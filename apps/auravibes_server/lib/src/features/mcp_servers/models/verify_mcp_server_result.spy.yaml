@@ -1,0 +1,5 @@
+class: VerifyMcpServerResult
+fields:
+  discovery: DiscoverMcpServerResult
+  verificationReceipt: String
+  expiresAt: DateTime

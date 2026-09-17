@@ -966,6 +966,15 @@ abstract class LocaleKeys {
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
   static const mcp_modal_save_success = 'mcp_modal.save_success';
+  static const mcp_modal_test_connection = 'mcp_modal.test_connection';
+  static const mcp_modal_test_connection_success =
+      'mcp_modal.test_connection_success';
+  static const mcp_modal_verification_success =
+      'mcp_modal.verification_success';
+  static const mcp_modal_verification_required =
+      'mcp_modal.verification_required';
+  static const mcp_modal_verification_expired =
+      'mcp_modal.verification_expired';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
   static const compaction_settings_auto_enabled =

@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
@@ -9,22 +10,73 @@ import 'package:riverpod/riverpod.dart';
 
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
-  Future<void> addMcpServer(
+  Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
-  }) async {
-    final _ = Object();
-  }
+  }) async => (
+    id: 'verification-id',
+    toolCount: 2,
+    expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+  );
+
+  @override
+  Future<void> commitPreparedMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+    required String verificationId,
+  }) => Future<void>.value();
 }
 
 class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
   @override
-  Future<void> addMcpServer(
+  Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
+  }) async => (
+    id: 'verification-id',
+    toolCount: 1,
+    expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+  );
+
+  @override
+  Future<void> commitPreparedMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+    required String verificationId,
   }) async {
     throw Exception('connect failed');
   }
+}
+
+class _TestFailingMcpConnectionNotifier extends McpConnectionNotifier {
+  @override
+  Future<McpConnectionVerification> prepareMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+  }) async {
+    throw Exception(
+      'Authorization: Bearer secret-token api_key=secret-api-key',
+    );
+  }
+
+  @override
+  Future<void> commitPreparedMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+    required String verificationId,
+  }) => Future<void>.value();
+}
+
+class _ExpiredMcpConnectionNotifier extends McpConnectionNotifier {
+  @override
+  Future<McpConnectionVerification> prepareMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+  }) async => (
+    id: 'expired-verification-id',
+    toolCount: 1,
+    expiresAt: DateTime.now().toUtc().subtract(const Duration(seconds: 1)),
+  );
 }
 
 void main() {
@@ -39,6 +91,9 @@ void main() {
       expect(state.bearerToken, '');
       expect(state.useHttp2, isFalse);
       expect(state.isSubmitting, isFalse);
+      expect(state.isTestingConnection, isFalse);
+      expect(state.isConnectionVerified, isFalse);
+      expect(state.verifiedToolCount, 0);
       expect(state.errorMessage, isNull);
     });
 
@@ -94,6 +149,18 @@ void main() {
         expect(entity.description, 'A test server');
         expect(entity.url, 'https://example.com');
         expect(entity.transport, isA<McpTransportTypeSSE>());
+      });
+
+      test('preserves HTTP/2 in streamable HTTP transport', () {
+        const state = McpFormState(
+          name: 'Test',
+          url: 'https://example.com',
+          useHttp2: true,
+        );
+
+        final transport = state.toCreateEntity().transport;
+        expect(transport, isA<McpTransportTypeStreamableHttp>());
+        expect((transport as McpTransportTypeStreamableHttp).useHttp2, isTrue);
       });
 
       test('nulls empty description', () {
@@ -194,17 +261,17 @@ void main() {
       expect(readContainer().read(mcpFormProvider('ws1')).name, '');
     });
 
-    test('setName updates name', () {
+    test('name field updates name', () {
       readNotifier().setName('New Name');
       expect(readContainer().read(mcpFormProvider('ws1')).name, 'New Name');
     });
 
-    test('setDescription updates description', () {
+    test('description field updates description', () {
       readNotifier().setDescription('Desc');
       expect(readContainer().read(mcpFormProvider('ws1')).description, 'Desc');
     });
 
-    test('setUrl updates url', () {
+    test('url field updates url', () {
       readNotifier().setUrl('https://example.com');
       expect(
         readContainer().read(mcpFormProvider('ws1')).url,
@@ -254,7 +321,7 @@ void main() {
       );
     });
 
-    test('setBearerToken updates token', () {
+    test('bearer token field updates token', () {
       readNotifier().setBearerToken('my-token');
       expect(
         readContainer().read(mcpFormProvider('ws1')).bearerToken,
@@ -262,29 +329,9 @@ void main() {
       );
     });
 
-    test('setUseHttp2 updates flag', () {
+    test('HTTP/2 field updates flag', () {
       readNotifier().setUseHttp2(value: true);
       expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
-    });
-
-    test('setSubmitting updates flag', () {
-      readNotifier().setSubmitting(value: true);
-      expect(readContainer().read(mcpFormProvider('ws1')).isSubmitting, isTrue);
-    });
-
-    test('setError sets error message', () {
-      readNotifier().setError('Something went wrong');
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).errorMessage,
-        'Something went wrong',
-      );
-    });
-
-    test('clearError clears error message', () {
-      readNotifier()
-        ..setError('Error')
-        ..clearError();
-      expect(readContainer().read(mcpFormProvider('ws1')).errorMessage, isNull);
     });
 
     test('submit returns false when invalid', () async {
@@ -324,16 +371,164 @@ void main() {
       );
     });
 
-    test('submit returns true when valid', () async {
+    test('submit returns true after verification', () async {
       readNotifier()
         ..setName('Test')
         ..setUrl('https://example.com')
         ..setAuthenticationType(.none);
 
+      expect(await readNotifier().testConnection(), isTrue);
       final result = await readNotifier().submit();
       expect(result, isTrue);
       expect(
         readContainer().read(mcpFormProvider('ws1')).isSubmitting,
+        isFalse,
+      );
+    });
+
+    test('submit requires verification', () async {
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      expect(await readNotifier().submit(), isFalse);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).errorMessage,
+        LocaleKeys.mcp_modal_verification_required,
+      );
+    });
+
+    test('testConnection returns true when valid', () async {
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      final result = await readNotifier().testConnection();
+
+      expect(result, isTrue);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isTestingConnection,
+        isFalse,
+      );
+      expect(readContainer().read(mcpFormProvider('ws1')).errorMessage, isNull);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+        isTrue,
+      );
+    });
+
+    test('name and description edits keep verification valid', () async {
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      expect(await readNotifier().testConnection(), isTrue);
+      readNotifier()
+        ..setName('Renamed')
+        ..setDescription('Updated description');
+
+      expect(await readNotifier().submit(), isTrue);
+    });
+
+    test('URL edits invalidate verification', () async {
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      expect(await readNotifier().testConnection(), isTrue);
+      readNotifier().setUrl('https://changed.example.com');
+
+      expect(await readNotifier().submit(), isFalse);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+        isFalse,
+      );
+    });
+
+    test('expired verification blocks saving', () async {
+      readContainer().dispose();
+      final expiredContainer = ProviderContainer(
+        overrides: [
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+            ),
+          ),
+          mcpConnectionProvider.overrideWith(_ExpiredMcpConnectionNotifier.new),
+        ],
+      );
+      final workspaceSession = await expiredContainer.read(
+        workspaceSessionForRouteProvider('ws1').future,
+      );
+      expect(workspaceSession, isA<WorkspaceSession>());
+      container = expiredContainer;
+      notifier = expiredContainer.read(mcpFormProvider('ws1').notifier);
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      expect(await readNotifier().testConnection(), isFalse);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+        isFalse,
+      );
+      expect(await readNotifier().submit(), isFalse);
+    });
+
+    test('testConnection redacts failures and blocks saving', () async {
+      readContainer().dispose();
+      final failingContainer = ProviderContainer(
+        overrides: [
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+            ),
+          ),
+          mcpConnectionProvider.overrideWith(
+            _TestFailingMcpConnectionNotifier.new,
+          ),
+        ],
+      );
+      final workspaceSession = await failingContainer.read(
+        workspaceSessionForRouteProvider('ws1').future,
+      );
+      expect(workspaceSession, isA<WorkspaceSession>());
+      container = failingContainer;
+      notifier = failingContainer.read(mcpFormProvider('ws1').notifier);
+
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      final testResult = await readNotifier().testConnection();
+      final stateAfterTest = readContainer().read(mcpFormProvider('ws1'));
+
+      expect(testResult, isFalse);
+      expect(stateAfterTest.errorMessage, contains('Bearer [REDACTED]'));
+      expect(stateAfterTest.errorMessage, contains('api_key=[REDACTED]'));
+      expect(stateAfterTest.errorMessage, isNot(contains('secret-token')));
+      expect(stateAfterTest.errorMessage, isNot(contains('secret-api-key')));
+      expect(stateAfterTest.isTestingConnection, isFalse);
+
+      expect(await readNotifier().submit(), isFalse);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
         isFalse,
       );
     });
@@ -376,6 +571,7 @@ void main() {
         ..setUrl('https://example.com')
         ..setAuthenticationType(.none);
 
+      expect(await readNotifier().testConnection(), isTrue);
       final result = await readNotifier().submit();
 
       expect(result, isFalse);
@@ -387,6 +583,10 @@ void main() {
       );
       expect(record.error.toString(), contains('connect failed'));
       expect(record.stackTrace, isNotNull);
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+        isTrue,
+      );
     });
   });
 }

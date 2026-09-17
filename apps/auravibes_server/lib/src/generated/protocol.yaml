@@ -42,6 +42,7 @@ conversation:
   - cancelTurn:
   - compact:
 mcpServer:
+  - verify:
   - create:
   - delete:
   - discoverAndCheck:

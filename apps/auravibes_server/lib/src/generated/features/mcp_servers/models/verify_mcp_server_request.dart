@@ -12,45 +12,36 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _is;
 
-abstract class CreateMcpServerRequest
+abstract class VerifyMcpServerRequest
     implements _is.SerializableModel, _is.ProtocolSerialization {
-  CreateMcpServerRequest._({
+  VerifyMcpServerRequest._({
     required this.workspaceId,
     required this.requestId,
-    required this.name,
     required this.url,
     required this.transport,
     required this.useHttp2,
-    this.description,
     this.bearerToken,
-    this.verificationReceipt,
   });
 
-  factory CreateMcpServerRequest({
+  factory VerifyMcpServerRequest({
     required int workspaceId,
     required String requestId,
-    required String name,
     required String url,
     required String transport,
     required bool useHttp2,
-    String? description,
     String? bearerToken,
-    String? verificationReceipt,
-  }) = _CreateMcpServerRequestImpl;
+  }) = _VerifyMcpServerRequestImpl;
 
-  factory CreateMcpServerRequest.fromJson(
+  factory VerifyMcpServerRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
-    return CreateMcpServerRequest(
+    return VerifyMcpServerRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
-      name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String,
       transport: jsonSerialization['transport'] as String,
       useHttp2: _is.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
-      description: jsonSerialization['description'] as String?,
       bearerToken: jsonSerialization['bearerToken'] as String?,
-      verificationReceipt: jsonSerialization['verificationReceipt'] as String?,
     );
   }
 
@@ -58,65 +49,48 @@ abstract class CreateMcpServerRequest
 
   String requestId;
 
-  String name;
-
   String url;
 
   String transport;
 
   bool useHttp2;
 
-  String? description;
-
   String? bearerToken;
 
-  String? verificationReceipt;
-
-  /// Returns a shallow copy of this [CreateMcpServerRequest]
+  /// Returns a shallow copy of this [VerifyMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
-  CreateMcpServerRequest copyWith({
+  VerifyMcpServerRequest copyWith({
     int? workspaceId,
     String? requestId,
-    String? name,
     String? url,
     String? transport,
     bool? useHttp2,
-    String? description,
     String? bearerToken,
-    String? verificationReceipt,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'CreateMcpServerRequest',
+      '__className__': 'VerifyMcpServerRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
-      'name': name,
       'url': url,
       'transport': transport,
       'useHttp2': useHttp2,
-      if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
-      if (verificationReceipt != null)
-        'verificationReceipt': verificationReceipt,
     };
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'CreateMcpServerRequest',
+      '__className__': 'VerifyMcpServerRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
-      'name': name,
       'url': url,
       'transport': transport,
       'useHttp2': useHttp2,
-      if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
-      if (verificationReceipt != null)
-        'verificationReceipt': verificationReceipt,
     };
   }
 
@@ -128,56 +102,42 @@ abstract class CreateMcpServerRequest
 
 class _Undefined {}
 
-class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
-  _CreateMcpServerRequestImpl({
+class _VerifyMcpServerRequestImpl extends VerifyMcpServerRequest {
+  _VerifyMcpServerRequestImpl({
     required int workspaceId,
     required String requestId,
-    required String name,
     required String url,
     required String transport,
     required bool useHttp2,
-    String? description,
     String? bearerToken,
-    String? verificationReceipt,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
-         name: name,
          url: url,
          transport: transport,
          useHttp2: useHttp2,
-         description: description,
          bearerToken: bearerToken,
-         verificationReceipt: verificationReceipt,
        );
 
-  /// Returns a shallow copy of this [CreateMcpServerRequest]
+  /// Returns a shallow copy of this [VerifyMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
   @override
-  CreateMcpServerRequest copyWith({
+  VerifyMcpServerRequest copyWith({
     int? workspaceId,
     String? requestId,
-    String? name,
     String? url,
     String? transport,
     bool? useHttp2,
-    Object? description = _Undefined,
     Object? bearerToken = _Undefined,
-    Object? verificationReceipt = _Undefined,
   }) {
-    return CreateMcpServerRequest(
+    return VerifyMcpServerRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       requestId: requestId ?? this.requestId,
-      name: name ?? this.name,
       url: url ?? this.url,
       transport: transport ?? this.transport,
       useHttp2: useHttp2 ?? this.useHttp2,
-      description: description is String? ? description : this.description,
       bearerToken: bearerToken is String? ? bearerToken : this.bearerToken,
-      verificationReceipt: verificationReceipt is String?
-          ? verificationReceipt
-          : this.verificationReceipt,
     );
   }
 }

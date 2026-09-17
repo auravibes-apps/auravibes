@@ -25,6 +25,7 @@ abstract class _CloudToolsRepositoryBase {
       _readState = null,
       _patchState = null,
       _create = null,
+      _verify = null,
       _delete = null,
       _discover = null;
 
@@ -32,6 +33,7 @@ abstract class _CloudToolsRepositoryBase {
     required this._readState,
     required this._patchState,
     required this._create,
+    required this._verify,
     required this._delete,
     required this._discover,
   }) : _gatewayFuture = Future.value(),
@@ -56,8 +58,17 @@ abstract class _CloudToolsRepositoryBase {
     required bool useHttp2,
     required String? description,
     required String? bearerToken,
+    required String? verificationReceipt,
   })?
   _create;
+  final Future<VerifyMcpServerResult> Function({
+    required String requestId,
+    required String url,
+    required String transport,
+    required bool useHttp2,
+    required String? bearerToken,
+  })?
+  _verify;
   final Future<void> Function({required String mcpServerId})? _delete;
   final Future<DiscoverMcpServerResult> Function({required String mcpServerId})?
   _discover;
@@ -107,8 +118,17 @@ class CloudToolsRepository extends _CloudToolsRepositoryBase
       required bool useHttp2,
       required String? description,
       required String? bearerToken,
+      required String? verificationReceipt,
     })
     create,
+    required Future<VerifyMcpServerResult> Function({
+      required String requestId,
+      required String url,
+      required String transport,
+      required bool useHttp2,
+      required String? bearerToken,
+    })
+    verify,
     required Future<void> Function({required String mcpServerId}) delete,
     required Future<DiscoverMcpServerResult> Function({
       required String mcpServerId,
@@ -118,6 +138,7 @@ class CloudToolsRepository extends _CloudToolsRepositoryBase
          readState: read,
          patchState: patch,
          create: create,
+         verify: verify,
          delete: delete,
          discover: discover,
        );
@@ -227,13 +248,43 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
   createMcpServer({
     required String workspaceId,
     required McpServerFormToCreate server,
+    required String requestId,
+    required String verificationReceipt,
   }) async {
     _validateCloudMcpServer(server);
-    final result = await _createMcpServer(_createMcpRequest(server));
+    final result = await _createMcpServer(
+      _createMcpRequest(
+        server,
+        requestId: requestId,
+        verificationReceipt: verificationReceipt,
+      ),
+    );
 
     return (
       server: _toMcpServerEntity(workspaceId, server, result),
       discovery: result.discovery,
+    );
+  }
+
+  Future<
+    ({
+      DiscoverMcpServerResult discovery,
+      String verificationReceipt,
+      DateTime expiresAt,
+    })
+  >
+  verifyMcpServer({
+    required String workspaceId,
+    required McpServerFormToCreate server,
+  }) async {
+    final _ = workspaceId;
+    _validateCloudMcpServer(server);
+    final result = await _verifyMcpServer(_verifyMcpRequest(server));
+
+    return (
+      discovery: result.discovery,
+      verificationReceipt: result.verificationReceipt,
+      expiresAt: result.expiresAt,
     );
   }
 
@@ -433,23 +484,72 @@ extension on _CloudToolsRepositoryBase {
       bool useHttp2,
       String? description,
       String? bearerToken,
+      String? verificationReceipt,
     })
     request,
   ) async {
     final create = _create;
-    if (create != null) {
-      return await create(
+    if (create != null) return await _callCreate(create, request);
+
+    return await CloudMcpGateway(await _gateway).createMcpServer(request);
+  }
+
+  Future<CreateMcpServerResult> _callCreate(
+    Future<CreateMcpServerResult> Function({
+      required String requestId,
+      required String name,
+      required String url,
+      required String transport,
+      required bool useHttp2,
+      required String? description,
+      required String? bearerToken,
+      required String? verificationReceipt,
+    })
+    create,
+    ({
+      String requestId,
+      String name,
+      String url,
+      String transport,
+      bool useHttp2,
+      String? description,
+      String? bearerToken,
+      String? verificationReceipt,
+    })
+    request,
+  ) => create(
+    requestId: request.requestId,
+    name: request.name,
+    url: request.url,
+    transport: request.transport,
+    useHttp2: request.useHttp2,
+    description: request.description,
+    bearerToken: request.bearerToken,
+    verificationReceipt: request.verificationReceipt,
+  );
+
+  Future<VerifyMcpServerResult> _verifyMcpServer(
+    ({
+      String requestId,
+      String url,
+      String transport,
+      bool useHttp2,
+      String? bearerToken,
+    })
+    request,
+  ) async {
+    final verify = _verify;
+    if (verify != null) {
+      return await verify(
         requestId: request.requestId,
-        name: request.name,
         url: request.url,
         transport: request.transport,
         useHttp2: request.useHttp2,
-        description: request.description,
         bearerToken: request.bearerToken,
       );
     }
 
-    return await CloudMcpGateway(await _gateway).createMcpServer(request);
+    return await CloudMcpGateway(await _gateway).verifyMcpServer(request);
   }
 
   Future<List<WorkspaceResource>> _read(WorkspaceResourceKind kind) async {
@@ -688,19 +788,44 @@ McpServerEntity _toMcpServerEntity(
   bool useHttp2,
   String? description,
   String? bearerToken,
+  String verificationReceipt,
 })
-_createMcpRequest(McpServerFormToCreate server) => (
-  requestId: const UuidV7().generate(),
+_createMcpRequest(
+  McpServerFormToCreate server, {
+  required String requestId,
+  required String verificationReceipt,
+}) => (
+  requestId: requestId,
   name: server.name.trim(),
   url: server.url.trim(),
   transport: 'streamableHttp',
-  useHttp2: switch (server.transport) {
-    McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
-    McpTransportTypeSSE() => false,
-  },
+  useHttp2: _mcpUseHttp2(server.transport),
   description: server.description?.trim(),
-  bearerToken:
-      server.authenticationType == McpAuthenticationTypeOptions.bearerToken
-      ? server.bearerToken
-      : null,
+  verificationReceipt: verificationReceipt,
+  bearerToken: _mcpBearerToken(server),
 );
+
+({
+  String requestId,
+  String url,
+  String transport,
+  bool useHttp2,
+  String? bearerToken,
+})
+_verifyMcpRequest(McpServerFormToCreate server) => (
+  requestId: const UuidV7().generate(),
+  url: server.url.trim(),
+  transport: 'streamableHttp',
+  useHttp2: _mcpUseHttp2(server.transport),
+  bearerToken: _mcpBearerToken(server),
+);
+
+bool _mcpUseHttp2(McpTransportType transport) => switch (transport) {
+  McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
+  McpTransportTypeSSE() => false,
+};
+
+String? _mcpBearerToken(McpServerFormToCreate server) =>
+    server.authenticationType == McpAuthenticationTypeOptions.bearerToken
+    ? server.bearerToken
+    : null;

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
@@ -17,6 +18,46 @@ class McpServerUseCases(
   final McpServerProbe _probe,
 ) {
   static const _endpointCreate = 'mcpServer.create';
+  static const _verificationLifetime = Duration(minutes: 5);
+
+  Future<VerifyMcpServerResult> verify(
+    Session session, {
+    required String userId,
+    required VerifyMcpServerRequest request,
+  }) async {
+    if (request.requestId.isEmpty) _validation();
+    await session.db.transaction(
+      (transaction) => _authorize(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      ),
+    );
+    final url = request.url.trim();
+    final discovery = await _probe(
+      uri: McpServerPolicy.validateUri(url),
+      transport: request.transport,
+      useHttp2: request.useHttp2,
+      bearerToken: request.bearerToken,
+    );
+    if (discovery.health != McpServerHealth.healthy) _validation();
+
+    final expiresAt = DateTime.now().toUtc().add(_verificationLifetime);
+    return VerifyMcpServerResult(
+      discovery: discovery,
+      verificationReceipt: await _createVerificationReceipt(
+        session,
+        userId: userId,
+        request: request,
+        url: url,
+        discovery: discovery,
+        expiresAt: expiresAt,
+      ),
+      expiresAt: expiresAt,
+    );
+  }
+
   Future<CreateMcpServerResult> create(
     Session session, {
     required String userId,
@@ -57,12 +98,14 @@ class McpServerUseCases(
       );
     });
     if (existing != null) return existing;
-    final uri = McpServerPolicy.validateUri(url);
-    final discovery = await _probe(
-      uri: uri,
-      transport: request.transport,
-      useHttp2: request.useHttp2,
-      bearerToken: request.bearerToken,
+    final verificationReceipt = request.verificationReceipt;
+    if (verificationReceipt == null) _validation();
+    final discovery = await _discoveryFromVerificationReceipt(
+      session,
+      userId: userId,
+      request: request,
+      url: url,
+      receipt: verificationReceipt,
     );
     if (discovery.health != McpServerHealth.healthy) _validation();
 
@@ -402,9 +445,7 @@ class McpServerUseCases(
     required String? description,
     required String? bearerToken,
   }) async {
-    final tokenDigest = base64UrlEncode(
-      (await Sha256().hash(utf8.encode(bearerToken ?? ''))).bytes,
-    );
+    final tokenDigest = await _bearerTokenDigest(bearerToken);
     final bytes = await Sha256().hash(
       utf8.encode(
         jsonEncode({
@@ -420,6 +461,108 @@ class McpServerUseCases(
     );
     return base64UrlEncode(bytes.bytes);
   }
+
+  Future<String> _createVerificationReceipt(
+    Session session, {
+    required String userId,
+    required VerifyMcpServerRequest request,
+    required String url,
+    required DiscoverMcpServerResult discovery,
+    required DateTime expiresAt,
+  }) async {
+    final payload = jsonEncode({
+      'workspaceId': request.workspaceId,
+      'userId': userId,
+      'requestId': request.requestId,
+      'url': url,
+      'transport': request.transport,
+      'useHttp2': request.useHttp2,
+      'bearerTokenDigest': await _bearerTokenDigest(request.bearerToken),
+      'expiresAt': expiresAt.toIso8601String(),
+      'discovery': discovery.toJson(),
+    });
+    final encrypted = await const WorkspaceSecretCipher().encrypt(
+      session,
+      payload,
+      workspaceId: request.workspaceId,
+      resourceId: request.requestId,
+    );
+
+    return jsonEncode({
+      'requestId': request.requestId,
+      'ciphertext': _base64(encrypted.ciphertext),
+      'nonce': _base64(encrypted.nonce),
+      'authenticationTag': _base64(encrypted.authenticationTag),
+    });
+  }
+
+  Future<DiscoverMcpServerResult> _discoveryFromVerificationReceipt(
+    Session session, {
+    required String userId,
+    required CreateMcpServerRequest request,
+    required String url,
+    required String receipt,
+  }) async {
+    try {
+      final envelope = jsonDecode(receipt);
+      if (envelope is! Map<String, dynamic> ||
+          envelope['requestId'] is! String ||
+          envelope['ciphertext'] is! String ||
+          envelope['nonce'] is! String ||
+          envelope['authenticationTag'] is! String) {
+        _validation();
+      }
+      final verificationRequestId = envelope['requestId']! as String;
+      final payload = jsonDecode(
+        await const WorkspaceSecretCipher().decryptEncrypted(
+          session,
+          ciphertext: _bytes(envelope['ciphertext']! as String),
+          nonce: _bytes(envelope['nonce']! as String),
+          authenticationTag: _bytes(envelope['authenticationTag']! as String),
+          workspaceId: request.workspaceId,
+          resourceId: verificationRequestId,
+        ),
+      );
+      if (payload is! Map<String, dynamic> ||
+          payload['workspaceId'] != request.workspaceId ||
+          payload['userId'] != userId ||
+          payload['requestId'] != verificationRequestId ||
+          payload['url'] != url ||
+          payload['transport'] != request.transport ||
+          payload['useHttp2'] != request.useHttp2 ||
+          payload['bearerTokenDigest'] !=
+              await _bearerTokenDigest(request.bearerToken)) {
+        _validation();
+      }
+      final expiresAt = DateTime.tryParse(
+        payload['expiresAt'] as String? ?? '',
+      );
+      if (expiresAt == null || !DateTime.now().toUtc().isBefore(expiresAt)) {
+        _validation();
+      }
+      final discoveryData = payload['discovery'];
+      if (discoveryData is! Map<String, dynamic>) _validation();
+      final discovery = DiscoverMcpServerResult.fromJson(discoveryData);
+      if (discovery.health != McpServerHealth.healthy) _validation();
+
+      return discovery;
+    } on CloudWorkspaceException {
+      rethrow;
+    } on Object {
+      _validation();
+    }
+  }
+
+  Future<String> _bearerTokenDigest(String? bearerToken) async =>
+      base64UrlEncode(
+        (await Sha256().hash(utf8.encode(bearerToken ?? ''))).bytes,
+      );
+
+  String _base64(ByteData value) => base64Encode(
+    value.buffer.asUint8List(value.offsetInBytes, value.lengthInBytes),
+  );
+
+  ByteData _bytes(String value) => ByteData.sublistView(base64Decode(value));
 
   Future<DiscoverMcpServerResult> discoverAndCheck(
     Session session, {

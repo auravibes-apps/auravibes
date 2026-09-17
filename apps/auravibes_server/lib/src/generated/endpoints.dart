@@ -66,6 +66,8 @@ import 'package:auravibes_server/src/generated/features/mcp_servers/models/delet
     as _ilfhgnq3;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
     as _imtqkt48;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _iqyjig0z;
 import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
     as _iq4yqonh;
 import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
@@ -1024,6 +1026,25 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'mcpServer',
       endpoint: endpoints['mcpServer']!,
       methodConnectors: {
+        'verify': _is.MethodConnector(
+          name: 'verify',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iqyjig0z.VerifyMcpServerRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['mcpServer'] as _im1tu8co.McpServerEndpoint)
+                  .verify(
+                    session,
+                    params['request'],
+                  ),
+        ),
         'create': _is.MethodConnector(
           name: 'create',
           params: {

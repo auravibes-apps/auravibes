@@ -22,6 +22,8 @@ void main() {
     final patchedKinds = <WorkspaceResourceKind>[];
     final createRequestIds = <String>[];
     var creates = 0;
+    var failFirstCreate = true;
+    var verifications = 0;
     var discoveries = 0;
     final repository = CloudToolsRepository.forTesting(
       patch: ({required requestId, required operations}) async {
@@ -74,9 +76,15 @@ void main() {
             required useHttp2,
             required description,
             required bearerToken,
+            required verificationReceipt,
           }) async {
             creates++;
+            expect(verificationReceipt, 'verification-receipt');
             createRequestIds.add(requestId);
+            if (failFirstCreate) {
+              failFirstCreate = false;
+              throw StateError('transient create failure');
+            }
             const serverId = 'created-server';
             const groupId = 'created-group';
             final now = DateTime.utc(2026);
@@ -143,7 +151,23 @@ void main() {
             return CreateMcpServerResult(
               mcpServerId: serverId,
               createdAt: now,
-              discovery: .new(health: McpServerHealth.healthy, tools: const []),
+              discovery: _discovery(),
+            );
+          },
+      verify:
+          ({
+            required requestId,
+            required url,
+            required transport,
+            required useHttp2,
+            required bearerToken,
+          }) async {
+            verifications++;
+
+            return VerifyMcpServerResult(
+              discovery: _discovery(),
+              verificationReceipt: 'verification-receipt',
+              expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
             );
           },
       delete: ({required mcpServerId}) async {
@@ -254,19 +278,38 @@ void main() {
       isNotNull,
     );
 
-    await notifier.addMcpServer(
-      const McpServerFormToCreate(
-        name: 'Cloud MCP',
-        url: 'https://mcp.example.com',
-        transport: McpTransportTypeStreamableHttp(),
-        authenticationType: .bearerToken,
-        bearerToken: 'test-token',
-      ),
+    const server = McpServerFormToCreate(
+      name: 'Cloud MCP',
+      url: 'https://mcp.example.com',
+      transport: McpTransportTypeStreamableHttp(),
+      authenticationType: .bearerToken,
+      bearerToken: 'test-token',
+    );
+    final verification = await notifier.prepareMcpConnection(
+      server,
       workspaceId: 'workspace-1',
     );
+    await expectLater(
+      notifier.commitPreparedMcpConnection(
+        server,
+        workspaceId: 'workspace-1',
+        verificationId: verification.id,
+      ),
+      throwsA(isA<StateError>()),
+    );
+    await notifier.commitPreparedMcpConnection(
+      server,
+      workspaceId: 'workspace-1',
+      verificationId: verification.id,
+    );
 
-    expect(creates, 1);
-    expect(createRequestIds.single, isNotEmpty);
+    expect(creates, 2);
+    expect(verifications, 1);
+    expect(createRequestIds, hasLength(2));
+    final firstCreateRequestId = createRequestIds.firstOrNull;
+    final secondCreateRequestId = createRequestIds.skip(1).firstOrNull;
+    expect(firstCreateRequestId, isNotEmpty);
+    expect(secondCreateRequestId, firstCreateRequestId);
     expect(patchedKinds, isEmpty);
     final group = resources
         .where((item) => item.resourceKind == WorkspaceResourceKind.toolGroup)
@@ -304,6 +347,16 @@ void main() {
     );
   });
 }
+
+DiscoverMcpServerResult _discovery() => DiscoverMcpServerResult(
+  health: .healthy,
+  tools: [
+    DiscoveredMcpTool(
+      name: 'sum',
+      inputSchemaJson: jsonEncode({'type': 'object'}),
+    ),
+  ],
+);
 
 WorkspaceResource _serverResource() => WorkspaceResource(
   workspaceId: 7,

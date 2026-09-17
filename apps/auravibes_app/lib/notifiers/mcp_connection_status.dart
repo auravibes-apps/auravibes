@@ -18,15 +18,18 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
+import 'package:crypto/crypto.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/v7.dart';
 
 part 'mcp_connection_status.freezed.dart';
 part 'mcp_connection_status.g.dart';
@@ -34,12 +37,18 @@ part 'mcp_connection_status.g.dart';
 final _logger = Logger('McpConnectionNotifier');
 
 const Duration _mcpConnectionTimeout = .new(seconds: 10);
+const Duration _mcpVerificationLifetime = .new(minutes: 5);
+
+typedef McpConnectionVerification = ({
+  String id,
+  int toolCount,
+  DateTime expiresAt,
+});
 
 typedef _AddedMcpServer = ({
   McpServerEntity server,
   List<McpToolInfo> tools,
   McpManagerClient client,
-  String? serviceConnectionId,
 });
 
 typedef _LocalMcpAddRequest = ({
@@ -51,25 +60,73 @@ typedef _LocalMcpAddRequest = ({
   ServiceConnectionRepository serviceConnectionRepository,
 });
 
-typedef _LocalMcpAddInput = ({
+typedef _McpPrepareRequest = ({
+  String id,
+  String fingerprint,
+  String workspaceId,
+});
+
+typedef _McpLocalPreparedData = ({
   McpManagerService manager,
   McpServerToCreate serverInfo,
-  ServiceConnectionRepository serviceConnectionRepository,
-  String workspaceId,
-  String? serviceConnectionId,
+  McpManagerClient client,
+  List<McpToolInfo> tools,
+  OAuthTokenEntity? latestOAuthToken,
+  StreamSubscription<OAuthTokenEntity>? tokenSubscription,
 });
 
-typedef _McpServiceConnectionAdd = ({
-  ServiceConnectionRepository repository,
-  String? id,
-});
-
-typedef _McpAddCleanup = ({
+typedef _McpConnectedLocalRequest = ({
+  _McpPrepareRequest request,
   McpManagerService manager,
-  ServiceConnectionRepository serviceConnectionRepository,
-  McpManagerClient? client,
-  String? serviceConnectionId,
+  McpServerToCreate serverInfo,
+  McpManagerClient client,
 });
+
+typedef _McpLocalPreparedRequest = ({
+  _McpConnectedLocalRequest request,
+  _McpPreparedTokenBuffer buffer,
+  StreamSubscription<OAuthTokenEntity>? tokenSubscription,
+  List<McpToolInfo> tools,
+});
+
+typedef _McpTokenPreparation = ({
+  _McpPreparedTokenBuffer buffer,
+  StreamSubscription<OAuthTokenEntity>? subscription,
+});
+
+typedef _PreparedMcpConnectionData = ({
+  String id,
+  String workspaceId,
+  String fingerprint,
+  DateTime verifiedAt,
+  DateTime expiresAt,
+  McpManagerService? manager,
+  McpServerToCreate? serverInfo,
+  McpManagerClient? client,
+  List<McpToolInfo> tools,
+  String? verificationReceipt,
+});
+
+typedef _McpCloudVerification = ({
+  DiscoverMcpServerResult discovery,
+  String verificationReceipt,
+  DateTime expiresAt,
+});
+
+class _McpPreparedTokenBuffer {
+  new(this._persist, this.latestOAuthToken);
+
+  OAuthTokenEntity? latestOAuthToken;
+  _PreparedMcpConnection? session;
+  final void Function(String, OAuthTokenEntity) _persist;
+
+  void update(OAuthTokenEntity token) {
+    latestOAuthToken = token;
+    session?.latestOAuthToken = token;
+    final persistenceId = session?.tokenPersistenceId;
+    if (persistenceId != null) _persist(persistenceId, token);
+  }
+}
 
 typedef _CloudDiscoveryError = ({
   String serverId,
@@ -179,6 +236,46 @@ class const McpToolIdComponents({
       };
 }
 
+class _PreparedMcpConnection {
+  new(_PreparedMcpConnectionData data)
+    : id = data.id,
+      workspaceId = data.workspaceId,
+      fingerprint = data.fingerprint,
+      verifiedAt = data.verifiedAt,
+      expiresAt = data.expiresAt,
+      manager = data.manager,
+      serverInfo = data.serverInfo,
+      client = data.client,
+      tools = data.tools,
+      verificationReceipt = data.verificationReceipt;
+
+  final String id;
+  final String workspaceId;
+  final String fingerprint;
+  final DateTime verifiedAt;
+  final DateTime expiresAt;
+  final McpManagerService? manager;
+  final McpServerToCreate? serverInfo;
+  final McpManagerClient? client;
+  final List<McpToolInfo> tools;
+  final String? verificationReceipt;
+
+  OAuthTokenEntity? latestOAuthToken;
+  String? tokenPersistenceId;
+  StreamSubscription<OAuthTokenEntity>? tokenSubscription;
+  String? cloudCreateRequestId;
+  String? cloudCommitFingerprint;
+
+  Future<void> close() async {
+    await tokenSubscription?.cancel();
+    tokenSubscription = null;
+    tokenPersistenceId = null;
+    await manager?.disconnect(client);
+  }
+}
+
+class const McpVerificationRequiredException() implements Exception;
+
 McpToolIdComponents _mcpToolIdComponents(
   String mcpServerId,
   String slugName,
@@ -218,6 +315,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   var _lastKnownState = const <McpConnectionState>[];
   var _currentState = const <McpConnectionState>[];
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
+  final _preparedMcpConnections = <String, _PreparedMcpConnection>{};
   StreamController<List<McpConnectionState>> _stateController =
       StreamController<List<McpConnectionState>>.broadcast(sync: true);
   McpManagerService? _mcpManagerService;
@@ -231,35 +329,60 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     if (!_stateController.isClosed) _stateController.add(value);
   }
 
-  /// Call an MCP tool on a connected MCP server.
-  Future<String> callTool({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) async {
-    if (_isCloud) {
-      throw const UnsupportedWorkspaceCapabilityException();
-    }
-    final client = _requiredToolClient(mcpServerId, toolIdentifier);
-
-    return await _requiredMcpManager.callToolString(
-      client,
-      toolIdentifier: toolIdentifier,
-      arguments: arguments,
-    );
-  }
-
-  /// Add a new MCP server from the form data.
-  Future<void> addMcpServer(
+  /// Prepare an MCP connection without persisting its configuration or tools.
+  Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
   }) async {
+    _prepareWorkspace(workspaceId);
+    await _discardPreparedMcpConnectionsForWorkspace(workspaceId);
+
+    final request = (
+      id: const UuidV7().generate(),
+      fingerprint: _mcpConnectionFingerprint(serverToCreate),
+      workspaceId: workspaceId,
+    );
     if (_isCloud) {
-      await _addCloudMcpServer(serverToCreate, workspaceId);
+      return await _prepareCloudMcpConnection(request, serverToCreate);
+    }
+
+    return await _prepareLocalMcpConnection(request, serverToCreate);
+  }
+
+  /// Persist a previously prepared MCP connection.
+  Future<void> commitPreparedMcpConnection(
+    McpServerFormToCreate serverToCreate, {
+    required String workspaceId,
+    required String verificationId,
+  }) async {
+    _prepareWorkspace(workspaceId);
+    final session = await _requiredPreparedMcpConnection(
+      verificationId,
+      serverToCreate,
+      workspaceId,
+    );
+    if (_isCloud) {
+      await _commitCloudPreparedMcpConnection(
+        session,
+        serverToCreate,
+        workspaceId,
+      );
 
       return;
     }
-    await _addLocalMcpServer(serverToCreate, workspaceId);
+    await _commitLocalPreparedMcpConnection(
+      session,
+      serverToCreate,
+      workspaceId,
+    );
+  }
+
+  /// Discard an in-memory MCP verification and its live client.
+  Future<void> discardPreparedMcpConnection(String verificationId) async {
+    final session = _preparedMcpConnections.remove(verificationId);
+    if (session == null) return;
+
+    final _ = await session.close();
   }
 
   /// Reconnect to a specific MCP server.
@@ -335,6 +458,24 @@ extension _McpConnectionNotifierContext on McpConnectionNotifier {
 }
 
 extension McpConnectionNotifierOperations on McpConnectionNotifier {
+  /// Call an MCP tool on a connected MCP server.
+  Future<String> callTool({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    if (_isCloud) {
+      throw const UnsupportedWorkspaceCapabilityException();
+    }
+    final client = _requiredToolClient(mcpServerId, toolIdentifier);
+
+    return await _requiredMcpManager.callToolString(
+      client,
+      toolIdentifier: toolIdentifier,
+      arguments: arguments,
+    );
+  }
+
   /// Get a connection state by server ID.
   McpConnectionState? getConnection(String serverId) => _currentState
       .where((connection) => connection.hasServerId(serverId))
@@ -471,72 +612,288 @@ extension _McpConnectionStateOperations on McpConnectionNotifier {
         )
         .timeout(timeout, onTimeout: () => const []);
   }
+}
 
-  Future<void> _addLocalMcpServer(
-    McpServerFormToCreate serverToCreate,
+extension _McpPreparedConnectionOperations on McpConnectionNotifier {
+  Future<void> _discardPreparedMcpConnectionsForWorkspace(
     String workspaceId,
   ) async {
-    final request = await _prepareLocalMcpAdd(serverToCreate, workspaceId);
-    final added = await _connectAndPersistMcp(request);
-
-    await _finishLocalMcpAdd(added, request.manager, workspaceId);
+    final ids = _preparedMcpConnections.values
+        .where((session) => session.workspaceId == workspaceId)
+        .map((session) => session.id)
+        .toList();
+    for (final id in ids) {
+      await discardPreparedMcpConnection(id);
+    }
   }
 
-  Future<_LocalMcpAddRequest> _prepareLocalMcpAdd(
-    McpServerFormToCreate serverToCreate,
-    String workspaceId,
-  ) async => _localMcpAddRequest(
-    await _prepareLocalMcpInput(serverToCreate, workspaceId),
-  );
-
-  Future<_LocalMcpAddInput> _prepareLocalMcpInput(
+  Future<_PreparedMcpConnection> _requiredPreparedMcpConnection(
+    String verificationId,
     McpServerFormToCreate serverToCreate,
     String workspaceId,
   ) async {
-    final serverInfo = await _buildMcpServerInfo(serverToCreate);
-    final serviceConnection = await _prepareMcpServiceConnection(
-      workspaceId,
-      serverInfo,
+    final session = _preparedMcpConnections[verificationId];
+    if (session == null ||
+        !_preparedSessionMatches(session, serverToCreate, workspaceId)) {
+      await discardPreparedMcpConnection(verificationId);
+      throw const McpVerificationRequiredException();
+    }
+
+    return session;
+  }
+
+  bool _preparedSessionMatches(
+    _PreparedMcpConnection session,
+    McpServerFormToCreate server,
+    String workspaceId,
+  ) =>
+      DateTime.now().toUtc().isBefore(session.expiresAt) &&
+      session.workspaceId == workspaceId &&
+      session.fingerprint == _mcpConnectionFingerprint(server);
+
+  Future<void> _completePreparedMcpConnection(String verificationId) async {
+    final session = _preparedMcpConnections.remove(verificationId);
+    final _ = await session?.tokenSubscription?.cancel();
+    if (session != null) session.tokenSubscription = null;
+  }
+
+  void _adoptPreparedTokenUpdates(
+    _PreparedMcpConnection session, {
+    required String serverId,
+    required String? serviceConnectionId,
+  }) {
+    if (serviceConnectionId == null) return;
+    final subscription = session.tokenSubscription;
+    if (subscription == null) return;
+    session.tokenPersistenceId = serviceConnectionId;
+    _tokenSubscriptions[serverId] = subscription;
+    session.tokenSubscription = null;
+  }
+}
+
+extension _McpPreparationOperations on McpConnectionNotifier {
+  Future<McpConnectionVerification> _prepareCloudMcpConnection(
+    _McpPrepareRequest request,
+    McpServerFormToCreate server,
+  ) async {
+    final verification = await _cloudRepository.verifyMcpServer(
+      workspaceId: request.workspaceId,
+      server: server,
+    );
+    if (_isDisposed) throw const McpVerificationRequiredException();
+
+    final session = _storePreparedCloudMcpConnection(
+      request,
+      server,
+      verification,
+    );
+
+    return _mcpVerificationSummary(session);
+  }
+
+  Future<McpConnectionVerification> _prepareLocalMcpConnection(
+    _McpPrepareRequest request,
+    McpServerFormToCreate server,
+  ) async {
+    final manager = _requiredMcpManager;
+    final serverInfo = await _buildMcpServerInfo(server);
+
+    return await _connectPreparedLocalMcp(request, manager, serverInfo);
+  }
+
+  Future<McpConnectionVerification> _connectPreparedLocalMcp(
+    _McpPrepareRequest request,
+    McpManagerService manager,
+    McpServerToCreate serverInfo,
+  ) async {
+    McpManagerClient? client;
+    try {
+      client = await manager.connectMcp(serverInfo);
+      final verification = await _prepareConnectedLocalMcp((
+        request: request,
+        manager: manager,
+        serverInfo: serverInfo,
+        client: client,
+      ));
+      client = null;
+
+      return verification;
+    } finally {
+      await manager.disconnect(client);
+    }
+  }
+
+  Future<McpConnectionVerification> _prepareConnectedLocalMcp(
+    _McpConnectedLocalRequest request,
+  ) async {
+    final tokenPreparation = _prepareLocalTokenUpdates(request);
+    try {
+      final tools = await _fetchPreparedLocalTools(request);
+
+      final session = _storePreparedLocalMcpConnection((
+        request: request,
+        buffer: tokenPreparation.buffer,
+        tokenSubscription: tokenPreparation.subscription,
+        tools: tools,
+      ));
+
+      return _mcpVerificationSummary(session);
+    } on Object {
+      await tokenPreparation.subscription?.cancel();
+      rethrow;
+    }
+  }
+
+  _PreparedMcpConnection _storePreparedCloudMcpConnection(
+    _McpPrepareRequest request,
+    McpServerFormToCreate server,
+    _McpCloudVerification verification,
+  ) {
+    final session = _PreparedMcpConnection(
+      _cloudPreparedConnectionData(request, verification),
+    )..cloudCommitFingerprint = _mcpCommitFingerprint(server);
+    _preparedMcpConnections[request.id] = session;
+
+    return session;
+  }
+
+  _PreparedMcpConnection _storePreparedLocalMcpConnection(
+    _McpLocalPreparedRequest data,
+  ) {
+    final session = _newPreparedLocalSession(
+      data.request.request,
+      _mcpLocalPreparedData(data),
+    );
+    data.buffer.session = session;
+    _preparedMcpConnections[data.request.request.id] = session;
+
+    return session;
+  }
+
+  _PreparedMcpConnection _newPreparedLocalSession(
+    _McpPrepareRequest request,
+    _McpLocalPreparedData data,
+  ) {
+    final verifiedAt = DateTime.now().toUtc();
+
+    return _PreparedMcpConnection(
+        _localPreparedConnectionData(request, data, verifiedAt),
+      )
+      ..latestOAuthToken = data.latestOAuthToken
+      ..tokenSubscription = data.tokenSubscription;
+  }
+
+  _PreparedMcpConnectionData _cloudPreparedConnectionData(
+    _McpPrepareRequest request,
+    _McpCloudVerification verification,
+  ) => (
+    id: request.id,
+    workspaceId: request.workspaceId,
+    fingerprint: request.fingerprint,
+    verifiedAt: DateTime.now().toUtc(),
+    expiresAt: verification.expiresAt,
+    manager: null,
+    serverInfo: null,
+    client: null,
+    tools: _cloudTools(verification.discovery),
+    verificationReceipt: verification.verificationReceipt,
+  );
+
+  _PreparedMcpConnectionData _localPreparedConnectionData(
+    _McpPrepareRequest request,
+    _McpLocalPreparedData data,
+    DateTime verifiedAt,
+  ) => (
+    id: request.id,
+    workspaceId: request.workspaceId,
+    fingerprint: request.fingerprint,
+    verifiedAt: verifiedAt,
+    expiresAt: verifiedAt.add(_mcpVerificationLifetime),
+    manager: data.manager,
+    serverInfo: data.serverInfo,
+    client: data.client,
+    tools: data.tools,
+    verificationReceipt: null,
+  );
+
+  OAuthTokenEntity? _initialOAuthToken(McpServerToCreate server) =>
+      switch (server.authenticationType) {
+        McpAuthenticationTypeOAuth(:final token) => token,
+        McpAuthenticationTypeNone() ||
+        McpAuthenticationTypeBearerToken() => null,
+      };
+}
+
+extension _McpLocalPreparationSupportOperations on McpConnectionNotifier {
+  _McpTokenPreparation _prepareLocalTokenUpdates(
+    _McpConnectedLocalRequest request,
+  ) {
+    final buffer = _McpPreparedTokenBuffer(
+      _persistTokenUpdate,
+      _initialOAuthToken(request.serverInfo),
     );
 
     return (
-      manager: _requiredMcpManager,
-      serverInfo: serverInfo,
-      serviceConnectionRepository: serviceConnection.repository,
-      workspaceId: workspaceId,
-      serviceConnectionId: serviceConnection.id,
+      buffer: buffer,
+      subscription: request.client.onTokenUpdate?.listen(buffer.update),
     );
+  }
+
+  Future<List<McpToolInfo>> _fetchPreparedLocalTools(
+    _McpConnectedLocalRequest request,
+  ) async {
+    final tools = await request.manager.getTools(request.client);
+    if (_isDisposed) throw const McpVerificationRequiredException();
+
+    return tools;
   }
 }
 
-extension _McpServiceConnectionAddOperations on McpConnectionNotifier {
-  Future<_McpServiceConnectionAdd> _prepareMcpServiceConnection(
-    String workspaceId,
-    McpServerToCreate serverInfo,
-  ) async {
-    final repository = _notifierRef.read(serviceConnectionRepositoryProvider);
-    final id = await _createMcpServiceConnection(
-      repository,
-      workspaceId,
-      serverInfo,
-    );
+String _mcpConnectionFingerprint(McpServerFormToCreate server) {
+  final bearerToken = server.bearerToken?.trim() ?? '';
 
-    return (repository: repository, id: id);
+  return jsonEncode({
+    'url': server.url.trim(),
+    'transport': server.transport.toJson(),
+    'authenticationType': server.authenticationType.name,
+    'bearerTokenDigest': sha256.convert(utf8.encode(bearerToken)).toString(),
+  });
+}
+
+McpConnectionVerification _mcpVerificationSummary(
+  _PreparedMcpConnection session,
+) => (
+  id: session.id,
+  toolCount: session.tools.length,
+  expiresAt: session.expiresAt,
+);
+
+_McpLocalPreparedData _mcpLocalPreparedData(_McpLocalPreparedRequest data) {
+  final request = data.request;
+
+  return (
+    manager: request.manager,
+    serverInfo: request.serverInfo,
+    client: request.client,
+    tools: data.tools,
+    latestOAuthToken: data.buffer.latestOAuthToken,
+    tokenSubscription: data.tokenSubscription,
+  );
+}
+
+McpAuthenticationType _preparedMcpAuthentication(
+  McpAuthenticationType authenticationType,
+  OAuthTokenEntity? latestToken,
+) {
+  if (authenticationType case final McpAuthenticationTypeOAuth oauth
+      when latestToken != null) {
+    return oauth.copyWith(token: latestToken);
   }
+
+  return authenticationType;
 }
 
 extension _McpConnectionAddOperations on McpConnectionNotifier {
-  _LocalMcpAddRequest _localMcpAddRequest(_LocalMcpAddInput input) => (
-    manager: input.manager,
-    serverInfo: input.serverInfo,
-    serverForPersistence: input.serverInfo.copyWith(
-      serviceConnectionId: input.serviceConnectionId,
-    ),
-    workspaceId: input.workspaceId,
-    serviceConnectionId: input.serviceConnectionId,
-    serviceConnectionRepository: input.serviceConnectionRepository,
-  );
-
   Future<McpServerToCreate> _buildMcpServerInfo(McpServerFormToCreate server) =>
       BuildMcpServerToCreateUseCase(
         authenticator: .new(
@@ -557,39 +914,6 @@ extension _McpConnectionAddOperations on McpConnectionNotifier {
     ),
   );
 
-  Future<_AddedMcpServer> _connectAndPersistMcp(
-    _LocalMcpAddRequest request,
-  ) async {
-    McpManagerClient? client;
-    try {
-      client = await _connectMcpClientForAdd(request);
-
-      return await _persistMcpAdd(request, client);
-    } on Object {
-      await _cleanupFailedMcpAdd(_mcpAddCleanup(request, client));
-      rethrow;
-    }
-  }
-
-  Future<McpManagerClient> _connectMcpClientForAdd(
-    _LocalMcpAddRequest request,
-  ) => request.manager.connectMcp(request.serverInfo);
-
-  Future<_AddedMcpServer> _persistMcpAdd(
-    _LocalMcpAddRequest request,
-    McpManagerClient client,
-  ) async {
-    final tools = await request.manager.getTools(client);
-    final server = await _persistMcpServer(request, tools);
-
-    return (
-      server: server,
-      tools: tools,
-      client: client,
-      serviceConnectionId: request.serviceConnectionId,
-    );
-  }
-
   Future<McpServerEntity> _persistMcpServer(
     _LocalMcpAddRequest request,
     List<McpToolInfo> tools,
@@ -599,37 +923,189 @@ extension _McpConnectionAddOperations on McpConnectionNotifier {
     tools: tools,
   );
 
+  Future<void> _commitLocalPreparedMcpConnection(
+    _PreparedMcpConnection session,
+    McpServerFormToCreate serverToCreate,
+    String workspaceId,
+  ) async {
+    final manager = session.manager;
+    final client = session.client;
+    if (manager == null || client == null) {
+      throw const McpVerificationRequiredException();
+    }
+    final request = await _createLocalMcpAddRequest(
+      session,
+      manager,
+      serverToCreate,
+      workspaceId,
+    );
+    await _persistLocalPreparedMcpConnection(session, request, client);
+  }
+
+  Future<_LocalMcpAddRequest> _createLocalMcpAddRequest(
+    _PreparedMcpConnection session,
+    McpManagerService manager,
+    McpServerFormToCreate serverToCreate,
+    String workspaceId,
+  ) async {
+    final serverInfo = _preparedServerInfo(session, serverToCreate);
+    final repository = _notifierRef.read(serviceConnectionRepositoryProvider);
+    final serviceConnectionId = await _createMcpServiceConnection(
+      repository,
+      workspaceId,
+      serverInfo,
+    );
+
+    return (
+      manager: manager,
+      serverInfo: serverInfo,
+      serverForPersistence: serverInfo.copyWith(
+        serviceConnectionId: serviceConnectionId,
+      ),
+      workspaceId: workspaceId,
+      serviceConnectionId: serviceConnectionId,
+      serviceConnectionRepository: repository,
+    );
+  }
+}
+
+extension _McpConnectionLocalCommitOperations on McpConnectionNotifier {
+  Future<void> _persistLocalPreparedMcpConnection(
+    _PreparedMcpConnection session,
+    _LocalMcpAddRequest request,
+    McpManagerClient client,
+  ) async {
+    McpServerEntity? persistedServer;
+    try {
+      persistedServer = await _persistPreparedLocalData(session, request);
+      await _finishPreparedLocalMcp(session, request, client, persistedServer);
+    } on Object {
+      session.tokenPersistenceId = null;
+      await _cleanupFailedLocalMcpCommit(request, persistedServer);
+      rethrow;
+    }
+  }
+
+  Future<McpServerEntity> _persistPreparedLocalData(
+    _PreparedMcpConnection session,
+    _LocalMcpAddRequest request,
+  ) async {
+    if (session.tokenSubscription != null) {
+      session.tokenPersistenceId = request.serviceConnectionId;
+    }
+    _requireLivePreparedConnection();
+    await _persistPreparedLocalOAuthToken(session, request);
+    final server = await _persistMcpServer(request, session.tools);
+    _requireLivePreparedConnection();
+    await _persistPreparedLocalOAuthToken(session, request);
+
+    return server;
+  }
+
+  Future<void> _persistPreparedLocalOAuthToken(
+    _PreparedMcpConnection session,
+    _LocalMcpAddRequest request,
+  ) => _persistBufferedOAuthToken(
+    session,
+    request.serviceConnectionRepository,
+    request.serviceConnectionId,
+    request.serverInfo,
+  );
+
+  Future<void> _finishPreparedLocalMcp(
+    _PreparedMcpConnection session,
+    _LocalMcpAddRequest request,
+    McpManagerClient client,
+    McpServerEntity server,
+  ) async {
+    await _finishLocalMcpAdd(
+      (server: server, tools: session.tools, client: client),
+      request.manager,
+      request.workspaceId,
+    );
+    _adoptPreparedTokenUpdates(
+      session,
+      serverId: server.id,
+      serviceConnectionId: request.serviceConnectionId,
+    );
+    await _completePreparedMcpConnection(session.id);
+  }
+
+  void _requireLivePreparedConnection() {
+    if (_isDisposed) throw const McpVerificationRequiredException();
+  }
+
+  Future<void> _cleanupFailedLocalMcpCommit(
+    _LocalMcpAddRequest request,
+    McpServerEntity? persistedServer,
+  ) async {
+    if (persistedServer != null) {
+      final _ = await _repositoryFor(request.workspaceId)
+          .deleteMcpServer(persistedServer.id);
+    }
+    final serviceConnectionId = request.serviceConnectionId;
+    if (serviceConnectionId != null) {
+      await request.serviceConnectionRepository.deleteOwnedMcpCredential(
+        serviceConnectionId,
+      );
+    }
+  }
+
+  McpServerToCreate _preparedServerInfo(
+    _PreparedMcpConnection session,
+    McpServerFormToCreate serverToCreate,
+  ) {
+    final serverInfo = session.serverInfo;
+    if (serverInfo == null) {
+      throw const McpVerificationRequiredException();
+    }
+
+    return serverInfo.copyWith(
+      name: serverToCreate.name.trim(),
+      description: serverToCreate.description?.trim(),
+      authenticationType: _preparedMcpAuthentication(
+        serverInfo.authenticationType,
+        session.latestOAuthToken,
+      ),
+    );
+  }
+
+  Future<void> _persistBufferedOAuthToken(
+    _PreparedMcpConnection session,
+    ServiceConnectionRepository repository,
+    String? serviceConnectionId,
+    McpServerToCreate serverInfo,
+  ) async {
+    if (serviceConnectionId == null) return;
+    final authenticationType = serverInfo.authenticationType;
+    if (authenticationType is! McpAuthenticationTypeOAuth) return;
+    final latestToken = session.latestOAuthToken;
+    if (latestToken == null || latestToken == authenticationType.token) return;
+
+    await repository.updateOAuthToken(
+      id: serviceConnectionId,
+      token: latestToken,
+    );
+  }
+
   Future<void> _finishLocalMcpAdd(
     _AddedMcpServer added,
     McpManagerService manager,
     String workspaceId,
   ) async {
     if (_isDisposed) {
-      manager.disconnect(added.client);
-
-      return;
+      await manager.disconnect(added.client);
+      throw const McpVerificationRequiredException();
     }
-    _listenTokenUpdates(
-      serverId: added.server.id,
-      serviceConnectionId: added.serviceConnectionId,
-      client: added.client,
-    );
     _appendConnectedMcp(added);
     _notifierRef.invalidate(workspaceToolsProvider(workspaceId));
   }
 }
 
-extension _McpAddCleanupInputOperations on McpConnectionNotifier {
-  _McpAddCleanup _mcpAddCleanup(
-    _LocalMcpAddRequest request,
-    McpManagerClient? client,
-  ) => (
-    manager: request.manager,
-    serviceConnectionRepository: request.serviceConnectionRepository,
-    client: client,
-    serviceConnectionId: request.serviceConnectionId,
-  );
-}
+String _mcpCommitFingerprint(McpServerFormToCreate server) => jsonEncode({
+  'name': server.name.trim(),
+  'description': server.description?.trim(),
+});
 
 extension _McpConnectionCleanupOperations on McpConnectionNotifier {
   void _appendConnectedMcp(_AddedMcpServer added) {
@@ -642,17 +1118,6 @@ extension _McpConnectionCleanupOperations on McpConnectionNotifier {
         tools: added.tools,
       ),
     ]);
-  }
-
-  Future<void> _cleanupFailedMcpAdd(_McpAddCleanup cleanup) async {
-    if (cleanup.client case final client?) {
-      cleanup.manager.disconnect(client);
-    }
-    if (cleanup.serviceConnectionId case final serviceConnectionId?) {
-      await cleanup.serviceConnectionRepository.deleteOwnedMcpCredential(
-        serviceConnectionId,
-      );
-    }
   }
 
   void _disconnectDeletedConnection(
@@ -908,7 +1373,7 @@ extension _McpConnectionResultOperations on McpConnectionNotifier {
   ) {
     _logger.warning(
       'MCP server connection failed: server=${server.id}',
-      error,
+      LogRedaction.redact(error.toString()),
       stackTrace,
     );
   }
@@ -1023,17 +1488,50 @@ extension _McpConnectionLifecycleOperations on McpConnectionNotifier {
 }
 
 extension _McpConnectionCloudOperations on McpConnectionNotifier {
-  Future<void> _addCloudMcpServer(
+  Future<void> _commitCloudPreparedMcpConnection(
+    _PreparedMcpConnection session,
     McpServerFormToCreate server,
     String workspaceId,
   ) async {
+    final verificationReceipt = session.verificationReceipt;
+    if (verificationReceipt == null) {
+      throw const McpVerificationRequiredException();
+    }
+    final requestId = _cloudCommitRequestId(session, server);
     final result = await _cloudRepository.createMcpServer(
       workspaceId: workspaceId,
       server: server,
+      requestId: requestId,
+      verificationReceipt: verificationReceipt,
     );
+    await _completeCloudPreparedMcpConnection(session, result, workspaceId);
+  }
+
+  Future<void> _completeCloudPreparedMcpConnection(
+    _PreparedMcpConnection session,
+    ({McpServerEntity server, DiscoverMcpServerResult discovery}) result,
+    String workspaceId,
+  ) async {
     if (_isDisposed) return;
     _setCloudDiscovery(result.server, result.discovery);
+    await _completePreparedMcpConnection(session.id);
     _notifierRef.invalidate(workspaceToolsProvider(workspaceId));
+  }
+
+  String _cloudCommitRequestId(
+    _PreparedMcpConnection session,
+    McpServerFormToCreate server,
+  ) {
+    final fingerprint = _mcpCommitFingerprint(server);
+    if (session.cloudCommitFingerprint != fingerprint ||
+        session.cloudCreateRequestId == null) {
+      session
+        ..cloudCreateRequestId = const UuidV7().generate()
+        ..cloudCommitFingerprint = fingerprint;
+    }
+
+    return session.cloudCreateRequestId ??
+        (throw const McpVerificationRequiredException());
   }
 
   Future<void> _discoverCloudMcp(
@@ -1143,14 +1641,18 @@ extension _McpConnectionCloudStateOperations on McpConnectionNotifier {
   /// Dispose all active connections.
   void _disposeAllConnections() {
     final manager = _mcpManagerService;
-    if (manager == null) return;
-    for (final connection in _lastKnownState) {
-      manager.disconnect(connection.client);
+    if (manager != null) {
+      for (final connection in _lastKnownState) {
+        manager.disconnect(connection.client);
+      }
     }
     for (final subscription in _tokenSubscriptions.values) {
       unawaited(subscription.cancel());
     }
     _tokenSubscriptions.clear();
+    for (final id in _preparedMcpConnections.keys.toList()) {
+      unawaited(discardPreparedMcpConnection(id));
+    }
   }
 }
 

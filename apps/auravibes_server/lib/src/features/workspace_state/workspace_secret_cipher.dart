@@ -35,14 +35,32 @@ class const WorkspaceSecretCipher() {
     if (secret.algorithm != 'AES-256-GCM' || secret.keyVersion != 1) {
       throw StateError('Unsupported workspace secret encryption.');
     }
+    return decryptEncrypted(
+      session,
+      ciphertext: secret.ciphertext,
+      nonce: secret.nonce,
+      authenticationTag: secret.authenticationTag,
+      workspaceId: secret.workspaceId,
+      resourceId: secret.resourceId,
+    );
+  }
+
+  Future<String> decryptEncrypted(
+    Session session, {
+    required ByteData ciphertext,
+    required ByteData nonce,
+    required ByteData authenticationTag,
+    required int workspaceId,
+    required String resourceId,
+  }) async {
     final clear = await AesGcm.with256bits().decrypt(
       SecretBox(
-        _bytes(secret.ciphertext),
-        nonce: _bytes(secret.nonce),
-        mac: Mac(_bytes(secret.authenticationTag)),
+        _bytes(ciphertext),
+        nonce: _bytes(nonce),
+        mac: Mac(_bytes(authenticationTag)),
       ),
       secretKey: SecretKey(_key(session)),
-      aad: _aad(secret.workspaceId, secret.resourceId),
+      aad: _aad(workspaceId, resourceId),
     );
     return utf8.decode(clear);
   }

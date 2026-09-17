@@ -99,6 +99,10 @@ import 'package:auravibes_server/src/generated/features/mcp_servers/models/disco
     as _imtqkt48;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i3ijx64u;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _iqyjig0z;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/verify_mcp_server_result.dart'
+    as _itziva9n;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
     as _il9jpql1;
 import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
@@ -1592,6 +1596,35 @@ class _McpServerEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_itziva9n.VerifyMcpServerResult> verify(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iqyjig0z.VerifyMcpServerRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpServer',
+            method: 'verify',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpServer',
+          methodName: 'verify',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_itziva9n.VerifyMcpServerResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<_i3p8mp89.CreateMcpServerResult> create(
     _ist.TestSessionBuilder sessionBuilder,
