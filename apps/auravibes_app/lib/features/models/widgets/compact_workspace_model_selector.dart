@@ -23,7 +23,9 @@ class const CompactWorkspaceModelSelector({
   static const _selectorWidth = 220.0;
   @override
   Widget build(BuildContext _, WidgetRef ref) {
-    final recentModelIds = _recentModelIds(ref);
+    final recentModelIds = compactMode && !sheetMode
+        ? const <String>[]
+        : _recentModelIds(ref);
 
     return _ModelSelectorView(
       models: ref.watch(
