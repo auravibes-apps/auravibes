@@ -1582,198 +1582,219 @@ void main() {
       expect(tester.getTopLeft(toolRow).dy, closeTo(before, 1));
     });
 
-    testWidgets(
-      'groups adjacent activity-only assistant messages into one run',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(320, 500));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
-        const firstTool = MessageToolCallEntity(
-          id: 'tc-1',
-          name: 'built_in_1_read_file',
-          argumentsRaw: '{"path": "first"}',
-          resultStatus: ToolCallResultStatus.success,
-        );
-        const secondTool = MessageToolCallEntity(
-          id: 'tc-2',
-          name: 'built_in_1_calculator',
-          argumentsRaw: '{"expression": "2 + 2"}',
-          resultStatus: ToolCallResultStatus.success,
-        );
-        const thirdTool = MessageToolCallEntity(
-          id: 'tc-3',
-          name: 'built_in_1_read_file',
-          argumentsRaw: '{"path": "third"}',
-          resultStatus: ToolCallResultStatus.success,
-        );
-        final olderMessages = {
-          for (var index = 0; index < 8; index++)
-            'old-$index': _createMessage(
-              id: 'old-$index',
-              content: 'Older message $index',
-              isUser: true,
-            ),
-        };
-        final messagesById = {
-          ...olderMessages,
-          'msg-1': _createMessage(
-            id: 'msg-1',
-            content: '',
-            isUser: false,
-            metadata: const MessageMetadataEntity(
-              thinking: 'First activity thought',
-              toolCalls: [firstTool],
-            ),
+    testWidgets('consolidates chronological assistant activity sessions', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 2200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      const firstTool = MessageToolCallEntity(
+        id: 'tc-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"path": "first"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const secondTool = MessageToolCallEntity(
+        id: 'tc-2',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{"expression": "2 + 2"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const thirdTool = MessageToolCallEntity(
+        id: 'tc-3',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"path": "third"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const fourthTool = MessageToolCallEntity(
+        id: 'tc-4',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{"expression": "4 + 4"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final olderMessages = {
+        for (var index = 0; index < 8; index++)
+          'old-$index': _createMessage(
+            id: 'old-$index',
+            content: 'Older message $index',
+            isUser: true,
           ),
-          'msg-2': _createMessage(
-            id: 'msg-2',
-            content: '',
-            isUser: false,
-            metadata: const MessageMetadataEntity(
-              thinking: 'Second activity thought',
-              toolCalls: [secondTool, thirdTool],
-            ),
+      };
+      final messagesById = {
+        ...olderMessages,
+        'plan-response': _createMessage(
+          id: 'plan-response',
+          content: 'First plan',
+          isUser: false,
+        ),
+        'plan-1': _createMessage(
+          id: 'plan-1',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'First activity thought',
+            toolCalls: [firstTool],
           ),
-        };
+        ),
+        'tools-1': _createMessage(
+          id: 'tools-1',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [secondTool]),
+        ),
+        'plan-2': _createMessage(
+          id: 'plan-2',
+          content: 'Second plan',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            thinking: 'Second activity thought',
+            toolCalls: [thirdTool],
+          ),
+        ),
+        'tools-2': _createMessage(
+          id: 'tools-2',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [fourthTool]),
+        ),
+        'final': _createMessage(
+          id: 'final',
+          content: 'Final response',
+          isUser: false,
+        ),
+      };
 
-        await pumpAndInit(
-          tester,
-          buildSubject(
-            messages: [...olderMessages.keys, 'msg-1', 'msg-2'],
-            overrides: [
-              messageConversationByIdProvider.overrideWith(
-                (ref, id) => messagesById[id.messageId],
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [
+            ...olderMessages.keys,
+            'plan-response',
+            'plan-1',
+            'tools-1',
+            'plan-2',
+            'tools-2',
+            'final',
+          ],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
               ),
-              isMessageStreamingProvider.overrideWith((ref, id) => false),
-              conversationBusyStateProvider.overrideWith(
-                (ref, _) async => const ConversationBusyState(
-                  isStreaming: false,
-                  hasPendingTools: false,
-                ),
-              ),
-            ],
-          ),
-        );
+            ),
+          ],
+        ),
+      );
 
-        expect(
-          find.byKey(const ValueKey('activity_trace_toggle_msg-1')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('activity_trace_toggle_msg-2')),
-          findsNothing,
-        );
-        expect(find.text('First activity thought'), findsNothing);
-        expect(find.text('Second activity thought'), findsNothing);
+      final activityToggle = find.byKey(
+        const ValueKey('activity_trace_toggle_plan-response'),
+      );
+      expect(activityToggle, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_tools-1')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_plan-2')),
+        findsNothing,
+      );
+      expect(find.text('4 tools'), findsOneWidget);
+      expect(find.text('First plan'), findsNothing);
+      expect(find.text('Second plan'), findsNothing);
+      expect(find.text('Final response'), findsOneWidget);
 
-        final activityToggle = find.byKey(
-          const ValueKey('activity_trace_toggle_msg-1'),
-        );
-        final activityBefore = tester.getTopLeft(activityToggle).dy;
-        await tester.tap(activityToggle);
-        await tester.pump();
-        expect(
-          tester.getTopLeft(activityToggle).dy,
-          closeTo(activityBefore, 1),
-        );
+      await tester.tap(activityToggle);
+      await tester.pump();
 
-        expect(find.text('First activity thought'), findsOneWidget);
-        expect(find.text('Second activity thought'), findsOneWidget);
-        expect(
-          tester.getTopLeft(find.text('First activity thought')).dy,
-          lessThan(tester.getTopLeft(find.text('Second activity thought')).dy),
-        );
-        expect(
-          find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('activity_tool_list_toggle_msg-2')),
-          findsNothing,
-        );
+      expect(find.text('First plan'), findsOneWidget);
+      expect(find.text('First activity thought'), findsOneWidget);
+      expect(find.text('Second plan'), findsOneWidget);
+      expect(find.text('Second activity thought'), findsOneWidget);
+      final firstToolGroup = find.byKey(
+        const ValueKey('activity_tool_list_toggle_plan-1'),
+      );
+      final secondToolGroup = find.byKey(
+        const ValueKey('activity_tool_list_toggle_plan-2'),
+      );
+      expect(firstToolGroup, findsOneWidget);
+      expect(secondToolGroup, findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsNothing);
+      expect(find.byKey(const ValueKey('activity_tool_tc-2')), findsNothing);
+      expect(find.byKey(const ValueKey('activity_tool_tc-3')), findsNothing);
+      expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsNothing);
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_narrative_plan-response')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_thinking_plan-1')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_thinking_plan-1')))
+            .dy,
+        lessThan(tester.getTopLeft(firstToolGroup).dy),
+      );
+      expect(
+        tester.getTopLeft(firstToolGroup).dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_narrative_plan-2')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_narrative_plan-2')))
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_thinking_plan-2')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_thinking_plan-2')))
+            .dy,
+        lessThan(tester.getTopLeft(secondToolGroup).dy),
+      );
+      await tester.ensureVisible(find.text('Final response'));
+      expect(
+        tester.getTopLeft(secondToolGroup).dy,
+        lessThan(tester.getTopLeft(find.text('Final response')).dy),
+      );
 
-        final toolSummary = tester.widget<Text>(
-          find.descendant(
-            of: find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
-            matching: find.byType(Text),
-          ),
-        );
-        expect(toolSummary.data, contains('+1'));
-        expect(toolSummary.maxLines, 1);
-        expect(toolSummary.overflow, TextOverflow.ellipsis);
+      await tester.tap(firstToolGroup);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('activity_tool_tc-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-2')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-3')), findsNothing);
+      expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsNothing);
 
-        final toolToggle = find.byKey(
-          const ValueKey('activity_tool_list_toggle_msg-1'),
-        );
-        await tester.ensureVisible(toolToggle);
-        await tester.pump();
-        final toolBefore = tester.getTopLeft(toolToggle).dy;
-        await tester.tap(toolToggle);
-        await tester.pump();
-        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
+      await tester.ensureVisible(secondToolGroup);
+      await tester.tap(secondToolGroup);
+      await tester.pump();
+      expect(find.byKey(const ValueKey('activity_tool_tc-3')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
+    });
 
-        expect(
-          find.byKey(const ValueKey('activity_tool_tc-1')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('activity_tool_tc-2')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('activity_tool_tc-3')),
-          findsOneWidget,
-        );
-
-        await tester.tap(toolToggle);
-        await tester.pump();
-        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        expect(tester.getTopLeft(toolToggle).dy, closeTo(toolBefore, 1));
-
-        await tester.tap(toolToggle);
-        await tester.pump();
-
-        final toolRow = find.byKey(const ValueKey('activity_tool_tc-1'));
-        await tester.ensureVisible(toolRow);
-        await tester.pump();
-        final toolRowBefore = tester.getTopLeft(toolRow).dy;
-        await tester.tap(toolRow);
-        await tester.pump();
-        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
-
-        await tester.tap(toolRow);
-        await tester.pump();
-        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
-        await tester.pump(const Duration(milliseconds: 1));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        await tester.pump(const Duration(milliseconds: 16));
-        expect(tester.getTopLeft(toolRow).dy, closeTo(toolRowBefore, 1));
-      },
-    );
-
-    testWidgets('folds interim assistant progress into the activity run', (
+    testWidgets('keeps final response visible after the activity session', (
       tester,
     ) async {
       const openingTool = MessageToolCallEntity(
@@ -1871,6 +1892,60 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.byKey(const ValueKey('activity_tool_tc-final')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_narrative_opening')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_thinking_opening')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_thinking_opening')))
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_tool_list_toggle_opening')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_tool_list_toggle_opening')),
+            )
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_thinking_answer')),
+              )
+              .dy,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_thinking_answer')))
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const ValueKey('activity_tool_tc-final')))
+              .dy,
+        ),
+      );
+      expect(
         tester
             .getTopLeft(
               find.byKey(const ValueKey('activity_trace_toggle_opening')),
@@ -1878,11 +1953,20 @@ void main() {
             .dy,
         lessThan(tester.getTopLeft(find.text('Final answer')).dy),
       );
+      expect(find.text('Final answer'), findsOneWidget);
+      expect(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_tool_tc-final')))
+            .dy,
+        lessThan(tester.getTopLeft(find.text('Final answer')).dy),
+      );
     });
 
-    testWidgets('splits user boundaries and folds trailing response activity', (
+    testWidgets('splits user boundaries between activity sessions', (
       tester,
     ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       const firstTool = MessageToolCallEntity(
         id: 'tc-1',
         name: 'built_in_1_read_file',
@@ -2004,23 +2088,143 @@ void main() {
       expect(find.text('After user'), findsNothing);
       expect(find.text('Before visible answer'), findsNothing);
 
-      tester
-          .widget<AuraPressable>(
-            find.descendant(
-              of: find.byKey(const ValueKey('activity_trace_toggle_msg-3')),
-              matching: find.byType(AuraPressable),
-            ),
-          )
-          .onPressed!
-          .call();
+      final secondActivityToggle = find.byKey(
+        const ValueKey('activity_trace_toggle_msg-3'),
+      );
+      await tester.ensureVisible(secondActivityToggle);
+      await tester.tap(secondActivityToggle);
       await tester.pump();
 
       expect(find.text('After user'), findsOneWidget);
       expect(find.text('Before visible answer'), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-3')), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
+      await tester.ensureVisible(find.text('Visible answer'));
+      expect(find.text('Visible answer'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('activity_tool_list_toggle_msg-3')),
-        findsOneWidget,
+        tester
+            .getTopLeft(find.byKey(const ValueKey('activity_thinking_msg-3')))
+            .dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(const ValueKey('activity_thinking_answer-1')),
+              )
+              .dy,
+        ),
       );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('activity_thinking_answer-1')),
+            )
+            .dy,
+        lessThan(tester.getTopLeft(find.text('Visible answer')).dy),
+      );
+    });
+
+    testWidgets('flushes tool activity at timeline boundaries', (tester) async {
+      const firstTool = MessageToolCallEntity(
+        id: 'boundary-tool-1',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const secondTool = MessageToolCallEntity(
+        id: 'boundary-tool-2',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+
+      Future<void> pumpBoundary({
+        required String boundaryId,
+        required MessageEntity? boundary,
+      }) async {
+        final messagesById = <String, MessageEntity?>{
+          'before': _createMessage(
+            id: 'before',
+            content: '',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              toolCalls: [firstTool, secondTool],
+            ),
+          ),
+          'after': _createMessage(
+            id: 'after',
+            content: '',
+            isUser: false,
+            metadata: const MessageMetadataEntity(
+              toolCalls: [firstTool, secondTool],
+            ),
+          ),
+          if (boundary != null) boundaryId: boundary,
+        };
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['before', boundaryId, 'after'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => messagesById[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_before')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('activity_tool_list_toggle_after')),
+          findsOneWidget,
+        );
+      }
+
+      await pumpBoundary(
+        boundaryId: 'user-boundary',
+        boundary: _createMessage(id: 'user-boundary', content: 'User'),
+      );
+      await pumpBoundary(
+        boundaryId: 'system-boundary',
+        boundary: _createMessage(
+          id: 'system-boundary',
+          content: 'System',
+          isUser: false,
+          messageType: MessageType.system,
+        ),
+      );
+      await pumpBoundary(
+        boundaryId: 'error-boundary',
+        boundary: _createMessage(
+          id: 'error-boundary',
+          content: 'compaction.errors.compaction_failed',
+          isUser: false,
+          status: MessageStatus.error,
+          messageType: MessageType.system,
+        ),
+      );
+      await pumpBoundary(
+        boundaryId: 'compaction-boundary',
+        boundary: _createMessage(
+          id: 'compaction-boundary',
+          content: 'Summary',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            isCompactionSummary: true,
+            compactionKind: CompactionKind.auto,
+          ),
+        ),
+      );
+      await pumpBoundary(boundaryId: 'missing-boundary', boundary: null);
     });
 
     testWidgets(
@@ -2053,10 +2257,7 @@ void main() {
           content: '',
           isUser: false,
           status: MessageStatus.unfinished,
-          metadata: const MessageMetadataEntity(
-            thinking: 'Second live work',
-            toolCalls: [secondToolCall],
-          ),
+          metadata: const MessageMetadataEntity(toolCalls: [secondToolCall]),
         );
         final completedFirstMessage = _createMessage(
           id: 'msg-1',
@@ -2079,7 +2280,6 @@ void main() {
           content: '',
           isUser: false,
           metadata: const MessageMetadataEntity(
-            thinking: 'Second live work',
             toolCalls: [
               MessageToolCallEntity(
                 id: 'tc-2',
@@ -2159,7 +2359,7 @@ void main() {
         await tester.pump();
 
         expect(find.text('2 tools'), findsOneWidget);
-        expect(find.text('Second live work'), findsOneWidget);
+        expect(find.text('First live work'), findsOneWidget);
         expect(
           find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
           findsOneWidget,
