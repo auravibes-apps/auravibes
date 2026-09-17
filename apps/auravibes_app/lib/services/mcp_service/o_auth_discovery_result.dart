@@ -12,6 +12,7 @@ import 'package:logging/logging.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 const _jsonAcceptHeader = {'Accept': 'application/json'};
+const _contentTypeHeaderName = 'content-type';
 final _oauthDiscoveryLogger = Logger('OAuthDiscoveryService');
 
 /// Result of OAuth discovery for an MCP server.
@@ -820,7 +821,7 @@ Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
         .get(uri, headers: _jsonAcceptHeader)
         .timeout(const Duration(seconds: 5));
     if (response.statusCode != HttpStatus.ok) return null;
-    final contentType = response.headers['content-type'];
+    final contentType = response.headers[_contentTypeHeaderName];
     if (contentType != null && !contentType.toLowerCase().contains('json')) {
       return null;
     }
@@ -832,7 +833,7 @@ Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
 }
 
 Map<String, dynamic>? _decodeJsonObject(http.Response response) {
-  final contentType = response.headers['content-type'];
+  final contentType = response.headers[_contentTypeHeaderName];
   if (contentType != null && !contentType.toLowerCase().contains('json')) {
     return null;
   }
@@ -1476,7 +1477,7 @@ String? _registeredClientId(http.Response response) {
     return _logRegistrationFailure(response.statusCode);
   }
 
-  final contentType = response.headers['content-type'];
+  final contentType = response.headers[_contentTypeHeaderName];
   if (contentType != null && !contentType.toLowerCase().contains('json')) {
     return null;
   }
