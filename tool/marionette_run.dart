@@ -106,6 +106,12 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
   final stderrSubscription = process.stderr
       .transform(utf8.decoder)
       .listen(stderr.write);
+  final sigintSubscription = ProcessSignal.sigint.watch().listen((_) {
+    if (!process.kill(.sigint)) return;
+  });
+  final sigtermSubscription = ProcessSignal.sigterm.watch().listen((_) {
+    if (!process.kill()) return;
+  });
   unawaited(stdin.pipe(process.stdin));
 
   try {
@@ -113,6 +119,8 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
   } finally {
     await stdoutSubscription.cancel();
     await stderrSubscription.cancel();
+    await sigintSubscription.cancel();
+    await sigtermSubscription.cancel();
     if (manifestFile.existsSync()) manifestFile.deleteSync();
   }
 }
@@ -127,6 +135,8 @@ void _writeManifest({
   final manifest = <String, Object?>{
     'instanceId': instanceId,
     'pid': pid,
+    'appFlavor': 'dev',
+    'marionetteEnabled': true,
     'vmServiceUri': vmServiceUri,
     'startedAt': startedAt,
   };
