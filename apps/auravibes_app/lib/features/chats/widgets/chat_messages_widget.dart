@@ -340,11 +340,11 @@ Widget _buildChatTimelineItem({
       childConversations: childConversations,
       workspaceId: workspaceId,
     ),
-    _MessageTimelineItem(:final source, :final activityRenderedInRun) =>
+    _MessageTimelineItem(:final source, :final activityRenderedInSession) =>
       _ChatMessageTimelineItem(
         key: ValueKey(source.message.id),
         source: source,
-        activityRenderedInRun: activityRenderedInRun,
+        activityRenderedInSession: activityRenderedInSession,
         onDisclosureChanged: onDisclosureChanged,
         parentConversationId: parentConversationId,
         childConversations: childConversations,
@@ -396,10 +396,13 @@ class _ActivityRunTimelineItem extends _ChatTimelineItem {
 }
 
 class _MessageTimelineItem extends _ChatTimelineItem {
-  const _MessageTimelineItem(this.source, {this.activityRenderedInRun = false});
+  const _MessageTimelineItem(
+    this.source, {
+    this.activityRenderedInSession = false,
+  });
 
   final _ResolvedChatMessage source;
-  final bool activityRenderedInRun;
+  final bool activityRenderedInSession;
 }
 
 class _ActivityRun {
@@ -410,6 +413,101 @@ class _ActivityRun {
 
   String get id => sources.first.message.id;
 }
+
+typedef _ActivityToolCall = ({
+  String messageId,
+  MessageToolCallEntity toolCall,
+  bool isForkReference,
+  bool isStreaming,
+});
+
+sealed class _ActivityRunEntry {
+  const _ActivityRunEntry();
+}
+
+class _ActivityNarrativeEntry extends _ActivityRunEntry {
+  const _ActivityNarrativeEntry({
+    required this.messageId,
+    required this.content,
+  });
+
+  final String messageId;
+  final String content;
+}
+
+class _ActivityThinkingEntry extends _ActivityRunEntry {
+  const _ActivityThinkingEntry({
+    required this.messageId,
+    required this.content,
+  });
+
+  final String messageId;
+  final String content;
+}
+
+class _ActivityToolGroupEntry extends _ActivityRunEntry {
+  const _ActivityToolGroupEntry(this.toolCalls);
+
+  final List<_ActivityToolCall> toolCalls;
+}
+
+List<_ActivityRunEntry> _buildActivityRunEntries(_ActivityRun run) {
+  final entries = <_ActivityRunEntry>[];
+  final toolCalls = <_ActivityToolCall>[];
+
+  void addToolGroup() {
+    if (toolCalls.isEmpty) return;
+    entries.add(_ActivityToolGroupEntry(List.of(toolCalls)));
+    toolCalls.clear();
+  }
+
+  for (final source in run.sources) {
+    if (run.activityContentMessageIds.contains(source.message.id)) {
+      final content = source.message.content.trim();
+      if (content.isNotEmpty) {
+        addToolGroup();
+        entries.add(
+          _ActivityNarrativeEntry(
+            messageId: source.message.id,
+            content: content,
+          ),
+        );
+      }
+    }
+
+    final thinking = source.message.metadata?.thinking?.trim();
+    if (thinking != null && thinking.isNotEmpty) {
+      addToolGroup();
+      entries.add(
+        _ActivityThinkingEntry(messageId: source.message.id, content: thinking),
+      );
+    }
+
+    for (final toolCall
+        in source.message.metadata?.toolCalls ??
+            const <MessageToolCallEntity>[]) {
+      toolCalls.add((
+        messageId: source.message.id,
+        toolCall: toolCall,
+        isForkReference: source.message.isForkReference,
+        isStreaming: source.isStreaming,
+      ));
+    }
+  }
+  addToolGroup();
+
+  return entries;
+}
+
+String _activityToolGroupId(_ActivityToolGroupEntry entry) =>
+    entry.toolCalls.first.messageId;
+
+bool _isLiveActivityToolGroup(_ActivityToolGroupEntry entry) =>
+    entry.toolCalls.any(
+      (item) =>
+          !item.isForkReference &&
+          (item.isStreaming || item.toolCall.isPending),
+    );
 
 List<_ChatTimelineItem> _buildChatTimelineItems(
   List<_ResolvedChatMessage?> messages,
@@ -441,24 +539,32 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     }
 
     final message = source.message;
-    final hasActivity =
-        !_isTimelineBoundary(message) && _hasAssistantActivity(message);
     final hasVisibleResponse = _hasVisibleAssistantResponse(
       message,
       replayPayloadsByMessageId,
     );
-    if (hasActivity &&
-        (!hasVisibleResponse ||
-            _hasFollowingAssistantActivity(messages, index))) {
-      activitySources.add(source);
-      if (hasVisibleResponse) activityContentMessageIds.add(message.id);
-      continue;
-    }
+    final hasFollowingAssistantActivity = _hasFollowingAssistantActivity(
+      messages,
+      index,
+    );
+    final hasActivity =
+        !_isTimelineBoundary(message) &&
+        (_hasAssistantActivity(message) ||
+            (hasVisibleResponse && hasFollowingAssistantActivity));
 
-    if (hasActivity && activitySources.isNotEmpty) {
+    if (hasActivity) {
+      final isFinalResponse =
+          hasVisibleResponse && !hasFollowingAssistantActivity;
       activitySources.add(source);
-      addActivityRun();
-      items.add(_MessageTimelineItem(source, activityRenderedInRun: true));
+      if (hasVisibleResponse && !isFinalResponse) {
+        activityContentMessageIds.add(message.id);
+      }
+      if (isFinalResponse) {
+        addActivityRun();
+        items.add(
+          _MessageTimelineItem(source, activityRenderedInSession: true),
+        );
+      }
       continue;
     }
 
@@ -474,16 +580,22 @@ bool _hasFollowingAssistantActivity(
   List<_ResolvedChatMessage?> messages,
   int index,
 ) {
-  if (index + 1 >= messages.length) return false;
-  final next = messages[index + 1];
-  if (next == null || _isTimelineBoundary(next.message)) return false;
+  for (var nextIndex = index + 1; nextIndex < messages.length; nextIndex++) {
+    final next = messages[nextIndex];
+    if (next == null || _isTimelineBoundary(next.message)) return false;
 
-  return _hasAssistantActivity(next.message);
+    if (_hasAssistantActivity(next.message)) return true;
+  }
+
+  return false;
 }
 
 bool _hasAssistantActivity(MessageEntity message) =>
-    message.metadata?.thinking?.trim().isNotEmpty == true ||
+    _hasAssistantThinking(message) ||
     message.metadata?.toolCalls.isNotEmpty == true;
+
+bool _hasAssistantThinking(MessageEntity message) =>
+    message.metadata?.thinking?.trim().isNotEmpty == true;
 
 bool _hasVisibleAssistantResponse(
   MessageEntity message,
@@ -508,7 +620,7 @@ bool _isErrorSystemMessage(MessageEntity message) =>
 
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
-  required final bool activityRenderedInRun,
+  final bool activityRenderedInSession = false,
   required final void Function(VoidCallback update) onDisclosureChanged,
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
@@ -536,7 +648,7 @@ class const _ChatMessageTimelineItem({
     }
 
     final showActivity =
-        !activityRenderedInRun &&
+        !activityRenderedInSession &&
         !_isTimelineBoundary(message) &&
         _hasAssistantActivity(message);
     return AuraColumn(
@@ -1178,30 +1290,23 @@ class const _AssistantActivityRun({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activityNarratives = [
-      for (final source in run.sources)
-        if (run.activityContentMessageIds.contains(source.message.id))
-          if (source.message.content.trim() case final content
-              when content.isNotEmpty)
-            (messageId: source.message.id, content: content),
+    final activityEntries = _buildActivityRunEntries(run);
+    final toolGroupEntries = [
+      for (final entry in activityEntries)
+        if (entry is _ActivityToolGroupEntry) entry,
     ];
-    final thinkingMessages = [
-      for (final source in run.sources)
-        if (source.message.metadata?.thinking?.trim() case final content?
-            when content.isNotEmpty)
-          (messageId: source.message.id, content: content),
+    final toolCalls = <_ActivityToolCall>[
+      for (final entry in toolGroupEntries) ...entry.toolCalls,
     ];
-    final toolCalls = [
-      for (final source in run.sources)
-        for (final toolCall
-            in source.message.metadata?.toolCalls ??
-                const <MessageToolCallEntity>[])
-          (
-            messageId: source.message.id,
-            toolCall: toolCall,
-            isForkReference: source.message.isForkReference,
-          ),
+    final expandableToolGroupIds = {
+      for (final entry in toolGroupEntries)
+        if (entry.toolCalls.length > 1) _activityToolGroupId(entry),
+    };
+    final liveToolGroupIds = [
+      for (final entry in toolGroupEntries)
+        if (_isLiveActivityToolGroup(entry)) _activityToolGroupId(entry),
     ];
+    final liveToolGroupSignature = liveToolGroupIds.join('\u0000');
     final isLive =
         run.sources.any(
           (source) => !source.message.isForkReference && source.isStreaming,
@@ -1218,9 +1323,12 @@ class const _AssistantActivityRun({
           .map((item) => item.toolCall)
           .toList(growable: false),
     );
-    final hasToolGroup = toolCalls.length > 1;
     final traceExpanded = useState(isLive);
-    final toolListExpanded = useState(isLive && hasToolGroup);
+    final expandedToolGroupIds = useState<Set<String>>(
+      isLive
+          ? liveToolGroupIds.where(expandableToolGroupIds.contains).toSet()
+          : <String>{},
+    );
     final expandedToolIds = useState(
       latestPendingToolId == null ? <String>{} : <String>{latestPendingToolId},
     );
@@ -1228,109 +1336,125 @@ class const _AssistantActivityRun({
     final previousToolSignature = useRef(toolSignature);
     final previousPendingToolId = useRef(latestPendingToolId);
 
-    useEffect(() {
-      final wasLive = previousIsLive.value;
-      final hasNewTool = previousToolSignature.value != toolSignature;
-      final hasNewPendingTool =
-          previousPendingToolId.value != latestPendingToolId;
-      if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
-        onDisclosureChanged(() {
-          traceExpanded.value = true;
-          toolListExpanded.value = hasToolGroup;
-          if (latestPendingToolId != null) {
-            expandedToolIds.value = {
-              ...expandedToolIds.value,
-              latestPendingToolId,
+    useEffect(
+      () {
+        final wasLive = previousIsLive.value;
+        final hasNewTool = previousToolSignature.value != toolSignature;
+        final hasNewPendingTool =
+            previousPendingToolId.value != latestPendingToolId;
+        if (isLive && (!wasLive || hasNewTool || hasNewPendingTool)) {
+          onDisclosureChanged(() {
+            traceExpanded.value = true;
+            expandedToolGroupIds.value = {
+              ...expandedToolGroupIds.value,
+              ...liveToolGroupIds.where(expandableToolGroupIds.contains),
             };
-          }
-        });
-      } else if (!isLive && wasLive) {
-        onDisclosureChanged(() {
-          traceExpanded.value = false;
-          toolListExpanded.value = false;
-          expandedToolIds.value = <String>{};
-        });
-      }
-      previousIsLive.value = isLive;
-      previousToolSignature.value = toolSignature;
-      previousPendingToolId.value = latestPendingToolId;
-      return null;
-    }, [hasToolGroup, isLive, latestPendingToolId, toolSignature]);
+            if (latestPendingToolId != null) {
+              expandedToolIds.value = {
+                ...expandedToolIds.value,
+                latestPendingToolId,
+              };
+            }
+          });
+        } else if (!isLive && wasLive) {
+          onDisclosureChanged(() {
+            traceExpanded.value = false;
+            expandedToolGroupIds.value = <String>{};
+            expandedToolIds.value = <String>{};
+          });
+        }
+        previousIsLive.value = isLive;
+        previousToolSignature.value = toolSignature;
+        previousPendingToolId.value = latestPendingToolId;
+        return null;
+      },
+      [
+        expandableToolGroupIds.length,
+        isLive,
+        latestPendingToolId,
+        liveToolGroupSignature,
+        toolSignature,
+      ],
+    );
 
-    final activityToolCalls = [
-      for (final item in toolCalls)
-        (
-          messageId: item.messageId,
-          toolCall: item.toolCall,
-          isForkReference: item.isForkReference,
-          displayName: _toolCallDisplayName(
-            ref.watch(toolDisplayNameProvider(workspaceId, item.toolCall.name)),
-            item.toolCall.name,
-          ),
-          openSubAgent: _openSubAgent(
-            context: context,
-            ref: ref,
-            workspaceId: workspaceId,
-            parentConversationId: parentConversationId,
-            childConversations: childConversations,
+    final toolContents = <String, Widget>{};
+    for (final entry in toolGroupEntries) {
+      final groupId = _activityToolGroupId(entry);
+      final activityToolCalls = [
+        for (final item in entry.toolCalls)
+          (
+            messageId: item.messageId,
             toolCall: item.toolCall,
+            isForkReference: item.isForkReference,
+            displayName: _toolCallDisplayName(
+              ref.watch(
+                toolDisplayNameProvider(workspaceId, item.toolCall.name),
+              ),
+              item.toolCall.name,
+            ),
+            openSubAgent: _openSubAgent(
+              context: context,
+              ref: ref,
+              workspaceId: workspaceId,
+              parentConversationId: parentConversationId,
+              childConversations: childConversations,
+              toolCall: item.toolCall,
+            ),
           ),
-        ),
-    ];
-    final toolRows = [
-      for (final activityToolCall in activityToolCalls)
-        _ActivityToolCallRow(
-          key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
-          toolCall: activityToolCall.toolCall,
-          displayName: activityToolCall.displayName,
-          isExpanded: expandedToolIds.value.contains(
-            activityToolCall.toolCall.id,
-          ),
-          onToggle: () => onDisclosureChanged(
-            () => expandedToolIds.value = _toggledToolIds(
-              expandedToolIds.value,
+      ];
+      final toolRows = [
+        for (final activityToolCall in activityToolCalls)
+          _ActivityToolCallRow(
+            key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
+            toolCall: activityToolCall.toolCall,
+            displayName: activityToolCall.displayName,
+            isExpanded: expandedToolIds.value.contains(
               activityToolCall.toolCall.id,
             ),
-          ),
-          openSubAgent: activityToolCall.openSubAgent,
-        ),
-    ];
-    final toolContent = switch (toolRows.length) {
-      0 => null,
-      1 => toolRows.single,
-      _ => AuraColumn(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _ActivityTraceDisclosure(
-            key: ValueKey('activity_tool_list_toggle_${run.id}'),
-            icon: Icons.build_outlined,
-            label: _toolCallsSummary(
-              activityToolCalls.map((toolCall) => toolCall.displayName),
-            ),
-            color: context.auraColors.secondary,
-            isExpanded: toolListExpanded.value,
-            onPressed: () => onDisclosureChanged(
-              () => toolListExpanded.value = !toolListExpanded.value,
-            ),
-          ),
-          if (toolListExpanded.value)
-            Padding(
-              padding: EdgeInsets.only(
-                left: context.auraTheme.fromSpacing(.sm),
-              ),
-              child: AuraColumn(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: toolRows,
+            onToggle: () => onDisclosureChanged(
+              () => expandedToolIds.value = _toggledToolIds(
+                expandedToolIds.value,
+                activityToolCall.toolCall.id,
               ),
             ),
-        ],
-      ),
-    };
-    final hasOuterDisclosure =
-        activityNarratives.length +
-            thinkingMessages.length +
-            (toolContent == null ? 0 : 1) >
-        1;
+            openSubAgent: activityToolCall.openSubAgent,
+          ),
+      ];
+      if (toolRows.length == 1) {
+        toolContents[groupId] = toolRows.single;
+      } else {
+        toolContents[groupId] = AuraColumn(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _ActivityTraceDisclosure(
+              key: ValueKey('activity_tool_list_toggle_$groupId'),
+              icon: Icons.build_outlined,
+              label: _toolCallsSummary(
+                activityToolCalls.map((toolCall) => toolCall.displayName),
+              ),
+              color: context.auraColors.secondary,
+              isExpanded: expandedToolGroupIds.value.contains(groupId),
+              onPressed: () => onDisclosureChanged(() {
+                final next = {...expandedToolGroupIds.value};
+                if (!next.remove(groupId)) next.add(groupId);
+                expandedToolGroupIds.value = next;
+              }),
+            ),
+            if (expandedToolGroupIds.value.contains(groupId))
+              Padding(
+                padding: EdgeInsets.only(
+                  left: context.auraTheme.fromSpacing(.sm),
+                ),
+                child: AuraColumn(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: toolRows,
+                ),
+              ),
+          ],
+        );
+      }
+    }
+    final hasOuterDisclosure = activityEntries.length > 1;
     final activityLabel = toolCalls.isEmpty
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
@@ -1338,27 +1462,37 @@ class const _AssistantActivityRun({
     final activityContent = AuraColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final narrative in activityNarratives)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: context.auraTheme.fromSpacing(.xs),
-            ),
-            child: _ActivityNarrative(
-              key: ValueKey('activity_narrative_${narrative.messageId}'),
-              content: narrative.content,
-            ),
-          ),
-        for (final thinking in thinkingMessages)
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: context.auraTheme.fromSpacing(.xs),
-            ),
-            child: _ActivityThinkingCard(
-              key: ValueKey('activity_thinking_${thinking.messageId}'),
-              content: thinking.content,
-            ),
-          ),
-        if (toolContent != null) toolContent,
+        for (final entry in activityEntries)
+          if (entry case _ActivityNarrativeEntry(
+            :final messageId,
+            :final content,
+          ))
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: context.auraTheme.fromSpacing(.xs),
+              ),
+              child: _ActivityNarrative(
+                key: ValueKey('activity_narrative_$messageId'),
+                content: content,
+              ),
+            )
+          else if (entry case _ActivityThinkingEntry(
+            :final messageId,
+            :final content,
+          ))
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: context.auraTheme.fromSpacing(.xs),
+              ),
+              child: _ActivityThinkingCard(
+                key: ValueKey('activity_thinking_$messageId'),
+                content: content,
+              ),
+            )
+          else
+            toolContents[_activityToolGroupId(
+              entry as _ActivityToolGroupEntry,
+            )]!,
       ],
     );
 
