@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 
 typedef ServiceConnectionMcpCredential = ({
   String id,
@@ -107,13 +108,13 @@ class const ServiceConnectionListItem({
         ),
         expiresAt: data.expiresAt,
         lastRefreshedAt: data.lastRefreshedAt,
-        lastAuthError: data.lastAuthError,
+        lastAuthError: _redactedAuthError(data.lastAuthError),
         metadataValues: _metadataValues(
           .new(
             metadata: data.metadata,
             expiresAt: data.expiresAt,
             lastRefreshedAt: data.lastRefreshedAt,
-            lastAuthError: data.lastAuthError,
+            lastAuthError: _redactedAuthError(data.lastAuthError),
           ),
         ),
         canRefresh: data.canRefresh,
@@ -137,6 +138,7 @@ enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
 enum ServiceConnectionDisplayStatus {
   connected,
   expiringSoon,
+  expired,
   needsReauth,
   failed,
   unknown,
@@ -180,6 +182,8 @@ ServiceConnectionDisplayStatus _displayStatus(_DisplayStatusRequest request) {
   final authStatus = _authStatus(request.authStatus);
   if (authStatus != null) return authStatus;
   if (request.hasMetadataError) return .failed;
+  if (request.lastAuthError?.isNotEmpty ?? false) return .failed;
+  if (_isExpired(request.expiresAt, request.now)) return .expired;
   if (_expiresSoon(request.expiresAt, request.now)) return .expiringSoon;
   if (_isConnected(request)) return .connected;
 
@@ -201,7 +205,14 @@ bool _isConnected(_DisplayStatusRequest request) {
 bool _expiresSoon(DateTime? expiresAt, DateTime now) {
   if (expiresAt == null) return false;
 
-  return expiresAt.isBefore(now.add(_expiryWarningThreshold));
+  return expiresAt.isAfter(now) &&
+      expiresAt.isBefore(now.add(_expiryWarningThreshold));
+}
+
+bool _isExpired(DateTime? expiresAt, DateTime now) {
+  if (expiresAt == null) return false;
+
+  return !expiresAt.isAfter(now);
 }
 
 List<ServiceConnectionMetadataValue> _metadataValues(
@@ -246,6 +257,12 @@ ServiceConnectionMetadataValue? _credentialMetadataValue(
 ) => value == null || value.isEmpty
     ? null
     : ServiceConnectionMetadataValue(key: key, value: value);
+
+String? _redactedAuthError(String? error) {
+  if (error == null || error.isEmpty) return null;
+
+  return LogRedaction.redact(error);
+}
 
 String? _hostFromUrl(String value) {
   final uri = Uri.tryParse(value);

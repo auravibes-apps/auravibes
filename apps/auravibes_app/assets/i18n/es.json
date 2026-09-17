@@ -155,9 +155,16 @@
     "status": {
       "connected": "Conectado",
       "expiring_soon": "Expira pronto",
+      "expired": "Expirada",
       "needs_reauth": "Necesita reconexión",
       "failed": "Falló",
       "unknown": "Desconocido"
+    },
+    "warning": {
+      "expiring_soon": "Esta conexión expira pronto.",
+      "expired": "Esta conexión ha expirado.",
+      "needs_reauth": "Esta conexión necesita reconectarse.",
+      "failed": "La autenticación de esta conexión falló."
     },
     "metadata": {
       "issuer": "Emisor",

@@ -202,12 +202,22 @@ abstract class LocaleKeys {
       'service_connections.status.connected';
   static const service_connections_status_expiring_soon =
       'service_connections.status.expiring_soon';
+  static const service_connections_status_expired =
+      'service_connections.status.expired';
   static const service_connections_status_needs_reauth =
       'service_connections.status.needs_reauth';
   static const service_connections_status_failed =
       'service_connections.status.failed';
   static const service_connections_status_unknown =
       'service_connections.status.unknown';
+  static const service_connections_warning_expiring_soon =
+      'service_connections.warning.expiring_soon';
+  static const service_connections_warning_expired =
+      'service_connections.warning.expired';
+  static const service_connections_warning_needs_reauth =
+      'service_connections.warning.needs_reauth';
+  static const service_connections_warning_failed =
+      'service_connections.warning.failed';
   static const service_connections_metadata_issuer =
       'service_connections.metadata.issuer';
   static const service_connections_metadata_client_id =

@@ -155,9 +155,16 @@
     "status": {
       "connected": "Connected",
       "expiring_soon": "Expiring soon",
+      "expired": "Expired",
       "needs_reauth": "Needs reconnect",
       "failed": "Failed",
       "unknown": "Unknown"
+    },
+    "warning": {
+      "expiring_soon": "This connection expires soon.",
+      "expired": "This connection has expired.",
+      "needs_reauth": "This connection needs to be reconnected.",
+      "failed": "Authentication failed for this connection."
     },
     "metadata": {
       "issuer": "Issuer",
