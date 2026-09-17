@@ -38,6 +38,7 @@ typedef _McpDeleteInput = ({
 class const ToolsGroupCard({
   required final ToolsGroupWithTools groupWithTools,
   required final String workspaceId,
+  final List<WorkspaceToolEntity>? visibleTools,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -56,6 +57,7 @@ class const ToolsGroupCard({
       isExpanded: isExpanded.value,
       onToggleExpand: () => isExpanded.value = !isExpanded.value,
       callbacks: callbacks,
+      visibleTools: visibleTools,
     );
   }
 }
@@ -161,6 +163,7 @@ class const _ToolsGroupCardLayout({
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ToolsGroupCardCallbacks callbacks,
+  final List<WorkspaceToolEntity>? visibleTools,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -173,6 +176,7 @@ class const _ToolsGroupCardLayout({
           isExpanded: isExpanded,
           onToggleExpand: onToggleExpand,
           callbacks: callbacks,
+          visibleTools: visibleTools,
         ),
         style: .border,
       ),
@@ -186,6 +190,7 @@ class const _ToolsGroupCardContent({
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ToolsGroupCardCallbacks callbacks,
+  final List<WorkspaceToolEntity>? visibleTools,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -202,7 +207,11 @@ class const _ToolsGroupCardContent({
         ),
         if (isExpanded) ...[
           const AuraDivider(),
-          _ToolsList(groupWithTools: groupWithTools, workspaceId: workspaceId),
+          _ToolsList(
+            groupWithTools: groupWithTools,
+            workspaceId: workspaceId,
+            visibleTools: visibleTools,
+          ),
         ],
       ],
       crossAxisAlignment: .start,
@@ -214,13 +223,16 @@ class const _ToolsGroupCardContent({
 class const _ToolsList({
   required final ToolsGroupWithTools groupWithTools,
   required final String workspaceId,
+  final List<WorkspaceToolEntity>? visibleTools,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (groupWithTools.tools.isEmpty) return const _EmptyToolsGroup();
+    final tools = visibleTools ?? groupWithTools.tools;
+    if (tools.isEmpty) return const _EmptyToolsGroup();
 
     return _ToolsGroupRows(
       groupWithTools: groupWithTools,
+      tools: tools,
       workspaceId: workspaceId,
     );
   }
@@ -250,6 +262,7 @@ class const _EmptyToolsMessage() extends StatelessWidget {
 
 class const _ToolsGroupRows({
   required final ToolsGroupWithTools groupWithTools,
+  required final List<WorkspaceToolEntity> tools,
   required final String workspaceId,
 }) extends StatelessWidget {
   @override
@@ -259,7 +272,7 @@ class const _ToolsGroupRows({
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: _ToolRows(
-        tools: groupWithTools.tools,
+        tools: tools,
         workspaceId: workspaceId,
         showDeleteButton: !groupWithTools.isMcpGroup,
       ),
