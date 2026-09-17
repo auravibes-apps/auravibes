@@ -129,8 +129,7 @@ class AppDatabase extends _$AppDatabase {
       _conversationListSchemaVersion + 1;
   static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
-  static const int _forkSchemaVersion =
-      _recentModelSelectionsSchemaVersion + 1;
+  static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
   static const int _currentSchemaVersion = _forkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
