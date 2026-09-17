@@ -608,24 +608,39 @@ void main() {
         final testContainer = await createInitializedContainer(fakeService);
         addTearDown(testContainer.dispose);
 
-        await testContainer
-            .read(mcpConnectionProvider.notifier)
-            .addMcpServer(
-              const McpServerFormToCreate(
-                name: 'Bearer MCP',
-                url: 'https://example.com',
-                transport: McpTransportTypeSSE(),
-                authenticationType: .bearerToken,
-                bearerToken: 'test-token',
-              ),
-              workspaceId: 'workspace-1',
-            );
+        final notifier = testContainer.read(mcpConnectionProvider.notifier);
+        const server = McpServerFormToCreate(
+          name: 'Bearer MCP',
+          url: 'https://example.com',
+          transport: McpTransportTypeSSE(),
+          authenticationType: .bearerToken,
+          bearerToken: 'test-token',
+        );
+        final verification = await notifier.prepareMcpConnection(
+          server,
+          workspaceId: 'workspace-1',
+        );
+        final updatedServer = server.copyWith(
+          name: '  Renamed MCP  ',
+          description: '  Updated description  ',
+        );
+        await notifier.commitPreparedMcpConnection(
+          updatedServer,
+          workspaceId: 'workspace-1',
+          verificationId: verification.id,
+        );
 
         final state = testContainer.read(mcpConnectionProvider);
         expect(state, hasLength(1));
         expect(state.firstOrNull?.status, McpConnectionStatus.connected);
         expect(state.firstOrNull?.tools, const [_toolInfo]);
+        expect(fakeService.getToolsCount, 1);
         expect(mcpServersRepository.addedServers, hasLength(1));
+        expect(mcpServersRepository.addedServers.single.name, 'Renamed MCP');
+        expect(
+          mcpServersRepository.addedServers.single.description,
+          'Updated description',
+        );
         expect(
           mcpServersRepository.addedServers.single.serviceConnectionId,
           isNotEmpty,
@@ -634,26 +649,98 @@ void main() {
       },
     );
 
+    test(
+      'prepareMcpConnection does not persist configuration or tools',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+
+        final notifier = testContainer.read(mcpConnectionProvider.notifier);
+        final verification = await notifier.prepareMcpConnection(
+          const McpServerFormToCreate(
+            name: 'Test MCP',
+            url: 'https://example.com',
+            transport: McpTransportTypeSSE(),
+            authenticationType: .none,
+            bearerToken: null,
+          ),
+          workspaceId: 'workspace-1',
+        );
+
+        expect(fakeService.connectedServers, hasLength(1));
+        expect(fakeService.getToolsCount, 1);
+        expect(verification.toolCount, 1);
+        expect(fakeService.disconnectCount, 0);
+        expect(mcpServersRepository.addedServers, isEmpty);
+        final credentials = await getDatabase()
+            .select(getDatabase().serviceConnections)
+            .get();
+        expect(credentials, isEmpty);
+        await notifier.discardPreparedMcpConnection(verification.id);
+        expect(fakeService.disconnectCount, 1);
+        expect(fakeService.getToolsCount, 1);
+      },
+    );
+
+    test(
+      'changed connection fields invalidate prepared verification',
+      () async {
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+
+        final notifier = testContainer.read(mcpConnectionProvider.notifier);
+        const server = McpServerFormToCreate(
+          name: 'Test MCP',
+          url: 'https://example.com',
+          transport: McpTransportTypeSSE(),
+          authenticationType: .none,
+          bearerToken: null,
+        );
+        final verification = await notifier.prepareMcpConnection(
+          server,
+          workspaceId: 'workspace-1',
+        );
+
+        await expectLater(
+          notifier.commitPreparedMcpConnection(
+            server.copyWith(url: 'https://changed.example.com'),
+            workspaceId: 'workspace-1',
+            verificationId: verification.id,
+          ),
+          throwsA(isA<McpVerificationRequiredException>()),
+        );
+        expect(fakeService.disconnectCount, 1);
+        expect(mcpServersRepository.addedServers, isEmpty);
+        expect(fakeService.getToolsCount, 1);
+      },
+    );
+
     test('addMcpServer cleans up credential when persistence fails', () async {
       mcpServersRepository.addServerError = .new('insert failed');
-      final testContainer = await createInitializedContainer(
-        _SuccessfulMcpManagerService(),
-      );
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
 
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      const server = McpServerFormToCreate(
+        name: 'Bearer MCP',
+        url: 'https://example.com',
+        transport: McpTransportTypeSSE(),
+        authenticationType: .bearerToken,
+        bearerToken: 'test-token',
+      );
+      final verification = await notifier.prepareMcpConnection(
+        server,
+        workspaceId: 'workspace-1',
+      );
       await expectLater(
-        testContainer
-            .read(mcpConnectionProvider.notifier)
-            .addMcpServer(
-              const McpServerFormToCreate(
-                name: 'Bearer MCP',
-                url: 'https://example.com',
-                transport: McpTransportTypeSSE(),
-                authenticationType: .bearerToken,
-                bearerToken: 'test-token',
-              ),
-              workspaceId: 'workspace-1',
-            ),
+        notifier.commitPreparedMcpConnection(
+          server,
+          workspaceId: 'workspace-1',
+          verificationId: verification.id,
+        ),
         throwsA(isA<Exception>()),
       );
 
@@ -662,6 +749,38 @@ void main() {
           .get();
       expect(credentials, isEmpty);
       expect(testContainer.read(mcpConnectionProvider), isEmpty);
+
+      mcpServersRepository.addServerError = null;
+      await notifier.commitPreparedMcpConnection(
+        server,
+        workspaceId: 'workspace-1',
+        verificationId: verification.id,
+      );
+      expect(mcpServersRepository.addedServers, hasLength(1));
+      expect(fakeService.getToolsCount, 1);
+    });
+
+    test('dispose disconnects a prepared local client', () async {
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = await createInitializedContainer(fakeService);
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      final verification = await notifier.prepareMcpConnection(
+        const McpServerFormToCreate(
+          name: 'Test MCP',
+          url: 'https://example.com',
+          transport: McpTransportTypeSSE(),
+          authenticationType: .none,
+          bearerToken: null,
+        ),
+        workspaceId: 'workspace-1',
+      );
+
+      expect(verification.toolCount, 1);
+      expect(fakeService.disconnectCount, 0);
+      testContainer.dispose();
+      await Future<void>.delayed(.zero);
+
+      expect(fakeService.disconnectCount, 1);
     });
 
     test('disconnectMcpServer for missing server is no-op', () {
@@ -773,18 +892,23 @@ void main() {
       final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
 
-      await testContainer
-          .read(mcpConnectionProvider.notifier)
-          .addMcpServer(
-            const McpServerFormToCreate(
-              name: 'Bearer MCP',
-              url: 'https://example.com',
-              transport: McpTransportTypeSSE(),
-              authenticationType: .bearerToken,
-              bearerToken: 'test-token',
-            ),
-            workspaceId: 'workspace-1',
-          );
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      const server = McpServerFormToCreate(
+        name: 'Bearer MCP',
+        url: 'https://example.com',
+        transport: McpTransportTypeSSE(),
+        authenticationType: .bearerToken,
+        bearerToken: 'test-token',
+      );
+      final verification = await notifier.prepareMcpConnection(
+        server,
+        workspaceId: 'workspace-1',
+      );
+      await notifier.commitPreparedMcpConnection(
+        server,
+        workspaceId: 'workspace-1',
+        verificationId: verification.id,
+      );
       tokenController.add(
         OAuthTokenEntity(
           accessToken: 'updated-access-token',
@@ -899,6 +1023,8 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   final connectedServers = <McpServerToCreate>[];
   final calledToolIdentifiers = <String>[];
+  int disconnectCount = 0;
+  int getToolsCount = 0;
   final _FakeMcpManagerClient _client;
 
   @override
@@ -910,11 +1036,13 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
   @override
   Future<void> disconnect(McpManagerClient? client) async {
-    final _ = Object();
+    if (client != null) disconnectCount++;
   }
 
   @override
   Future<List<McpToolInfo>> getTools(McpManagerClient client) async {
+    getToolsCount++;
+
     return const [_toolInfo];
   }
 

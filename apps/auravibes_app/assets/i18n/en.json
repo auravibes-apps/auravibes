@@ -813,7 +813,12 @@
         "hint": "This token will be stored securely"
       }
     },
-    "save_success": "MCP server configuration saved"
+    "save_success": "MCP server configuration saved",
+    "test_connection": "Verify connection",
+    "test_connection_success": "Connection verified",
+    "verification_success": "Connection verified · {} tools found",
+    "verification_required": "Verify the connection before saving.",
+    "verification_expired": "Verification expired. Verify the connection again."
   },
   "compaction": {
     "settings": {

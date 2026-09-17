@@ -141,6 +141,9 @@ import 'features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i5i328k3;
 import 'features/mcp_servers/models/discovered_mcp_tool.dart' as _igzjg3pi;
 import 'features/mcp_servers/models/mcp_server_health.dart' as _iw1ftww6;
+import 'features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _ic37m0ag;
+import 'features/mcp_servers/models/verify_mcp_server_result.dart' as _ig6h5o5u;
 import 'features/model_connections/models/api_model.dart' as _i8ct1fsr;
 import 'features/model_connections/models/api_model_provider.dart' as _ioo5yu9z;
 import 'features/model_connections/models/create_model_connection_request.dart'
@@ -334,6 +337,8 @@ export 'features/mcp_servers/models/discover_mcp_server_request.dart';
 export 'features/mcp_servers/models/discover_mcp_server_result.dart';
 export 'features/mcp_servers/models/discovered_mcp_tool.dart';
 export 'features/mcp_servers/models/mcp_server_health.dart';
+export 'features/mcp_servers/models/verify_mcp_server_request.dart';
+export 'features/mcp_servers/models/verify_mcp_server_result.dart';
 export 'features/model_connections/models/api_model.dart';
 export 'features/model_connections/models/api_model_provider.dart';
 export 'features/model_connections/models/create_model_connection_request.dart';
@@ -4372,6 +4377,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iw1ftww6.McpServerHealth) {
       return _iw1ftww6.McpServerHealth.fromJson(data) as T;
     }
+    if (t == _ic37m0ag.VerifyMcpServerRequest) {
+      return _ic37m0ag.VerifyMcpServerRequest.fromJson(data) as T;
+    }
+    if (t == _ig6h5o5u.VerifyMcpServerResult) {
+      return _ig6h5o5u.VerifyMcpServerResult.fromJson(data) as T;
+    }
     if (t == _i8ct1fsr.ApiModel) {
       return _i8ct1fsr.ApiModel.fromJson(data) as T;
     }
@@ -4966,6 +4977,18 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_iw1ftww6.McpServerHealth?>()) {
       return (data != null ? _iw1ftww6.McpServerHealth.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ic37m0ag.VerifyMcpServerRequest?>()) {
+      return (data != null
+              ? _ic37m0ag.VerifyMcpServerRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ig6h5o5u.VerifyMcpServerResult?>()) {
+      return (data != null
+              ? _ig6h5o5u.VerifyMcpServerResult.fromJson(data)
+              : null)
           as T;
     }
     if (t == _is.getType<_i8ct1fsr.ApiModel?>()) {
@@ -5618,6 +5641,8 @@ class Protocol extends _is.DatabaseSerializationManager {
       _i5i328k3.DiscoverMcpServerResult => 'DiscoverMcpServerResult',
       _igzjg3pi.DiscoveredMcpTool => 'DiscoveredMcpTool',
       _iw1ftww6.McpServerHealth => 'McpServerHealth',
+      _ic37m0ag.VerifyMcpServerRequest => 'VerifyMcpServerRequest',
+      _ig6h5o5u.VerifyMcpServerResult => 'VerifyMcpServerResult',
       _i8ct1fsr.ApiModel => 'ApiModel',
       _ioo5yu9z.ApiModelProvider => 'ApiModelProvider',
       _i4akrsd1.CreateModelConnectionRequest => 'CreateModelConnectionRequest',
@@ -5854,6 +5879,10 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'DiscoveredMcpTool';
       case _iw1ftww6.McpServerHealth():
         return 'McpServerHealth';
+      case _ic37m0ag.VerifyMcpServerRequest():
+        return 'VerifyMcpServerRequest';
+      case _ig6h5o5u.VerifyMcpServerResult():
+        return 'VerifyMcpServerResult';
       case _i8ct1fsr.ApiModel():
         return 'ApiModel';
       case _ioo5yu9z.ApiModelProvider():
@@ -6246,6 +6275,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'McpServerHealth') {
       return deserialize<_iw1ftww6.McpServerHealth>(data['data']);
+    }
+    if (dataClassName == 'VerifyMcpServerRequest') {
+      return deserialize<_ic37m0ag.VerifyMcpServerRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyMcpServerResult') {
+      return deserialize<_ig6h5o5u.VerifyMcpServerResult>(data['data']);
     }
     if (dataClassName == 'ApiModel') {
       return deserialize<_i8ct1fsr.ApiModel>(data['data']);

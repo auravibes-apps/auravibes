@@ -155,6 +155,7 @@ class _McpFormFieldChildren {
           child: _BearerTokenField(workspaceId: workspaceId),
           visible: showBearerTokenField,
         ),
+        _VerificationStatus(workspaceId: workspaceId),
       ];
 
   final List<Widget> values;
@@ -212,16 +213,17 @@ class const _LoadingOverlay({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => _LoadingOverlayContent(
-    isSubmitting: ref.watch(
-      mcpFormProvider(workspaceId).select((value) => value.isSubmitting),
+    isBusy: ref.watch(
+      mcpFormProvider(workspaceId)
+          .select((value) => value.isSubmitting || value.isTestingConnection),
     ),
   );
 }
 
-class const _LoadingOverlayContent({required final bool isSubmitting})
+class const _LoadingOverlayContent({required final bool isBusy})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => isSubmitting
+  Widget build(BuildContext context) => isBusy
       ? _LoadingOverlaySurface(color: context.auraColors.surface)
       : const SizedBox.shrink();
 }
@@ -253,10 +255,13 @@ class const _ErrorBanner({required final String workspaceId})
   }
 }
 
-String _displayErrorMessage(String errorMessage) =>
-    errorMessage == LocaleKeys.tools_screen_mcp_error
-    ? errorMessage.tr()
-    : errorMessage;
+String _displayErrorMessage(String errorMessage) => switch (errorMessage) {
+  LocaleKeys.tools_screen_mcp_error ||
+  LocaleKeys.workspace_capabilities_unsupported_error ||
+  LocaleKeys.mcp_modal_verification_required ||
+  LocaleKeys.mcp_modal_verification_expired => errorMessage.tr(),
+  _ => errorMessage,
+};
 
 class const _ErrorBannerContent({required final String message})
     extends StatelessWidget {
@@ -302,15 +307,80 @@ class const _ErrorBannerRow({
   );
 }
 
+class const _VerificationStatus({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(
+      mcpFormProvider(workspaceId).select(
+        (value) => (
+          isVerified: value.isConnectionVerified,
+          toolCount: value.verifiedToolCount,
+        ),
+      ),
+    );
+
+    return _VerificationStatusContent(
+      isVerified: state.isVerified,
+      toolCount: state.toolCount,
+    );
+  }
+}
+
+class const _VerificationStatusContent({
+  required final bool isVerified,
+  required final int toolCount,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!isVerified) return const SizedBox.shrink();
+
+    return AuraBadge(
+      child: AuraRow(
+        children: [
+          const AuraIcon(Icons.check_circle, size: .small),
+          Text(
+            LocaleKeys.mcp_modal_verification_success.tr(
+              args: [toolCount.toString()],
+            ),
+          ),
+        ],
+        spacing: .xs,
+        mainAxisSize: .min,
+      ),
+      variant: .success,
+    );
+  }
+}
+
 class const _Footer({required final String workspaceId})
     extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _FooterBar(
-    isSubmitting: ref.watch(
-      mcpFormProvider(workspaceId).select((value) => value.isSubmitting),
-    ),
-    onSubmit: () => unawaited(_submit(context, ref, workspaceId)),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _watchMcpFooterState(ref, workspaceId);
+
+    return _FooterBar(
+      isSubmitting: state.isSubmitting,
+      isTestingConnection: state.isTestingConnection,
+      isConnectionVerified: state.isConnectionVerified,
+      onTestConnection: () =>
+          unawaited(_testConnection(context, ref, workspaceId)),
+      onSubmit: () => unawaited(_submit(context, ref, workspaceId)),
+    );
+  }
+
+  Future<void> _testConnection(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+  ) async {
+    final success = await ref
+        .read(mcpFormProvider(workspaceId).notifier)
+        .testConnection();
+    if (!success || !context.mounted) return;
+
+    _showMcpConnectionTestSuccess(context);
+  }
 
   Future<void> _submit(
     BuildContext context,
@@ -325,6 +395,17 @@ class const _Footer({required final String workspaceId})
   }
 }
 
+({bool isSubmitting, bool isTestingConnection, bool isConnectionVerified})
+_watchMcpFooterState(WidgetRef ref, String workspaceId) => ref.watch(
+  mcpFormProvider(workspaceId).select(
+    (value) => (
+      isSubmitting: value.isSubmitting,
+      isTestingConnection: value.isTestingConnection,
+      isConnectionVerified: value.isConnectionVerified,
+    ),
+  ),
+);
+
 Future<bool> _submitMcpForm(WidgetRef ref, String workspaceId) =>
     ref.read(mcpFormProvider(workspaceId).notifier).submit();
 
@@ -336,8 +417,19 @@ void _showMcpSaveSuccess(BuildContext context) {
   );
 }
 
+void _showMcpConnectionTestSuccess(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: Text(LocaleKeys.mcp_modal_test_connection_success.tr()),
+    variant: .success,
+  );
+}
+
 class const _FooterBar({
   required final bool isSubmitting,
+  required final bool isTestingConnection,
+  required final bool isConnectionVerified,
+  required final VoidCallback onTestConnection,
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
@@ -347,6 +439,9 @@ class const _FooterBar({
       alpha: AddMcpModal._dividerOpacity,
     ),
     isSubmitting: isSubmitting,
+    isTestingConnection: isTestingConnection,
+    isConnectionVerified: isConnectionVerified,
+    onTestConnection: onTestConnection,
     onSubmit: onSubmit,
   );
 }
@@ -355,6 +450,9 @@ class const _FooterBarFrame({
   required final EdgeInsets padding,
   required final Color borderColor,
   required final bool isSubmitting,
+  required final bool isTestingConnection,
+  required final bool isConnectionVerified,
+  required final VoidCallback onTestConnection,
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
@@ -364,13 +462,22 @@ class const _FooterBarFrame({
     ),
     child: Padding(
       padding: padding,
-      child: _FooterButtons(isSubmitting: isSubmitting, onSubmit: onSubmit),
+      child: _FooterButtons(
+        isSubmitting: isSubmitting,
+        isTestingConnection: isTestingConnection,
+        isConnectionVerified: isConnectionVerified,
+        onTestConnection: onTestConnection,
+        onSubmit: onSubmit,
+      ),
     ),
   );
 }
 
 class const _FooterButtons({
   required final bool isSubmitting,
+  required final bool isTestingConnection,
+  required final bool isConnectionVerified,
+  required final VoidCallback onTestConnection,
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
@@ -379,8 +486,16 @@ class const _FooterButtons({
       const Expanded(child: _FooterCancelButton()),
       const AuraSizedBox(width: .sm),
       Expanded(
+        child: _FooterTestConnectionButton(
+          isTestingConnection: isTestingConnection,
+          onTestConnection: onTestConnection,
+        ),
+      ),
+      const AuraSizedBox(width: .sm),
+      Expanded(
         child: _FooterSaveButton(
           isSubmitting: isSubmitting,
+          disabled: isTestingConnection || !isConnectionVerified,
           onSubmit: onSubmit,
         ),
       ),
@@ -399,6 +514,7 @@ class const _FooterCancelButton() extends StatelessWidget {
 
 class const _FooterSaveButton({
   required final bool isSubmitting,
+  required final bool disabled,
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
@@ -406,6 +522,20 @@ class const _FooterSaveButton({
     onPressed: onSubmit,
     child: const TextLocale(LocaleKeys.common_save),
     isLoading: isSubmitting,
+    disabled: disabled,
+  );
+}
+
+class const _FooterTestConnectionButton({
+  required final bool isTestingConnection,
+  required final VoidCallback onTestConnection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onTestConnection,
+    child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
+    variant: .outlined,
+    isLoading: isTestingConnection,
   );
 }
 

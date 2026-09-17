@@ -96,6 +96,10 @@ import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models
     as _ie29eho8;
 import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/discover_mcp_server_result.dart'
     as _iar1xj2j;
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/verify_mcp_server_request.dart'
+    as _isteb76q;
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/verify_mcp_server_result.dart'
+    as _ipyzz06m;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model.dart'
     as _iuloe217;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model_provider.dart'
@@ -695,6 +699,14 @@ class EndpointMcpServer extends _isc.EndpointRef {
 
   @override
   String get name => 'mcpServer';
+
+  _ida.Future<_ipyzz06m.VerifyMcpServerResult> verify(
+    _isteb76q.VerifyMcpServerRequest request,
+  ) => caller.callServerEndpoint<_ipyzz06m.VerifyMcpServerResult>(
+    'mcpServer',
+    'verify',
+    {'request': request},
+  );
 
   _ida.Future<_i3f0a4jf.CreateMcpServerResult> create(
     _iqrnkkwp.CreateMcpServerRequest request,
