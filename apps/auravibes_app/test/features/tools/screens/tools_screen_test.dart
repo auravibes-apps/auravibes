@@ -20,6 +20,20 @@ class _MockWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
 }
 
+class _ResetWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
+  new(this._onReset);
+
+  final void Function() _onReset;
+
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
+
+  @override
+  Future<void> resetToolPermissions() async {
+    _onReset();
+  }
+}
+
 class _MockGroupedToolsNotifier extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
@@ -111,6 +125,61 @@ void main() {
       await tester.pump();
       expect(find.byType(ToolsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
+    });
+
+    testWidgets('confirms before resetting workspace tool permissions', (
+      tester,
+    ) async {
+      var resetCalls = 0;
+      final notifier = _ResetWorkspaceToolsNotifier(() => resetCalls++);
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: Theme(
+              data: .new(extensions: [AuraTheme.light]),
+              child: const ToolsScreen(workspaceId: 'test-ws'),
+            ),
+            overrides: [
+              workspaceToolsProvider('test-ws').overrideWith(() => notifier),
+              groupedToolsProvider('test-ws')
+                  .overrideWith(_MockGroupedToolsNotifier.new),
+              workspaceSessionForRouteProvider('test-ws').overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(
+                    LocalWorkspaceRef(localWorkspaceId: 'test-ws'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.restore));
+      await tester.pump();
+
+      expect(find.text('Reset Workspace Tool Permissions'), findsOneWidget);
+      expect(
+        find.text(
+          'This will enable all tools in this workspace and set their '
+          'permissions to Always Ask. Continue?',
+        ),
+        findsOneWidget,
+      );
+      expect(resetCalls, 0);
+
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(resetCalls, 0);
+
+      await tester.tap(find.byIcon(Icons.restore));
+      await tester.pump();
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(resetCalls, 1);
     });
 
     testWidgets('back button pops ToolsScreen route', (tester) async {

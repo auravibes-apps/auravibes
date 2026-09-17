@@ -388,6 +388,9 @@
   "tools_screen": {
     "title": "Workspace Tools",
     "refresh_tooltip": "Refresh tools",
+    "reset_tool_permissions_title": "Reset Workspace Tool Permissions",
+    "reset_tool_permissions_confirm": "This will enable all tools in this workspace and set their permissions to Always Ask. Continue?",
+    "reset_tool_permissions_tooltip": "Reset tool permissions",
     "workspace_ai_tools": "Workspace AI Tools",
     "enable_configure_description": "Enable and configure tools for this workspace",
     "enabled_count": {

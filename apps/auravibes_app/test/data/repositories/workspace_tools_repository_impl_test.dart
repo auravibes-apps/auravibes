@@ -207,6 +207,24 @@ void main() {
       });
     });
 
+    group('resetWorkspaceToolPermissions', () {
+      test('returns reset tools for the requested workspace', () async {
+        final updatedRows = [createToolRow()];
+        when(() => fixture.mockToolsDao.resetWorkspaceToolPermissions('ws-1'))
+            .thenAnswer((_) async => updatedRows);
+
+        final result = await fixture.repository.resetWorkspaceToolPermissions(
+          'ws-1',
+        );
+
+        expect(result, hasLength(1));
+        expect(result.single.isEnabled, isTrue);
+        expect(result.single.permissionMode, ToolPermissionMode.alwaysAsk);
+        verify(() => fixture.mockToolsDao.resetWorkspaceToolPermissions('ws-1'))
+            .called(1);
+      });
+    });
+
     group('isWorkspaceToolEnabled', () {
       test('returns true when enabled', () async {
         when(

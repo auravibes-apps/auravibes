@@ -538,6 +538,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.context_usage.semantic_overflow';
   static const tools_screen_title = 'tools_screen.title';
   static const tools_screen_refresh_tooltip = 'tools_screen.refresh_tooltip';
+  static const tools_screen_reset_tool_permissions_title =
+      'tools_screen.reset_tool_permissions_title';
+  static const tools_screen_reset_tool_permissions_confirm =
+      'tools_screen.reset_tool_permissions_confirm';
+  static const tools_screen_reset_tool_permissions_tooltip =
+      'tools_screen.reset_tool_permissions_tooltip';
   static const tools_screen_workspace_ai_tools =
       'tools_screen.workspace_ai_tools';
   static const tools_screen_enable_configure_description =

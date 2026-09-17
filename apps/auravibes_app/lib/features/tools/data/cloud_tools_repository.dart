@@ -192,6 +192,20 @@ mixin _WorkspaceToolOperations on _CloudToolsRepositoryBase {
     return tool.copyWith(permissionMode: permissionMode);
   }
 
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String _,
+  ) async {
+    final tools = await _read(.tool);
+    final permissions = await _read(.toolPermission);
+    final resources = [...tools, ...permissions];
+
+    if (resources.isNotEmpty) {
+      final _ = await _patch(resources.map(_resetToolResource).toList());
+    }
+
+    return await getWorkspaceTools('');
+  }
+
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String _,
     String toolType, {
@@ -463,6 +477,21 @@ extension on _CloudToolsRepositoryBase {
       expectedRevision: resource.revision,
     ),
   ])).resources.single;
+
+  WorkspacePatchOperation _resetToolResource(WorkspaceResource resource) {
+    final data = _data(resource)
+      ..['isEnabled'] = true
+      ..['permissionMode'] = ToolPermissionMode.alwaysAsk.name;
+
+    return WorkspacePatchOperation(
+      operation: .update,
+      resourceKind: resource.resourceKind,
+      resourceId: resource.resourceId,
+      data: jsonEncode(data),
+      fieldMask: const [],
+      expectedRevision: resource.revision,
+    );
+  }
 
   Future<WorkspaceResource?> _find(
     WorkspaceResourceKind kind,

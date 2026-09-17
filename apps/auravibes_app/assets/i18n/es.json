@@ -388,6 +388,9 @@
   "tools_screen": {
     "title": "Herramientas del Espacio de Trabajo",
     "refresh_tooltip": "Actualizar herramientas",
+    "reset_tool_permissions_title": "Restablecer permisos de herramientas del espacio de trabajo",
+    "reset_tool_permissions_confirm": "Esto volverá a activar todas las herramientas de este espacio de trabajo y establecerá sus permisos en «Siempre preguntar». ¿Continuar?",
+    "reset_tool_permissions_tooltip": "Restablecer permisos de herramientas",
     "workspace_ai_tools": "Herramientas IA del Espacio de Trabajo",
     "enable_configure_description": "Activa y configura herramientas para este espacio de trabajo",
     "enabled_count": {
