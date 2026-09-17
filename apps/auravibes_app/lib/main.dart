@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
@@ -8,6 +9,7 @@ import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
+import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/services.dart'
@@ -22,12 +24,17 @@ PrintLogCollector? _marionetteLogCollector;
 
 Future<void> main() async {
   _configureFlavor();
-  _ensureFlutterBinding();
+  final marionetteInstanceId = _ensureFlutterBinding();
   _configureLogging();
   await MainLocale.ensureInitialized();
 
   _configureSystemUi();
   final container = ProviderContainer();
+  if (marionetteInstanceId != null) {
+    registerAuravibesMarionetteExtensions(
+      createMarionetteDevelopmentState(container),
+    );
+  }
 
   _runApp(container);
   _scheduleModelSync(container);
@@ -41,9 +48,14 @@ void _configureLogging() => AppLogging.configure(
   onLog: _marionetteLogCollector?.addLog,
 );
 
-void _ensureFlutterBinding() {
+String? _ensureFlutterBinding() {
   // Debug-only bridges; enable one explicitly for agent-controlled runs.
-  if (kDebugMode && const bool.fromEnvironment('ENABLE_MARIONETTE')) {
+  if (shouldEnableMarionette(
+    isDebugMode: kDebugMode,
+    requested: const bool.fromEnvironment('ENABLE_MARIONETTE'),
+    flavor: AppFlavorConfig.instance.appFlavor,
+    dbHashSource: AppEnvConfig.dbHashSource,
+  )) {
     final instanceId = _resolveMarionetteInstanceId();
     final logCollector = PrintLogCollector();
     _marionetteLogCollector = logCollector;
@@ -53,16 +65,18 @@ void _ensureFlutterBinding() {
     _registerMarionetteInstanceExtension(instanceId);
     debugPrint('AURAVIBES_MARIONETTE_INSTANCE_ID=$instanceId');
 
-    return;
+    return instanceId;
   }
 
   if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     final _ = enableFlutterDriverExtension();
 
-    return;
+    return null;
   }
 
   final _ = WidgetsFlutterBinding.ensureInitialized();
+
+  return null;
 }
 
 String _resolveMarionetteInstanceId() {
