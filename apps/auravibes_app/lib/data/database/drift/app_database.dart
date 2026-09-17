@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.da
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
@@ -32,6 +33,7 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
@@ -55,6 +57,7 @@ export 'daos/conversation_skills_dao.dart';
 export 'daos/conversation_tools_dao.dart';
 export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
+export 'daos/recent_model_selections_dao.dart';
 export 'daos/skill_credentials_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
 export 'daos/workspace_dao.dart';
@@ -89,6 +92,7 @@ part 'app_database.g.dart';
     SkillTemplateTools,
     ConversationSkills,
     AppSkillWorkspaceSettings,
+    RecentModelSelections,
   ],
   daos: [
     WorkspaceDao,
@@ -111,6 +115,7 @@ part 'app_database.g.dart';
     SkillTemplateToolsDao,
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
+    RecentModelSelectionsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -122,8 +127,9 @@ class AppDatabase extends _$AppDatabase {
   static const _conversationListSchemaVersion = 8;
   static const int _conversationPinOrderingSchemaVersion =
       _conversationListSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _conversationPinOrderingSchemaVersion;
+  static const int _recentModelSelectionsSchemaVersion =
+      _conversationPinOrderingSchemaVersion + 1;
+  static const int _currentSchemaVersion = _recentModelSelectionsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -167,6 +173,7 @@ extension on AppDatabase {
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
     await _upgradeConversationListSchema(from);
+    await _upgradeRecentModelSelectionsSchema(m, from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -229,6 +236,11 @@ extension on AppDatabase {
       'updated_at DESC, id DESC '
       ')',
     );
+  }
+
+  Future<void> _upgradeRecentModelSelectionsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._recentModelSelectionsSchemaVersion) return;
+    await m.createTable(recentModelSelections);
   }
 
   Future<void> _backfillAgentDescriptions(int from) async {

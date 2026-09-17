@@ -104,12 +104,16 @@ import 'package:auravibes_server_client/src/protocol/features/model_connections/
     as _im3xu94m;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_model_connections_request.dart'
     as _if6l4bkm;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_recent_model_selections_request.dart'
+    as _i8ofi609;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _ibbwb4vv;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_connection_view.dart'
     as _i5hnstsl;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_sync_result.dart'
     as _idbs8oqc;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/record_recent_model_selection_request.dart'
+    as _iw3nw471;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _i5neyvt3;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
@@ -768,6 +772,22 @@ class EndpointModelConnection extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<List<_i9qkc4pk.WorkspaceModelSelectionView>>(
     'modelConnection',
     'listSelections',
+    {'request': request},
+  );
+
+  _ida.Future<List<String>> listRecentSelections(
+    _i8ofi609.ListRecentModelSelectionsRequest request,
+  ) => caller.callServerEndpoint<List<String>>(
+    'modelConnection',
+    'listRecentSelections',
+    {'request': request},
+  );
+
+  _ida.Future<void> recordRecentSelection(
+    _iw3nw471.RecordRecentModelSelectionRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'modelConnection',
+    'recordRecentSelection',
     {'request': request},
   );
 

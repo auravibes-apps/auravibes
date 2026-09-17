@@ -18,6 +18,14 @@ typedef _UpdateModelConnection = Future<ModelConnectionView> Function({
   required String? url,
 });
 
+typedef CloudRecentModelSelectionsLoader = Future<List<String>> Function(
+  ListRecentModelSelectionsRequest request,
+);
+
+typedef CloudRecentModelSelectionRecorder = Future<void> Function(
+  RecordRecentModelSelectionRequest request,
+);
+
 class CloudModelGateway {
   new(this._stateGateway)
     : _testAndSync = null,
@@ -26,6 +34,8 @@ class CloudModelGateway {
       _update = null,
       _delete = null,
       _listSelections = null,
+      _listRecentSelections = null,
+      _recordRecentSelection = null,
       _listCatalogProviders = null,
       _listCatalogModels = null,
       _startCodexOAuth = null,
@@ -39,6 +49,8 @@ class CloudModelGateway {
     this._update,
     this._delete,
     this._listSelections,
+    this._listRecentSelections,
+    this._recordRecentSelection,
     this._listCatalogProviders,
     this._listCatalogModels,
     this._startCodexOAuth,
@@ -64,6 +76,8 @@ class CloudModelGateway {
     ListWorkspaceModelSelectionsRequest request,
   )?
   _listSelections;
+  final CloudRecentModelSelectionsLoader? _listRecentSelections;
+  final CloudRecentModelSelectionRecorder? _recordRecentSelection;
   final Future<List<ApiModelProvider>> Function()? _listCatalogProviders;
   final Future<List<ApiModel>> Function({String? providerId})?
   _listCatalogModels;
@@ -186,6 +200,31 @@ extension CloudModelGatewaySelections on CloudModelGateway {
       () =>
           _listSelections?.call(request) ??
           _client.modelConnection.listSelections(request),
+    );
+  }
+
+  Future<List<String>> listRecentModelSelections() {
+    final request = ListRecentModelSelectionsRequest(workspaceId: _workspaceId);
+
+    return CloudAppErrors.guardCall(
+      .model,
+      () =>
+          _listRecentSelections?.call(request) ??
+          _client.modelConnection.listRecentSelections(request),
+    );
+  }
+
+  Future<void> recordRecentModelSelection(String selectionId) {
+    final request = RecordRecentModelSelectionRequest(
+      workspaceId: _workspaceId,
+      selectionId: selectionId,
+    );
+
+    return CloudAppErrors.guardCall(
+      .model,
+      () =>
+          _recordRecentSelection?.call(request) ??
+          _client.modelConnection.recordRecentSelection(request),
     );
   }
 

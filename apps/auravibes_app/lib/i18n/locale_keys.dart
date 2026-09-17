@@ -49,6 +49,8 @@ abstract class LocaleKeys {
   static const models_screens_select_provider =
       'models_screens.select_provider';
   static const models_screens_select_model = 'models_screens.select_model';
+  static const models_screens_recent_models = 'models_screens.recent_models';
+  static const models_screens_all_models = 'models_screens.all_models';
   static const models_screens_select_provider_first =
       'models_screens.select_provider_first';
   static const models_screens_no_providers_configured =

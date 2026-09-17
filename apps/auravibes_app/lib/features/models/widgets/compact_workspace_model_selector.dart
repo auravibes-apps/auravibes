@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
@@ -19,18 +22,51 @@ class const CompactWorkspaceModelSelector({
 }) extends HookConsumerWidget {
   static const _selectorWidth = 220.0;
   @override
-  Widget build(BuildContext _, WidgetRef ref) => _ModelSelectorView(
-    models: ref.watch(
-      listModelsGroupedByProviderProvider(workspaceId: workspaceId),
-    ),
-    config: (
-      selectedId: workspaceModelSelectionId,
-      onChanged: onChanged,
-      compactMode: compactMode,
-      sheetMode: sheetMode,
-      modelUnavailable: modelUnavailable,
-    ),
-  );
+  Widget build(BuildContext _, WidgetRef ref) {
+    final recentModelIds = _recentModelIds(ref);
+
+    return _ModelSelectorView(
+      models: ref.watch(
+        listModelsGroupedByProviderProvider(workspaceId: workspaceId),
+      ),
+      config: (
+        selectedId: workspaceModelSelectionId,
+        onChanged: _onModelChanged(ref),
+        compactMode: compactMode,
+        sheetMode: sheetMode,
+        modelUnavailable: modelUnavailable,
+        recentModelIds: recentModelIds,
+      ),
+    );
+  }
+
+  List<String> _recentModelIds(WidgetRef ref) =>
+      ref.watch(recentModelSelectionsProvider(workspaceId)).value ??
+      const <String>[];
+
+  ValueChanged<String?> _onModelChanged(WidgetRef ref) =>
+      (selectionId) => _recordAndChangeModel(
+        ref: ref,
+        workspaceId: workspaceId,
+        onChanged: onChanged,
+        selectionId: selectionId,
+      );
+}
+
+void _recordAndChangeModel({
+  required WidgetRef ref,
+  required String workspaceId,
+  required ValueChanged<String?> onChanged,
+  required String? selectionId,
+}) {
+  if (selectionId != null) {
+    unawaited(
+      ref
+          .read(recentModelSelectionsProvider(workspaceId).notifier)
+          .record(selectionId),
+    );
+  }
+  onChanged(selectionId);
 }
 
 class const _ModelSelectorView({
@@ -61,6 +97,7 @@ typedef _SelectorConfig = ({
   bool compactMode,
   bool sheetMode,
   bool modelUnavailable,
+  List<String> recentModelIds,
 });
 
 class const _ModelSelectorLoading({required final bool sheetMode})
@@ -121,7 +158,11 @@ class const _SearchableModelSelectorBody({
 }) extends HookWidget {
   @override
   Widget build(BuildContext _) {
-    final search = _useModelSearch(groupedModels, config.selectedId);
+    final search = _useModelSearch(
+      groupedModels,
+      config.selectedId,
+      config.recentModelIds,
+    );
 
     return config.sheetMode
         ? _ModelSheetSelector.fromSearch(
@@ -140,36 +181,104 @@ class const _SearchableModelSelectorBody({
 typedef _ModelSearch = ({
   TextEditingController controller,
   List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
   ValueChanged<String> onChanged,
+});
+
+typedef _ModelSearchResults = ({
+  List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
 });
 
 _ModelSearch _useModelSearch(
   Map<String, List<WorkspaceModelSelectionWithConnectionEntity>> groupedModels,
   String? selectedId,
+  List<String> recentModelIds,
 ) {
   final search = useState<String>('');
+  final results = _modelSearchResults(
+    groupedModels,
+    selectedId,
+    recentModelIds,
+    search.value,
+  );
 
-  return (
+  return _buildModelSearch(
     controller: useTextEditingController(),
-    models: _filteredModels(
-      groupedModels,
-      search.value.trim().toLowerCase(),
-      selectedId,
-    ),
+    models: results.models,
+    recentModels: results.recentModels,
     onChanged: (value) => search.value = value,
   );
 }
 
-List<WorkspaceModelSelectionWithConnectionEntity> _filteredModels(
+_ModelSearchResults _modelSearchResults(
   Map<String, List<WorkspaceModelSelectionWithConnectionEntity>> groupedModels,
-  String searchTerm,
   String? selectedId,
-) {
-  final models = _allModels(groupedModels);
-  if (searchTerm.isEmpty) return models;
+  List<String> recentModelIds,
+  String searchValue,
+) => _searchResultsForModels(
+  _allModels(groupedModels),
+  selectedId,
+  recentModelIds,
+  searchValue.trim().toLowerCase(),
+);
 
-  return models
-      .where((model) => _isVisibleModel(model, selectedId, searchTerm))
+_ModelSearchResults _searchResultsForModels(
+  List<WorkspaceModelSelectionWithConnectionEntity> allModels,
+  String? selectedId,
+  List<String> recentModelIds,
+  String searchTerm,
+) {
+  final recentModels = _recentModelsForSearch(
+    allModels,
+    recentModelIds,
+    searchTerm,
+  );
+
+  return (
+    models: _modelsForSearch(allModels, recentModels, selectedId, searchTerm),
+    recentModels: recentModels,
+  );
+}
+
+_ModelSearch _buildModelSearch({
+  required TextEditingController controller,
+  required List<WorkspaceModelSelectionWithConnectionEntity> models,
+  required List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
+  required ValueChanged<String> onChanged,
+}) => (
+  controller: controller,
+  models: models,
+  recentModels: recentModels,
+  onChanged: onChanged,
+);
+
+List<WorkspaceModelSelectionWithConnectionEntity> _recentModelsForSearch(
+  List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<String> recentModelIds,
+  String searchTerm,
+) => searchTerm.isEmpty
+    ? _modelsForRecentSelectionIds(models, recentModelIds)
+    : const <WorkspaceModelSelectionWithConnectionEntity>[];
+
+List<WorkspaceModelSelectionWithConnectionEntity> _modelsForSearch(
+  List<WorkspaceModelSelectionWithConnectionEntity> allModels,
+  List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
+  String? selectedId,
+  String searchTerm,
+) {
+  if (searchTerm.isNotEmpty) {
+    return allModels
+        .where((model) => _isVisibleModel(model, selectedId, searchTerm))
+        .toList();
+  }
+
+  final recentIds = {
+    for (final model in recentModels) model.workspaceModelSelection.id,
+  };
+
+  return allModels
+      .where((model) => !recentIds.contains(model.workspaceModelSelection.id))
       .toList();
 }
 
@@ -185,12 +294,32 @@ bool _isVisibleModel(
     model.workspaceModelSelection.id == selectedId ||
     _matchesSearch(model, searchTerm);
 
+List<WorkspaceModelSelectionWithConnectionEntity> _modelsForRecentSelectionIds(
+  List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<String> recentModelIds,
+) {
+  final modelsById = {
+    for (final model in models) model.workspaceModelSelection.id: model,
+  };
+  final seen = <String>{};
+  final result = <WorkspaceModelSelectionWithConnectionEntity>[];
+
+  for (final recentModelId in recentModelIds) {
+    if (!seen.add(recentModelId)) continue;
+    final model = modelsById[recentModelId];
+    if (model != null) result.add(model);
+  }
+
+  return result;
+}
+
 class const _ModelSheetSelector({
   required final TextEditingController controller,
   required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
   groupedModels,
   required final List<WorkspaceModelSelectionWithConnectionEntity>
   filteredModels,
+  required final List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
   required final ValueChanged<String> onSearchChanged,
@@ -204,6 +333,7 @@ class const _ModelSheetSelector({
          controller: search.controller,
          groupedModels: groupedModels,
          filteredModels: search.models,
+         recentModels: search.recentModels,
          workspaceModelSelectionId: config.selectedId,
          onChanged: config.onChanged,
          onSearchChanged: search.onChanged,
@@ -220,6 +350,7 @@ class const _ModelSheetSelector({
     return _ModelSheetContent(
       controller: controller,
       filteredModels: filteredModels,
+      recentModels: recentModels,
       workspaceModelSelectionId: workspaceModelSelectionId,
       onChanged: onChanged,
       onSearchChanged: onSearchChanged,
@@ -231,6 +362,7 @@ class _ModelSheetContent extends Column {
   new({
     required TextEditingController controller,
     required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
+    required List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
     required String? workspaceModelSelectionId,
     required ValueChanged<String?> onChanged,
     required ValueChanged<String> onSearchChanged,
@@ -244,7 +376,8 @@ class _ModelSheetContent extends Column {
            const AuraSizedBox(height: .sm),
            Flexible(
              child: _ModelSheetOptions(
-               filteredModels: filteredModels,
+               models: filteredModels,
+               recentModels: recentModels,
                workspaceModelSelectionId: workspaceModelSelectionId,
                onChanged: onChanged,
              ),
@@ -265,20 +398,78 @@ class const _ModelSearchInput({
   );
 }
 
+typedef _ModelSheetItemConfig = ({
+  List<WorkspaceModelSelectionWithConnectionEntity> models,
+  List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
+  String? workspaceModelSelectionId,
+  ValueChanged<String?> onChanged,
+});
+
 class _ModelSheetOptions extends ListView {
+  static const _sectionTitleCount = 2;
+  static const _recentTitleIndex = 0;
+  static const _recentModelIndexOffset = 1;
+  static const int _allModelsIndexOffset = _sectionTitleCount;
+
   new({
-    required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
+    required List<WorkspaceModelSelectionWithConnectionEntity> models,
+    required List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
     required String? workspaceModelSelectionId,
     required ValueChanged<String?> onChanged,
   }) : super.separated(
-         itemBuilder: (context, index) => _ModelSheetTile(
-           model: filteredModels[index],
-           workspaceModelSelectionId: workspaceModelSelectionId,
-           onChanged: onChanged,
+         itemBuilder: (context, index) => _ModelSheetItem(
+           config: (
+             models: models,
+             recentModels: recentModels,
+             workspaceModelSelectionId: workspaceModelSelectionId,
+             onChanged: onChanged,
+           ),
+           index: index,
          ),
          separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
-         itemCount: filteredModels.length,
+         itemCount:
+             models.length +
+             recentModels.length +
+             (recentModels.isEmpty ? 0 : _sectionTitleCount),
        );
+}
+
+class const _ModelSheetItem({
+  required final _ModelSheetItemConfig config,
+  required final int index,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final recentCount = config.recentModels.length;
+    if (recentCount > 0 && index == _ModelSheetOptions._recentTitleIndex) {
+      return const _RecentModelsSectionTitle();
+    }
+    if (recentCount > 0 &&
+        index == recentCount + _ModelSheetOptions._recentModelIndexOffset) {
+      return const _AllModelsSectionTitle();
+    }
+
+    return _ModelSheetTile(
+      model: _modelForIndex(config, index),
+      workspaceModelSelectionId: config.workspaceModelSelectionId,
+      onChanged: config.onChanged,
+    );
+  }
+
+  WorkspaceModelSelectionWithConnectionEntity _modelForIndex(
+    _ModelSheetItemConfig config,
+    int index,
+  ) {
+    final recentModels = config.recentModels;
+    if (recentModels.isEmpty) return config.models[index];
+    if (index <= recentModels.length) {
+      return recentModels[index - _ModelSheetOptions._recentModelIndexOffset];
+    }
+
+    return config.models[index -
+        recentModels.length -
+        _ModelSheetOptions._allModelsIndexOffset];
+  }
 }
 
 class const _ModelSheetTile({
@@ -323,6 +514,7 @@ class const _CompactModelDropdown({
   groupedModels,
   required final List<WorkspaceModelSelectionWithConnectionEntity>
   filteredModels,
+  required final List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
   required final TextEditingController controller,
@@ -336,6 +528,7 @@ class const _CompactModelDropdown({
   }) : this(
          groupedModels: groupedModels,
          filteredModels: search.models,
+         recentModels: search.recentModels,
          workspaceModelSelectionId: config.selectedId,
          onChanged: config.onChanged,
          controller: search.controller,
@@ -350,6 +543,7 @@ class const _CompactModelDropdown({
 
     return _ModelDropdown(
       filteredModels: filteredModels,
+      recentModels: recentModels,
       workspaceModelSelectionId: workspaceModelSelectionId,
       onChanged: onChanged,
       controller: controller,
@@ -378,6 +572,7 @@ class const _EmptyModelDropdown() extends StatelessWidget {
 class _ModelDropdown extends SizedBox {
   new({
     required List<WorkspaceModelSelectionWithConnectionEntity> filteredModels,
+    required List<WorkspaceModelSelectionWithConnectionEntity> recentModels,
     required String? workspaceModelSelectionId,
     required ValueChanged<String?> onChanged,
     required TextEditingController controller,
@@ -386,6 +581,19 @@ class _ModelDropdown extends SizedBox {
          width: CompactWorkspaceModelSelector._selectorWidth,
          child: AuraDropdownSelector<String>(
            options: [
+             if (recentModels.isNotEmpty)
+               const AuraDropdownOption<String>(
+                 value: _recentModelsSectionValue,
+                 child: _RecentModelsSectionTitle(),
+                 isEnabled: false,
+               ),
+             for (final model in recentModels) _ModelDropdownOption(model),
+             if (recentModels.isNotEmpty)
+               const AuraDropdownOption<String>(
+                 value: _allModelsSectionValue,
+                 child: _AllModelsSectionTitle(),
+                 isEnabled: false,
+               ),
              for (final model in filteredModels) _ModelDropdownOption(model),
            ],
            value: workspaceModelSelectionId,
@@ -402,6 +610,24 @@ class _ModelDropdown extends SizedBox {
            ),
          ),
        );
+}
+
+const _recentModelsSectionValue = '__recent_models__';
+const _allModelsSectionValue = '__all_models__';
+
+class const _RecentModelsSectionTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.models_screens_recent_models),
+    style: .heading6,
+  );
+}
+
+class const _AllModelsSectionTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraDivider.withLabel(
+    label: TextLocale(LocaleKeys.models_screens_all_models),
+  );
 }
 
 BorderRadius _inputRadius(BuildContext context) =>

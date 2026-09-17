@@ -70,8 +70,12 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _ikucadiy;
 import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
     as _ii4wbihw;
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_recent_model_selections_request.dart'
+    as _itstzlin;
 import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _infwdxn7;
+import 'package:auravibes_server/src/generated/features/model_connections/models/record_recent_model_selection_request.dart'
+    as _i87c7wxl;
 import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
@@ -1200,6 +1204,48 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['modelConnection']
                           as _irncar1s.ModelConnectionEndpoint)
                       .listSelections(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listRecentSelections': _is.MethodConnector(
+          name: 'listRecentSelections',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_itstzlin.ListRecentModelSelectionsRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
+                      .listRecentSelections(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'recordRecentSelection': _is.MethodConnector(
+          name: 'recordRecentSelection',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i87c7wxl.RecordRecentModelSelectionRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
+                      .recordRecentSelection(
                         session,
                         params['request'],
                       ),

@@ -12466,6 +12466,301 @@ class AppSkillWorkspaceSettingsCompanion
   }
 }
 
+class $RecentModelSelectionsTable extends RecentModelSelections
+    with TableInfo<$RecentModelSelectionsTable, RecentModelSelectionTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecentModelSelectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _selectionIdMeta = const VerificationMeta(
+    'selectionId',
+  );
+  @override
+  late final GeneratedColumn<String> selectionId = GeneratedColumn<String>(
+    'selection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _selectedAtMicrosMeta = const VerificationMeta(
+    'selectedAtMicros',
+  );
+  @override
+  late final GeneratedColumn<int> selectedAtMicros = GeneratedColumn<int>(
+    'selected_at_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    selectionId,
+    selectedAtMicros,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recent_model_selections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecentModelSelectionTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('selection_id')) {
+      context.handle(
+        _selectionIdMeta,
+        selectionId.isAcceptableOrUnknown(
+          data['selection_id']!,
+          _selectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_selectionIdMeta);
+    }
+    if (data.containsKey('selected_at_micros')) {
+      context.handle(
+        _selectedAtMicrosMeta,
+        selectedAtMicros.isAcceptableOrUnknown(
+          data['selected_at_micros']!,
+          _selectedAtMicrosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_selectedAtMicrosMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, selectionId};
+  @override
+  RecentModelSelectionTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecentModelSelectionTable(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      selectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selection_id'],
+      )!,
+      selectedAtMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}selected_at_micros'],
+      )!,
+    );
+  }
+
+  @override
+  $RecentModelSelectionsTable createAlias(String alias) {
+    return $RecentModelSelectionsTable(attachedDatabase, alias);
+  }
+}
+
+class RecentModelSelectionTable extends DataClass
+    implements Insertable<RecentModelSelectionTable> {
+  final String workspaceId;
+  final String selectionId;
+  final int selectedAtMicros;
+  const RecentModelSelectionTable({
+    required this.workspaceId,
+    required this.selectionId,
+    required this.selectedAtMicros,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['selection_id'] = Variable<String>(selectionId);
+    map['selected_at_micros'] = Variable<int>(selectedAtMicros);
+    return map;
+  }
+
+  RecentModelSelectionsCompanion toCompanion(bool nullToAbsent) {
+    return RecentModelSelectionsCompanion(
+      workspaceId: Value(workspaceId),
+      selectionId: Value(selectionId),
+      selectedAtMicros: Value(selectedAtMicros),
+    );
+  }
+
+  factory RecentModelSelectionTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecentModelSelectionTable(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      selectionId: serializer.fromJson<String>(json['selectionId']),
+      selectedAtMicros: serializer.fromJson<int>(json['selectedAtMicros']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'selectionId': serializer.toJson<String>(selectionId),
+      'selectedAtMicros': serializer.toJson<int>(selectedAtMicros),
+    };
+  }
+
+  RecentModelSelectionTable copyWith({
+    String? workspaceId,
+    String? selectionId,
+    int? selectedAtMicros,
+  }) => RecentModelSelectionTable(
+    workspaceId: workspaceId ?? this.workspaceId,
+    selectionId: selectionId ?? this.selectionId,
+    selectedAtMicros: selectedAtMicros ?? this.selectedAtMicros,
+  );
+  RecentModelSelectionTable copyWithCompanion(
+    RecentModelSelectionsCompanion data,
+  ) {
+    return RecentModelSelectionTable(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      selectionId: data.selectionId.present
+          ? data.selectionId.value
+          : this.selectionId,
+      selectedAtMicros: data.selectedAtMicros.present
+          ? data.selectedAtMicros.value
+          : this.selectedAtMicros,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentModelSelectionTable(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('selectionId: $selectionId, ')
+          ..write('selectedAtMicros: $selectedAtMicros')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, selectionId, selectedAtMicros);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecentModelSelectionTable &&
+          other.workspaceId == this.workspaceId &&
+          other.selectionId == this.selectionId &&
+          other.selectedAtMicros == this.selectedAtMicros);
+}
+
+class RecentModelSelectionsCompanion
+    extends UpdateCompanion<RecentModelSelectionTable> {
+  final Value<String> workspaceId;
+  final Value<String> selectionId;
+  final Value<int> selectedAtMicros;
+  final Value<int> rowid;
+  const RecentModelSelectionsCompanion({
+    this.workspaceId = const Value.absent(),
+    this.selectionId = const Value.absent(),
+    this.selectedAtMicros = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecentModelSelectionsCompanion.insert({
+    required String workspaceId,
+    required String selectionId,
+    required int selectedAtMicros,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       selectionId = Value(selectionId),
+       selectedAtMicros = Value(selectedAtMicros);
+  static Insertable<RecentModelSelectionTable> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? selectionId,
+    Expression<int>? selectedAtMicros,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (selectionId != null) 'selection_id': selectionId,
+      if (selectedAtMicros != null) 'selected_at_micros': selectedAtMicros,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecentModelSelectionsCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? selectionId,
+    Value<int>? selectedAtMicros,
+    Value<int>? rowid,
+  }) {
+    return RecentModelSelectionsCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      selectionId: selectionId ?? this.selectionId,
+      selectedAtMicros: selectedAtMicros ?? this.selectedAtMicros,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (selectionId.present) {
+      map['selection_id'] = Variable<String>(selectionId.value);
+    }
+    if (selectedAtMicros.present) {
+      map['selected_at_micros'] = Variable<int>(selectedAtMicros.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecentModelSelectionsCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('selectionId: $selectionId, ')
+          ..write('selectedAtMicros: $selectedAtMicros, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12500,6 +12795,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ConversationSkillsTable(this);
   late final $AppSkillWorkspaceSettingsTable appSkillWorkspaceSettings =
       $AppSkillWorkspaceSettingsTable(this);
+  late final $RecentModelSelectionsTable recentModelSelections =
+      $RecentModelSelectionsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -12588,6 +12885,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ConversationSkillsDao(this as AppDatabase);
   late final AppSkillWorkspaceSettingsDao appSkillWorkspaceSettingsDao =
       AppSkillWorkspaceSettingsDao(this as AppDatabase);
+  late final RecentModelSelectionsDao recentModelSelectionsDao =
+      RecentModelSelectionsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12614,6 +12913,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     skillTemplateTools,
     conversationSkills,
     appSkillWorkspaceSettings,
+    recentModelSelections,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     agentsWorkspaceNameId,
@@ -25048,6 +25348,205 @@ typedef $$AppSkillWorkspaceSettingsTableProcessedTableManager =
       AppSkillWorkspaceSettingsTable,
       PrefetchHooks Function({bool workspaceId})
     >;
+typedef $$RecentModelSelectionsTableCreateCompanionBuilder =
+    RecentModelSelectionsCompanion Function({
+      required String workspaceId,
+      required String selectionId,
+      required int selectedAtMicros,
+      Value<int> rowid,
+    });
+typedef $$RecentModelSelectionsTableUpdateCompanionBuilder =
+    RecentModelSelectionsCompanion Function({
+      Value<String> workspaceId,
+      Value<String> selectionId,
+      Value<int> selectedAtMicros,
+      Value<int> rowid,
+    });
+
+class $$RecentModelSelectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RecentModelSelectionsTable> {
+  $$RecentModelSelectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectionId => $composableBuilder(
+    column: $table.selectionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get selectedAtMicros => $composableBuilder(
+    column: $table.selectedAtMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecentModelSelectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecentModelSelectionsTable> {
+  $$RecentModelSelectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selectionId => $composableBuilder(
+    column: $table.selectionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get selectedAtMicros => $composableBuilder(
+    column: $table.selectedAtMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecentModelSelectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecentModelSelectionsTable> {
+  $$RecentModelSelectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+    column: $table.workspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get selectionId => $composableBuilder(
+    column: $table.selectionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get selectedAtMicros => $composableBuilder(
+    column: $table.selectedAtMicros,
+    builder: (column) => column,
+  );
+}
+
+class $$RecentModelSelectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecentModelSelectionsTable,
+          RecentModelSelectionTable,
+          $$RecentModelSelectionsTableFilterComposer,
+          $$RecentModelSelectionsTableOrderingComposer,
+          $$RecentModelSelectionsTableAnnotationComposer,
+          $$RecentModelSelectionsTableCreateCompanionBuilder,
+          $$RecentModelSelectionsTableUpdateCompanionBuilder,
+          (
+            RecentModelSelectionTable,
+            BaseReferences<
+              _$AppDatabase,
+              $RecentModelSelectionsTable,
+              RecentModelSelectionTable
+            >,
+          ),
+          RecentModelSelectionTable,
+          PrefetchHooks Function()
+        > {
+  $$RecentModelSelectionsTableTableManager(
+    _$AppDatabase db,
+    $RecentModelSelectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecentModelSelectionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$RecentModelSelectionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$RecentModelSelectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> selectionId = const Value.absent(),
+                Value<int> selectedAtMicros = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecentModelSelectionsCompanion(
+                workspaceId: workspaceId,
+                selectionId: selectionId,
+                selectedAtMicros: selectedAtMicros,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String selectionId,
+                required int selectedAtMicros,
+                Value<int> rowid = const Value.absent(),
+              }) => RecentModelSelectionsCompanion.insert(
+                workspaceId: workspaceId,
+                selectionId: selectionId,
+                selectedAtMicros: selectedAtMicros,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $RecentModelSelectionsTable,
+                    RecentModelSelectionTable
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RecentModelSelectionsTable,
+                    RecentModelSelectionTable
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecentModelSelectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecentModelSelectionsTable,
+      RecentModelSelectionTable,
+      $$RecentModelSelectionsTableFilterComposer,
+      $$RecentModelSelectionsTableOrderingComposer,
+      $$RecentModelSelectionsTableAnnotationComposer,
+      $$RecentModelSelectionsTableCreateCompanionBuilder,
+      $$RecentModelSelectionsTableUpdateCompanionBuilder,
+      (
+        RecentModelSelectionTable,
+        BaseReferences<
+          _$AppDatabase,
+          $RecentModelSelectionsTable,
+          RecentModelSelectionTable
+        >,
+      ),
+      RecentModelSelectionTable,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -25108,4 +25607,6 @@ class $AppDatabaseManager {
         _db,
         _db.appSkillWorkspaceSettings,
       );
+  $$RecentModelSelectionsTableTableManager get recentModelSelections =>
+      $$RecentModelSelectionsTableTableManager(_db, _db.recentModelSelections);
 }
