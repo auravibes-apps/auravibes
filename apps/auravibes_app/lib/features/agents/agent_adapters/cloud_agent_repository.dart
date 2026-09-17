@@ -195,6 +195,21 @@ List<AgentSkillRef> _decodeAgentSkills(
   String agentId,
 ) => _agentSkillAssociations(resources, agentId).map(_decodeSkill).toList();
 
+List<AgentEntity> _mapAgents(
+  Iterable<WorkspaceResource> resources,
+  String workspaceId,
+  Map<String, int> revisions,
+) {
+  _recordAgentRevisions(revisions, resources);
+
+  return [
+    for (final resource in resources)
+      if (resource.resourceKind == WorkspaceResourceKind.agent &&
+          resource.deletedAt == null)
+        _decodeAgent(resource, resources, workspaceId),
+  ];
+}
+
 mixin _CloudAgentRepositoryRead {
   String get workspaceId;
   ReadCloudAgents get read;
@@ -207,26 +222,12 @@ mixin _CloudAgentRepositoryRead {
       watch([
         WorkspaceResourceKind.agent,
         WorkspaceResourceKind.agentAssociation,
-      ]).map((resources) => _mapAgents(resources, workspaceId));
+      ]).map((resources) => _mapAgents(resources, workspaceId, _revisions));
 
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
     final resources = await read();
 
-    return _mapAgents(resources, workspaceId);
-  }
-
-  List<AgentEntity> _mapAgents(
-    Iterable<WorkspaceResource> resources,
-    String workspaceId,
-  ) {
-    _recordAgentRevisions(_revisions, resources);
-
-    return [
-      for (final resource in resources)
-        if (resource.resourceKind == WorkspaceResourceKind.agent &&
-            resource.deletedAt == null)
-          _decodeAgent(resource, resources, workspaceId),
-    ];
+    return _mapAgents(resources, workspaceId, _revisions);
   }
 
   Future<AgentListPage> listAgents(AgentListQuery query) => list(query);
