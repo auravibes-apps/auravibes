@@ -112,16 +112,18 @@ class const _ToolsGroupList({
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.fromSpacing(.sm),
       ),
-      itemBuilder: (context, index) {
-        final result = groups[index];
-
-        return ToolsGroupCard(
-          groupWithTools: result.group,
-          workspaceId: workspaceId,
-          visibleTools: result.tools,
-        );
-      },
+      itemBuilder: _itemBuilder,
       itemCount: groups.length,
+    );
+  }
+
+  Widget _itemBuilder(BuildContext _, int index) {
+    final result = groups[index];
+
+    return ToolsGroupCard(
+      groupWithTools: result.group,
+      workspaceId: workspaceId,
+      visibleTools: result.tools,
     );
   }
 }
@@ -134,24 +136,31 @@ typedef _WorkspaceToolsGroupResult = ({
 List<_WorkspaceToolsGroupResult> _filterWorkspaceGroups(
   List<ToolsGroupWithTools> groups,
   String query,
-) {
-  final results = <_WorkspaceToolsGroupResult>[];
-  for (final group in groups) {
-    if (matchesToolsSearch(query, _workspaceGroupSearchValues(group))) {
-      results.add((group: group, tools: group.tools));
-      continue;
-    }
+) => groups
+    .map((group) => _matchingWorkspaceGroup(group, query))
+    .whereType<_WorkspaceToolsGroupResult>()
+    .toList();
 
-    final matchingTools = group.tools
-        .where((tool) => matchesToolsSearch(query, _toolSearchValues(tool)))
-        .toList();
-    if (matchingTools.isNotEmpty) {
-      results.add((group: group, tools: matchingTools));
-    }
+_WorkspaceToolsGroupResult? _matchingWorkspaceGroup(
+  ToolsGroupWithTools group,
+  String query,
+) {
+  if (ToolsSearch.matches(query, _workspaceGroupSearchValues(group))) {
+    return (group: group, tools: group.tools);
   }
 
-  return results;
+  final matchingTools = _matchingWorkspaceTools(group.tools, query);
+  if (matchingTools.isEmpty) return null;
+
+  return (group: group, tools: matchingTools);
 }
+
+List<WorkspaceToolEntity> _matchingWorkspaceTools(
+  List<WorkspaceToolEntity> tools,
+  String query,
+) => tools
+    .where((tool) => ToolsSearch.matches(query, _toolSearchValues(tool)))
+    .toList();
 
 Iterable<String?> _workspaceGroupSearchValues(ToolsGroupWithTools group) => [
   group.group?.name,

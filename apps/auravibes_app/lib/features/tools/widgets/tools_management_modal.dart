@@ -293,29 +293,34 @@ typedef _ConversationToolsGroupResult = ({
 List<_ConversationToolsGroupResult> _filterConversationGroups(
   List<ConversationToolsGroupWithTools> groups,
   String query,
-) {
-  final results = <_ConversationToolsGroupResult>[];
-  for (final group in groups) {
-    if (matchesToolsSearch(query, _conversationGroupSearchValues(group))) {
-      results.add((group: group, tools: group.tools));
-      continue;
-    }
+) => groups
+    .map((group) => _matchingConversationGroup(group, query))
+    .whereType<_ConversationToolsGroupResult>()
+    .toList();
 
-    final matchingTools = group.tools
-        .where(
-          (toolState) => matchesToolsSearch(
-            query,
-            _conversationToolSearchValues(toolState),
-          ),
-        )
-        .toList();
-    if (matchingTools.isNotEmpty) {
-      results.add((group: group, tools: matchingTools));
-    }
+_ConversationToolsGroupResult? _matchingConversationGroup(
+  ConversationToolsGroupWithTools group,
+  String query,
+) {
+  if (ToolsSearch.matches(query, _conversationGroupSearchValues(group))) {
+    return (group: group, tools: group.tools);
   }
 
-  return results;
+  final matchingTools = _matchingConversationTools(group.tools, query);
+  if (matchingTools.isEmpty) return null;
+
+  return (group: group, tools: matchingTools);
 }
+
+List<ConversationToolState> _matchingConversationTools(
+  List<ConversationToolState> tools,
+  String query,
+) => tools
+    .where(
+      (toolState) =>
+          ToolsSearch.matches(query, _conversationToolSearchValues(toolState)),
+    )
+    .toList();
 
 Iterable<String?> _conversationGroupSearchValues(
   ConversationToolsGroupWithTools group,
