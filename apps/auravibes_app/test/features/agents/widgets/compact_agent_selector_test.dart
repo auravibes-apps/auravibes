@@ -54,6 +54,25 @@ void main() {
     expect(selected, isNull);
   });
 
+  testWidgets('sheet mode omits hidden and disabled agents', (tester) async {
+    await _pumpSubject(
+      tester,
+      agents: [
+        _makeAgent('chat', 'Chat Agent'),
+        _makeAgent('sub-agent', 'Sub-agent Only', visibility: .subAgentList),
+        _makeAgent('disabled', 'Disabled Agent', isEnabled: false),
+      ],
+      onChanged: (_) {
+        final _ = Object();
+      },
+      sheetMode: true,
+    );
+
+    expect(find.text('Chat Agent'), findsOneWidget);
+    expect(find.text('Sub-agent Only'), findsNothing);
+    expect(find.text('Disabled Agent'), findsNothing);
+  });
+
   testWidgets('compact mode shows selected agent chip', (tester) async {
     await _pumpSubject(
       tester,
@@ -104,7 +123,12 @@ Future<void> _pumpSubject(
   expect(pumpCount, greaterThanOrEqualTo(0));
 }
 
-AgentEntity _makeAgent(String id, String name) {
+AgentEntity _makeAgent(
+  String id,
+  String name, {
+  AgentVisibility visibility = .both,
+  bool isEnabled = true,
+}) {
   return AgentEntity(
     id: id,
     workspaceId: 'ws-1',
@@ -113,5 +137,7 @@ AgentEntity _makeAgent(String id, String name) {
     skills: const [],
     createdAt: .new(2026),
     updatedAt: .new(2026),
+    isEnabled: isEnabled,
+    visibility: visibility,
   );
 }

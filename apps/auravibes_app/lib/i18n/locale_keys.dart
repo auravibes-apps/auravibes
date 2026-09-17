@@ -268,7 +268,10 @@ abstract class LocaleKeys {
   static const agents_enabled_label = 'agents.enabled_label';
   static const agents_disabled_label = 'agents.disabled_label';
   static const agents_enabled_description = 'agents.enabled_description';
+  static const agents_visibility_update_error =
+      'agents.visibility_update_error';
   static const agents_visibility_label = 'agents.visibility_label';
+  static const agents_visibility_done = 'agents.visibility_done';
   static const agents_visibility_chat_selector =
       'agents.visibility_chat_selector';
   static const agents_visibility_sub_agent_list =
