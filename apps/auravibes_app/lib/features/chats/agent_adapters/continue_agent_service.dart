@@ -636,7 +636,11 @@ extension _ContinueAgentCompletionPersistence
       messageId,
       .new(
         metadata: metadata,
-        status: _requiresA2uiAction(metadata) ? .unfinished : .sent,
+        status:
+            _requiresA2uiAction(metadata) ||
+                (metadata?.hasPendingToolCalls ?? false)
+            ? .unfinished
+            : .sent,
       ),
     );
   }

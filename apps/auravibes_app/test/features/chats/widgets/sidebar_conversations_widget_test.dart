@@ -580,6 +580,12 @@ class _RecordingConversationRepository implements ConversationRepository {
   }
 
   @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
+
+  @override
   Future<ConversationEntity?> getConversationById(String id) {
     throw UnimplementedError();
   }

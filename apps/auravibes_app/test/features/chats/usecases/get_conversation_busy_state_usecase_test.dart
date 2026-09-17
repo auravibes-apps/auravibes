@@ -109,6 +109,33 @@ void main() {
         expect(result.isBusy, isFalse);
       },
     );
+
+    test('ignores pending tools inherited by a fork', () async {
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer(
+            (_) async => [
+              _message(
+                id: 'assistant-1',
+                isUser: false,
+                isForkReference: true,
+                metadata: const MessageMetadataEntity(
+                  toolCalls: [
+                    MessageToolCallEntity(
+                      id: 'tool-1',
+                      name: 'weather.lookup',
+                      argumentsRaw: '{}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.hasPendingTools, isFalse);
+      expect(result.isBusy, isFalse);
+    });
   });
 }
 
@@ -131,6 +158,7 @@ GetConversationBusyStateUsecase _createUsecase({
 MessageEntity _message({
   required String id,
   required bool isUser,
+  bool isForkReference = false,
   MessageMetadataEntity? metadata,
 }) {
   return MessageEntity(
@@ -143,5 +171,6 @@ MessageEntity _message({
     createdAt: .new(2025),
     updatedAt: .new(2025),
     metadata: metadata,
+    isForkReference: isForkReference,
   );
 }

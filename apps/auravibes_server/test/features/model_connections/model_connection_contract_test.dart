@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:auravibes_server/src/features/model_connections/usecases/model_connection_usecases.dart';
@@ -37,6 +38,19 @@ void main() {
     );
     expect(validated.address.address, '8.8.4.4');
     pinnedHttpClient(validated.address).close(force: true);
+  });
+
+  test('provider URL validation bounds stalled DNS lookups', () async {
+    final lookup = Completer<List<InternetAddress>>();
+
+    await expectLater(
+      validatePublicHttpsUri(
+        'https://provider.example/v1',
+        lookup: (_) => lookup.future,
+        dnsTimeout: const Duration(milliseconds: 1),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
   });
 
   test('dedicated model endpoint contracts contain metadata but no secret', () {

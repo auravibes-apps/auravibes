@@ -11,6 +11,9 @@ abstract final class ConversationStatuses {
   static bool isTerminal(String status) =>
       status == cancelled || status == completed || status == failed;
 
+  static bool isMessageTerminal(String status) =>
+      status == 'sent' || status == 'error' || isTerminal(status);
+
   static bool isActive(String status) => !isTerminal(status);
 }
 
@@ -24,6 +27,7 @@ abstract final class ConversationJobKinds {
 abstract final class ConversationJobStatuses {
   static const queued = 'queued';
   static const leased = 'leased';
+  static const waitingForSubAgents = 'waitingForSubAgents';
   static const completed = 'completed';
   static const cancelled = 'cancelled';
   static const failed = 'failed';

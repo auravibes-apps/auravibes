@@ -16,6 +16,14 @@ import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_convers
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _StoppedToolsRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+  String conversationId,
+});
+
 class const AppAgentConversationDataProvider({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -74,6 +82,18 @@ class const AppAgentConversationDataProvider({
   }
 
   @override
+  Future<void> markMessagesErrored(List<String> messageIds) async {
+    final _ = await Future.wait(
+      messageIds.map(
+        (messageId) => messageRepository.patchMessage(
+          messageId,
+          const MessagePatch(status: .error),
+        ),
+      ),
+    );
+  }
+
+  @override
   Future<void> stopLatestPendingTools(String conversationId) async {
     final messages = await messageRepository.getMessagesByConversation(
       conversationId,
@@ -85,12 +105,13 @@ class const AppAgentConversationDataProvider({
     final updatedToolCalls = _stoppedPendingToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    await _persistStoppedTools(
-      messageRepository,
-      latestAssistantMessage.id,
-      metadata,
-      updatedToolCalls,
-    );
+    await _persistStoppedTools((
+      messageRepository: messageRepository,
+      messageId: latestAssistantMessage.id,
+      metadata: metadata,
+      toolCalls: updatedToolCalls,
+      conversationId: conversationId,
+    ));
   }
 }
 
@@ -98,15 +119,14 @@ extension on AppAgentConversationDataProvider {
   MessageMetadataEntity _messageMetadata(MessageEntity message) =>
       message.metadata ?? const MessageMetadataEntity();
 
-  Future<void> _persistStoppedTools(
-    MessageRepository messageRepository,
-    String messageId,
-    MessageMetadataEntity metadata,
-    List<MessageToolCallEntity> toolCalls,
-  ) async {
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
+  Future<void> _persistStoppedTools(_StoppedToolsRequest request) async {
+    final _ = await request.messageRepository.patchMessage(
+      request.messageId,
+      .new(
+        metadata: request.metadata.copyWith(toolCalls: request.toolCalls),
+        status: .sent,
+      ),
+      conversationId: request.conversationId,
     );
   }
 
@@ -145,7 +165,7 @@ extension on AppAgentConversationDataProvider {
 
 MessageEntity? _latestAssistantMessage(List<MessageEntity> messages) {
   for (final message in messages.reversed) {
-    if (!message.isUser) return message;
+    if (!message.isUser && !message.isForkReference) return message;
   }
 
   return null;

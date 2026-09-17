@@ -7,6 +7,13 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
+typedef _ChildFinishRequest = ({
+  String conversationId,
+  agent.SubAgentCompletionStatus status,
+  Object? error,
+  StackTrace? stackTrace,
+});
+
 class AgentToolResumeService({
   required MessageRepository messageRepository,
   required ConversationRepository conversationRepository,
@@ -38,13 +45,18 @@ class const AppAgentToolResumeProvider({
     required String conversationId,
     required String workspaceId,
   }) async {
-    final decision = await toolExecutionService.call(
+    final decision = await _runAllowedTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
     if (decision != agent.AgentIterationDecision.done) return decision;
 
-    _finishChildIfNeeded(activeSubAgents, conversationId);
+    _finishChildIfNeeded(activeSubAgents, (
+      conversationId: conversationId,
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
 
     return decision;
   }
@@ -54,13 +66,18 @@ class const AppAgentToolResumeProvider({
     required String conversationId,
     required agent.AgentIterationContext context,
   }) async {
-    final decision = await agentLoop(
+    final decision = await _continueAgent(
       conversationId: conversationId,
       context: context,
     );
     if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
 
-    _finishChildIfNeeded(activeSubAgents, conversationId);
+    _finishChildIfNeeded(activeSubAgents, (
+      conversationId: conversationId,
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
   }
 
   @override
@@ -80,18 +97,61 @@ class const AppAgentToolResumeProvider({
       workspaceId: conversation.workspaceId,
     );
   }
+
+  Future<agent.AgentIterationDecision> _runAllowedTools({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    try {
+      return await toolExecutionService.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+      );
+    } on Object catch (error, stackTrace) {
+      _finishChildIfNeeded(activeSubAgents, (
+        conversationId: conversationId,
+        status: .error,
+        error: error,
+        stackTrace: stackTrace,
+      ));
+      rethrow;
+    }
+  }
+
+  Future<agent.AgentIterationDecision> _continueAgent({
+    required String conversationId,
+    required agent.AgentIterationContext context,
+  }) async {
+    try {
+      return await agentLoop(conversationId: conversationId, context: context);
+    } on Object catch (error, stackTrace) {
+      _finishChildIfNeeded(activeSubAgents, (
+        conversationId: conversationId,
+        status: .error,
+        error: error,
+        stackTrace: stackTrace,
+      ));
+      rethrow;
+    }
+  }
 }
 
 void _finishChildIfNeeded(
   ActiveSubAgentRuntime? runtime,
-  String conversationId,
+  _ChildFinishRequest request,
 ) {
   if (runtime == null) return;
 
-  final parentId = runtime.parentOf(conversationId);
+  final parentId = runtime.parentOf(request.conversationId);
   if (parentId == null) return;
 
-  runtime.finish(parentId: parentId, childId: conversationId);
+  runtime.finish((
+    parentId: parentId,
+    childId: request.conversationId,
+    status: request.status,
+    error: request.error,
+    stackTrace: request.stackTrace,
+  ));
 }
 
 final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(

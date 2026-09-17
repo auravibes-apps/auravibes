@@ -19,6 +19,7 @@ void main() {
     );
 
     const messageId = 'message-1';
+    const conversationId = 'conversation-1';
 
     final message = MessageEntity(
       id: messageId,
@@ -59,19 +60,29 @@ void main() {
     test('marks a single tool call skipped', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
-      when(() => messageRepository.patchMessage(messageId, any()))
-          .thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(
+          messageId,
+          any(),
+          conversationId: conversationId,
+        ),
+      ).thenAnswer((_) async => message);
 
       final result = await provider.skipToolCall(
         messageId: messageId,
         toolCallId: 'tool-1',
+        conversationId: conversationId,
       );
 
       expect(result, isTrue);
       final patch =
-          verify(() => messageRepository.patchMessage(messageId, captureAny()))
-                  .captured
-                  .single
+          verify(
+                () => messageRepository.patchMessage(
+                  messageId,
+                  captureAny(),
+                  conversationId: conversationId,
+                ),
+              ).captured.single
               as MessagePatch;
       expect(
         patch.metadata?.toolCalls.first.resultStatus,
@@ -90,6 +101,7 @@ void main() {
       final result = await provider.skipToolCall(
         messageId: messageId,
         toolCallId: 'tool-1',
+        conversationId: conversationId,
       );
 
       expect(result, isFalse);
@@ -99,15 +111,27 @@ void main() {
     test('marks only pending tool calls stopped', () async {
       when(() => messageRepository.getMessageById(messageId))
           .thenAnswer((_) async => message);
-      when(() => messageRepository.patchMessage(messageId, any()))
-          .thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(
+          messageId,
+          any(),
+          conversationId: conversationId,
+        ),
+      ).thenAnswer((_) async => message);
 
-      await provider.stopPendingToolCalls(messageId: messageId);
+      await provider.stopPendingToolCalls(
+        messageId: messageId,
+        conversationId: conversationId,
+      );
 
       final patch =
-          verify(() => messageRepository.patchMessage(messageId, captureAny()))
-                  .captured
-                  .single
+          verify(
+                () => messageRepository.patchMessage(
+                  messageId,
+                  captureAny(),
+                  conversationId: conversationId,
+                ),
+              ).captured.single
               as MessagePatch;
       expect(
         patch.metadata?.toolCalls.first.resultStatus,
@@ -136,7 +160,10 @@ void main() {
       );
 
       await expectLater(
-        provider.stopPendingToolCalls(messageId: messageId),
+        provider.stopPendingToolCalls(
+          messageId: messageId,
+          conversationId: conversationId,
+        ),
         completes,
       );
 
@@ -148,7 +175,10 @@ void main() {
           .thenAnswer((_) => Future<void>.value());
 
       await expectLater(
-        provider.resumeConversationIfReady(messageId: messageId),
+        provider.resumeConversationIfReady(
+          messageId: messageId,
+          conversationId: conversationId,
+        ),
         completes,
       );
 

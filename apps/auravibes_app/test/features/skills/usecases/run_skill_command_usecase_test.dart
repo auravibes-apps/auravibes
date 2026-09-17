@@ -127,6 +127,61 @@ void main() {
       expect(nativeRunner.calls, 0);
     },
   );
+
+  test('dispatches agents native tools through the injected runner', () async {
+    final nativeRunner = _NativeRunner();
+    final nativeTarget = <AgentResolvedToolName>[];
+    final nativeSpecs = _SkillSpecs([
+      ToolSpec(
+        name: 'skill__app__agents__list_agents',
+        description: 'List agents.',
+        inputJsonSchema: const {
+          'type': 'object',
+          'additionalProperties': false,
+        },
+      ),
+    ]);
+    final manifests = _AgentsManifests();
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
+      loadConversationSkillUsecase: (_) => _UnusedLoad(),
+      unloadConversationSkillUsecase: (_) => _UnusedUnload(),
+      buildLoadedSkillManifestsUsecase: manifests,
+      buildSkillTemplateToolSpecsUsecase: const _SkillSpecs([]),
+      buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: nativeRunner,
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      runSkillNativeTool: (request) async {
+        nativeTarget.add(request.target);
+
+        return {'count': 1};
+      },
+    );
+
+    final result = await usecase.call((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      commandName: callSkillToolName,
+      arguments: const <String, Object?>{
+        'skill': agentsSkillSlug,
+        'tool': listAgentsToolName,
+        'args': {},
+        'revision': 'agents-r1',
+      },
+    ));
+
+    expect(result, {
+      'result': {'count': 1},
+    });
+    expect(nativeTarget.single.fullName, 'skill__app__agents__list_agents');
+    expect(nativeRunner.calls, 0);
+    expect(manifests.calls, 1);
+  });
 }
 
 class _Manifests implements BuildLoadedSkillManifestsUsecase {
@@ -157,6 +212,38 @@ class _Manifests implements BuildLoadedSkillManifestsUsecase {
       ],
     ),
   ];
+}
+
+class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
+  int calls = 0;
+
+  @override
+  Future<List<SkillManifest>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async {
+    calls++;
+
+    return [
+      SkillManifest(
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        instructions: agentsSkillContent,
+        revision: 'agents-r1',
+        tools: [
+          SkillManifestTool(
+            name: listAgentsToolName,
+            description: 'List agents.',
+            inputJsonSchema: const {
+              'type': 'object',
+              'additionalProperties': false,
+            },
+          ),
+        ],
+      ),
+    ];
+  }
 }
 
 class _LoadedSkills implements ListAvailableSkillsUsecase {

@@ -464,8 +464,13 @@ void main() {
           permissionTableId: 'workspace-tool-1',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => mcpMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => mcpMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
@@ -604,8 +609,13 @@ void main() {
           permissionTableId: 'calculator',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => toolMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => toolMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
@@ -725,8 +735,13 @@ void main() {
           permissionTableId: 'calculator',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => multiToolMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => multiToolMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
@@ -838,8 +853,13 @@ void main() {
             permissionTableId: 'calculator',
           ),
         );
-        when(() => messageRepository.patchMessage('message-1', any()))
-            .thenAnswer((_) async => mixedMessage);
+        when(
+          () => messageRepository.patchMessage(
+            'message-1',
+            any(),
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) async => mixedMessage);
         when(
           () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
@@ -983,8 +1003,13 @@ void main() {
           permissionTableId: 'disabled_tool',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => mixedPermMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => mixedPermMessage);
 
       final result = await usecase.call(
         conversationId: 'conversation-1',
@@ -1265,8 +1290,13 @@ void main() {
       );
       when(() => messageRepository.getMessageById('message-1'))
           .thenAnswer((_) async => nativeMessage);
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => nativeMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => nativeMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
@@ -1344,8 +1374,13 @@ void main() {
       );
       when(() => messageRepository.getMessageById('message-1'))
           .thenAnswer((_) async => nativeMessage);
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => nativeMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => nativeMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.done);
 
@@ -1423,8 +1458,13 @@ void main() {
       );
       when(() => messageRepository.getMessageById('message-1'))
           .thenAnswer((_) async => nativeMessage);
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => nativeMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => nativeMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.done);
 
@@ -1435,7 +1475,11 @@ void main() {
 
       final update =
           verify(
-                () => messageRepository.patchMessage('message-1', captureAny()),
+                () => messageRepository.patchMessage(
+                  'message-1',
+                  captureAny(),
+                  conversationId: 'conversation-1',
+                ),
               ).captured.single
               as MessagePatch;
       final tc = update.metadata?.toolCalls.firstWhere(
@@ -1506,8 +1550,13 @@ void main() {
         );
         when(() => messageRepository.getMessageById('message-1'))
             .thenAnswer((_) async => nativeMessage);
-        when(() => messageRepository.patchMessage('message-1', any()))
-            .thenAnswer((_) async => nativeMessage);
+        when(
+          () => messageRepository.patchMessage(
+            'message-1',
+            any(),
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) async => nativeMessage);
         when(
           () => getAgentIterationDecisionUsecase.call(messageId: 'message-1'),
         ).thenAnswer((_) async => AgentIterationDecision.done);
@@ -1519,8 +1568,11 @@ void main() {
 
         final update =
             verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
+                  () => messageRepository.patchMessage(
+                    'message-1',
+                    captureAny(),
+                    conversationId: 'conversation-1',
+                  ),
                 ).captured.single
                 as MessagePatch;
         final tc = update.metadata?.toolCalls.firstWhere(
@@ -1650,8 +1702,13 @@ void main() {
           permissionTableId: 'calculator',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => failedMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => failedMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
@@ -1722,8 +1779,13 @@ void main() {
         );
         when(() => messageRepository.getMessageById('message-1'))
             .thenAnswer((_) async => cancelMessage);
-        when(() => messageRepository.patchMessage('message-1', any()))
-            .thenAnswer((_) async => cancelMessage);
+        when(
+          () => messageRepository.patchMessage(
+            'message-1',
+            any(),
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) async => cancelMessage);
 
         agentCancellationRuntime.requestStop('conversation-1');
 
@@ -1796,8 +1858,13 @@ void main() {
           permissionTableId: 'calculator',
         ),
       );
-      when(() => messageRepository.patchMessage('message-1', any()))
-          .thenAnswer((_) async => disabledMessage);
+      when(
+        () => messageRepository.patchMessage(
+          'message-1',
+          any(),
+          conversationId: 'conversation-1',
+        ),
+      ).thenAnswer((_) async => disabledMessage);
       when(() => getAgentIterationDecisionUsecase.call(messageId: 'message-1'))
           .thenAnswer((_) async => AgentIterationDecision.done);
 
@@ -1809,7 +1876,11 @@ void main() {
       expect(result, AgentIterationDecision.done);
       final update =
           verify(
-                () => messageRepository.patchMessage('message-1', captureAny()),
+                () => messageRepository.patchMessage(
+                  'message-1',
+                  captureAny(),
+                  conversationId: 'conversation-1',
+                ),
               ).captured.single
               as MessagePatch;
       final tc = update.metadata?.toolCalls.first;
@@ -1875,7 +1946,11 @@ List<MessageToolCallEntity>? _capturedToolCalls(
   MockMessageRepository messageRepository,
 ) {
   final patches = verify(
-    () => messageRepository.patchMessage('message-1', captureAny()),
+    () => messageRepository.patchMessage(
+      'message-1',
+      captureAny(),
+      conversationId: 'conversation-1',
+    ),
   ).captured.cast<MessagePatch>();
   final byId = <String, MessageToolCallEntity>{};
   for (final patch in patches) {

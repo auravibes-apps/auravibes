@@ -56,6 +56,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _ik9usty6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i4hkj4ob;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/fork_conversation_request.dart'
+    as _ijnbg967;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_conversation_request.dart'
     as _i3j9438n;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_turn_request.dart'
@@ -507,6 +509,14 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_i54dvwkh.ConversationSummary>(
     'conversation',
     'create',
+    {'request': request},
+  );
+
+  _ida.Future<_i54dvwkh.ConversationSummary> fork(
+    _ijnbg967.ForkConversationRequest request,
+  ) => caller.callServerEndpoint<_i54dvwkh.ConversationSummary>(
+    'conversation',
+    'fork',
     {'request': request},
   );
 

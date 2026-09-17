@@ -129,7 +129,9 @@ class AppDatabase extends _$AppDatabase {
       _conversationListSchemaVersion + 1;
   static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
-  static const int _currentSchemaVersion = _recentModelSelectionsSchemaVersion;
+  static const int _forkSchemaVersion =
+      _recentModelSelectionsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _forkSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -173,7 +175,8 @@ extension on AppDatabase {
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
     await _upgradeConversationListSchema(from);
-    await _upgradeRecentModelSelectionsSchema(m, from);
+    await _upgradeRecentModelSelectionsSchema(m);
+    await _upgradeForkSchema(m, from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -238,8 +241,8 @@ extension on AppDatabase {
     );
   }
 
-  Future<void> _upgradeRecentModelSelectionsSchema(Migrator m, int from) async {
-    if (from >= AppDatabase._recentModelSelectionsSchemaVersion) return;
+  Future<void> _upgradeRecentModelSelectionsSchema(Migrator m) async {
+    if (await _tableExists('recent_model_selections')) return;
     await m.createTable(recentModelSelections);
   }
 
@@ -248,6 +251,27 @@ extension on AppDatabase {
     await customStatement(
       'UPDATE agents SET description = substr(trim(content), 1, 512) '
       'WHERE length(description) = 0',
+    );
+  }
+
+  Future<void> _upgradeForkSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._forkSchemaVersion) return;
+    if (!await _tableExists('conversations')) return;
+    if (!await _columnExists('conversations', 'fork_source_conversation_id')) {
+      await m.addColumn(conversations, conversations.forkSourceConversationId);
+    }
+    if (!await _columnExists('conversations', 'fork_source_title')) {
+      await m.addColumn(conversations, conversations.forkSourceTitle);
+    }
+    if (!await _columnExists('conversations', 'fork_through_message_id')) {
+      await m.addColumn(conversations, conversations.forkThroughMessageId);
+    }
+    if (!await _columnExists('conversations', 'fork_materialized_at')) {
+      await m.addColumn(conversations, conversations.forkMaterializedAt);
+    }
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
+      'ON conversations (fork_source_conversation_id)',
     );
   }
 }

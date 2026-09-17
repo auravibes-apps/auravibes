@@ -7,5 +7,9 @@ fields:
   sequence: int
   modelId: String?
   agentId: String?
+  forkSourceConversationId: String?
+  forkSourceTitle: String?
+  forkThroughMessageId: String?
+  forkMaterializedAt: DateTime?
   activeExecutionId: String?
   updatedAt: DateTime

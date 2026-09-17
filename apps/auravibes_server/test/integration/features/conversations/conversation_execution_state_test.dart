@@ -27,6 +27,7 @@ void main() {
     (sessionBuilder, endpoints) {
       Future<_ExecutionFixture> prepareExecution({
         bool continueConversation = true,
+        bool seedCompletedTurn = false,
       }) async {
         final userId = const Uuid().v4().toString();
         final session = sessionBuilder.copyWith(
@@ -71,6 +72,57 @@ void main() {
             updatedAt: now,
           ),
         );
+        if (seedCompletedTurn) {
+          final historyTime = now.subtract(const Duration(seconds: 2));
+          final historyUser = await ConversationMessage.db.insertRow(
+            database,
+            ConversationMessage(
+              workspaceId: workspace.id!,
+              conversationId: conversation.id!,
+              stableId: 'history-user',
+              role: 'user',
+              kind: 'text',
+              status: 'sent',
+              content: 'History',
+              revision: 1,
+              createdAt: historyTime,
+              updatedAt: historyTime,
+            ),
+          );
+          final historyAssistant = await ConversationMessage.db.insertRow(
+            database,
+            ConversationMessage(
+              workspaceId: workspace.id!,
+              conversationId: conversation.id!,
+              stableId: 'history-assistant',
+              role: 'assistant',
+              kind: 'text',
+              status: 'sent',
+              content: 'Completed history',
+              revision: 1,
+              createdAt: historyTime.add(const Duration(milliseconds: 1)),
+              updatedAt: historyTime.add(const Duration(milliseconds: 1)),
+            ),
+          );
+          await ConversationTurn.db.insertRow(
+            database,
+            ConversationTurn(
+              workspaceId: workspace.id!,
+              conversationId: conversation.id!,
+              requestId: 'history-turn',
+              requestHash: '{}',
+              initiatorUserId: userId,
+              userMessageId: historyUser.id,
+              assistantMessageId: historyAssistant.id,
+              status: ConversationStatuses.completed,
+              revision: 1,
+              acceptedSequence: 1,
+              terminalAt: historyTime.add(const Duration(milliseconds: 1)),
+              createdAt: historyTime,
+              updatedAt: historyTime.add(const Duration(milliseconds: 1)),
+            ),
+          );
+        }
         if (continueConversation) {
           await endpoints.conversation.queueConversationMessage(
             session,
@@ -222,6 +274,49 @@ void main() {
       );
 
       test(
+        'Fork during approval stops before the active user turn',
+        () async {
+          final fixture = await prepareExecution(seedCompletedTurn: true);
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+
+          final fork = await decisionUseCases().fork(
+            fixture.database,
+            userId: fixture.userId,
+            request: ForkConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'fork-approval',
+              forkConversationId: 'fork-1',
+              sourceConversationId: fixture.conversationId,
+            ),
+          );
+
+          expect(fork.forkThroughMessageId, 'history-assistant');
+          final snapshot = await decisionUseCases().getConversationSnapshot(
+            fixture.database,
+            userId: fixture.userId,
+            request: GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fork.id,
+            ),
+          );
+          expect(
+            snapshot.messages.map((message) => message.id),
+            ['history-assistant', 'history-user'],
+          );
+          expect(snapshot.toolCalls, isEmpty);
+          expect(snapshot.pendingMessages, isEmpty);
+          expect(snapshot.activeExecution, isNull);
+          expect(snapshot.conversation.executionState, 'idle');
+          expect(staged.toolCallIds, ['tool-call-1']);
+          final sourceCall = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(staged.toolCallIds.single),
+          ))!;
+          expect(sourceCall.status, 'pending');
+        },
+      );
+
+      test(
         'Skip queues a continuation that replays the denied tool result',
         () async {
           final fixture = await prepareExecution();
@@ -233,6 +328,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'skip-1',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.single,
               argumentsDigest: 'digest-1',
@@ -400,6 +496,7 @@ void main() {
           request: SubmitToolDecisionRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'skip-one-of-two',
+            conversationId: fixture.conversationId,
             turnId: staged.turn.requestId,
             toolCallId: staged.toolCallIds.first,
             argumentsDigest: 'digest-1',
@@ -455,6 +552,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'approve-first',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
               argumentsDigest: 'digest-1',
@@ -469,6 +567,7 @@ void main() {
               request: SubmitToolDecisionRequest(
                 workspaceId: fixture.workspaceId,
                 requestId: 'approve-second-stale',
+                conversationId: fixture.conversationId,
                 turnId: staged.turn.requestId,
                 toolCallId: staged.toolCallIds.last,
                 argumentsDigest: 'digest-2',
@@ -491,6 +590,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'approve-second-retry',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.last,
               argumentsDigest: 'digest-2',
@@ -518,6 +618,7 @@ void main() {
           final request = SubmitToolDecisionRequest(
             workspaceId: fixture.workspaceId,
             requestId: 'idempotent-decision',
+            conversationId: fixture.conversationId,
             turnId: staged.turn.requestId,
             toolCallId: staged.toolCallIds.single,
             argumentsDigest: 'digest-1',
@@ -573,6 +674,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'stop-all',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
               argumentsDigest: 'digest-1',
@@ -632,6 +734,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'skip-a',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
               argumentsDigest: 'digest-1',
@@ -645,6 +748,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'stop-all-a',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.first,
               argumentsDigest: 'digest-1',
@@ -1070,6 +1174,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'approve-1',
+              conversationId: fixture.conversationId,
               turnId: turn.requestId,
               toolCallId: 'tool-call-1',
               argumentsDigest: 'digest-1',
@@ -1253,6 +1358,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'approve-racing-pause',
+              conversationId: fixture.conversationId,
               turnId: staged.turn.requestId,
               toolCallId: staged.toolCallIds.single,
               argumentsDigest: 'digest-1',
@@ -1318,6 +1424,7 @@ void main() {
             request: SubmitToolDecisionRequest(
               workspaceId: fixture.workspaceId,
               requestId: 'approve-phase-one',
+              conversationId: fixture.conversationId,
               turnId: firstTurn.requestId,
               toolCallId: 'phase-one-call',
               argumentsDigest: 'phase-one-digest',

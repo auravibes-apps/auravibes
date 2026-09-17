@@ -34,6 +34,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/del
     as _il5llor3;
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _igstxg4l;
+import 'package:auravibes_server/src/generated/features/conversations/models/fork_conversation_request.dart'
+    as _i1ewhboi;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_conversation_request.dart'
     as _itkmf3xs;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
@@ -569,6 +571,26 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .create(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'fork': _is.MethodConnector(
+          name: 'fork',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i1ewhboi.ForkConversationRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .fork(
                         session,
                         params['request'],
                       ),

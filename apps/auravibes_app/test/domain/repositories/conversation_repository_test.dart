@@ -87,6 +87,12 @@ class _StubConversationRepository implements ConversationRepository {
   Future<bool> deleteConversation(String id) async {
     return deleteResult;
   }
+
+  @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
 }
 
 void main() {

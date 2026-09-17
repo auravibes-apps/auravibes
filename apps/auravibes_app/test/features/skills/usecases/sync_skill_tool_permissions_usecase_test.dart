@@ -101,12 +101,16 @@ void main() {
       final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
       );
-      expect(tools, hasLength(1));
-      expect(tools.single.toolId, spec.name);
-      expect(tools.single.description, spec.description);
-      expect(tools.single.inputSchema, jsonEncode(spec.inputJsonSchema));
-      expect(tools.single.isEnabled, isTrue);
-      expect(tools.single.permissions, PermissionAccess.ask);
+      expect(tools, hasLength(2));
+      final created = tools.singleWhere((tool) => tool.toolId == spec.name);
+      expect(created.description, spec.description);
+      expect(created.inputSchema, jsonEncode(spec.inputJsonSchema));
+      expect(created.isEnabled, isTrue);
+      expect(created.permissions, PermissionAccess.ask);
+      expect(
+        tools.any((tool) => tool.toolId == 'skill__app__agents__run_sub_agent'),
+        isTrue,
+      );
     });
 
     test('updates metadata and preserves permission settings', () async {
@@ -127,7 +131,7 @@ void main() {
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
           (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
-              .single;
+              .singleWhere((tool) => tool.toolId == initialSpec.name);
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
@@ -152,7 +156,7 @@ void main() {
 
       final updated =
           (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
-              .single;
+              .singleWhere((tool) => tool.toolId == updatedSpec.name);
       expect(updated.description, updatedSpec.description);
       expect(updated.inputSchema, jsonEncode(updatedSpec.inputJsonSchema));
       expect(updated.isEnabled, isFalse);
@@ -177,7 +181,7 @@ void main() {
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
           (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
-              .single;
+              .singleWhere((tool) => tool.toolId == spec.name);
 
       await fixture.usecase.call(
         conversationId: 'conversation-id',
@@ -186,7 +190,7 @@ void main() {
 
       final unchanged =
           (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
-              .single;
+              .singleWhere((tool) => tool.toolId == spec.name);
       expect(unchanged.updatedAt, created.updatedAt);
     });
 
@@ -215,8 +219,15 @@ void main() {
       final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
       );
-      expect(tools, hasLength(1));
-      expect(tools.single.toolId, staleSpec.name);
+      expect(tools, hasLength(2));
+      expect(
+        tools.singleWhere((tool) => tool.toolId == staleSpec.name).toolId,
+        staleSpec.name,
+      );
+      expect(
+        tools.any((tool) => tool.toolId == 'skill__app__agents__run_sub_agent'),
+        isTrue,
+      );
     });
 
     test('permissionTableIdFor returns matching row id', () async {
@@ -239,7 +250,7 @@ void main() {
       );
       final tool = (await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
-      )).single;
+      )).singleWhere((candidate) => candidate.toolId == spec.name);
       expect(permissionId, tool.id);
     });
 

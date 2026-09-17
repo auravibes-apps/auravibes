@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
@@ -16,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -43,8 +45,12 @@ ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
   );
 }
 
-class const _FakeLoadConversationToolSpecsUsecase()
-    implements LoadConversationToolSpecsUsecase {
+class const _FakeLoadConversationToolSpecsUsecase({
+  final bool includeSkillCommand = false,
+}) implements LoadConversationToolSpecsUsecase {
+  @override
+  ConversationRepository? get conversationRepository => null;
+
   @override
   Future<List<ToolSpec>> call({
     required String conversationId,
@@ -60,6 +66,15 @@ class const _FakeLoadConversationToolSpecsUsecase()
     required String workspaceId,
   }) async {
     return buildToolCatalog([
+      if (includeSkillCommand)
+        ToolCatalogCandidate.reserved(
+          spec: .new(
+            name: callSkillToolName,
+            description: 'Call a loaded skill tool.',
+            inputJsonSchema: const {'type': 'object'},
+          ),
+          target: ResolvedTool.skillCommand(commandName: callSkillToolName),
+        ),
       ToolCatalogCandidate.external(
         spec: .new(
           name: 'built_in_calc_calculator',
@@ -118,6 +133,8 @@ MessageEntity _assistantMessage({
 class _FakeResolveToolApprovalDecisionUsecase(
   final Map<String, ToolApprovalDecision> _decisions,
 ) extends ResolveToolApprovalDecisionUsecase {
+  ResolvedTool? lastResolvedTool;
+
   this
     : super(
         conversationToolsRepository: _NoOpConversationToolsRepository(),
@@ -132,12 +149,44 @@ class _FakeResolveToolApprovalDecisionUsecase(
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
+    lastResolvedTool = resolvedTool;
+
     return _decisions[toolCallId] ??
         ToolApprovalDecision(
           toolCallId: toolCallId,
           permissionResult: .notConfigured,
         );
   }
+}
+
+class _FakeResolveEffectiveToolApprovalUsecase(
+  final AgentResolvedToolName target,
+) implements ResolveEffectiveToolApprovalUsecase {
+  ResolvedTool? lastRequestedTool;
+  String? lastArgumentsRaw;
+
+  @override
+  Future<ResolvedTool?> call({
+    required String conversationId,
+    required String workspaceId,
+    required ResolvedTool requestedTool,
+    required String argumentsRaw,
+  }) async {
+    lastRequestedTool = requestedTool;
+    lastArgumentsRaw = argumentsRaw;
+
+    return ResolvedTool.skillCommand(
+      commandName: callSkillToolName,
+      target: target,
+    );
+  }
+
+  @override
+  Future<AgentResolvedToolName?> resolveTarget({
+    required String conversationId,
+    required String workspaceId,
+    required SkillCommandTarget command,
+  }) async => target;
 }
 
 class _ThrowingToolApprovalUsecase()
@@ -541,6 +590,94 @@ void main() {
       expect(
         result.map((p) => p.toolCall.id),
         containsAll(['tc-needs-confirm-1', 'tc-needs-confirm-2']),
+      );
+    });
+
+    test('shows valid nested list_agents approval by exact target', () async {
+      const argumentsRaw =
+          '{"skill":"agents","tool":"list_agents","args":{},'
+          '"revision":"rev-1"}';
+      final effectiveUsecase = _FakeResolveEffectiveToolApprovalUsecase(
+        .skillNative(
+          tableId: listAgentsToolName,
+          skillSlug: agentsSkillSlug,
+          toolIdentifier: listAgentsToolName,
+        ),
+      );
+      final decisionUsecase = _FakeResolveToolApprovalDecisionUsecase({
+        'tc-list-agents': const ToolApprovalDecision(
+          toolCallId: 'tc-list-agents',
+          permissionResult: .needsConfirmation,
+          permissionTableId: 'list-agents-permission',
+        ),
+      });
+      final messages = [
+        _assistantMessage(
+          id: 'msg-list-agents',
+          conversationId: 'conv-1',
+          toolCalls: [
+            const MessageToolCallEntity(
+              id: 'tc-list-agents',
+              name: callSkillToolName,
+              argumentsRaw: argumentsRaw,
+            ),
+          ],
+        ),
+      ];
+
+      container = _pendingToolContainer(
+        overrides: [
+          loadConversationToolSpecsUsecaseProvider('ws-1').overrideWithValue(
+            const _FakeLoadConversationToolSpecsUsecase(
+              includeSkillCommand: true,
+            ),
+          ),
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(AsyncValue<List<MessageEntity>>.data(messages)),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: 'conv-1',
+          ).overrideWithValue(
+            AsyncValue<ConversationEntity?>.data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Test',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
+              ),
+            ),
+          ),
+          resolveEffectiveToolApprovalUsecaseProvider.overrideWithValue(
+            effectiveUsecase,
+          ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(decisionUsecase),
+        ],
+      );
+
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+
+      expect(result, hasLength(1));
+      expect(result.single.toolCall.name, callSkillToolName);
+      expect(
+        effectiveUsecase.lastRequestedTool?.toolIdentifier,
+        callSkillToolName,
+      );
+      expect(effectiveUsecase.lastArgumentsRaw, argumentsRaw);
+      expect(
+        decisionUsecase.lastResolvedTool?.fullName,
+        'skill__app__agents__list_agents',
       );
     });
 

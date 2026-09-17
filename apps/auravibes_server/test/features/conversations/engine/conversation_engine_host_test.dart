@@ -29,14 +29,25 @@ void main() {
       'user-1',
       executionId: 'execution-1',
       parentTurnId: 42,
+      parentToolCallId: 'parent-tool-call-1',
     );
 
     expect(conversation_repo.conversationParentTurnIdForJob(payload), 42);
     expect(
+      conversation_repo.conversationParentToolCallIdForJob(payload),
+      'parent-tool-call-1',
+    );
+    expect(
       conversation_repo.conversationParentTurnIdForExecutionSettings(
-        '{"parentTurnId":42}',
+        '{"parentTurnId":42,"parentToolCallId":"parent-tool-call-1"}',
       ),
       42,
+    );
+    expect(
+      conversation_repo.conversationParentToolCallIdForExecutionSettings(
+        '{"parentTurnId":42,"parentToolCallId":"parent-tool-call-1"}',
+      ),
+      'parent-tool-call-1',
     );
   });
 

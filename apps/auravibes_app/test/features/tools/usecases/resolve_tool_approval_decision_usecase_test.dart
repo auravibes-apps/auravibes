@@ -297,20 +297,50 @@ void main() {
         );
       });
 
-      test('does not auto-grant run_sub_agent', () async {
-        final decision = await fixture.usecase(
-          conversationId: 'conv-1',
-          workspaceId: 'ws-1',
-          toolCallId: 'tc-1',
-          resolvedTool: ResolvedTool.skillNative(
-            tableId: agent.runSubAgentToolName,
-            skillSlug: agent.agentsSkillSlug,
-            toolIdentifier: agent.runSubAgentToolName,
-          ),
-        );
+      test(
+        'requires approval for run_sub_agent without loading agents',
+        () async {
+          final syncSkillToolPermissionsUsecase =
+              MockSyncSkillToolPermissionsUsecase();
+          when(
+            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolName: 'skill__app__agents__run_sub_agent',
+            ),
+          ).thenAnswer((_) async => 'run-sub-agent-permission');
+          when(
+            () => fixture.conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'run-sub-agent-permission',
+            ),
+          ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
+          final usecase = ResolveToolApprovalDecisionUsecase(
+            conversationToolsRepository: fixture.conversationToolsRepository,
+            toolsGroupsRepository: fixture.toolsGroupsRepository,
+            workspaceToolsRepository: fixture.workspaceToolsRepository,
+            syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+          );
 
-        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
-      });
+          final decision = await usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'tc-1',
+            resolvedTool: ResolvedTool.skillNative(
+              tableId: agent.runSubAgentToolName,
+              skillSlug: agent.agentsSkillSlug,
+              toolIdentifier: agent.runSubAgentToolName,
+            ),
+          );
+
+          expect(
+            decision.permissionResult,
+            ToolPermissionResult.needsConfirmation,
+          );
+          expect(decision.permissionTableId, 'run-sub-agent-permission');
+        },
+      );
     });
 
     group('MCP tools', () {

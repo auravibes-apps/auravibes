@@ -276,6 +276,41 @@ void main() {
     expect(tools.map((tool) => tool.spec.name), isNot(contains('hidden')));
   });
 
+  test('materializes root sub-agent execution without loading agents', () {
+    final rootTools = materializeCloudSkillTools(
+      selectedSkillIds: const {},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+    );
+
+    expect(
+      rootTools.map((tool) => tool.spec.name),
+      ['skill__app__agents__run_sub_agent'],
+    );
+
+    final disabledTools = materializeCloudSkillTools(
+      selectedSkillIds: const {},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [
+        {'skillId': agentsSkillSlug, 'isEnabled': false},
+      ],
+      isChildConversation: false,
+    );
+    expect(disabledTools, isEmpty);
+
+    final childTools = materializeCloudSkillTools(
+      selectedSkillIds: const {agentsSkillSlug},
+      userSkills: const [],
+      templateTools: const [],
+      appSkillSettings: const [],
+      isChildConversation: true,
+    );
+    expect(childTools, isEmpty);
+  });
+
   test('lists only ready user skills in cloud load controls', () {
     final controls = materializeCloudSkillControlTools(
       selectedSkillIds: const {},
@@ -338,7 +373,10 @@ void main() {
         ),
       ),
     );
-    expect(tools, isEmpty);
+    expect(
+      tools.map((tool) => tool.spec.name),
+      ['skill__app__agents__run_sub_agent'],
+    );
   });
 
   test('native credential schemas offer opaque credential IDs', () {
@@ -439,7 +477,10 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(tools, isEmpty);
+    expect(
+      tools.map((tool) => tool.spec.name),
+      ['skill__app__agents__run_sub_agent'],
+    );
   });
 
   test(
@@ -460,10 +501,16 @@ void main() {
 
       expect(
         tools.map((tool) => tool.spec.name),
-        ['skill__app__jina__reader_fetch'],
+        [
+          'skill__app__agents__run_sub_agent',
+          'skill__app__jina__reader_fetch',
+        ],
+      );
+      final jinaTool = tools.singleWhere(
+        (tool) => tool.spec.name == 'skill__app__jina__reader_fetch',
       );
       expect(
-        tools.single.spec.inputJsonSchema['properties'],
+        jinaTool.spec.inputJsonSchema['properties'],
         isNot(contains('credentialId')),
       );
     },
@@ -549,7 +596,11 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(tools, hasLength(skill.nativeTools.length));
+    expect(tools, hasLength(skill.nativeTools.length + 1));
+    expect(
+      tools.map((tool) => tool.spec.name),
+      contains('skill__app__agents__run_sub_agent'),
+    );
     for (final nativeTool in skill.nativeTools) {
       expect(
         serverToolIsExecutable(
@@ -816,4 +867,31 @@ void main() {
       expect(first?.tools.single.inputJsonSchema['properties'], isNotNull);
     },
   );
+
+  test('keeps the direct sub-agent tool out of the agents manifest', () async {
+    final direct = ServerResolvedTool(
+      descriptor: AgentResolvedToolName.skillNative(
+        tableId: runSubAgentToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: runSubAgentToolName,
+      ),
+      spec: runSubAgentToolSpec,
+    );
+    final list = ServerResolvedTool(
+      descriptor: AgentResolvedToolName.skillNative(
+        tableId: listAgentsToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: listAgentsToolName,
+      ),
+      spec: listAgentsToolSpec,
+    );
+
+    final manifest = await buildCloudSkillManifest(
+      slug: agentsSkillSlug,
+      userSkills: const [],
+      tools: [direct, list],
+    );
+
+    expect(manifest?.tools.map((tool) => tool.name), [listAgentsToolName]);
+  });
 }

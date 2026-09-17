@@ -128,6 +128,11 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       apiKey: request.apiKey,
       codec: _openRouterCodec(),
       models: [ChatCompletionsModelDefinition(name: request.modelId)],
+      headers: const {
+        'HTTP-Referer': 'https://auravibes.me',
+        'X-OpenRouter-Title': 'AuraVibes',
+        'X-OpenRouter-Categories': 'personal-agent',
+      },
     );
   }
 

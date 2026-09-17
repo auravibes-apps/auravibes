@@ -125,8 +125,8 @@ extension on AppOpenAICodexPlugin {
       return ProviderTransportResponse(
         statusCode: response.statusCode,
         body: httpClient == null
-            ? _closeAfter(response.stream, client)
-            : response.stream,
+            ? _closeAfter(response.stream.timeout(requestTimeout), client)
+            : response.stream.timeout(requestTimeout),
       );
     } on Object {
       if (httpClient == null) client.close();

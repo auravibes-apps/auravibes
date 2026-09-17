@@ -8,9 +8,12 @@ import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
-import 'package:drift/drift.dart';
+import 'package:collection/collection.dart';
 
 const _messageContentCannotBeEmpty = 'Message content cannot be empty';
+
+bool _isTerminalStatus(MessageTableStatus status) =>
+    status == MessageTableStatus.sent || status == MessageTableStatus.error;
 
 typedef _MessageWatchError = ({
   Exception error,
@@ -25,6 +28,69 @@ typedef _MessageWatchErrorInput = ({
   EventSink<List<MessageEntity>> sink,
   String conversationId,
 });
+
+typedef _MessageMapping = ({
+  MessagesTable table,
+  List<MessageAttachmentEntity> attachments,
+  String? conversationIdOverride,
+  bool isForkReference,
+});
+
+class _MessageWatchController {
+  new(this._repository, this._conversationId);
+
+  final MessageRepository _repository;
+  final String _conversationId;
+  final _controller = StreamController<List<MessageEntity>>();
+  final _subscriptions = <StreamSubscription<dynamic>>[];
+  var _pending = false;
+  var _running = false;
+
+  Stream<List<MessageEntity>> get stream => _controller.stream;
+
+  void listen() {
+    final database = _repository._database;
+    _subscriptions
+      ..add(database.select(database.messages).watch().listen(_onChange))
+      ..add(database.select(database.conversations).watch().listen(_onChange))
+      ..add(
+        database.select(database.messageAttachments).watch().listen(_onChange),
+      );
+    unawaited(emit());
+  }
+
+  Future<void> emit() async {
+    if (_running) {
+      _pending = true;
+
+      return;
+    }
+    _running = true;
+    do {
+      _pending = false;
+      await _emitOnce();
+    } while (_pending);
+    _running = false;
+  }
+
+  Future<void> cancel() async {
+    for (final subscription in _subscriptions) {
+      await subscription.cancel();
+    }
+    _subscriptions.clear();
+  }
+
+  void _onChange(Object _) => unawaited(emit());
+
+  Future<void> _emitOnce() async {
+    try {
+      final messages = await _repository._getEffectiveMessages(_conversationId);
+      if (!_controller.isClosed) _controller.add(messages);
+    } on Object catch (error, stackTrace) {
+      if (!_controller.isClosed) _controller.addError(error, stackTrace);
+    }
+  }
+}
 
 /// Implementation of [MessageRepository] interface.
 ///
@@ -42,13 +108,7 @@ class MessageRepository(
     _MessageRepositoryStateApi {
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
-  ) async {
-    final messageTables = await _database.messageDao.getMessagesByConversation(
-      conversationId,
-    );
-
-    return await _mapToMessagesWithAttachments(messageTables);
-  }
+  ) => _getEffectiveMessages(conversationId);
 }
 
 mixin _MessageRepositoryReadApi {
@@ -105,15 +165,19 @@ mixin _MessageRepositoryQueryApi {
 }
 
 mixin _MessageRepositoryMutationApi {
-  Future<MessageEntity> patchMessage(String id, MessagePatch message) =>
+  Future<MessageEntity> patchMessage(
+    String id,
+    MessagePatch message, {
+    String? conversationId,
+  }) =>
       MessageRepositoryMutationOperations(this as MessageRepository)
-          .patchMessage(id, message);
+          .patchMessage(id, message, conversationId: conversationId);
 }
 
 mixin _MessageRepositoryStateApi {
-  Future<bool> deleteMessage(String id) =>
+  Future<bool> deleteMessage(String id, {String? conversationId}) =>
       MessageRepositoryStateOperations(this as MessageRepository)
-          .deleteMessage(id);
+          .deleteMessage(id, conversationId: conversationId);
 
   Future<bool> messageExists(String id) =>
       MessageRepositoryStateOperations(this as MessageRepository)
@@ -143,41 +207,137 @@ extension MessageRepositoryReadOperations on MessageRepository {
   Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
     List<String> conversationIds,
   ) async {
-    final messageTables = await _database.messageDao
-        .getLatestAssistantMessagesByConversations(conversationIds);
+    final latestMessages = <MessageEntity>[];
+    for (final conversationId in conversationIds) {
+      final messages = await _getEffectiveMessages(conversationId);
+      final latest = messages.lastWhereOrNull((message) => !message.isUser);
+      if (latest != null) latestMessages.add(latest);
+    }
 
-    return messageTables.map(_mapToMessage).toList();
+    return latestMessages;
   }
 
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
-  ) =>
-      _watchMessagesQuery(conversationId)
-          .map(_mapJoinedMessageRows)
-          .transform(_messageWatchTransformer(conversationId));
+  ) => _watchEffectiveMessages(conversationId);
 }
 
 extension on MessageRepository {
-  Stream<List<TypedResult>> _watchMessagesQuery(String conversationId) {
-    final query =
-        _database.select(_database.messages).join(_messageAttachmentJoins())
-          ..where(_database.messages.conversationId.equals(conversationId))
-          ..orderBy(_messageOrderTerms());
+  Future<List<MessageEntity>> _getEffectiveMessages(
+    String conversationId,
+  ) async {
+    final rows = await _effectiveMessageRows(conversationId);
 
-    return query.watch();
+    return await _mapEffectiveRows(rows, conversationId);
   }
 
-  List<Join<HasResultSet, dynamic>> _messageAttachmentJoins() => [
-    leftOuterJoin(
-      _database.messageAttachments,
-      _database.messageAttachments.messageId.equalsExp(_database.messages.id),
-    ),
-  ];
+  Stream<List<MessageEntity>> _watchEffectiveMessages(String conversationId) {
+    final watcher = _MessageWatchController(this, conversationId);
+    watcher
+      .._controller.onListen = watcher.listen
+      .._controller.onCancel = watcher.cancel;
 
-  List<OrderingTerm> _messageOrderTerms() => [
-    OrderingTerm(expression: _database.messages.createdAt),
-    OrderingTerm(expression: _database.messageAttachments.createdAt),
-  ];
+    return watcher.stream.transform(_messageWatchTransformer(conversationId));
+  }
+
+  Future<List<({MessagesTable table, bool isForkReference})>>
+  _effectiveMessageRows(String conversationId) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    final own = await _database.messageDao.getMessagesByConversation(
+      conversationId,
+    );
+
+    return _sortEffectiveRows(await _inheritedMessageRows(conversation), own);
+  }
+
+  Future<List<({MessagesTable table, bool isForkReference})>>
+  _inheritedMessageRows(ConversationsTable? conversation) async {
+    final sourceConversation = conversation;
+    final sourceId = sourceConversation?.forkSourceConversationId;
+    if (sourceConversation == null ||
+        sourceId == null ||
+        sourceConversation.forkMaterializedAt != null) {
+      return const [];
+    }
+
+    final sourceRows = await _effectiveMessageRows(sourceId);
+
+    return _collectInheritedRows(
+      sourceRows,
+      sourceConversation.forkThroughMessageId,
+    );
+  }
+
+  List<({MessagesTable table, bool isForkReference})> _collectInheritedRows(
+    List<({MessagesTable table, bool isForkReference})> sourceRows,
+    String? boundary,
+  ) {
+    final inherited = <({MessagesTable table, bool isForkReference})>[];
+    var foundBoundary = boundary == null;
+    for (final row in sourceRows) {
+      if (!_isDurableForkRow(row.table)) continue;
+      inherited.add((table: row.table, isForkReference: true));
+      if (boundary == row.table.id) {
+        foundBoundary = true;
+        break;
+      }
+    }
+    if (!foundBoundary) _throwInvalidForkBoundary();
+
+    return inherited;
+  }
+
+  Never _throwInvalidForkBoundary() => throw const MessageValidationException(
+    'Fork boundary must be a terminal message',
+  );
+
+  List<({MessagesTable table, bool isForkReference})> _sortEffectiveRows(
+    List<({MessagesTable table, bool isForkReference})> inherited,
+    List<MessagesTable> own,
+  ) => [
+    ...inherited,
+    ...own.map((table) => (table: table, isForkReference: false)),
+  ]..sort(_compareEffectiveRows);
+
+  int _compareEffectiveRows(
+    ({MessagesTable table, bool isForkReference}) left,
+    ({MessagesTable table, bool isForkReference}) right,
+  ) {
+    final created = left.table.createdAt.compareTo(right.table.createdAt);
+
+    return created == 0 ? left.table.id.compareTo(right.table.id) : created;
+  }
+
+  bool _isDurableForkRow(MessagesTable message) {
+    if (!_isTerminalStatus(message.status)) return false;
+
+    return !(MessageMetadataEntity.fromJsonString(message.metadata)
+            ?.hasPendingToolCalls ??
+        false);
+  }
+
+  Future<List<MessageEntity>> _mapEffectiveRows(
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String conversationId,
+  ) async {
+    if (rows.isEmpty) return [];
+    final attachments = await _messageAttachmentRows(
+      rows.map((row) => row.table).toList(),
+    );
+    final attachmentsByMessage = _attachmentsByMessage(attachments);
+
+    return [
+      for (final row in rows)
+        _mapToMessage((
+          table: row.table,
+          attachments: attachmentsByMessage[row.table.id] ?? [],
+          conversationIdOverride: conversationId,
+          isForkReference: row.isForkReference,
+        )),
+    ];
+  }
 
   StreamTransformer<List<MessageEntity>, List<MessageEntity>>
   _messageWatchTransformer(String conversationId) =>
@@ -241,49 +401,39 @@ extension on MessageRepository {
 extension MessageRepositoryQueryOperations on MessageRepository {
   Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
     String conversationId,
-  ) {
-    return _database.messageDao
-        .watchLatestAssistantMessageByConversation(conversationId)
-        .map((message) => message == null ? null : _mapToMessage(message));
-  }
+  ) => watchMessagesByConversation(
+    conversationId,
+  ).map((messages) => messages.lastWhereOrNull((message) => !message.isUser));
 
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,
     int offset,
   ) async {
-    final messageTables = await _database.messageDao
-        .getMessagesByConversationPaginated(conversationId, limit, offset);
+    final messages = await _getEffectiveMessages(conversationId);
 
-    return await _mapToMessagesWithAttachments(messageTables);
+    return messages.skip(offset).take(limit).toList();
   }
 
   Future<List<MessageEntity>> getMessagesByType(
     String conversationId,
     MessageType messageType,
   ) async {
-    final messageTables = await _database.messageDao.getMessagesByType(
-      conversationId,
-      _messageTypeToTableType(messageType),
-    );
-
-    return await _mapToMessagesWithAttachments(messageTables);
+    return (await _getEffectiveMessages(conversationId))
+        .where((message) => message.messageType == messageType)
+        .toList();
   }
 
   Future<List<MessageEntity>> getUserMessages(String conversationId) async {
-    final messageTables = await _database.messageDao.getUserMessages(
-      conversationId,
-    );
-
-    return await _mapToMessagesWithAttachments(messageTables);
+    return (await _getEffectiveMessages(conversationId))
+        .where((message) => message.isUser)
+        .toList();
   }
 
   Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
-    final messageTables = await _database.messageDao.getSystemMessages(
-      conversationId,
-    );
-
-    return await _mapToMessagesWithAttachments(messageTables);
+    return (await _getEffectiveMessages(conversationId))
+        .where((message) => !message.isUser)
+        .toList();
   }
 
   Future<MessageEntity?> getMessageById(String id) async {
@@ -364,25 +514,66 @@ extension on MessageRepository {
 }
 
 extension MessageRepositoryMutationOperations on MessageRepository {
-  Future<MessageEntity> patchMessage(String id, MessagePatch message) async {
+  Future<MessageEntity> patchMessage(
+    String id,
+    MessagePatch message, {
+    String? conversationId,
+  }) async {
     _validateMessagePatch(message);
+    final existing = await _database.messageDao.getMessageById(id);
+    if (existing == null) throw MessageNotFoundException(id);
+    _validatePatchOwnership(existing, conversationId);
+    _validateTerminalPatch(existing, message);
     await _validateSentMessage(id, message);
 
-    final messageCompanion = _mapPatchToMessagesCompanion(message);
-    final updatedMessage = await _database.messageDao.patchMessage(
-      id,
-      messageCompanion,
-    );
-
-    if (updatedMessage == null) {
-      throw MessageNotFoundException(id);
-    }
+    final updatedMessage = await _patchMessageRow(id, message);
 
     return await _mapToMessageWithAttachments(updatedMessage);
   }
 }
 
 extension on MessageRepository {
+  void _validatePatchOwnership(MessagesTable existing, String? conversationId) {
+    if (conversationId != null && existing.conversationId != conversationId) {
+      throw const MessageValidationException('Fork reference is read-only');
+    }
+  }
+
+  void _validateTerminalPatch(MessagesTable existing, MessagePatch message) {
+    if (!_isTerminalStatus(existing.status) || _hasPendingToolCalls(existing)) {
+      return;
+    }
+    if (_changesFinalMessage(existing, message)) {
+      throw const MessageValidationException('Terminal message is immutable');
+    }
+  }
+
+  bool _changesFinalMessage(MessagesTable existing, MessagePatch message) {
+    final nextStatus = _messageStatusToTableStatus(message.status);
+
+    return message.content != null ||
+        message.metadata != null ||
+        (nextStatus != null && nextStatus != existing.status);
+  }
+
+  bool _hasPendingToolCalls(MessagesTable message) =>
+      MessageMetadataEntity.fromJsonString(message.metadata)
+          ?.hasPendingToolCalls ??
+      false;
+
+  Future<MessagesTable> _patchMessageRow(
+    String id,
+    MessagePatch message,
+  ) async {
+    final updated = await _database.messageDao.patchMessage(
+      id,
+      _mapPatchToMessagesCompanion(message),
+    );
+    if (updated == null) throw MessageNotFoundException(id);
+
+    return updated;
+  }
+
   Future<void> _validateSentMessage(String id, MessagePatch message) async {
     if (message.status != MessageStatus.sent || message.content != null) {
       return;
@@ -408,15 +599,17 @@ extension on MessageRepository {
 }
 
 extension MessageRepositoryStateOperations on MessageRepository {
-  Future<bool> deleteMessage(String id) async {
+  Future<bool> deleteMessage(String id, {String? conversationId}) async {
     final message = await getMessageById(id);
     if (message == null) {
       return false; // Return false instead of throwing for delete operations.
     }
+    final existing = await _database.messageDao.getMessageById(id);
+    _validateDeleteOwnership(existing, conversationId);
 
     final deleted = await _database.messageDao.deleteMessage(id);
     if (deleted) {
-      await _deletePersistedAttachmentFiles(message.attachments);
+      await _deleteMessageAttachments(id, message.attachments);
     }
 
     return deleted;
@@ -430,16 +623,13 @@ extension MessageRepositoryStateOperations on MessageRepository {
     String conversationId,
     MessageStatus status,
   ) async {
-    final messageTables = await _database.messageDao.getMessagesByStatus(
-      conversationId,
-      status.value,
-    );
-
-    return await _mapToMessagesWithAttachments(messageTables);
+    return (await _getEffectiveMessages(conversationId))
+        .where((message) => message.status == status)
+        .toList();
   }
 
-  Future<int> getMessageCountByConversation(String conversationId) {
-    return _database.messageDao.getMessageCountByConversation(conversationId);
+  Future<int> getMessageCountByConversation(String conversationId) async {
+    return (await _getEffectiveMessages(conversationId)).length;
   }
 
   Future<bool> validateMessage(MessageToCreate message) async {
@@ -453,13 +643,34 @@ extension MessageRepositoryStateOperations on MessageRepository {
   Future<MessageEntity?> getLatestCompactionSummary(
     String conversationId,
   ) async {
-    final row = await _database.messageDao.getLatestCompactionSummary(
-      conversationId,
-    );
+    final messages = await _getEffectiveMessages(conversationId);
 
-    if (row == null) return null;
+    return messages.lastWhereOrNull(_isCompactionSummary);
+  }
 
-    return await _mapToMessageWithAttachments(row);
+  void _validateDeleteOwnership(
+    MessagesTable? existing,
+    String? conversationId,
+  ) {
+    if (conversationId != null &&
+        (existing == null || existing.conversationId != conversationId)) {
+      throw const MessageValidationException('Fork reference is read-only');
+    }
+  }
+
+  bool _isCompactionSummary(MessageEntity message) =>
+      message.messageType == MessageType.system &&
+      message.status == MessageStatus.sent &&
+      message.metadata?.isCompactionSummary == true;
+
+  Future<void> _deleteMessageAttachments(
+    String messageId,
+    List<MessageAttachmentEntity> attachments,
+  ) async {
+    final _ = await (_database.delete(
+      _database.messageAttachments,
+    )..where((table) => table.messageId.equals(messageId))).go();
+    await _deletePersistedAttachmentFiles(attachments);
   }
 }
 
@@ -505,10 +716,12 @@ extension on MessageRepository {
     Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
   ) => messageTables
       .map(
-        (message) => _mapToMessage(
-          message,
+        (message) => _mapToMessage((
+          table: message,
           attachments: attachmentsByMessage[message.id] ?? [],
-        ),
+          conversationIdOverride: null,
+          isForkReference: false,
+        )),
       )
       .toList();
 
@@ -535,9 +748,17 @@ extension on MessageRepository {
   ) async {
     final _ = await Future.wait(
       attachments.map((attachment) {
-        return _deleteAttachmentFile(attachment.localPath);
+        return _deleteAttachmentFileIfUnreferenced(attachment.localPath);
       }),
     );
+  }
+
+  Future<void> _deleteAttachmentFileIfUnreferenced(String localPath) async {
+    final rows = await (_database.select(
+      _database.messageAttachments,
+    )..where((table) => table.localPath.equals(localPath))).get();
+    if (rows.isNotEmpty) return;
+    await _deleteAttachmentFile(localPath);
   }
 
   Future<void> _deleteAttachmentFile(String localPath) async {
@@ -557,74 +778,36 @@ extension on MessageRepository {
 }
 
 extension on MessageRepository {
-  /// Maps a [messageTable] database record to a [MessageEntity] domain entity.
+  /// Maps a database record to a [MessageEntity] domain entity.
   ///
-  /// [messageTable] The database record to map.
   /// Returns the corresponding [MessageEntity] entity.
-  MessageEntity _mapToMessage(
-    MessagesTable messageTable, {
-    List<MessageAttachmentEntity> attachments = const [],
-  }) {
+  MessageEntity _mapToMessage(_MessageMapping mapping) {
+    return _mapMessageDetails(_mapMessageCore(mapping), mapping);
+  }
+
+  MessageEntity _mapMessageCore(_MessageMapping mapping) {
+    final table = mapping.table;
+
     return MessageEntity(
-      id: messageTable.id,
-      conversationId: messageTable.conversationId,
-      content: messageTable.content,
-      messageType: .fromString(messageTable.messageType.value),
-      isUser: messageTable.isUser,
-      status: _messageTableStatusToEntityStatus(messageTable.status),
-      createdAt: messageTable.createdAt,
-      updatedAt: messageTable.updatedAt,
-      metadata: .fromJsonString(messageTable.metadata),
-      attachments: attachments,
+      id: table.id,
+      conversationId: mapping.conversationIdOverride ?? table.conversationId,
+      content: table.content,
+      messageType: .fromString(table.messageType.value),
+      isUser: table.isUser,
+      status: _messageTableStatusToEntityStatus(table.status),
+      createdAt: table.createdAt,
+      updatedAt: table.updatedAt,
     );
   }
 
-  List<MessageEntity> _mapJoinedMessageRows(List<TypedResult> rows) {
-    final joinedRows = _collectJoinedMessageRows(rows);
-
-    return _joinedMessages(joinedRows.messages, joinedRows.attachments);
-  }
-
-  ({
-    Map<String, MessagesTable> messages,
-    Map<String, List<MessageAttachmentEntity>> attachments,
-  })
-  _collectJoinedMessageRows(List<TypedResult> rows) {
-    final messageRows = <String, MessagesTable>{};
-    final attachmentsByMessage = <String, List<MessageAttachmentEntity>>{};
-    for (final row in rows) {
-      _collectJoinedMessageRow(row, messageRows, attachmentsByMessage);
-    }
-
-    return (messages: messageRows, attachments: attachmentsByMessage);
-  }
-
-  void _collectJoinedMessageRow(
-    TypedResult row,
-    Map<String, MessagesTable> messageRows,
-    Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
-  ) {
-    final message = row.readTable(_database.messages);
-    messageRows[message.id] = message;
-
-    final attachment = row.readTableOrNull(_database.messageAttachments);
-    if (attachment == null) return;
-
-    attachmentsByMessage
-        .putIfAbsent(message.id, () => [])
-        .add(_mapToAttachment(attachment));
-  }
-
-  List<MessageEntity> _joinedMessages(
-    Map<String, MessagesTable> messageRows,
-    Map<String, List<MessageAttachmentEntity>> attachmentsByMessage,
-  ) => [
-    for (final message in messageRows.values)
-      _mapToMessage(
-        message,
-        attachments: attachmentsByMessage[message.id] ?? [],
-      ),
-  ];
+  MessageEntity _mapMessageDetails(
+    MessageEntity message,
+    _MessageMapping mapping,
+  ) => message.copyWith(
+    metadata: .fromJsonString(mapping.table.metadata),
+    attachments: mapping.attachments,
+    isForkReference: mapping.isForkReference,
+  );
 }
 
 extension on MessageRepository {

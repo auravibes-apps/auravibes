@@ -5,6 +5,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 typedef _SubmitToolDecisionRequest = ({
   String requestId,
+  String conversationId,
   String turnId,
   String toolCallId,
   String argumentsDigest,
@@ -156,6 +157,14 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
       request.copyWith(workspaceId: _workspaceId),
     ),
   );
+
+  Future<ConversationSummary> forkConversation(
+    ForkConversationRequest request,
+  ) => CloudAppErrors.guardCall(
+    .conversation,
+    () =>
+        _client.conversation.fork(request.copyWith(workspaceId: _workspaceId)),
+  );
 }
 
 mixin _CloudChatGatewayTurnApi on _CloudChatGatewayBase {
@@ -214,6 +223,7 @@ SubmitToolDecisionRequest _submitToolDecisionRequest(
 ) => .new(
   workspaceId: workspaceId,
   requestId: request.requestId,
+  conversationId: request.conversationId,
   turnId: request.turnId,
   toolCallId: request.toolCallId,
   argumentsDigest: request.argumentsDigest,

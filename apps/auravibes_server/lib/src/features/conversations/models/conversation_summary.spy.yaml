@@ -6,6 +6,10 @@ fields:
   modelId: String?
   agentId: String?
   parentConversationId: String?
+  forkSourceConversationId: String?
+  forkSourceTitle: String?
+  forkThroughMessageId: String?
+  forkMaterializedAt: DateTime?
   revision: int
   createdAt: DateTime
   updatedAt: DateTime

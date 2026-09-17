@@ -1,10 +1,19 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
+
+typedef _ToolCallsPatchRequest = ({
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+  String conversationId,
+  MessageStatus? status,
+});
 
 class const AppToolCallActionsDataProvider({
   required final MessageRepository messageRepository,
@@ -16,26 +25,29 @@ class const AppToolCallActionsDataProvider({
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return false;
-
-    final metadata = message.metadata ?? const MessageMetadataEntity();
-    final updatedToolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
-
-    await _patchToolCalls(messageId, metadata, updatedToolCalls);
+    await _skipMessageToolCall(message, toolCallId, conversationId);
     onToolCallChanged();
 
     return true;
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) {
     return agentToolResumeService.call(messageId: messageId);
   }
 
   @override
-  Future<void> stopPendingToolCalls({required String messageId}) async {
+  Future<void> stopPendingToolCalls({
+    required String messageId,
+    required String conversationId,
+  }) async {
     final message = await _loadMessage(messageId);
     if (message == null) return;
 
@@ -43,9 +55,33 @@ class const AppToolCallActionsDataProvider({
     final updatedToolCalls = _stoppedToolCalls(metadata.toolCalls);
     if (updatedToolCalls == null) return;
 
-    await _patchToolCalls(messageId, metadata, updatedToolCalls);
+    await _patchToolCalls((
+      messageId: messageId,
+      metadata: metadata,
+      toolCalls: updatedToolCalls,
+      status: .sent,
+      conversationId: conversationId,
+    ));
     onToolCallChanged();
     _finishActiveSubAgent(message);
+  }
+
+  Future<void> _skipMessageToolCall(
+    MessageEntity message,
+    String toolCallId,
+    String conversationId,
+  ) async {
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    final toolCalls = _skippedToolCalls(metadata.toolCalls, toolCallId);
+    final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
+
+    await _patchToolCalls((
+      messageId: message.id,
+      metadata: metadata,
+      toolCalls: toolCalls,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+      conversationId: conversationId,
+    ));
   }
 
   Future<MessageEntity?> _loadMessage(String messageId) {
@@ -78,14 +114,14 @@ class const AppToolCallActionsDataProvider({
     return didUpdate ? updatedToolCalls : null;
   }
 
-  Future<void> _patchToolCalls(
-    String messageId,
-    MessageMetadataEntity metadata,
-    List<MessageToolCallEntity> toolCalls,
-  ) async {
+  Future<void> _patchToolCalls(_ToolCallsPatchRequest request) async {
     final _ = await messageRepository.patchMessage(
-      messageId,
-      .new(metadata: metadata.copyWith(toolCalls: toolCalls)),
+      request.messageId,
+      .new(
+        metadata: request.metadata.copyWith(toolCalls: request.toolCalls),
+        status: request.status,
+      ),
+      conversationId: request.conversationId,
     );
   }
 
@@ -93,10 +129,12 @@ class const AppToolCallActionsDataProvider({
     final parentId = activeSubAgents?.parentOf(message.conversationId);
     if (parentId == null) return;
 
-    activeSubAgents?.finish(
+    activeSubAgents?.finish((
       parentId: parentId,
       childId: message.conversationId,
       status: agent.SubAgentCompletionStatus.stopped,
-    );
+      error: null,
+      stackTrace: null,
+    ));
   }
 }

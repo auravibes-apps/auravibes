@@ -31,6 +31,10 @@ abstract class Conversation
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.forkSourceConversationId,
+    this.forkSourceTitle,
+    this.forkThroughMessageId,
+    this.forkMaterializedAt,
   }) : projectionRevision = projectionRevision ?? 1,
        eventSequence = eventSequence ?? 0,
        executionState = executionState ?? 'idle';
@@ -52,6 +56,10 @@ abstract class Conversation
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   }) = _ConversationImpl;
 
   factory Conversation.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -79,6 +87,16 @@ abstract class Conversation
       deletedAt: jsonSerialization['deletedAt'] == null
           ? null
           : _isc.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
+      forkSourceConversationId:
+          jsonSerialization['forkSourceConversationId'] as String?,
+      forkSourceTitle: jsonSerialization['forkSourceTitle'] as String?,
+      forkThroughMessageId:
+          jsonSerialization['forkThroughMessageId'] as String?,
+      forkMaterializedAt: jsonSerialization['forkMaterializedAt'] == null
+          ? null
+          : _isc.DateTimeJsonExtension.fromJson(
+              jsonSerialization['forkMaterializedAt'],
+            ),
     );
   }
 
@@ -117,6 +135,14 @@ abstract class Conversation
 
   DateTime? deletedAt;
 
+  String? forkSourceConversationId;
+
+  String? forkSourceTitle;
+
+  String? forkThroughMessageId;
+
+  DateTime? forkMaterializedAt;
+
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
   @_isc.useResult
@@ -137,6 +163,10 @@ abstract class Conversation
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -159,6 +189,13 @@ abstract class Conversation
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
     };
   }
 
@@ -183,6 +220,13 @@ abstract class Conversation
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
     };
   }
 
@@ -212,6 +256,10 @@ class _ConversationImpl extends Conversation {
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
@@ -229,6 +277,10 @@ class _ConversationImpl extends Conversation {
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
+         forkSourceConversationId: forkSourceConversationId,
+         forkSourceTitle: forkSourceTitle,
+         forkThroughMessageId: forkThroughMessageId,
+         forkMaterializedAt: forkMaterializedAt,
        );
 
   /// Returns a shallow copy of this [Conversation]
@@ -252,6 +304,10 @@ class _ConversationImpl extends Conversation {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
+    Object? forkSourceConversationId = _Undefined,
+    Object? forkSourceTitle = _Undefined,
+    Object? forkThroughMessageId = _Undefined,
+    Object? forkMaterializedAt = _Undefined,
   }) {
     return Conversation(
       id: id is int? ? id : this.id,
@@ -274,6 +330,18 @@ class _ConversationImpl extends Conversation {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
+      forkSourceConversationId: forkSourceConversationId is String?
+          ? forkSourceConversationId
+          : this.forkSourceConversationId,
+      forkSourceTitle: forkSourceTitle is String?
+          ? forkSourceTitle
+          : this.forkSourceTitle,
+      forkThroughMessageId: forkThroughMessageId is String?
+          ? forkThroughMessageId
+          : this.forkThroughMessageId,
+      forkMaterializedAt: forkMaterializedAt is DateTime?
+          ? forkMaterializedAt
+          : this.forkMaterializedAt,
     );
   }
 }

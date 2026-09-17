@@ -197,6 +197,20 @@ void main() {
     },
   );
 
+  test('server callback bounds stalled DNS lookups', () async {
+    final lookup = Completer<List<InternetAddress>>();
+
+    await expectLater(
+      validateServerSkillRequestTarget(
+        const UrlRequest(url: 'https://example.com'),
+        requireHttps: true,
+        lookup: (_) => lookup.future,
+        dnsTimeout: const Duration(milliseconds: 1),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+  });
+
   test('server callback target accepts resolved public address', () async {
     final target = await validateServerSkillRequestTarget(
       const UrlRequest(url: 'https://example.com/search'),
@@ -219,6 +233,19 @@ void main() {
         maxBytes: 2,
       ),
       throwsFormatException,
+    );
+  });
+
+  test('server callback bounds stalled response bodies', () async {
+    final response = StreamController<List<int>>();
+    addTearDown(response.close);
+
+    await expectLater(
+      readBoundedServerSkillResponse(
+        response.stream,
+        idleTimeout: const Duration(milliseconds: 1),
+      ),
+      throwsA(isA<TimeoutException>()),
     );
   });
 

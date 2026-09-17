@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/skills/providers/workspace_skills_provide
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show agentsSkillSlug;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -53,7 +54,16 @@ void main() {
       );
 
       expect(skills, hasLength(catalog.length));
-      expect(skills.every((skill) => !skill.isEnabled), isTrue);
+      expect(
+        skills.singleWhere((skill) => skill.slug == agentsSkillSlug).isEnabled,
+        isTrue,
+      );
+      expect(
+        skills
+            .where((skill) => skill.slug != agentsSkillSlug)
+            .every((skill) => !skill.isEnabled),
+        isTrue,
+      );
     },
   );
 

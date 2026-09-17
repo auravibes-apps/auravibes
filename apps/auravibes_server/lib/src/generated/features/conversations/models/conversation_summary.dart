@@ -21,6 +21,10 @@ abstract class ConversationSummary
     this.modelId,
     this.agentId,
     this.parentConversationId,
+    this.forkSourceConversationId,
+    this.forkSourceTitle,
+    this.forkThroughMessageId,
+    this.forkMaterializedAt,
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
@@ -33,6 +37,10 @@ abstract class ConversationSummary
     String? modelId,
     String? agentId,
     String? parentConversationId,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -47,6 +55,16 @@ abstract class ConversationSummary
       agentId: jsonSerialization['agentId'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
+      forkSourceConversationId:
+          jsonSerialization['forkSourceConversationId'] as String?,
+      forkSourceTitle: jsonSerialization['forkSourceTitle'] as String?,
+      forkThroughMessageId:
+          jsonSerialization['forkThroughMessageId'] as String?,
+      forkMaterializedAt: jsonSerialization['forkMaterializedAt'] == null
+          ? null
+          : _is.DateTimeJsonExtension.fromJson(
+              jsonSerialization['forkMaterializedAt'],
+            ),
       revision: jsonSerialization['revision'] as int,
       createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -69,6 +87,14 @@ abstract class ConversationSummary
 
   String? parentConversationId;
 
+  String? forkSourceConversationId;
+
+  String? forkSourceTitle;
+
+  String? forkThroughMessageId;
+
+  DateTime? forkMaterializedAt;
+
   int revision;
 
   DateTime createdAt;
@@ -85,6 +111,10 @@ abstract class ConversationSummary
     String? modelId,
     String? agentId,
     String? parentConversationId,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -100,6 +130,13 @@ abstract class ConversationSummary
       if (agentId != null) 'agentId': agentId,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -117,6 +154,13 @@ abstract class ConversationSummary
       if (agentId != null) 'agentId': agentId,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
+      if (forkSourceConversationId != null)
+        'forkSourceConversationId': forkSourceConversationId,
+      if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
+      if (forkThroughMessageId != null)
+        'forkThroughMessageId': forkThroughMessageId,
+      if (forkMaterializedAt != null)
+        'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -139,6 +183,10 @@ class _ConversationSummaryImpl extends ConversationSummary {
     String? modelId,
     String? agentId,
     String? parentConversationId,
+    String? forkSourceConversationId,
+    String? forkSourceTitle,
+    String? forkThroughMessageId,
+    DateTime? forkMaterializedAt,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -149,6 +197,10 @@ class _ConversationSummaryImpl extends ConversationSummary {
          modelId: modelId,
          agentId: agentId,
          parentConversationId: parentConversationId,
+         forkSourceConversationId: forkSourceConversationId,
+         forkSourceTitle: forkSourceTitle,
+         forkThroughMessageId: forkThroughMessageId,
+         forkMaterializedAt: forkMaterializedAt,
          revision: revision,
          createdAt: createdAt,
          updatedAt: updatedAt,
@@ -165,6 +217,10 @@ class _ConversationSummaryImpl extends ConversationSummary {
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
     Object? parentConversationId = _Undefined,
+    Object? forkSourceConversationId = _Undefined,
+    Object? forkSourceTitle = _Undefined,
+    Object? forkThroughMessageId = _Undefined,
+    Object? forkMaterializedAt = _Undefined,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -178,6 +234,18 @@ class _ConversationSummaryImpl extends ConversationSummary {
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,
+      forkSourceConversationId: forkSourceConversationId is String?
+          ? forkSourceConversationId
+          : this.forkSourceConversationId,
+      forkSourceTitle: forkSourceTitle is String?
+          ? forkSourceTitle
+          : this.forkSourceTitle,
+      forkThroughMessageId: forkThroughMessageId is String?
+          ? forkThroughMessageId
+          : this.forkThroughMessageId,
+      forkMaterializedAt: forkMaterializedAt is DateTime?
+          ? forkMaterializedAt
+          : this.forkMaterializedAt,
       revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

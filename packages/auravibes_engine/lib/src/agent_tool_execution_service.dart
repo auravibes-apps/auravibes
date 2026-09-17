@@ -50,9 +50,13 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
   bool isCancellationRequested(String conversationId);
 
-  Future<void> stopPendingTools({required String messageId});
+  Future<void> stopPendingTools({
+    required String messageId,
+    required String conversationId,
+  });
 
   Future<void> updateToolResults({
+    required String conversationId,
     required String messageId,
     required List<AgentToolResultUpdate> updates,
   });
@@ -80,7 +84,10 @@ class const AgentToolExecutionService<TTool extends Object>({
     }
 
     if (provider.isCancellationRequested(conversationId)) {
-      await provider.stopPendingTools(messageId: latestToolCalls.messageId);
+      await provider.stopPendingTools(
+        messageId: latestToolCalls.messageId,
+        conversationId: conversationId,
+      );
 
       return AgentIterationDecision.done;
     }
@@ -161,6 +168,7 @@ class const AgentToolExecutionService<TTool extends Object>({
     if (updates.isNotEmpty) {
       await provider.updateToolResults(
         messageId: latestToolCalls.messageId,
+        conversationId: conversationId,
         updates: updates,
       );
     }
@@ -172,6 +180,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         final next = updateChain.then(
           (_) => provider.updateToolResults(
             messageId: latestToolCalls.messageId,
+            conversationId: conversationId,
             updates: [update],
           ),
         );
@@ -277,6 +286,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         tool: toolToCall.tool,
         error: error,
         stackTrace: stackTrace,
+        failurePhase: null,
       ));
 
       return AgentToolResultUpdate(

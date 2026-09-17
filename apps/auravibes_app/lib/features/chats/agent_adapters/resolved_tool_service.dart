@@ -414,7 +414,7 @@ Future<Object?> _runSkillControlTool({
 }
 
 String _requiredControlSlug(Map<String, dynamic> arguments) {
-  final slug = arguments['slug'];
+  final slug = arguments['slug'] ?? arguments['skillSlug'];
   if (slug is! String || slug.isEmpty) {
     throw const FormatException('Skill control tools require a slug.');
   }
@@ -672,11 +672,9 @@ ListAvailableSkillsUsecase _requiredCredentialSkillLister(
 }
 
 String _requiredSkillSlug(Map<String, dynamic> arguments) {
-  final skillSlug = arguments['skillSlug'];
+  final skillSlug = arguments['slug'] ?? arguments['skillSlug'];
   if (skillSlug is! String || skillSlug.isEmpty) {
-    throw const FormatException(
-      'Skill credential listing requires a skillSlug.',
-    );
+    throw const FormatException('Skill credential listing requires a slug.');
   }
 
   return skillSlug;
@@ -760,15 +758,7 @@ Future<Object?> _runSkillNativeTool(_SkillNativeToolRequest request) {
 }
 
 Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
-  final operation = CancelableOperation<Object?>.fromFuture(
-    _runSubAgentTool(request: request),
-  );
-  request.provider.agentCancellationRuntime.registerCancelableOperation(
-    request.conversationId,
-    operation,
-  );
-
-  return operation.valueOrCancellation();
+  return _runSubAgentTool(request: request);
 }
 
 Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
@@ -860,6 +850,7 @@ class _ConfiguredSkillCommandRunner {
     _usecase = _buildConfiguredSkillCommand(
       _configuredSkillCommandDependencies(_provider),
       _listSkillCredentialsForCommand,
+      _runSkillNativeTool,
     );
   }
 
@@ -895,6 +886,41 @@ class _ConfiguredSkillCommandRunner {
     );
 
     return _credentialMap(result);
+  }
+
+  Future<Object?> _runSkillNativeTool(RunSkillNativeToolRequest request) {
+    final target = request.target;
+    if (target.skillSlug == agent.agentsSkillSlug) {
+      return _runSubAgentNativeTool(
+        .new(
+          conversationId: request.conversationId,
+          workspaceId: request.workspaceId,
+          skillSlug: target.skillSlug ?? '',
+          toolSlug: target.toolIdentifier,
+          arguments: request.arguments,
+          provider: _provider,
+        ),
+      );
+    }
+
+    return _runConfiguredAppSkillTool(request);
+  }
+
+  Future<Object?> _runConfiguredAppSkillTool(
+    RunSkillNativeToolRequest request,
+  ) {
+    final target = request.target;
+    final usecase = _provider.runAppSkillToolUsecase;
+    if (usecase == null) {
+      throw StateError('RunAppSkillToolUsecase is not configured.');
+    }
+
+    return usecase.call(
+      workspaceId: request.workspaceId,
+      skillSlug: target.skillSlug ?? '',
+      toolSlug: target.toolIdentifier,
+      arguments: request.arguments,
+    );
   }
 }
 
@@ -949,6 +975,7 @@ _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
 RunSkillCommandUsecase _buildConfiguredSkillCommand(
   _ConfiguredSkillCommandDependencies deps,
   ListSkillCredentials listSkillCredentials,
+  RunSkillNativeTool runSkillNativeTool,
 ) {
   return RunSkillCommandUsecase(
     listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
@@ -961,6 +988,7 @@ RunSkillCommandUsecase _buildConfiguredSkillCommand(
     runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
     runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
     listSkillCredentials: listSkillCredentials,
+    runSkillNativeTool: runSkillNativeTool,
   );
 }
 
@@ -988,6 +1016,7 @@ T _requiredConfigured<T>(T? value) {
 
 final Provider<ResolvedToolService>
 resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
+  final container = ref.container;
   final agentCancellationRuntime = ref.watch(agentCancellationRuntimeProvider);
   final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
 
@@ -996,9 +1025,9 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     loadConversationSkillUsecase: (workspaceId) =>
-        ref.read(loadConversationSkillUsecaseProvider(workspaceId)),
+        container.read(loadConversationSkillUsecaseProvider(workspaceId)),
     unloadConversationSkillUsecase: (workspaceId) =>
-        ref.read(unloadConversationSkillUsecaseProvider(workspaceId)),
+        container.read(unloadConversationSkillUsecaseProvider(workspaceId)),
     runSkillTemplateToolUsecase: ref.watch(runSkillTemplateToolUsecaseProvider),
     runAppSkillToolUsecase: ref.watch(runAppSkillToolUsecaseProvider),
     buildLoadedSkillManifestsUsecase: ref.watch(
@@ -1011,9 +1040,9 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       buildAppSkillNativeToolSpecsUsecaseProvider,
     ),
     runSkillsManagerToolUsecase: (workspaceId) =>
-        ref.read(runSkillsManagerToolUsecaseProvider(workspaceId)),
+        container.read(runSkillsManagerToolUsecaseProvider(workspaceId)),
     listAvailableSkillsUsecase: (workspaceId) =>
-        ref.read(listAvailableSkillsUsecaseProvider(workspaceId)),
+        container.read(listAvailableSkillsUsecaseProvider(workspaceId)),
     listAppSkillCredentialCandidatesUsecase: ref.watch(
       listAppSkillCredentialCandidatesUsecaseProvider,
     ),
@@ -1029,7 +1058,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       ),
       startRequest: activeSubAgents.start,
       continueAgentTurn: ({required conversationId, required context}) {
-        return ref
+        return container
             .read(appAgentLoopProvider)
             .call(conversationId: conversationId, context: context);
       },
@@ -1037,11 +1066,13 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         agentCancellationRuntime.registerCleanup(parentId, () {
           if (activeSubAgents.parentOf(childId) != parentId) return;
           agentCancellationRuntime.requestStopOnStart(childId);
-          activeSubAgents.finish(
+          activeSubAgents.finish((
             parentId: parentId,
             childId: childId,
             status: agent.SubAgentCompletionStatus.stopped,
-          );
+            error: null,
+            stackTrace: null,
+          ));
         });
       },
     ),
@@ -1049,7 +1080,7 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         ({required workspaceId, required toolSlug, required result}) {
           _invalidateSkillsManagerToolState(
             .new(
-              ref: ref,
+              container: container,
               workspaceId: workspaceId,
               toolSlug: toolSlug,
               result: result,
@@ -1078,22 +1109,24 @@ void _invalidateSkillsManagerToolState(
 }
 
 class const _SkillManagerInvalidationRequest({
-  required final Ref ref,
+  required final ProviderContainer container,
   required final String workspaceId,
   required final String toolSlug,
   required final Object result,
 });
 
 void _invalidateUserSkill(_SkillManagerInvalidationRequest request) {
-  request.ref.invalidate(workspaceSkillsProvider(request.workspaceId));
+  request.container.invalidate(workspaceSkillsProvider(request.workspaceId));
   final skillId = _resultValue(request.result, 'skillId');
   if (skillId is String && skillId.isNotEmpty) {
-    request.ref.invalidate(skillDetailProvider(request.workspaceId, skillId));
+    request.container.invalidate(
+      skillDetailProvider(request.workspaceId, skillId),
+    );
   }
 }
 
 void _invalidateCredentialDefinition(_SkillManagerInvalidationRequest request) {
-  request.ref
+  request.container
     ..invalidate(skillCredentialDefinitionsProvider(request.workspaceId))
     ..invalidate(serviceConnectionsProvider(request.workspaceId));
   final definitionId = _resultValue(request.result, 'definitionId');
@@ -1106,7 +1139,7 @@ void _invalidateCredentialDefinitionDetails(
   _SkillManagerInvalidationRequest request,
   String definitionId,
 ) {
-  request.ref
+  request.container
     ..invalidate(
       skillCredentialDefinitionProvider(request.workspaceId, definitionId),
     )
@@ -1118,7 +1151,7 @@ void _invalidateCredentialDefinitionDetails(
 void _invalidateTemplateTool(_SkillManagerInvalidationRequest request) {
   final skillId = _resultValue(request.result, 'skillId');
   if (skillId is String && skillId.isNotEmpty) {
-    request.ref.invalidate(
+    request.container.invalidate(
       skillTemplateToolsProvider(request.workspaceId, skillId),
     );
   }

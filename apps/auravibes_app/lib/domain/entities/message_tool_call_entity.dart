@@ -151,6 +151,9 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 
+  bool get hasPendingToolCalls =>
+      toolCalls.any((toolCall) => toolCall.isPending);
+
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
     try {
@@ -217,6 +220,10 @@ abstract class const MessageEntity._() with _$MessageEntity {
 
     @Default(<MessageAttachmentEntity>[])
     List<MessageAttachmentEntity> attachments,
+
+    /// True when the message is inherited from a reference-backed fork
+    /// source and cannot be mutated by the current conversation.
+    @Default(false) bool isForkReference,
   }) = _MessageEntity;
 
   /// Returns true if the message has valid content.

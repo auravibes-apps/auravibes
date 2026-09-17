@@ -60,6 +60,12 @@ class _FakeConversationRepository implements ConversationRepository {
   ) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
 }
 
 void main() {

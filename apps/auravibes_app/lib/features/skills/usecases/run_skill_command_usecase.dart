@@ -15,11 +15,29 @@ typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
   required Map<String, dynamic> arguments,
 });
 
+typedef RunSkillNativeToolRequest = ({
+  String conversationId,
+  String workspaceId,
+  AgentResolvedToolName target,
+  Map<String, dynamic> arguments,
+});
+
+typedef RunSkillNativeTool = Future<Object?> Function(
+  RunSkillNativeToolRequest request,
+);
+
 typedef _RunSkillCommandRequest = ({
   String conversationId,
   String workspaceId,
   String commandName,
   Map<String, dynamic> arguments,
+});
+
+typedef _SkillToolExecutionRequest = ({
+  String conversationId,
+  String workspaceId,
+  AgentResolvedToolName target,
+  SkillCommandTarget command,
 });
 
 typedef _SkillFilterRequest = ({
@@ -52,6 +70,7 @@ class const RunSkillCommandUsecase({
   required final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
   required final RunAppSkillToolUsecase runAppSkillToolUsecase,
   required final ListSkillCredentials listSkillCredentials,
+  final RunSkillNativeTool? runSkillNativeTool,
 }) {
   Future<Map<String, Object?>> call(_RunSkillCommandRequest request) =>
       _runSkillCommand(this, request);
@@ -210,12 +229,16 @@ Future<Object?> _executeCallTool(
     command,
   );
 
-  return await _RunSkillCommandExecution(usecase)
-      ._runSkillTool(target, request.workspaceId, command);
+  return await _RunSkillCommandExecution(usecase)._runSkillTool((
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    target: target,
+    command: command,
+  ));
 }
 
 String _slug(Map<String, dynamic> arguments) {
-  final slug = arguments['slug'];
+  final slug = arguments['slug'] ?? arguments['skillSlug'];
   if (slug is! String || slug.isEmpty) {
     throw const FormatException('Skill command requires a slug.');
   }
@@ -374,15 +397,17 @@ Map<String, Object?> _loadedSkillResult(String slug, SkillManifest manifest) =>
     {'loaded': slug, 'manifest': manifest.toJson()};
 
 class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
-  Future<Object?> _runSkillTool(
-    AgentResolvedToolName target,
-    String workspaceId,
-    SkillCommandTarget command,
-  ) => switch (target.kind) {
-    .skillTemplate => _runSkillTemplateTool(workspaceId, command),
-    .skillNative => _runSkillNativeTool(workspaceId, command),
-    _ => throw StateError('Unsupported skill tool target: ${target.fullName}'),
-  };
+  Future<Object?> _runSkillTool(_SkillToolExecutionRequest request) =>
+      switch (request.target.kind) {
+        .skillTemplate => _runSkillTemplateTool(
+          request.workspaceId,
+          request.command,
+        ),
+        .skillNative => _runSkillNativeTool(request),
+        _ => throw StateError(
+          'Unsupported skill tool target: ${request.target.fullName}',
+        ),
+      };
 
   Future<Object?> _runSkillTemplateTool(
     String workspaceId,
@@ -394,13 +419,31 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
     arguments: Map<String, dynamic>.from(command.args),
   );
 
-  Future<Object?> _runSkillNativeTool(
-    String workspaceId,
-    SkillCommandTarget command,
+  Future<Object?> _runSkillNativeTool(_SkillToolExecutionRequest request) {
+    final nativeRunner = _usecase.runSkillNativeTool;
+    if (nativeRunner == null) return _runAppSkillTool(request);
+
+    return nativeRunner((
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      target: request.target,
+      arguments: Map<String, dynamic>.from(request.command.args),
+    ));
+  }
+
+  Future<Object?> _runAppSkillTool(_SkillToolExecutionRequest request) =>
+      _runAppSkillToolWithArguments(
+        request,
+        Map<String, dynamic>.from(request.command.args),
+      );
+
+  Future<Object?> _runAppSkillToolWithArguments(
+    _SkillToolExecutionRequest request,
+    Map<String, dynamic> arguments,
   ) => _usecase.runAppSkillToolUsecase.call(
-    workspaceId: workspaceId,
-    skillSlug: command.skill,
-    toolSlug: command.tool,
-    arguments: Map<String, dynamic>.from(command.args),
+    workspaceId: request.workspaceId,
+    skillSlug: request.command.skill,
+    toolSlug: request.command.tool,
+    arguments: arguments,
   );
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
@@ -9,10 +10,9 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_ma
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:logging/logging.dart';
@@ -31,6 +31,7 @@ typedef _ToolApprovalRequest = ({
   ResolveToolApprovalDecisionUsecase? resolver,
   ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolverForWorkspace,
+  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   ResolveSkillCommandTarget? resolveSkillCommandTarget,
   String conversationId,
   String workspaceId,
@@ -45,6 +46,7 @@ typedef _ToolExecutionErrorRequest = ({
   ResolvedTool tool,
   Object error,
   StackTrace stackTrace,
+  String? failurePhase,
 });
 
 typedef _AgentToolApprovalRequest =
@@ -54,8 +56,18 @@ typedef _AgentToolExecutionErrorRequest =
     agent.AgentToolExecutionErrorRequest<ResolvedTool>;
 
 typedef _ToolResultsRequest = ({
+  String conversationId,
   String messageId,
   List<agent.AgentToolResultUpdate> updates,
+});
+
+typedef _StoppedToolCallsRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> updatedToolCalls,
+  String conversationId,
+  MessageStatus status,
 });
 
 class AgentToolExecutionService({
@@ -67,6 +79,7 @@ class AgentToolExecutionService({
   ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecision,
   ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionForWorkspace,
+  ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   ResolveSkillCommandTarget? resolveSkillCommandTarget,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
@@ -80,6 +93,7 @@ class AgentToolExecutionService({
           resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
           resolveToolApprovalDecisionUsecaseForWorkspace:
               resolveToolApprovalDecisionForWorkspace,
+          effectiveToolApprovalUsecase: effectiveToolApprovalUsecase,
           resolveSkillCommandTarget: resolveSkillCommandTarget,
         ),
       );
@@ -94,6 +108,7 @@ class const AppAllowedToolsDataProvider({
   final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase,
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionUsecaseForWorkspace,
+  final ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   final ResolveSkillCommandTarget? resolveSkillCommandTarget,
 }) implements agent.AgentToolExecutionProvider<ResolvedTool> {
   @override
@@ -102,6 +117,7 @@ class const AppAllowedToolsDataProvider({
   ) => _resolveToolApprovalDecision((
     resolver: resolveToolApprovalDecisionUsecase,
     resolverForWorkspace: resolveToolApprovalDecisionUsecaseForWorkspace,
+    effectiveToolApprovalUsecase: effectiveToolApprovalUsecase,
     resolveSkillCommandTarget: resolveSkillCommandTarget,
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
@@ -153,16 +169,25 @@ class const AppAllowedToolsDataProvider({
   }
 
   @override
-  Future<void> stopPendingTools({required String messageId}) async {
-    await _stopPendingTools(messageRepository, messageId);
+  Future<void> stopPendingTools({
+    required String messageId,
+    required String conversationId,
+  }) async {
+    await _stopPendingTools(
+      messageRepository,
+      messageId,
+      conversationId: conversationId,
+    );
   }
 
   @override
   Future<void> updateToolResults({
+    required String conversationId,
     required String messageId,
     required List<agent.AgentToolResultUpdate> updates,
   }) async {
     await _updateToolResults(messageRepository, (
+      conversationId: conversationId,
       messageId: messageId,
       updates: updates,
     ));
@@ -215,6 +240,30 @@ Future<ResolvedTool?> _resolveApprovalTool(_ToolApprovalRequest request) {
     return Future<ResolvedTool?>.value(tool);
   }
 
+  return _resolveSkillApproval(request, tool);
+}
+
+Future<ResolvedTool?> _resolveSkillApproval(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+) {
+  final effectiveResolver = request.effectiveToolApprovalUsecase;
+  if (effectiveResolver != null) {
+    return effectiveResolver.call(
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      requestedTool: tool,
+      argumentsRaw: request.argumentsRaw,
+    );
+  }
+
+  return _resolveLegacySkillApproval(request, tool);
+}
+
+Future<ResolvedTool?> _resolveLegacySkillApproval(
+  _ToolApprovalRequest request,
+  ResolvedTool tool,
+) {
   final decoded = _decodeArguments(request.argumentsRaw);
   if (decoded == null) return Future<ResolvedTool?>.value();
 
@@ -284,8 +333,9 @@ agent.AgentToolApprovalDecision _notConfiguredApprovalDecision() =>
 
 Future<void> _stopPendingTools(
   MessageRepository messageRepository,
-  String messageId,
-) async {
+  String messageId, {
+  required String conversationId,
+}) async {
   final message = await messageRepository.getMessageById(messageId);
   if (message == null) return;
 
@@ -293,12 +343,14 @@ Future<void> _stopPendingTools(
   final updated = _stoppedPendingToolCalls(metadata.toolCalls);
   if (updated == null) return;
 
-  await _persistStoppedToolCalls(
-    messageRepository,
-    messageId,
-    metadata,
-    updated,
-  );
+  await _persistStoppedToolCalls((
+    messageRepository: messageRepository,
+    messageId: messageId,
+    metadata: metadata,
+    updatedToolCalls: updated,
+    conversationId: conversationId,
+    status: .sent,
+  ));
 }
 
 List<MessageToolCallEntity>? _stoppedPendingToolCalls(
@@ -315,15 +367,14 @@ List<MessageToolCallEntity>? _stoppedPendingToolCalls(
   ];
 }
 
-Future<void> _persistStoppedToolCalls(
-  MessageRepository messageRepository,
-  String messageId,
-  MessageMetadataEntity metadata,
-  List<MessageToolCallEntity> updatedToolCalls,
-) async {
-  final _ = await messageRepository.patchMessage(
-    messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+Future<void> _persistStoppedToolCalls(_StoppedToolCallsRequest request) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
+    .new(
+      metadata: request.metadata.copyWith(toolCalls: request.updatedToolCalls),
+      status: request.status,
+    ),
+    conversationId: request.conversationId,
   );
 }
 
@@ -339,9 +390,28 @@ Future<void> _updateToolResults(
     metadata.toolCalls,
     request.updates,
   );
+  await _persistToolResults(
+    messageRepository,
+    request,
+    metadata,
+    updatedToolCalls,
+  );
+}
+
+Future<void> _persistToolResults(
+  MessageRepository messageRepository,
+  _ToolResultsRequest request,
+  MessageMetadataEntity metadata,
+  List<MessageToolCallEntity> toolCalls,
+) async {
+  final updatedMetadata = metadata.copyWith(toolCalls: toolCalls);
   final _ = await messageRepository.patchMessage(
     request.messageId,
-    .new(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
+    .new(
+      metadata: updatedMetadata,
+      status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+    ),
+    conversationId: request.conversationId,
   );
 }
 
@@ -371,59 +441,29 @@ void _logToolExecutionError(_ToolExecutionErrorRequest request) {
     'conversationId=${request.conversationId} '
     'toolCallId=${request.toolCallId} '
     'toolType=${request.tool.type.name} '
-    'toolIdentifier=${request.tool.toolIdentifier}',
-    request.error,
-    request.stackTrace,
+    'toolIdentifier=${request.tool.toolIdentifier} '
+    'failurePhase=${request.failurePhase ?? 'unknown'} '
+    'error=${LogRedaction.redact(request.error)} '
+    'stackTrace=${LogRedaction.redact(request.stackTrace)}',
   );
 }
 
-final Provider<AgentToolExecutionService>
-agentToolExecutionServiceProvider = Provider<AgentToolExecutionService>((ref) {
-  return AgentToolExecutionService(
-    loadLatestMessageToolCallsUsecase: ref.watch(agentToolCallLoaderProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-    getAgentIterationDecisionUsecase: ref.watch(
-      agentToolDecisionServiceProvider,
-    ),
-    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-    resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
-        ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
-    resolveSkillCommandTarget:
-        ({
-          required conversationId,
-          required workspaceId,
-          required command,
-        }) async {
-          final manifests = await ref
-              .read(buildLoadedSkillManifestsUsecaseProvider)
-              .call(conversationId: conversationId, workspaceId: workspaceId);
-          final manifest = manifests
-              .where((candidate) => candidate.slug == command.skill)
-              .firstOrNull;
-          if (manifest == null || manifest.revision != command.revision) {
-            return null;
-          }
-          final specs = [
-            ...await ref
-                .read(buildSkillTemplateToolSpecsUsecaseProvider)
-                .call(conversationId: conversationId, workspaceId: workspaceId),
-            ...await ref
-                .read(buildAppSkillNativeToolSpecsUsecaseProvider)
-                .call(conversationId: conversationId, workspaceId: workspaceId),
-          ];
-          const resolver = agent.AgentToolNameResolver();
-          final matches = <agent.AgentResolvedToolName>[];
-          for (final spec in specs) {
-            final candidate = resolver.resolve(spec.name);
-            if (candidate != null &&
-                candidate.skillSlug == command.skill &&
-                candidate.toolIdentifier == command.tool) {
-              matches.add(candidate);
-            }
-          }
-
-          return matches.length == 1 ? matches.single : null;
-        },
-  );
-});
+final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
+    Provider<AgentToolExecutionService>((ref) {
+      return AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: ref.watch(
+          agentToolCallLoaderProvider,
+        ),
+        messageRepository: ref.watch(messageRepositoryProvider),
+        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+        getAgentIterationDecisionUsecase: ref.watch(
+          agentToolDecisionServiceProvider,
+        ),
+        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+        resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
+            ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
+        effectiveToolApprovalUsecase: ref.watch(
+          resolveEffectiveToolApprovalUsecaseProvider,
+        ),
+      );
+    });

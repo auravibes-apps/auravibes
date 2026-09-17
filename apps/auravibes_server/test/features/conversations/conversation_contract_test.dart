@@ -173,6 +173,7 @@ void main() {
     final request = SubmitToolDecisionRequest(
       workspaceId: 1,
       requestId: 'decision-1',
+      conversationId: 'conversation-1',
       turnId: 'turn-1',
       toolCallId: 'call-1',
       argumentsDigest: 'observed-digest',

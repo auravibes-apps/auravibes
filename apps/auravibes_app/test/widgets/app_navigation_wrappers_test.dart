@@ -753,6 +753,12 @@ class _FakeConversationRepository implements ConversationRepository {
     throw UnimplementedError();
   }
 
+  @override
+  Future<ConversationEntity> forkConversation(
+    String sourceConversationId, {
+    String? throughMessageId,
+  }) => throw UnimplementedError();
+
   void _processPendingRemovals() {
     if (_pendingRemoval.isNotEmpty) {
       _controllers.removeWhere(_pendingRemoval.contains);

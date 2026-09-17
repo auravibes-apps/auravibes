@@ -3,13 +3,16 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/resolve_effective_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -17,7 +20,11 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('approve_tool_call_service');
 
-typedef _ToolCallLookupRequest = ({String messageId, String toolCallId});
+typedef _ToolCallLookupRequest = ({
+  String conversationId,
+  String messageId,
+  String toolCallId,
+});
 
 typedef _ToolResolutionRequest = ({
   ConversationRepository conversationRepository,
@@ -27,6 +34,8 @@ typedef _ToolResolutionRequest = ({
   ToolResolverService toolResolverService,
   String conversationId,
   String toolName,
+  String argumentsRaw,
+  ResolveEffectiveToolApprovalUsecase? resolveEffectiveToolApprovalUsecase,
 });
 
 typedef _ToolGrantRequest = ({
@@ -42,10 +51,19 @@ typedef _ToolGrantRequest = ({
 });
 
 typedef _ToolCallPatchRequest = ({
+  String conversationId,
   String messageId,
   String toolCallId,
   ToolCallResultStatus resultStatus,
   String? responseRaw,
+});
+
+typedef _ToolCallPersistenceRequest = ({
+  MessageRepository messageRepository,
+  String messageId,
+  MessageMetadataEntity metadata,
+  String conversationId,
+  MessageStatus? status,
 });
 
 typedef _ToolExecutionErrorRequest =
@@ -68,6 +86,8 @@ class const AppApproveToolCallDataProvider({
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
+  final ResolveEffectiveToolApprovalUsecase?
+  resolveEffectiveToolApprovalUsecase,
 }) implements agent.ApproveToolCallProvider<ResolvedTool> {
   this
     : assert(
@@ -87,16 +107,14 @@ class const AppApproveToolCallDataProvider({
       );
 
   @override
-  Future<void> updateToolCallResult({
-    required String messageId,
-    required String toolCallId,
-    required agent.AgentToolResultStatus resultStatus,
-    String? responseRaw,
-  }) => _patchToolCall(messageRepository, onToolCallChanged, (
-    messageId: messageId,
-    toolCallId: toolCallId,
-    resultStatus: AgentToolStatusMapper.toResultStatus(resultStatus),
-    responseRaw: responseRaw,
+  Future<void> updateToolCallResult(
+    agent.AgentToolCallResultUpdateRequest request,
+  ) => _patchToolCall(messageRepository, onToolCallChanged, (
+    messageId: request.messageId,
+    toolCallId: request.toolCallId,
+    resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
+    responseRaw: request.responseRaw,
+    conversationId: request.conversationId,
   ));
 
   @override
@@ -107,8 +125,10 @@ class const AppApproveToolCallDataProvider({
   Future<agent.AgentApprovableToolCall?> loadToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) {
     return _loadToolCall(messageRepository, (
+      conversationId: conversationId,
       messageId: messageId,
       toolCallId: toolCallId,
     ));
@@ -118,6 +138,7 @@ class const AppApproveToolCallDataProvider({
   Future<ResolvedTool?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   }) {
     return _resolveTool((
       conversationRepository: conversationRepository,
@@ -127,6 +148,8 @@ class const AppApproveToolCallDataProvider({
       toolResolverService: toolResolverService,
       conversationId: conversationId,
       toolName: toolName,
+      argumentsRaw: argumentsRaw,
+      resolveEffectiveToolApprovalUsecase: resolveEffectiveToolApprovalUsecase,
     ));
   }
 
@@ -165,8 +188,10 @@ class const AppApproveToolCallDataProvider({
   Future<void> markToolCallRunning({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) {
     return _patchToolCall(messageRepository, onToolCallChanged, (
+      conversationId: conversationId,
       messageId: messageId,
       toolCallId: toolCallId,
       resultStatus: .running,
@@ -175,7 +200,10 @@ class const AppApproveToolCallDataProvider({
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) {
     return agentToolResumeService.call(messageId: messageId);
   }
 
@@ -191,6 +219,9 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
 ) async {
   final message = await messageRepository.getMessageById(request.messageId);
   if (message == null) return null;
+  if (message.conversationId != request.conversationId) {
+    throw const MessageValidationException('Fork reference is read-only');
+  }
 
   final toolCall = _findToolCall(message.metadata, request.toolCallId);
   if (toolCall == null) return null;
@@ -220,9 +251,36 @@ Future<ResolvedTool?> _resolveTool(_ToolResolutionRequest request) async {
     return await _resolveWithoutConversation(request);
   }
 
-  final catalog = await _loadConversationToolCatalog(request, conversation);
+  return await _resolveToolInConversation(request, conversation);
+}
 
-  return request.toolResolverService.resolveTool(request.toolName, catalog);
+Future<ResolvedTool?> _resolveToolInConversation(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+) async {
+  final catalog = await _loadConversationToolCatalog(request, conversation);
+  final resolved = request.toolResolverService.resolveTool(
+    request.toolName,
+    catalog,
+  );
+
+  return await _resolveEffectiveTool(request, conversation, resolved);
+}
+
+Future<ResolvedTool?> _resolveEffectiveTool(
+  _ToolResolutionRequest request,
+  ConversationEntity conversation,
+  ResolvedTool? resolved,
+) {
+  final resolver = request.resolveEffectiveToolApprovalUsecase;
+  if (resolved == null || resolver == null) return Future.value(resolved);
+
+  return resolver.call(
+    conversationId: request.conversationId,
+    workspaceId: conversation.workspaceId,
+    requestedTool: resolved,
+    argumentsRaw: request.argumentsRaw,
+  );
 }
 
 Future<ResolvedTool?> _resolveWithoutConversation(
@@ -338,18 +396,51 @@ Future<void> _patchToolCall(
   void Function() onToolCallChanged,
   _ToolCallPatchRequest request,
 ) async {
-  final message = await messageRepository.getMessageById(request.messageId);
+  final message = await _loadOwnedToolCallMessage(messageRepository, request);
   if (message == null) return;
 
-  final metadata = message.metadata ?? const MessageMetadataEntity();
-  final updatedToolCalls = _updatedToolCalls(metadata.toolCalls, request);
-
-  await _persistToolCallPatch(
-    messageRepository,
-    request.messageId,
-    metadata.copyWith(toolCalls: updatedToolCalls),
-  );
+  await _patchOwnedToolCall(messageRepository, message, request);
   onToolCallChanged();
+}
+
+Future<void> _patchOwnedToolCall(
+  MessageRepository messageRepository,
+  MessageEntity message,
+  _ToolCallPatchRequest request,
+) async {
+  final updatedMetadata = _updatedToolCallMetadata(message, request);
+
+  await _persistToolCallPatch((
+    messageRepository: messageRepository,
+    messageId: request.messageId,
+    metadata: updatedMetadata,
+    conversationId: request.conversationId,
+    status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+  ));
+}
+
+MessageMetadataEntity _updatedToolCallMetadata(
+  MessageEntity message,
+  _ToolCallPatchRequest request,
+) {
+  final metadata = message.metadata ?? const MessageMetadataEntity();
+
+  return metadata.copyWith(
+    toolCalls: _updatedToolCalls(metadata.toolCalls, request),
+  );
+}
+
+Future<MessageEntity?> _loadOwnedToolCallMessage(
+  MessageRepository messageRepository,
+  _ToolCallPatchRequest request,
+) async {
+  final message = await messageRepository.getMessageById(request.messageId);
+  if (message == null) return null;
+  if (message.conversationId != request.conversationId) {
+    throw const MessageValidationException('Fork reference is read-only');
+  }
+
+  return message;
 }
 
 List<MessageToolCallEntity> _updatedToolCalls(
@@ -366,14 +457,11 @@ List<MessageToolCallEntity> _updatedToolCalls(
     )
     .toList();
 
-Future<void> _persistToolCallPatch(
-  MessageRepository messageRepository,
-  String messageId,
-  MessageMetadataEntity metadata,
-) async {
-  final _ = await messageRepository.patchMessage(
-    messageId,
-    .new(metadata: metadata),
+Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) async {
+  final _ = await request.messageRepository.patchMessage(
+    request.messageId,
+    .new(metadata: request.metadata, status: request.status),
+    conversationId: request.conversationId,
   );
 }
 
@@ -383,8 +471,9 @@ void _logToolExecutionError(_ToolExecutionErrorRequest request) {
     'conversationId=${request.conversationId} '
     'toolCallId=${request.toolCallId} '
     'toolType=${request.tool.type.name} '
-    'toolIdentifier=${request.tool.toolIdentifier}',
-    request.error,
-    request.stackTrace,
+    'toolIdentifier=${request.tool.toolIdentifier} '
+    'failurePhase=${request.failurePhase ?? 'unknown'} '
+    'error=${LogRedaction.redact(request.error)} '
+    'stackTrace=${LogRedaction.redact(request.stackTrace)}',
   );
 }

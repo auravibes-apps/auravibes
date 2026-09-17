@@ -41,6 +41,18 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
+
+    /// Source conversation id for a reference-backed fork.
+    String? forkSourceConversationId,
+
+    /// Source title captured when the fork was created.
+    String? forkSourceTitle,
+
+    /// Inclusive terminal message boundary captured by the fork.
+    String? forkThroughMessageId,
+
+    /// When inherited history was materialized into owned rows.
+    DateTime? forkMaterializedAt,
   }) = _ConversationEntity;
 
   /// Returns true if the conversation has a valid title.
@@ -50,6 +62,12 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
   bool get isValid {
     return hasValidTitle && workspaceId.isNotEmpty;
   }
+
+  bool get isFork => forkSourceConversationId != null;
+
+  bool get isMaterialized => forkMaterializedAt != null;
+
+  bool get isForkMaterialized => forkMaterializedAt != null;
 
   String identity() => id;
 

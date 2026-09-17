@@ -11,10 +11,29 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
         level: .once,
       );
 
       expect(provider.updates, [AgentToolResultStatus.toolNotFound]);
+      expect(provider.didResume, isTrue);
+    });
+
+    test('marks unresolved nested skill command as not configured', () async {
+      final provider = _FakeApproveToolCallProvider(
+        resolvedTool: null,
+        toolName: callSkillToolName,
+      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
+
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
+        level: .once,
+      );
+
+      expect(provider.updates, [AgentToolResultStatus.notConfigured]);
       expect(provider.didResume, isTrue);
     });
 
@@ -28,11 +47,12 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
         level: .conversation,
       );
 
       expect(provider.calls, [
-        'resolve:conversation-1:calculator',
+        'resolve:conversation-1:calculator:{"input": "1+1"}',
         'grant:conversation-1:calculator',
         'running:message-1:tool-1',
         'run:1+1',
@@ -52,6 +72,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
         level: .once,
       );
 
@@ -68,6 +89,7 @@ void main() {
       await usecase.call(
         messageId: 'message-1',
         toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
         level: .once,
       );
 
@@ -81,7 +103,11 @@ void main() {
       final provider = _FakeSkipToolCallProvider(shouldSkip: true);
       final usecase = SkipToolCallService(provider: provider);
 
-      await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
+      );
 
       expect(provider.calls, ['skip:message-1:tool-1', 'resume:message-1']);
     });
@@ -90,7 +116,11 @@ void main() {
       final provider = _FakeSkipToolCallProvider(shouldSkip: false);
       final usecase = SkipToolCallService(provider: provider);
 
-      await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        conversationId: 'conversation-1',
+      );
 
       expect(provider.didResume, isFalse);
     });
@@ -102,6 +132,7 @@ class _FakeApproveToolCallProvider({
   final Object? runResult,
   final Object? runError,
   final bool isCancelled = false,
+  final String toolName = 'calculator',
 }) implements ApproveToolCallProvider<String> {
   final calls = <String>[];
   final updates = <AgentToolResultStatus>[];
@@ -111,10 +142,11 @@ class _FakeApproveToolCallProvider({
   Future<AgentApprovableToolCall?> loadToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
-    return const AgentApprovableToolCall(
+    return AgentApprovableToolCall(
       conversationId: 'conversation-1',
-      name: 'calculator',
+      name: toolName,
       argumentsRaw: '{"input": "1+1"}',
     );
   }
@@ -123,8 +155,9 @@ class _FakeApproveToolCallProvider({
   Future<String?> resolveTool({
     required String conversationId,
     required String toolName,
+    required String argumentsRaw,
   }) async {
-    calls.add('resolve:$conversationId:$toolName');
+    calls.add('resolve:$conversationId:$toolName:$argumentsRaw');
 
     return resolvedTool;
   }
@@ -155,23 +188,24 @@ class _FakeApproveToolCallProvider({
   Future<void> markToolCallRunning({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     calls.add('running:$messageId:$toolCallId');
   }
 
   @override
-  Future<void> updateToolCallResult({
-    required String messageId,
-    required String toolCallId,
-    required AgentToolResultStatus resultStatus,
-    String? responseRaw,
-  }) async {
-    updates.add(resultStatus);
-    calls.add('update:$resultStatus:$responseRaw');
+  Future<void> updateToolCallResult(
+    AgentToolCallResultUpdateRequest request,
+  ) async {
+    updates.add(request.resultStatus);
+    calls.add('update:${request.resultStatus}:${request.responseRaw}');
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) async {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) async {
     didResume = true;
     calls.add('resume:$messageId');
   }
@@ -192,6 +226,7 @@ class _FakeSkipToolCallProvider({required final bool shouldSkip})
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
+    required String conversationId,
   }) async {
     calls.add('skip:$messageId:$toolCallId');
 
@@ -199,7 +234,10 @@ class _FakeSkipToolCallProvider({required final bool shouldSkip})
   }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) async {
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) async {
     didResume = true;
     calls.add('resume:$messageId');
   }

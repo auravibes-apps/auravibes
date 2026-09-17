@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
 const maxSubAgentTitleLength = 160;
 const maxSubAgentPromptLength = 20000;
@@ -28,26 +29,39 @@ class const SubAgentRunner({
     String workspaceId, {
     Map<String, dynamic> arguments = const {},
   }) async {
-    late final SubAgentCatalogQuery query;
     try {
-      query = SubAgentCatalogQuery.fromArguments(workspaceId, arguments);
-    } on FormatException catch (error) {
-      return _error(error.message);
-    }
-    final page = await agentCatalog.listSubAgents(query);
+      final query = SubAgentCatalogQuery.fromArguments(workspaceId, arguments);
+      final page = await agentCatalog.listSubAgents(query);
 
-    return jsonEncode({
-      'agents': [
-        for (final agent in page.agents)
-          {
-            'id': agent.id,
-            'name': agent.name,
-            'description': agent.description,
-            'types': agent.types,
-          },
-      ],
-      'nextCursor': page.nextCursor,
-    });
+      return jsonEncode({
+        'agents': [
+          for (final agent in page.agents)
+            {
+              'id': agent.id,
+              'name': agent.name,
+              'description': agent.description,
+              'types': agent.types,
+            },
+        ],
+        'nextCursor': page.nextCursor,
+      });
+    } on AgentToolExecutionFailure {
+      rethrow;
+    } on FormatException catch (error, stackTrace) {
+      throw _failure(
+        responseRaw: _error(error.message),
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: 'listAgents.validate',
+      );
+    } on Object catch (error, stackTrace) {
+      throw _failure(
+        responseRaw: _error('Unable to list agents.'),
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: 'listAgents.execute',
+      );
+    }
   }
 
   Future<String> run({
@@ -56,35 +70,67 @@ class const SubAgentRunner({
     required Map<String, dynamic> arguments,
   }) async {
     final request = _SubAgentRunRequest.from(arguments);
-    if (request.error != null) return _error(request.error!);
+    if (request.error != null) {
+      final error = FormatException(request.error!);
 
-    final parent = await conversationStore.getConversation(
-      parentConversationId,
-    );
-    final parentError = _parentError(parent, workspaceId);
-    if (parentError != null) return _error(parentError);
+      throw _failure(
+        responseRaw: _error(request.error!),
+        error: error,
+        stackTrace: StackTrace.current,
+        failurePhase: 'run.validate',
+      );
+    }
 
-    final agentError = await _agentError(request.agentId, workspaceId);
-    if (agentError != null) return agentError;
-
-    final child = await conversationStore.createChildConversation((
-      parentConversationId: parentConversationId,
-      workspaceId: workspaceId,
-      modelId: parent!.modelId,
-      agentId: request.agentId,
-      title: request.title,
-    ));
-    final requestHandle = startRequest(
-      parentId: parentConversationId,
-      childId: child.id,
-    );
-    onChildStarted?.call(parentId: parentConversationId, childId: child.id);
+    SubAgentConversationRecord? child;
+    SubAgentRequestHandle? requestHandle;
     var completionStatus = SubAgentCompletionStatus.done;
+    var failurePhase = 'run.parentValidation';
     try {
+      final parent = await conversationStore.getConversation(
+        parentConversationId,
+      );
+      final parentError = _parentError(parent, workspaceId);
+      if (parentError != null) {
+        throw _failure(
+          responseRaw: _error(parentError),
+          error: StateError(parentError),
+          stackTrace: StackTrace.current,
+          failurePhase: failurePhase,
+        );
+      }
+
+      failurePhase = 'run.agentValidation';
+      final agentError = await _agentError(request.agentId, workspaceId);
+      if (agentError != null) {
+        throw _failure(
+          responseRaw: _error(agentError, agentId: request.agentId),
+          error: StateError(agentError),
+          stackTrace: StackTrace.current,
+          failurePhase: failurePhase,
+        );
+      }
+
+      failurePhase = 'run.createChild';
+      child = await conversationStore.createChildConversation((
+        parentConversationId: parentConversationId,
+        workspaceId: workspaceId,
+        modelId: parent!.modelId,
+        agentId: request.agentId,
+        title: request.title,
+      ));
+      requestHandle = startRequest(
+        parentId: parentConversationId,
+        childId: child.id,
+      );
+      failurePhase = 'run.childStarted';
+      onChildStarted?.call(parentId: parentConversationId, childId: child.id);
+
+      failurePhase = 'run.createPrompt';
       final message = await messageStore.createUserPrompt(
         conversationId: child.id,
         prompt: request.prompt,
       );
+      failurePhase = 'run.continueAgent';
       final decision = await continueAgentTurn(
         conversationId: child.id,
         context: AgentIterationContext(
@@ -98,6 +144,7 @@ class const SubAgentRunner({
         return await _result(child.id, 'stopped', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
+        failurePhase = 'run.waitForApproval';
         final waitResult = await _waitForToolApproval(
           requestHandle,
           child.id,
@@ -110,13 +157,29 @@ class const SubAgentRunner({
         }
       }
 
+      failurePhase = 'run.readResult';
       return await _result(child.id, 'done', agentId: request.agentId);
-    } on Object {
+    } on AgentToolExecutionFailure catch (failure) {
+      completionStatus = SubAgentCompletionStatus.error;
+      if (child == null) rethrow;
+
+      throw _failure(
+        responseRaw: _failedResult(child.id, request.agentId),
+        error: failure.error,
+        stackTrace: failure.stackTrace,
+        failurePhase: failurePhase,
+      );
+    } on Object catch (error, stackTrace) {
       completionStatus = SubAgentCompletionStatus.error;
 
-      return _failedResult(child.id, request.agentId);
+      throw _failure(
+        responseRaw: _failedResult(child?.id, request.agentId),
+        error: error,
+        stackTrace: stackTrace,
+        failurePhase: failurePhase,
+      );
     } finally {
-      requestHandle.finish(completionStatus);
+      requestHandle?.finish(completionStatus);
     }
   }
 
@@ -136,7 +199,7 @@ class const SubAgentRunner({
 
     final agent = await agentCatalog.getSubAgent(agentId);
     if (agent == null || agent.workspaceId != workspaceId) {
-      return _error('Unknown agent.', agentId: agentId);
+      return 'Unknown agent.';
     }
 
     return null;
@@ -155,9 +218,12 @@ class const SubAgentRunner({
       );
     }
     if (status == SubAgentCompletionStatus.error) {
-      return _SubAgentWaitResult(
-        .error,
-        _failedResult(conversationId, agentId),
+      final failure = requestHandle.failure;
+      throw _failure(
+        responseRaw: _failedResult(conversationId, agentId),
+        error: failure?.error ?? StateError('Sub-agent continuation failed.'),
+        stackTrace: failure?.stackTrace ?? StackTrace.current,
+        failurePhase: 'run.waitForApproval',
       );
     }
 
@@ -179,9 +245,21 @@ class const SubAgentRunner({
     });
   }
 
-  String _failedResult(String conversationId, String? agentId) {
+  AgentToolExecutionFailure _failure({
+    required String responseRaw,
+    required Object error,
+    required StackTrace stackTrace,
+    required String failurePhase,
+  }) => AgentToolExecutionFailure(
+    responseRaw: responseRaw,
+    error: error,
+    stackTrace: stackTrace,
+    failurePhase: failurePhase,
+  );
+
+  String _failedResult(String? conversationId, String? agentId) {
     return jsonEncode({
-      'conversationId': conversationId,
+      'conversationId': ?conversationId,
       'status': 'error',
       'content': 'Sub-agent failed.',
       'agentId': ?agentId,
@@ -322,6 +400,8 @@ typedef StartSubAgentRequest = SubAgentRequestHandle Function({
 abstract interface class SubAgentRequestHandle {
   Future<SubAgentCompletionStatus> get completion;
 
+  SubAgentCompletionFailure? get failure;
+
   bool get isStopped;
 
   void finish([
@@ -330,6 +410,11 @@ abstract interface class SubAgentRequestHandle {
 }
 
 enum SubAgentCompletionStatus { done, stopped, error }
+
+class const SubAgentCompletionFailure({
+  required final Object error,
+  required final StackTrace stackTrace,
+});
 
 class const SubAgentCatalogEntry({
   required final String id,
