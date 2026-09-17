@@ -256,18 +256,26 @@ extension on AppDatabase {
   Future<void> _upgradeForkSchema(Migrator m, int from) async {
     if (from >= AppDatabase._forkSchemaVersion) return;
     if (!await _tableExists('conversations')) return;
-    if (!await _columnExists('conversations', 'fork_source_conversation_id')) {
-      await m.addColumn(conversations, conversations.forkSourceConversationId);
-    }
-    if (!await _columnExists('conversations', 'fork_source_title')) {
-      await m.addColumn(conversations, conversations.forkSourceTitle);
-    }
-    if (!await _columnExists('conversations', 'fork_through_message_id')) {
-      await m.addColumn(conversations, conversations.forkThroughMessageId);
-    }
-    if (!await _columnExists('conversations', 'fork_materialized_at')) {
-      await m.addColumn(conversations, conversations.forkMaterializedAt);
-    }
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_source_conversation_id',
+      conversations.forkSourceConversationId,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_source_title',
+      conversations.forkSourceTitle,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_through_message_id',
+      conversations.forkThroughMessageId,
+    );
+    await _addConversationColumnIfMissing(
+      m,
+      'fork_materialized_at',
+      conversations.forkMaterializedAt,
+    );
     await customStatement(
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
@@ -276,6 +284,15 @@ extension on AppDatabase {
 }
 
 extension on AppDatabase {
+  Future<void> _addConversationColumnIfMissing<T extends Object>(
+    Migrator m,
+    String columnName,
+    GeneratedColumn<T> column,
+  ) async {
+    if (await _columnExists('conversations', columnName)) return;
+    await m.addColumn(conversations, column);
+  }
+
   Future<void> _upgradeToSchema4(Migrator m) async {
     await m.addColumn(conversations, conversations.parentConversationId);
     await m.createTable(messageAttachments);
