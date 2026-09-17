@@ -262,6 +262,103 @@ void main() {
       expect(patched.content, 'updated');
     });
 
+    test(
+      'concurrent tool metadata patches preserve both final statuses',
+      () async {
+        const initialMetadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-a',
+              name: 'tool_a',
+              argumentsRaw: '{}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-b',
+              name: 'tool_b',
+              argumentsRaw: '{}',
+            ),
+          ],
+        );
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: .text,
+            isUser: false,
+            status: .unfinished,
+            metadata: jsonEncode(initialMetadata.toJson()),
+          ),
+        );
+
+        final _ = await Future.wait([
+          repository.patchMessage(
+            created.id,
+            const MessagePatch(
+              metadata: .new(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'tool-a',
+                    name: 'tool_a',
+                    argumentsRaw: '{}',
+                    resultStatus: .success,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          repository.patchMessage(
+            created.id,
+            const MessagePatch(
+              metadata: .new(
+                toolCalls: [
+                  MessageToolCallEntity(
+                    id: 'tool-b',
+                    name: 'tool_b',
+                    argumentsRaw: '{}',
+                    resultStatus: .executionError,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ]);
+
+        final patched = await repository.getMessageById(created.id);
+        final toolCalls = patched?.metadata?.toolCalls ?? const [];
+        expect(
+          toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-a')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-b')
+              .resultStatus,
+          ToolCallResultStatus.executionError,
+        );
+
+        final _ = await repository.patchMessage(
+          created.id,
+          const MessagePatch(metadata: initialMetadata),
+        );
+
+        final afterStalePatch = await repository.getMessageById(created.id);
+        expect(
+          afterStalePatch?.metadata?.toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-a')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+        expect(
+          afterStalePatch?.metadata?.toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-b')
+              .resultStatus,
+          ToolCallResultStatus.executionError,
+        );
+      },
+    );
+
     test('patchMessage throws for non-existent', () {
       expect(
         () => repository.patchMessage(

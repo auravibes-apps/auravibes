@@ -33,13 +33,15 @@ class AgentToolResumeService({
       );
 }
 
-class const AppAgentToolResumeProvider({
+class AppAgentToolResumeProvider({
   required final MessageRepository messageRepository,
   required final ConversationRepository conversationRepository,
   required final AgentToolExecutionService toolExecutionService,
   required final agent.AgentLoopRunner agentLoop,
   required final ActiveSubAgentRuntime? activeSubAgents,
 }) implements agent.AgentToolResumeProvider {
+  final _activeContinuations = <String, Future<agent.AgentIterationDecision>>{};
+
   @override
   Future<agent.AgentIterationDecision> runAllowedTools({
     required String conversationId,
@@ -65,19 +67,11 @@ class const AppAgentToolResumeProvider({
   Future<void> continueAgent({
     required String conversationId,
     required agent.AgentIterationContext context,
-  }) async {
-    final decision = await _continueAgent(
-      conversationId: conversationId,
-      context: context,
-    );
-    if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
+  }) {
+    final continuation = _activeContinuations[conversationId] ??=
+        _continueAgent(conversationId: conversationId, context: context);
 
-    _finishChildIfNeeded(activeSubAgents, (
-      conversationId: conversationId,
-      status: .done,
-      error: null,
-      stackTrace: null,
-    ));
+    return _awaitContinuation(conversationId, continuation);
   }
 
   @override
@@ -123,7 +117,13 @@ class const AppAgentToolResumeProvider({
     required agent.AgentIterationContext context,
   }) async {
     try {
-      return await agentLoop(conversationId: conversationId, context: context);
+      final decision = await agentLoop(
+        conversationId: conversationId,
+        context: context,
+      );
+      _finishChildAfterDecision(conversationId, decision);
+
+      return decision;
     } on Object catch (error, stackTrace) {
       _finishChildIfNeeded(activeSubAgents, (
         conversationId: conversationId,
@@ -132,6 +132,33 @@ class const AppAgentToolResumeProvider({
         stackTrace: stackTrace,
       ));
       rethrow;
+    }
+  }
+
+  void _finishChildAfterDecision(
+    String conversationId,
+    agent.AgentIterationDecision decision,
+  ) {
+    if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
+
+    _finishChildIfNeeded(activeSubAgents, (
+      conversationId: conversationId,
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
+  }
+
+  Future<void> _awaitContinuation(
+    String conversationId,
+    Future<agent.AgentIterationDecision> continuation,
+  ) async {
+    try {
+      final _ = await continuation;
+    } finally {
+      if (identical(_activeContinuations[conversationId], continuation)) {
+        final _ = _activeContinuations.remove(conversationId);
+      }
     }
   }
 }

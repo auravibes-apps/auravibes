@@ -94,12 +94,21 @@ extension _SyncSkillToolPermissionsUsecaseSync
       workspaceId: workspaceId,
     );
 
-    return [
+    final specs = [
       ...await _dynamicSpecs(conversationId, workspaceId),
       ...await _templateSpecs(conversationId, workspaceId, agentSkills),
       ...await _nativeSpecs(conversationId, workspaceId, agentSkills),
-      _runSubAgentPermissionSpec(),
     ];
+    _addRunSubAgentSpec(specs);
+
+    return specs;
+  }
+
+  void _addRunSubAgentSpec(List<ToolSpec> specs) {
+    final runSubAgentSpec = _runSubAgentPermissionSpec();
+    if (specs.any((spec) => spec.name == runSubAgentSpec.name)) return;
+
+    specs.add(runSubAgentSpec);
   }
 
   ToolSpec _runSubAgentPermissionSpec() {
