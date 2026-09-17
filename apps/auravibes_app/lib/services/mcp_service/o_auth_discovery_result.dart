@@ -820,9 +820,8 @@ Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
     final response = await http
         .get(uri, headers: _jsonAcceptHeader)
         .timeout(const Duration(seconds: 5));
-    if (response.statusCode != HttpStatus.ok) return null;
-    final contentType = response.headers[_contentTypeHeaderName];
-    if (contentType != null && !contentType.toLowerCase().contains('json')) {
+    if (response.statusCode != HttpStatus.ok ||
+        !_hasJsonContentType(response)) {
       return null;
     }
 
@@ -833,12 +832,15 @@ Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
 }
 
 Map<String, dynamic>? _decodeJsonObject(http.Response response) {
-  final contentType = response.headers[_contentTypeHeaderName];
-  if (contentType != null && !contentType.toLowerCase().contains('json')) {
-    return null;
-  }
+  if (!_hasJsonContentType(response)) return null;
 
   return _decodeJsonObjectBody(response.body);
+}
+
+bool _hasJsonContentType(http.Response response) {
+  final contentType = response.headers[_contentTypeHeaderName];
+
+  return contentType == null || contentType.toLowerCase().contains('json');
 }
 
 Map<String, dynamic>? _decodeJsonObjectBody(String body) {
