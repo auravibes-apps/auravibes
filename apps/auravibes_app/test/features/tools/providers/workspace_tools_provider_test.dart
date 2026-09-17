@@ -24,10 +24,11 @@ WorkspaceToolEntity _tool({
   bool isEnabled = true,
   ToolPermissionMode permissionMode = ToolPermissionMode.alwaysAsk,
   String? config,
+  String workspaceId = 'ws1',
 }) {
   return WorkspaceToolEntity(
     id: id,
-    workspaceId: 'ws1',
+    workspaceId: workspaceId,
     toolId: toolId,
     isEnabled: isEnabled,
     permissionMode: permissionMode,
@@ -41,12 +42,13 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   List<WorkspaceToolEntity> tools = [];
   List<String> removedIds = [];
   Map<String, WorkspaceToolEntity> updatedTools = {};
+  List<String> resetWorkspaceIds = [];
   bool removeResult = true;
 
   @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
     String workspaceId,
-  ) async => tools;
+  ) async => tools.where((tool) => tool.workspaceId == workspaceId).toList();
 
   @override
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
@@ -68,6 +70,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }) async {
     final tool = tools.firstWhere((t) => t.id == id);
     final updated = tool.copyWith(isEnabled: isEnabled);
+    tools = tools.map((t) => t.id == id ? updated : t).toList();
     updatedTools[id] = updated;
 
     return updated;
@@ -87,9 +90,28 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }) async {
     final tool = tools.firstWhere((t) => t.id == id);
     final updated = tool.copyWith(permissionMode: permissionMode);
+    tools = tools.map((t) => t.id == id ? updated : t).toList();
     updatedTools[id] = updated;
 
     return updated;
+  }
+
+  @override
+  Future<List<WorkspaceToolEntity>> resetWorkspaceToolPermissions(
+    String workspaceId,
+  ) async {
+    resetWorkspaceIds.add(workspaceId);
+    final resetTools = tools
+        .where((tool) => tool.workspaceId == workspaceId)
+        .map(
+          (tool) => tool.copyWith(isEnabled: true, permissionMode: .alwaysAsk),
+        )
+        .toList();
+    final resetById = {for (final tool in resetTools) tool.id: tool};
+    tools = tools.map((tool) => resetById[tool.id] ?? tool).toList();
+    updatedTools.addAll(resetById);
+
+    return resetTools;
   }
 
   @override
@@ -273,6 +295,46 @@ void main() {
         ToolPermissionMode.alwaysAllow,
       );
     });
+
+    test(
+      'resetToolPermissions restores defaults for current workspace',
+      () async {
+        final repository = fixture.repository;
+        final container = fixture.container;
+        repository.tools = [
+          _tool(id: 'current', isEnabled: false, permissionMode: .alwaysAllow),
+          _tool(
+            id: 'other',
+            isEnabled: false,
+            permissionMode: .alwaysDeny,
+            workspaceId: 'other-workspace',
+          ),
+        ];
+
+        final _ = container.listen(
+          workspaceToolsProvider('ws1'),
+          _ignoreWorkspaceTools,
+          fireImmediately: true,
+        );
+        final _ = await container.read(workspaceToolsProvider('ws1').future);
+
+        await container
+            .read(workspaceToolsProvider('ws1').notifier)
+            .resetToolPermissions();
+
+        expect(repository.resetWorkspaceIds, ['ws1']);
+        expect(repository.tools.first.isEnabled, isTrue);
+        expect(
+          repository.tools.first.permissionMode,
+          ToolPermissionMode.alwaysAsk,
+        );
+        expect(repository.tools.last.isEnabled, isFalse);
+        expect(
+          repository.tools.last.permissionMode,
+          ToolPermissionMode.alwaysDeny,
+        );
+      },
+    );
 
     test('addTool enables tool and invalidates self', () async {
       final repository = fixture.repository;
