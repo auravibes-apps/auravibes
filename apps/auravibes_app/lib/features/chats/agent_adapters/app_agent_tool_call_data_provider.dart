@@ -30,7 +30,7 @@ agent.AgentToolCallState _toolCallState(MessageToolCallEntity toolCall) {
   if (toolCall.resultStatus == ToolCallResultStatus.stoppedByUser) {
     return agent.AgentToolCallState.stopped;
   }
-  if (toolCall.isAwaitingApproval) return agent.AgentToolCallState.pending;
+  if (toolCall.isPending) return agent.AgentToolCallState.pending;
 
   return agent.AgentToolCallState.resolved;
 }

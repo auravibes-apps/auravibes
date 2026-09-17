@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_service.dart';
@@ -157,6 +159,49 @@ void main() {
         ).called(1),
         returnsNormally,
       );
+    });
+
+    test('continues an active conversation only once', () async {
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
+      when(
+        () => toolExecutionService.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ),
+      ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
+
+      final loopStarted = Completer<void>();
+      final loopFinished = Completer<AgentIterationDecision>();
+      when(
+        () => agentLoop.call(
+          conversationId: conversationId,
+          context: const AgentIterationContext(origin: .toolResume),
+        ),
+      ).thenAnswer((_) {
+        if (!loopStarted.isCompleted) loopStarted.complete();
+
+        return loopFinished.future;
+      });
+
+      final first = usecase.call(messageId: messageId);
+      final second = usecase.call(messageId: messageId);
+      await loopStarted.future;
+
+      expect(
+        () => verify(
+          () => agentLoop.call(
+            conversationId: conversationId,
+            context: const AgentIterationContext(origin: .toolResume),
+          ),
+        ).called(1),
+        returnsNormally,
+      );
+
+      loopFinished.complete(AgentIterationDecision.done);
+      final _ = await Future.wait([first, second]);
     });
 
     test('fetches message by correct messageId', () async {

@@ -2451,39 +2451,44 @@ void main() {
       expect(find.byType(AuraMessageBubble), findsNothing);
     });
 
-    testWidgets('renders unresolved running tool call', (tester) async {
-      const toolCall = MessageToolCallEntity(
-        id: 'tc-1',
-        name: 'built_in_1_calculator',
-        argumentsRaw: '{}',
-      );
-      final message = _createMessage(
-        content: '',
-        isUser: false,
-        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
-      );
+    testWidgets(
+      'renders unresolved tool call as pending without approval projection',
+      (tester) async {
+        const toolCall = MessageToolCallEntity(
+          id: 'tc-1',
+          name: 'built_in_1_calculator',
+          argumentsRaw: '{}',
+        );
+        final message = _createMessage(
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+        );
 
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          messages: ['msg-1'],
-          overrides: [
-            messageConversationByIdProvider.overrideWith((ref, id) => message),
-            isMessageStreamingProvider.overrideWith((ref, id) => false),
-            conversationBusyStateProvider.overrideWith(
-              (ref, _) async => const ConversationBusyState(
-                isStreaming: false,
-                hasPendingTools: true,
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['msg-1'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => message,
               ),
-            ),
-          ],
-        ),
-      );
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: true,
+                ),
+              ),
+            ],
+          ),
+        );
 
-      expect(find.text('Running...'), findsOneWidget);
-      expect(find.byIcon(Icons.sync), findsOneWidget);
-      expect(find.byType(AuraMessageBubble), findsNothing);
-    });
+        expect(find.text('Awaiting confirmation'), findsOneWidget);
+        expect(find.byIcon(Icons.hourglass_empty), findsOneWidget);
+        expect(find.byType(AuraMessageBubble), findsNothing);
+      },
+    );
 
     testWidgets('renders tool call with skipped status', (tester) async {
       const toolCall = MessageToolCallEntity(

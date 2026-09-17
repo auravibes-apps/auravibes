@@ -113,6 +113,33 @@ void main() {
       );
     });
 
+    test('creates the run_sub_agent permission row', () async {
+      final spec = ToolSpec(
+        name: 'skill__app__agents__run_sub_agent',
+        description: 'Run a sub-agent',
+        inputJsonSchema: {'type': 'object'},
+      );
+      stubSpecs();
+
+      await fixture.usecase.call(
+        conversationId: 'conversation-id',
+        workspaceId: fixture.workspaceId,
+      );
+
+      final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
+        workspaceId: fixture.workspaceId,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
+      );
+      final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
+        group?.id ?? fail('Expected skills group'),
+      );
+      final tool = tools.single;
+
+      expect(tool.toolId, spec.name);
+      expect(tool.isEnabled, isTrue);
+      expect(tool.permissions, PermissionAccess.ask);
+    });
+
     test('updates metadata and preserves permission settings', () async {
       final initialSpec = ToolSpec(
         name: 'skill__user__example__search',

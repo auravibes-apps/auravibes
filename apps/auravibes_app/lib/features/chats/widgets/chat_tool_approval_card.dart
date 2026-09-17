@@ -3,6 +3,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -33,7 +34,7 @@ final _logger = Logger('chat_tool_approval_card');
 typedef _ActionErrorRequest = ({
   BuildContext context,
   String errorMessageKey,
-  Exception error,
+  Object error,
   StackTrace stackTrace,
 });
 
@@ -60,22 +61,33 @@ class const _PendingToolCallsView({
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hiddenKeys = useState(<String>{});
     final asyncCalls = pendingCalls == null
         ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
         : null;
 
+    useEffect(() => _resetHiddenKeys(hiddenKeys), [conversationId]);
+
     return _PendingToolCallsResult(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      hiddenKeys: hiddenKeys,
       pendingCalls: pendingCalls,
       asyncCalls: asyncCalls,
     );
   }
 }
 
+Dispose? _resetHiddenKeys(ValueNotifier<Set<String>> hiddenKeys) {
+  hiddenKeys.value = {};
+
+  return null;
+}
+
 class const _PendingToolCallsResult({
   required final String workspaceId,
   required final String conversationId,
+  required final ValueNotifier<Set<String>> hiddenKeys,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
 }) extends StatelessWidget {
@@ -90,6 +102,7 @@ class const _PendingToolCallsResult({
     return _PendingToolCallsList(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      hiddenKeys: hiddenKeys,
       pendingCalls: pendingCalls ?? asyncCalls?.value ?? const [],
     );
   }
@@ -98,6 +111,7 @@ class const _PendingToolCallsResult({
 class const _PendingToolCallsList({
   required final String workspaceId,
   required final String conversationId,
+  required final ValueNotifier<Set<String>> hiddenKeys,
   required final List<PendingToolCall> pendingCalls,
 }) extends StatelessWidget {
   @override
@@ -106,6 +120,7 @@ class const _PendingToolCallsList({
       : _PendingToolCallsPager(
           workspaceId: workspaceId,
           conversationId: conversationId,
+          hiddenKeys: hiddenKeys,
           pendingCalls: pendingCalls,
         );
 }
@@ -113,128 +128,480 @@ class const _PendingToolCallsList({
 class const _PendingToolCallsPager({
   required final String workspaceId,
   required final String conversationId,
+  required final ValueNotifier<Set<String>> hiddenKeys,
   required final List<PendingToolCall> pendingCalls,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
-    final currentIndex = useState(0);
-    final lastIndex = pendingCalls.length - 1;
-    useEffect(() => _resetPagerIndexEffect(currentIndex, lastIndex), [
-      lastIndex,
-    ]);
-
-    return _PendingToolCallsPagerPage(
+    final request = _usePendingToolCallsPager((
       workspaceId: workspaceId,
       conversationId: conversationId,
+      hiddenKeys: hiddenKeys,
       pendingCalls: pendingCalls,
-      currentIndex: currentIndex,
+    ));
+
+    return _PendingToolCallsPagerPageBuilder(request: request);
+  }
+}
+
+typedef _PendingToolCallsPagerPageRequest = ({
+  String workspaceId,
+  String conversationId,
+  List<PendingToolCall> visibleCalls,
+  ValueNotifier<String?> selectedKey,
+  List<String> previousKeys,
+  _HideApprovalCalls onHideCalls,
+  _RestoreApprovalCalls onRestoreCalls,
+});
+
+typedef _PendingToolCallsPagerHookRequest = ({
+  String workspaceId,
+  String conversationId,
+  ValueNotifier<Set<String>> hiddenKeys,
+  List<PendingToolCall> pendingCalls,
+});
+
+typedef _PagerVisibilityCallbacks = ({
+  _HideApprovalCalls onHideCalls,
+  _RestoreApprovalCalls onRestoreCalls,
+});
+
+typedef _PagerSelectionState = ({
+  ValueNotifier<String?> selectedKey,
+  ObjectRef<List<String>> previousKeys,
+});
+
+typedef _PagerVisibleState = ({List<PendingToolCall> calls, List<String> keys});
+
+_PendingToolCallsPagerPageRequest _usePendingToolCallsPager(
+  _PendingToolCallsPagerHookRequest request,
+) {
+  final visible = _visiblePagerState(request);
+  final selection = _usePagerSelection(request.conversationId, visible.keys);
+  final callbacks = _pagerVisibilityCallbacks(
+    request.hiddenKeys,
+    request.conversationId,
+  );
+
+  return _pagerPageRequest(request, visible, selection, callbacks);
+}
+
+_PendingToolCallsPagerPageRequest _pagerPageRequest(
+  _PendingToolCallsPagerHookRequest request,
+  _PagerVisibleState visible,
+  _PagerSelectionState selection,
+  _PagerVisibilityCallbacks callbacks,
+) => (
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+  visibleCalls: visible.calls,
+  selectedKey: selection.selectedKey,
+  previousKeys: selection.previousKeys.value,
+  onHideCalls: callbacks.onHideCalls,
+  onRestoreCalls: callbacks.onRestoreCalls,
+);
+
+_PagerVisibleState _visiblePagerState(
+  _PendingToolCallsPagerHookRequest request,
+) {
+  final calls = _visiblePendingCalls(
+    pendingCalls: request.pendingCalls,
+    hiddenKeys: request.hiddenKeys.value,
+    conversationId: request.conversationId,
+  );
+
+  return (
+    calls: calls,
+    keys: _pendingToolCallKeys(calls, request.conversationId),
+  );
+}
+
+_PagerSelectionState _usePagerSelection(
+  String conversationId,
+  List<String> visibleKeys,
+) {
+  final selectedKey = useState<String?>(null);
+  final previousKeys = useRef<List<String>>([]);
+  _usePagerSelectionEffects((
+    conversationId: conversationId,
+    selectedKey: selectedKey,
+    previousKeys: previousKeys,
+    visibleKeys: visibleKeys,
+  ));
+
+  return (selectedKey: selectedKey, previousKeys: previousKeys);
+}
+
+_PagerVisibilityCallbacks _pagerVisibilityCallbacks(
+  ValueNotifier<Set<String>> hiddenKeys,
+  String conversationId,
+) => (
+  onHideCalls: (calls) => _hidePendingCalls((
+    calls: calls,
+    conversationId: conversationId,
+    hiddenKeys: hiddenKeys,
+  )),
+  onRestoreCalls: (keys) => _restorePendingCalls(hiddenKeys, keys),
+);
+
+typedef _PagerSelectionEffectsRequest = ({
+  String conversationId,
+  ValueNotifier<String?> selectedKey,
+  ObjectRef<List<String>> previousKeys,
+  List<String> visibleKeys,
+});
+
+void _usePagerSelectionEffects(_PagerSelectionEffectsRequest request) {
+  useEffect(
+    () => _resetPagerSelection(request.selectedKey, request.previousKeys),
+    [request.conversationId],
+  );
+  useEffect(
+    () => _syncPagerSelection((
+      selectedKey: request.selectedKey,
+      previousKeys: request.previousKeys,
+      visibleKeys: request.visibleKeys,
+    )),
+    request.visibleKeys,
+  );
+}
+
+class const _PendingToolCallsPagerPageBuilder({
+  required final _PendingToolCallsPagerPageRequest request,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final visibleCalls = request.visibleCalls;
+    if (visibleCalls.isEmpty) return const SizedBox.shrink();
+
+    final conversationId = request.conversationId;
+
+    return _PendingToolCallsPagerPage(
+      workspaceId: request.workspaceId,
+      conversationId: conversationId,
+      pendingCalls: visibleCalls,
+      selectedKey: request.selectedKey,
+      previousKeys: request.previousKeys,
+      onHideCalls: request.onHideCalls,
+      onRestoreCalls: request.onRestoreCalls,
     );
   }
 }
 
-void _resetPagerIndex(ValueNotifier<int> currentIndex, int lastIndex) {
-  if (currentIndex.value > lastIndex) currentIndex.value = lastIndex;
-}
+List<PendingToolCall> _visiblePendingCalls({
+  required List<PendingToolCall> pendingCalls,
+  required Set<String> hiddenKeys,
+  required String conversationId,
+}) => [
+  for (final pendingCall in pendingCalls)
+    if (!hiddenKeys.contains(_pendingToolCallKey(pendingCall, conversationId)))
+      pendingCall,
+];
 
-Dispose? _resetPagerIndexEffect(
-  ValueNotifier<int> currentIndex,
-  int lastIndex,
+List<String> _pendingToolCallKeys(
+  Iterable<PendingToolCall> pendingCalls,
+  String conversationId,
+) => [
+  for (final pendingCall in pendingCalls)
+    _pendingToolCallKey(pendingCall, conversationId),
+];
+
+Dispose? _resetPagerSelection(
+  ValueNotifier<String?> selectedKey,
+  ObjectRef<List<String>> previousKeys,
 ) {
-  _resetPagerIndex(currentIndex, lastIndex);
+  selectedKey.value = null;
+  previousKeys.value = [];
 
   return null;
 }
+
+typedef _PagerSelectionSyncRequest = ({
+  ValueNotifier<String?> selectedKey,
+  ObjectRef<List<String>> previousKeys,
+  List<String> visibleKeys,
+});
+
+Dispose? _syncPagerSelection(_PagerSelectionSyncRequest request) {
+  _applyPagerSelection(
+    selectedKey: request.selectedKey,
+    previousKeys: request.previousKeys,
+    visibleKeys: request.visibleKeys,
+  );
+
+  return null;
+}
+
+void _applyPagerSelection({
+  required ValueNotifier<String?> selectedKey,
+  required ObjectRef<List<String>> previousKeys,
+  required List<String> visibleKeys,
+}) {
+  final nextIndex = _pagerSelectionIndex((
+    currentKeys: visibleKeys,
+    selectedKey: selectedKey.value,
+    previousKeys: previousKeys.value,
+  ));
+  final nextKey = visibleKeys.isEmpty ? null : visibleKeys[nextIndex];
+  if (selectedKey.value != nextKey) selectedKey.value = nextKey;
+  previousKeys.value = visibleKeys;
+}
+
+typedef _PagerKeySelectionRequest = ({
+  List<String> currentKeys,
+  String? selectedKey,
+  List<String> previousKeys,
+});
+
+int _pagerSelectionIndex(_PagerKeySelectionRequest request) {
+  final selectedKey = request.selectedKey;
+  final selectedIndex = selectedKey == null
+      ? -1
+      : request.currentKeys.indexOf(selectedKey);
+  if (selectedIndex >= 0) return selectedIndex;
+
+  final previousIndex = selectedKey == null
+      ? -1
+      : request.previousKeys.indexOf(selectedKey);
+
+  return math.min(math.max(previousIndex, 0), request.currentKeys.length - 1);
+}
+
+typedef _HidePendingCallsRequest = ({
+  Iterable<PendingToolCall> calls,
+  String conversationId,
+  ValueNotifier<Set<String>> hiddenKeys,
+});
+
+Set<String>? _hidePendingCalls(_HidePendingCallsRequest request) {
+  final keys = _pendingToolCallKeys(request.calls, request.conversationId);
+  final newKeys = keys.toSet().difference(request.hiddenKeys.value);
+  if (newKeys.isEmpty) return null;
+
+  request.hiddenKeys.value = {...request.hiddenKeys.value, ...newKeys};
+
+  return newKeys;
+}
+
+void _restorePendingCalls(
+  ValueNotifier<Set<String>> hiddenKeys,
+  Set<String> keys,
+) {
+  hiddenKeys.value = {...hiddenKeys.value}..removeAll(keys);
+}
+
+String _pendingToolCallKey(PendingToolCall pendingCall, String conversationId) {
+  final sourceConversationId = pendingCall.sourceConversationId.isEmpty
+      ? conversationId
+      : pendingCall.sourceConversationId;
+
+  return '$sourceConversationId:'
+      '${pendingCall.messageId}:${pendingCall.toolCall.id}';
+}
+
+typedef _HideApprovalCalls = Set<String>? Function(
+  Iterable<PendingToolCall> calls,
+);
+typedef _StartApprovalDecision = Set<String>? Function();
+typedef _RestoreApprovalCalls = void Function(Set<String> keys);
 
 class const _PendingToolCallsPagerPage({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
-  required final ValueNotifier<int> currentIndex,
+  required final ValueNotifier<String?> selectedKey,
+  required final List<String> previousKeys,
+  required final _HideApprovalCalls onHideCalls,
+  required final _RestoreApprovalCalls onRestoreCalls,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final page = _PendingToolCallsPageData(
+  Widget build(BuildContext context) => _PendingToolCallsPagerContentBuilder(
+    request: (
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingCalls: pendingCalls,
-      currentIndex: currentIndex,
-    );
-
-    return _PendingToolCallsPagerContent(request: page.request);
-  }
-}
-
-class _PendingToolCallsPageData {
-  new({
-    required String workspaceId,
-    required String conversationId,
-    required List<PendingToolCall> pendingCalls,
-    required ValueNotifier<int> currentIndex,
-  }) : request = _approvalCardRequest(
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         pendingCalls: pendingCalls,
-         currentIndex: currentIndex,
-       );
-
-  final _ApprovalCardRequest request;
-}
-
-_ApprovalCardRequest _approvalCardRequest({
-  required String workspaceId,
-  required String conversationId,
-  required List<PendingToolCall> pendingCalls,
-  required ValueNotifier<int> currentIndex,
-}) {
-  final selection = _PendingToolCallsPageSelection(pendingCalls, currentIndex);
-  final sourceConversationId =
-      pendingCalls[selection.clamped].sourceConversationId;
-
-  return _ApprovalCardRequest(
-    workspaceId: workspaceId,
-    conversationId: sourceConversationId.isEmpty
-        ? conversationId
-        : sourceConversationId,
-    pendingCalls: pendingCalls,
-    currentIndexNotifier: currentIndex,
-    selection: selection,
+      selectedKey: selectedKey.value,
+      previousKeys: previousKeys,
+      selectedKeyNotifier: selectedKey,
+      onHideCalls: onHideCalls,
+      onRestoreCalls: onRestoreCalls,
+    ),
   );
 }
 
+typedef _PendingToolCallsPagerContentRequest = ({
+  String workspaceId,
+  String conversationId,
+  List<PendingToolCall> pendingCalls,
+  String? selectedKey,
+  List<String> previousKeys,
+  ValueNotifier<String?> selectedKeyNotifier,
+  _HideApprovalCalls onHideCalls,
+  _RestoreApprovalCalls onRestoreCalls,
+});
+
+class const _PendingToolCallsPagerContentBuilder({
+  required final _PendingToolCallsPagerContentRequest request,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final selection = _PendingToolCallsPageSelection(
+      request.pendingCalls,
+      request.selectedKey,
+      request.previousKeys,
+      request.conversationId,
+    );
+    final current = request.pendingCalls[selection.clamped];
+
+    return _PendingToolCallsPagerContent(
+      request: _pagerApprovalCardRequest(request, selection, current),
+    );
+  }
+}
+
+_ApprovalCardRequest _pagerApprovalCardRequest(
+  _PendingToolCallsPagerContentRequest request,
+  _PendingToolCallsPageSelection selection,
+  PendingToolCall current,
+) {
+  final currentIndex = selection.clamped;
+  final actions = _pagerApprovalActions(request, current, currentIndex);
+
+  return (
+    workspaceId: request.workspaceId,
+    conversationId: request.conversationId,
+    current: current,
+    currentIndex: currentIndex,
+    totalCount: request.pendingCalls.length,
+    hasPrev: currentIndex > 0,
+    hasNext: currentIndex < selection.lastIndex,
+    actions: actions,
+  );
+}
+
+typedef _ApprovalCardActions = ({
+  VoidCallback? onPrev,
+  VoidCallback? onNext,
+  _StartApprovalDecision onDecisionStarted,
+  _StartApprovalDecision onStopAllStarted,
+  _RestoreApprovalCalls onDecisionFailed,
+});
+
+_ApprovalCardActions _pagerApprovalActions(
+  _PendingToolCallsPagerContentRequest request,
+  PendingToolCall current,
+  int currentIndex,
+) {
+  final navigation = _pagerNavigationActions(request, currentIndex);
+  final decisions = _pagerDecisionActions(request, current);
+
+  return (
+    onPrev: navigation.onPrev,
+    onNext: navigation.onNext,
+    onDecisionStarted: decisions.onDecisionStarted,
+    onStopAllStarted: decisions.onStopAllStarted,
+    onDecisionFailed: request.onRestoreCalls,
+  );
+}
+
+typedef _PagerNavigationActions = ({
+  VoidCallback? onPrev,
+  VoidCallback? onNext,
+});
+
+_PagerNavigationActions _pagerNavigationActions(
+  _PendingToolCallsPagerContentRequest request,
+  int currentIndex,
+) {
+  final pendingCalls = request.pendingCalls;
+  final conversationId = request.conversationId;
+  final selectedKey = request.selectedKeyNotifier;
+
+  return (
+    onPrev: currentIndex > 0
+        ? _setPagerSelection(
+            selectedKey,
+            pendingCalls[currentIndex - 1],
+            conversationId,
+          )
+        : null,
+    onNext: currentIndex < pendingCalls.length - 1
+        ? _setPagerSelection(
+            selectedKey,
+            pendingCalls[currentIndex + 1],
+            conversationId,
+          )
+        : null,
+  );
+}
+
+VoidCallback _setPagerSelection(
+  ValueNotifier<String?> selectedKey,
+  PendingToolCall pendingCall,
+  String conversationId,
+) =>
+    () => selectedKey.value = _pendingToolCallKey(pendingCall, conversationId);
+
+typedef _PagerDecisionActions = ({
+  _StartApprovalDecision onDecisionStarted,
+  _StartApprovalDecision onStopAllStarted,
+});
+
+_PagerDecisionActions _pagerDecisionActions(
+  _PendingToolCallsPagerContentRequest request,
+  PendingToolCall current,
+) => (
+  onDecisionStarted: () => request.onHideCalls([current]),
+  onStopAllStarted: () => request.onHideCalls(request.pendingCalls),
+);
+
 class _PendingToolCallsPageSelection {
-  new(List<PendingToolCall> pendingCalls, ValueNotifier<int> currentIndex)
-    : lastIndex = pendingCalls.length - 1,
-      clamped = math.min(currentIndex.value, pendingCalls.length - 1);
+  new(
+    List<PendingToolCall> pendingCalls,
+    String? selectedKey,
+    List<String> previousKeys,
+    String conversationId,
+  ) : lastIndex = pendingCalls.length - 1,
+      clamped = _pendingToolCallPageIndex((
+        pendingCalls: pendingCalls,
+        selectedKey: selectedKey,
+        previousKeys: previousKeys,
+        conversationId: conversationId,
+      ));
 
   final int lastIndex;
   final int clamped;
 }
 
-class _ApprovalCardRequest {
-  new({
-    required this.workspaceId,
-    required this.conversationId,
-    required List<PendingToolCall> pendingCalls,
-    required ValueNotifier<int> currentIndexNotifier,
-    required _PendingToolCallsPageSelection selection,
-  }) : current = pendingCalls[selection.clamped],
-       currentIndex = selection.clamped,
-       totalCount = pendingCalls.length,
-       hasPrev = selection.clamped > 0,
-       hasNext = selection.clamped < selection.lastIndex,
-       onPrev = (() => currentIndexNotifier.value = selection.clamped - 1),
-       onNext = (() => currentIndexNotifier.value = selection.clamped + 1);
+typedef _PagerIndexRequest = ({
+  List<PendingToolCall> pendingCalls,
+  String? selectedKey,
+  List<String> previousKeys,
+  String conversationId,
+});
 
-  final String workspaceId;
-  final String conversationId;
-  final PendingToolCall current;
-  final int currentIndex;
-  final int totalCount;
-  final bool hasPrev;
-  final bool hasNext;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
+int _pendingToolCallPageIndex(_PagerIndexRequest request) {
+  final pendingCalls = request.pendingCalls;
+  final conversationId = request.conversationId;
+  final keys = _pendingToolCallKeys(pendingCalls, conversationId);
+
+  return _pagerSelectionIndex((
+    currentKeys: keys,
+    selectedKey: request.selectedKey,
+    previousKeys: request.previousKeys,
+  ));
 }
+
+typedef _ApprovalCardRequest = ({
+  String workspaceId,
+  String conversationId,
+  PendingToolCall current,
+  int currentIndex,
+  int totalCount,
+  bool hasPrev,
+  bool hasNext,
+  _ApprovalCardActions actions,
+});
 
 class const _PendingToolCallsPagerContent({
   required final _ApprovalCardRequest request,
@@ -387,8 +754,8 @@ class _ApprovalCardBodyChildren {
           totalCount: request.totalCount,
           hasPrev: request.hasPrev,
           hasNext: request.hasNext,
-          onPrev: request.onPrev,
-          onNext: request.onNext,
+          onPrev: request.actions.onPrev,
+          onNext: request.actions.onNext,
         ),
         _ToolCallInfo(
           displayName: displayName,
@@ -401,6 +768,9 @@ class _ApprovalCardBodyChildren {
           conversationId: request.conversationId,
           toolCall: request.current.toolCall,
           messageId: request.current.messageId,
+          onDecisionStarted: request.actions.onDecisionStarted,
+          onStopAllStarted: request.actions.onStopAllStarted,
+          onDecisionFailed: request.actions.onDecisionFailed,
         ),
       ];
 
@@ -412,8 +782,8 @@ class const _NavigationHeader({
   required final int totalCount,
   required final bool hasPrev,
   required final bool hasNext,
-  required final VoidCallback onPrev,
-  required final VoidCallback onNext,
+  required final VoidCallback? onPrev,
+  required final VoidCallback? onNext,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -488,8 +858,8 @@ TextStyle _navigationCountStyle(BuildContext context) {
 class const _NavigationControls({
   required final bool hasPrev,
   required final bool hasNext,
-  required final VoidCallback onPrev,
-  required final VoidCallback onNext,
+  required final VoidCallback? onPrev,
+  required final VoidCallback? onNext,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
@@ -507,8 +877,8 @@ class _NavigationControlChildren {
   new({
     required bool hasPrev,
     required bool hasNext,
-    required VoidCallback onPrev,
-    required VoidCallback onNext,
+    required VoidCallback? onPrev,
+    required VoidCallback? onNext,
   }) : values = [
          _NavButton(
            icon: Icons.chevron_left,
@@ -842,6 +1212,9 @@ class const _ConfirmationButtons({
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String messageId,
+  required final _StartApprovalDecision onDecisionStarted,
+  required final _StartApprovalDecision onStopAllStarted,
+  required final _RestoreApprovalCalls onDecisionFailed,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -850,6 +1223,9 @@ class const _ConfirmationButtons({
       conversationId: conversationId,
       toolCall: toolCall,
       messageId: messageId,
+      onDecisionStarted: onDecisionStarted,
+      onStopAllStarted: onStopAllStarted,
+      onDecisionFailed: onDecisionFailed,
     );
 
     return _ConfirmationButtonRows(
@@ -865,6 +1241,9 @@ class const _ConfirmationActionHandler({
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String messageId,
+  required final _StartApprovalDecision onDecisionStarted,
+  required final _StartApprovalDecision onStopAllStarted,
+  required final _RestoreApprovalCalls onDecisionFailed,
 }) {
   bool get _isCloudCall =>
       toolCall.turnId != null &&
@@ -874,35 +1253,43 @@ class const _ConfirmationActionHandler({
 
 extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
   Future<void> allowOnce(WidgetRef ref, BuildContext context) {
-    return _runAction(
-      context,
+    return _runAction((
+      context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
       action: () => _approve(ref, agent.AgentToolGrantLevel.once),
-    );
+      onStarted: onDecisionStarted,
+      onFailed: onDecisionFailed,
+    ));
   }
 
   Future<void> allowForConversation(WidgetRef ref, BuildContext context) {
-    return _runAction(
-      context,
+    return _runAction((
+      context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
       action: () => _approve(ref, agent.AgentToolGrantLevel.conversation),
-    );
+      onStarted: onDecisionStarted,
+      onFailed: onDecisionFailed,
+    ));
   }
 
   Future<void> skip(WidgetRef ref, BuildContext context) {
-    return _runAction(
-      context,
+    return _runAction((
+      context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
       action: () => _skip(ref),
-    );
+      onStarted: onDecisionStarted,
+      onFailed: onDecisionFailed,
+    ));
   }
 
   Future<void> stopAll(WidgetRef ref, BuildContext context) {
-    return _runAction(
-      context,
+    return _runAction((
+      context: context,
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
       action: () => _stopAll(ref),
-    );
+      onStarted: onStopAllStarted,
+      onFailed: onDecisionFailed,
+    ));
   }
 }
 
@@ -983,6 +1370,14 @@ typedef _CloudExecutionRequest = ({
   bool stopAll,
 });
 
+typedef _RunApprovalActionRequest = ({
+  BuildContext context,
+  String errorMessageKey,
+  Future<void> Function() action,
+  _StartApprovalDecision onStarted,
+  _RestoreApprovalCalls onFailed,
+});
+
 extension _ConfirmationCloudActions on _ConfirmationActionHandler {
   _CloudDecisionData? _cloudDecisionData() {
     final turnId = toolCall.turnId;
@@ -1053,18 +1448,18 @@ Future<Object?> _submitCloudDecision(_CloudDecisionRequest request) =>
     ));
 
 extension _ConfirmationActionExecution on _ConfirmationActionHandler {
-  Future<void> _runAction(
-    BuildContext context, {
-    required String errorMessageKey,
-    required Future<void> Function() action,
-  }) async {
+  Future<void> _runAction(_RunApprovalActionRequest request) async {
+    final hiddenKeys = request.onStarted();
+    if (hiddenKeys == null) return;
+
     try {
-      await action();
-    } on Exception catch (error, stackTrace) {
-      if (!context.mounted) return;
+      await request.action();
+    } on Object catch (error, stackTrace) {
+      request.onFailed(hiddenKeys);
+      if (!request.context.mounted) return;
       _showActionError((
-        context: context,
-        errorMessageKey: errorMessageKey,
+        context: request.context,
+        errorMessageKey: request.errorMessageKey,
         error: error,
         stackTrace: stackTrace,
       ));
@@ -1145,7 +1540,7 @@ class _AllowButtonChildren {
   }) : values = [
          Expanded(
            child: AuraButton(
-             onPressed: () => handler.allowOnce(ref, actionContext),
+             onPressed: () => unawaited(handler.allowOnce(ref, actionContext)),
              child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
              variant: .outlined,
              size: .small,
@@ -1155,7 +1550,7 @@ class _AllowButtonChildren {
            Expanded(
              child: AuraButton(
                onPressed: () =>
-                   handler.allowForConversation(ref, actionContext),
+                   unawaited(handler.allowForConversation(ref, actionContext)),
                child: const TextLocale(
                  LocaleKeys.tool_confirmation_allow_conversation,
                ),
@@ -1191,7 +1586,7 @@ class _DecisionButtonChildren {
   }) : values = [
          Expanded(
            child: AuraButton(
-             onPressed: () => handler.skip(ref, actionContext),
+             onPressed: () => unawaited(handler.skip(ref, actionContext)),
              child: const TextLocale(LocaleKeys.tool_confirmation_skip),
              variant: .outlined,
              tint: .primary,
@@ -1200,7 +1595,7 @@ class _DecisionButtonChildren {
          ),
          Expanded(
            child: AuraButton(
-             onPressed: () => handler.stopAll(ref, actionContext),
+             onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
              child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
              variant: .outlined,
              tint: .error,

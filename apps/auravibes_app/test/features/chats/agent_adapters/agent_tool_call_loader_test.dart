@@ -3,6 +3,7 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -26,6 +27,32 @@ void main() {
       AgentToolStatusMapper.toLifecycle(.running),
       agent.AgentToolCallLifecycle.pending,
     );
+  });
+
+  test('treats running tool calls as pending for agent resume', () async {
+    final messageRepository = MockMessageRepository();
+    final provider = AppAgentToolCallDataProvider(
+      messageRepository: messageRepository,
+    );
+    final message = _message(
+      id: 'assistant-1',
+      metadata: const MessageMetadataEntity(
+        toolCalls: [
+          MessageToolCallEntity(
+            id: 'running-tool',
+            name: 'built_in_calc_calculator',
+            argumentsRaw: '{}',
+            resultStatus: .running,
+          ),
+        ],
+      ),
+    );
+    when(() => messageRepository.getMessageById(message.id))
+        .thenAnswer((_) async => message);
+
+    final states = await provider.getToolCallStates(message.id);
+
+    expect(states, [agent.AgentToolCallState.pending]);
   });
 
   setUpAll(registerTestFallbackValues);
