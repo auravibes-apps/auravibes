@@ -571,62 +571,82 @@ class ConversationUseCases {
         lockMode: LockMode.forUpdate,
       );
       for (final fork in forks) {
-        await _cancelForDeletion(
+        await _materializeDeletionFork(
           session,
-          conversation: fork,
+          context: context,
+          sourceId: sourceId,
+          boundaryMaps: boundaryMaps,
+          fork: fork,
           now: now,
           transaction: transaction,
         );
-        final canceledFork = await Conversation.db.findById(
-          session,
-          fork.id!,
-          transaction: transaction,
-        );
-        if (canceledFork == null) _fail(ConversationErrorCode.notFound);
-        final hasCapturedBoundary = context.frozenForkBoundaries.containsKey(
-          fork.stableId,
-        );
-        final boundary = hasCapturedBoundary
-            ? context.frozenForkBoundaries[fork.stableId]
-            : fork.forkThroughMessageId;
-        final mappedBoundary = boundary == null
-            ? null
-            : boundaryMaps[sourceId]?[boundary];
-        final forkToMaterialize = mappedBoundary == null
-            ? canceledFork
-            : canceledFork.copyWith(forkThroughMessageId: mappedBoundary);
-        if (mappedBoundary != null) {
-          await Conversation.db.updateRow(
-            session,
-            forkToMaterialize,
-            transaction: transaction,
-          );
-        }
-        final source = await _repository.findConversationByStableId(
-          session,
-          workspaceId: context.workspaceId,
-          conversationId: sourceId,
-          transaction: transaction,
-          lock: true,
-        );
-        if (source == null) _fail(ConversationErrorCode.notFound);
-        boundaryMaps[fork.stableId] = await _materializeFork(
-          session,
-          context: (
-            source: source,
-            fork: forkToMaterialize,
-            actorUserId: context.userId,
-            requestId: context.requestId,
-            now: now,
-            transaction: transaction,
-            boundaryOverride: mappedBoundary ?? boundary,
-            boundaryWasCaptured: hasCapturedBoundary,
-          ),
-        );
-        context.deletedConversationIds.add(fork.stableId);
         pendingSources.add(fork.stableId);
       }
     }
+  }
+
+  Future<void> _materializeDeletionFork(
+    Session session, {
+    required _DeletionForkContext context,
+    required String sourceId,
+    required Map<String, Map<String, String>> boundaryMaps,
+    required Conversation fork,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    await _cancelForDeletion(
+      session,
+      conversation: fork,
+      now: now,
+      transaction: transaction,
+    );
+    final canceledFork = await Conversation.db.findById(
+      session,
+      fork.id!,
+      transaction: transaction,
+    );
+    if (canceledFork == null) _fail(ConversationErrorCode.notFound);
+    final hasCapturedBoundary = context.frozenForkBoundaries.containsKey(
+      fork.stableId,
+    );
+    final boundary = hasCapturedBoundary
+        ? context.frozenForkBoundaries[fork.stableId]
+        : fork.forkThroughMessageId;
+    final mappedBoundary = boundary == null
+        ? null
+        : boundaryMaps[sourceId]?[boundary];
+    final forkToMaterialize = mappedBoundary == null
+        ? canceledFork
+        : canceledFork.copyWith(forkThroughMessageId: mappedBoundary);
+    if (mappedBoundary != null) {
+      await Conversation.db.updateRow(
+        session,
+        forkToMaterialize,
+        transaction: transaction,
+      );
+    }
+    final source = await _repository.findConversationByStableId(
+      session,
+      workspaceId: context.workspaceId,
+      conversationId: sourceId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (source == null) _fail(ConversationErrorCode.notFound);
+    boundaryMaps[fork.stableId] = await _materializeFork(
+      session,
+      context: (
+        source: source,
+        fork: forkToMaterialize,
+        actorUserId: context.userId,
+        requestId: context.requestId,
+        now: now,
+        transaction: transaction,
+        boundaryOverride: mappedBoundary ?? boundary,
+        boundaryWasCaptured: hasCapturedBoundary,
+      ),
+    );
+    context.deletedConversationIds.add(fork.stableId);
   }
 
   Future<void> _purgeDeletionConversations(
