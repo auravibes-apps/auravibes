@@ -377,6 +377,7 @@
       "options_tooltip": "More options",
       "error_workspace_mismatch": "This conversation belongs to a different workspace",
       "error_not_found": "Conversation not found",
+      "view_sub_agent_run": "View run",
       "context_usage": {
         "label": "Context window usage",
         "limit_unavailable": "Context window limit unavailable for this model.",

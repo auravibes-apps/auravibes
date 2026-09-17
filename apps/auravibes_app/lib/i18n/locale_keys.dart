@@ -524,6 +524,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.error_workspace_mismatch';
   static const chats_screens_chat_conversation_error_not_found =
       'chats_screens.chat_conversation.error_not_found';
+  static const chats_screens_chat_conversation_view_sub_agent_run =
+      'chats_screens.chat_conversation.view_sub_agent_run';
   static const chats_screens_chat_conversation_context_usage_label =
       'chats_screens.chat_conversation.context_usage.label';
   static const chats_screens_chat_conversation_context_usage_limit_unavailable =
