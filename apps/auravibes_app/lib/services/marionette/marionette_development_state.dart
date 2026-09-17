@@ -51,17 +51,10 @@ class MarionetteDevelopmentState({
   @override
   Future<Map<String, dynamic>> navigate({
     required String route,
-    String? workspaceId,
+    required String workspaceId,
   }) async {
     if (!allowedRoutes.contains(route)) {
       throw ArgumentError.value(route, 'route', 'is not allowlisted');
-    }
-    if (workspaceId == null || workspaceId.isEmpty) {
-      throw ArgumentError.value(
-        workspaceId,
-        'workspaceId',
-        'is required for workspace routes',
-      );
     }
 
     await _requireLocalWorkspace(workspaceId);
@@ -369,7 +362,7 @@ class MarionetteDevelopmentState({
 abstract interface class MarionetteExtensionActions {
   Future<Map<String, dynamic>> navigate({
     required String route,
-    String? workspaceId,
+    required String workspaceId,
   });
 
   Future<Map<String, dynamic>> selectWorkspace({required String workspaceId});

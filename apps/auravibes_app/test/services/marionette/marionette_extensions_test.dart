@@ -168,7 +168,7 @@ final class _FakeActions implements MarionetteExtensionActions {
   @override
   Future<Map<String, dynamic>> navigate({
     required String route,
-    String? workspaceId,
+    required String workspaceId,
   }) async {
     actionCalls++;
 
