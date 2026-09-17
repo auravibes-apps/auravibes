@@ -153,6 +153,50 @@ void main() {
     expect(await fixture.agentsRepository.getAgentById(updated.id), isNull);
   });
 
+  test(
+    'updates visibility without changing enabled state or filtering',
+    () async {
+      final fixture = await _AgentsRepositoryFixture.create();
+      addTearDown(fixture.close);
+
+      final agent = await fixture.agentsRepository.createAgent(
+        fixture.workspaceId,
+        const AgentToCreate(
+          name: 'Helper',
+          description: 'Use for helper work',
+          content: 'Prompt',
+          isEnabled: false,
+        ),
+      );
+
+      final updated = await SaveAgentUsecase(fixture.agentsRepository)
+          .updateVisibility(agent.id, .chatSelector);
+
+      expect(updated.visibility, AgentVisibility.chatSelector);
+      expect(updated.isEnabled, isFalse);
+      expect(
+        (await fixture.agentsRepository.getAgentById(agent.id))?.visibility,
+        AgentVisibility.chatSelector,
+      );
+      expect(
+        (await fixture.agentsRepository.listAgents(
+          .new(workspaceId: fixture.workspaceId, type: .subAgentList),
+        )).agents,
+        isEmpty,
+      );
+      expect(
+        (await fixture.agentsRepository.listAgents(
+          .new(
+            workspaceId: fixture.workspaceId,
+            type: .chatSelector,
+            status: .enabled,
+          ),
+        )).agents,
+        isEmpty,
+      );
+    },
+  );
+
   test('rejects invalid agent data', () async {
     final fixture = await _AgentsRepositoryFixture.create();
     addTearDown(fixture.close);

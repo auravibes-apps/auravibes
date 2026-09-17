@@ -95,7 +95,7 @@ class const _AgentSheetMode({
       child: TextLocale(LocaleKeys.agents_selector_placeholder),
     ),
     AsyncData(:final value) => _AgentSheetSelector(
-      agents: value,
+      agents: _visibleChatAgents(value),
       agentId: agentId,
       onChanged: onChanged,
     ),
@@ -110,7 +110,10 @@ class _AgentCompactMode extends StatelessWidget {
           label: TextLocale(LocaleKeys.agents_selector_placeholder),
         ),
         AsyncData(:final value) => _AgentChip(
-          label: switch (_selectedAgentName(value, agentId)) {
+          label: switch (_selectedAgentName(
+            _visibleChatAgents(value),
+            agentId,
+          )) {
             null => const TextLocale(
               LocaleKeys.agents_selector_none,
               softWrap: false,
@@ -195,9 +198,7 @@ class _AgentDropdownOptions extends StatelessWidget {
            value: '',
            child: TextLocale(LocaleKeys.agents_selector_none),
          ),
-         for (final agent in agents.where(
-           (agent) => agent.appearsInChatSelector,
-         ))
+         for (final agent in _visibleChatAgents(agents))
            AuraDropdownOption(value: agent.id, child: Text(agent.name)),
        ];
 
@@ -226,6 +227,9 @@ class const _AgentChip({required final Widget label}) extends StatelessWidget {
     );
   }
 }
+
+List<AgentEntity> _visibleChatAgents(List<AgentEntity> agents) =>
+    agents.where((agent) => agent.appearsInChatSelector).toList();
 
 String? _selectedAgentName(List<AgentEntity> agents, String? agentId) {
   for (final agent in agents) {

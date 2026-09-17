@@ -130,6 +130,118 @@ void main() {
     expect(duplicateCalls, 2);
     expect(find.text('Unable to duplicate agent'), findsOneWidget);
   });
+
+  testWidgets('updates visibility inline on wide layouts', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1024, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    var agent = _agent('agent-1', 'Helper', 'Use for helper work');
+    var updateCalls = 0;
+    final repository = _FakeAgentRepository(
+      (_) async => .new(agents: [agent]),
+      onGet: (_) async => _entity(agent),
+      onUpdate: (_, update) async {
+        updateCalls++;
+        expect(update.name, agent.name);
+        expect(update.description, agent.description);
+        expect(update.content, 'Prompt');
+        expect(update.isEnabled, agent.isEnabled);
+        expect(update.skills, isEmpty);
+        agent = AgentListItem(
+          id: agent.id,
+          name: agent.name,
+          description: agent.description,
+          isEnabled: agent.isEnabled,
+          visibility: update.visibility,
+          skillCount: agent.skillCount,
+        );
+
+        return _entity(agent);
+      },
+    );
+    await _pumpSubject(tester, repository);
+
+    expect(find.byType(AuraButtonGroup<AgentVisibility>), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(PopupMenuItem<String>), findsNWidgets(3));
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Duplicate agent'), findsOneWidget);
+    expect(find.text('Delete'), findsOneWidget);
+    await tester.tapAt(const Offset(500, 750));
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sub-agent list'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(updateCalls, 1);
+    expect(agent.visibility, AgentVisibility.subAgentList);
+    expect(find.text('Sub-agent list'), findsOneWidget);
+
+    await tester.binding.setSurfaceSize(const Size(1440, 800));
+    await tester.pump();
+    expect(find.byType(AuraButtonGroup<AgentVisibility>), findsOneWidget);
+  });
+
+  testWidgets('confirms visibility from the mobile bottom sheet', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    var agent = _agent('agent-1', 'Helper', 'Use for helper work');
+    var updateCalls = 0;
+    final repository = _FakeAgentRepository(
+      (_) async => .new(agents: [agent]),
+      onGet: (_) async => _entity(agent),
+      onUpdate: (_, update) async {
+        updateCalls++;
+        agent = AgentListItem(
+          id: agent.id,
+          name: agent.name,
+          description: agent.description,
+          isEnabled: agent.isEnabled,
+          visibility: update.visibility,
+          skillCount: agent.skillCount,
+        );
+
+        return _entity(agent);
+      },
+    );
+    await _pumpSubject(tester, repository);
+
+    final control = find.byKey(const ValueKey('agent-visibility-agent-1'));
+    await tester.tap(
+      find.descendant(of: control, matching: find.byType(AuraButton)),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(AuraChoicePicker<AgentVisibility>), findsOneWidget);
+    expect(find.byKey(const ValueKey('agent-visibility-done')), findsOneWidget);
+    expect(updateCalls, 0);
+
+    await tester.tap(find.text('Sub-agent list'));
+    await tester.pump();
+    expect(updateCalls, 0);
+
+    await tester.tap(find.byKey(const ValueKey('agent-visibility-done')));
+    final _ = await tester.pumpAndSettle();
+
+    expect(updateCalls, 1);
+    expect(agent.visibility, AgentVisibility.subAgentList);
+
+    await tester.tap(
+      find.descendant(of: control, matching: find.byType(AuraButton)),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Chat selector'));
+    await tester.pump();
+    await tester.tapAt(const Offset(10, 10));
+    final _ = await tester.pumpAndSettle();
+
+    expect(updateCalls, 1);
+    expect(agent.visibility, AgentVisibility.subAgentList);
+  });
 }
 
 Future<void> _pumpSubject(
@@ -177,11 +289,14 @@ AgentEntity _entity(AgentListItem agent) => AgentEntity(
 );
 
 class _FakeAgentRepository implements AgentRepository {
-  new(this._onList, {this._onDuplicate});
+  new(this._onList, {this._onDuplicate, this._onGet, this._onUpdate});
 
   final queries = <AgentListQuery>[];
   final Future<AgentListPage> Function(AgentListQuery query) _onList;
   final Future<AgentEntity> Function(String agentId)? _onDuplicate;
+  final Future<AgentEntity?> Function(String agentId)? _onGet;
+  final Future<AgentEntity> Function(String agentId, AgentToUpdate agent)?
+  _onUpdate;
 
   @override
   Future<AgentListPage> listAgents(AgentListQuery query) {
@@ -203,7 +318,7 @@ class _FakeAgentRepository implements AgentRepository {
 
   @override
   Future<AgentEntity?> getAgentById(String agentId) =>
-      throw UnimplementedError();
+      _onGet?.call(agentId) ?? (throw UnimplementedError());
 
   @override
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) =>
@@ -211,7 +326,7 @@ class _FakeAgentRepository implements AgentRepository {
 
   @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) =>
-      throw UnimplementedError();
+      _onUpdate?.call(agentId, agent) ?? (throw UnimplementedError());
 
   @override
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) =>

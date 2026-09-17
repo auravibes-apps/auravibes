@@ -12,6 +12,28 @@ class const SaveAgentUsecase(final AgentRepository _repository) {
   Future<AgentEntity> update(String agentId, AgentToUpdate agent) {
     return _repository.updateAgent(agentId, agent);
   }
+
+  Future<AgentEntity> updateVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) async {
+    final current = await _repository.getAgentById(agentId);
+    if (current == null) {
+      throw StateError('Agent not found: $agentId');
+    }
+
+    return await update(
+      agentId,
+      .new(
+        name: current.name,
+        description: current.description,
+        content: current.content,
+        isEnabled: current.isEnabled,
+        visibility: visibility,
+        skills: current.skills,
+      ),
+    );
+  }
 }
 
 final ProviderFamily<SaveAgentUsecase, String> saveAgentUsecaseProvider =

@@ -23,6 +23,24 @@ void main() {
       expect(find.byType(AuraTile), findsOneWidget);
     });
 
+    testWidgets('keeps child semantics when no tap callback is provided', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(body: AuraTile(child: Text('Status Tile'))),
+          ),
+        );
+
+        expect(find.bySemanticsLabel('Status Tile'), findsOneWidget);
+        expect(find.bySemanticsLabel('Tile'), findsNothing);
+      } finally {
+        semantics.dispose();
+      }
+    });
+
     testWidgets('has correct width (full width)', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
