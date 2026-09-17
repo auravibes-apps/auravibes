@@ -38,6 +38,7 @@ typedef _ConversationToolsCallbackInput = ({
 class const ConversationToolsGroupCard({
   required final ConversationToolsGroupWithTools groupWithTools,
   required final String workspaceId,
+  final List<ConversationToolState>? visibleTools,
   final String? conversationId,
 
   /// Whether the group should be initially expanded.
@@ -56,6 +57,7 @@ class const ConversationToolsGroupCard({
       isExpanded: isExpanded.value,
       onToggleExpand: () => isExpanded.value = !isExpanded.value,
       callbacks: callbacks,
+      visibleTools: visibleTools,
       conversationId: conversationId,
     );
   }
@@ -161,6 +163,7 @@ class const _ConversationToolsGroupCardFrame({
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ConversationToolsGroupCardCallbacks callbacks,
+  final List<ConversationToolState>? visibleTools,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -173,6 +176,7 @@ class const _ConversationToolsGroupCardFrame({
         isExpanded: isExpanded,
         onToggleExpand: onToggleExpand,
         callbacks: callbacks,
+        visibleTools: visibleTools,
         conversationId: conversationId,
       ),
       style: .border,
@@ -186,6 +190,7 @@ class const _ConversationToolsGroupCardContent({
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ConversationToolsGroupCardCallbacks callbacks,
+  final List<ConversationToolState>? visibleTools,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -204,6 +209,7 @@ class const _ConversationToolsGroupCardContent({
         _ToolsList(
           groupWithTools: groupWithTools,
           workspaceId: workspaceId,
+          visibleTools: visibleTools,
           conversationId: conversationId,
         ),
       ],
@@ -216,16 +222,18 @@ class const _ConversationToolsGroupCardContent({
 class const _ToolsList({
   required final ConversationToolsGroupWithTools groupWithTools,
   required final String workspaceId,
+  final List<ConversationToolState>? visibleTools,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (groupWithTools.tools.isEmpty) {
+    final tools = visibleTools ?? groupWithTools.tools;
+    if (tools.isEmpty) {
       return const _EmptyTools();
     }
 
     return _ToolRows(
-      tools: groupWithTools.tools,
+      tools: tools,
       workspaceId: workspaceId,
       conversationId: conversationId,
     );
