@@ -169,7 +169,7 @@ void main() {
     testWidgets('passes leading width to the Material app bar', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
+          home: Scaffold(
             appBar: AuraAppBar(title: Text('Sized leading'), leadingWidth: 96),
           ),
           theme: .new(extensions: [AuraTheme.light]),
