@@ -48,6 +48,9 @@ class const ResponsiveSlidingDrawer({
   /// An optional controller to programmatically open, close, or toggle the
   /// drawer state.
   required final ResponsiveSlidingDrawerController controller,
+
+  /// Whether the drawer starts open.
+  final bool initiallyOpen = false,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -105,8 +108,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   @override
   void initState() {
     super.initState();
-    _isOpen = false; // Initially closed.
+    _isOpen = widget.initiallyOpen;
     _controller = .new(duration: _animationDuration, vsync: this);
+    if (_isOpen) _controller?.value = 1;
     _controller?.addListener(_handleControllerTick);
     widget.controller._state = this;
   }

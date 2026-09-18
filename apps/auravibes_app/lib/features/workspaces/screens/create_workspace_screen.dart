@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_form.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:go_router/go_router.dart';
@@ -58,7 +59,7 @@ class const _CreateWorkspaceAppBar()
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) => AuraAppBar(
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: const TextLocale(LocaleKeys.workspace_management_create_title),
     leading: AuraIconButton(
       icon: Icons.arrow_back,

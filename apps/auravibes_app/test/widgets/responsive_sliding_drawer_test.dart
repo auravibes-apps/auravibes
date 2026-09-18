@@ -121,6 +121,7 @@ void main() {
     Widget buildDrawer({
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
+      bool initiallyOpen = false,
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) {
@@ -133,6 +134,7 @@ void main() {
                 body: body,
                 isDarkMode: isDarkMode,
                 controller: controller,
+                initiallyOpen: initiallyOpen,
               ),
               theme: .new(extensions: [AuraTheme.light]),
               locale: context.locale,
@@ -154,6 +156,7 @@ void main() {
       WidgetTester tester, {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
+      bool initiallyOpen = false,
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) async {
@@ -162,6 +165,7 @@ void main() {
           buildDrawer(
             controller: controller,
             isDarkMode: isDarkMode,
+            initiallyOpen: initiallyOpen,
             drawer: drawer,
             body: body,
           ),
@@ -198,6 +202,19 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
+    });
+
+    testWidgets('can start with drawer open', (tester) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      await pumpDrawer(tester, controller: controller, initiallyOpen: true);
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, closeTo(0, 0.1));
+
+      controller.toggle();
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
     });
 
     testWidgets('controller close after open', (tester) async {

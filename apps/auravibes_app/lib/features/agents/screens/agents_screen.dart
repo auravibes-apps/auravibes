@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart
 import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -92,7 +93,7 @@ class const _AgentsAppBar({required final VoidCallback onCreate})
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.agents_title),
       actions: [
         AuraIconButton(

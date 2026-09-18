@@ -16,20 +16,37 @@ class const AuraAppBarWithDrawer({
 
   @override
   Widget build(BuildContext context) {
+    final back =
+        leading ??
+        (Navigator.of(context).canPop()
+            ? AuraIconButton(
+                icon: Icons.arrow_back,
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null);
+    final leadingItems = [
+      Semantics(
+        key: const ValueKey<String>('app_drawer_menu'),
+        child: AuraIconButton(
+          icon: Icons.menu,
+          onPressed: () => _toggleDrawer(context),
+        ),
+        identifier: 'app_drawer_menu',
+      ),
+      if (back case final value?)
+        Semantics(
+          key: const ValueKey<String>('app_navigation_back'),
+          child: value,
+          identifier: 'app_navigation_back',
+        ),
+    ];
+
     return AuraAppBar(
       title: title,
       actions: actions,
       bottom: bottom,
-      leading:
-          leading ??
-          Semantics(
-            key: const ValueKey<String>('app_drawer_menu'),
-            child: AuraIconButton(
-              icon: Icons.menu,
-              onPressed: () => _toggleDrawer(context),
-            ),
-            identifier: 'app_drawer_menu',
-          ),
+      leading: Row(mainAxisSize: .min, children: leadingItems),
+      leadingWidth: kToolbarHeight * leadingItems.length,
     );
   }
 

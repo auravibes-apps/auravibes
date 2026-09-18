@@ -2,6 +2,7 @@
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:go_router/go_router.dart';
@@ -163,7 +164,7 @@ class const _SkillCredentialDefinitionsAppBar({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) => AuraAppBar(
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: const TextLocale(LocaleKeys.skill_credentials_definitions_title),
     actions: [_SkillCredentialDefinitionAddButton(workspaceId: workspaceId)],
     leading: const _SkillCredentialDefinitionsBackButton(),

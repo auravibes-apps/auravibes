@@ -6,7 +6,14 @@ import 'package:material_ui/material_ui.dart';
 /// App bar following the Aura design system.
 class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Creates an Aura app bar.
-  const new({super.key, this.title, this.actions, this.bottom, this.leading});
+  const new({
+    super.key,
+    this.title,
+    this.actions,
+    this.bottom,
+    this.leading,
+    this.leadingWidth,
+  });
 
   /// Title.
   final Widget? title;
@@ -19,6 +26,9 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   /// Optional custom leading widget.
   final Widget? leading;
+
+  /// Width reserved for the leading widget.
+  final double? leadingWidth;
 
   @override
   Size get preferredSize =>
@@ -52,6 +62,7 @@ class _AuraAppBarContent {
         elevation: 0,
         backgroundColor: DesignColors.transparent,
         centerTitle: true,
+        leadingWidth: appBar.leadingWidth,
       );
 
   final Widget child;
