@@ -211,7 +211,7 @@ class MarionetteDevelopmentState({
   };
 }
 
-Never _throwMarionetteNotAllowlisted(Object? value, String parameter) =>
+Never _throwMarionetteNotAllowlisted(Object value, String parameter) =>
     throw ArgumentError.value(value, parameter, 'is not allowlisted');
 
 Future<void> _seedMarionetteDemoData(AppDatabase database) async {
