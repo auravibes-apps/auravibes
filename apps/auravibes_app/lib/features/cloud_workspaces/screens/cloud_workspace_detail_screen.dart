@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -28,7 +29,7 @@ class const CloudWorkspaceDetailScreen({
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cloudWorkspaceDetailProvider(_key));
     return AuraScreen(
-      appBar: AuraAppBar(
+      appBar: AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.cloud_workspaces_detail_title),
         leading: AuraIconButton(
           icon: Icons.arrow_back,

@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill
 import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -187,7 +188,7 @@ class const _SkillsScreenAppBar({required final VoidCallback onCreateSkill})
 
 class _SkillsScreenAppBarData {
   new({required VoidCallback onCreateSkill})
-    : child = AuraAppBar(
+    : child = AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.skills_screen_title),
         actions: [_SkillsScreenCreateButton(onPressed: onCreateSkill)],
         leading: const _SkillsScreenBackButton(),

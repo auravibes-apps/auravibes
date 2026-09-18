@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
@@ -393,7 +394,7 @@ class const _SkillCredentialDefinitionAppBar({
 
 class _CredentialDefinitionAppBarData {
   new({required _SkillCredentialDefinitionEditScreenState state})
-    : child = AuraAppBar(
+    : child = AuraAppBarWithDrawer(
         title: TextLocale(
           state._isCreate
               ? LocaleKeys.skill_credentials_definitions_create_title

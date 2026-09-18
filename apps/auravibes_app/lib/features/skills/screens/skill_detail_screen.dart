@@ -25,6 +25,7 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillToolDefinition;
@@ -493,7 +494,7 @@ class const _SkillDetailAppBar({
   Widget build(BuildContext context) {
     final isCreate = state._isCreate;
 
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: _SkillDetailAppBarTitle(isCreate: isCreate),
       actions: _SkillDetailAppBarActions((
         state: state,

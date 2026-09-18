@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/providers/skill_template_tools_pro
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
@@ -1010,7 +1011,7 @@ class const _SkillToolEditAppBar({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) => AuraAppBar(
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: _SkillToolAppBarTitle(isCreate: isCreate),
     actions: [
       _SkillToolAppBarPreview(onPressed: onPreview),
