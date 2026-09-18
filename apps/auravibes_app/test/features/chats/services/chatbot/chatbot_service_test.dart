@@ -564,9 +564,9 @@ void main() {
       expect(titles.last, 'Deep Focus');
     });
 
-    test('falls back when title generation throws', () async {
+    test('falls back when title provider creation throws', () async {
       final service = _createService(
-        providerFactory: _FakeProviderFactory(throwsOnGenerate: true),
+        providerFactory: _FakeProviderFactory(throwsOnCreateGenkit: true),
       );
 
       final titles = await service
@@ -740,6 +740,7 @@ class _FakeProviderFactory extends ProviderFactory {
     genkit.ModelResponse? response,
     this.onRequest,
     this.throwsOnGenerate = false,
+    this.throwsOnCreateGenkit = false,
   }) : response = response ?? _modelResponse(genkit.FinishReason.stop),
        super(
          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
@@ -749,12 +750,14 @@ class _FakeProviderFactory extends ProviderFactory {
   final genkit.ModelResponse response;
   final void Function(genkit.ModelRequest request)? onRequest;
   final bool throwsOnGenerate;
+  final bool throwsOnCreateGenkit;
 
   @override
   Future<genkit.Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
   }) async {
+    if (throwsOnCreateGenkit) throw Exception('failed to create Genkit');
     return genkit.Genkit(isDevEnv: false)..defineModel(
       name: 'test/model',
       fn: (input, context) async {
