@@ -131,6 +131,8 @@
     "empty_title": "No hay conexiones",
     "empty_subtitle": "Agrega un proveedor de modelo o credencial de habilidad para conectar este espacio de trabajo.",
     "empty_filter": "No hay conexiones de {type}",
+    "empty_search": "No hay conexiones que coincidan con la búsqueda o los filtros.",
+    "search_placeholder": "Buscar conexiones...",
     "delete_credential_title": "Eliminar credencial de habilidad",
     "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
     "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
@@ -146,7 +148,11 @@
       "all": "Todas",
       "model_providers": "Proveedores de modelo",
       "skill_credentials": "Credenciales de habilidad",
-      "mcp_servers": "Servidores MCP"
+      "mcp_servers": "Servidores MCP",
+      "oauth": "OAuth",
+      "failed": "Fallidas",
+      "expiring": "Por expirar",
+      "needs_auth": "Necesitan autenticación"
     },
     "type": {
       "model_provider": "Proveedor de Modelo",
