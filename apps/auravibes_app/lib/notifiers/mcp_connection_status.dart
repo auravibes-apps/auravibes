@@ -308,7 +308,7 @@ McpToolIdComponents _mcpToolIdComponents(
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
-@riverpod
+@Riverpod(keepAlive: true)
 class McpConnectionNotifier extends _$McpConnectionNotifier {
   String? _activeWorkspaceId;
   var _isCloud = false;
