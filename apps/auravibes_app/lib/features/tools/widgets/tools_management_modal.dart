@@ -133,17 +133,29 @@ class const _ToolsManagementDialogColumn({
   @override
   Widget build(BuildContext context) {
     final searchQuery = useState('');
+    final initiallyExpanded = useState(false);
+    final expansionCommand = useState(0);
+
+    void setAllGroupsExpanded({required bool expanded}) {
+      initiallyExpanded.value = expanded;
+      expansionCommand.value++;
+    }
 
     return Column(
       mainAxisSize: .min,
       children: [
-        const _ToolsManagementHeader(),
+        _ToolsManagementHeader(
+          onExpandAll: () => setAllGroupsExpanded(expanded: true),
+          onCollapseAll: () => setAllGroupsExpanded(expanded: false),
+        ),
         ToolsSearchInput(onChanged: (value) => searchQuery.value = value),
         Flexible(
           child: _ToolsManagementContent(
             groupedToolsAsync: groupedToolsAsync,
             workspaceId: workspaceId,
             searchQuery: searchQuery.value,
+            initiallyExpanded: initiallyExpanded.value,
+            expansionCommand: expansionCommand.value,
             conversationId: conversationId,
           ),
         ),
@@ -153,7 +165,10 @@ class const _ToolsManagementDialogColumn({
   }
 }
 
-class const _ToolsManagementHeader() extends StatelessWidget {
+class const _ToolsManagementHeader({
+  required final VoidCallback onExpandAll,
+  required final VoidCallback onCollapseAll,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -165,22 +180,42 @@ class const _ToolsManagementHeader() extends StatelessWidget {
           ),
         ),
       ),
-      child: const _ToolsManagementHeaderRow(),
+      child: _ToolsManagementHeaderRow(
+        onExpandAll: onExpandAll,
+        onCollapseAll: onCollapseAll,
+      ),
     );
   }
 }
 
-class const _ToolsManagementHeaderRow() extends StatelessWidget {
+class const _ToolsManagementHeaderRow({
+  required final VoidCallback onExpandAll,
+  required final VoidCallback onCollapseAll,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
-        AuraText(
+        const AuraText(
           child: TextLocale(LocaleKeys.tools_screen_manage_title),
           style: .heading6,
         ),
-        Spacer(),
-        _CloseToolsManagementButton(),
+        const Spacer(),
+        AuraIconButton(
+          icon: Icons.unfold_more,
+          onPressed: onExpandAll,
+          key: const ValueKey('tools_expand_all_groups'),
+          semanticLabel: LocaleKeys.tools_screen_expand_all_groups,
+          tooltip: LocaleKeys.tools_screen_expand_all_groups.tr(),
+        ),
+        AuraIconButton(
+          icon: Icons.unfold_less,
+          onPressed: onCollapseAll,
+          key: const ValueKey('tools_collapse_all_groups'),
+          semanticLabel: LocaleKeys.tools_screen_collapse_all_groups,
+          tooltip: LocaleKeys.tools_screen_collapse_all_groups.tr(),
+        ),
+        const _CloseToolsManagementButton(),
       ],
     );
   }
@@ -202,17 +237,23 @@ class const _ToolsManagementContent({
   groupedToolsAsync,
   required final String workspaceId,
   required final String searchQuery,
+  required final bool initiallyExpanded,
+  required final int expansionCommand,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (groupedToolsAsync) {
       AsyncLoading() => const Center(child: AuraSpinner()),
-      AsyncData(:final value) => _GroupedToolsList(
-        groups: value,
-        workspaceId: workspaceId,
-        searchQuery: searchQuery,
-        conversationId: conversationId,
+      AsyncData(:final value) => KeyedSubtree(
+        key: ValueKey(expansionCommand),
+        child: _GroupedToolsList(
+          groups: value,
+          workspaceId: workspaceId,
+          searchQuery: searchQuery,
+          initiallyExpanded: initiallyExpanded,
+          conversationId: conversationId,
+        ),
       ),
       AsyncError(:final error) => Center(
         child: AuraText(
@@ -229,6 +270,7 @@ class const _GroupedToolsList({
   required final List<ConversationToolsGroupWithTools> groups,
   required final String workspaceId,
   required final String searchQuery,
+  required final bool initiallyExpanded,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -243,6 +285,7 @@ class const _GroupedToolsList({
     return _GroupedToolsListView(
       groups: filteredGroups,
       workspaceId: workspaceId,
+      initiallyExpanded: initiallyExpanded,
       conversationId: conversationId,
     );
   }
@@ -251,6 +294,7 @@ class const _GroupedToolsList({
 class const _GroupedToolsListView({
   required final List<_ConversationToolsGroupResult> groups,
   required final String workspaceId,
+  required final bool initiallyExpanded,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -265,6 +309,7 @@ class const _GroupedToolsListView({
   Widget _itemBuilder(BuildContext _, int index) => _ConversationToolsGroupItem(
     result: groups[index],
     workspaceId: workspaceId,
+    initiallyExpanded: initiallyExpanded,
     conversationId: conversationId,
   );
 }
@@ -272,6 +317,7 @@ class const _GroupedToolsListView({
 class const _ConversationToolsGroupItem({
   required final _ConversationToolsGroupResult result,
   required final String workspaceId,
+  required final bool initiallyExpanded,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -281,6 +327,7 @@ class const _ConversationToolsGroupItem({
       workspaceId: workspaceId,
       visibleTools: result.tools,
       conversationId: conversationId,
+      initiallyExpanded: initiallyExpanded,
     );
   }
 }

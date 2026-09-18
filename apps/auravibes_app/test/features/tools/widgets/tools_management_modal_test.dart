@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/tools/models/conversation_tools_group_wit
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
+import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -224,6 +225,86 @@ void main() {
 
       expect(find.byIcon(Icons.search_off), findsOneWidget);
       expect(find.byType(ConversationToolTile), findsNothing);
+    });
+
+    testWidgets('expands and collapses all conversation tool groups', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await _pumpModal(tester, [
+        _defaultGroup([_toolState(id: 'first', toolId: 'first_tool')]),
+        ConversationToolsGroupWithTools(
+          group: .new(
+            id: 'group-2',
+            workspaceId: _workspaceId,
+            name: 'Second Group',
+            isEnabled: true,
+            permissions: .ask,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+          tools: [_toolState(id: 'second', toolId: 'second_tool')],
+        ),
+      ]);
+
+      expect(find.byType(ConversationToolTile), findsNothing);
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey('tools_expand_all_groups')),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('first_tool'), findsOneWidget);
+
+      final _ = await tester.drag(
+        find.byType(ListView),
+        const Offset(0, -1000),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('second_tool'), findsOneWidget);
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey('tools_collapse_all_groups')),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(ConversationToolTile), findsNothing);
+    });
+
+    testWidgets('individual group toggle works after bulk expansion', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await _pumpModal(tester, [
+        _defaultGroup([_toolState(id: 'first')]),
+        ConversationToolsGroupWithTools(
+          group: .new(
+            id: 'group-2',
+            workspaceId: _workspaceId,
+            name: 'Second Group',
+            isEnabled: true,
+            permissions: .ask,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+          tools: [_toolState(id: 'second')],
+        ),
+      ]);
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey('tools_expand_all_groups')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final firstGroup = find.byType(ConversationToolsGroupCard).first;
+      final _ = await tester.tap(
+        find.descendant(of: firstGroup, matching: find.byType(IconButton)),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(ConversationToolTile), findsOneWidget);
     });
   });
 }

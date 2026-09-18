@@ -444,6 +444,8 @@
     "no_tools_in_group": "No tools available",
     "disabled_in_workspace": "Disabled in workspace",
     "manage_title": "Manage Tools",
+    "expand_all_groups": "Expand all groups",
+    "collapse_all_groups": "Collapse all groups",
     "load_error": "Error loading tools: {}"
   },
   "skills_screen": {
