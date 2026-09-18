@@ -1280,7 +1280,7 @@ packages:
     source: hosted
     version: "0.6.0"
   marionette_mcp:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: marionette_mcp
       sha256: "24a2b3277c659367e3d6c306d35d35600fc78c5d28512f06bc843cb2e65e21b3"
