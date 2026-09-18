@@ -72,8 +72,20 @@ void main() {
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'WS', type: WorkspaceType.local),
       );
+      final agent = await database.agentsDao.createAgent(
+        .new(
+          workspaceId: .new(workspace.id),
+          name: const .new('Agent'),
+          content: const .new('Prompt'),
+        ),
+        const [],
+      );
       final conversation = await database.conversationDao.insertConversation(
-        .insert(workspaceId: workspace.id, title: 'Pinned'),
+        .insert(
+          workspaceId: workspace.id,
+          title: 'Pinned',
+          agentId: .new(agent.id),
+        ),
       );
       final _ = await database.conversationDao.patchConversation(
         conversation.id,
@@ -86,10 +98,10 @@ void main() {
         conversation.id,
       );
 
-      expect(
-        (restored ?? fail('Expected restored conversation')).isPinned,
-        isTrue,
-      );
+      final restoredConversation =
+          restored ?? fail('Expected restored conversation');
+      expect(restoredConversation.isPinned, isTrue);
+      expect(restoredConversation.agentId, agent.id);
     });
 
     test('getConversationById returns conversation', () async {

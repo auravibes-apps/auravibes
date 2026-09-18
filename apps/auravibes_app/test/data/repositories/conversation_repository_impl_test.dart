@@ -40,6 +40,7 @@ void main() {
       String title = 'Test Conversation',
       String workspaceId = 'ws-1',
       String? modelId,
+      String? agentId,
       bool isPinned = false,
     }) {
       return ConversationsTable(
@@ -49,6 +50,7 @@ void main() {
         workspaceId: workspaceId,
         title: title,
         modelId: modelId,
+        agentId: agentId,
         isPinned: isPinned,
       );
     }
@@ -152,6 +154,15 @@ void main() {
         expect(result.title, 'Test Conversation');
         expect(result.workspaceId, 'ws-1');
         expect(result.isPinned, false);
+      });
+
+      test('maps the persisted default agent', () async {
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow(agentId: 'agent-1'));
+
+        final result = await repository.getConversationById('conv-1');
+
+        expect(result?.agentId, 'agent-1');
       });
 
       test('returns null when not found', () async {

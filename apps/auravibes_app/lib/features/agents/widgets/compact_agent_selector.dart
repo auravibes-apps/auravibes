@@ -210,7 +210,7 @@ class _AgentDropdownOptions extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraDropdownSelector<String>(
     options: _options,
-    value: agentId ?? '',
+    value: _selectedChatAgentId(agents, agentId) ?? '',
     onChanged: onValueChanged,
     placeholder: const TextLocale(LocaleKeys.agents_selector_placeholder),
   );
@@ -237,6 +237,14 @@ String? _selectedAgentName(List<AgentEntity> agents, String? agentId) {
   }
 
   return null;
+}
+
+String? _selectedChatAgentId(List<AgentEntity> agents, String? agentId) {
+  if (agentId == null) return null;
+
+  return _visibleChatAgents(agents).any((agent) => agent.id == agentId)
+      ? agentId
+      : null;
 }
 
 class const _AgentSheetSelector({

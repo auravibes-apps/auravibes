@@ -188,6 +188,24 @@ void main() {
       );
     });
 
+    test('passes selected agent as the conversation default', () async {
+      final result = await _send(
+        fixture.usecase,
+        workspaceId: 'ws-1',
+        draft: const ChatDraft(text: 'Hello'),
+        workspaceModelSelectionId: 'model-sel-1',
+        agentId: 'agent-override',
+      );
+
+      expect(result.id, 'conv-1');
+      final captured =
+          verify(
+                () => fixture.conversationRepo.createConversation(captureAny()),
+              ).captured.single
+              as ConversationToCreate;
+      expect(captured.agentId, 'agent-override');
+    });
+
     test('throws when model selection not found', () {
       when(
         () => fixture.workspaceModelSelectionRepo
