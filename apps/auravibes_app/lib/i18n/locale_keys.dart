@@ -438,6 +438,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_retry_message =
+      'chats_screens.chat_conversation.retry_message';
   static const chats_screens_chat_conversation_submit_answers =
       'chats_screens.chat_conversation.submit_answers';
   static const chats_screens_chat_conversation_form_submitted =
@@ -462,6 +464,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
+  static const chats_screens_chat_conversation_retry_error =
+      'chats_screens.chat_conversation.retry_error';
   static const chats_screens_chat_conversation_generation_credits_error =
       'chats_screens.chat_conversation.generation_credits_error';
   static const chats_screens_chat_conversation_rate_limit_retry =
