@@ -27,8 +27,9 @@ import 'package:riverpod/riverpod.dart';
 
 final _logger = Logger('continue_agent_service');
 
-const String _inlineGenerationErrorMessageKey =
+const String _legacyCreditsErrorMessageKey =
     LocaleKeys.chats_screens_chat_conversation_generation_credits_error;
+const String _providerErrorMetadataKey = 'providerError';
 
 typedef _ContinueAgentA2uiMessage = ({
   ChatA2uiRuntime? runtime,
@@ -403,7 +404,7 @@ extension _ContinueAgentFailurePersistence
     String conversationId,
     Object error,
   ) async {
-    final content = _inlineGenerationErrorKey(error);
+    final content = _providerErrorDetail(error);
     if (content == null) return;
 
     final created = await this.messageRepository.createMessage(
@@ -413,6 +414,7 @@ extension _ContinueAgentFailurePersistence
         messageType: .system,
         isUser: false,
         status: .sending,
+        metadata: _providerErrorMetadataJson(),
       ),
     );
     final _ = await this.messageRepository.patchMessage(
@@ -425,7 +427,8 @@ extension _ContinueAgentFailurePersistence
 bool _isInlineGenerationErrorMessage(MessageEntity message) =>
     message.messageType == .system &&
     message.status == .error &&
-    message.content == _inlineGenerationErrorMessageKey;
+    (message.metadata?.modelMetadata[_providerErrorMetadataKey] == true ||
+        message.content == _legacyCreditsErrorMessageKey);
 
 AgentIterationContext? _contextWithRetryUsers(
   AgentIterationContext? context,
@@ -445,12 +448,18 @@ AgentIterationContext? _contextWithRetryUsers(
   );
 }
 
-String? _inlineGenerationErrorKey(Object error) {
+String? _providerErrorDetail(Object error) {
   if (error is! GenkitException) return null;
-  if (!error.message.contains('(HTTP 402)')) return null;
+  final details = error.details?.trim();
+  if (details == null || details.isEmpty) return null;
 
-  return _inlineGenerationErrorMessageKey;
+  return details;
 }
+
+String? _providerErrorMetadataJson() => JsonCodec.encode(
+  const MessageMetadataEntity(modelMetadata: {_providerErrorMetadataKey: true})
+      .toJson(),
+);
 
 extension _ContinueAgentCleanup on _ContinueAgentServiceDependencies {
   MessageMetadataEntity? _markPendingToolsStopped(

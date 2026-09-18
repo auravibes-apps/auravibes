@@ -618,6 +618,9 @@ bool _isErrorSystemMessage(MessageEntity message) =>
     message.messageType == MessageType.system &&
     message.status == MessageStatus.error;
 
+bool _isProviderErrorMessage(MessageEntity message) =>
+    message.metadata?.modelMetadata['providerError'] == true;
+
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
   final bool activityRenderedInSession = false,
@@ -643,6 +646,7 @@ class const _ChatMessageTimelineItem({
     if (_isErrorSystemMessage(message)) {
       return _ErrorMessageWidget(
         content: message.content,
+        isProviderError: _isProviderErrorMessage(message),
         key: ValueKey(message.id),
       );
     }
@@ -2248,20 +2252,39 @@ class const _CompactedMessageWidget({
   }
 }
 
-class const _ErrorMessageWidget({required final String content, super.key})
-    extends StatelessWidget {
+class const _ErrorMessageWidget({
+  required final String content,
+  required final bool isProviderError,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final visibleContent = isProviderError
+        ? content
+        : content.tr(context: context);
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
 
     return AuraContainer(
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline, size: iconSize, color: auraColors.onError),
-          const AuraSizedBox(width: .xs),
-          Flexible(child: TextLocale(content)),
+          Row(
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: iconSize,
+                color: auraColors.onError,
+              ),
+              const AuraSizedBox(width: .xs),
+              Flexible(child: AuraSelectableText(visibleContent)),
+            ],
+          ),
+          _MessageCopyAction(
+            resolveContent: () => visibleContent,
+            isUser: false,
+          ),
         ],
       ),
       padding: .medium,

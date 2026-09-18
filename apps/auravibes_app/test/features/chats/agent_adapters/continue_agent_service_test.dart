@@ -160,6 +160,26 @@ void main() {
           .thenAnswer((_) async => _unfinishedAssistantMessage);
     });
 
+    test('disables tools for unsupported non-Codex models', () {
+      final adapter = _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      );
+      final model = _model.copyWith(
+        modelsProvider: _model.modelsProvider.copyWith(type: .openrouter),
+        workspaceModelSelection: _model.workspaceModelSelection.copyWith(
+          supportsToolCalls: false,
+        ),
+      );
+
+      expect(adapter.shouldDisableTools(model), isTrue);
+    });
+
     test('uses model stream as lastResult', () async {
       when(
         () => chatbotService.sendMessage(
@@ -1255,17 +1275,19 @@ void main() {
       );
     });
 
-    test('persists an inline error for provider credit failures', () async {
+    test('persists provider details as an inline error', () async {
       final errorMessage = MessageEntity(
         id: 'system-error-1',
         conversationId: 'conversation-1',
-        content:
-            LocaleKeys.chats_screens_chat_conversation_generation_credits_error,
+        content: 'The provider rejected this request for an unknown reason.',
         messageType: .system,
         isUser: false,
         status: .sending,
         createdAt: .new(2025),
         updatedAt: .new(2025),
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {'providerError': true},
+        ),
       );
       final previousError = errorMessage.copyWith(
         id: 'previous-system-error-1',
@@ -1319,8 +1341,9 @@ void main() {
       ).thenAnswer(
         (_) => Stream.error(
           GenkitException(
-            'OpenRouter API request failed (HTTP 402).',
-            details: 'This request requires more credits or fewer max_tokens.',
+            'OpenRouter provider request failed.',
+            details:
+                'The provider rejected this request for an unknown reason.',
           ),
         ),
       );
@@ -1342,6 +1365,12 @@ void main() {
       expect(created.single.messageType, MessageType.system);
       expect(created.single.isUser, isFalse);
       expect(created.single.status, MessageStatus.sending);
+      expect(created.single.metadata, isNotNull);
+      expect(
+        MessageMetadataEntity.fromJsonString(created.single.metadata)
+            ?.modelMetadata['providerError'],
+        isTrue,
+      );
       verify(
         () => messageRepository.patchMessage(
           'system-error-1',

@@ -128,12 +128,8 @@ class AppAgentContinuationAdapter({
   }
 
   @override
-  bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) {
-    return ModelProviderOAuthProfiles.isCodexProvider(
-          model.modelConnection.modelId,
-        ) &&
-        !model.workspaceModelSelection.supportsToolCalls;
-  }
+  bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) =>
+      !model.workspaceModelSelection.supportsToolCalls;
 }
 
 mixin _AgentContinuationMessageRoleChecks {

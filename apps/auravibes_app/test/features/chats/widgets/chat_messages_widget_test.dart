@@ -3131,6 +3131,66 @@ void main() {
 
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
+
+    testWidgets('renders provider error details without localization', (
+      tester,
+    ) async {
+      const providerDetails =
+          'This endpoint has a maximum context length of 32768 tokens.';
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final message = _createMessage(
+        content: providerDetails,
+        isUser: false,
+        status: MessageStatus.error,
+        messageType: MessageType.system,
+        metadata: const MessageMetadataEntity(
+          modelMetadata: {'providerError': true},
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text(providerDetails), findsOneWidget);
+      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(copiedText, providerDetails);
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
   });
 }
 
