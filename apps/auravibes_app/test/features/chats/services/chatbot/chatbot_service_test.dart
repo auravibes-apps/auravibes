@@ -576,6 +576,23 @@ void main() {
       expect(titles, ['hello world from failure']);
     });
 
+    test('falls back when title response contains an error', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: genkit.ModelResponse(
+            finishReason: genkit.FinishReason.failed,
+            error: genkit.RuntimeError(message: 'failed'),
+          ),
+        ),
+      );
+
+      final titles = await service
+          .streamTitle(_makeConfig(), 'hello world from error')
+          .toList();
+
+      expect(titles, ['hello world from error']);
+    });
+
     test('strips double quotes from title', () {
       final stripped = _stripQuotes('"My Title"');
       expect(stripped, 'My Title');
