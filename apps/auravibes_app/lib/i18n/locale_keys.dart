@@ -166,6 +166,10 @@ abstract class LocaleKeys {
       'service_connections.empty_subtitle';
   static const service_connections_empty_filter =
       'service_connections.empty_filter';
+  static const service_connections_empty_search =
+      'service_connections.empty_search';
+  static const service_connections_search_placeholder =
+      'service_connections.search_placeholder';
   static const service_connections_delete_credential_title =
       'service_connections.delete_credential_title';
   static const service_connections_delete_credential_confirm =
@@ -192,6 +196,14 @@ abstract class LocaleKeys {
       'service_connections.filter.skill_credentials';
   static const service_connections_filter_mcp_servers =
       'service_connections.filter.mcp_servers';
+  static const service_connections_filter_oauth =
+      'service_connections.filter.oauth';
+  static const service_connections_filter_failed =
+      'service_connections.filter.failed';
+  static const service_connections_filter_expiring =
+      'service_connections.filter.expiring';
+  static const service_connections_filter_needs_auth =
+      'service_connections.filter.needs_auth';
   static const service_connections_type_model_provider =
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =

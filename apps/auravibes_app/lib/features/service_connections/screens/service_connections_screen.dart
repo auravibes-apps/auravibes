@@ -28,11 +28,19 @@ const _deleteConfirmationActions = AuraConfirmDialogActions(
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
 );
 
-enum _ConnectionFilter { all, modelProviders, skillCredentials, mcpServers }
+enum _ConnectionFilter {
+  all,
+  modelProviders,
+  skillCredentials,
+  mcpServers,
+  oauth,
+  failed,
+  expiringSoon,
+  needsAuth,
+}
 
 typedef _ConnectionFilterOptionData = ({
   _ConnectionFilter value,
-  ServiceConnectionListItemKind? kind,
   String titleKey,
 });
 
@@ -99,25 +107,28 @@ class _McpActionRequest {
 }
 
 const _connectionFilterData = <_ConnectionFilterOptionData>[
-  (
-    value: .all,
-    kind: null,
-    titleKey: LocaleKeys.service_connections_filter_all,
-  ),
+  (value: .all, titleKey: LocaleKeys.service_connections_filter_all),
   (
     value: .modelProviders,
-    kind: .modelProvider,
     titleKey: LocaleKeys.service_connections_filter_model_providers,
   ),
   (
     value: .skillCredentials,
-    kind: .skillCredential,
     titleKey: LocaleKeys.service_connections_filter_skill_credentials,
   ),
   (
     value: .mcpServers,
-    kind: .mcpServer,
     titleKey: LocaleKeys.service_connections_filter_mcp_servers,
+  ),
+  (value: .oauth, titleKey: LocaleKeys.service_connections_filter_oauth),
+  (value: .failed, titleKey: LocaleKeys.service_connections_filter_failed),
+  (
+    value: .expiringSoon,
+    titleKey: LocaleKeys.service_connections_filter_expiring,
+  ),
+  (
+    value: .needsAuth,
+    titleKey: LocaleKeys.service_connections_filter_needs_auth,
   ),
 ];
 
@@ -388,6 +399,7 @@ class const _ConnectionsList({
 
 class _ConnectionsListState extends State<_ConnectionsList> {
   _ConnectionFilter _selectedFilter = .all;
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) => widget.connections.isEmpty
@@ -397,6 +409,8 @@ class _ConnectionsListState extends State<_ConnectionsList> {
           filter: _selectedFilter,
           onAddConnection: widget.onAddConnection,
           onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
+          onSearchChanged: (query) => setState(() => _searchQuery = query),
+          searchQuery: _searchQuery,
         );
 }
 
@@ -466,18 +480,33 @@ class const _ConnectionsListContent({
   required final _ConnectionFilter filter,
   required final VoidCallback onAddConnection,
   required final ValueChanged<_ConnectionFilter> onFilterChanged,
+  required final ValueChanged<String> onSearchChanged,
+  required final String searchQuery,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: .stretch,
       children: [
+        Padding(
+          padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+          child: AuraInput(
+            key: const ValueKey<String>('service_connections_search'),
+            placeholder: const TextLocale(
+              LocaleKeys.service_connections_search_placeholder,
+            ),
+            prefixIcon: const AuraIcon(Icons.search),
+            size: .small,
+            onChanged: onSearchChanged,
+          ),
+        ),
         _ConnectionFilterSelector(value: filter, onChanged: onFilterChanged),
         Expanded(
           child: _ConnectionsTab(
             connections: connections,
             onAddConnection: onAddConnection,
-            kind: _connectionKind(filter),
+            filter: filter,
+            searchQuery: searchQuery,
           ),
         ),
       ],
@@ -509,34 +538,72 @@ extension on _ConnectionFilterOptionData {
       AuraTabOption(
         value: value,
         title: TextLocale(titleKey),
-        semanticLabel: _connectionFilterLabel(context, kind),
+        semanticLabel: titleKey.tr(context: context),
       );
 }
 
-ServiceConnectionListItemKind? _connectionKind(_ConnectionFilter filter) {
+bool _matchesConnectionFilter(
+  ServiceConnectionListItem connection,
+  _ConnectionFilter filter,
+) {
   return switch (filter) {
-    .all => null,
-    .modelProviders => .modelProvider,
-    .skillCredentials => .skillCredential,
-    .mcpServers => .mcpServer,
+    .all => true,
+    .modelProviders => connection.kind == .modelProvider,
+    .skillCredentials => connection.kind == .skillCredential,
+    .mcpServers => connection.kind == .mcpServer,
+    .oauth =>
+      connection.authenticationType?.toLowerCase().contains('oauth') ?? false,
+    .failed => connection.displayStatus == .failed,
+    .expiringSoon => connection.displayStatus == .expiringSoon,
+    .needsAuth => connection.displayStatus == .needsReauth,
   };
+}
+
+Iterable<String?> _connectionSearchValues(
+  ServiceConnectionListItem connection,
+) => [
+  connection.name,
+  connection.serviceName,
+  connection.authenticationType,
+  ...connection.metadataValues.map((value) => value.value),
+];
+
+List<ServiceConnectionListItem> _filterConnections(
+  List<ServiceConnectionListItem> connections,
+  _ConnectionFilter filter,
+  String searchQuery,
+) {
+  final normalizedQuery = searchQuery.trim().toLowerCase();
+
+  return connections.where((connection) {
+    if (!_matchesConnectionFilter(connection, filter)) return false;
+    if (normalizedQuery.isEmpty) return true;
+
+    return _connectionSearchValues(
+      connection,
+    ).any((value) => value?.toLowerCase().contains(normalizedQuery) ?? false);
+  }).toList();
 }
 
 class const _ConnectionsTab({
   required final List<ServiceConnectionListItem> connections,
   required final VoidCallback onAddConnection,
-  final ServiceConnectionListItemKind? kind,
+  required final _ConnectionFilter filter,
+  required final String searchQuery,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final visibleConnections = kind == null
-        ? connections
-        : connections.where((connection) => connection.kind == kind).toList();
+    final visibleConnections = _filterConnections(
+      connections,
+      filter,
+      searchQuery,
+    );
 
     if (visibleConnections.isEmpty) {
       return _EmptyFilteredConnections(
-        kind: kind,
+        filter: filter,
         onAddConnection: onAddConnection,
+        searchQuery: searchQuery,
       );
     }
 
@@ -545,28 +612,34 @@ class const _ConnectionsTab({
 }
 
 class const _EmptyFilteredConnections({
-  required final ServiceConnectionListItemKind? kind,
+  required final _ConnectionFilter filter,
   required final VoidCallback onAddConnection,
+  required final String searchQuery,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: _EmptyFilteredConnectionsContent(
-      kind: kind,
+      filter: filter,
       onAddConnection: onAddConnection,
+      searchQuery: searchQuery,
     ),
   );
 }
 
 class const _EmptyFilteredConnectionsContent({
-  required final ServiceConnectionListItemKind? kind,
+  required final _ConnectionFilter filter,
   required final VoidCallback onAddConnection,
+  required final String searchQuery,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      const AuraIcon(Icons.hub_outlined, size: .extraLarge),
+      AuraIcon(
+        searchQuery.trim().isEmpty ? Icons.hub_outlined : Icons.search_off,
+        size: .extraLarge,
+      ),
       AuraText(
-        child: Text(_filteredConnectionsMessage(context, kind)),
+        child: Text(_filteredConnectionsMessage(context, filter, searchQuery)),
         style: .heading3,
       ),
       _ConnectionsAddAction(onPressed: onAddConnection),
@@ -577,10 +650,15 @@ class const _EmptyFilteredConnectionsContent({
 
 String _filteredConnectionsMessage(
   BuildContext context,
-  ServiceConnectionListItemKind? kind,
+  _ConnectionFilter filter,
+  String searchQuery,
 ) {
+  if (searchQuery.trim().isNotEmpty) {
+    return LocaleKeys.service_connections_empty_search.tr(context: context);
+  }
+
   return LocaleKeys.service_connections_empty_filter.tr(
-    namedArgs: {'type': _connectionFilterLabel(context, kind)},
+    namedArgs: {'type': _connectionFilterLabel(context, filter)},
     context: context,
   );
 }
@@ -600,23 +678,20 @@ class const _ConnectionsListView({
   }
 }
 
-String _connectionFilterLabel(
-  BuildContext context,
-  ServiceConnectionListItemKind? kind,
-) {
-  return switch (kind) {
-    null => LocaleKeys.service_connections_filter_all.tr(context: context),
-    .modelProvider => LocaleKeys.service_connections_filter_model_providers.tr(
-      context: context,
-    ),
-    .skillCredential =>
-      LocaleKeys.service_connections_filter_skill_credentials.tr(
-        context: context,
-      ),
-    .mcpServer => LocaleKeys.service_connections_filter_mcp_servers.tr(
-      context: context,
-    ),
+String _connectionFilterLabel(BuildContext context, _ConnectionFilter filter) {
+  final localeKey = switch (filter) {
+    .all => LocaleKeys.service_connections_filter_all,
+    .modelProviders => LocaleKeys.service_connections_filter_model_providers,
+    .skillCredentials =>
+      LocaleKeys.service_connections_filter_skill_credentials,
+    .mcpServers => LocaleKeys.service_connections_filter_mcp_servers,
+    .oauth => LocaleKeys.service_connections_filter_oauth,
+    .failed => LocaleKeys.service_connections_filter_failed,
+    .expiringSoon => LocaleKeys.service_connections_filter_expiring,
+    .needsAuth => LocaleKeys.service_connections_filter_needs_auth,
   };
+
+  return localeKey.tr(context: context);
 }
 
 class const _ConnectionTile({
