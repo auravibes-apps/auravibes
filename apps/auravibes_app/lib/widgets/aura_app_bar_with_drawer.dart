@@ -16,41 +16,70 @@ class const AuraAppBarWithDrawer({
 
   @override
   Widget build(BuildContext context) {
-    final back =
-        leading ??
-        (Navigator.of(context).canPop()
-            ? AuraIconButton(
-                icon: Icons.arrow_back,
-                onPressed: () => Navigator.of(context).pop(),
-              )
-            : null);
-    final leadingItems = [
-      Semantics(
-        key: const ValueKey<String>('app_drawer_menu'),
-        child: AuraIconButton(
-          icon: Icons.menu,
-          onPressed: () => _toggleDrawer(context),
-        ),
-        identifier: 'app_drawer_menu',
-      ),
-      if (back case final value?)
-        Semantics(
-          key: const ValueKey<String>('app_navigation_back'),
-          child: value,
-          identifier: 'app_navigation_back',
-        ),
-    ];
+    final hasBack = leading != null || Navigator.of(context).canPop();
 
     return AuraAppBar(
       title: title,
       actions: actions,
       bottom: bottom,
-      leading: Row(mainAxisSize: .min, children: leadingItems),
-      leadingWidth: kToolbarHeight * leadingItems.length,
+      leading: _AuraAppBarWithDrawerLeading(
+        onMenuPressed: () => _toggleDrawer(context),
+        showAutomaticBack: hasBack,
+        leading: leading,
+      ),
+      leadingWidth: kToolbarHeight * (hasBack ? 2 : 1),
     );
   }
 
   void _toggleDrawer(BuildContext context) {
     ResponsiveSlidingDrawerProvider.maybeOf(context)?.toggle();
   }
+}
+
+class const _AuraAppBarWithDrawerLeading({
+  required final VoidCallback onMenuPressed,
+  required final bool showAutomaticBack,
+  final Widget? leading,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      _DrawerMenuButton(onPressed: onMenuPressed),
+      if (leading case final value?)
+        _NavigationBackButton(child: value)
+      else if (showAutomaticBack)
+        const _AutomaticNavigationBackButton(),
+    ],
+  );
+}
+
+class const _DrawerMenuButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('app_drawer_menu'),
+    child: AuraIconButton(icon: Icons.menu, onPressed: onPressed),
+    identifier: 'app_drawer_menu',
+  );
+}
+
+class const _NavigationBackButton({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('app_navigation_back'),
+    child: child,
+    identifier: 'app_navigation_back',
+  );
+}
+
+class const _AutomaticNavigationBackButton() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _NavigationBackButton(
+    child: AuraIconButton(
+      icon: Icons.arrow_back,
+      onPressed: () => Navigator.of(context).pop(),
+    ),
+  );
 }
