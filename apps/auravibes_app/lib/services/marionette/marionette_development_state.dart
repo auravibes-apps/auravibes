@@ -39,6 +39,7 @@ class MarionetteDevelopmentState({
     'model_sync',
   ];
   static const allowedFeatureFlags = <String>{...allowedFeatureFlagValues};
+  static const maxIdentifierLength = 128;
 
   static const demoWorkspaceId = 'marionette-demo-workspace';
   static const demoConnectionId = 'marionette-demo-connection';
@@ -86,16 +87,11 @@ class MarionetteDevelopmentState({
     await _requireLocalWorkspace(workspaceId);
     _requireStableIdentifier(modelSelectionId, 'modelSelectionId');
 
-    final selection = await modelSelectionRepository
-        .getWorkspaceModelSelectionById(modelSelectionId);
-    if (selection == null ||
-        selection.modelConnection.workspaceId != workspaceId) {
-      throw ArgumentError.value(
-        modelSelectionId,
-        'modelSelectionId',
-        'does not identify a model in the selected workspace',
-      );
-    }
+    await _requireMarionetteModelSelection(
+      modelSelectionRepository,
+      workspaceId,
+      modelSelectionId,
+    );
 
     await database.recentModelSelectionsDao.recordSelection(
       workspaceId,
@@ -114,13 +110,7 @@ class MarionetteDevelopmentState({
 
   @override
   Future<Map<String, dynamic>> seedDemoData() async {
-    await database.transaction(() async {
-      await _seedWorkspace();
-      await _seedConnection();
-      await _seedModelSelection();
-      await _seedConversation();
-      await _seedMessage();
-    });
+    await database.transaction(() => _seedMarionetteDemoData(database));
 
     return const {
       'workspaceId': demoWorkspaceId,
@@ -169,144 +159,6 @@ class MarionetteDevelopmentState({
     return {'flag': flag, 'enabled': enabled, 'cleared': !enabled};
   }
 
-  Future<void> _seedWorkspace() async {
-    final existing = await (database.select(
-      database.workspaces,
-    )..where((table) => table.id.equals(demoWorkspaceId))).getSingleOrNull();
-    if (existing != null) {
-      if (existing.type != .local) {
-        throw StateError('Reserved Marionette workspace is not local');
-      }
-
-      return;
-    }
-
-    final _ = await database
-        .into(database.workspaces)
-        .insert(
-          WorkspacesCompanion.insert(
-            id: const Value(demoWorkspaceId),
-            createdAt: .new(_demoTimestamp),
-            updatedAt: .new(_demoTimestamp),
-            name: 'Marionette Demo',
-            type: .local,
-          ),
-        );
-  }
-
-  Future<void> _seedConnection() async {
-    final existing = await (database.select(
-      database.serviceConnections,
-    )..where((table) => table.id.equals(demoConnectionId))).getSingleOrNull();
-    if (existing != null) {
-      if (existing.workspaceId != demoWorkspaceId ||
-          existing.authenticationType != .none) {
-        throw StateError(
-          'Reserved Marionette connection is not development-only',
-        );
-      }
-
-      return;
-    }
-
-    final _ = await database
-        .into(database.serviceConnections)
-        .insert(
-          ServiceConnectionsCompanion.insert(
-            id: const Value(demoConnectionId),
-            createdAt: .new(_demoTimestamp),
-            updatedAt: .new(_demoTimestamp),
-            name: 'Marionette Demo Provider',
-            serviceId: 'marionette-demo',
-            kind: .modelProvider,
-            authenticationType: .none,
-            workspaceId: demoWorkspaceId,
-          ),
-        );
-  }
-
-  Future<void> _seedModelSelection() async {
-    final existing =
-        await (database.select(database.workspaceModelSelections)
-              ..where((table) => table.id.equals(demoModelSelectionId)))
-            .getSingleOrNull();
-    if (existing != null) {
-      if (existing.modelConnectionId != demoConnectionId ||
-          existing.modelId != 'marionette-demo-model') {
-        throw StateError('Reserved Marionette model selection is invalid');
-      }
-
-      return;
-    }
-
-    final _ = await database
-        .into(database.workspaceModelSelections)
-        .insert(
-          WorkspaceModelSelectionsCompanion.insert(
-            id: const Value(demoModelSelectionId),
-            createdAt: .new(_demoTimestamp),
-            updatedAt: .new(_demoTimestamp),
-            modelId: 'marionette-demo-model',
-            modelConnectionId: demoConnectionId,
-          ),
-        );
-  }
-
-  Future<void> _seedConversation() async {
-    final existing = await (database.select(
-      database.conversations,
-    )..where((table) => table.id.equals(demoConversationId))).getSingleOrNull();
-    if (existing != null) {
-      if (existing.workspaceId != demoWorkspaceId ||
-          existing.modelId != demoModelSelectionId) {
-        throw StateError('Reserved Marionette conversation is invalid');
-      }
-
-      return;
-    }
-
-    final _ = await database
-        .into(database.conversations)
-        .insert(
-          ConversationsCompanion.insert(
-            id: const Value(demoConversationId),
-            createdAt: .new(_demoTimestamp),
-            updatedAt: .new(_demoTimestamp),
-            workspaceId: demoWorkspaceId,
-            title: 'Marionette Demo Conversation',
-            modelId: const Value(demoModelSelectionId),
-          ),
-        );
-  }
-
-  Future<void> _seedMessage() async {
-    final existing = await (database.select(
-      database.messages,
-    )..where((table) => table.id.equals(demoMessageId))).getSingleOrNull();
-    if (existing != null) {
-      if (existing.conversationId != demoConversationId) {
-        throw StateError('Reserved Marionette message is invalid');
-      }
-
-      return;
-    }
-
-    final _ = await database
-        .into(database.messages)
-        .insert(
-          MessagesCompanion.insert(
-            id: const Value(demoMessageId),
-            createdAt: .new(_demoTimestamp),
-            updatedAt: .new(_demoTimestamp),
-            conversationId: demoConversationId,
-            content: 'Deterministic Marionette demo message.',
-            messageType: .text,
-            isUser: true,
-            status: .sent,
-          ),
-        );
-  }
-
   Future<int> _clearFeatureFlags() async {
     final preferences = await this.preferences;
     var cleared = 0;
@@ -332,7 +184,7 @@ class MarionetteDevelopmentState({
 
   void _requireStableIdentifier(String value, String parameter) {
     if (value.isEmpty ||
-        value.length > 128 ||
+        value.length > maxIdentifierLength ||
         value == '.' ||
         value == '..' ||
         value != Uri.encodeComponent(value)) {
@@ -357,6 +209,245 @@ class MarionetteDevelopmentState({
     'settings' => SettingsRoute(workspaceId: workspaceId).location,
     _ => throw ArgumentError.value(route, 'route', 'is not allowlisted'),
   };
+}
+
+Future<void> _seedMarionetteDemoData(AppDatabase database) async {
+  await _seedMarionetteWorkspace(database);
+  await _seedMarionetteConnection(database);
+  await _seedMarionetteModelSelection(database);
+  await _seedMarionetteConversation(database);
+  await _seedMarionetteMessage(database);
+}
+
+Future<void> _requireMarionetteModelSelection(
+  WorkspaceModelSelectionRepository repository,
+  String workspaceId,
+  String modelSelectionId,
+) async {
+  final selection = await repository.getWorkspaceModelSelectionById(
+    modelSelectionId,
+  );
+  if (selection == null ||
+      selection.modelConnection.workspaceId != workspaceId) {
+    throw ArgumentError.value(
+      modelSelectionId,
+      'modelSelectionId',
+      'does not identify a model in the selected workspace',
+    );
+  }
+}
+
+Future<void> _seedMarionetteWorkspace(AppDatabase database) async {
+  final existing =
+      await (database.select(database.workspaces)..where(
+            (table) =>
+                table.id.equals(MarionetteDevelopmentState.demoWorkspaceId),
+          ))
+          .getSingleOrNull();
+  if (existing != null) {
+    if (existing.type != .local) {
+      throw StateError('Reserved Marionette workspace is not local');
+    }
+
+    return;
+  }
+
+  await _insertMarionetteWorkspace(database);
+}
+
+Future<void> _insertMarionetteWorkspace(AppDatabase database) async {
+  final _ = await database
+      .into(database.workspaces)
+      .insert(
+        WorkspacesCompanion.insert(
+          id: const Value(MarionetteDevelopmentState.demoWorkspaceId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          name: 'Marionette Demo',
+          type: .local,
+        ),
+      );
+}
+
+Future<void> _seedMarionetteConnection(AppDatabase database) async {
+  final existing = await _findMarionetteConnection(database);
+  if (existing != null) {
+    _validateMarionetteConnection(
+      isDemoWorkspace:
+          existing.workspaceId == MarionetteDevelopmentState.demoWorkspaceId,
+      isUnauthenticated: existing.authenticationType == .none,
+    );
+
+    return;
+  }
+
+  await _insertMarionetteConnection(database);
+}
+
+Future<ServiceConnectionTable?> _findMarionetteConnection(
+  AppDatabase database,
+) =>
+    (database.select(database.serviceConnections)..where(
+          (table) =>
+              table.id.equals(MarionetteDevelopmentState.demoConnectionId),
+        ))
+        .getSingleOrNull();
+
+Future<void> _insertMarionetteConnection(AppDatabase database) async {
+  final _ = await database
+      .into(database.serviceConnections)
+      .insert(
+        ServiceConnectionsCompanion.insert(
+          id: const Value(MarionetteDevelopmentState.demoConnectionId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          name: 'Marionette Demo Provider',
+          serviceId: 'marionette-demo',
+          kind: .modelProvider,
+          authenticationType: .none,
+          workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+        ),
+      );
+}
+
+Future<void> _seedMarionetteModelSelection(AppDatabase database) async {
+  final existing = await _findMarionetteModelSelection(database);
+  if (existing != null) {
+    _validateMarionetteModelSelection(
+      isDemoConnection:
+          existing.modelConnectionId ==
+          MarionetteDevelopmentState.demoConnectionId,
+      isDemoModel: existing.modelId == 'marionette-demo-model',
+    );
+
+    return;
+  }
+
+  await _insertMarionetteModelSelection(database);
+}
+
+Future<WorkspaceModelSelectionTable?> _findMarionetteModelSelection(
+  AppDatabase database,
+) =>
+    (database.select(database.workspaceModelSelections)..where(
+          (table) =>
+              table.id.equals(MarionetteDevelopmentState.demoModelSelectionId),
+        ))
+        .getSingleOrNull();
+
+Future<void> _insertMarionetteModelSelection(AppDatabase database) async {
+  final _ = await database
+      .into(database.workspaceModelSelections)
+      .insert(
+        WorkspaceModelSelectionsCompanion.insert(
+          id: const Value(MarionetteDevelopmentState.demoModelSelectionId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          modelId: 'marionette-demo-model',
+          modelConnectionId: MarionetteDevelopmentState.demoConnectionId,
+        ),
+      );
+}
+
+Future<void> _seedMarionetteConversation(AppDatabase database) async {
+  final existing = await _findMarionetteConversation(database);
+  if (existing != null) {
+    _validateMarionetteConversation(
+      isDemoWorkspace:
+          existing.workspaceId == MarionetteDevelopmentState.demoWorkspaceId,
+      isDemoModel:
+          existing.modelId == MarionetteDevelopmentState.demoModelSelectionId,
+    );
+
+    return;
+  }
+
+  await _insertMarionetteConversation(database);
+}
+
+Future<ConversationsTable?> _findMarionetteConversation(AppDatabase database) =>
+    (database.select(database.conversations)..where(
+          (table) =>
+              table.id.equals(MarionetteDevelopmentState.demoConversationId),
+        ))
+        .getSingleOrNull();
+
+Future<void> _insertMarionetteConversation(AppDatabase database) async {
+  final _ = await database
+      .into(database.conversations)
+      .insert(
+        ConversationsCompanion.insert(
+          id: const Value(MarionetteDevelopmentState.demoConversationId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+          title: 'Marionette Demo Conversation',
+          modelId: const Value(MarionetteDevelopmentState.demoModelSelectionId),
+        ),
+      );
+}
+
+Future<void> _seedMarionetteMessage(AppDatabase database) async {
+  final existing =
+      await (database.select(database.messages)..where(
+            (table) =>
+                table.id.equals(MarionetteDevelopmentState.demoMessageId),
+          ))
+          .getSingleOrNull();
+  if (existing != null) {
+    if (existing.conversationId !=
+        MarionetteDevelopmentState.demoConversationId) {
+      throw StateError('Reserved Marionette message is invalid');
+    }
+
+    return;
+  }
+
+  await _insertMarionetteMessage(database);
+}
+
+Future<void> _insertMarionetteMessage(AppDatabase database) async {
+  final _ = await database
+      .into(database.messages)
+      .insert(
+        MessagesCompanion.insert(
+          id: const Value(MarionetteDevelopmentState.demoMessageId),
+          createdAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          updatedAt: .new(MarionetteDevelopmentState._demoTimestamp),
+          conversationId: MarionetteDevelopmentState.demoConversationId,
+          content: 'Deterministic Marionette demo message.',
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+        ),
+      );
+}
+
+void _validateMarionetteConnection({
+  required bool isDemoWorkspace,
+  required bool isUnauthenticated,
+}) {
+  if (!isDemoWorkspace || !isUnauthenticated) {
+    throw StateError('Reserved Marionette connection is not development-only');
+  }
+}
+
+void _validateMarionetteModelSelection({
+  required bool isDemoConnection,
+  required bool isDemoModel,
+}) {
+  if (!isDemoConnection || !isDemoModel) {
+    throw StateError('Reserved Marionette model selection is invalid');
+  }
+}
+
+void _validateMarionetteConversation({
+  required bool isDemoWorkspace,
+  required bool isDemoModel,
+}) {
+  if (!isDemoWorkspace || !isDemoModel) {
+    throw StateError('Reserved Marionette conversation is invalid');
+  }
 }
 
 abstract interface class MarionetteExtensionActions {

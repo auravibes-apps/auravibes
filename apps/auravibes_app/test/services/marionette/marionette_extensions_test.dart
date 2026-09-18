@@ -68,7 +68,7 @@ void main() {
   });
 
   test('registration exposes only schema-backed allowlisted tools', () {
-    registerAuravibesMarionetteExtensions(_FakeActions());
+    MarionetteExtensionRegistration.register(_FakeActions());
 
     final details = {
       for (final extension in customExtensionRegistry)
@@ -114,10 +114,10 @@ void main() {
     expect(flagProperties['enabled'], containsPair('default', true));
   });
 
-  group('shouldEnableMarionette', () {
+  group('MarionetteExtensionBootstrap.shouldEnable', () {
     test('requires debug mode, explicit request, dev flavor, and db scope', () {
       expect(
-        shouldEnableMarionette(
+        MarionetteExtensionBootstrap.shouldEnable(
           isDebugMode: true,
           requested: true,
           flavor: .dev,
@@ -148,7 +148,7 @@ void main() {
         (isDebugMode: true, requested: true, flavor: Flavor.dev, db: ''),
       ]) {
         expect(
-          shouldEnableMarionette(
+          MarionetteExtensionBootstrap.shouldEnable(
             isDebugMode: values.isDebugMode,
             requested: values.requested,
             flavor: values.flavor,

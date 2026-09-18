@@ -31,8 +31,8 @@ Future<void> main() async {
   _configureSystemUi();
   final container = ProviderContainer();
   if (marionetteInstanceId != null) {
-    registerAuravibesMarionetteExtensions(
-      createMarionetteDevelopmentState(container),
+    MarionetteExtensionRegistration.register(
+      MarionetteExtensionBootstrap.createState(container),
     );
   }
 
@@ -50,23 +50,7 @@ void _configureLogging() => AppLogging.configure(
 
 String? _ensureFlutterBinding() {
   // Debug-only bridges; enable one explicitly for agent-controlled runs.
-  if (shouldEnableMarionette(
-    isDebugMode: kDebugMode,
-    requested: const bool.fromEnvironment('ENABLE_MARIONETTE'),
-    flavor: AppFlavorConfig.instance.appFlavor,
-    dbHashSource: AppEnvConfig.dbHashSource,
-  )) {
-    final instanceId = _resolveMarionetteInstanceId();
-    final logCollector = PrintLogCollector();
-    _marionetteLogCollector = logCollector;
-    final _ = MarionetteBinding.ensureInitialized(
-      .new(logCollector: logCollector),
-    );
-    _registerMarionetteInstanceExtension(instanceId);
-    debugPrint('AURAVIBES_MARIONETTE_INSTANCE_ID=$instanceId');
-
-    return instanceId;
-  }
+  if (_shouldEnableMarionette()) return _initializeMarionette();
 
   if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     final _ = enableFlutterDriverExtension();
@@ -77,6 +61,26 @@ String? _ensureFlutterBinding() {
   final _ = WidgetsFlutterBinding.ensureInitialized();
 
   return null;
+}
+
+bool _shouldEnableMarionette() => MarionetteExtensionBootstrap.shouldEnable(
+  isDebugMode: kDebugMode,
+  requested: const bool.fromEnvironment('ENABLE_MARIONETTE'),
+  flavor: AppFlavorConfig.instance.appFlavor,
+  dbHashSource: AppEnvConfig.dbHashSource,
+);
+
+String _initializeMarionette() {
+  final instanceId = _resolveMarionetteInstanceId();
+  final logCollector = PrintLogCollector();
+  _marionetteLogCollector = logCollector;
+  final _ = MarionetteBinding.ensureInitialized(
+    .new(logCollector: logCollector),
+  );
+  _registerMarionetteInstanceExtension(instanceId);
+  debugPrint('AURAVIBES_MARIONETTE_INSTANCE_ID=$instanceId');
+
+  return instanceId;
 }
 
 String _resolveMarionetteInstanceId() {
