@@ -18,7 +18,7 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_message_sender.
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision;
+    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 
 import 'package:riverpod/src/providers/provider.dart';
 
@@ -82,6 +82,36 @@ class SendMessageUsecase {
   Future<void> continueFromUserMessage({
     required String conversationId,
     required String messageId,
+  }) => _continueFromUserMessage(
+    conversationId: conversationId,
+    messageId: messageId,
+    origin: .userMessage,
+  );
+
+  Future<void> retryUserMessage({
+    required String conversationId,
+    required String messageId,
+  }) async {
+    final repository = messageRepository;
+    if (repository == null) {
+      throw StateError('Local message repository unavailable');
+    }
+    final message = await repository.getMessageById(messageId);
+    if (!_isRetryableUserMessage(message, conversationId)) {
+      throw StateError('Message cannot be retried');
+    }
+
+    await _continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: messageId,
+      origin: .manualContinue,
+    );
+  }
+
+  Future<void> _continueFromUserMessage({
+    required String conversationId,
+    required String messageId,
+    required AgentIterationOrigin origin,
   }) async {
     final continueTurn = continueAgentTurn;
     if (continueTurn == null) {
@@ -90,7 +120,7 @@ class SendMessageUsecase {
     final _ = await continueTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
-        origin: .userMessage,
+        origin: origin,
         ackMessageIds: [messageId],
       ),
     );
@@ -136,6 +166,17 @@ class SendMessageUsecase {
       messageId: createdMessage.id,
     );
   }
+}
+
+bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {
+  if (message == null || message.conversationId != conversationId) {
+    return false;
+  }
+  if (!message.isUser || message.isForkReference || !message.hasValidContent) {
+    return false;
+  }
+
+  return message.status == .error || message.status == .unfinished;
 }
 
 extension SendMessageUsecaseNewConversation on SendMessageUsecase {

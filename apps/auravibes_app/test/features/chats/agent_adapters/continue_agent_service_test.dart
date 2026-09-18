@@ -1275,7 +1275,7 @@ void main() {
       );
     });
 
-    test('persists provider details as an inline error', () async {
+    test('keeps the previous inline error when a retry fails', () async {
       final errorMessage = MessageEntity(
         id: 'system-error-1',
         conversationId: 'conversation-1',
@@ -1389,12 +1389,13 @@ void main() {
           const MessagePatch(status: .error),
         ),
       ).called(1);
-      verify(() => messageRepository.deleteMessage('previous-system-error-1'))
-          .called(1);
+      final _ = verifyNever(
+        () => messageRepository.deleteMessage('previous-system-error-1'),
+      );
     });
 
     test(
-      'clears the previous inline error before a successful retry',
+      'clears the previous inline error only after retry succeeds',
       () async {
         final previousError = MessageEntity(
           id: 'previous-system-error-1',
