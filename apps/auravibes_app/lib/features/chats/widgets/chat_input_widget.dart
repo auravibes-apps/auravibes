@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_previ
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -449,21 +450,24 @@ class const _ChatInputAgentSelector({
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Semantics(
-        key: const ValueKey<String>('chat_agent_selector'),
+      child: StableUiSelector(
+        identifier: 'chat_agent_selector',
         child: GestureDetector(
           child: IgnorePointer(child: compactControl),
-          onTap: () => _showSelectorSheet(
-            context: context,
-            title: const TextLocale(LocaleKeys.agents_title),
-            child: sheetControl,
-          ),
+          onTap: () => _showAgentSelectorSheet(context, sheetControl),
           behavior: .opaque,
         ),
-        identifier: 'chat_agent_selector',
       ),
     );
   }
+}
+
+void _showAgentSelectorSheet(BuildContext context, Widget sheetControl) {
+  _showSelectorSheet(
+    context: context,
+    title: const TextLocale(LocaleKeys.agents_title),
+    child: sheetControl,
+  );
 }
 
 class const _ChatInputActions({
@@ -1389,19 +1393,16 @@ class const _ModelSelectorButton({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final input = state.input;
-
-    return Semantics(
-      key: const ValueKey<String>('chat_model_selector'),
+    return StableUiSelector(
+      identifier: 'chat_model_selector',
       child: GestureDetector(
-        child: input.modelCompactControl,
+        child: state.input.modelCompactControl,
         onTap: () => _showSelectorSheet(
           context: context,
           title: const TextLocale(LocaleKeys.models_screens_select_model),
-          child: input.modelSheetControl,
+          child: state.input.modelSheetControl,
         ),
       ),
-      identifier: 'chat_model_selector',
     );
   }
 }

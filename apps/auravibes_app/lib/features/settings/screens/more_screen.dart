@@ -2,6 +2,7 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:go_router/go_router.dart';
@@ -119,15 +120,14 @@ class const _MoreTile({
   Widget build(BuildContext context) {
     final selectorId = 'more_${spec.kind.name}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
+    return StableUiSelector(
+      identifier: selectorId,
       child: _SectionTile(
         icon: spec.icon,
         titleKey: spec.titleKey,
         subtitleKey: spec.subtitleKey,
         onTap: () => context.push(spec.location(workspaceId)),
       ),
-      identifier: selectorId,
     );
   }
 }

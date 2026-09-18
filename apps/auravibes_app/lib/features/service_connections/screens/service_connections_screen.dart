@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/service_connections/usecases/service_conn
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -742,12 +743,10 @@ class const _ConnectionWarningActionButton({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectorId = 'service_connection_warning_${connection.id}';
-
     return Align(
       alignment: .centerRight,
-      child: Semantics(
-        key: ValueKey<String>(selectorId),
+      child: StableUiSelector(
+        identifier: 'service_connection_warning_${connection.id}',
         child: AuraButton(
           onPressed: () => unawaited(
             _runConnectionWarningAction(
@@ -761,7 +760,6 @@ class const _ConnectionWarningActionButton({
           variant: .outlined,
           size: .small,
         ),
-        identifier: selectorId,
       ),
     );
   }
@@ -835,8 +833,8 @@ class const _ConnectionTileMenu({
     final menuController = AuraPopupMenuController();
     final selectorId = 'service_connection_menu_${connection.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
+    return StableUiSelector(
+      identifier: selectorId,
       child: AuraPopupMenu(
         child: AuraIconButton(
           icon: Icons.more_vert,
@@ -845,7 +843,6 @@ class const _ConnectionTileMenu({
         items: [..._connectionMenuItems(context, ref, connection)],
         controller: menuController,
       ),
-      identifier: selectorId,
     );
   }
 }

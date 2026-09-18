@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -926,15 +927,14 @@ class const _LocalWorkspaceTile({
   Widget build(BuildContext context) {
     final selectorId = 'workspace_select_${workspace.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
+    return StableUiSelector(
+      identifier: selectorId,
       child: AuraTile(
         child: _WorkspaceName(name: workspace.name, isActive: isActive),
         onTap: () => actions.switchWorkspace(workspace.id),
         variant: .ghost,
         trailing: _LocalWorkspaceMenu(workspace: workspace, actions: actions),
       ),
-      identifier: selectorId,
     );
   }
 }
@@ -983,8 +983,8 @@ class const _ConnectedWorkspaceTile({
   Widget build(BuildContext context) {
     final selectorId = 'workspace_select_${workspace.id}';
 
-    return Semantics(
-      key: ValueKey<String>(selectorId),
+    return StableUiSelector(
+      identifier: selectorId,
       child: AuraTile(
         child: _ConnectedWorkspaceDetails(
           workspace: workspace,
@@ -998,7 +998,6 @@ class const _ConnectedWorkspaceTile({
           actions: actions,
         ),
       ),
-      identifier: selectorId,
     );
   }
 }
