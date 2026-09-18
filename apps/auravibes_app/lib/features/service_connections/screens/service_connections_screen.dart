@@ -402,16 +402,28 @@ class _ConnectionsListState extends State<_ConnectionsList> {
   String _searchQuery = '';
 
   @override
-  Widget build(BuildContext context) => widget.connections.isEmpty
-      ? _EmptyConnections(onAddConnection: widget.onAddConnection)
-      : _ConnectionsListContent(
-          connections: widget.connections,
-          filter: _selectedFilter,
-          onAddConnection: widget.onAddConnection,
-          onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
-          onSearchChanged: (query) => setState(() => _searchQuery = query),
-          searchQuery: _searchQuery,
-        );
+  Widget build(BuildContext context) {
+    if (widget.connections.isEmpty) {
+      return _EmptyConnections(onAddConnection: widget.onAddConnection);
+    }
+
+    return _ConnectionsListContent(
+      connections: widget.connections,
+      filter: _selectedFilter,
+      onAddConnection: widget.onAddConnection,
+      onFilterChanged: _onFilterChanged,
+      onSearchChanged: _onSearchChanged,
+      searchQuery: _searchQuery,
+    );
+  }
+
+  void _onFilterChanged(_ConnectionFilter filter) {
+    setState(() => _selectedFilter = filter);
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() => _searchQuery = query);
+  }
 }
 
 class const _EmptyConnections({required final VoidCallback onAddConnection})
@@ -488,18 +500,7 @@ class const _ConnectionsListContent({
     return Column(
       crossAxisAlignment: .stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-          child: AuraInput(
-            key: const ValueKey<String>('service_connections_search'),
-            placeholder: const TextLocale(
-              LocaleKeys.service_connections_search_placeholder,
-            ),
-            prefixIcon: const AuraIcon(Icons.search),
-            size: .small,
-            onChanged: onSearchChanged,
-          ),
-        ),
+        _ConnectionSearchInput(onChanged: onSearchChanged),
         _ConnectionFilterSelector(value: filter, onChanged: onFilterChanged),
         Expanded(
           child: _ConnectionsTab(
@@ -512,6 +513,24 @@ class const _ConnectionsListContent({
       ],
     );
   }
+}
+
+class const _ConnectionSearchInput({
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+    child: AuraInput(
+      key: const ValueKey<String>('service_connections_search'),
+      placeholder: const TextLocale(
+        LocaleKeys.service_connections_search_placeholder,
+      ),
+      prefixIcon: const AuraIcon(Icons.search),
+      size: .small,
+      onChanged: onChanged,
+    ),
+  );
 }
 
 class const _ConnectionFilterSelector({
@@ -545,19 +564,39 @@ extension on _ConnectionFilterOptionData {
 bool _matchesConnectionFilter(
   ServiceConnectionListItem connection,
   _ConnectionFilter filter,
-) {
-  return switch (filter) {
-    .all => true,
-    .modelProviders => connection.kind == .modelProvider,
-    .skillCredentials => connection.kind == .skillCredential,
-    .mcpServers => connection.kind == .mcpServer,
-    .oauth =>
-      connection.authenticationType?.toLowerCase().contains('oauth') ?? false,
-    .failed => connection.displayStatus == .failed,
-    .expiringSoon => connection.displayStatus == .expiringSoon,
-    .needsAuth => connection.displayStatus == .needsReauth,
-  };
-}
+) => switch (filter) {
+  .all => true,
+  .modelProviders ||
+  .skillCredentials ||
+  .mcpServers => _matchesConnectionKind(connection, filter),
+  .oauth => _isOauthConnection(connection),
+  .failed ||
+  .expiringSoon ||
+  .needsAuth => _matchesConnectionStatus(connection, filter),
+};
+
+bool _matchesConnectionKind(
+  ServiceConnectionListItem connection,
+  _ConnectionFilter filter,
+) => switch (filter) {
+  .modelProviders => connection.kind == .modelProvider,
+  .skillCredentials => connection.kind == .skillCredential,
+  .mcpServers => connection.kind == .mcpServer,
+  _ => false,
+};
+
+bool _isOauthConnection(ServiceConnectionListItem connection) =>
+    connection.authenticationType?.toLowerCase().contains('oauth') ?? false;
+
+bool _matchesConnectionStatus(
+  ServiceConnectionListItem connection,
+  _ConnectionFilter filter,
+) => switch (filter) {
+  .failed => connection.displayStatus == .failed,
+  .expiringSoon => connection.displayStatus == .expiringSoon,
+  .needsAuth => connection.displayStatus == .needsReauth,
+  _ => false,
+};
 
 Iterable<String?> _connectionSearchValues(
   ServiceConnectionListItem connection,
@@ -573,16 +612,28 @@ List<ServiceConnectionListItem> _filterConnections(
   _ConnectionFilter filter,
   String searchQuery,
 ) {
-  final normalizedQuery = searchQuery.trim().toLowerCase();
+  final normalizedQuery = _normalizeSearchQuery(searchQuery);
 
-  return connections.where((connection) {
-    if (!_matchesConnectionFilter(connection, filter)) return false;
-    if (normalizedQuery.isEmpty) return true;
+  return connections
+      .where(
+        (connection) =>
+            _matchesConnectionFilter(connection, filter) &&
+            _matchesConnectionSearch(connection, normalizedQuery),
+      )
+      .toList();
+}
 
-    return _connectionSearchValues(
-      connection,
-    ).any((value) => value?.toLowerCase().contains(normalizedQuery) ?? false);
-  }).toList();
+String _normalizeSearchQuery(String searchQuery) =>
+    searchQuery.trim().toLowerCase();
+
+bool _matchesConnectionSearch(
+  ServiceConnectionListItem connection,
+  String normalizedQuery,
+) {
+  if (normalizedQuery.isEmpty) return true;
+
+  return _connectionSearchValues(connection)
+      .any((value) => value?.toLowerCase().contains(normalizedQuery) ?? false);
 }
 
 class const _ConnectionsTab({
