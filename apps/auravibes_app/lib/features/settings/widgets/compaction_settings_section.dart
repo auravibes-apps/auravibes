@@ -459,11 +459,15 @@ class const _CompactionResetButton({
   required final _CompactionSettingsSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => AuraButton(
-    onPressed: () => unawaited(state._resetDefaults()),
-    child: const TextLocale(LocaleKeys.compaction_settings_reset_defaults),
-    variant: .ghost,
-    size: .small,
+  Widget build(BuildContext _) => Semantics(
+    key: const ValueKey<String>('settings_compaction_reset'),
+    child: AuraButton(
+      onPressed: () => unawaited(state._resetDefaults()),
+      child: const TextLocale(LocaleKeys.compaction_settings_reset_defaults),
+      variant: .ghost,
+      size: .small,
+    ),
+    identifier: 'settings_compaction_reset',
   );
 }
 
@@ -471,9 +475,13 @@ class const _CompactionSaveButton({
   required final _CompactionSettingsSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => AuraButton(
-    onPressed: () => unawaited(state._save()),
-    child: const TextLocale(LocaleKeys.settings_screen_actions_save),
-    size: .small,
+  Widget build(BuildContext _) => Semantics(
+    key: const ValueKey<String>('settings_compaction_save'),
+    child: AuraButton(
+      onPressed: () => unawaited(state._save()),
+      child: const TextLocale(LocaleKeys.settings_screen_actions_save),
+      size: .small,
+    ),
+    identifier: 'settings_compaction_save',
   );
 }

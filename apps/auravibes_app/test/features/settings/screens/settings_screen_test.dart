@@ -45,6 +45,26 @@ void main() {
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('app_drawer_menu')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_theme')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_accent_color')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_compaction_reset')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_compaction_save')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('tapping theme tile shows radio group dialog', (tester) async {

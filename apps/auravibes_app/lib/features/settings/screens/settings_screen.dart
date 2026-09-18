@@ -166,8 +166,9 @@ class const _ThemeTile({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return AuraTile(
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('settings_theme'),
+    child: AuraTile(
       child: const AuraText(
         child: TextLocale(LocaleKeys.settings_screen_theme_title),
         style: .bodyLarge,
@@ -176,8 +177,9 @@ class const _ThemeTile({
       variant: .ghost,
       leading: _ThemeTileIcon(color: context.auraColors.secondary),
       trailing: _ThemeTileTrailing(theme: theme),
-    );
-  }
+    ),
+    identifier: 'settings_theme',
+  );
 }
 
 class const _ThemeTileTrailing({required final AppTheme theme})

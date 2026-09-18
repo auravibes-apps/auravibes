@@ -75,6 +75,12 @@ void main() {
     expect(find.text('This connection has expired.'), findsOneWidget);
     expect(find.text('Refresh token'), findsOneWidget);
     expect(find.text('Reconnect'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('service_connection_warning_Expiring MCP'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(AuraCallout), findsNWidgets(2));
     expect(
       find.text('Authentication failed for this connection.'),
@@ -95,6 +101,10 @@ void main() {
     await _pumpScreen(tester, container, _syncWorkspaceId);
     final _ = await tester.pumpAndSettle();
 
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_sync')),
+      findsOneWidget,
+    );
     await tester.tap(find.byIcon(Icons.sync));
     await tester.pump();
 
@@ -152,6 +162,27 @@ void main() {
 
     expect(find.byIcon(Icons.sync), findsNothing);
     await _unmountScreen(tester);
+  });
+
+  testWidgets('exposes distinct add selectors for empty and app bar actions', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_add')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_empty_add')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('deletes service connections from row menu', (tester) async {

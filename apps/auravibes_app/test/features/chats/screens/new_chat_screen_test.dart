@@ -200,6 +200,10 @@ void main() {
         find.byKey(const Key('new_chat_workspace_selector')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey<String>('workspace_selector')),
+        findsOneWidget,
+      );
       expect(find.text('Personal'), findsOneWidget);
     });
 

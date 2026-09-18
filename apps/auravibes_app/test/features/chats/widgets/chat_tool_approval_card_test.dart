@@ -105,6 +105,14 @@ void main() {
       );
 
       expect(find.byIcon(Icons.build_outlined), findsOneWidget);
+      for (final selector in [
+        'tool_approval_allow_once',
+        'tool_approval_allow_conversation',
+        'tool_approval_skip',
+        'tool_approval_stop_all',
+      ]) {
+        expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
+      }
     });
 
     testWidgets('shows navigation chevrons for multiple pending calls', (
@@ -125,6 +133,14 @@ void main() {
 
       expect(find.byIcon(Icons.chevron_left), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_previous')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_next')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows formatted tool display name', (tester) async {
