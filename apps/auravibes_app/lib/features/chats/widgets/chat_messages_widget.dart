@@ -53,6 +53,7 @@ class const ChatMessagesWidget({
   final Map<String, MessageEntity>? messageEntitiesById,
   final List<PendingToolCall> pendingToolCalls = const [],
   final bool showThinking = false,
+  final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
@@ -149,6 +150,7 @@ class const ChatMessagesWidget({
       resolvedMessages,
       submittedA2uiReplayPayloads,
     ).reversed.toList(growable: false);
+    final retryableMessageId = _retryableUserMessageId(resolvedMessages);
 
     void updateDisclosure(VoidCallback update) => update();
 
@@ -175,6 +177,8 @@ class const ChatMessagesWidget({
         a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
         replayPayloadsByMessageId: submittedA2uiReplayPayloads,
         conversation: conversation,
+        retryableMessageId: retryableMessageId,
+        onRetryMessage: onRetryMessage,
       ),
       separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
       itemCount: itemCount,
@@ -316,6 +320,8 @@ Widget _buildChatTimelineItem({
   required ChatA2uiRuntime? a2uiRuntime,
   required Map<String, List<String>> replayPayloadsByMessageId,
   required ConversationEntity? conversation,
+  required String? retryableMessageId,
+  required Future<void> Function(MessageEntity message)? onRetryMessage,
 }) {
   if (showThinking && index == 0) {
     return const ChatThinkingIndicator(
@@ -352,6 +358,8 @@ Widget _buildChatTimelineItem({
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
+        canRetry: source.message.id == retryableMessageId,
+        onRetryMessage: onRetryMessage,
       ),
   };
   final rendered = _DisclosureSizeReporter(
@@ -621,6 +629,24 @@ bool _isErrorSystemMessage(MessageEntity message) =>
 bool _isProviderErrorMessage(MessageEntity message) =>
     message.metadata?.modelMetadata['providerError'] == true;
 
+String? _retryableUserMessageId(List<_ResolvedChatMessage?> messages) {
+  for (final source in messages.reversed) {
+    final message = source?.message;
+    if (message?.isUser != true) continue;
+
+    return _canRetryUserMessage(message!) ? message.id : null;
+  }
+
+  return null;
+}
+
+bool _canRetryUserMessage(MessageEntity message) =>
+    message.isUser &&
+    !message.isForkReference &&
+    message.hasValidContent &&
+    (message.status == MessageStatus.error ||
+        message.status == MessageStatus.unfinished);
+
 class const _ChatMessageTimelineItem({
   required final _ResolvedChatMessage source,
   final bool activityRenderedInSession = false,
@@ -630,6 +656,8 @@ class const _ChatMessageTimelineItem({
   required final String workspaceId,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
+  required final bool canRetry,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -674,6 +702,8 @@ class const _ChatMessageTimelineItem({
           conversationId: parentConversationId,
           a2uiRuntime: a2uiRuntime,
           a2uiReplayPayloads: a2uiReplayPayloads,
+          canRetry: canRetry,
+          onRetryMessage: onRetryMessage,
         ),
       ],
     );
@@ -687,6 +717,8 @@ class const _ChatMessageContent({
   required final String conversationId,
   required final ChatA2uiRuntime? a2uiRuntime,
   required final List<String> a2uiReplayPayloads,
+  required final bool canRetry,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -715,6 +747,8 @@ class const _ChatMessageContent({
         conversationId: conversationId,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads: a2uiReplayPayloads,
+        canRetry: canRetry,
+        onRetryMessage: onRetryMessage,
       ),
       crossAxisAlignment: CrossAxisAlignment.start,
     );
@@ -754,6 +788,8 @@ List<Widget> _messageContentChildren({
   required String conversationId,
   required ChatA2uiRuntime? a2uiRuntime,
   required List<String> a2uiReplayPayloads,
+  required bool canRetry,
+  required Future<void> Function(MessageEntity message)? onRetryMessage,
 }) {
   final selectableChildren = <Widget>[
     if (showTextBubble)
@@ -785,12 +821,15 @@ List<Widget> _messageContentChildren({
           children: selectableChildren,
         ),
       ),
-    if (!hasA2uiResponse && _messageCopyText(message, a2uiRuntime) != null)
+    if (!hasA2uiResponse &&
+        (_messageCopyText(message, a2uiRuntime) != null ||
+            (canRetry && onRetryMessage != null)))
       _MessageActions(
         message: message,
         resolveContent: () => _messageCopyText(message, a2uiRuntime),
         workspaceId: workspaceId,
         conversationId: conversationId,
+        onRetryMessage: canRetry ? onRetryMessage : null,
       ),
     if (hasA2uiResponse)
       _MessageFooter(
@@ -1064,25 +1103,48 @@ bool _canForkMessage(MessageEntity message) =>
 
 class const _MessageActions({
   required final MessageEntity message,
-  required final String? Function() resolveContent,
+  final String? Function()? resolveContent,
   required final String workspaceId,
   required final String conversationId,
+  final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      _MessageCopyAction(
-        resolveContent: resolveContent,
-        isUser: message.isUser,
-      ),
-      if (_canForkMessage(message))
-        _MessageForkAction(
-          message: message,
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-    ],
+  Widget build(BuildContext context) {
+    final resolve = resolveContent;
+    final retry = onRetryMessage;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (resolve != null)
+          _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
+        if (retry != null)
+          _MessageRetryAction(message: message, onRetryMessage: retry),
+        if (_canForkMessage(message))
+          _MessageForkAction(
+            message: message,
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+          ),
+      ],
+    );
+  }
+}
+
+class const _MessageRetryAction({
+  required final MessageEntity message,
+  required final Future<void> Function(MessageEntity message) onRetryMessage,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerRight,
+    child: AuraIconButton(
+      key: ValueKey('retry_message_${message.id}'),
+      icon: Icons.refresh,
+      size: .small,
+      tooltip: LocaleKeys.chats_screens_chat_conversation_retry_message.tr(),
+      onPressed: () => unawaited(onRetryMessage(message)),
+    ),
   );
 }
 

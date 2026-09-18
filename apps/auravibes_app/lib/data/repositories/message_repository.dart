@@ -560,6 +560,13 @@ extension on MessageRepository {
     if (!_isTerminalStatus(existing.status) || _hasPendingToolCalls(existing)) {
       return;
     }
+    if (existing.isUser &&
+        existing.status == MessageTableStatus.error &&
+        message.status == MessageStatus.sending &&
+        message.content == null &&
+        message.metadata == null) {
+      return;
+    }
     if (_changesFinalMessage(existing, message)) {
       throw const MessageValidationException('Terminal message is immutable');
     }

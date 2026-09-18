@@ -43,6 +43,7 @@ Widget buildSubject({
   String conversationId = 'conv-1',
   List<PendingToolCall> pendingToolCalls = const [],
   bool showThinking = false,
+  Future<void> Function(MessageEntity message)? onRetryMessage,
   ConversationEntity? conversation,
   AuraTheme? theme,
   Widget Function(BuildContext context, Widget child)? appBuilder,
@@ -53,6 +54,7 @@ Widget buildSubject({
     overrides: overrides,
     pendingToolCalls: pendingToolCalls,
     showThinking: showThinking,
+    onRetryMessage: onRetryMessage,
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
@@ -385,6 +387,83 @@ void main() {
 
       expect(find.byType(ChatMessagesWidget), findsOneWidget);
       expect(find.byType(ListView), findsOneWidget);
+    });
+
+    for (final status in [MessageStatus.error, MessageStatus.unfinished]) {
+      testWidgets('shows retry action for user $status messages', (
+        tester,
+      ) async {
+        final message = _createMessage(id: 'failed-user', status: status);
+        final retriedIds = <String>[];
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [message.id],
+            messageEntitiesById: {message.id: message},
+            onRetryMessage: (message) async => retriedIds.add(message.id),
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => message,
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        expect(
+          find.byKey(const ValueKey('retry_message_failed-user')),
+          findsOneWidget,
+        );
+        expect(find.byTooltip('Retry message'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey('retry_message_failed-user')),
+        );
+        await tester.pump();
+
+        expect(retriedIds, ['failed-user']);
+      });
+    }
+
+    testWidgets('does not retry an older failed user message', (tester) async {
+      final failed = _createMessage(
+        id: 'failed-user',
+        status: MessageStatus.error,
+      );
+      final latest = _createMessage(id: 'latest-user');
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [failed.id, latest.id],
+          messageEntitiesById: {failed.id: failed, latest.id: latest},
+          onRetryMessage: (_) async {},
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => id.messageId == failed.id ? failed : latest,
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('retry_message_failed-user')),
+        findsNothing,
+      );
     });
 
     testWidgets('renders user message with text content', (tester) async {
@@ -3204,6 +3283,7 @@ class const _ChatMessagesTestSubject({
   required final List<PendingToolCall> pendingToolCalls,
   final Map<String, MessageEntity>? messageEntitiesById,
   final bool showThinking = false,
+  final Future<void> Function(MessageEntity message)? onRetryMessage,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
   final Widget Function(BuildContext context, Widget child)? appBuilder,
@@ -3243,6 +3323,7 @@ class const _ChatMessagesTestSubject({
                   messageEntitiesById: messageEntitiesById,
                   pendingToolCalls: pendingToolCalls,
                   showThinking: showThinking,
+                  onRetryMessage: onRetryMessage,
                 ),
               ),
             );

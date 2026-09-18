@@ -142,6 +142,14 @@ typedef _SendMessageRequest = ({
   ChatDraft draft,
 });
 
+typedef _RetryMessageRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+  MessageEntity message,
+});
+
 typedef _ManualCompactRequest = ({
   BuildContext context,
   WidgetRef ref,
@@ -432,6 +440,7 @@ class const _LoadedChatConversationHookState({
   required final VoidCallback onToolsPress,
   required final VoidCallback onStop,
   required final Future<void> Function(ChatDraft) onSendMessage,
+  required final Future<void> Function(MessageEntity) onRetryMessage,
   required final VoidCallback onCompact,
 });
 
@@ -439,6 +448,7 @@ typedef _LoadedChatConversationCoreCallbacks = ({
   VoidCallback onToolsPress,
   VoidCallback onStop,
   Future<void> Function(ChatDraft) onSendMessage,
+  Future<void> Function(MessageEntity) onRetryMessage,
   VoidCallback onCompact,
 });
 
@@ -465,6 +475,7 @@ _LoadedChatConversationHookState _useLoadedChatConversationHookState(
     onToolsPress: _useToolsPressCallback(callbacks),
     onStop: _useStopCallback(callbacks),
     onSendMessage: _useSendMessageCallback(callbacks),
+    onRetryMessage: _useRetryMessageCallback(callbacks),
     onCompact: _useCompactCallback(callbacks),
   );
 }
@@ -488,6 +499,13 @@ Future<void> Function(ChatDraft) _useSendMessageCallback(
 ) => useCallback<Future<void> Function(ChatDraft)>(
   callbacks.core.onSendMessage,
   [callbacks.ref],
+);
+
+Future<void> Function(MessageEntity) _useRetryMessageCallback(
+  _LoadedChatConversationCallbacks callbacks,
+) => useCallback<Future<void> Function(MessageEntity)>(
+  callbacks.core.onRetryMessage,
+  [callbacks.ref, callbacks.workspaceId, callbacks.conversationId],
 );
 
 VoidCallback _useCompactCallback(_LoadedChatConversationCallbacks callbacks) =>
@@ -555,6 +573,7 @@ _LoadedChatConversationCoreCallbacks _loadedConversationCoreCallbacks(
   onToolsPress: _loadedConversationToolsPress(request),
   onStop: _loadedConversationStop(request, stopRequested),
   onSendMessage: _loadedConversationSendMessage(request),
+  onRetryMessage: _loadedConversationRetryMessage(request),
   onCompact: _loadedConversationCompact(request),
 );
 
@@ -604,6 +623,17 @@ Future<void> Function(ChatDraft) _loadedConversationSendMessage(
       workspaceId: request.workspaceId,
       conversationId: request.conversation.id,
       draft: draft,
+    ));
+
+Future<void> Function(MessageEntity) _loadedConversationRetryMessage(
+  _LoadedRuntimeRequest request,
+) =>
+    (message) => _retryMessage((
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversation.id,
+      message: message,
     ));
 
 VoidCallback _loadedConversationCompact(_LoadedRuntimeRequest request) =>
@@ -1139,6 +1169,9 @@ class const _ChatConversationMessageList({
       workspaceId: data.workspaceId,
       conversationId: data.conversation.id,
       pendingToolCalls: data.state.pendingCalls,
+      onRetryMessage: data.state.isInputBusy
+          ? null
+          : data.callbacks.hooks.onRetryMessage,
       showThinking: data.state.isGenerating && !data.hidesStoppedRun,
     ),
   );
@@ -1850,6 +1883,82 @@ Future<void> _continueLocalAgent(WidgetRef ref, String conversationId) async {
       );
 }
 
+Future<void> _retryMessage(_RetryMessageRequest request) async {
+  if (!_canRetryMessage(request)) return;
+
+  try {
+    await _runRetryMessage(request);
+  } on Exception catch (error, stackTrace) {
+    _reportRetryMessageError(request, error, stackTrace);
+  }
+}
+
+bool _canRetryMessage(_RetryMessageRequest request) {
+  final busyState = request.ref.read(
+    conversationBusyStateProvider(request.workspaceId, request.conversationId),
+  );
+  final rateLimitRetry = request.ref.read(
+    conversationRateLimitRetryProvider,
+  )[request.conversationId];
+  if (!_canContinueAgent(
+    _conversationBusyStateValue(busyState),
+    rateLimitRetry,
+  )) {
+    return false;
+  }
+
+  return true;
+}
+
+Future<void> _runRetryMessage(_RetryMessageRequest request) async {
+  final cloud = await request.ref.read(
+    cloudTurnUsecaseProvider(request.workspaceId).future,
+  );
+  if (cloud == null) {
+    await _retryLocalMessage(request);
+
+    return;
+  }
+
+  await _retryCloudMessage(request, cloud);
+}
+
+Future<void> _retryLocalMessage(_RetryMessageRequest request) => request.ref
+    .read(sendMessageUsecaseProvider(request.workspaceId))
+    .retryUserMessage(
+      conversationId: request.conversationId,
+      messageId: request.message.id,
+    );
+
+Future<void> _retryCloudMessage(
+  _RetryMessageRequest request,
+  CloudTurnUsecase cloud,
+) => _continueCloudAgent((
+  ref: request.ref,
+  cloud: cloud,
+  workspaceId: request.workspaceId,
+  conversationId: request.conversationId,
+));
+
+void _reportRetryMessageError(
+  _RetryMessageRequest request,
+  Exception error,
+  StackTrace stackTrace,
+) {
+  _logger.severe(
+    'Failed to retry message ${request.message.id}',
+    error,
+    stackTrace,
+  );
+  if (!request.context.mounted) return;
+
+  final _ = AuraSnackBars.show(
+    context: request.context,
+    content: Text(LocaleKeys.chats_screens_chat_conversation_retry_error.tr()),
+    variant: .error,
+  );
+}
+
 void _reportContinueAgentError(_ContinueErrorRequest request) {
   _logContinueAgentError(request);
   _reportContinueAgentFlutterError(request);
@@ -2204,6 +2313,7 @@ class const _ChatList({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
   final bool showThinking = false,
 }) extends ConsumerWidget {
   @override
@@ -2218,6 +2328,7 @@ class const _ChatList({
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      onRetryMessage: onRetryMessage,
     );
   }
 }
@@ -2228,6 +2339,7 @@ class const _ChatListContent({
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
   required final bool showThinking,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2239,6 +2351,7 @@ class const _ChatListContent({
       conversationId: conversationId,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      onRetryMessage: onRetryMessage,
     );
   }
 }
@@ -2249,6 +2362,7 @@ class const _ChatListErrorOrResult({
   required final String conversationId,
   required final List<PendingToolCall> pendingToolCalls,
   required final bool showThinking,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2266,6 +2380,7 @@ class const _ChatListErrorOrResult({
       messages: chatMessages.value ?? const <MessageEntity>[],
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      onRetryMessage: onRetryMessage,
     );
   }
 }
@@ -2293,6 +2408,7 @@ class const _ChatListResult({
   required final Iterable<MessageEntity> messages,
   required final List<PendingToolCall> pendingToolCalls,
   required final bool showThinking,
+  required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2305,6 +2421,7 @@ class const _ChatListResult({
       messageEntitiesById: messageData.entitiesById,
       pendingToolCalls: pendingToolCalls,
       showThinking: showThinking,
+      onRetryMessage: onRetryMessage,
     );
   }
 }
