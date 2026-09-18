@@ -35,7 +35,9 @@ extension on ToolResolverService {
         .skillControl => ResolvedTool.skillCommand(
           commandName: resolved.toolIdentifier,
         ),
-        .skillNative || .skillTemplate => _resolveSkillTool(resolved),
+        .skillNative ||
+        .skillTemplate ||
+        .skillAppTemplate => _resolveSkillTool(resolved),
         .mcp => _resolveMcpTool(resolved),
         .builtIn => _resolveBuiltInTool(resolved),
         .native => _resolveNativeTool(resolved),
@@ -44,11 +46,8 @@ extension on ToolResolverService {
   ResolvedTool _resolveSkillTool(AgentResolvedToolName resolved) {
     final skillSlug = resolved.skillSlug ?? '';
 
-    return _resolvedSkillTool(resolved, skillSlug, _isNativeSkill(resolved));
+    return _resolvedSkillTool(resolved, skillSlug, resolved.kind);
   }
-
-  bool _isNativeSkill(AgentResolvedToolName resolved) =>
-      resolved.kind == AgentResolvedToolKind.skillNative;
 
   ResolvedTool _resolveMcpTool(AgentResolvedToolName resolved) =>
       ResolvedTool.mcp(
@@ -89,15 +88,21 @@ extension on ToolResolverService {
 ResolvedTool _resolvedSkillTool(
   AgentResolvedToolName resolved,
   String skillSlug,
-  bool isNative,
-) => isNative
-    ? ResolvedTool.skillNative(
-        tableId: resolved.tableId,
-        skillSlug: skillSlug,
-        toolIdentifier: resolved.toolIdentifier,
-      )
-    : ResolvedTool.skillTemplate(
-        tableId: resolved.tableId,
-        skillSlug: skillSlug,
-        toolIdentifier: resolved.toolIdentifier,
-      );
+  AgentResolvedToolKind kind,
+) => switch (kind) {
+  .skillNative => .skillNative(
+    tableId: resolved.tableId,
+    skillSlug: skillSlug,
+    toolIdentifier: resolved.toolIdentifier,
+  ),
+  .skillAppTemplate => .skillAppTemplate(
+    tableId: resolved.tableId,
+    skillSlug: skillSlug,
+    toolIdentifier: resolved.toolIdentifier,
+  ),
+  _ => .skillTemplate(
+    tableId: resolved.tableId,
+    skillSlug: skillSlug,
+    toolIdentifier: resolved.toolIdentifier,
+  ),
+};

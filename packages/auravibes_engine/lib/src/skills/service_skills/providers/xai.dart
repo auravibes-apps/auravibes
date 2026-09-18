@@ -1,10 +1,8 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const xAiSkill = AppSkillDefinition(
+final xAiSkill = AppSkillDefinition(
   identifier: 'xai',
   slug: 'xai',
   title: 'xAI',
@@ -15,14 +13,24 @@ for public posts and account-related queries.
 ''',
   requiresCredential: true,
   compatibleModelProviderIds: ['xai'],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using xAI web search.',
       inputJsonSchema: _webSearchInputSchema,
       requiresCredential: true,
-      callback: _webSearch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.x.ai/v1/responses',
+        inputSchema: _webSearchInputSchema,
+        headers: {
+          'authorization': 'Bearer {{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _webSearchBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'x_search',
@@ -30,7 +38,16 @@ for public posts and account-related queries.
       description: 'Search public X posts for a query.',
       inputJsonSchema: _xSearchInputSchema,
       requiresCredential: true,
-      callback: _xSearch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.x.ai/v1/responses',
+        inputSchema: _xSearchInputSchema,
+        headers: {
+          'authorization': 'Bearer {{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _xSearchBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -39,7 +56,7 @@ const Map<String, Object> _webSearchInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'grok-4'},
     'allowedDomains': {
       'type': 'array',
       'items': {'type': 'string'},
@@ -76,93 +93,19 @@ const Map<String, Object> _xSearchInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _webSearch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  return _responses(
-    context,
-    input,
-    _webSearchTool(input),
-    textInput(input, 'question'),
-  );
-}
+const _webSearchBody = '''
+{"model":{{ input.model | json }},"tools":[{"type":"web_search"
+{% if input.allowedDomains != nil %},"allowed_domains":{{ input.allowedDomains | json }}{% endif %}
+{% if input.excludedDomains != nil %},"excluded_domains":{{ input.excludedDomains | json }}{% endif %}
+{% if input.enableImageUnderstanding != nil %},"enable_image_understanding":{{ input.enableImageUnderstanding | json }}{% endif %}
+{% if input.enableImageSearch != nil %},"enable_image_search":{{ input.enableImageSearch | json }}{% endif %}}],"input":{{ input.question | json }}}
+''';
 
-CancelableOperation<Object?> _xSearch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  return _responses(
-    context,
-    input,
-    _xSearchTool(input),
-    textInput(input, 'query'),
-  );
-}
-
-CancelableOperation<Object?> _responses(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  Map<String, Object?> tool,
-  String text,
-) {
-  return postJson(
-    context,
-    'https://api.x.ai/v1/responses',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    {
-      'model': stringInput(input, 'model', defaultValue: 'grok-4'),
-      'tools': [tool],
-      'input': text,
-    },
-  );
-}
-
-Map<String, Object?> _webSearchTool(Map<String, dynamic> input) {
-  final tool = <String, Object?>{'type': 'web_search'};
-  putIfPresent(
-    tool,
-    'allowed_domains',
-    stringListInput(input, 'allowedDomains'),
-  );
-  putIfPresent(
-    tool,
-    'excluded_domains',
-    stringListInput(input, 'excludedDomains'),
-  );
-  putIfPresent(
-    tool,
-    'enable_image_understanding',
-    boolInput(input, 'enableImageUnderstanding'),
-  );
-  putIfPresent(
-    tool,
-    'enable_image_search',
-    boolInput(input, 'enableImageSearch'),
-  );
-
-  return tool;
-}
-
-Map<String, Object?> _xSearchTool(Map<String, dynamic> input) {
-  final tool = <String, Object?>{'type': 'x_search'};
-  putIfPresent(
-    tool,
-    'allowed_x_handles',
-    stringListInput(input, 'allowedXHandles'),
-  );
-  putIfPresent(
-    tool,
-    'excluded_x_handles',
-    stringListInput(input, 'excludedXHandles'),
-  );
-  putIfPresent(tool, 'from_date', stringInput(input, 'fromDate'));
-  putIfPresent(tool, 'to_date', stringInput(input, 'toDate'));
-  putIfPresent(
-    tool,
-    'enable_video_understanding',
-    boolInput(input, 'enableVideoUnderstanding'),
-  );
-
-  return tool;
-}
+const _xSearchBody = '''
+{"model":{{ input.model | json }},"tools":[{"type":"x_search"
+{% if input.allowedXHandles != nil %},"allowed_x_handles":{{ input.allowedXHandles | json }}{% endif %}
+{% if input.excludedXHandles != nil %},"excluded_x_handles":{{ input.excludedXHandles | json }}{% endif %}
+{% if input.fromDate != nil %},"from_date":{{ input.fromDate | json }}{% endif %}
+{% if input.toDate != nil %},"to_date":{{ input.toDate | json }}{% endif %}
+{% if input.enableVideoUnderstanding != nil %},"enable_video_understanding":{{ input.enableVideoUnderstanding | json }}{% endif %}}],"input":{{ input.query | json }}}
+''';

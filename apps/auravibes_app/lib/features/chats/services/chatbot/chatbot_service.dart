@@ -240,16 +240,31 @@ String? _requestThinking(GenerateResponseChunk<Object?> chunk) {
 Stream<String> _streamTitle(_TitleRequest request) async* {
   try {
     final responseStream = await _titleStream(request);
-    final accumulatedTitle = StringBuffer();
-    await for (final event in responseStream) {
-      accumulatedTitle.write(event.text);
-      yield normalizeConversationTitle(
-        accumulatedTitle.toString(),
-        request.firstMessage,
-      );
-    }
+    yield* _streamTitleEvents(responseStream, request.firstMessage);
+    yield* _titleFallbackIfError(responseStream.onResult, request.firstMessage);
   } on Exception catch (_) {
     yield fallbackConversationTitle(request.firstMessage);
+  }
+}
+
+Stream<String> _streamTitleEvents(
+  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+  responseStream,
+  String firstMessage,
+) async* {
+  final accumulatedTitle = StringBuffer();
+  await for (final event in responseStream) {
+    accumulatedTitle.write(event.text);
+    yield normalizeConversationTitle(accumulatedTitle.toString(), firstMessage);
+  }
+}
+
+Stream<String> _titleFallbackIfError(
+  Future<GenerateResponseHelper<Object?>> responseFuture,
+  String firstMessage,
+) async* {
+  if ((await responseFuture).error != null) {
+    yield fallbackConversationTitle(firstMessage);
   }
 }
 

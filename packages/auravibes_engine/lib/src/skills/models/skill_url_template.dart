@@ -19,6 +19,19 @@ class const SkillUrlTemplate({
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('URL template must be a JSON object.');
     }
+    const allowedKeys = {
+      'url',
+      'method',
+      'headers',
+      'query',
+      'body',
+      'bodyFormat',
+      'timeoutSeconds',
+      'format',
+    };
+    if (decoded.keys.any((key) => !allowedKeys.contains(key))) {
+      throw const FormatException('URL template has unknown fields.');
+    }
 
     final url = decoded['url'];
     if (url is! String || url.trim().isEmpty) {
@@ -107,7 +120,7 @@ class const SkillUrlTemplate({
   static SkillUrlTemplateBodyFormat _bodyFormatFromJson(Object? value) {
     if (value == null) return SkillUrlTemplateBodyFormat.infer;
     final normalized = '$value'.trim().toLowerCase();
-    if (normalized case 'infer' || 'json' || 'text') {
+    if (normalized case 'infer' || 'json' || 'form' || 'text') {
       return SkillUrlTemplateBodyFormat.values.byName(normalized);
     }
 
@@ -148,6 +161,7 @@ class const SkillUrlTemplate({
 enum SkillUrlTemplateBodyFormat(final String value) {
   infer('infer'),
   json('json'),
+  form('form'),
   text('text'),
 }
 

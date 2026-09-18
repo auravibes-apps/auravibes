@@ -32,6 +32,17 @@ void _validateValue(Map<String, Object?> schema, Object? value, String path) {
       !allowedValues.any((allowed) => _jsonEquals(allowed, value))) {
     throw FormatException('Value at $path is not in enum');
   }
+
+  if (value is num) {
+    final minimum = schema['minimum'];
+    if (minimum is num && value < minimum) {
+      throw FormatException('Value at $path is below minimum');
+    }
+    final maximum = schema['maximum'];
+    if (maximum is num && value > maximum) {
+      throw FormatException('Value at $path is above maximum');
+    }
+  }
 }
 
 void _validateObject(Map<String, Object?> schema, Object? value, String path) {

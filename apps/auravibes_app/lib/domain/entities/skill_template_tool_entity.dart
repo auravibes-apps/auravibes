@@ -15,12 +15,14 @@ abstract class const SkillTemplateToolEntity._()
     required String title,
     required String description,
     required String slug,
-    required String templateJson,
-    required String inputsJson,
     required bool isEnabled,
     required bool requiresCredential,
     required DateTime createdAt,
     required DateTime updatedAt,
+    @Default('') String templateJson,
+    @Default('') String inputsJson,
+    @Default('{}') String definitionJson,
+    String? credentialDefinitionId,
   }) = _SkillTemplateToolEntity;
 }
 
@@ -34,8 +36,10 @@ abstract class const SkillTemplateToolToCreate._()
     required SkillTemplateToolType templateType,
     required String title,
     required String description,
-    required String templateJson,
-    required String inputsJson,
+    @Default('') String templateJson,
+    @Default('') String inputsJson,
+    @Default('{}') String definitionJson,
+    String? credentialDefinitionId,
     @Default(false) bool requiresCredential,
     @Default(true) bool isEnabled,
   }) = _SkillTemplateToolToCreate;
@@ -50,8 +54,11 @@ abstract class const SkillTemplateToolToUpdate._()
   const factory({
     String? title,
     String? description,
+    String? definitionJson,
     String? templateJson,
     String? inputsJson,
+    String? credentialDefinitionId,
+    @Default(false) bool clearCredentialDefinition,
     bool? requiresCredential,
     bool? isEnabled,
   }) = _SkillTemplateToolToUpdate;

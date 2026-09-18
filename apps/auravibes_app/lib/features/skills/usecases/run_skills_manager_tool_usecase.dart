@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
@@ -41,6 +42,7 @@ const Set<String> _credentialDefinitionToolSlugs = {
   SkillToolSlugs.updateSkillCredentialDefinition,
   SkillToolSlugs.deleteSkillCredentialDefinition,
 };
+const Set<String> _appSkillToolSlugs = {SkillToolSlugs.cloneAppSkill};
 
 typedef _SkillTemplateToolCreation = ({String skillId, String title});
 typedef _SkillManagerToolRequest = ({
@@ -63,6 +65,7 @@ class const RunSkillsManagerToolUsecase(
   final UpdateSkillCredentialDefinitionUsecase
   _updateSkillCredentialDefinitionUsecase, {
   final CloudSkillStore? cloudStore,
+  final CloneAppSkillUsecase? cloneAppSkillUsecase,
 }) {
   Future<Object> call({
     required String workspaceId,
@@ -78,8 +81,27 @@ class const RunSkillsManagerToolUsecase(
     if (_credentialDefinitionToolSlugs.contains(toolSlug)) {
       return _callCredentialDefinitionTool(workspaceId, toolSlug, arguments);
     }
+    if (_appSkillToolSlugs.contains(toolSlug)) {
+      return _cloneAppSkill(workspaceId, arguments);
+    }
 
     throw UnsupportedError('Unsupported skills manager tool: $toolSlug');
+  }
+}
+
+extension _RunSkillsManagerAppSkills on RunSkillsManagerToolUsecase {
+  Future<Object> _cloneAppSkill(
+    String workspaceId,
+    Map<String, dynamic> arguments,
+  ) async {
+    final clone = cloneAppSkillUsecase;
+    if (clone == null) throw StateError('App skill cloning is unavailable.');
+    final skill = await clone.call(
+      workspaceId,
+      _requiredString(arguments, 'appSkillSlug'),
+    );
+
+    return _skillResult('cloned', skill, includeDetails: true);
   }
 }
 
@@ -206,29 +228,65 @@ extension _RunSkillsManagerMutations on RunSkillsManagerToolUsecase {
     isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
   );
 
-  SkillTemplateToolToCreate _skillTemplateToolCreateValue(
+  Future<SkillTemplateToolToCreate> _skillTemplateToolCreateValue(
     Map<String, dynamic> arguments,
     String title,
-  ) => .new(
-    templateType: SkillTemplateToolType.url,
-    title: title,
-    description: _requiredString(arguments, 'description'),
-    templateJson: _jsonObjectString(arguments, 'template'),
-    inputsJson: _jsonObjectString(arguments, 'inputs'),
-    requiresCredential: _optionalBool(arguments, 'requiresCredential') ?? false,
-    isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
-  );
+  ) async {
+    final definition = _definitionArgument(arguments);
+    final credentialDefinitionId = await _toolCredentialDefinitionId(arguments);
 
-  SkillTemplateToolToUpdate _skillTemplateToolUpdateValue(
+    return _newSkillTemplateTool(
+      arguments,
+      title,
+      definition,
+      credentialDefinitionId,
+    );
+  }
+
+  Future<SkillTemplateToolToUpdate> _skillTemplateToolUpdateValue(
     Map<String, dynamic> arguments,
-  ) => .new(
-    title: _optionalString(arguments, 'title'),
-    description: _optionalString(arguments, 'description'),
-    templateJson: _optionalJsonObjectString(arguments, 'template'),
-    inputsJson: _optionalJsonObjectString(arguments, 'inputs'),
-    requiresCredential: _optionalBool(arguments, 'requiresCredential'),
-    isEnabled: _optionalBool(arguments, 'isEnabled'),
-  );
+  ) async {
+    final definition = _optionalDefinitionArgument(arguments);
+    final credentialDefinitionProvided = arguments.containsKey(
+      'credentialDefinitionId',
+    );
+    final credentialDefinitionId = await _toolCredentialDefinitionId(arguments);
+
+    return _newSkillTemplateToolUpdate(
+      arguments,
+      definition,
+      credentialDefinitionId,
+      credentialDefinitionProvided,
+    );
+  }
+
+  SkillTemplateDefinition _definitionArgument(Map<String, dynamic> arguments) {
+    final value = arguments['definition'];
+    if (value is Map) {
+      return SkillTemplateDefinition.fromJsonMap(value);
+    }
+    final definitionJson = arguments['definitionJson'];
+    if (definitionJson is String && definitionJson.trim().isNotEmpty) {
+      return SkillTemplateDefinition.fromJsonString(definitionJson);
+    }
+
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: _jsonObjectString(arguments, 'template'),
+      inputsJson: _jsonObjectString(arguments, 'inputs'),
+    );
+  }
+
+  String? _optionalDefinitionArgument(Map<String, dynamic> arguments) {
+    if (arguments.containsKey('definition')) {
+      return _definitionArgument(arguments).toJsonString();
+    }
+    final value = arguments['definitionJson'];
+    if (value is String && value.trim().isNotEmpty) {
+      return SkillTemplateDefinition.fromJsonString(value).toJsonString();
+    }
+
+    return null;
+  }
 
   Future<Object> _updateUserSkill(
     String workspaceId,
@@ -260,6 +318,57 @@ extension _RunSkillsManagerMutations on RunSkillsManagerToolUsecase {
     if (cloud != null) return await _deleteSkill(cloud, skill.id);
 
     return await _skillsRepositoryOrThrow().deleteSkill(skill.id);
+  }
+}
+
+extension _RunSkillsManagerTemplateValues on RunSkillsManagerToolUsecase {
+  SkillTemplateToolToCreate _newSkillTemplateTool(
+    Map<String, dynamic> arguments,
+    String title,
+    SkillTemplateDefinition definition,
+    String? credentialDefinitionId,
+  ) => .new(
+    templateType: SkillTemplateToolType.url,
+    title: title,
+    description: _requiredString(arguments, 'description'),
+    definitionJson: definition.toJsonString(),
+    templateJson: definition.legacyTemplateJson,
+    inputsJson: definition.legacyInputsJson,
+    credentialDefinitionId: credentialDefinitionId,
+    requiresCredential: _optionalBool(arguments, 'requiresCredential') ?? false,
+    isEnabled: _optionalBool(arguments, 'isEnabled') ?? true,
+  );
+
+  SkillTemplateToolToUpdate _newSkillTemplateToolUpdate(
+    Map<String, dynamic> arguments,
+    String? definition,
+    String? credentialDefinitionId,
+    bool credentialDefinitionProvided,
+  ) => .new(
+    title: _optionalString(arguments, 'title'),
+    description: _optionalString(arguments, 'description'),
+    definitionJson: definition,
+    templateJson: definition == null
+        ? _optionalJsonObjectString(arguments, 'template')
+        : null,
+    inputsJson: definition == null
+        ? _optionalJsonObjectString(arguments, 'inputs')
+        : null,
+    credentialDefinitionId: credentialDefinitionId,
+    clearCredentialDefinition:
+        credentialDefinitionProvided && credentialDefinitionId == null,
+    requiresCredential: _optionalBool(arguments, 'requiresCredential'),
+    isEnabled: _optionalBool(arguments, 'isEnabled'),
+  );
+
+  Future<String?> _toolCredentialDefinitionId(
+    Map<String, dynamic> arguments,
+  ) async {
+    if (!arguments.containsKey('credentialDefinitionId')) return null;
+
+    return await _resolveCredentialDefinitionId(
+      arguments['credentialDefinitionId'],
+    );
   }
 }
 
@@ -371,7 +480,7 @@ extension _RunSkillsManagerTemplateTools on RunSkillsManagerToolUsecase {
     );
     final updated = await _updateSkillTemplateToolUsecase.call(
       tool.id,
-      _skillTemplateToolUpdateValue(request.arguments),
+      await _skillTemplateToolUpdateValue(request.arguments),
     );
 
     return _toolResult('updated', updated, includeDetails: true);
@@ -449,10 +558,11 @@ extension _RunSkillsManagerTemplateToolSupport on RunSkillsManagerToolUsecase {
     String skillId,
     Map<String, dynamic> arguments,
     String title,
-  ) => _createSkillTemplateToolUsecase.call(
-    skillId,
-    _skillTemplateToolCreateValue(arguments, title),
-  );
+  ) async {
+    final value = await _skillTemplateToolCreateValue(arguments, title);
+
+    return await _createSkillTemplateToolUsecase.call(skillId, value);
+  }
 }
 
 extension _RunSkillsManagerCredentials on RunSkillsManagerToolUsecase {
@@ -801,7 +911,11 @@ extension _RunSkillsManagerResultDetails on RunSkillsManagerToolUsecase {
 
   Map<String, Object?> _toolCredentialFields(SkillTemplateToolEntity tool) => {
     'requiresCredential': tool.requiresCredential,
+    ...?_optionalCredentialField(tool.credentialDefinitionId),
   };
+
+  Map<String, Object?>? _optionalCredentialField(String? id) =>
+      id == null ? null : {'credentialDefinitionId': id};
 
   Map<String, Object?> _skillDetails(SkillEntity skill) => {
     'description': skill.description,
@@ -811,6 +925,7 @@ extension _RunSkillsManagerResultDetails on RunSkillsManagerToolUsecase {
 
   Map<String, Object?> _toolDetails(SkillTemplateToolEntity tool) => {
     'description': tool.description,
+    'definition': jsonDecode(tool.definitionJson),
     'template': jsonDecode(tool.templateJson),
     'inputs': jsonDecode(tool.inputsJson),
     'isEnabled': tool.isEnabled,
@@ -931,5 +1046,8 @@ runSkillsManagerToolUsecaseProvider =
         ref.watch(createSkillCredentialDefinitionUsecaseProvider(workspaceId)),
         ref.watch(updateSkillCredentialDefinitionUsecaseProvider(workspaceId)),
         cloudStore: cloud,
+        cloneAppSkillUsecase: ref.watch(
+          cloneAppSkillUsecaseProvider(workspaceId),
+        ),
       );
     });

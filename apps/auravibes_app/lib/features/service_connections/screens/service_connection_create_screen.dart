@@ -912,7 +912,7 @@ bool _canCreateAppSkillCredential(AppSkillDefinition skill) {
   if (skill.compatibleModelProviderIds.isNotEmpty) return false;
 
   return skill.requiresCredential ||
-      skill.nativeTools.any((tool) => tool.requiresCredential);
+      skill.tools.any((tool) => tool.requiresCredential);
 }
 
 String _credentialValueLabel(BuildContext context, String? appSkillId) {

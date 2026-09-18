@@ -52,17 +52,10 @@
       "additionalBranchPrefix": ""
     },
     {
-      "description": "Update Genkit core and provider packages together",
+      "description": "Update Genkit, provider, and OpenAI Dart packages together",
       "matchManagers": ["pub"],
-      "matchPackageNames": ["genkit", "genkit_*"],
+      "matchPackageNames": ["genkit", "genkit_*", "openai_dart"],
       "groupName": "Genkit",
-      "additionalBranchPrefix": ""
-    },
-    {
-      "description": "Group OpenAI Dart updates across workspace packages",
-      "matchManagers": ["pub"],
-      "matchPackageNames": ["openai_dart"],
-      "groupName": "OpenAI Dart",
       "additionalBranchPrefix": ""
     },
     {

@@ -20,7 +20,7 @@ typedef _AddToolSpecRequest = ({
 typedef _MaterializeToolSpecRequest = ({
   AvailableSkill skill,
   SkillTemplateToolEntity tool,
-  Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  Map<String, Object?> inputSchema,
   List<String> credentialIds,
 });
 
@@ -147,11 +147,12 @@ extension on BuildSkillTemplateToolSpecsUsecase {
       tool: tool,
     );
     if (credentialIds == null) return null;
+    final definition = _definition(tool);
 
     return _materializeToolSpec((
       skill: skill,
       tool: tool,
-      inputDefinitions: SkillTemplateInputDefinition.parseMap(tool.inputsJson),
+      inputSchema: definition.inputSchema,
       credentialIds: credentialIds,
     ));
   }
@@ -164,7 +165,7 @@ extension on BuildSkillTemplateToolSpecsUsecase {
       .new(
         name: _toolName(skill, tool),
         description: _toolDescription(skill, tool),
-        schema: _inputSchema(request.inputDefinitions),
+        schema: request.inputSchema,
         requiresCredential: tool.requiresCredential,
         credentialIds: request.credentialIds,
       ),
@@ -178,36 +179,24 @@ extension on BuildSkillTemplateToolSpecsUsecase {
         toolIdentifier: tool.slug,
       ).fullName;
 
-  Map<String, dynamic> _inputSchema(
-    Map<String, SkillTemplateInputDefinition> inputDefinitions,
-  ) => {
-    'type': 'object',
-    'properties': _inputProperties(inputDefinitions),
-    'required': _requiredInputs(inputDefinitions),
-    'additionalProperties': false,
-  };
-
-  Map<String, dynamic> _inputProperties(
-    Map<String, SkillTemplateInputDefinition> inputDefinitions,
-  ) => {
-    for (final entry in inputDefinitions.entries)
-      entry.key: {
-        'type': entry.value.type,
-        'description': entry.value.description,
-      },
-  };
-
-  List<String> _requiredInputs(
-    Map<String, SkillTemplateInputDefinition> inputDefinitions,
-  ) => [
-    for (final entry in inputDefinitions.entries)
-      if (!entry.value.optional) entry.key,
-  ];
-
   String _toolDescription(AvailableSkill skill, SkillTemplateToolEntity tool) =>
       tool.description.trim().isEmpty
       ? '${tool.title}: ${skill.description}'
       : tool.description;
+}
+
+extension on BuildSkillTemplateToolSpecsUsecase {
+  SkillTemplateDefinition _definition(SkillTemplateToolEntity tool) {
+    final source = tool.definitionJson.trim();
+    if (source.isNotEmpty && source != '{}') {
+      return SkillTemplateDefinition.fromJsonString(source);
+    }
+
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: tool.templateJson,
+      inputsJson: tool.inputsJson,
+    );
+  }
 }
 
 extension on BuildSkillTemplateToolSpecsUsecase {
@@ -216,7 +205,8 @@ extension on BuildSkillTemplateToolSpecsUsecase {
     required AvailableSkill skill,
     required SkillTemplateToolEntity tool,
   }) async {
-    final credentialDefinitionId = skill.credentialDefinitionId;
+    final credentialDefinitionId =
+        tool.credentialDefinitionId ?? skill.credentialDefinitionId;
     if (credentialDefinitionId == null) {
       return _optionalCredentialIds(tool);
     }

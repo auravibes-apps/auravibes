@@ -38,6 +38,17 @@ String serverToolExecutionFailureCode(Object error) => switch (error) {
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     descriptor.kind == AgentResolvedToolKind.mcp ||
     descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+    (descriptor.kind == AgentResolvedToolKind.skillAppTemplate &&
+        serviceSkillDefinitions.any(
+          (skill) =>
+              skill.kind == AppSkillDefinitionKind.template &&
+              skill.slug == descriptor.skillSlug &&
+              skill.tools.any(
+                (tool) =>
+                    tool.slug == descriptor.toolIdentifier &&
+                    tool.urlTemplate != null,
+              ),
+        )) ||
     (descriptor.kind == AgentResolvedToolKind.skillControl &&
         skillCommandToolNames.contains(descriptor.toolIdentifier)) ||
     (descriptor.kind == AgentResolvedToolKind.skillNative &&
@@ -45,10 +56,9 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
             serviceSkillDefinitions.any(
               (skill) =>
                   skill.slug == descriptor.skillSlug &&
-                  skill.nativeTools.any(
-                    (tool) =>
-                        tool.slug == descriptor.toolIdentifier &&
-                        (tool.urlTemplate != null || tool.callback != null),
+                  skill.kind == AppSkillDefinitionKind.native &&
+                  skill.tools.any(
+                    (tool) => tool.slug == descriptor.toolIdentifier,
                   ),
             )));
 
@@ -297,12 +307,18 @@ bool cloudUserSkillReady(
 ) {
   final skillId = skill['id'];
   if (skillId is! String || skill['isEnabled'] == false) return false;
-  final credentialIds = _templateCredentialIds(skill, serviceConnections);
   return templateTools.any(
-    (tool) =>
-        tool['skillId'] == skillId &&
-        tool['isEnabled'] != false &&
-        (tool['requiresCredential'] != true || credentialIds.isNotEmpty),
+    (tool) {
+      if (tool['skillId'] != skillId || tool['isEnabled'] == false) {
+        return false;
+      }
+      final credentialIds = _templateCredentialIds(
+        skill,
+        serviceConnections,
+        tool['credentialDefinitionId'],
+      );
+      return tool['requiresCredential'] != true || credentialIds.isNotEmpty;
+    },
   );
 }
 
@@ -335,6 +351,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
     final credentialIds = _templateCredentialIds(
       enabledUserSkills[skillId],
       serviceConnections,
+      tool['credentialDefinitionId'],
     );
     if (tool['requiresCredential'] == true && credentialIds.isEmpty) {
       continue;
@@ -356,7 +373,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
               ? tool['description']! as String
               : '',
           inputJsonSchema: cloudTemplateInputSchema(
-            tool['inputsJson'],
+            _cloudTemplateDefinitionSource(tool),
             requiresCredential: tool['requiresCredential'] == true,
             credentialIds: credentialIds,
           ),
@@ -390,13 +407,14 @@ List<ServerResolvedTool> materializeCloudSkillTools({
       continue;
     }
     final credentialIds = _serviceCredentialIds(skill, serviceConnections);
-    for (final tool in skill.nativeTools) {
-      if ((tool.urlTemplate == null && tool.callback == null) ||
+    for (final tool in skill.tools) {
+      if (skill.kind != AppSkillDefinitionKind.template ||
+          tool.urlTemplate == null ||
           (tool.requiresCredential && credentialIds.isEmpty)) {
         continue;
       }
       tools.add(
-        _nativeTool(
+        _appTemplateTool(
           skillSlug: skill.slug,
           toolIdentifier: tool.slug,
           description: tool.description,
@@ -420,15 +438,33 @@ List<ServerResolvedTool> materializeCloudSkillTools({
 }
 
 Map<String, Object?> cloudTemplateInputSchema(
-  Object? inputsJson, {
+  Object? definitionJson, {
   required bool requiresCredential,
   Iterable<String> credentialIds = const [],
 }) {
+  final schema = _templateDefinitionSchema(definitionJson);
+  if (schema != null) {
+    return materializeSkillToolSchema(
+      schema,
+      requiresCredential: requiresCredential,
+      credentialIds: credentialIds,
+    );
+  }
   return templateInputSchema(
-    inputsJson,
+    definitionJson,
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
   );
+}
+
+Object? _cloudTemplateDefinitionSource(Map<String, dynamic> tool) {
+  final definition = tool['definitionJson'];
+  if (definition is! String ||
+      (definition.trim().isNotEmpty && definition != '{}')) {
+    return definition ?? tool['inputsJson'];
+  }
+
+  return tool['inputsJson'];
 }
 
 Map<String, Object?> cloudNativeInputSchema(
@@ -446,8 +482,11 @@ Map<String, Object?> cloudNativeInputSchema(
 List<String> _templateCredentialIds(
   Map<String, dynamic>? skill,
   Iterable<Map<String, dynamic>> connections,
+  Object? toolDefinitionId,
 ) {
-  final definitionId = skill?['credentialDefinitionId'];
+  final definitionId = toolDefinitionId is String
+      ? toolDefinitionId
+      : skill?['credentialDefinitionId'];
   if (definitionId is! String) return const [];
   return connections
       .where(
@@ -460,6 +499,23 @@ List<String> _templateCredentialIds(
       .map((connection) => connection['id'])
       .whereType<String>()
       .toList(growable: false);
+}
+
+Map<String, Object?>? _templateDefinitionSchema(Object? value) {
+  try {
+    final definition = switch (value) {
+      final String source
+          when source.trim().isNotEmpty && source.trim() != '{}' =>
+        SkillTemplateDefinition.fromJsonString(source),
+      final Map<Object?, Object?> source => SkillTemplateDefinition.fromJsonMap(
+        source,
+      ),
+      _ => null,
+    };
+    return definition?.inputSchema;
+  } on FormatException {
+    return null;
+  }
 }
 
 List<String> _serviceCredentialIds(
@@ -484,7 +540,28 @@ ServerResolvedTool _nativeTool({
   required Map<String, Object?> inputJsonSchema,
 }) {
   final descriptor = AgentResolvedToolName.skillNative(
-    tableId: 'skill__app__${skillSlug}__$toolIdentifier',
+    tableId: 'skill__app_native__${skillSlug}__$toolIdentifier',
+    skillSlug: skillSlug,
+    toolIdentifier: toolIdentifier,
+  );
+  return ServerResolvedTool(
+    descriptor: descriptor,
+    spec: ToolSpec(
+      name: descriptor.fullName,
+      description: description,
+      inputJsonSchema: inputJsonSchema,
+    ),
+  );
+}
+
+ServerResolvedTool _appTemplateTool({
+  required String skillSlug,
+  required String toolIdentifier,
+  required String description,
+  required Map<String, Object?> inputJsonSchema,
+}) {
+  final descriptor = AgentResolvedToolName.skillAppTemplate(
+    tableId: 'skill__app_template__${skillSlug}__$toolIdentifier',
     skillSlug: skillSlug,
     toolIdentifier: toolIdentifier,
   );
@@ -512,9 +589,10 @@ bool cloudAppSkillEnabled(
 bool cloudServiceSkillReady(
   AppSkillDefinition skill,
   Iterable<Map<String, dynamic>> serviceConnections,
-) => skill.nativeTools.any(
+) => skill.tools.any(
   (tool) =>
-      (tool.urlTemplate != null || tool.callback != null) &&
+      skill.kind == AppSkillDefinitionKind.template &&
+      tool.urlTemplate != null &&
       (!tool.requiresCredential ||
           serviceConnections.any(
             (connection) =>

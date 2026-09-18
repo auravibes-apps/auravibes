@@ -403,6 +403,7 @@ class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
           request.workspaceId,
           request.command,
         ),
+        .skillAppTemplate => _runAppSkillTool(request),
         .skillNative => _runSkillNativeTool(request),
         _ => throw StateError(
           'Unsupported skill tool target: ${request.target.fullName}',

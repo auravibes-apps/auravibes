@@ -12,9 +12,10 @@ final braveSkill = AppSkillDefinition(
   content: '''
 Use Brave when you need current public web results, news, images, videos,
 or compact context for grounding an answer. Prefer it for broad web discovery.
-''',
+  ''',
   requiresCredential: true,
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'web_search',
       title: 'Web search',
@@ -174,6 +175,7 @@ const Map<String, SkillTemplateInputDefinition> _inputs = {
     description: 'Result offset.',
     type: 'integer',
     optional: true,
+    minimum: 0,
   ),
   'locLat': SkillTemplateInputDefinition(
     description: 'Location latitude.',

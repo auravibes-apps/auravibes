@@ -57,32 +57,47 @@ void main() {
       expect(result, 'safe body');
     });
 
-    test('runs callback tools through injected request context', () async {
+    test('merges external credential definitions into a manifest', () async {
       late UrlRequest capturedRequest;
-      final executor = _executor((request) {
+      final executor = SkillTemplateExecutor(const ResolveSkillUrlTemplate(), (
+        request,
+      ) {
         capturedRequest = request;
-
-        return const UrlResponse(
-          statusCode: 200,
-          body: 'callback body',
-          headers: {},
-          elapsed: .zero,
+        return CancelableOperation.fromFuture(
+          Future.value(
+            const UrlResponse(
+              statusCode: 200,
+              body: 'ok',
+              headers: {},
+              elapsed: .zero,
+            ),
+          ),
         );
       });
 
-      final result = await executor
-          .run(
-            skill: _callbackSkill,
-            toolSlug: 'fetch',
-            input: {'url': 'https://example.com'},
+      await executor
+          .call(
+            definition: const SkillTemplateDefinition(
+              request: SkillUrlTemplate(
+                url: 'https://example.com',
+                headers: {'authorization': 'Bearer {{ credential.apiKey }}'},
+              ),
+              inputs: {},
+            ),
+            inputs: const {},
+            credentials: const {'apiKey': 'secret'},
+            credentialDefinitions: const {
+              'apiKey': SkillCredentialAttributeDefinition(
+                description: 'API key',
+              ),
+            },
           )
           .value;
 
-      expect(result, 'callback body');
-      expect(capturedRequest.url, 'https://example.com');
+      expect(capturedRequest.headers['authorization'], 'Bearer secret');
     });
 
-    test('runs DuckDuckGo search through HTML callback scraper', () async {
+    test('returns DuckDuckGo raw HTML response', () async {
       late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
@@ -115,24 +130,22 @@ void main() {
         'application/x-www-form-urlencoded',
       );
       expect(capturedRequest.headers['user-agent'], contains('Mozilla/5.0'));
-      expect(
-        result,
-        '{"provider":"duckduckgo","query":"flutter jobs","sources":[{"title":"Flutter Jobs","url":"https://example.com/jobs","snippet":"Remote & mobile roles"}]}',
-      );
+      expect(result, _duckDuckGoHtml);
     });
 
-    test('surfaces DuckDuckGo bot challenge clearly', () async {
-      final executor = _executor((request) {
-        return const UrlResponse(
-          statusCode: 202,
-          body: '<html><div class="anomaly-modal"></div></html>',
-          headers: {},
-          elapsed: .zero,
-        );
-      });
+    test(
+      'returns provider challenge responses without normalization',
+      () async {
+        final executor = _executor((request) {
+          return const UrlResponse(
+            statusCode: 202,
+            body: '<html><div class="anomaly-modal"></div></html>',
+            headers: {},
+            elapsed: .zero,
+          );
+        });
 
-      expect(
-        () => executor
+        final result = await executor
             .run(
               skill: serviceSkillDefinitions.singleWhere(
                 (skill) => skill.slug == 'duckduckgo',
@@ -140,16 +153,11 @@ void main() {
               toolSlug: 'search',
               input: {'query': 'flutter jobs'},
             )
-            .value,
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            contains('bot-detection challenge'),
-          ),
-        ),
-      );
-    });
+            .value;
+
+        expect(result, '<html><div class="anomaly-modal"></div></html>');
+      },
+    );
 
     test('maps OpenAI model and web filters into request body', () async {
       late UrlRequest capturedRequest;
@@ -190,7 +198,7 @@ void main() {
       expect(tool['filters'], {
         'allowed_domains': ['flutter.dev'],
       });
-      expect(tool['search_content_types'], ['text', 'image']);
+      expect(body['search_content_types'], ['text', 'image']);
     });
 
     test('maps Gemini model into request URL', () async {
@@ -254,20 +262,35 @@ void main() {
       );
     });
 
-    test('rejects tool definitions with multiple executors', () {
+    test('does not execute tools without a URL template', () {
       expect(
-        () => AppSkillToolDefinition(
-          slug: 'bad',
-          title: 'Bad',
-          description: 'Bad',
-          urlTemplate: const AppSkillUrlTemplate(
-            template: .new(url: 'https://example.com'),
-            inputs: {},
-          ),
-          callback: (input, request) =>
-              request(const UrlRequest(url: 'https://example.com')),
-        ),
-        throwsA(isA<AssertionError>()),
+        () =>
+            _executor(
+              (request) => const UrlResponse(
+                statusCode: 200,
+                body: '',
+                headers: {},
+                elapsed: .zero,
+              ),
+            ).run(
+              skill: const AppSkillDefinition(
+                identifier: 'native',
+                slug: 'native',
+                title: 'Native',
+                description: 'Native',
+                content: 'Native',
+                tools: [
+                  AppSkillToolDefinition(
+                    slug: 'native',
+                    title: 'Native',
+                    description: 'Native',
+                  ),
+                ],
+              ),
+              toolSlug: 'native',
+              input: const {},
+            ),
+        throwsUnsupportedError,
       );
     });
 
@@ -399,7 +422,6 @@ AppSkillExecutor _executor(UrlResponse Function(UrlRequest) run) {
 
   return AppSkillExecutor(
     .new(const ResolveSkillUrlTemplate(), httpClient.execute),
-    httpClient.execute,
   );
 }
 
@@ -409,7 +431,7 @@ const _templateSkill = AppSkillDefinition(
   title: 'Example',
   description: 'Example',
   content: 'Example',
-  nativeTools: [
+  tools: [
     AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',
@@ -425,25 +447,6 @@ const _templateSkill = AppSkillDefinition(
           'apiKey': SkillCredentialAttributeDefinition(description: 'API key'),
         },
       ),
-    ),
-  ],
-);
-
-final _callbackSkill = AppSkillDefinition(
-  identifier: 'callback',
-  slug: 'callback',
-  title: 'Callback',
-  description: 'Callback',
-  content: 'Callback',
-  nativeTools: [
-    AppSkillToolDefinition(
-      slug: 'fetch',
-      title: 'Fetch',
-      description: 'Fetch.',
-      callback: (input, context) {
-        return context(.new(url: input['url'] as String))
-            .then<Object?>((response) => response.body);
-      },
     ),
   ],
 );

@@ -1,10 +1,8 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const openAiSkill = AppSkillDefinition(
+final openAiSkill = AppSkillDefinition(
   identifier: 'openai',
   slug: 'openai',
   title: 'OpenAI',
@@ -15,14 +13,24 @@ information. This skill uses OpenAI API credentials.
 ''',
   requiresCredential: true,
   compatibleModelProviderIds: ['openai'],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using OpenAI web grounding.',
       inputJsonSchema: _webSearchInputSchema,
       requiresCredential: true,
-      callback: _webSearch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.openai.com/v1/responses',
+        inputSchema: _webSearchInputSchema,
+        headers: {
+          'authorization': 'Bearer {{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _webSearchBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -31,7 +39,7 @@ const Map<String, Object> _webSearchInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'gpt-4.1'},
     'searchContextSize': {
       'type': 'string',
       'enum': ['low', 'medium', 'high'],
@@ -55,45 +63,26 @@ const Map<String, Object> _webSearchInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _webSearch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final filters = <String, Object>{};
-  putIfPresent(
-    filters,
-    'allowed_domains',
-    stringListInput(input, 'allowedDomains'),
-  );
-  putIfPresent(
-    filters,
-    'blocked_domains',
-    stringListInput(input, 'blockedDomains'),
-  );
-  final tool = <String, Object?>{'type': 'web_search'};
-  putIfPresent(
-    tool,
-    'search_context_size',
-    stringInput(input, 'searchContextSize'),
-  );
-  putIfPresent(tool, 'filters', filters);
-  putIfPresent(tool, 'user_location', approximateLocation(input));
-  tool['search_content_types'] = [
-    'text',
-    if (input['includeImages'] == true) 'image',
-  ];
-  final body = <String, Object?>{
-    'model': stringInput(input, 'model', defaultValue: 'gpt-4.1'),
-    'tools': [tool],
-    'input': textInput(input, 'question'),
-  };
-  putIfPresent(
-    body,
-    'max_output_tokens',
-    positiveIntInput(input, 'maxOutputTokens'),
-  );
-
-  return postJson(context, 'https://api.openai.com/v1/responses', {
-    'authorization': 'Bearer ${apiKey(input)}',
-  }, body);
+const _webSearchBody = '''
+{
+  "model": {{ input.model | json }},
+  "tools": [{
+    "type": "web_search"
+    {% if input.searchContextSize != nil %},"search_context_size":{{ input.searchContextSize | json }}{% endif %}
+    {% if input.allowedDomains != nil or input.blockedDomains != nil %},"filters":{
+      {% if input.allowedDomains != nil %}"allowed_domains":{{ input.allowedDomains | json }}{% endif %}
+      {% if input.blockedDomains != nil %}{% if input.allowedDomains != nil %},{% endif %}"blocked_domains":{{ input.blockedDomains | json }}{% endif %}
+    }{% endif %}
+    {% if input.country != nil or input.region != nil or input.city != nil or input.timezone != nil %},"user_location":{
+      "type":"approximate"
+      {% if input.country != nil %},"country":{{ input.country | json }}{% endif %}
+      {% if input.region != nil %},"region":{{ input.region | json }}{% endif %}
+      {% if input.city != nil %},"city":{{ input.city | json }}{% endif %}
+      {% if input.timezone != nil %},"timezone":{{ input.timezone | json }}{% endif %}
+    }{% endif %}
+  }],
+  "search_content_types": ["text"{% if input.includeImages %},"image"{% endif %}],
+  "input": {{ input.question | json }}
+  {% if input.maxOutputTokens != nil %},"max_output_tokens":{{ input.maxOutputTokens | json }}{% endif %}
 }
+''';

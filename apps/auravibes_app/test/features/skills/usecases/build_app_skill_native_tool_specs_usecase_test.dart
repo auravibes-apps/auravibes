@@ -31,7 +31,7 @@ void main() {
       );
 
       expect(specs, hasLength(1));
-      expect(specs.single.name, 'skill__app__openai__web_search');
+      expect(specs.single.name, 'skill__app_template__openai__web_search');
       expect(specs.single.inputJsonSchema['required'], ['question']);
       final properties = specs.single.inputJsonSchema['properties']! as Map;
       final credentialSchema = properties['credentialId'] as Map;
@@ -102,9 +102,9 @@ void main() {
       expect(
         specs.map((spec) => spec.name),
         containsAll([
-          'skill__app__skills_manager__list_user_skills',
-          'skill__app__brave__web_search',
-          'skill__app__brave__llm_context',
+          'skill__app_native__skills_manager__list_user_skills',
+          'skill__app_template__brave__web_search',
+          'skill__app_template__brave__llm_context',
         ]),
       );
     });
@@ -131,8 +131,8 @@ void main() {
         );
 
         expect(specs.map((spec) => spec.name), [
-          'skill__app__agents__list_agents',
-          'skill__app__agents__run_sub_agent',
+          'skill__app_native__agents__list_agents',
+          'skill__app_native__agents__run_sub_agent',
         ]);
       },
     );
@@ -184,7 +184,7 @@ void main() {
         workspaceId: 'workspace-1',
       );
 
-      expect(specs.single.name, 'skill__app__codex__web_search');
+      expect(specs.single.name, 'skill__app_template__codex__web_search');
       expect(specs.single.inputJsonSchema['required'], ['question']);
       final properties = specs.single.inputJsonSchema['properties']! as Map;
       final credentialSchema = properties['credentialId'] as Map;
@@ -214,11 +214,11 @@ void main() {
 
         expect(
           specs.map((spec) => spec.name),
-          contains('skill__app__jina__reader_fetch'),
+          contains('skill__app_template__jina__reader_fetch'),
         );
         expect(
           specs.map((spec) => spec.name),
-          isNot(contains('skill__app__jina__search')),
+          isNot(contains('skill__app_template__jina__search')),
         );
       },
     );
@@ -268,7 +268,7 @@ void main() {
           workspaceId: 'workspace-1',
         );
 
-        expect(specs.single.name, 'skill__app__searxng__search');
+        expect(specs.single.name, 'skill__app_template__searxng__search');
         expect(specs.single.inputJsonSchema['required'], ['query']);
         final properties = specs.single.inputJsonSchema['properties']! as Map;
         final credentialSchema = properties['credentialId'] as Map;
@@ -308,7 +308,7 @@ class const _FakeAppSkillCandidates(
   @override
   bool isCredentialRequired(AppSkillDefinition skill) {
     return skill.requiresCredential ||
-        skill.nativeTools.any((tool) => tool.requiresCredential);
+        skill.tools.any((tool) => tool.requiresCredential);
   }
 
   @override
@@ -316,7 +316,7 @@ class const _FakeAppSkillCandidates(
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    if (skill.nativeTools.any((tool) => !tool.requiresCredential)) {
+    if (skill.tools.any((tool) => !tool.requiresCredential)) {
       return true;
     }
 

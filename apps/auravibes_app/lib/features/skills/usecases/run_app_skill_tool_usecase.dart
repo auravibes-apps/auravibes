@@ -111,7 +111,7 @@ extension _RunAppSkillCredentialOperations on RunAppSkillToolUsecase {
   AppSkillToolDefinition? _findTool(
     AppSkillDefinition? skill,
     String toolSlug,
-  ) => skill?.nativeTools.where((tool) => tool.slug == toolSlug).firstOrNull;
+  ) => skill?.tools.where((tool) => tool.slug == toolSlug).firstOrNull;
 
   Future<Map<String, String>> _resolveCredential(
     _CredentialRequest request,
@@ -356,10 +356,7 @@ final runAppSkillToolUsecaseProvider = Provider<RunAppSkillToolUsecase>((ref) {
     ref.watch(serviceConnectionRepositoryProvider),
     ref.watch(skillCredentialsRepositoryProvider),
     ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
-    .new(
-      .new(const ResolveSkillUrlTemplate(), httpClient.execute),
-      httpClient.execute,
-    ),
+    .new(.new(const ResolveSkillUrlTemplate(), httpClient.execute)),
     ref.watch(oauthCredentialServiceProvider),
   );
 });

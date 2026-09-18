@@ -21,7 +21,7 @@ Use Liquid conditionals for optional or dependent fields. Do not use {input:name
 Define each tool input accurately with type, description, and optional when appropriate.
 Only create user skills from explicit user intent.
 ''',
-  nativeTools: [
+  tools: [
     AppSkillToolDefinition(
       slug: 'list_user_skills',
       title: 'List user skills',
@@ -46,6 +46,12 @@ Only create user skills from explicit user intent.
       slug: 'delete_user_skill',
       title: 'Delete user skill',
       description: 'Delete a user-owned skill by slug.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'clone_app_skill',
+      title: 'Clone app skill',
+      description:
+          'Clone a declarative built-in service skill as a user skill.',
     ),
     AppSkillToolDefinition(
       slug: 'list_skill_template_tools',
@@ -143,6 +149,11 @@ final List<ToolSpec> skillsManagerToolSpecs = [
     _schema(['skillSlug']),
   ),
   _spec(
+    'clone_app_skill',
+    'Clone a declarative built-in service skill as a user skill.',
+    _schema(['appSkillSlug']),
+  ),
+  _spec(
     'list_skill_template_tools',
     'List URL template tools for a user skill.',
     _schema(['skillSlug']),
@@ -156,9 +167,15 @@ final List<ToolSpec> skillsManagerToolSpecs = [
     'create_skill_template_tool',
     'Create a URL template tool for a user skill.',
     _schema(
-      ['skillSlug', 'title', 'description', 'template', 'inputs'],
-      extra: const {'requiresCredential': 'boolean', 'isEnabled': 'boolean'},
-      objectFields: const {'template', 'inputs'},
+      ['skillSlug', 'title', 'description', 'definition'],
+      extra: const {
+        'template': 'object',
+        'inputs': 'object',
+        'credentialDefinitionId': 'string',
+        'requiresCredential': 'boolean',
+        'isEnabled': 'boolean',
+      },
+      objectFields: const {'definition', 'template', 'inputs'},
     ),
   ),
   _spec(
@@ -169,8 +186,10 @@ final List<ToolSpec> skillsManagerToolSpecs = [
       extra: const {
         'title': 'string',
         'description': 'string',
+        'definition': 'object',
         'template': 'object',
         'inputs': 'object',
+        'credentialDefinitionId': 'string',
         'requiresCredential': 'boolean',
         'isEnabled': 'boolean',
       },
@@ -215,7 +234,7 @@ ToolSpec _spec(
   String description, [
   Map<String, Object?>? schema,
 ]) => ToolSpec(
-  name: 'skill__app__${skillsManagerSkillSlug}__$slug',
+  name: 'skill__app_native__${skillsManagerSkillSlug}__$slug',
   description: description,
   inputJsonSchema:
       schema ??

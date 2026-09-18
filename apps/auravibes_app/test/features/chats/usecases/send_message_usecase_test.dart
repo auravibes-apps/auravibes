@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
@@ -77,6 +78,55 @@ void main() {
         returnsNormally,
       );
     });
+
+    for (final status in [MessageStatus.error, MessageStatus.unfinished]) {
+      test('retries the existing $status user message', () async {
+        final message = MessageEntity(
+          id: 'failed-user',
+          conversationId: 'conversation-1',
+          content: '',
+          messageType: .text,
+          isUser: true,
+          status: status,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-1',
+              messageId: 'failed-user',
+              localPath: '/tmp/image.png',
+              fileName: 'image.png',
+              displayName: 'image.png',
+              mimeType: 'image/png',
+              modality: .image,
+              sizeBytes: 10,
+              createdAt: .new(2025),
+              updatedAt: .new(2025),
+            ),
+          ],
+        );
+        when(() => fixture.messageRepository.getMessageById('failed-user'))
+            .thenAnswer((_) async => message);
+
+        await fixture.usecase.retryUserMessage(
+          conversationId: 'conversation-1',
+          messageId: 'failed-user',
+        );
+
+        verify(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: .manualContinue,
+              ackMessageIds: ['failed-user'],
+            ),
+          ),
+        ).called(1);
+        final _ = verifyNever(
+          () => fixture.messageRepository.createMessage(any()),
+        );
+      });
+    }
 
     test(
       'queues the draft instead of persisting when the conversation is busy',

@@ -10,9 +10,7 @@ class const SelectPromptMessagesUsecase({
   required final MessageRepository messageRepository,
 }) {
   Future<List<MessageEntity>> call(String conversationId) async {
-    final messages = await messageRepository.getMessagesByConversation(
-      conversationId,
-    );
+    final messages = await _promptMessages(conversationId);
 
     final selectedIds = selectAgentPromptHistory(
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
@@ -21,7 +19,15 @@ class const SelectPromptMessagesUsecase({
 
     return selectedIds.map((id) => messagesById[id]!).toList();
   }
+
+  Future<List<MessageEntity>> _promptMessages(String conversationId) async =>
+      (await messageRepository.getMessagesByConversation(conversationId))
+          .where((message) => !_isPromptExcludedMessage(message))
+          .toList();
 }
+
+bool _isPromptExcludedMessage(MessageEntity message) =>
+    message.messageType == .system && message.status == .error;
 
 final selectPromptMessagesUsecaseProvider =
     Provider<SelectPromptMessagesUsecase>((ref) {

@@ -163,6 +163,27 @@ void main() {
       },
     );
 
+    test('excludes errored system messages from the prompt', () async {
+      final messages = [
+        _makeMessage(id: 'user-1'),
+        _makeMessage(
+          id: 'provider-error',
+          content: 'Provider failed',
+          isUser: false,
+          messageType: .system,
+          status: .error,
+        ),
+        _makeMessage(id: 'assistant-1', isUser: false),
+      ];
+
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
+
+      final result = await usecase('conv-1');
+
+      expect(result.map((message) => message.id), ['user-1', 'assistant-1']);
+    });
+
     test('no duplicated compacted predecessors in result', () async {
       final messages = [
         _makeMessage(id: 'old-1'),
