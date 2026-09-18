@@ -451,12 +451,12 @@ class const _ConnectionsAddAction({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('service_connections_add'),
+    key: const ValueKey<String>('service_connections_empty_add'),
     child: AuraButton(
       onPressed: onPressed,
       child: const TextLocale(LocaleKeys.service_connections_add),
     ),
-    identifier: 'service_connections_add',
+    identifier: 'service_connections_empty_add',
   );
 }
 

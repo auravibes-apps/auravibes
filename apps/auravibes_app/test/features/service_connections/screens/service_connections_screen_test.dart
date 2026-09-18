@@ -164,6 +164,27 @@ void main() {
     await _unmountScreen(tester);
   });
 
+  testWidgets('exposes distinct add selectors for empty and app bar actions', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_add')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('service_connections_empty_add')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('deletes service connections from row menu', (tester) async {
     _addWidgetTearDown(tester);
     final database = AppDatabase(
