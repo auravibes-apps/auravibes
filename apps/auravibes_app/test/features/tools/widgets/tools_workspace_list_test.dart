@@ -6,27 +6,33 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
-import '../../../helpers/test_provider_scope.dart';
+import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'ws-1';
 
-WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
+WorkspaceToolEntity _tool({
+  String id = 't1',
+  String toolId = 'custom_tool',
+  String? description,
+  bool isEnabled = true,
+}) {
   return WorkspaceToolEntity(
     id: id,
     workspaceId: _workspaceId,
-    toolId: 'custom_tool',
+    toolId: toolId,
     isEnabled: isEnabled,
     permissionMode: .alwaysAsk,
     createdAt: .new(2026),
     updatedAt: .new(2026),
+    description: description,
   );
 }
 
@@ -35,6 +41,24 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
     group: null,
     tools: tools,
     defaultGroupType: .builtIn,
+  );
+}
+
+ToolsGroupWithTools _groupWithTools({
+  required List<WorkspaceToolEntity> tools,
+  String name = 'Test Group',
+}) {
+  return ToolsGroupWithTools(
+    group: .new(
+      id: 'group-1',
+      workspaceId: _workspaceId,
+      name: name,
+      isEnabled: true,
+      permissions: .ask,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+    ),
+    tools: tools,
   );
 }
 
@@ -59,33 +83,35 @@ class _ErrorNotifier extends GroupedToolsNotifier {
   }
 }
 
+class const _ListApp({required final List<Object> overrides})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TestableApp(
+    child: Theme(
+      data: .new(extensions: [AuraTheme.light]),
+      child: const Scaffold(
+        body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+      ),
+    ),
+    overrides: overrides,
+    workspaceId: _workspaceId,
+  );
+}
+
+Future<void> _pumpListApp(WidgetTester tester, List<Object> overrides) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(_ListApp(overrides: overrides));
+  });
+  await tester.pump();
+  await tester.pump();
+  await tester.pump();
+}
+
 void main() {
   testWidgets('shows loading spinner while loading', (tester) async {
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: TestProviderScope(
-          overrides: [
-            groupedToolsProvider(_workspaceId)
-                .overrideWith(_LoadingNotifier.new),
-          ],
-          child: MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const Scaffold(
-                body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
-              ),
-            ),
-          ),
-        ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
-    await tester.pump();
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId).overrideWith(_LoadingNotifier.new),
+    ]);
 
     expect(find.byType(AuraSpinner), findsOneWidget);
   });
@@ -96,51 +122,85 @@ void main() {
       _defaultGroup([_tool(id: 't3')]),
     ];
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: TestProviderScope(
-          overrides: [
-            groupedToolsProvider(_workspaceId)
-                .overrideWith(() => _DataNotifier(groups)),
-          ],
-          child: MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const Scaffold(
-                body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
-              ),
-            ),
-          ),
-        ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
 
     expect(find.byType(ToolsGroupCard), findsNWidgets(2));
   });
 
-  testWidgets('shows error widget on error', (tester) async {
-    await tester.pumpWidget(
-      TestProviderScope(
-        overrides: [
-          groupedToolsProvider(_workspaceId).overrideWith(_ErrorNotifier.new),
+  testWidgets('filters tools by name or description', (tester) async {
+    final groups = [
+      _defaultGroup([
+        _tool(toolId: 'search_files', description: 'Reads local files'),
+        _tool(id: 't2', toolId: 'calendar', description: 'Plans events'),
+      ]),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    await tester.enterText(find.byType(AuraInput), 'local files');
+    await tester.pump();
+    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(ToolItemRow), findsOneWidget);
+    expect(find.text('calendar'), findsNothing);
+  });
+
+  testWidgets('group matches show all tools with original enablement', (
+    tester,
+  ) async {
+    final groups = [
+      _groupWithTools(
+        tools: [
+          _tool(id: 'enabled', toolId: 'alpha'),
+          _tool(id: 'disabled', toolId: 'beta', isEnabled: false),
         ],
-        child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Scaffold(
-              body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
-            ),
-          ),
-        ),
+        name: 'Remote Files',
       ),
-    );
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    await tester.enterText(find.byType(AuraInput), 'remote');
+    await tester.pump();
+    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.pumpAndSettle();
+
+    final rows = tester.widgetList<ToolItemRow>(find.byType(ToolItemRow));
+    expect(rows, hasLength(2));
+    expect(rows.map((row) => row.tool.isEnabled), [true, false]);
+  });
+
+  testWidgets('shows no-results state when no tools match', (tester) async {
+    final groups = [
+      _defaultGroup([_tool()]),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    await tester.enterText(find.byType(AuraInput), 'not-found');
+    await tester.pump();
+
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+    expect(find.byType(ToolsGroupCard), findsNothing);
+  });
+
+  testWidgets('shows error widget on error', (tester) async {
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId).overrideWith(_ErrorNotifier.new),
+    ]);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AppErrorWidget), findsOneWidget);

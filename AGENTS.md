@@ -133,7 +133,7 @@
 
 ## Skill routing
 
-- Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing.
+- Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP is default for OpenCode, Pi, and Codex, CLI only when MCP is unavailable.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
 - Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.6.0.
 - Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.

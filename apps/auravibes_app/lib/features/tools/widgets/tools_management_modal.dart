@@ -1,15 +1,21 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_search.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_search_empty_state.dart';
+import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -123,17 +129,21 @@ class const _ToolsManagementDialogColumn({
   groupedToolsAsync,
   required final String workspaceId,
   final String? conversationId,
-}) extends StatelessWidget {
+}) extends HookWidget {
   @override
   Widget build(BuildContext context) {
+    final searchQuery = useState('');
+
     return Column(
       mainAxisSize: .min,
       children: [
         const _ToolsManagementHeader(),
+        ToolsSearchInput(onChanged: (value) => searchQuery.value = value),
         Flexible(
           child: _ToolsManagementContent(
             groupedToolsAsync: groupedToolsAsync,
             workspaceId: workspaceId,
+            searchQuery: searchQuery.value,
             conversationId: conversationId,
           ),
         ),
@@ -191,6 +201,7 @@ class const _ToolsManagementContent({
   required final AsyncValue<List<ConversationToolsGroupWithTools>>
   groupedToolsAsync,
   required final String workspaceId,
+  required final String searchQuery,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
@@ -200,6 +211,7 @@ class const _ToolsManagementContent({
       AsyncData(:final value) => _GroupedToolsList(
         groups: value,
         workspaceId: workspaceId,
+        searchQuery: searchQuery,
         conversationId: conversationId,
       ),
       AsyncError(:final error) => Center(
@@ -216,16 +228,20 @@ class const _ToolsManagementContent({
 class const _GroupedToolsList({
   required final List<ConversationToolsGroupWithTools> groups,
   required final String workspaceId,
+  required final String searchQuery,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (groups.isEmpty) {
+    if (groups.isEmpty && searchQuery.trim().isEmpty) {
       return const ToolsEmptyState();
     }
 
+    final filteredGroups = _filterConversationGroups(groups, searchQuery);
+    if (filteredGroups.isEmpty) return const ToolsSearchEmptyState();
+
     return _GroupedToolsListView(
-      groups: groups,
+      groups: filteredGroups,
       workspaceId: workspaceId,
       conversationId: conversationId,
     );
@@ -233,7 +249,7 @@ class const _GroupedToolsList({
 }
 
 class const _GroupedToolsListView({
-  required final List<ConversationToolsGroupWithTools> groups,
+  required final List<_ConversationToolsGroupResult> groups,
   required final String workspaceId,
   final String? conversationId,
 }) extends StatelessWidget {
@@ -247,23 +263,83 @@ class const _GroupedToolsListView({
   }
 
   Widget _itemBuilder(BuildContext _, int index) => _ConversationToolsGroupItem(
-    group: groups[index],
+    result: groups[index],
     workspaceId: workspaceId,
     conversationId: conversationId,
   );
 }
 
 class const _ConversationToolsGroupItem({
-  required final ConversationToolsGroupWithTools group,
+  required final _ConversationToolsGroupResult result,
   required final String workspaceId,
   final String? conversationId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConversationToolsGroupCard(
-      groupWithTools: group,
+      groupWithTools: result.group,
       workspaceId: workspaceId,
+      visibleTools: result.tools,
       conversationId: conversationId,
     );
   }
 }
+
+typedef _ConversationToolsGroupResult = ({
+  ConversationToolsGroupWithTools group,
+  List<ConversationToolState> tools,
+});
+
+List<_ConversationToolsGroupResult> _filterConversationGroups(
+  List<ConversationToolsGroupWithTools> groups,
+  String query,
+) => groups
+    .map((group) => _matchingConversationGroup(group, query))
+    .whereType<_ConversationToolsGroupResult>()
+    .toList();
+
+_ConversationToolsGroupResult? _matchingConversationGroup(
+  ConversationToolsGroupWithTools group,
+  String query,
+) {
+  if (ToolsSearch.matches(query, _conversationGroupSearchValues(group))) {
+    return (group: group, tools: group.tools);
+  }
+
+  final matchingTools = _matchingConversationTools(group.tools, query);
+  if (matchingTools.isEmpty) return null;
+
+  return (group: group, tools: matchingTools);
+}
+
+List<ConversationToolState> _matchingConversationTools(
+  List<ConversationToolState> tools,
+  String query,
+) => tools
+    .where(
+      (toolState) =>
+          ToolsSearch.matches(query, _conversationToolSearchValues(toolState)),
+    )
+    .toList();
+
+Iterable<String?> _conversationGroupSearchValues(
+  ConversationToolsGroupWithTools group,
+) => [
+  group.group?.name,
+  group.group?.id,
+  group.mcpServerId,
+  group.mcpConnectionState?.server.name,
+  group.defaultGroupType?.name,
+  group.localizedDisplayNameKey?.tr(),
+  if (group.isMcpGroup) 'mcp',
+];
+
+Iterable<String?> _conversationToolSearchValues(
+  ConversationToolState toolState,
+) => [
+  toolState.tool.id,
+  toolState.tool.toolId,
+  toolState.tool.toolId.toHumanReadable(),
+  toolState.tool.description,
+  toolState.tool.workspaceToolsGroupId,
+];

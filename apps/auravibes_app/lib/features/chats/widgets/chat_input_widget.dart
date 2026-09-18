@@ -452,12 +452,13 @@ class const _ChatInputAgentSelector({
       child: Semantics(
         key: const ValueKey<String>('chat_agent_selector'),
         child: GestureDetector(
-          child: compactControl,
+          child: IgnorePointer(child: compactControl),
           onTap: () => _showSelectorSheet(
             context: context,
             title: const TextLocale(LocaleKeys.agents_title),
             child: sheetControl,
           ),
+          behavior: .opaque,
         ),
         identifier: 'chat_agent_selector',
       ),

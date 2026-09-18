@@ -712,11 +712,11 @@ return bearerToken(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  none,TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint)?  oauth,TResult Function( String bearerToken)?  bearerToken,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  none,TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult Function( String bearerToken)?  bearerToken,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none();case McpAuthenticationTypeOAuth() when oauth != null:
-return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint);case McpAuthenticationTypeBearerToken() when bearerToken != null:
+return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken() when bearerToken != null:
 return bearerToken(_that.bearerToken);case _:
   return orElse();
 
@@ -735,11 +735,11 @@ return bearerToken(_that.bearerToken);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  none,required TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint)  oauth,required TResult Function( String bearerToken)  bearerToken,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  none,required TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)  oauth,required TResult Function( String bearerToken)  bearerToken,}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone():
 return none();case McpAuthenticationTypeOAuth():
-return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint);case McpAuthenticationTypeBearerToken():
+return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken():
 return bearerToken(_that.bearerToken);}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -754,11 +754,11 @@ return bearerToken(_that.bearerToken);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  none,TResult? Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint)?  oauth,TResult? Function( String bearerToken)?  bearerToken,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  none,TResult? Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult? Function( String bearerToken)?  bearerToken,}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none();case McpAuthenticationTypeOAuth() when oauth != null:
-return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint);case McpAuthenticationTypeBearerToken() when bearerToken != null:
+return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken() when bearerToken != null:
 return bearerToken(_that.bearerToken);case _:
   return null;
 
@@ -806,13 +806,15 @@ int get hashCode => runtimeType.hashCode;
 @JsonSerializable()
 
 class McpAuthenticationTypeOAuth extends McpAuthenticationType {
-  const McpAuthenticationTypeOAuth({required this.token, required this.clientId, required this.authorizationEndpoint, required this.tokenEndpoint,  String? $type}): $type = $type ?? 'oauth',super._();
+  const McpAuthenticationTypeOAuth({required this.token, required this.clientId, required this.authorizationEndpoint, required this.tokenEndpoint, this.issuer, this.resource,  String? $type}): $type = $type ?? 'oauth',super._();
   factory McpAuthenticationTypeOAuth.fromJson(Map<String, dynamic> json) => _$McpAuthenticationTypeOAuthFromJson(json);
 
  final  OAuthTokenEntity token;
  final  String clientId;
  final  String authorizationEndpoint;
  final  String tokenEndpoint;
+ final  String? issuer;
+ final  String? resource;
 
 @JsonKey(name: 'runtimeType')
 final String $type;
@@ -831,13 +833,13 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeOAuth&&(identical(other.token, token) || other.token == token)&&(identical(other.clientId, clientId) || other.clientId == clientId)&&(identical(other.authorizationEndpoint, authorizationEndpoint) || other.authorizationEndpoint == authorizationEndpoint)&&(identical(other.tokenEndpoint, tokenEndpoint) || other.tokenEndpoint == tokenEndpoint));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeOAuth&&(identical(other.token, token) || other.token == token)&&(identical(other.clientId, clientId) || other.clientId == clientId)&&(identical(other.authorizationEndpoint, authorizationEndpoint) || other.authorizationEndpoint == authorizationEndpoint)&&(identical(other.tokenEndpoint, tokenEndpoint) || other.tokenEndpoint == tokenEndpoint)&&(identical(other.issuer, issuer) || other.issuer == issuer)&&(identical(other.resource, resource) || other.resource == resource));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,token,clientId,authorizationEndpoint,tokenEndpoint);
+    return Object.hash(runtimeType,token,clientId,authorizationEndpoint,tokenEndpoint,issuer,resource);
 }
 
 
@@ -849,7 +851,7 @@ abstract mixin class $McpAuthenticationTypeOAuthCopyWith<$Res> implements $McpAu
   factory $McpAuthenticationTypeOAuthCopyWith(McpAuthenticationTypeOAuth value, $Res Function(McpAuthenticationTypeOAuth) _then) = _$McpAuthenticationTypeOAuthCopyWithImpl;
 @useResult
 $Res call({
- OAuthTokenEntity token, String clientId, String authorizationEndpoint, String tokenEndpoint
+ OAuthTokenEntity token, String clientId, String authorizationEndpoint, String tokenEndpoint, String? issuer, String? resource
 });
 
 
@@ -866,13 +868,15 @@ class _$McpAuthenticationTypeOAuthCopyWithImpl<$Res>
 
 /// Create a copy of McpAuthenticationType
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? token = null,Object? clientId = null,Object? authorizationEndpoint = null,Object? tokenEndpoint = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? token = null,Object? clientId = null,Object? authorizationEndpoint = null,Object? tokenEndpoint = null,Object? issuer = freezed,Object? resource = freezed,}) {
   return _then(McpAuthenticationTypeOAuth(
 token: null == token ? _self.token : token // ignore: cast_nullable_to_non_nullable
 as OAuthTokenEntity,clientId: null == clientId ? _self.clientId : clientId // ignore: cast_nullable_to_non_nullable
 as String,authorizationEndpoint: null == authorizationEndpoint ? _self.authorizationEndpoint : authorizationEndpoint // ignore: cast_nullable_to_non_nullable
 as String,tokenEndpoint: null == tokenEndpoint ? _self.tokenEndpoint : tokenEndpoint // ignore: cast_nullable_to_non_nullable
-as String,
+as String,issuer: freezed == issuer ? _self.issuer : issuer // ignore: cast_nullable_to_non_nullable
+as String?,resource: freezed == resource ? _self.resource : resource // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -1605,7 +1609,7 @@ $McpAuthenticationTypeCopyWith<$Res> get authenticationType {
 /// @nodoc
 mixin _$McpServerFormToCreate {
 
- String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get description;
+ String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get oauthClientId; String? get description;
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1617,14 +1621,14 @@ $McpServerFormToCreateCopyWith<McpServerFormToCreate> get copyWith => _$McpServe
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerFormToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.description, _this.description) || other.description == _this.description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.oauthClientId, _this.oauthClientId) || other.oauthClientId == _this.oauthClientId)&&(identical(other.description, _this.description) || other.description == _this.description));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerFormToCreate;
-  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.description);
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.oauthClientId,_this.description);
 }
 
 
@@ -1636,7 +1640,7 @@ abstract mixin class $McpServerFormToCreateCopyWith<$Res>  {
   factory $McpServerFormToCreateCopyWith(McpServerFormToCreate value, $Res Function(McpServerFormToCreate) _then) = _$McpServerFormToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description
 });
 
 
@@ -1653,13 +1657,14 @@ class _$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? description = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,}) {
   return _then(McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
+as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -1746,10 +1751,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
   return orElse();
 
 }
@@ -1767,10 +1772,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? description)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate():
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1787,10 +1792,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? description)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
   return null;
 
 }
@@ -1802,7 +1807,7 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 
 
 class _McpServerFormToCreate extends McpServerFormToCreate {
-  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.description}): super._();
+  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.oauthClientId, this.description}): super._();
   
 
 @override final  String name;
@@ -1810,6 +1815,7 @@ class _McpServerFormToCreate extends McpServerFormToCreate {
 @override final  McpTransportType transport;
 @override final  McpAuthenticationTypeOptions authenticationType;
 @override final  String? bearerToken;
+@override final  String? oauthClientId;
 @override final  String? description;
 
 /// Create a copy of McpServerFormToCreate
@@ -1822,13 +1828,13 @@ _$McpServerFormToCreateCopyWith<_McpServerFormToCreate> get copyWith => __$McpSe
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.description, description) || other.description == description));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.oauthClientId, oauthClientId) || other.oauthClientId == oauthClientId)&&(identical(other.description, description) || other.description == description));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
+    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,oauthClientId,description);
 }
 
 
@@ -1840,7 +1846,7 @@ abstract mixin class _$McpServerFormToCreateCopyWith<$Res> implements $McpServer
   factory _$McpServerFormToCreateCopyWith(_McpServerFormToCreate value, $Res Function(_McpServerFormToCreate) _then) = __$McpServerFormToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description
 });
 
 
@@ -1857,13 +1863,14 @@ class __$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? description = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,}) {
   return _then(_McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
+as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

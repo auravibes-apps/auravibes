@@ -31,6 +31,7 @@ void main() {
       },
       workspaceId: 'workspace',
       read: () async => const [],
+      watch: (_) => const Stream.empty(),
       readAgent: (_) async => const [],
       list: (_) async => const AgentListPage(agents: []),
       duplicate: (sourceAgentId) async {
@@ -127,6 +128,7 @@ void main() {
           updatedAt: now,
         ),
       ],
+      watch: (_) => const Stream.empty(),
       readAgent: (_) async => [
         WorkspaceResource(
           workspaceId: 1,
@@ -262,6 +264,7 @@ void main() {
       },
       workspaceId: 'workspace',
       read: () async => List.of(resources),
+      watch: (_) => const Stream.empty(),
       readAgent: (_) async => List.of(resources),
       list: (_) async => const AgentListPage(agents: []),
       duplicate: (_) async => fail('Unexpected duplicate'),
@@ -303,6 +306,60 @@ void main() {
       WorkspaceResourceKind.agentAssociation,
       WorkspaceResourceKind.agent,
     ]);
+  });
+
+  test('cloud watch maps every agent resource snapshot', () async {
+    final now = DateTime.utc(2026);
+    final resources = [
+      _resource(
+        now: now,
+        kind: .agent,
+        id: 'agent-1',
+        data: {
+          'name': 'Agent',
+          'description': 'Description',
+          'content': 'Prompt',
+          'visibility': 'both',
+        },
+      ),
+      _resource(
+        now: now,
+        kind: .agentAssociation,
+        id: 'association-1',
+        data: {'agentId': 'agent-1', 'skillId': 'skill-1'},
+      ),
+    ];
+    List<WorkspaceResourceKind>? watchedKinds;
+    final repository = CloudAgentRepository(
+      patch: ({required requestId, required operations}) =>
+          throw StateError('Unexpected patch'),
+      workspaceId: 'workspace',
+      read: () async => throw StateError('Unexpected read'),
+      watch: (kinds) {
+        watchedKinds = kinds;
+
+        return Stream.fromIterable(<List<WorkspaceResource>>[
+          const [],
+          resources,
+        ]);
+      },
+      readAgent: (_) async => throw StateError('Unexpected agent read'),
+      list: (_) async => throw StateError('Unexpected list'),
+      duplicate: (_) async => throw StateError('Unexpected duplicate'),
+    );
+
+    final snapshots = await repository
+        .watchAgentsByWorkspace('workspace')
+        .toList();
+
+    expect(watchedKinds, [
+      WorkspaceResourceKind.agent,
+      WorkspaceResourceKind.agentAssociation,
+    ]);
+    expect(snapshots, hasLength(2));
+    expect(snapshots.firstOrNull, isEmpty);
+    expect(snapshots.last.single.id, 'agent-1');
+    expect(snapshots.last.single.skills, const [AgentSkillRef.user('skill-1')]);
   });
 
   test('cloud list maps the query and catalog page', () async {

@@ -90,6 +90,7 @@ ServiceConnectionSecret _oauth2Secret(Map<String, dynamic> json) =>
 class const ServiceConnectionMetadata({
   final String? clientId,
   final String? issuer,
+  final String? resource,
   final String? authorizationEndpoint,
   final String? tokenEndpoint,
   final List<String> scopes = const [],
@@ -101,6 +102,7 @@ class const ServiceConnectionMetadata({
     return ServiceConnectionMetadata(
       clientId: _stringOrNull(json['client_id']),
       issuer: _stringOrNull(json['issuer']),
+      resource: _stringOrNull(json['resource']),
       authorizationEndpoint: _stringOrNull(json['authorization_endpoint']),
       tokenEndpoint: _stringOrNull(json['token_endpoint']),
       scopes: _scopesFromJson(json['scopes']),
@@ -114,6 +116,7 @@ class const ServiceConnectionMetadata({
     return {
       if (clientId != null) 'client_id': clientId,
       if (issuer != null) 'issuer': issuer,
+      if (resource != null) 'resource': resource,
       if (authorizationEndpoint != null)
         'authorization_endpoint': authorizationEndpoint,
       if (tokenEndpoint != null) 'token_endpoint': tokenEndpoint,
@@ -138,7 +141,7 @@ class const ServiceConnectionAuthCodec._() {
   static OAuthTokenEntity tokenFromSecret({
     required ServiceConnectionSecretOAuth2 secret,
     required DateTime issuedAt,
-    required int expiresIn,
+    required int? expiresIn,
     required List<String> scopes,
   }) {
     return OAuthTokenEntity(

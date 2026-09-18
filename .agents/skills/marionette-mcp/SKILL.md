@@ -47,6 +47,55 @@ disconnect and connect to the correct manifest URI before doing anything else.
 The app registers `auravibes.instanceIdentity` only on the Marionette debug
 path. Marionette promotes it to the `auravibes_instance_identity` MCP tool.
 
+## CLI fallback for shell-only agents
+
+MCP remains the default for OpenCode, Pi, and Codex. Use the CLI only when the
+agent cannot start or maintain an MCP server. The workspace pins
+`marionette_cli` at `0.6.0` in `pubspec.yaml` and `pubspec.lock`; install it
+with `fvm dart pub get` from the repository root.
+
+Launch one isolated dev app, then use the repo wrapper for every CLI command:
+
+```sh
+fvm dart run tool/marionette_run.dart --instance-id agent-a --device macos
+fvm dart run tool/marionette_cli.dart --instance-id agent-a get-interactive-elements
+```
+
+The wrapper reads `.dart_tool/marionette/instances/agent-a.json`, requires the
+`dev` flavor and Marionette flag, verifies `auravibes.instanceIdentity`, and
+passes that exact local `vmServiceUri` to `marionette_cli`. It rejects missing
+instance IDs, URI or `--instance` overrides, production/remote endpoints, and
+the CLI's global `register`, `unregister`, `list`, and `doctor` discovery
+commands. Never call the upstream CLI directly with `--instance`.
+
+`marionette_cli 0.6.0` has per-command connection lifecycle: the first command
+connects, and the command disconnects in its cleanup path. There is no
+persistent `connect` or `disconnect` command. Stop the app launcher with
+Ctrl-C; the launcher removes its manifest on normal exit. The wrapper reports
+the selected instance, a redacted manifest-URI label, and `connecting`,
+`failed`, or `disconnected` state.
+
+CLI command reference:
+
+```sh
+# inspect
+fvm dart run tool/marionette_cli.dart --instance-id agent-a get-interactive-elements
+# tap and enter text
+fvm dart run tool/marionette_cli.dart --instance-id agent-a tap --key submit_button
+fvm dart run tool/marionette_cli.dart --instance-id agent-a enter-text --key email_field --input 'test@example.com'
+# scroll and screenshot
+fvm dart run tool/marionette_cli.dart --instance-id agent-a scroll-to --text 'Bottom Item'
+fvm dart run tool/marionette_cli.dart --instance-id agent-a take-screenshots --output .dart_tool/marionette/agent-a.png
+# logs and lifecycle
+fvm dart run tool/marionette_cli.dart --instance-id agent-a get-logs
+fvm dart run tool/marionette_cli.dart --instance-id agent-a hot-reload
+fvm dart run tool/marionette_cli.dart --instance-id agent-a hot-restart
+```
+
+The safe smoke path is local-only: launch the dev macOS app, run inspection,
+screenshot, and logs, then stop the launcher. Do not add it to CI because it
+requires a GUI app and a live VM service.
+
 ## App interaction
 
 Use `get_interactive_elements` first. Prefer stable `ValueKey<String>` keys;

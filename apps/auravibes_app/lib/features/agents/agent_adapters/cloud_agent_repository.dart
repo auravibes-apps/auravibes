@@ -11,6 +11,9 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
 typedef ReadCloudAgents = Future<List<WorkspaceResource>> Function();
+typedef WatchCloudAgents = Stream<List<WorkspaceResource>> Function(
+  List<WorkspaceResourceKind> kinds,
+);
 typedef ReadCloudAgent = Future<List<WorkspaceResource>> Function(
   String agentId,
 );
@@ -62,6 +65,7 @@ typedef _AgentUpdateResponse = ({
 class CloudAgentRepository({
   @override required final String workspaceId,
   @override required final ReadCloudAgents read,
+  @override required final WatchCloudAgents watch,
   @override required final ReadCloudAgent readAgent,
   @override required final ListCloudAgents list,
   @override required final DuplicateCloudAgent duplicate,
@@ -76,6 +80,7 @@ class CloudAgentRepository({
          duplicate: store.duplicateAgent,
          patch: store.patch,
          read: () => _readCloudAgentResources(store),
+         watch: store.watchResources,
          readAgent: (agentId) => _readCloudAgent(gateway, agentId),
          list: (query) => _listCloudAgents(gateway, query),
          workspaceId: workspaceId,
@@ -190,29 +195,39 @@ List<AgentSkillRef> _decodeAgentSkills(
   String agentId,
 ) => _agentSkillAssociations(resources, agentId).map(_decodeSkill).toList();
 
+List<AgentEntity> _mapAgents(
+  Iterable<WorkspaceResource> resources,
+  String workspaceId,
+  Map<String, int> revisions,
+) {
+  _recordAgentRevisions(revisions, resources);
+
+  return [
+    for (final resource in resources)
+      if (resource.resourceKind == WorkspaceResourceKind.agent &&
+          resource.deletedAt == null)
+        _decodeAgent(resource, resources, workspaceId),
+  ];
+}
+
 mixin _CloudAgentRepositoryRead {
   String get workspaceId;
   ReadCloudAgents get read;
+  WatchCloudAgents get watch;
   ReadCloudAgent get readAgent;
   ListCloudAgents get list;
   Map<String, int> get _revisions;
 
-  Stream<List<AgentEntity>> _watchAgentsByWorkspace(String workspaceId) async* {
-    yield await getAgentsByWorkspace(workspaceId);
-  }
+  Stream<List<AgentEntity>> _watchAgentsByWorkspace(String workspaceId) =>
+      watch([
+        WorkspaceResourceKind.agent,
+        WorkspaceResourceKind.agentAssociation,
+      ]).map((resources) => _mapAgents(resources, workspaceId, _revisions));
 
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
     final resources = await read();
-    for (final resource in resources) {
-      _revisions[resource.resourceId] = resource.revision;
-    }
 
-    return [
-      for (final resource in resources)
-        if (resource.resourceKind == WorkspaceResourceKind.agent &&
-            resource.deletedAt == null)
-          _decodeAgent(resource, resources, workspaceId),
-    ];
+    return _mapAgents(resources, workspaceId, _revisions);
   }
 
   Future<AgentListPage> listAgents(AgentListQuery query) => list(query);

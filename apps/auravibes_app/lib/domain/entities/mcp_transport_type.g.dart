@@ -65,6 +65,8 @@ McpAuthenticationTypeOAuth _$McpAuthenticationTypeOAuthFromJson(
   clientId: json['clientId'] as String,
   authorizationEndpoint: json['authorizationEndpoint'] as String,
   tokenEndpoint: json['tokenEndpoint'] as String,
+  issuer: json['issuer'] as String?,
+  resource: json['resource'] as String?,
   $type: json['runtimeType'] as String?,
 );
 
@@ -75,6 +77,8 @@ Map<String, dynamic> _$McpAuthenticationTypeOAuthToJson(
   'clientId': instance.clientId,
   'authorizationEndpoint': instance.authorizationEndpoint,
   'tokenEndpoint': instance.tokenEndpoint,
+  'issuer': instance.issuer,
+  'resource': instance.resource,
   'runtimeType': instance.$type,
 };
 
