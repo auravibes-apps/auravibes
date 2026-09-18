@@ -248,6 +248,10 @@ Stream<String> _streamTitle(_TitleRequest request) async* {
         request.firstMessage,
       );
     }
+    final response = await responseStream.onResult;
+    if (response.error != null) {
+      yield fallbackConversationTitle(request.firstMessage);
+    }
   } on Exception catch (_) {
     yield fallbackConversationTitle(request.firstMessage);
   }
