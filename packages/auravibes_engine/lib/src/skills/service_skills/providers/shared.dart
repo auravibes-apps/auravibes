@@ -54,7 +54,6 @@ const apiKeyCredentialDefinitions = {
 AppSkillUrlTemplate declarativeTemplate({
   required String url,
   required Map<String, Object> inputSchema,
-  UrlRequestMethod method = UrlRequestMethod.post,
   Map<String, String> headers = const {},
   Map<String, String> query = const {},
   String? body,
@@ -64,7 +63,7 @@ AppSkillUrlTemplate declarativeTemplate({
 }) => AppSkillUrlTemplate(
   template: SkillUrlTemplate(
     url: url,
-    method: method,
+    method: UrlRequestMethod.post,
     headers: headers,
     query: query,
     body: body,

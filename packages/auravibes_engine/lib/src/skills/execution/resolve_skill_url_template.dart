@@ -152,6 +152,17 @@ void _validateInputValue(
   Object? value,
   SkillTemplateInputDefinition definition,
 ) {
+  _validateInputType(name, value, definition);
+  _validateInputConstraints(name, value, definition);
+  _validateInputItems(name, value, definition);
+  _validateInputProperties(name, value, definition);
+}
+
+void _validateInputType(
+  String name,
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
   final validType = switch (definition.type.trim().toLowerCase()) {
     'string' => value is String,
     'boolean' => value is bool,
@@ -164,6 +175,13 @@ void _validateInputValue(
   if (!validType) {
     throw FormatException('Input $name must be a ${definition.type}.');
   }
+}
+
+void _validateInputConstraints(
+  String name,
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
   if (definition.enumValues.isNotEmpty &&
       !definition.enumValues.any((candidate) => candidate == value)) {
     throw FormatException(
@@ -175,27 +193,49 @@ void _validateInputValue(
           (definition.maximum != null && value > definition.maximum!))) {
     throw FormatException('Input $name is outside its allowed range.');
   }
-  if (value is List && definition.items != null) {
-    for (final item in value) {
-      _validateInputValue('$name[]', item, definition.items!);
-    }
+}
+
+void _validateInputItems(
+  String name,
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
+  if (value is! List || definition.items == null) return;
+
+  for (final item in value) {
+    _validateInputValue('$name[]', item, definition.items!);
   }
-  if (value is Map) {
-    if (!definition.additionalProperties &&
-        value.keys.any((key) => !definition.properties.containsKey(key))) {
-      throw FormatException('Input $name contains an unknown property.');
-    }
-    for (final entry in definition.properties.entries) {
-      final nestedValue = value[entry.key];
-      if (nestedValue == null) {
-        if (!entry.value.optional) {
-          throw FormatException('Missing required input: $name.${entry.key}.');
-        }
-        continue;
-      }
-      _validateInputValue('$name.${entry.key}', nestedValue, entry.value);
-    }
+}
+
+void _validateInputProperties(
+  String name,
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
+  if (value is! Map) return;
+
+  if (!definition.additionalProperties &&
+      value.keys.any((key) => !definition.properties.containsKey(key))) {
+    throw FormatException('Input $name contains an unknown property.');
   }
+  for (final entry in definition.properties.entries) {
+    _validateInputProperty(name, value, entry);
+  }
+}
+
+void _validateInputProperty(
+  String name,
+  Map<Object?, Object?> value,
+  MapEntry<String, SkillTemplateInputDefinition> entry,
+) {
+  final nestedValue = value[entry.key];
+  if (nestedValue == null) {
+    if (!entry.value.optional) {
+      throw FormatException('Missing required input: $name.${entry.key}.');
+    }
+    return;
+  }
+  _validateInputValue('$name.${entry.key}', nestedValue, entry.value);
 }
 
 void validateSkillTemplateDefinition(SkillTemplateDefinition definition) {

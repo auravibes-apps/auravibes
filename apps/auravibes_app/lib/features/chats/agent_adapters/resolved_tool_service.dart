@@ -40,6 +40,8 @@ import 'package:riverpod/riverpod.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
+const _runAppSkillToolUsecaseNotConfigured =
+    'RunAppSkillToolUsecase is not configured.';
 const Set<String> _userSkillToolSlugs = {
   SkillToolSlugs.createUserSkill,
   SkillToolSlugs.updateUserSkill,
@@ -275,7 +277,7 @@ class const AppResolvedToolProvider({
   ) {
     final usecase = runAppSkillToolUsecase;
     if (usecase == null) {
-      throw StateError('RunAppSkillToolUsecase is not configured.');
+      throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
     final operation = usecase.callCancelable(
@@ -808,7 +810,7 @@ Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
 Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
   final usecase = request.provider.runAppSkillToolUsecase;
   if (usecase == null) {
-    throw StateError('RunAppSkillToolUsecase is not configured.');
+    throw StateError(_runAppSkillToolUsecaseNotConfigured);
   }
 
   final operation = usecase.callCancelable(
@@ -956,7 +958,7 @@ class _ConfiguredSkillCommandRunner {
     final target = request.target;
     final usecase = _provider.runAppSkillToolUsecase;
     if (usecase == null) {
-      throw StateError('RunAppSkillToolUsecase is not configured.');
+      throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
     return usecase.call(

@@ -3,6 +3,10 @@ import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dar
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
+const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
+const _contentTypeHeader = 'content-type';
+const _jsonContentType = 'application/json';
+
 final firecrawlSkill = AppSkillDefinition(
   identifier: 'firecrawl',
   slug: 'firecrawl',
@@ -155,8 +159,8 @@ final AppSkillUrlTemplate _searchTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/search',
   inputSchema: _searchInputSchema,
   headers: {
-    'authorization': 'Bearer {{ credential.apiKey }}',
-    'content-type': 'application/json',
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
   },
   body: '''
 {"query":{{ input.query | json }}
@@ -178,8 +182,8 @@ final AppSkillUrlTemplate _scrapeTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/scrape',
   inputSchema: _scrapeInputSchema,
   headers: {
-    'authorization': 'Bearer {{ credential.apiKey }}',
-    'content-type': 'application/json',
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
   },
   body: '''
 {"url":{{ input.url | json }},"formats":{% if input.formats != nil %}{{ input.formats | json }}{% else %}["markdown"]{% endif %}
@@ -195,8 +199,8 @@ final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/crawl',
   inputSchema: fetchInputSchema,
   headers: {
-    'authorization': 'Bearer {{ credential.apiKey }}',
-    'content-type': 'application/json',
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
   },
   body: '{"url":{{ input.url | json }}}',
   bodyFormat: .json,
@@ -206,8 +210,8 @@ final AppSkillUrlTemplate _mapTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/map',
   inputSchema: _mapInputSchema,
   headers: {
-    'authorization': 'Bearer {{ credential.apiKey }}',
-    'content-type': 'application/json',
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
   },
   body: '''
 {"url":{{ input.url | json }}
@@ -223,8 +227,8 @@ final AppSkillUrlTemplate _extractTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/extract',
   inputSchema: _extractInputSchema,
   headers: {
-    'authorization': 'Bearer {{ credential.apiKey }}',
-    'content-type': 'application/json',
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
   },
   body: '''
 {"urls":{{ input.urls | json }}

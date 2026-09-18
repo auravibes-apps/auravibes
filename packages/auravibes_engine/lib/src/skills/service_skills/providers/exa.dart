@@ -2,6 +2,11 @@ import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
+const _apiKeyHeader = 'x-api-key';
+const _apiKeyTemplate = '{{ credential.apiKey }}';
+const _contentTypeHeader = 'content-type';
+const _jsonContentType = 'application/json';
+
 final exaSkill = AppSkillDefinition(
   identifier: 'exa',
   slug: 'exa',
@@ -24,8 +29,8 @@ Prefer it when semantic relevance matters more than a classic result page.
         url: 'https://api.exa.ai/search',
         inputSchema: _searchInputSchema,
         headers: {
-          'x-api-key': '{{ credential.apiKey }}',
-          'content-type': 'application/json',
+          _apiKeyHeader: _apiKeyTemplate,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _searchBody,
         bodyFormat: .json,
@@ -41,8 +46,8 @@ Prefer it when semantic relevance matters more than a classic result page.
         url: 'https://api.exa.ai/contents',
         inputSchema: _contentsInputSchema,
         headers: {
-          'x-api-key': '{{ credential.apiKey }}',
-          'content-type': 'application/json',
+          _apiKeyHeader: _apiKeyTemplate,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _contentsBody,
         bodyFormat: .json,
@@ -58,8 +63,8 @@ Prefer it when semantic relevance matters more than a classic result page.
         url: 'https://api.exa.ai/answer',
         inputSchema: _answerInputSchema,
         headers: {
-          'x-api-key': '{{ credential.apiKey }}',
-          'content-type': 'application/json',
+          _apiKeyHeader: _apiKeyTemplate,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _answerBody,
         bodyFormat: .json,

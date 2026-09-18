@@ -174,6 +174,18 @@ void _validateManifestSchemaNode(
   Map<Object?, Object?> schema, {
   bool root = false,
 }) {
+  _validateManifestSchemaKeys(schema);
+  _validateManifestSchemaRoot(schema, root);
+  final type = _validateManifestSchemaType(schema);
+  _validateManifestSchemaMetadata(schema);
+  _validateManifestSchemaConstraints(schema);
+  _validateManifestSchemaProperties(schema);
+  _validateManifestSchemaRequired(schema);
+  _validateManifestSchemaAlternatives(schema);
+  _validateManifestSchemaItems(schema, type);
+}
+
+void _validateManifestSchemaKeys(Map<Object?, Object?> schema) {
   const allowedKeys = {
     'type',
     'description',
@@ -192,6 +204,11 @@ void _validateManifestSchemaNode(
   if (schema.keys.any((key) => key is! String || !allowedKeys.contains(key))) {
     throw const FormatException('Input schema has unknown fields.');
   }
+}
+
+void _validateManifestSchemaRoot(Map<Object?, Object?> schema, bool root) {
+  if (!root) return;
+
   if (root && schema['type'] != 'object') {
     throw const FormatException('Skill inputSchema must be an object schema.');
   }
@@ -200,6 +217,9 @@ void _validateManifestSchemaNode(
       'Skill inputSchema must reject unknown inputs.',
     );
   }
+}
+
+Object? _validateManifestSchemaType(Map<Object?, Object?> schema) {
   final type = schema['type'];
   const supportedTypes = {
     'string',
@@ -212,12 +232,19 @@ void _validateManifestSchemaNode(
   if (type != null && (type is! String || !supportedTypes.contains(type))) {
     throw FormatException('Unsupported input schema type: $type.');
   }
+  return type;
+}
+
+void _validateManifestSchemaMetadata(Map<Object?, Object?> schema) {
   for (final key in ['description', 'optional', 'additionalProperties']) {
     final value = schema[key];
     if (value == null) continue;
     final valid = key == 'description' ? value is String : value is bool;
     if (!valid) throw FormatException('Input schema $key must be valid.');
   }
+}
+
+void _validateManifestSchemaConstraints(Map<Object?, Object?> schema) {
   final enumValues = schema['enum'];
   if (enumValues != null && enumValues is! List) {
     throw const FormatException('Input schema enum must be an array.');
@@ -231,21 +258,27 @@ void _validateManifestSchemaNode(
   if (minimum is num && maximum is num && minimum > maximum) {
     throw const FormatException('Input schema range is invalid.');
   }
+}
+
+void _validateManifestSchemaProperties(Map<Object?, Object?> schema) {
   final properties = schema['properties'];
-  if (properties != null) {
-    if (properties is! Map) {
-      throw const FormatException('Input schema properties must be an object.');
-    }
-    for (final entry in properties.entries) {
-      if (entry.key is! String || entry.value is! Map) {
-        throw const FormatException(
-          'Input schema properties must be named objects.',
-        );
-      }
-      _validateManifestSchemaNode(entry.value! as Map<Object?, Object?>);
-    }
+  if (properties == null) return;
+  if (properties is! Map) {
+    throw const FormatException('Input schema properties must be an object.');
   }
+  for (final entry in properties.entries) {
+    if (entry.key is! String || entry.value is! Map) {
+      throw const FormatException(
+        'Input schema properties must be named objects.',
+      );
+    }
+    _validateManifestSchemaNode(entry.value! as Map<Object?, Object?>);
+  }
+}
+
+void _validateManifestSchemaRequired(Map<Object?, Object?> schema) {
   final required = schema['required'];
+  final properties = schema['properties'];
   if (required != null &&
       (required is! List || !required.every((value) => value is String))) {
     throw const FormatException('Input schema required must be strings.');
@@ -258,19 +291,30 @@ void _validateManifestSchemaNode(
       );
     }
   }
+}
+
+void _validateManifestSchemaAlternatives(Map<Object?, Object?> schema) {
   for (final key in ['anyOf', 'oneOf']) {
     final alternatives = schema[key];
     if (alternatives == null) continue;
-    if (alternatives is! List ||
-        alternatives.isEmpty ||
-        alternatives.any((value) => value is! Map)) {
-      throw FormatException('Input schema $key must contain objects.');
-    }
-    for (final alternative in alternatives) {
-      _validateManifestSchemaNode(alternative! as Map<Object?, Object?>);
-    }
+    _validateManifestSchemaAlternativeList(key, alternatives);
   }
+}
+
+void _validateManifestSchemaAlternativeList(String key, Object? alternatives) {
+  if (alternatives is! List ||
+      alternatives.isEmpty ||
+      alternatives.any((value) => value is! Map)) {
+    throw FormatException('Input schema $key must contain objects.');
+  }
+  for (final alternative in alternatives) {
+    _validateManifestSchemaNode(alternative! as Map<Object?, Object?>);
+  }
+}
+
+void _validateManifestSchemaItems(Map<Object?, Object?> schema, Object? type) {
   final items = schema['items'];
+  final properties = schema['properties'];
   if (items != null) {
     if (items is! Map) {
       throw const FormatException('Input schema items must be an object.');
@@ -288,28 +332,33 @@ void _validateManifestSchemaNode(
 }
 
 void _validateManifestCredentialSchema(Map<Object?, Object?> schema) {
-  const allowedKeys = {'description', 'optional', 'secret'};
   for (final entry in schema.entries) {
-    if (entry.key is! String || entry.value is! Map) {
-      throw const FormatException('Credential schema entries must be objects.');
-    }
-    final definition = entry.value! as Map<Object?, Object?>;
-    if (definition.keys.any(
-      (key) => key is! String || !allowedKeys.contains(key),
-    )) {
-      throw const FormatException('Credential schema has unknown fields.');
-    }
-    final description = definition['description'];
-    if (description != null && description is! String) {
-      throw const FormatException(
-        'Credential schema description must be text.',
-      );
-    }
-    for (final key in ['optional', 'secret']) {
-      final value = definition[key];
-      if (value != null && value is! bool) {
-        throw FormatException('Credential schema $key must be boolean.');
-      }
+    _validateManifestCredentialEntry(entry.key, entry.value);
+  }
+}
+
+void _validateManifestCredentialEntry(Object? key, Object? value) {
+  if (key is! String || value is! Map) {
+    throw const FormatException('Credential schema entries must be objects.');
+  }
+  _validateManifestCredentialDefinition(value);
+}
+
+void _validateManifestCredentialDefinition(Map<Object?, Object?> definition) {
+  const allowedKeys = {'description', 'optional', 'secret'};
+  if (definition.keys.any(
+    (key) => key is! String || !allowedKeys.contains(key),
+  )) {
+    throw const FormatException('Credential schema has unknown fields.');
+  }
+  final description = definition['description'];
+  if (description != null && description is! String) {
+    throw const FormatException('Credential schema description must be text.');
+  }
+  for (final key in ['optional', 'secret']) {
+    final value = definition[key];
+    if (value != null && value is! bool) {
+      throw FormatException('Credential schema $key must be boolean.');
     }
   }
 }

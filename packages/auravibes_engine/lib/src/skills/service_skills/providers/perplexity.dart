@@ -2,6 +2,10 @@ import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
+const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
+const _contentTypeHeader = 'content-type';
+const _jsonContentType = 'application/json';
+
 final perplexitySkill = AppSkillDefinition(
   identifier: 'perplexity',
   slug: 'perplexity',
@@ -25,8 +29,8 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
         url: 'https://api.perplexity.ai/search',
         inputSchema: _searchInputSchema,
         headers: {
-          'authorization': 'Bearer {{ credential.apiKey }}',
-          'content-type': 'application/json',
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _searchBody,
         bodyFormat: .json,
@@ -42,8 +46,8 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
         url: 'https://api.perplexity.ai/v1/sonar',
         inputSchema: _sonarInputSchema,
         headers: {
-          'authorization': 'Bearer {{ credential.apiKey }}',
-          'content-type': 'application/json',
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _sonarBody,
         bodyFormat: .json,
@@ -59,8 +63,8 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
         url: 'https://api.perplexity.ai/v1/agent',
         inputSchema: _agentInputSchema,
         headers: {
-          'authorization': 'Bearer {{ credential.apiKey }}',
-          'content-type': 'application/json',
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
         },
         body: _agentBody,
         bodyFormat: .json,

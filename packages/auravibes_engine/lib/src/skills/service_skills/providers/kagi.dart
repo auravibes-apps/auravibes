@@ -3,6 +3,10 @@ import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dar
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
+const _authorizationHeader = 'Bot {{ credential.apiKey }}';
+const _contentTypeHeader = 'content-type';
+const _jsonContentType = 'application/json';
+
 final kagiSkill = AppSkillDefinition(
   identifier: 'kagi',
   slug: 'kagi',
@@ -24,7 +28,7 @@ enrichment, and summarization.
       urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://kagi.com/api/v1/search',
-          headers: {'authorization': 'Bot {{ credential.apiKey }}'},
+          headers: {'authorization': _authorizationHeader},
           query: {'q': '{{ input.query }}'},
         ),
         inputs: queryInputs,
@@ -41,8 +45,8 @@ enrichment, and summarization.
         url: 'https://kagi.com/api/v0/fastgpt',
         inputSchema: _fastGptInputSchema,
         headers: {
-          'authorization': 'Bot {{ credential.apiKey }}',
-          'content-type': 'application/json',
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
         },
         body: '''
 {"query":{{ input.question | json }},"web_search":{{ input.webSearch | json }}
@@ -60,7 +64,7 @@ enrichment, and summarization.
       urlTemplate: .new(
         template: SkillUrlTemplate(
           url: 'https://kagi.com/api/v0/enrich/web',
-          headers: {'authorization': 'Bot {{ credential.apiKey }}'},
+          headers: {'authorization': _authorizationHeader},
           query: {'q': '{{ input.query }}'},
         ),
         inputs: queryInputs,
@@ -77,8 +81,8 @@ enrichment, and summarization.
         url: 'https://kagi.com/api/v0/summarize',
         inputSchema: _summarizeInputSchema,
         headers: {
-          'authorization': 'Bot {{ credential.apiKey }}',
-          'content-type': 'application/json',
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
         },
         body: '''
 {
