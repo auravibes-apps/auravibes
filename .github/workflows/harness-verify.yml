@@ -58,6 +58,37 @@ jobs:
             }
           done < <(sed -nE 's/.*\]\(([^)]*)\).*/\1/p' AGENTS.md)
 
+      - name: Verify project-local Marionette MCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden_command="$(printf '%s %s %s %s %s' dart pub global run 'marionette_mcp')"
+          if git grep -n -F -- "$forbidden_command" -- .; then
+            echo '::error::Marionette MCP must not use the global Dart executable.'
+            exit 1
+          fi
+
+          jq -e '.mcpServers.marionette.command == "fvm" and .mcpServers.marionette.args == ["dart", "run", "marionette_mcp"]' .mcp.json
+          jq -e '.mcp.marionette.command == ["fvm", "dart", "run", "marionette_mcp"]' opencode.json
+          jq -e '.mcpServers.marionette.command == "fvm" and .mcpServers.marionette.args == ["dart", "run", "marionette_mcp"]' .pi/mcp.json
+          grep -Fx 'command = "fvm"' .codex/config.toml
+          grep -Fx 'args = ["dart", "run", "marionette_mcp"]' .codex/config.toml
+
+          ruby -ryaml -e '
+            root = YAML.load_file("pubspec.yaml")
+            app = YAML.load_file("apps/auravibes_app/pubspec.yaml")
+            lock = YAML.load_file("pubspec.lock").fetch("packages")
+            exact_version = /\A\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\z/
+            versions = [
+              root.dig("dev_dependencies", "marionette_mcp"),
+              app.dig("dependencies", "marionette_flutter"),
+              lock.dig("marionette_mcp", "version"),
+              lock.dig("marionette_flutter", "version")
+            ]
+            abort unless versions.all? { |version| version.is_a?(String) && version.match?(exact_version) }
+            abort unless versions.uniq.one?
+          '
+
       - name: Warn on instruction drift
         if: ${{ github.event_name == 'pull_request' }}
         shell: bash
