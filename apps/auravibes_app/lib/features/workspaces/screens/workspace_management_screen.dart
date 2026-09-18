@@ -726,7 +726,10 @@ class const _AvailableCloudDataState(
   @override
   Widget build(BuildContext context) {
     if (value.authenticationRequired) {
-      return _CloudAccountDisconnected(workspaceId: workspaceId);
+      return _CloudAccountDisconnected(
+        workspaceId: workspaceId,
+        accountId: account.userId,
+      );
     }
 
     return _AvailableCloudWorkspaceList(
@@ -739,21 +742,30 @@ class const _AvailableCloudDataState(
   }
 }
 
-class const _CloudAccountDisconnected({required final String workspaceId})
-    extends StatelessWidget {
+class const _CloudAccountDisconnected({
+  required final String workspaceId,
+  required final String accountId,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      _CloudAccountDisconnectedTile(workspaceId: workspaceId);
+  Widget build(BuildContext context) => _CloudAccountDisconnectedTile(
+    workspaceId: workspaceId,
+    accountId: accountId,
+  );
 }
 
-class const _CloudAccountDisconnectedTile({required final String workspaceId})
-    extends StatelessWidget {
+class const _CloudAccountDisconnectedTile({
+  required final String workspaceId,
+  required final String accountId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
       child: const _CloudAccountDisconnectedText(),
       variant: .ghost,
-      trailing: _CloudAccountSignInButton(workspaceId: workspaceId),
+      trailing: _CloudAccountSignInButton(
+        workspaceId: workspaceId,
+        accountId: accountId,
+      ),
     );
   }
 }
@@ -775,19 +787,26 @@ class const _CloudAccountDisconnectedText() extends StatelessWidget {
   }
 }
 
-class const _CloudAccountSignInButton({required final String workspaceId})
-    extends StatelessWidget {
+class const _CloudAccountSignInButton({
+  required final String workspaceId,
+  required final String accountId,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('workspace_cloud_account_sign_in'),
-    child: AuraButton(
-      onPressed: () =>
-          context.go(CloudAccountLoginRoute(workspaceId: workspaceId).location),
-      child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
-      variant: .outlined,
-    ),
-    identifier: 'workspace_cloud_account_sign_in',
-  );
+  Widget build(BuildContext context) {
+    final selectorId = 'workspace_cloud_account_sign_in_$accountId';
+
+    return Semantics(
+      key: ValueKey<String>(selectorId),
+      child: AuraButton(
+        onPressed: () => context.go(
+          CloudAccountLoginRoute(workspaceId: workspaceId).location,
+        ),
+        child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
+        variant: .outlined,
+      ),
+      identifier: selectorId,
+    );
+  }
 }
 
 class const _AvailableCloudWorkspaceList({

@@ -229,14 +229,15 @@ void main() {
                 ),
               );
             }
-            final account = accounts.firstOrNull;
-            if (cloudAuthenticationRequired && account != null) {
-              overrides.add(
-                cloudWorkspaceStateProvider(account.userId).overrideWith(
-                  (ref) async =>
-                      const CloudWorkspaceViewState.authenticationRequired(),
-                ),
-              );
+            if (cloudAuthenticationRequired) {
+              for (final account in accounts) {
+                overrides.add(
+                  cloudWorkspaceStateProvider(account.userId).overrideWith(
+                    (ref) async =>
+                        const CloudWorkspaceViewState.authenticationRequired(),
+                  ),
+                );
+              }
             }
 
             return ProviderScope(
@@ -341,7 +342,45 @@ void main() {
       expect(find.text('Session expired. Sign in again.'), findsOneWidget);
       expect(find.text('Sign in again'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey<String>('workspace_cloud_account_sign_in')),
+        find.byKey(
+          const ValueKey<String>('workspace_cloud_account_sign_in_account-1'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('keeps expired cloud account selectors unique', (tester) async {
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          accounts: const [
+            CloudAccountSession(
+              serverUrl: 'http://localhost:8080',
+              userId: 'account-1',
+              email: 'first@example.com',
+            ),
+            CloudAccountSession(
+              serverUrl: 'http://localhost:8080',
+              userId: 'account-2',
+              email: 'second@example.com',
+            ),
+          ],
+          cloudAuthenticationRequired: true,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('workspace_cloud_account_sign_in_account-1'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('workspace_cloud_account_sign_in_account-2'),
+        ),
         findsOneWidget,
       );
     });
