@@ -165,5 +165,18 @@ void main() {
       expect(find.text(customLeadingText), findsOneWidget);
       expect(find.byType(AuraAppBar), findsOneWidget);
     });
+
+    testWidgets('passes leading width to the Material app bar', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const Scaffold(
+            appBar: AuraAppBar(title: Text('Sized leading'), leadingWidth: 96),
+          ),
+          theme: .new(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(tester.widget<AppBar>(find.byType(AppBar)).leadingWidth, 96);
+    });
   });
 }
