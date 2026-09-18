@@ -59,7 +59,7 @@ void main() {
       SkillEntity skill,
     })
   >
-  createFixture() async {
+  createFixture({bool includeAppSkill = false}) async {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
@@ -108,6 +108,16 @@ void main() {
               kind: skill.kind,
               isEnabled: skill.isEnabled,
             ),
+            if (includeAppSkill)
+              const WorkspaceSkill(
+                source: SkillSource.app,
+                id: 'app-skill',
+                slug: 'native_helper',
+                title: 'Native Helper',
+                description: 'Built-in helper skill.',
+                kind: .native,
+                isEnabled: false,
+              ),
           ],
         ),
         deleteSkillProvider(workspace.id)
@@ -147,7 +157,7 @@ void main() {
   }
 
   testWidgets('renders and manages user skills from the list', (tester) async {
-    final fixture = await createFixture();
+    final fixture = await createFixture(includeAppSkill: true);
     final router = createRouter();
     addTearDown(router.dispose);
 
@@ -157,7 +167,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Workspace Skills'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
+    await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Write Summary'), findsOneWidget);
     expect(find.text('User'), findsOneWidget);
@@ -171,7 +181,7 @@ void main() {
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
+    await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
@@ -183,7 +193,7 @@ void main() {
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
+    await tester.ensureVisible(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
@@ -207,5 +217,60 @@ void main() {
       await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
       null,
     );
+
+    final search = find.byType(EditableText);
+    await tester.enterText(search, 'summary');
+    final _ = await tester.pump();
+    expect(find.text('Write Summary'), findsOneWidget);
+    expect(find.text('Native Helper'), findsNothing);
+
+    await tester.enterText(search, 'helper native');
+    final _ = await tester.pump();
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.enterText(search, 'summry');
+    final _ = await tester.pump();
+    expect(find.text('Write Summary'), findsOneWidget);
+    expect(find.text('Native Helper'), findsNothing);
+
+    await tester.enterText(search, 'native_helper');
+    final _ = await tester.pump();
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.enterText(search, 'app');
+    final _ = await tester.pump();
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.enterText(search, 'native');
+    final _ = await tester.pump();
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.enterText(search, '');
+    final _ = await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('skills-source-filter')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('App').first);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('skills-status-filter')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Disabled').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Native Helper'), findsOneWidget);
+    expect(find.text('Write Summary'), findsNothing);
+
+    await tester.enterText(search, 'missing');
+    final _ = await tester.pump();
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+    expect(find.text('No skills match these filters'), findsOneWidget);
+    expect(find.text('Native Helper'), findsNothing);
   });
 }

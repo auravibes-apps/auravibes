@@ -554,6 +554,30 @@ void main() {
       expect(state.firstOrNull?.server.id, 'server-2');
     });
 
+    test(
+      'reconnectMcpServer remains usable after listeners are removed',
+      () async {
+        mcpServersRepository.serverById = _server2;
+        final fakeService = _FailingMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+
+        final listener = testContainer.listen(mcpConnectionProvider, (_, _) {
+          final _ = Object();
+        });
+        final notifier = testContainer.read(mcpConnectionProvider.notifier);
+        listener.close();
+        await Future<void>.delayed(.zero);
+
+        await notifier.reconnectMcpServer('server-2');
+
+        expect(
+          testContainer.read(mcpConnectionProvider).single.status,
+          McpConnectionStatus.error,
+        );
+      },
+    );
+
     test('dispose cleans up connections', () {
       container.read(mcpConnectionProvider.notifier).state = [
         McpConnectionState(server: _server, status: .connected),

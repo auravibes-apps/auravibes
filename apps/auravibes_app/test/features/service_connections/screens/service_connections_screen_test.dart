@@ -88,6 +88,85 @@ void main() {
     );
   });
 
+  testWidgets('searches connection metadata and applies status filters', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Notion',
+          displayStatus: .needsReauth,
+          serviceName: 'notion.example.com',
+          metadataValues: const [
+            ServiceConnectionMetadataValue(
+              key: .issuer,
+              value: 'https://issuer.example.com',
+            ),
+            ServiceConnectionMetadataValue(
+              key: .scopes,
+              value: 'read:pages write:pages',
+            ),
+          ],
+        ),
+        _mcpConnection(
+          name: 'GitHub',
+          displayStatus: .connected,
+          serviceName: 'github.example.com',
+          authenticationType: 'bearerToken',
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+
+    final searchField = find.descendant(
+      of: find.byKey(const ValueKey<String>('service_connections_search')),
+      matching: find.byType(EditableText),
+    );
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.text('GitHub'), findsOneWidget);
+
+    final _ = await tester.enterText(searchField, 'notion');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.text('GitHub'), findsNothing);
+
+    final _ = await tester.enterText(searchField, 'notion.example.com');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.text('GitHub'), findsNothing);
+
+    final _ = await tester.enterText(searchField, 'issuer.example.com');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Notion'), findsOneWidget);
+
+    final _ = await tester.enterText(searchField, 'write:pages');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Notion'), findsOneWidget);
+
+    final _ = await tester.enterText(searchField, '');
+    final needsAuthFilter = find.text('Needs auth');
+    final _ = await tester.ensureVisible(needsAuthFilter);
+    final _ = await tester.tap(needsAuthFilter);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Notion'), findsOneWidget);
+    expect(find.text('GitHub'), findsNothing);
+
+    final allFilter = find.text('All');
+    final _ = await tester.ensureVisible(allFilter);
+    final _ = await tester.tap(allFilter);
+    final _ = await tester.enterText(searchField, 'missing-connection');
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('No connections match your search or filters.'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.search_off), findsOneWidget);
+  });
+
   testWidgets('syncs the local model catalog with visible progress', (
     tester,
   ) async {
@@ -430,23 +509,26 @@ ProviderContainer _syncTestContainer(
 ServiceConnectionListItem _mcpConnection({
   required String name,
   required ServiceConnectionDisplayStatus displayStatus,
+  String serviceName = 'mcp.example.com',
+  String authenticationType = 'oauth2',
+  List<ServiceConnectionMetadataValue> metadataValues = const [],
   bool canRefresh = false,
   bool canReconnect = false,
 }) => ServiceConnectionListItem(
   id: name,
   workspaceId: _syncWorkspaceId,
   name: name,
-  serviceName: 'mcp.example.com',
+  serviceName: serviceName,
   kind: .mcpServer,
   keySuffix: null,
   credentialDefinitionId: null,
   mcpServerId: '$name-server',
-  authenticationType: 'oauth2',
+  authenticationType: authenticationType,
   displayStatus: displayStatus,
   expiresAt: null,
   lastRefreshedAt: null,
   lastAuthError: null,
-  metadataValues: const [],
+  metadataValues: metadataValues,
   canRefresh: canRefresh,
   canReconnect: canReconnect,
 );

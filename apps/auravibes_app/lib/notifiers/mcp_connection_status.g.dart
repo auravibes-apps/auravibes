@@ -71,7 +71,7 @@ final class McpConnectionNotifierProvider
         argument: null,
         retry: null,
         name: r'mcpConnectionProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -93,7 +93,7 @@ final class McpConnectionNotifierProvider
 }
 
 String _$mcpConnectionNotifierHash() =>
-    r'dc9d6e77d4c03086418216e55a2a0825ed8d124a';
+    r'25f02b1a24b4e470e5c8da2b1974e5a16ee98f4b';
 
 /// Manages MCP server connections and their tools.
 ///

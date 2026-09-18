@@ -166,6 +166,10 @@ abstract class LocaleKeys {
       'service_connections.empty_subtitle';
   static const service_connections_empty_filter =
       'service_connections.empty_filter';
+  static const service_connections_empty_search =
+      'service_connections.empty_search';
+  static const service_connections_search_placeholder =
+      'service_connections.search_placeholder';
   static const service_connections_delete_credential_title =
       'service_connections.delete_credential_title';
   static const service_connections_delete_credential_confirm =
@@ -192,6 +196,14 @@ abstract class LocaleKeys {
       'service_connections.filter.skill_credentials';
   static const service_connections_filter_mcp_servers =
       'service_connections.filter.mcp_servers';
+  static const service_connections_filter_oauth =
+      'service_connections.filter.oauth';
+  static const service_connections_filter_failed =
+      'service_connections.filter.failed';
+  static const service_connections_filter_expiring =
+      'service_connections.filter.expiring';
+  static const service_connections_filter_needs_auth =
+      'service_connections.filter.needs_auth';
   static const service_connections_type_model_provider =
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
@@ -632,6 +644,13 @@ abstract class LocaleKeys {
       'skills_screen.error_app_skill_disabled';
   static const skills_screen_empty_title = 'skills_screen.empty_title';
   static const skills_screen_empty_subtitle = 'skills_screen.empty_subtitle';
+  static const skills_screen_search_placeholder =
+      'skills_screen.search_placeholder';
+  static const skills_screen_search_no_results =
+      'skills_screen.search_no_results';
+  static const skills_screen_filter_all = 'skills_screen.filter_all';
+  static const skills_screen_filter_source = 'skills_screen.filter_source';
+  static const skills_screen_filter_status = 'skills_screen.filter_status';
   static const skills_screen_app_read_only = 'skills_screen.app_read_only';
   static const skills_screen_slug_label = 'skills_screen.slug_label';
   static const skills_screen_title_label = 'skills_screen.title_label';
@@ -645,6 +664,7 @@ abstract class LocaleKeys {
   static const skills_screen_edit_content = 'skills_screen.edit_content';
   static const skills_screen_content_empty = 'skills_screen.content_empty';
   static const skills_screen_enabled_label = 'skills_screen.enabled_label';
+  static const skills_screen_disabled_label = 'skills_screen.disabled_label';
   static const skills_screen_credential_optional_label =
       'skills_screen.credential_optional_label';
   static const skills_screen_credential_optional_hint =
