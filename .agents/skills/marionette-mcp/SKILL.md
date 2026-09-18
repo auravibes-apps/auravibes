@@ -99,6 +99,117 @@ The safe smoke path is local-only: launch the dev macOS app, run inspection,
 screenshot, and logs, then stop the launcher. Do not add it to CI because it
 requires a GUI app and a live VM service.
 
+## Repeatable agent smoke runbook
+
+Use this flow for an isolated macOS dev-app smoke run. It uses no production
+server, credentials, or user data.
+
+1. Give the run a unique ID and keep the launcher terminal/session open:
+
+   ```sh
+   fvm dart run tool/marionette_run.dart --instance-id agent-a --device macos
+   ```
+
+   Read `.dart_tool/marionette/instances/agent-a.json` and use its exact
+   `vmServiceUri`. The URI is ephemeral and token-bearing: use it only for the
+   connection, never paste it into a report. Confirm `appFlavor` is `dev` and
+   `marionetteEnabled` is `true`.
+
+2. Start or select the agent's own Marionette bridge. Call `connect` with the
+   manifest URI, then immediately call `auravibes_instance_identity`. If the
+   promoted tool is unavailable, use `call_custom_extension` with
+   `extension: "auravibes.instanceIdentity"`. Continue only when the returned
+   `instanceId` exactly matches `agent-a`.
+
+3. Call `get_interactive_elements` before interacting. Use stable keys, never
+   coordinates. The new-chat smoke controls are:
+
+   - `workspace_selector`
+   - `chat_composer`
+   - `chat_agent_selector`
+   - `chat_model_selector`
+   - `chat_attachment_options_button`
+   - `chat_send_button`
+
+   If a required control has no stable key, stop and report the missing
+   selector. Visible text is a fallback, not a coordinate substitute.
+
+4. Seed deterministic local state through the app custom extensions. Use the
+   promoted MCP tools when present, or `call_custom_extension` with these
+   names and arguments:
+
+   ```text
+   auravibes.seedDemoData {}
+   auravibes.selectWorkspace {"workspaceId":"marionette-demo-workspace"}
+   auravibes.selectModel {
+     "workspaceId":"marionette-demo-workspace",
+     "modelSelectionId":"marionette-demo-model-selection"
+   }
+   ```
+
+   After each extension call, call `get_logs`. Then inspect until the UI shows
+   `Marionette Demo` and `marionette-demo-model`. These fixed IDs are local
+   development fixtures, not production records.
+
+5. Exercise the deterministic composer path with stable keys:
+
+   ```text
+   tap {"key":"chat_composer"}
+   enter_text {"key":"chat_composer","input":"Marionette smoke message"}
+   get_interactive_elements {}
+   ```
+
+   Call `get_logs` after every tap or text-entry action. Verify the entered
+   text from the inspected `EditableText`; do not send unless a controlled
+   local backend or fixture makes the send result deterministic.
+
+6. Exercise optional controls only when their state is present:
+
+   - Tap `chat_attachment_options_button`, inspect the surfaced menu keys, and
+     use only a checked-in fixture if a file picker is available. Never attach
+     a real user file or browse arbitrary paths.
+   - Tap `chat_model_selector` or `workspace_selector`, inspect the resulting
+     options, and select by surfaced key/text. The custom extensions above are
+     the deterministic selection path when the menu is not populated.
+   - If a pending tool-approval card appears, use only its stable keys:
+     `tool_approval_allow_once`, `tool_approval_allow_conversation`,
+     `tool_approval_skip`, and `tool_approval_stop_all`. If no request exists,
+     record approval as not applicable; do not manufacture a production tool
+     request.
+
+   Call `get_logs` after every optional action. Logs are already redacted by
+   `AppLogging`. A local `service:model_sync` failure is expected when the
+   configured `http://localhost:8080/` server is not running; report it as an
+   environment limitation, not as proof that chat sending passed.
+
+7. On any failed action, immediately call `get_logs` and
+   `take_screenshots`. With the CLI fallback, save the image under
+   `.dart_tool/marionette/` with the instance ID. Record the failed stable key,
+   current route/state, first relevant redacted log, and screenshot path.
+   Stop only the launcher session for the manifest's PID with Ctrl-C. Never use
+   `pkill`, a broad Flutter kill, or another agent's manifest. On clean exit,
+   disconnect the bridge and confirm the manifest was removed.
+
+8. If the process crashed and the manifest remains, verify that its exact PID
+   is no longer the matching runner before removing the stale manifest or
+   choosing another ID. A stale manifest is not permission to connect by
+   scanning for another VM service.
+
+The CLI fallback can run the keyed inspection, input, screenshot, and log
+steps shown above. It has no custom-extension command, so use MCP for the full
+seeded workspace/model flow or document that extension-only steps were skipped.
+
+### Marionette, Flutter Driver, and native keyboard boundaries
+
+- Marionette uses `ENABLE_MARIONETTE=true`, stable-key interaction, VM-service
+  custom extensions, and redacted app logs.
+- Flutter Driver uses the `dev Driver` launch profile and
+  `ENABLE_FLUTTER_DRIVER=true`; its text entry is test-input emulation, not a
+  native keyboard.
+- Native keyboard behavior uses `dev Debug` with neither automation define.
+  Do not combine Marionette and Flutter Driver flags. Relaunch after changing
+  any `--dart-define`.
+
 ## App interaction
 
 Use `get_interactive_elements` first. Prefer stable `ValueKey<String>` keys;
