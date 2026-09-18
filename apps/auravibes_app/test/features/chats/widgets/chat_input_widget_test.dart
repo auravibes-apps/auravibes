@@ -310,6 +310,50 @@ void main() {
     expect(find.text('Attachment must be 25 MB or smaller.'), findsOneWidget);
   });
 
+  testWidgets('warns and cleans up unsupported selected attachments', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/image.png',
+      fileName: 'image.png',
+      displayName: 'image.png',
+      mimeType: 'image/png',
+      modality: .image,
+      sizeBytes: 2048,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final previousPicker = fp.FilePickerPlatform.instance;
+    addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'file'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.attach_file));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      find.text('Current model does not support this input.'),
+      findsOneWidget,
+    );
+    expect(find.text(attachment.fileName), findsNothing);
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+  });
+
   testWidgets('does not update sending state after unmount', (tester) async {
     final sendCompleter = Completer<void>();
 
@@ -819,6 +863,7 @@ class _FakeLocalChatAttachmentService(
   final Exception? copyError,
 }) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
+  final deletedPaths = <String>[];
 
   @override
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
@@ -833,7 +878,11 @@ class _FakeLocalChatAttachmentService(
   }
 
   @override
-  Future<void> deleteAttachment(String _) => Future.value();
+  Future<void> deleteAttachment(String localPath) {
+    deletedPaths.add(localPath);
+
+    return Future.value();
+  }
 
   @override
   Future<void> startVoiceRecording() => Future.value();
