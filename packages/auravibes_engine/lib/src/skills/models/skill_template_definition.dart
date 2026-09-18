@@ -301,7 +301,7 @@ void _validateManifestSchemaAlternatives(Map<Object?, Object?> schema) {
   }
 }
 
-void _validateManifestSchemaAlternativeList(String key, Object? alternatives) {
+void _validateManifestSchemaAlternativeList(String key, Object alternatives) {
   if (alternatives is! List ||
       alternatives.isEmpty ||
       alternatives.any((value) => value is! Map)) {
