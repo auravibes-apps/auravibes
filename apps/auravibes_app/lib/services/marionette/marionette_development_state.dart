@@ -46,7 +46,6 @@ class MarionetteDevelopmentState({
   static const demoModelSelectionId = 'marionette-demo-model-selection';
   static const demoConversationId = 'marionette-demo-conversation';
   static const demoMessageId = 'marionette-demo-message';
-  static const _notAllowlistedMessage = 'is not allowlisted';
   static const _featureFlagPrefix = 'auravibes.marionette.feature.';
   static final _demoTimestamp = DateTime.utc(2026);
 
@@ -56,7 +55,7 @@ class MarionetteDevelopmentState({
     required String workspaceId,
   }) async {
     if (!allowedRoutes.contains(route)) {
-      throw ArgumentError.value(route, 'route', _notAllowlistedMessage);
+      _throwMarionetteNotAllowlisted(route, 'route');
     }
 
     await _requireLocalWorkspace(workspaceId);
@@ -145,7 +144,7 @@ class MarionetteDevelopmentState({
     required bool enabled,
   }) async {
     if (!allowedFeatureFlags.contains(flag)) {
-      throw ArgumentError.value(flag, 'flag', _notAllowlistedMessage);
+      _throwMarionetteNotAllowlisted(flag, 'flag');
     }
 
     final preferences = await this.preferences;
@@ -208,9 +207,12 @@ class MarionetteDevelopmentState({
     'skills' => SkillsRoute(workspaceId: workspaceId).location,
     'agents' => AgentsRoute(workspaceId: workspaceId).location,
     'settings' => SettingsRoute(workspaceId: workspaceId).location,
-    _ => throw ArgumentError.value(route, 'route', _notAllowlistedMessage),
+    _ => _throwMarionetteNotAllowlisted(route, 'route'),
   };
 }
+
+Never _throwMarionetteNotAllowlisted(Object? value, String parameter) =>
+    throw ArgumentError.value(value, parameter, 'is not allowlisted');
 
 Future<void> _seedMarionetteDemoData(AppDatabase database) async {
   await _seedMarionetteWorkspace(database);
