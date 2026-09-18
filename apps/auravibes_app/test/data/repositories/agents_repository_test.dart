@@ -565,6 +565,35 @@ void main() {
         );
     expect(noAgentSkills, isEmpty);
 
+    final disabledAgent = await fixture.agentsRepository.createAgent(
+      fixture.workspaceId,
+      const AgentToCreate(
+        name: 'Disabled Agent',
+        description: 'Unavailable chat default',
+        content: 'Prompt',
+        isEnabled: false,
+      ),
+    );
+    final disabledConversation = await fixture.conversationRepository
+        .createConversation(
+          .new(
+            title: 'Disabled agent',
+            workspaceId: fixture.workspaceId,
+            agentId: disabledAgent.id,
+          ),
+        );
+    final disabledAgentSkills =
+        await ListConversationAgentSkillsUsecase(
+          (conversationId, _) => fixture.conversationRepository
+              .getConversationById(conversationId),
+          (_) => fixture.agentsRepository,
+          fixture.resolveAgentSkillsUsecase.call,
+        ).call(
+          conversationId: disabledConversation.id,
+          workspaceId: fixture.workspaceId,
+        );
+    expect(disabledAgentSkills, isEmpty);
+
     final otherWorkspace = await fixture.database.workspaceDao.insertWorkspace(
       .insert(name: 'Other', type: WorkspaceType.local),
     );
@@ -609,6 +638,13 @@ void main() {
       await DeleteAgentUsecase(fixture.agentsRepository)(agent.id),
       isTrue,
     );
+    final deletedAgentSkills = await ListConversationAgentSkillsUsecase(
+      (conversationId, _) =>
+          fixture.conversationRepository.getConversationById(conversationId),
+      (_) => fixture.agentsRepository,
+      fixture.resolveAgentSkillsUsecase.call,
+    ).call(conversationId: conversation.id, workspaceId: fixture.workspaceId);
+    expect(deletedAgentSkills, isEmpty);
   });
 
   test('resolves agent skill availability branches', () async {

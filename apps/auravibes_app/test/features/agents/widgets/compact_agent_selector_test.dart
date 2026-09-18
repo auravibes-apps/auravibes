@@ -119,6 +119,36 @@ void main() {
     expect(find.byIcon(Icons.smart_toy_outlined), findsOneWidget);
     expect(find.text('Research Agent'), findsOneWidget);
   });
+
+  testWidgets('dropdown ignores unavailable selected agent', (tester) async {
+    await _pumpSubject(
+      tester,
+      agents: [_makeAgent('agent-1', 'Disabled Agent', isEnabled: false)],
+      onChanged: (_) {
+        final _ = Object();
+      },
+      agentId: 'agent-1',
+    );
+
+    expect(find.byType(AuraDropdownSelector<String>), findsOneWidget);
+    expect(find.text('Disabled Agent'), findsNothing);
+  });
+
+  testWidgets('compact mode falls back for unavailable selected agent', (
+    tester,
+  ) async {
+    await _pumpSubject(
+      tester,
+      agents: [_makeAgent('agent-1', 'Disabled Agent', isEnabled: false)],
+      onChanged: (_) {
+        final _ = Object();
+      },
+      agentId: 'agent-1',
+      compactMode: true,
+    );
+
+    expect(find.text('Disabled Agent'), findsNothing);
+  });
 }
 
 Future<void> _pumpSubject(
@@ -136,12 +166,14 @@ Future<void> _pumpSubject(
         child: Theme(
           data: .new(extensions: [AuraTheme.light]),
           child: Scaffold(
-            body: CompactAgentSelector(
-              workspaceId: 'ws-1',
-              agentId: agentId,
-              onChanged: onChanged,
-              compactMode: compactMode,
-              sheetMode: sheetMode,
+            body: Portal(
+              child: CompactAgentSelector(
+                workspaceId: 'ws-1',
+                agentId: agentId,
+                onChanged: onChanged,
+                compactMode: compactMode,
+                sheetMode: sheetMode,
+              ),
             ),
           ),
         ),

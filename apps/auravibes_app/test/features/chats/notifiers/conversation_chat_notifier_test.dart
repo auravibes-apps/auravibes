@@ -304,6 +304,70 @@ void main() {
       sub.close();
     });
 
+    test(
+      'setAgent explicitly overrides and persists the chat default',
+      () async {
+        final defaultConversation = conversation.copyWith(
+          agentId: 'agent-default',
+        );
+        final updatedConversation = defaultConversation.copyWith(
+          agentId: 'agent-override',
+        );
+        final patched = <ConversationPatch>[];
+        final container = ProviderContainer(
+          overrides: [
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => Stream.value(defaultConversation),
+            ),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(
+                onPatch: (id, patch) {
+                  patched.add(patch);
+
+                  return updatedConversation;
+                },
+              ),
+            ),
+            cloudConversationUsecaseProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final completer = Completer<AsyncValue<ConversationResult>>();
+        final sub = container.listen<AsyncValue<ConversationResult>>(
+          conversationChatProvider('ws-1', 'conv-1'),
+          (_, next) {
+            if (next is AsyncData<ConversationResult> &&
+                !completer.isCompleted) {
+              completer.complete(next);
+            }
+          },
+          fireImmediately: true,
+        );
+
+        final _ = await completer.future;
+        await container
+            .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+            .setAgent('agent-override');
+
+        expect(patched, hasLength(1));
+        expect(patched.single.agentId, 'agent-override');
+        final state = container
+            .read(conversationChatProvider('ws-1', 'conv-1'))
+            .value;
+        expect(
+          ((state ?? fail('Expected state to be non-null'))
+                  as ConversationFound)
+              .conversation
+              .agentId,
+          'agent-override',
+        );
+
+        sub.close();
+      },
+    );
+
     test('setModel does nothing when ConversationNotFound', () async {
       final container = ProviderContainer(
         overrides: [
