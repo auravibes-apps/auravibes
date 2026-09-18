@@ -287,7 +287,10 @@ void _validateMarionetteParameterNames(
   Set<String> allowedParameters,
 ) {
   final unknown = params.keys
-      .where((parameter) => !allowedParameters.contains(parameter))
+      .where(
+        (parameter) =>
+            parameter != 'isolateId' && !allowedParameters.contains(parameter),
+      )
       .toList();
   if (unknown.isNotEmpty) {
     throw ArgumentError.value(
