@@ -15,7 +15,7 @@ void main() {
   const workspaceId = 'workspace-1';
 
   test(
-    'uses registry metadata for a cloud-native skill without a resource',
+    'uses registry metadata for a cloud template skill without a resource',
     () async {
       final container = ProviderContainer(
         overrides: [
@@ -30,9 +30,9 @@ void main() {
       );
 
       expect(detail, isNotNull);
-      if (detail == null) fail('Expected a native skill detail.');
+      if (detail == null) fail('Expected an app skill detail.');
       expect(detail.source, SkillSource.app);
-      expect(detail.kind, SkillKind.native);
+      expect(detail.kind, SkillKind.template);
       expect(detail.title, 'DuckDuckGo Search');
       expect(detail.description, isNotEmpty);
       expect(detail.appTools, isNotEmpty);

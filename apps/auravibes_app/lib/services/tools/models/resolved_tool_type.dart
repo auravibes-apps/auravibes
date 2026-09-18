@@ -10,6 +10,7 @@ enum ResolvedToolType {
   skillCommand,
   skillNative,
   skillTemplate,
+  skillAppTemplate,
 }
 
 /// Represents a resolved tool that can be built-in, native, or MCP.
@@ -75,6 +76,13 @@ class ResolvedTool._({
   })
   skillNative = _skillNative;
 
+  static const ResolvedTool Function({
+    required String tableId,
+    required String skillSlug,
+    required String toolIdentifier,
+  })
+  skillAppTemplate = _skillAppTemplate;
+
   final bool isBuiltIn = type == .builtIn;
   final bool isMcp = type == .mcp;
   final bool isNative = type == .native;
@@ -82,6 +90,7 @@ class ResolvedTool._({
   final bool isSkillCommand = type == .skillCommand;
   final bool isSkillNative = type == .skillNative;
   final bool isSkillTemplate = type == .skillTemplate;
+  final bool isSkillAppTemplate = type == .skillAppTemplate;
 }
 
 ResolvedTool _mcp({
@@ -164,6 +173,19 @@ ResolvedTool _skillNative({
   skillToolSlug: toolIdentifier,
 );
 
+ResolvedTool _skillAppTemplate({
+  required String tableId,
+  required String skillSlug,
+  required String toolIdentifier,
+}) => ResolvedTool._(
+  type: .skillAppTemplate,
+  tableId: tableId,
+  toolIdentifier: toolIdentifier,
+  fullName: _skillAppTemplateName(tableId, skillSlug, toolIdentifier),
+  skillSlug: skillSlug,
+  skillToolSlug: toolIdentifier,
+);
+
 String _skillTemplateName(String tableId, String skillSlug, String tool) =>
     AgentResolvedToolName.skillTemplate(
       tableId: tableId,
@@ -173,6 +195,13 @@ String _skillTemplateName(String tableId, String skillSlug, String tool) =>
 
 String _skillNativeName(String tableId, String skillSlug, String tool) =>
     AgentResolvedToolName.skillNative(
+      tableId: tableId,
+      skillSlug: skillSlug,
+      toolIdentifier: tool,
+    ).fullName;
+
+String _skillAppTemplateName(String tableId, String skillSlug, String tool) =>
+    AgentResolvedToolName.skillAppTemplate(
       tableId: tableId,
       skillSlug: skillSlug,
       toolIdentifier: tool,

@@ -15,15 +15,34 @@ void main() {
       expect(slugs.where((slug) => slug.startsWith('search_')), isEmpty);
     });
 
-    test('all native tools have an executor', () {
-      final missingExecutors = [
-        for (final skill in serviceSkillDefinitions)
-          for (final tool in skill.nativeTools)
-            if (tool.urlTemplate == null && tool.callback == null)
-              '${skill.slug}.${tool.slug}',
-      ];
+    test('all service skills are declarative templates', () {
+      final missingExecutors = <String>[];
+      for (final skill in serviceSkillDefinitions) {
+        if (skill.kind != AppSkillDefinitionKind.template) {
+          missingExecutors.add('${skill.slug} is ${skill.kind}');
+        }
+        for (final tool in skill.tools) {
+          if (tool.urlTemplate == null) {
+            missingExecutors.add('${skill.slug}.${tool.slug}');
+          }
+        }
+      }
 
       expect(missingExecutors, isEmpty);
+    });
+
+    test('all service tools have valid versioned manifests', () {
+      for (final skill in serviceSkillDefinitions) {
+        for (final tool in skill.tools) {
+          final definition = tool.definition;
+          expect(definition, isNotNull, reason: '${skill.slug}.${tool.slug}');
+          try {
+            validateSkillTemplateDefinition(definition!);
+          } on Object catch (error) {
+            fail('${skill.slug}.${tool.slug}: $error');
+          }
+        }
+      }
     });
 
     test('agent-facing text hides API internals', () {
@@ -36,7 +55,7 @@ void main() {
           skill.description,
         );
         _collectInternalLeaks(leaks, '${skill.slug}.content', skill.content);
-        for (final tool in skill.nativeTools) {
+        for (final tool in skill.tools) {
           _collectInternalLeaks(
             leaks,
             '${skill.slug}.${tool.slug}.title',
@@ -75,8 +94,8 @@ void main() {
       expect(codex.title, 'OpenAI Codex');
       expect(codex.requiresCredential, isTrue);
       expect(codex.compatibleModelProviderIds, ['openai-codex']);
-      expect(codex.nativeTools.single.slug, 'web_search');
-      expect(codex.nativeTools.single.callback, isNotNull);
+      expect(codex.tools.single.slug, 'web_search');
+      expect(codex.tools.single.urlTemplate, isNotNull);
     });
 
     test('Gemini only reuses Google API-key credentials', () {
@@ -91,24 +110,23 @@ void main() {
       );
     });
 
-    test('DuckDuckGo uses callback scraper instead of Instant Answer API', () {
+    test('DuckDuckGo uses raw HTML template instead of Instant Answer API', () {
       final duckDuckGo = serviceSkillDefinitions.singleWhere(
         (skill) => skill.slug == 'duckduckgo',
       );
-      final tool = duckDuckGo.nativeTools.single;
+      final tool = duckDuckGo.tools.single;
 
       expect(duckDuckGo.title, 'DuckDuckGo Search');
       expect(duckDuckGo.requiresCredential, isFalse);
       expect(tool.slug, 'search');
-      expect(tool.callback, isNotNull);
-      expect(tool.urlTemplate, isNull);
+      expect(tool.urlTemplate, isNotNull);
     });
 
     test('SearXNG uses credential base URL instead of agent input', () {
       final searXng = serviceSkillDefinitions.singleWhere(
         (skill) => skill.slug == 'searxng',
       );
-      final tool = searXng.nativeTools.single;
+      final tool = searXng.tools.single;
       final properties = tool.inputJsonSchema['properties'] as Map;
 
       expect(searXng.requiresCredential, isTrue);
@@ -151,7 +169,7 @@ Map<String, Object?> _properties(String skillSlug, String toolSlug) {
   final skill = serviceSkillDefinitions.singleWhere(
     (skill) => skill.slug == skillSlug,
   );
-  final tool = skill.nativeTools.singleWhere((tool) => tool.slug == toolSlug);
+  final tool = skill.tools.singleWhere((tool) => tool.slug == toolSlug);
 
   return Map<String, Object?>.from(tool.inputJsonSchema['properties']! as Map);
 }

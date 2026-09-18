@@ -133,7 +133,7 @@ void main() {
     final nativeTarget = <AgentResolvedToolName>[];
     final nativeSpecs = _SkillSpecs([
       ToolSpec(
-        name: 'skill__app__agents__list_agents',
+        name: 'skill__app_native__agents__list_agents',
         description: 'List agents.',
         inputJsonSchema: const {
           'type': 'object',
@@ -178,7 +178,10 @@ void main() {
     expect(result, {
       'result': {'count': 1},
     });
-    expect(nativeTarget.single.fullName, 'skill__app__agents__list_agents');
+    expect(
+      nativeTarget.single.fullName,
+      'skill__app_native__agents__list_agents',
+    );
     expect(nativeRunner.calls, 0);
     expect(manifests.calls, 1);
   });

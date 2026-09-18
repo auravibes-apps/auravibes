@@ -23,13 +23,13 @@ void main() {
       expect(tool?.fullName, 'skill__user__writer__draft');
     });
 
-    test('resolves app skill tool names', () {
-      final tool = resolver.resolve('skill__app__writer__open_url');
+    test('resolves app template skill tool names', () {
+      final tool = resolver.resolve('skill__app_template__writer__open_url');
 
-      expect(tool?.kind, AgentResolvedToolKind.skillNative);
+      expect(tool?.kind, AgentResolvedToolKind.skillAppTemplate);
       expect(tool?.skillSlug, 'writer');
       expect(tool?.toolIdentifier, 'open_url');
-      expect(tool?.fullName, 'skill__app__writer__open_url');
+      expect(tool?.fullName, 'skill__app_template__writer__open_url');
     });
 
     test('resolves MCP tool names', () {

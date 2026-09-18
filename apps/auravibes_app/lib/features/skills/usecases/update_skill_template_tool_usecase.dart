@@ -9,12 +9,6 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
-typedef _ToolValidationRequest = ({
-  SkillTemplateToolToUpdate tool,
-  SkillTemplateToolEntity existing,
-  Map<String, SkillCredentialAttributeDefinition> credentialDefinitions,
-});
-
 class const UpdateSkillTemplateToolUsecase(
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
   final CloudSkillStore? cloudStore,
@@ -31,53 +25,71 @@ class const UpdateSkillTemplateToolUsecase(
     String toolId,
     SkillTemplateToolToUpdate tool,
   ) async {
-    final templateJson = tool.templateJson;
-    final inputsJson = tool.inputsJson;
-    if (!_requiresValidation(templateJson, inputsJson)) return tool;
+    if (!_requiresValidation(tool)) return tool;
 
-    await _validateExistingTool(toolId, tool);
+    final existing = await _requiredExistingTool(toolId);
+    final validated = await _validatedDefinition(existing, tool);
+    validateSkillTemplateDefinition(validated);
 
-    return _canonicalToolUpdate(tool, templateJson);
+    return tool.copyWith(
+      definitionJson: validated.toJsonString(),
+      templateJson: validated.legacyTemplateJson,
+      inputsJson: validated.legacyInputsJson,
+    );
   }
 
-  Future<void> _validateExistingTool(
-    String toolId,
-    SkillTemplateToolToUpdate tool,
-  ) async {
+  Future<SkillTemplateToolEntity> _requiredExistingTool(String toolId) async {
     final existing = await _existingTool(toolId);
     if (existing == null) {
       throw StateError('Skill template tool not found: $toolId');
     }
+
+    return existing;
+  }
+
+  Future<SkillTemplateDefinition> _validatedDefinition(
+    SkillTemplateToolEntity existing,
+    SkillTemplateToolToUpdate tool,
+  ) async {
+    final definition = _definition(tool, existing);
+    final credentialDefinitionId = tool.clearCredentialDefinition
+        ? null
+        : tool.credentialDefinitionId ?? existing.credentialDefinitionId;
     final credentialDefinitions = await _credentialDefinitions(
       existing.skillId,
+      credentialDefinitionId,
     );
-    _validateToolFields((
-      tool: tool,
-      existing: existing,
-      credentialDefinitions: credentialDefinitions,
-    ));
+
+    return definition.copyWith(
+      credentialDefinitions: {
+        ...definition.credentialDefinitions,
+        ...credentialDefinitions,
+      },
+    );
   }
 }
 
 extension _UpdateSkillTemplateValidationOperations
     on UpdateSkillTemplateToolUsecase {
-  bool _requiresValidation(String? templateJson, String? inputsJson) =>
-      templateJson != null || inputsJson != null;
+  bool _requiresValidation(SkillTemplateToolToUpdate tool) =>
+      tool.definitionJson != null ||
+      tool.templateJson != null ||
+      tool.inputsJson != null;
 
-  SkillTemplateToolToUpdate _canonicalToolUpdate(
-    SkillTemplateToolToUpdate tool,
-    String? templateJson,
-  ) => templateJson == null
-      ? tool
-      : tool.copyWith(
-          templateJson: canonicalSkillUrlTemplateJson(templateJson),
-        );
+  SkillTemplateDefinition _definition(
+    SkillTemplateToolToUpdate value,
+    SkillTemplateToolEntity existing,
+  ) {
+    final source = value.definitionJson;
+    if (source != null && source.trim().isNotEmpty && source != '{}') {
+      return SkillTemplateDefinition.fromJsonString(source);
+    }
+    final template = value.templateJson ?? existing.templateJson;
+    final inputs = value.inputsJson ?? existing.inputsJson;
 
-  void _validateToolFields(_ToolValidationRequest request) {
-    validateSkillTemplateTool(
-      templateJson: request.tool.templateJson ?? request.existing.templateJson,
-      inputsJson: request.tool.inputsJson ?? request.existing.inputsJson,
-      credentialDefinitions: request.credentialDefinitions,
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: template,
+      inputsJson: inputs,
     );
   }
 
@@ -111,19 +123,28 @@ extension _UpdateSkillTemplateValidationOperations
 extension _UpdateSkillTemplateCredentialOperations
     on UpdateSkillTemplateToolUsecase {
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _credentialDefinitions(String skillId) async {
+  _credentialDefinitions(String skillId, String? toolDefinitionId) async {
     final cloud = cloudStore;
     if (cloud != null) {
-      return await _cloudCredentialDefinitions(cloud, skillId);
+      return await _cloudCredentialDefinitions(
+        cloud,
+        skillId,
+        toolDefinitionId,
+      );
     }
 
-    return await _localCredentialDefinitions(skillId);
+    return await _localCredentialDefinitions(skillId, toolDefinitionId);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _cloudCredentialDefinitions(CloudSkillStore cloud, String skillId) async {
-    final skill = await cloud.skill(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
+  _cloudCredentialDefinitions(
+    CloudSkillStore cloud,
+    String skillId,
+    String? toolDefinitionId,
+  ) async {
+    final credentialDefinitionId =
+        toolDefinitionId ??
+        (await cloud.skill(skillId))?.credentialDefinitionId;
     if (credentialDefinitionId == null) return const {};
     final definition = await cloud.definition(credentialDefinitionId);
     if (definition == null) return const {};
@@ -134,7 +155,7 @@ extension _UpdateSkillTemplateCredentialOperations
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _localCredentialDefinitions(String skillId) async {
+  _localCredentialDefinitions(String skillId, String? toolDefinitionId) async {
     final skillsRepository = this.skillsRepository;
     final definitionsRepository = this.skillCredentialDefinitionsRepository;
     if (skillsRepository == null || definitionsRepository == null) {
@@ -144,7 +165,7 @@ extension _UpdateSkillTemplateCredentialOperations
 
     return await _credentialDefinitionValues(
       definitionsRepository,
-      skill?.credentialDefinitionId,
+      toolDefinitionId ?? skill?.credentialDefinitionId,
     );
   }
 

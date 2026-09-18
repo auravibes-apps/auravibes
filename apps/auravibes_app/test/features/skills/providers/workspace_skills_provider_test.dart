@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -57,6 +58,14 @@ void main() {
       expect(
         skills.singleWhere((skill) => skill.slug == agentsSkillSlug).isEnabled,
         isTrue,
+      );
+      expect(
+        skills.singleWhere((skill) => skill.slug == 'duckduckgo').kind,
+        SkillKind.template,
+      );
+      expect(
+        skills.singleWhere((skill) => skill.slug == 'skills_manager').kind,
+        SkillKind.native,
       );
       expect(
         skills

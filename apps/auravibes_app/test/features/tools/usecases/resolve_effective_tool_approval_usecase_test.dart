@@ -22,8 +22,8 @@ void main() {
       argumentsRaw: _arguments(revision: 'rev-1'),
     );
 
-    expect(result?.fullName, 'skill__app__agents__list_agents');
-    expect(result?.target?.fullName, 'skill__app__agents__list_agents');
+    expect(result?.fullName, 'skill__app_native__agents__list_agents');
+    expect(result?.target?.fullName, 'skill__app_native__agents__list_agents');
   });
 
   test('rejects malformed, stale, and unloaded commands', () async {
@@ -120,7 +120,7 @@ SkillManifest _manifest({required String revision}) => SkillManifest(
 );
 
 ToolSpec _nativeSpec() => ToolSpec(
-  name: 'skill__app__agents__list_agents',
+  name: 'skill__app_native__agents__list_agents',
   description: 'List agents.',
   inputJsonSchema: const {'type': 'object', 'additionalProperties': false},
 );

@@ -72,6 +72,9 @@ extension on DuplicateSkillUsecase {
       description: tool.description,
       templateJson: tool.templateJson,
       inputsJson: tool.inputsJson,
+      definitionJson: tool.definitionJson,
+      credentialDefinitionId: tool.credentialDefinitionId,
+      requiresCredential: tool.requiresCredential,
       isEnabled: tool.isEnabled,
     );
 

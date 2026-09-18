@@ -248,10 +248,10 @@ void main() {
       tools.map((tool) => tool.spec.name),
       containsAll([
         'skill__user__research__search',
-        'skill__app__agents__list_agents',
-        'skill__app__agents__run_sub_agent',
-        for (final tool in service.nativeTools)
-          'skill__app__${service.slug}__${tool.slug}',
+        'skill__app_native__agents__list_agents',
+        'skill__app_native__agents__run_sub_agent',
+        for (final tool in service.tools)
+          'skill__app_template__${service.slug}__${tool.slug}',
       ]),
     );
     final template = tools.firstWhere(
@@ -287,7 +287,7 @@ void main() {
 
     expect(
       rootTools.map((tool) => tool.spec.name),
-      ['skill__app__agents__run_sub_agent'],
+      ['skill__app_native__agents__run_sub_agent'],
     );
 
     final disabledTools = materializeCloudSkillTools(
@@ -375,7 +375,7 @@ void main() {
     );
     expect(
       tools.map((tool) => tool.spec.name),
-      ['skill__app__agents__run_sub_agent'],
+      ['skill__app_native__agents__run_sub_agent'],
     );
   });
 
@@ -479,7 +479,7 @@ void main() {
 
     expect(
       tools.map((tool) => tool.spec.name),
-      ['skill__app__agents__run_sub_agent'],
+      ['skill__app_native__agents__run_sub_agent'],
     );
   });
 
@@ -502,12 +502,12 @@ void main() {
       expect(
         tools.map((tool) => tool.spec.name),
         [
-          'skill__app__agents__run_sub_agent',
-          'skill__app__jina__reader_fetch',
+          'skill__app_native__agents__run_sub_agent',
+          'skill__app_template__jina__reader_fetch',
         ],
       );
       final jinaTool = tools.singleWhere(
-        (tool) => tool.spec.name == 'skill__app__jina__reader_fetch',
+        (tool) => tool.spec.name == 'skill__app_template__jina__reader_fetch',
       );
       expect(
         jinaTool.spec.inputJsonSchema['properties'],
@@ -536,7 +536,7 @@ void main() {
     expect(
       defaultCloudToolPermission(
         AgentResolvedToolName.skillNative(
-          tableId: 'skill__app__agents__run_sub_agent',
+          tableId: 'skill__app_native__agents__run_sub_agent',
           skillSlug: agentsSkillSlug,
           toolIdentifier: runSubAgentToolName,
         ),
@@ -557,23 +557,23 @@ void main() {
       isTrue,
     );
   });
-  test('server executes declarative service native tools', () {
+  test('server executes declarative service template tools', () {
     final skill = serviceSkillDefinitions.first;
-    final nativeTool = skill.nativeTools.first;
+    final templateTool = skill.tools.first;
 
     expect(
       serverToolIsExecutable(
-        AgentResolvedToolName.skillNative(
-          tableId: nativeTool.slug,
+        AgentResolvedToolName.skillAppTemplate(
+          tableId: templateTool.slug,
           skillSlug: skill.slug,
-          toolIdentifier: nativeTool.slug,
+          toolIdentifier: templateTool.slug,
         ),
       ),
       isTrue,
     );
   });
 
-  test('advertises compiled callback-backed service tools to cloud', () {
+  test('advertises compiled declarative service tools to cloud', () {
     final skill = serviceSkillDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'anthropic',
     );
@@ -596,18 +596,18 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(tools, hasLength(skill.nativeTools.length + 1));
+    expect(tools, hasLength(skill.tools.length + 1));
     expect(
       tools.map((tool) => tool.spec.name),
-      contains('skill__app__agents__run_sub_agent'),
+      contains('skill__app_native__agents__run_sub_agent'),
     );
-    for (final nativeTool in skill.nativeTools) {
+    for (final templateTool in skill.tools) {
       expect(
         serverToolIsExecutable(
-          AgentResolvedToolName.skillNative(
-            tableId: nativeTool.slug,
+          AgentResolvedToolName.skillAppTemplate(
+            tableId: templateTool.slug,
             skillSlug: skill.slug,
-            toolIdentifier: nativeTool.slug,
+            toolIdentifier: templateTool.slug,
           ),
         ),
         isTrue,

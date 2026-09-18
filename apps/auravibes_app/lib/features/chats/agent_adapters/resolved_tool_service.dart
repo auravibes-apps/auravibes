@@ -40,6 +40,8 @@ import 'package:riverpod/riverpod.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
+const _runAppSkillToolUsecaseNotConfigured =
+    'RunAppSkillToolUsecase is not configured.';
 const Set<String> _userSkillToolSlugs = {
   SkillToolSlugs.createUserSkill,
   SkillToolSlugs.updateUserSkill,
@@ -132,9 +134,21 @@ class ResolvedToolService {
     return delegate.call(
       conversationId: conversationId,
       tool: tool,
-      arguments: arguments,
+      arguments: _executionArguments(tool, arguments),
     );
   }
+}
+
+Map<String, dynamic> _executionArguments(
+  ResolvedTool tool,
+  Map<String, dynamic> arguments,
+) {
+  if (!tool.isSkillCommand || tool.target == null) return arguments;
+
+  final nestedArguments = arguments['args'];
+  if (nestedArguments is! Map) return arguments;
+
+  return Map<String, dynamic>.from(nestedArguments);
 }
 
 class const AppResolvedToolProvider({
@@ -256,6 +270,29 @@ class const AppResolvedToolProvider({
       ),
     );
   }
+
+  @override
+  Future<Object?> runSkillAppTemplateTool(
+    agent.SkillAppTemplateToolRequest input,
+  ) {
+    final usecase = runAppSkillToolUsecase;
+    if (usecase == null) {
+      throw StateError(_runAppSkillToolUsecaseNotConfigured);
+    }
+
+    final operation = usecase.callCancelable(
+      workspaceId: input.workspaceId,
+      skillSlug: input.skillSlug,
+      toolSlug: input.toolSlug,
+      arguments: input.arguments,
+    );
+    agentCancellationRuntime.registerCancelableOperation(
+      input.conversationId,
+      operation,
+    );
+
+    return operation.valueOrCancellation();
+  }
 }
 
 Future<Object?> _runSkillControlRequest(
@@ -288,6 +325,7 @@ agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
     .skillCommand => _skillCommandDescriptor(tool),
     .skillNative => _skillNativeDescriptor(tool),
     .skillTemplate => _skillTemplateDescriptor(tool),
+    .skillAppTemplate => _skillAppTemplateDescriptor(tool),
   };
 }
 
@@ -334,6 +372,14 @@ agent.AgentResolvedToolName _skillNativeDescriptor(ResolvedTool tool) {
 
 agent.AgentResolvedToolName _skillTemplateDescriptor(ResolvedTool tool) {
   return agent.AgentResolvedToolName.skillTemplate(
+    tableId: tool.tableId,
+    skillSlug: tool.skillSlug ?? '',
+    toolIdentifier: tool.toolIdentifier,
+  );
+}
+
+agent.AgentResolvedToolName _skillAppTemplateDescriptor(ResolvedTool tool) {
+  return agent.AgentResolvedToolName.skillAppTemplate(
     tableId: tool.tableId,
     skillSlug: tool.skillSlug ?? '',
     toolIdentifier: tool.toolIdentifier,
@@ -764,7 +810,7 @@ Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
 Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
   final usecase = request.provider.runAppSkillToolUsecase;
   if (usecase == null) {
-    throw StateError('RunAppSkillToolUsecase is not configured.');
+    throw StateError(_runAppSkillToolUsecaseNotConfigured);
   }
 
   final operation = usecase.callCancelable(
@@ -912,7 +958,7 @@ class _ConfiguredSkillCommandRunner {
     final target = request.target;
     final usecase = _provider.runAppSkillToolUsecase;
     if (usecase == null) {
-      throw StateError('RunAppSkillToolUsecase is not configured.');
+      throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
     return usecase.call(

@@ -10,6 +10,7 @@ import 'package:riverpod/src/providers/provider.dart';
 typedef DisableSkillRequest = ({
   String workspaceId,
   SkillSource source,
+  SkillKind kind,
   String skillId,
   bool isEnabled,
   String? slug,
@@ -20,6 +21,7 @@ typedef DisableSkillRequest = ({
 
 typedef _AppSkillDisableRequest = ({
   String workspaceId,
+  SkillKind kind,
   String skillId,
   bool isEnabled,
   String? slug,
@@ -47,6 +49,7 @@ class const DisableSkillUsecase(
 
   _AppSkillDisableRequest _appSkillRequest(DisableSkillRequest request) => (
     workspaceId: request.workspaceId,
+    kind: request.kind,
     skillId: request.skillId,
     isEnabled: request.isEnabled,
     slug: request.slug,
@@ -88,6 +91,7 @@ class const DisableSkillUsecase(
     _AppSkillDisableRequest request,
   ) => cloud.setAppSkillEnabled((
     id: request.skillId,
+    kind: request.kind,
     enabled: request.isEnabled,
     slug: request.slug,
     title: request.title,

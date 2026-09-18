@@ -295,6 +295,68 @@ void main() {
     );
   });
 
+  test('unwraps approved skill command arguments before dispatch', () async {
+    final appSkillTool = _MockRunAppSkillToolUsecase();
+    final conversationRepository = MockConversationRepository();
+    when(() => conversationRepository.getConversationById('conversation-1'))
+        .thenAnswer(
+          (_) async => ConversationEntity(
+            id: 'conversation-1',
+            title: 'Conversation',
+            workspaceId: 'workspace-1',
+            isPinned: false,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+        );
+    when(
+      () => appSkillTool.callCancelable(
+        workspaceId: 'workspace-1',
+        skillSlug: 'codex',
+        toolSlug: 'web_search',
+        arguments: {'question': 'What is TCGplayer?'},
+      ),
+    ).thenReturn(CancelableOperation.fromFuture(.value('codex result')));
+    final service = ResolvedToolService(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
+      conversationRepository: conversationRepository,
+      runAppSkillToolUsecase: appSkillTool,
+    );
+
+    final result = await service.call(
+      conversationId: 'conversation-1',
+      tool: ResolvedTool.skillCommand(
+        commandName: callSkillToolName,
+        target: AgentResolvedToolName.skillAppTemplate(
+          tableId: 'web_search',
+          skillSlug: 'codex',
+          toolIdentifier: 'web_search',
+        ),
+      ),
+      arguments: {
+        'skill': 'codex',
+        'tool': 'web_search',
+        'revision': 'rev-1',
+        'args': {'question': 'What is TCGplayer?'},
+      },
+    );
+
+    expect(result, 'codex result');
+    verify(
+      () => appSkillTool.callCancelable(
+        workspaceId: 'workspace-1',
+        skillSlug: 'codex',
+        toolSlug: 'web_search',
+        arguments: {'question': 'What is TCGplayer?'},
+      ),
+    ).called(1);
+  });
+
   test('maps resolved tools to agent descriptors', () {
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
@@ -733,7 +795,7 @@ void main() {
     ).thenAnswer(
       (_) async => [
         ToolSpec(
-          name: 'skill__app__openai__search',
+          name: 'skill__app_template__openai__search',
           description: 'Search.',
           inputJsonSchema: const {
             'type': 'object',

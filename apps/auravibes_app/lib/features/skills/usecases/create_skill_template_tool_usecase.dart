@@ -43,31 +43,57 @@ class const CreateSkillTemplateToolUsecase(
     String skillId,
     SkillTemplateToolToCreate tool,
   ) async {
-    validateSkillTemplateTool(
-      templateJson: tool.templateJson,
-      inputsJson: tool.inputsJson,
-      credentialDefinitions: await _credentialDefinitions(skillId),
+    final source = _definition(tool);
+    final definition = source.copyWith(
+      credentialDefinitions: {
+        ...source.credentialDefinitions,
+        ...await _credentialDefinitions(skillId, tool.credentialDefinitionId),
+      },
     );
+    validateSkillTemplateDefinition(definition);
 
     return tool.copyWith(
-      templateJson: canonicalSkillUrlTemplateJson(tool.templateJson),
+      definitionJson: definition.toJsonString(),
+      templateJson: definition.legacyTemplateJson,
+      inputsJson: definition.legacyInputsJson,
+    );
+  }
+
+  SkillTemplateDefinition _definition(SkillTemplateToolToCreate tool) {
+    final source = tool.definitionJson.trim();
+    if (source.isNotEmpty && source != '{}') {
+      return SkillTemplateDefinition.fromJsonString(source);
+    }
+
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: tool.templateJson,
+      inputsJson: tool.inputsJson,
     );
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _credentialDefinitions(String skillId) async {
+  _credentialDefinitions(String skillId, String? toolDefinitionId) async {
     final cloud = cloudStore;
     if (cloud != null) {
-      return await _cloudCredentialDefinitions(cloud, skillId);
+      return await _cloudCredentialDefinitions(
+        cloud,
+        skillId,
+        toolDefinitionId,
+      );
     }
 
-    return await _localCredentialDefinitions(skillId);
+    return await _localCredentialDefinitions(skillId, toolDefinitionId);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _cloudCredentialDefinitions(CloudSkillStore cloud, String skillId) async {
-    final skill = await cloud.skill(skillId);
-    final credentialDefinitionId = skill?.credentialDefinitionId;
+  _cloudCredentialDefinitions(
+    CloudSkillStore cloud,
+    String skillId,
+    String? toolDefinitionId,
+  ) async {
+    final credentialDefinitionId =
+        toolDefinitionId ??
+        (await cloud.skill(skillId))?.credentialDefinitionId;
     if (credentialDefinitionId == null) return const {};
     final definition = await cloud.definition(credentialDefinitionId);
     if (definition == null) return const {};
@@ -78,7 +104,7 @@ class const CreateSkillTemplateToolUsecase(
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
-  _localCredentialDefinitions(String skillId) async {
+  _localCredentialDefinitions(String skillId, String? toolDefinitionId) async {
     final skillsRepository = this.skillsRepository;
     final definitionsRepository = skillCredentialDefinitionsRepository;
     if (skillsRepository == null || definitionsRepository == null) {
@@ -88,7 +114,7 @@ class const CreateSkillTemplateToolUsecase(
 
     return await _credentialDefinitionValues(
       definitionsRepository,
-      skill?.credentialDefinitionId,
+      toolDefinitionId ?? skill?.credentialDefinitionId,
     );
   }
 

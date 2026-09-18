@@ -132,6 +132,7 @@ DisableSkillRequest _disableSkillRequest(
 ) => (
   workspaceId: workspaceId,
   source: skill.source,
+  kind: skill.kind,
   skillId: skill.id,
   isEnabled: change.isEnabled,
   slug: skill.slug,

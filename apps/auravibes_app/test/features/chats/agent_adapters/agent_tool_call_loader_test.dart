@@ -98,7 +98,7 @@ void main() {
 
       expect(tool?.type, ResolvedToolType.skillNative);
       expect(tool?.skillSlug, agent.agentsSkillSlug);
-      expect(tool?.fullName, 'skill__app__agents__list_agents');
+      expect(tool?.fullName, 'skill__app_native__agents__list_agents');
     });
 
     test('uses an empty catalog when conversation is missing', () async {

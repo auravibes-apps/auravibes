@@ -107,17 +107,16 @@ Future<Object?> runCompiledServiceSkillTool({
   final skill = serviceSkillDefinitions
       .where((candidate) => candidate.slug == skillSlug)
       .firstOrNull;
-  final nativeTool = skill?.nativeTools
+  final templateTool = skill?.tools
       .where((candidate) => candidate.slug == toolSlug)
       .firstOrNull;
   if (skill == null ||
-      nativeTool == null ||
-      (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
+      templateTool == null ||
+      templateTool.urlTemplate == null) {
     throw const ServerToolNotConfiguredException();
   }
   return AppSkillExecutor(
-        RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient),
-        httpClient,
+        SkillTemplateExecutor(const ResolveSkillUrlTemplate(), httpClient),
       )
       .run(
         skill: skill,
@@ -261,6 +260,12 @@ class const ServerToolExecutorService({
         request,
       ),
       AgentResolvedToolKind.skillTemplate => _runSkill(
+        session,
+        turn,
+        tool,
+        request.arguments,
+      ),
+      AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
         session,
         turn,
         tool,
@@ -482,6 +487,12 @@ class const ServerToolExecutorService({
     final normalized = Map<String, dynamic>.from(target.args);
     final result = await switch (resolved.descriptor.kind) {
       AgentResolvedToolKind.skillTemplate => _runSkill(
+        session,
+        turn,
+        resolved,
+        normalized,
+      ),
+      AgentResolvedToolKind.skillAppTemplate => _runNativeSkill(
         session,
         turn,
         resolved,
@@ -756,17 +767,18 @@ class const ServerToolExecutorService({
     final skill = serviceSkillDefinitions
         .where((candidate) => candidate.slug == tool.descriptor.skillSlug)
         .firstOrNull;
-    final nativeTool = skill?.nativeTools
+    final templateTool = skill?.tools
         .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
         .firstOrNull;
     final credentialId = arguments['credentialId'];
     if (skill == null ||
-        nativeTool == null ||
-        (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
+        skill.kind != AppSkillDefinitionKind.template ||
+        templateTool == null ||
+        templateTool.urlTemplate == null) {
       throw const ServerToolNotConfiguredException();
     }
     var credentials = const <String, String>{};
-    if (nativeTool.requiresCredential) {
+    if (templateTool.requiresCredential) {
       if (credentialId is! String ||
           credentialId.isEmpty ||
           !cloudToolAllowsCredential(tool, credentialId)) {
@@ -802,7 +814,7 @@ class const ServerToolExecutorService({
     );
     return runCompiledServiceSkillTool(
       skillSlug: skill.slug,
-      toolSlug: nativeTool.slug,
+      toolSlug: templateTool.slug,
       input: arguments,
       credentials: credentials,
       httpClient: httpClient,
@@ -1429,11 +1441,18 @@ class const ServerToolExecutorService({
     }).firstOrNull;
     if (resource == null) throw const ServerToolNotConfiguredException();
     final data = _jsonMap(resource.data);
-    final templateJson = data['templateJson'] ?? data['urlTemplateJson'];
-    final inputsJson = data['inputsJson'];
-    if (templateJson is! String || inputsJson is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
+    final credentialDefinitionId = await _skillCredentialDefinitionId(
+      session,
+      turn.workspaceId,
+      data,
+    );
+    final definition = await _skillTemplateDefinition(
+      session,
+      turn.workspaceId,
+      data,
+      credentialDefinitionId,
+    );
+    validateSkillTemplateDefinition(definition);
     final credentialId = arguments['credentialId'];
     final secret = credentialId is String && credentialId.isNotEmpty
         ? await _skillCredentialSecret(
@@ -1441,6 +1460,7 @@ class const ServerToolExecutorService({
             turn: turn,
             skillData: data,
             credentialId: credentialId,
+            credentialDefinitionId: credentialDefinitionId,
           )
         : null;
     if (data['requiresCredential'] == true && secret == null) {
@@ -1453,35 +1473,99 @@ class const ServerToolExecutorService({
               await const WorkspaceSecretCipher().decrypt(session, secret),
             ),
           );
-    final request = const ResolveSkillUrlTemplate()(
-      template: SkillUrlTemplate.fromJsonString(templateJson),
-      inputs: arguments,
-      credentials: credentials,
-      inputDefinitions: SkillTemplateInputDefinition.parseMap(inputsJson),
-    );
-    final uri = requirePublicUriSyntax(
-      request.url,
-      requireHttps: credentials.isNotEmpty,
-    );
-    final addresses = await InternetAddress.lookup(
-      uri.host,
-    ).timeout(const Duration(seconds: 5));
-    if (addresses.any(
-      (address) => isPrivateIpAddress(
-        address.rawAddress,
-        isIpv6: address.type == InternetAddressType.IPv6,
-      ),
-    )) {
-      throw const FormatException(publicUrlError);
-    }
     await _throwIfCancelled(session, turn);
-    final response = await _request(session, turn, uri, addresses, request);
-    return const UrlContentTransformer()
-        .transform(
-          response,
-          requestedFormat: request.format,
-        )
-        .body;
+    final response =
+        await SkillTemplateExecutor(
+              const ResolveSkillUrlTemplate(),
+              _skillHttpClient(
+                session,
+                turn,
+                requireHttps: credentials.isNotEmpty,
+              ),
+            )
+            .call(
+              definition: definition,
+              inputs: arguments,
+              credentials: credentials,
+            )
+            .value;
+    return response.body;
+  }
+
+  Future<SkillTemplateDefinition> _skillTemplateDefinition(
+    Session session,
+    int workspaceId,
+    Map<String, dynamic> data,
+    String? credentialDefinitionId,
+  ) async {
+    final definition = _skillTemplateDefinitionFromData(data);
+    if (credentialDefinitionId == null) return definition;
+
+    final credentialDefinition = await _resource(
+      session,
+      workspaceId,
+      WorkspaceResourceKind.skillDefinition,
+      credentialDefinitionId,
+    );
+    final credentialData = _jsonMap(credentialDefinition.data);
+    final attributesJson = credentialData['attributesJson'];
+    if (attributesJson is! String) {
+      throw const ServerToolNotConfiguredException();
+    }
+
+    return definition.copyWith(
+      credentialDefinitions: {
+        ...SkillCredentialAttributeDefinition.parseMap(attributesJson),
+        ...definition.credentialDefinitions,
+      },
+    );
+  }
+
+  SkillTemplateDefinition _skillTemplateDefinitionFromData(
+    Map<String, dynamic> data,
+  ) {
+    final definitionJson = data['definitionJson'];
+    if (definitionJson is String &&
+        definitionJson.trim().isNotEmpty &&
+        definitionJson != '{}') {
+      return SkillTemplateDefinition.fromJsonString(definitionJson);
+    }
+    final templateJson = data['templateJson'] ?? data['urlTemplateJson'];
+    final inputsJson = data['inputsJson'];
+    if (templateJson is! String || inputsJson is! String) {
+      throw const ServerToolNotConfiguredException();
+    }
+
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: templateJson,
+      inputsJson: inputsJson,
+    );
+  }
+
+  Future<String?> _skillCredentialDefinitionId(
+    Session session,
+    int workspaceId,
+    Map<String, dynamic> data,
+  ) async {
+    final toolDefinitionId = data['credentialDefinitionId'];
+    if (toolDefinitionId is String && toolDefinitionId.trim().isNotEmpty) {
+      return toolDefinitionId.trim();
+    }
+    final skillId = data['skillId'];
+    if (skillId is! String || skillId.isEmpty) return null;
+
+    final skill = await _resource(
+      session,
+      workspaceId,
+      WorkspaceResourceKind.skill,
+      skillId,
+    );
+    final skillDefinitionId = _jsonMap(skill.data)['credentialDefinitionId'];
+    if (skillDefinitionId is! String || skillDefinitionId.trim().isEmpty) {
+      return null;
+    }
+
+    return skillDefinitionId.trim();
   }
 
   Future<WorkspaceSecret?> _skillCredentialSecret(
@@ -1489,6 +1573,7 @@ class const ServerToolExecutorService({
     required ConversationTurn turn,
     required Map<String, dynamic> skillData,
     required String credentialId,
+    String? credentialDefinitionId,
   }) async {
     final credential = await _resource(
       session,
@@ -1509,7 +1594,9 @@ class const ServerToolExecutorService({
       WorkspaceResourceKind.skill,
       skillId,
     );
-    final definitionId = _jsonMap(skill.data)['credentialDefinitionId'];
+    final definitionId = credentialDefinitionId?.trim().isNotEmpty == true
+        ? credentialDefinitionId
+        : _jsonMap(skill.data)['credentialDefinitionId'];
     if (definitionId is! String ||
         credentialData['credentialDefinitionId'] != definitionId) {
       throw const ServerToolNotConfiguredException();

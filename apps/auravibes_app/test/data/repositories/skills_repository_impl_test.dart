@@ -1405,25 +1405,27 @@ void main() {
       expect(
         specs.map((spec) => spec.name),
         containsAll([
-          'skill__app__skills_manager__list_user_skills',
-          'skill__app__skills_manager__get_user_skill',
-          'skill__app__skills_manager__create_user_skill',
-          'skill__app__skills_manager__update_user_skill',
-          'skill__app__skills_manager__delete_user_skill',
-          'skill__app__skills_manager__list_skill_template_tools',
-          'skill__app__skills_manager__get_skill_template_tool',
-          'skill__app__skills_manager__create_skill_template_tool',
-          'skill__app__skills_manager__update_skill_template_tool',
-          'skill__app__skills_manager__delete_skill_template_tool',
-          'skill__app__skills_manager__list_skill_credential_definitions',
-          'skill__app__skills_manager__get_skill_credential_definition',
-          'skill__app__skills_manager__create_skill_credential_definition',
-          'skill__app__skills_manager__update_skill_credential_definition',
-          'skill__app__skills_manager__delete_skill_credential_definition',
+          'skill__app_native__skills_manager__list_user_skills',
+          'skill__app_native__skills_manager__get_user_skill',
+          'skill__app_native__skills_manager__create_user_skill',
+          'skill__app_native__skills_manager__update_user_skill',
+          'skill__app_native__skills_manager__delete_user_skill',
+          'skill__app_native__skills_manager__clone_app_skill',
+          'skill__app_native__skills_manager__list_skill_template_tools',
+          'skill__app_native__skills_manager__get_skill_template_tool',
+          'skill__app_native__skills_manager__create_skill_template_tool',
+          'skill__app_native__skills_manager__update_skill_template_tool',
+          'skill__app_native__skills_manager__delete_skill_template_tool',
+          _skillManagerTool('list_skill_credential_definitions'),
+          _skillManagerTool('get_skill_credential_definition'),
+          _skillManagerTool('create_skill_credential_definition'),
+          _skillManagerTool('update_skill_credential_definition'),
+          _skillManagerTool('delete_skill_credential_definition'),
         ]),
       );
       final createSkillSpec = specs.singleWhere(
-        (spec) => spec.name == 'skill__app__skills_manager__create_user_skill',
+        (spec) =>
+            spec.name == 'skill__app_native__skills_manager__create_user_skill',
       );
       final createSkillProperties =
           createSkillSpec.inputJsonSchema['properties']! as Map;
@@ -1436,7 +1438,7 @@ void main() {
       final createToolSpec = specs.singleWhere(
         (spec) =>
             spec.name ==
-            'skill__app__skills_manager__create_skill_template_tool',
+            'skill__app_native__skills_manager__create_skill_template_tool',
       );
       final createToolProperties =
           createToolSpec.inputJsonSchema['properties']! as Map;
@@ -1836,6 +1838,9 @@ List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
 
   return propertySchema['enum'] as List<Object?>;
 }
+
+String _skillManagerTool(String toolSlug) =>
+    'skill__app_native__skills_manager__$toolSlug';
 
 Dio _dioWithBody(String body, {List<RequestOptions>? requests}) {
   final dio = Dio();

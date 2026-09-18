@@ -108,14 +108,16 @@ void main() {
       expect(created.isEnabled, isTrue);
       expect(created.permissions, PermissionAccess.ask);
       expect(
-        tools.any((tool) => tool.toolId == 'skill__app__agents__run_sub_agent'),
+        tools.any(
+          (tool) => tool.toolId == 'skill__app_native__agents__run_sub_agent',
+        ),
         isTrue,
       );
     });
 
     test('creates the run_sub_agent permission row', () async {
       final spec = ToolSpec(
-        name: 'skill__app__agents__run_sub_agent',
+        name: 'skill__app_native__agents__run_sub_agent',
         description: 'Run a sub-agent',
         inputJsonSchema: {'type': 'object'},
       );
@@ -223,7 +225,7 @@ void main() {
 
     test('keeps stale skill tool rows', () async {
       final staleSpec = ToolSpec(
-        name: 'skill__app__skills_manager__create_user_skill',
+        name: 'skill__app_native__skills_manager__create_user_skill',
         description: 'Create skill',
         inputJsonSchema: {'type': 'object'},
       );
@@ -252,7 +254,9 @@ void main() {
         staleSpec.name,
       );
       expect(
-        tools.any((tool) => tool.toolId == 'skill__app__agents__run_sub_agent'),
+        tools.any(
+          (tool) => tool.toolId == 'skill__app_native__agents__run_sub_agent',
+        ),
         isTrue,
       );
     });
@@ -316,7 +320,7 @@ void main() {
       );
       expect(
         SkillPermissionTools.isSkillPermissionToolName(
-          'skill__app__skills_manager__list_user_skills',
+          'skill__app_native__skills_manager__list_user_skills',
         ),
         isTrue,
       );

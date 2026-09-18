@@ -1,10 +1,12 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const perplexitySkill = AppSkillDefinition(
+const _authorizationHeader = 'Bearer {{ credential.apiKey }}';
+const _contentTypeHeader = 'content-type';
+const _jsonContentType = 'application/json';
+
+final perplexitySkill = AppSkillDefinition(
   identifier: 'perplexity',
   slug: 'perplexity',
   title: 'Perplexity',
@@ -15,14 +17,24 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
 ''',
   requiresCredential: true,
   compatibleModelProviderIds: ['perplexity', 'perplexity-agent'],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search the web for ranked results.',
       inputJsonSchema: _searchInputSchema,
       requiresCredential: true,
-      callback: _search,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.perplexity.ai/search',
+        inputSchema: _searchInputSchema,
+        headers: {
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
+        },
+        body: _searchBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'sonar_answer',
@@ -30,7 +42,16 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
       description: 'Answer a question with web citations.',
       inputJsonSchema: _sonarInputSchema,
       requiresCredential: true,
-      callback: _sonar,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.perplexity.ai/v1/sonar',
+        inputSchema: _sonarInputSchema,
+        headers: {
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
+        },
+        body: _sonarBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'agent',
@@ -38,7 +59,16 @@ research. Prefer Sonar for concise answers and agent for broader workflows.
       description: 'Run a Perplexity agent workflow for a question.',
       inputJsonSchema: _agentInputSchema,
       requiresCredential: true,
-      callback: _agent,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.perplexity.ai/v1/agent',
+        inputSchema: _agentInputSchema,
+        headers: {
+          'authorization': _authorizationHeader,
+          _contentTypeHeader: _jsonContentType,
+        },
+        body: _agentBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -73,7 +103,7 @@ const Map<String, Object> _sonarInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'sonar'},
     'searchMode': {'type': 'string'},
     'returnImages': {'type': 'boolean'},
     'returnRelatedQuestions': {'type': 'boolean'},
@@ -89,7 +119,7 @@ const Map<String, Object> _agentInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'maxSteps': {'type': 'integer', 'minimum': 1},
+    'maxSteps': {'type': 'integer', 'minimum': 1, 'default': 10},
     'tools': {
       'type': 'array',
       'items': {'type': 'string'},
@@ -99,105 +129,33 @@ const Map<String, Object> _agentInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _search(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{'query': textInput(input, 'query')};
-  putIfPresent(body, 'max_results', positiveIntInput(input, 'maxResults'));
-  putIfPresent(body, 'country', stringInput(input, 'country'));
-  putIfPresent(body, 'search_language_filter', stringInput(input, 'language'));
-  putIfPresent(
-    body,
-    'search_domain_filter',
-    stringListInput(input, 'includeDomains'),
-  );
-  putIfPresent(
-    body,
-    'exclude_domains',
-    stringListInput(input, 'excludeDomains'),
-  );
-  putIfPresent(
-    body,
-    'search_context_size',
-    stringInput(input, 'searchContextSize'),
-  );
-  putIfPresent(body, 'max_tokens', positiveIntInput(input, 'maxTokens'));
-  putIfPresent(
-    body,
-    'max_tokens_per_page',
-    positiveIntInput(input, 'maxTokensPerPage'),
-  );
-  putIfPresent(body, 'start_date', stringInput(input, 'startDate'));
-  putIfPresent(body, 'end_date', stringInput(input, 'endDate'));
-  putIfPresent(
-    body,
-    'search_recency_filter',
-    stringInput(input, 'searchRecencyFilter'),
-  );
+const _searchBody = '''
+{"query":{{ input.query | json }}
+{% if input.maxResults != nil %},"max_results":{{ input.maxResults | json }}{% endif %}
+{% if input.country != nil %},"country":{{ input.country | json }}{% endif %}
+{% if input.language != nil %},"search_language_filter":{{ input.language | json }}{% endif %}
+{% if input.includeDomains != nil %},"search_domain_filter":{{ input.includeDomains | json }}{% endif %}
+{% if input.excludeDomains != nil %},"exclude_domains":{{ input.excludeDomains | json }}{% endif %}
+{% if input.searchContextSize != nil %},"search_context_size":{{ input.searchContextSize | json }}{% endif %}
+{% if input.maxTokens != nil %},"max_tokens":{{ input.maxTokens | json }}{% endif %}
+{% if input.maxTokensPerPage != nil %},"max_tokens_per_page":{{ input.maxTokensPerPage | json }}{% endif %}
+{% if input.startDate != nil %},"start_date":{{ input.startDate | json }}{% endif %}
+{% if input.endDate != nil %},"end_date":{{ input.endDate | json }}{% endif %}
+{% if input.searchRecencyFilter != nil %},"search_recency_filter":{{ input.searchRecencyFilter | json }}{% endif %}}
+''';
 
-  return _post(context, input, 'https://api.perplexity.ai/search', body);
-}
+const _sonarBody = '''
+{"model":{{ input.model | json }},"messages":[{"role":"user","content":{{ input.question | json }}}]
+{% if input.searchMode != nil %},"search_mode":{{ input.searchMode | json }}{% endif %}
+{% if input.returnImages != nil %},"return_images":{{ input.returnImages | json }}{% endif %}
+{% if input.returnRelatedQuestions != nil %},"return_related_questions":{{ input.returnRelatedQuestions | json }}{% endif %}
+{% if input.disableSearch != nil %},"disable_search":{{ input.disableSearch | json }}{% endif %}
+{% if input.enableSearchClassifier != nil %},"enable_search_classifier":{{ input.enableSearchClassifier | json }}{% endif %}
+{% if input.searchContextSize != nil %},"web_search_options":{"search_context_size":{{ input.searchContextSize | json }}}{% endif %}}
+''';
 
-CancelableOperation<Object?> _sonar(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'model': stringInput(input, 'model', defaultValue: 'sonar'),
-    'messages': [
-      {'role': 'user', 'content': textInput(input, 'question')},
-    ],
-  };
-  putIfPresent(body, 'search_mode', stringInput(input, 'searchMode'));
-  putIfPresent(body, 'return_images', boolInput(input, 'returnImages'));
-  putIfPresent(
-    body,
-    'return_related_questions',
-    boolInput(input, 'returnRelatedQuestions'),
-  );
-  putIfPresent(body, 'disable_search', boolInput(input, 'disableSearch'));
-  putIfPresent(
-    body,
-    'enable_search_classifier',
-    boolInput(input, 'enableSearchClassifier'),
-  );
-  if (stringInput(input, 'searchContextSize') case final size
-      when size.isNotEmpty) {
-    body['web_search_options'] = {'search_context_size': size};
-  }
-
-  return _post(context, input, 'https://api.perplexity.ai/v1/sonar', body);
-}
-
-CancelableOperation<Object?> _agent(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final tools = stringListInput(input, 'tools') ?? const ['web_search'];
-  return postJson(
-    context,
-    'https://api.perplexity.ai/v1/agent',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    {
-      'messages': [
-        {'role': 'user', 'content': textInput(input, 'question')},
-      ],
-      'tools': [
-        for (final tool in tools) {'type': tool},
-      ],
-      'max_steps': positiveIntInput(input, 'maxSteps') ?? 10,
-    },
-  );
-}
-
-CancelableOperation<Object?> _post(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  String url,
-  Map<String, Object?> body,
-) {
-  return postJson(context, url, {
-    'authorization': 'Bearer ${apiKey(input)}',
-  }, body);
-}
+const _agentBody = '''
+{"messages":[{"role":"user","content":{{ input.question | json }}}],
+"tools":[{"type":"web_search"}],
+"max_steps":{{ input.maxSteps | json }}}
+''';

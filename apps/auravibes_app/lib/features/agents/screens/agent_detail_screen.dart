@@ -2690,6 +2690,7 @@ extension on WorkspaceSkill {
   DisableSkillRequest _enableRequest(String workspaceId) => (
     workspaceId: workspaceId,
     source: source,
+    kind: kind,
     skillId: id,
     isEnabled: true,
     slug: null,

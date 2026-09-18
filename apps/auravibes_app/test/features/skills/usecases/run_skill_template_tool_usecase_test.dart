@@ -18,7 +18,8 @@ class _CredentialDefinitionsRepository extends Mock
 
 class _CredentialsRepository extends Mock implements SkillCredentialsRepository;
 
-class _RunSkillUrlTemplate extends Mock implements engine.RunSkillUrlTemplate;
+class _SkillTemplateExecutor extends Mock
+    implements engine.SkillTemplateExecutor;
 
 void main() {
   test('cloud template execution never reads local repositories', () async {
@@ -28,7 +29,7 @@ void main() {
       skills,
       _CredentialDefinitionsRepository(),
       _CredentialsRepository(),
-      _RunSkillUrlTemplate(),
+      _SkillTemplateExecutor(),
       (_) async => const WorkspaceSession(
         CloudWorkspaceRef(
           localWorkspaceId: 'workspace-1',

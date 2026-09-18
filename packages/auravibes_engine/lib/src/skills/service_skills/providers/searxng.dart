@@ -36,9 +36,10 @@ const searXngSkill = AppSkillDefinition(
 Use SearXNG when the user has a trusted metasearch instance and wants results
 aggregated from that instance. The instance is selected from configured
 workspace credentials.
-''',
+  ''',
   requiresCredential: true,
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',

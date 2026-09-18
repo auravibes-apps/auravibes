@@ -712,6 +712,15 @@ abstract class LocaleKeys {
   static const skills_tool_url_label = 'skills_tool.url_label';
   static const skills_tool_url_hint = 'skills_tool.url_hint';
   static const skills_tool_method_label = 'skills_tool.method_label';
+  static const skills_tool_headers_section_title =
+      'skills_tool.headers_section_title';
+  static const skills_tool_headers_hint = 'skills_tool.headers_hint';
+  static const skills_tool_header_key_label = 'skills_tool.header_key_label';
+  static const skills_tool_header_value_label =
+      'skills_tool.header_value_label';
+  static const skills_tool_header_value_placeholder =
+      'skills_tool.header_value_placeholder';
+  static const skills_tool_add_header = 'skills_tool.add_header';
   static const skills_tool_query_section_title =
       'skills_tool.query_section_title';
   static const skills_tool_query_hint = 'skills_tool.query_hint';
@@ -722,6 +731,7 @@ abstract class LocaleKeys {
   static const skills_tool_add_query = 'skills_tool.add_query';
   static const skills_tool_body_format_label = 'skills_tool.body_format_label';
   static const skills_tool_body_format_json = 'skills_tool.body_format_json';
+  static const skills_tool_body_format_form = 'skills_tool.body_format_form';
   static const skills_tool_body_format_text = 'skills_tool.body_format_text';
   static const skills_tool_body_label = 'skills_tool.body_label';
   static const skills_tool_body_hint = 'skills_tool.body_hint';
@@ -746,10 +756,38 @@ abstract class LocaleKeys {
       'skills_tool.input_description_hint';
   static const skills_tool_input_optional_label =
       'skills_tool.input_optional_label';
+  static const skills_tool_input_default_label =
+      'skills_tool.input_default_label';
+  static const skills_tool_input_default_hint =
+      'skills_tool.input_default_hint';
+  static const skills_tool_input_enum_label = 'skills_tool.input_enum_label';
+  static const skills_tool_input_enum_hint = 'skills_tool.input_enum_hint';
+  static const skills_tool_input_minimum_label =
+      'skills_tool.input_minimum_label';
+  static const skills_tool_input_maximum_label =
+      'skills_tool.input_maximum_label';
+  static const skills_tool_input_items_type_label =
+      'skills_tool.input_items_type_label';
+  static const skills_tool_input_nested_properties_label =
+      'skills_tool.input_nested_properties_label';
+  static const skills_tool_input_nested_properties_hint =
+      'skills_tool.input_nested_properties_hint';
   static const skills_tool_requires_credential_label =
       'skills_tool.requires_credential_label';
   static const skills_tool_requires_credential_hint =
       'skills_tool.requires_credential_hint';
+  static const skills_tool_credential_definition_label =
+      'skills_tool.credential_definition_label';
+  static const skills_tool_credential_definition_hint =
+      'skills_tool.credential_definition_hint';
+  static const skills_tool_preview_label = 'skills_tool.preview_label';
+  static const skills_tool_preview_error = 'skills_tool.preview_error';
+  static const skills_tool_advanced_definition_label =
+      'skills_tool.advanced_definition_label';
+  static const skills_tool_advanced_definition_hint =
+      'skills_tool.advanced_definition_hint';
+  static const skills_tool_advanced_definition_toggle =
+      'skills_tool.advanced_definition_toggle';
   static const skills_tool_add_input = 'skills_tool.add_input';
   static const skill_credentials_definitions_title =
       'skill_credentials_definitions.title';
