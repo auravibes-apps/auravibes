@@ -452,6 +452,8 @@
     "no_tools_in_group": "No hay herramientas disponibles",
     "disabled_in_workspace": "Desactivada en espacio de trabajo",
     "manage_title": "Gestionar herramientas",
+    "expand_all_groups": "Expandir todos los grupos",
+    "collapse_all_groups": "Contraer todos los grupos",
     "load_error": "Error al cargar herramientas: {}"
   },
   "skills_screen": {

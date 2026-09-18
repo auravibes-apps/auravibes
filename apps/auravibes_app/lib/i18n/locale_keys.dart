@@ -626,6 +626,10 @@ abstract class LocaleKeys {
   static const tools_screen_disabled_in_workspace =
       'tools_screen.disabled_in_workspace';
   static const tools_screen_manage_title = 'tools_screen.manage_title';
+  static const tools_screen_expand_all_groups =
+      'tools_screen.expand_all_groups';
+  static const tools_screen_collapse_all_groups =
+      'tools_screen.collapse_all_groups';
   static const tools_screen_load_error = 'tools_screen.load_error';
   static const skills_screen_title = 'skills_screen.title';
   static const skills_screen_detail_title = 'skills_screen.detail_title';
