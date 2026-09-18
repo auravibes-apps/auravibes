@@ -34,10 +34,9 @@
       "lifecycle": "lazy"
     },
     "marionette": {
-      "command": "dart",
+      "command": "fvm",
       "args": [
-        "pub",
-        "global",
+        "dart",
         "run",
         "marionette_mcp"
       ],

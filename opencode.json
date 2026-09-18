@@ -36,7 +36,7 @@
     "marionette": {
       "enabled": true,
       "type": "local",
-      "command": ["dart", "pub", "global", "run", "marionette_mcp"]
+      "command": ["fvm", "dart", "run", "marionette_mcp"]
     },
     "pubdev": {
       "type": "local",

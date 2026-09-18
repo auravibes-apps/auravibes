@@ -11,8 +11,11 @@ normal debugging and Flutter Driver.
 ## Setup and launch
 
 - Work from the repository root.
-- Install the bridge once per machine:
-  `dart pub global activate marionette_mcp`.
+- Run the project-local bridge from the repository root:
+  `fvm dart run marionette_mcp`.
+  The root `pubspec.yaml` and `pubspec.lock` pin `marionette_mcp` and
+  `marionette_flutter` to the same exact compatible version. Do not activate
+  or invoke a globally installed Marionette MCP executable.
 - Project configuration registers the bridge for shared MCP (`.mcp.json`), Pi
   (`.pi/mcp.json` and `pi-mcp-adapter`), OpenCode (`opencode.json`), and Codex
   (`.codex/config.toml`). Each agent runtime must start its own bridge process.
