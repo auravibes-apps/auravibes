@@ -1,10 +1,8 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const exaSkill = AppSkillDefinition(
+final exaSkill = AppSkillDefinition(
   identifier: 'exa',
   slug: 'exa',
   title: 'Exa',
@@ -14,14 +12,24 @@ Use Exa for AI-oriented web discovery, page contents, and grounded answers.
 Prefer it when semantic relevance matters more than a classic result page.
 ''',
   requiresCredential: true,
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Find relevant web pages for a query.',
       inputJsonSchema: _searchInputSchema,
       requiresCredential: true,
-      callback: _search,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.exa.ai/search',
+        inputSchema: _searchInputSchema,
+        headers: {
+          'x-api-key': '{{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _searchBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'contents',
@@ -29,7 +37,16 @@ Prefer it when semantic relevance matters more than a classic result page.
       description: 'Fetch clean content for a URL.',
       inputJsonSchema: _contentsInputSchema,
       requiresCredential: true,
-      callback: _contents,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.exa.ai/contents',
+        inputSchema: _contentsInputSchema,
+        headers: {
+          'x-api-key': '{{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _contentsBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'answer',
@@ -37,7 +54,16 @@ Prefer it when semantic relevance matters more than a classic result page.
       description: 'Answer a question with web grounding.',
       inputJsonSchema: _answerInputSchema,
       requiresCredential: true,
-      callback: _answer,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.exa.ai/answer',
+        inputSchema: _answerInputSchema,
+        headers: {
+          'x-api-key': '{{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _answerBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -105,83 +131,39 @@ const Map<String, Object> _answerInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _search(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{'query': textInput(input, 'query')};
-  putIfPresent(body, 'type', stringInput(input, 'type'));
-  putIfPresent(body, 'numResults', positiveIntInput(input, 'numResults'));
-  _putCommonFilters(body, input);
-  _putContents(body, input);
+const _searchBody = '''
+{"query":{{ input.query | json }}
+{% if input.type != nil %},"type":{{ input.type | json }}{% endif %}
+{% if input.numResults != nil %},"numResults":{{ input.numResults | json }}{% endif %}
+{% if input.includeDomains != nil %},"includeDomains":{{ input.includeDomains | json }}{% endif %}
+{% if input.excludeDomains != nil %},"excludeDomains":{{ input.excludeDomains | json }}{% endif %}
+{% if input.startPublishedDate != nil %},"startPublishedDate":{{ input.startPublishedDate | json }}{% endif %}
+{% if input.endPublishedDate != nil %},"endPublishedDate":{{ input.endPublishedDate | json }}{% endif %}
+{% if input.category != nil %},"category":{{ input.category | json }}{% endif %}
+{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil or input.livecrawlTimeout != nil or input.maxAgeHours != nil %},"contents":{
+  {% if input.includeText != nil %}"text":{{ input.includeText | json }}{% endif %}
+  {% if input.includeHighlights != nil %}{% if input.includeText != nil %},{% endif %}"highlights":{{ input.includeHighlights | json }}{% endif %}
+  {% if input.includeSummary != nil %}{% if input.includeText != nil or input.includeHighlights != nil %},{% endif %}"summary":{{ input.includeSummary | json }}{% endif %}
+  {% if input.livecrawlTimeout != nil %}{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil %},{% endif %}"livecrawlTimeout":{{ input.livecrawlTimeout | json }}{% endif %}
+  {% if input.maxAgeHours != nil %}{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil or input.livecrawlTimeout != nil %},{% endif %}"maxAgeHours":{{ input.maxAgeHours | json }}{% endif %}
+}{% endif %}}
+''';
 
-  return _post(context, input, 'https://api.exa.ai/search', body);
-}
+const _contentsBody = '''
+{"urls":{{ input.urls | json }}
+{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil or input.livecrawlTimeout != nil or input.maxAgeHours != nil %},"contents":{
+  {% if input.includeText != nil %}"text":{{ input.includeText | json }}{% endif %}
+  {% if input.includeHighlights != nil %}{% if input.includeText != nil %},{% endif %}"highlights":{{ input.includeHighlights | json }}{% endif %}
+  {% if input.includeSummary != nil %}{% if input.includeText != nil or input.includeHighlights != nil %},{% endif %}"summary":{{ input.includeSummary | json }}{% endif %}
+  {% if input.livecrawlTimeout != nil %}{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil %},{% endif %}"livecrawlTimeout":{{ input.livecrawlTimeout | json }}{% endif %}
+  {% if input.maxAgeHours != nil %}{% if input.includeText != nil or input.includeHighlights != nil or input.includeSummary != nil or input.livecrawlTimeout != nil %},{% endif %}"maxAgeHours":{{ input.maxAgeHours | json }}{% endif %}
+}{% endif %}}
+''';
 
-CancelableOperation<Object?> _contents(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{};
-  putIfPresent(body, 'urls', stringListInput(input, 'urls'));
-  _putContents(body, input);
-
-  return _post(context, input, 'https://api.exa.ai/contents', body);
-}
-
-CancelableOperation<Object?> _answer(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{'query': textInput(input, 'question')};
-  _putCommonFilters(body, input);
-
-  return _post(context, input, 'https://api.exa.ai/answer', body);
-}
-
-CancelableOperation<Object?> _post(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  String url,
-  Map<String, Object?> body,
-) {
-  return postJson(context, url, {'x-api-key': apiKey(input)}, body);
-}
-
-void _putCommonFilters(Map<String, Object?> body, Map<String, dynamic> input) {
-  putIfPresent(
-    body,
-    'includeDomains',
-    stringListInput(input, 'includeDomains'),
-  );
-  putIfPresent(
-    body,
-    'excludeDomains',
-    stringListInput(input, 'excludeDomains'),
-  );
-  putIfPresent(
-    body,
-    'startPublishedDate',
-    stringInput(input, 'startPublishedDate'),
-  );
-  putIfPresent(
-    body,
-    'endPublishedDate',
-    stringInput(input, 'endPublishedDate'),
-  );
-  putIfPresent(body, 'category', stringInput(input, 'category'));
-}
-
-void _putContents(Map<String, Object?> body, Map<String, dynamic> input) {
-  final contents = <String, Object?>{};
-  putIfPresent(contents, 'text', boolInput(input, 'includeText'));
-  putIfPresent(contents, 'highlights', boolInput(input, 'includeHighlights'));
-  putIfPresent(contents, 'summary', boolInput(input, 'includeSummary'));
-  putIfPresent(
-    contents,
-    'livecrawlTimeout',
-    positiveIntInput(input, 'livecrawlTimeout'),
-  );
-  putIfPresent(contents, 'maxAgeHours', positiveIntInput(input, 'maxAgeHours'));
-  putIfPresent(body, 'contents', contents);
-}
+const _answerBody = '''
+{"query":{{ input.question | json }}
+{% if input.includeDomains != nil %},"includeDomains":{{ input.includeDomains | json }}{% endif %}
+{% if input.excludeDomains != nil %},"excludeDomains":{{ input.excludeDomains | json }}{% endif %}
+{% if input.startPublishedDate != nil %},"startPublishedDate":{{ input.startPublishedDate | json }}{% endif %}
+{% if input.endPublishedDate != nil %},"endPublishedDate":{{ input.endPublishedDate | json }}{% endif %}}
+''';

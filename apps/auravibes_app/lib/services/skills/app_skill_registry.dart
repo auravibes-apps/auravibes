@@ -45,7 +45,7 @@ AppSkillDefinition _agentsSkillDefinition() => AppSkillDefinition(
   title: agentsSkillTitle,
   description: 'Inspect enabled workspace agents.',
   content: agentsSkillContent,
-  nativeTools: [_agentsListTool(), _agentsRunSubAgentTool()],
+  tools: [_agentsListTool(), _agentsRunSubAgentTool()],
   titleKey: LocaleKeys.app_skills_agents_title,
   descriptionKey: LocaleKeys.app_skills_agents_description,
   contentKey: LocaleKeys.app_skills_agents_content,
@@ -77,21 +77,21 @@ AppSkillDefinition _localizedDefinition(AppSkillDefinition definition) =>
 
 AppSkillDefinition _localizedDefinitionWithTools(
   AppSkillDefinition definition,
-  List<AppSkillToolDefinition> nativeTools,
+  List<AppSkillToolDefinition> tools,
 ) => AppSkillDefinition(
   identifier: definition.identifier,
   slug: definition.slug,
   title: definition.title,
   description: definition.description,
   content: definition.content,
-  nativeTools: nativeTools,
+  tools: tools,
   titleKey: LocaleKeys.app_skills_skills_manager_title,
   descriptionKey: LocaleKeys.app_skills_skills_manager_description,
   contentKey: LocaleKeys.app_skills_skills_manager_content,
 );
 
 List<AppSkillToolDefinition> _localizedTools(AppSkillDefinition definition) =>
-    definition.nativeTools.map(_localizedTool).toList();
+    definition.tools.map(_localizedTool).toList();
 
 AppSkillToolDefinition _localizedTool(AppSkillToolDefinition tool) =>
     AppSkillToolDefinition(

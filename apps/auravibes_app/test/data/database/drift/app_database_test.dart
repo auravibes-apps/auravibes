@@ -46,7 +46,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 11);
+      expect(fixture.database.schemaVersion, 12);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -80,6 +80,61 @@ void main() {
       final strategy = fixture.database.migration;
       final _ = await fixture.database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
+    });
+
+    const migrationDefinitionTestName =
+        'migration converts legacy skill tool fragments '
+        'to a definition';
+    test(migrationDefinitionTestName, () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 11
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL
+          );
+        ''')
+        ..execute('''
+          CREATE TABLE skill_template_tools (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            skill_id TEXT NOT NULL,
+            template_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            slug TEXT NOT NULL,
+            template_json TEXT NOT NULL,
+            inputs_json TEXT NOT NULL,
+            requires_credential INTEGER NOT NULL DEFAULT 0,
+            is_enabled INTEGER NOT NULL DEFAULT 1
+          );
+        ''')
+        ..execute('''
+          INSERT INTO skill_template_tools (
+            id, created_at, updated_at, skill_id, template_type, title,
+            description, slug, template_json, inputs_json
+          ) VALUES (
+            'tool-1', 0, 0, 'skill-1', 'url', 'Search', 'Search', 'search',
+            '{"url":"https://example.com","method":"GET"}',
+            '{"query":{"type":"string","description":"Query"}}'
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final row = await fixture.database
+          .customSelect(
+            'SELECT definition_json FROM skill_template_tools WHERE id = ?',
+            variables: [const Variable<String>('tool-1')],
+          )
+          .getSingle();
+      final definition = row.read<String>('definition_json');
+
+      expect(definition, contains('"version":1'));
+      expect(definition, contains('"inputSchema"'));
+      expect(definition, contains('"request"'));
     });
 
     test('migration strategy has onCreate callback', () {

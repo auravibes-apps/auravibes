@@ -401,7 +401,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     title: skill.title,
     description: skill.description,
     content: skill.content,
-    kind: .native,
+    kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
   );
 
   Future<bool> _isCredentialReady(String workspaceId, SkillEntity skill) {
@@ -417,7 +417,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
   ) async {
     final usecase = _listAppSkillCredentialCandidatesUsecase;
     if (usecase == null ||
-        skill.nativeTools.any((tool) => !tool.requiresCredential) ||
+        skill.tools.any((tool) => !tool.requiresCredential) ||
         !usecase.isCredentialRequired(skill)) {
       return true;
     }

@@ -7,6 +7,7 @@ enum AgentResolvedToolKind {
   skillControl,
   skillNative,
   skillTemplate,
+  skillAppTemplate,
 }
 
 class const AgentResolvedToolName._({
@@ -84,6 +85,20 @@ class const AgentResolvedToolName._({
     );
   }
 
+  factory skillAppTemplate({
+    required String tableId,
+    required String skillSlug,
+    required String toolIdentifier,
+  }) {
+    return AgentResolvedToolName._(
+      kind: .skillAppTemplate,
+      tableId: tableId,
+      toolIdentifier: toolIdentifier,
+      skillSlug: skillSlug,
+      skillToolSlug: toolIdentifier,
+    );
+  }
+
   String get fullName {
     return switch (kind) {
       .builtIn => 'built_in_${tableId}_$toolIdentifier',
@@ -91,13 +106,15 @@ class const AgentResolvedToolName._({
       .native => 'native_${tableId}_$toolIdentifier',
       .skillControl => toolIdentifier,
       .skillTemplate => 'skill__user__${skillSlug}__$toolIdentifier',
-      .skillNative => 'skill__app__${skillSlug}__$toolIdentifier',
+      .skillNative => 'skill__app_native__${skillSlug}__$toolIdentifier',
+      .skillAppTemplate => 'skill__app_template__${skillSlug}__$toolIdentifier',
     };
   }
 
   bool get isSkill =>
       kind == AgentResolvedToolKind.skillTemplate ||
-      kind == AgentResolvedToolKind.skillNative;
+      kind == AgentResolvedToolKind.skillNative ||
+      kind == AgentResolvedToolKind.skillAppTemplate;
 }
 
 class const AgentToolNameResolver({
@@ -112,8 +129,16 @@ class const AgentToolNameResolver({
 
     final skillTool = _parseSkillToolName(compositeToolName);
     if (skillTool != null) {
-      if (skillTool.source == 'app') {
+      if (skillTool.source == 'app_native' || skillTool.source == 'app') {
         return AgentResolvedToolName.skillNative(
+          tableId: skillTool.toolSlug,
+          skillSlug: skillTool.skillSlug,
+          toolIdentifier: skillTool.toolSlug,
+        );
+      }
+
+      if (skillTool.source == 'app_template') {
+        return AgentResolvedToolName.skillAppTemplate(
           tableId: skillTool.toolSlug,
           skillSlug: skillTool.skillSlug,
           toolIdentifier: skillTool.toolSlug,
@@ -194,7 +219,10 @@ class const AgentToolNameResolver({
   ) {
     return switch (compositeId.split('__')) {
       ['skill', final source, final skillSlug, final toolSlug]
-          when (source == 'user' || source == 'app') &&
+          when (source == 'user' ||
+                  source == 'app_template' ||
+                  source == 'app_native' ||
+                  source == 'app') &&
               skillSlug.isNotEmpty &&
               toolSlug.isNotEmpty =>
         (source: source, skillSlug: skillSlug, toolSlug: toolSlug),

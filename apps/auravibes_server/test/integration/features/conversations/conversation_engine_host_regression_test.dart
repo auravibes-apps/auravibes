@@ -963,7 +963,7 @@ void main() {
             toolIdentifier: runSubAgentToolName,
           ),
           spec: ToolSpec(
-            name: 'skill__app__agents__$runSubAgentToolName',
+            name: 'skill__app_native__agents__$runSubAgentToolName',
             description: '',
             inputJsonSchema: const {},
           ),
@@ -980,7 +980,7 @@ void main() {
               parentTool,
               const ServerToolRequest(
                 id: 'cancel-during-child-launch',
-                name: 'skill__app__agents__run_sub_agent',
+                name: 'skill__app_native__agents__run_sub_agent',
                 arguments: {'title': 'Child', 'prompt': 'Do the work.'},
               ),
             );
@@ -1041,7 +1041,7 @@ void main() {
             toolIdentifier: runSubAgentToolName,
           ),
           spec: ToolSpec(
-            name: 'skill__app__agents__$runSubAgentToolName',
+            name: 'skill__app_native__agents__$runSubAgentToolName',
             description: '',
             inputJsonSchema: const {},
           ),
@@ -1058,7 +1058,7 @@ void main() {
               parentTool,
               const ServerToolRequest(
                 id: 'cancel-after-child-continuation',
-                name: 'skill__app__agents__run_sub_agent',
+                name: 'skill__app_native__agents__run_sub_agent',
                 arguments: {'title': 'Child', 'prompt': 'Do the work.'},
               ),
             );
@@ -1263,7 +1263,7 @@ void main() {
             toolIdentifier: runSubAgentToolName,
           ),
           spec: ToolSpec(
-            name: 'skill__app__agents__$runSubAgentToolName',
+            name: 'skill__app_native__agents__$runSubAgentToolName',
             description: '',
             inputJsonSchema: const {},
           ),
@@ -1274,7 +1274,7 @@ void main() {
           parentTool,
           const ServerToolRequest(
             id: 'parent-approved-child',
-            name: 'skill__app__agents__run_sub_agent',
+            name: 'skill__app_native__agents__run_sub_agent',
             arguments: {'title': 'Child', 'prompt': 'Do the work.'},
           ),
         );

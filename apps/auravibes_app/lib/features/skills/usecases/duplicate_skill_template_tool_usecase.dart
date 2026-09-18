@@ -42,8 +42,11 @@ class const DuplicateSkillTemplateToolUsecase(
         templateType: tool.templateType,
         title: title,
         description: tool.description,
+        definitionJson: tool.definitionJson,
         templateJson: tool.templateJson,
         inputsJson: tool.inputsJson,
+        credentialDefinitionId: tool.credentialDefinitionId,
+        requiresCredential: tool.requiresCredential,
         isEnabled: tool.isEnabled,
       ),
     );

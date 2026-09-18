@@ -569,7 +569,7 @@ void main() {
         inputJsonSchema: const {'type': 'object'},
       );
       final braveSearchSpec = ToolSpec(
-        name: 'skill__app__brave__search',
+        name: 'skill__app_template__brave__search',
         description: 'Search with Brave.',
         inputJsonSchema: const {'type': 'object'},
       );

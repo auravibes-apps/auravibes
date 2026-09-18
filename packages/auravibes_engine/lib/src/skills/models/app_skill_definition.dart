@@ -6,10 +6,13 @@ class const AppSkillDefinition({
   required final String title,
   required final String description,
   required final String content,
-  final List<AppSkillToolDefinition> nativeTools = const [],
+  final AppSkillDefinitionKind kind = AppSkillDefinitionKind.native,
+  final List<AppSkillToolDefinition> tools = const [],
   final bool requiresCredential = false,
   final List<String> compatibleModelProviderIds = const [],
   final String? titleKey,
   final String? descriptionKey,
   final String? contentKey,
 });
+
+enum AppSkillDefinitionKind { native, template }

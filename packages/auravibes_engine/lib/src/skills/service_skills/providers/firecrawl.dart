@@ -1,7 +1,6 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final firecrawlSkill = AppSkillDefinition(
@@ -14,29 +13,42 @@ Use Firecrawl when page content matters: scraping pages, crawling sites,
 discovering URLs, or extracting structured data from public pages.
 ''',
   requiresCredential: true,
-  nativeTools: [
+  kind: .template,
+  tools: [
     _tool(
       'search',
       'Search',
       'Search web content.',
       _searchInputSchema,
-      _search,
+      _searchTemplate,
     ),
     _tool(
       'scrape',
       'Scrape',
       'Scrape page content from a URL.',
       _scrapeInputSchema,
-      _scrape,
+      _scrapeTemplate,
     ),
-    _tool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
-    _tool('map', 'Map', 'Map URLs from a website.', _mapInputSchema, _map),
+    _tool(
+      'crawl',
+      'Crawl',
+      'Crawl a website.',
+      fetchInputSchema,
+      _crawlTemplate,
+    ),
+    _tool(
+      'map',
+      'Map',
+      'Map URLs from a website.',
+      _mapInputSchema,
+      _mapTemplate,
+    ),
     _tool(
       'extract',
       'Extract',
       'Extract structured data from a URL.',
       _extractInputSchema,
-      _extract,
+      _extractTemplate,
     ),
   ],
 );
@@ -46,7 +58,7 @@ AppSkillToolDefinition _tool(
   String title,
   String description,
   Map<String, Object> schema,
-  AppSkillToolCallback callback,
+  AppSkillUrlTemplate template,
 ) {
   return AppSkillToolDefinition(
     slug: slug,
@@ -54,7 +66,7 @@ AppSkillToolDefinition _tool(
     description: description,
     inputJsonSchema: schema,
     requiresCredential: true,
-    callback: callback,
+    urlTemplate: template,
   );
 }
 
@@ -139,93 +151,85 @@ const Map<String, Object> _extractInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _search(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{'query': textInput(input, 'query')};
-  putIfPresent(body, 'limit', positiveIntInput(input, 'limit'));
-  putIfPresent(body, 'sources', stringListInput(input, 'sources'));
-  putIfPresent(body, 'categories', stringListInput(input, 'categories'));
-  putIfPresent(
-    body,
-    'includeDomains',
-    stringListInput(input, 'includeDomains'),
-  );
-  putIfPresent(
-    body,
-    'excludeDomains',
-    stringListInput(input, 'excludeDomains'),
-  );
-  putIfPresent(body, 'tbs', stringInput(input, 'tbs'));
-  putIfPresent(body, 'location', stringInput(input, 'location'));
-  putIfPresent(body, 'country', stringInput(input, 'country'));
-  putIfPresent(body, 'timeout', positiveIntInput(input, 'timeout'));
-  putIfPresent(
-    body,
-    'ignoreInvalidURLs',
-    boolInput(input, 'ignoreInvalidURLs'),
-  );
-  return _post(context, input, 'search', body);
-}
+final AppSkillUrlTemplate _searchTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/search',
+  inputSchema: _searchInputSchema,
+  headers: {
+    'authorization': 'Bearer {{ credential.apiKey }}',
+    'content-type': 'application/json',
+  },
+  body: '''
+{"query":{{ input.query | json }}
+{% if input.limit != nil %},"limit":{{ input.limit | json }}{% endif %}
+{% if input.sources != nil %},"sources":{{ input.sources | json }}{% endif %}
+{% if input.categories != nil %},"categories":{{ input.categories | json }}{% endif %}
+{% if input.includeDomains != nil %},"includeDomains":{{ input.includeDomains | json }}{% endif %}
+{% if input.excludeDomains != nil %},"excludeDomains":{{ input.excludeDomains | json }}{% endif %}
+{% if input.tbs != nil %},"tbs":{{ input.tbs | json }}{% endif %}
+{% if input.location != nil %},"location":{{ input.location | json }}{% endif %}
+{% if input.country != nil %},"country":{{ input.country | json }}{% endif %}
+{% if input.timeout != nil %},"timeout":{{ input.timeout | json }}{% endif %}
+{% if input.ignoreInvalidURLs != nil %},"ignoreInvalidURLs":{{ input.ignoreInvalidURLs | json }}{% endif %}}
+''',
+  bodyFormat: .json,
+);
 
-CancelableOperation<Object?> _scrape(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'url': textInput(input, 'url'),
-    'formats': stringListInput(input, 'formats') ?? const ['markdown'],
-  };
-  putIfPresent(body, 'onlyMainContent', boolInput(input, 'onlyMainContent'));
-  putIfPresent(body, 'includeTags', stringListInput(input, 'includeTags'));
-  putIfPresent(body, 'excludeTags', stringListInput(input, 'excludeTags'));
-  putIfPresent(body, 'timeout', positiveIntInput(input, 'timeout'));
-  return _post(context, input, 'scrape', body);
-}
+final AppSkillUrlTemplate _scrapeTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/scrape',
+  inputSchema: _scrapeInputSchema,
+  headers: {
+    'authorization': 'Bearer {{ credential.apiKey }}',
+    'content-type': 'application/json',
+  },
+  body: '''
+{"url":{{ input.url | json }},"formats":{% if input.formats != nil %}{{ input.formats | json }}{% else %}["markdown"]{% endif %}
+{% if input.onlyMainContent != nil %},"onlyMainContent":{{ input.onlyMainContent | json }}{% endif %}
+{% if input.includeTags != nil %},"includeTags":{{ input.includeTags | json }}{% endif %}
+{% if input.excludeTags != nil %},"excludeTags":{{ input.excludeTags | json }}{% endif %}
+{% if input.timeout != nil %},"timeout":{{ input.timeout | json }}{% endif %}}
+''',
+  bodyFormat: .json,
+);
 
-CancelableOperation<Object?> _crawl(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  return _post(context, input, 'crawl', {'url': textInput(input, 'url')});
-}
+final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/crawl',
+  inputSchema: fetchInputSchema,
+  headers: {
+    'authorization': 'Bearer {{ credential.apiKey }}',
+    'content-type': 'application/json',
+  },
+  body: '{"url":{{ input.url | json }}}',
+  bodyFormat: .json,
+);
 
-CancelableOperation<Object?> _map(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{'url': textInput(input, 'url')};
-  putIfPresent(body, 'limit', positiveIntInput(input, 'limit'));
-  putIfPresent(
-    body,
-    'includeSubdomains',
-    boolInput(input, 'includeSubdomains'),
-  );
-  putIfPresent(body, 'ignoreSitemap', boolInput(input, 'ignoreSitemap'));
-  putIfPresent(body, 'sitemapOnly', boolInput(input, 'sitemapOnly'));
-  return _post(context, input, 'map', body);
-}
+final AppSkillUrlTemplate _mapTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/map',
+  inputSchema: _mapInputSchema,
+  headers: {
+    'authorization': 'Bearer {{ credential.apiKey }}',
+    'content-type': 'application/json',
+  },
+  body: '''
+{"url":{{ input.url | json }}
+{% if input.limit != nil %},"limit":{{ input.limit | json }}{% endif %}
+{% if input.includeSubdomains != nil %},"includeSubdomains":{{ input.includeSubdomains | json }}{% endif %}
+{% if input.ignoreSitemap != nil %},"ignoreSitemap":{{ input.ignoreSitemap | json }}{% endif %}
+{% if input.sitemapOnly != nil %},"sitemapOnly":{{ input.sitemapOnly | json }}{% endif %}}
+''',
+  bodyFormat: .json,
+);
 
-CancelableOperation<Object?> _extract(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'urls': stringListInput(input, 'urls') ?? const [],
-  };
-  putIfPresent(body, 'prompt', stringInput(input, 'prompt'));
-  putIfPresent(body, 'schema', input['schema']);
-  return _post(context, input, 'extract', body);
-}
-
-CancelableOperation<Object?> _post(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  String tool,
-  Map<String, Object?> body,
-) {
-  return postJson(context, 'https://api.firecrawl.dev/v2/$tool', {
-    'authorization': 'Bearer ${apiKey(input)}',
-  }, body);
-}
+final AppSkillUrlTemplate _extractTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/extract',
+  inputSchema: _extractInputSchema,
+  headers: {
+    'authorization': 'Bearer {{ credential.apiKey }}',
+    'content-type': 'application/json',
+  },
+  body: '''
+{"urls":{{ input.urls | json }}
+{% if input.prompt != nil %},"prompt":{{ input.prompt | json }}{% endif %}
+{% if input.schema != nil %},"schema":{{ input.schema | json }}{% endif %}}
+''',
+  bodyFormat: .json,
+);

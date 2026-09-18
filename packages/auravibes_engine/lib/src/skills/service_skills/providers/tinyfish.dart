@@ -1,12 +1,10 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const tinyFishSkill = AppSkillDefinition(
+final tinyFishSkill = AppSkillDefinition(
   identifier: 'tinyfish',
   slug: 'tinyfish',
   title: 'TinyFish',
@@ -14,10 +12,11 @@ const tinyFishSkill = AppSkillDefinition(
   content: '''
 Use TinyFish for web search and page fetching. Prefer fetch when the user gives
 specific URLs and wants extracted content.
-''',
+  ''',
   requiresCredential: true,
-  nativeTools: [
-    AppSkillToolDefinition(
+  kind: .template,
+  tools: [
+    const AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search the web for a query.',
@@ -49,7 +48,22 @@ specific URLs and wants extracted content.
       description: 'Fetch clean content from a URL.',
       inputJsonSchema: _fetchInputSchema,
       requiresCredential: true,
-      callback: _fetch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.fetch.tinyfish.ai',
+        inputSchema: _fetchInputSchema,
+        headers: {
+          'X-API-Key': '{{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: '''
+{"urls":{{ input.urls | json }},"format":{% if input.format != nil %}{{ input.format | json }}{% else %}"markdown"{% endif %}
+{% if input.links != nil %},"links":{{ input.links | json }}{% endif %}
+{% if input.imageLinks != nil %},"image_links":{{ input.imageLinks | json }}{% endif %}
+{% if input.ttl != nil %},"ttl":{{ input.ttl | json }}{% endif %}
+{% if input.perUrlTimeoutMs != nil %},"per_url_timeout_ms":{{ input.perUrlTimeoutMs | json }}{% endif %}}
+''',
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -126,25 +140,3 @@ const Map<String, SkillTemplateInputDefinition> _searchInputs = {
     optional: true,
   ),
 };
-
-CancelableOperation<Object?> _fetch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'urls': stringListInput(input, 'urls') ?? const [],
-    'format': stringInput(input, 'format', defaultValue: 'markdown'),
-  };
-  putIfPresent(body, 'links', boolInput(input, 'links'));
-  putIfPresent(body, 'image_links', boolInput(input, 'imageLinks'));
-  putIfPresent(body, 'ttl', positiveIntInput(input, 'ttl'));
-  putIfPresent(
-    body,
-    'per_url_timeout_ms',
-    positiveIntInput(input, 'perUrlTimeoutMs'),
-  );
-
-  return postJson(context, 'https://api.fetch.tinyfish.ai', {
-    'X-API-Key': apiKey(input),
-  }, body);
-}

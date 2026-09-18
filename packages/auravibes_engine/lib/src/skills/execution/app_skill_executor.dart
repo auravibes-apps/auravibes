@@ -1,13 +1,9 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/execution/run_skill_url_template.dart';
-import 'package:auravibes_engine/src/skills/execution/skill_http_client.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 
-class const AppSkillExecutor(
-  final RunSkillUrlTemplate _runSkillUrlTemplate,
-  final SkillHttpClient _httpClient,
-) {
+class const AppSkillExecutor(final SkillTemplateExecutor _templateExecutor) {
   CancelableOperation<Object?> run({
     required AppSkillDefinition skill,
     required String toolSlug,
@@ -21,20 +17,15 @@ class const AppSkillExecutor(
 
     final template = resolvedTool.urlTemplate;
     if (template != null) {
-      return _runSkillUrlTemplate
+      final definition = resolvedTool.definition!;
+      return _templateExecutor
           .call(
-            template: template.template,
+            definition: definition,
             inputs: input,
             credentials: credentials,
-            inputDefinitions: template.inputs,
-            credentialDefinitions: template.credentialDefinitions,
+            schema: resolvedTool.inputJsonSchema,
           )
           .then<Object?>((response) => response.body);
-    }
-
-    final callback = resolvedTool.callback;
-    if (callback != null) {
-      return callback({...input, 'credential': credentials}, _httpClient);
     }
 
     throw UnsupportedError('App skill tool has no executor: $toolSlug');
@@ -44,7 +35,7 @@ class const AppSkillExecutor(
     AppSkillDefinition skill,
     String toolSlug,
   ) {
-    for (final tool in skill.nativeTools) {
+    for (final tool in skill.tools) {
       if (tool.slug == toolSlug) return tool;
     }
 

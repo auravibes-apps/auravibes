@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/skills/models/skill_credential_attribute_definition.dart';
+import 'package:auravibes_engine/src/skills/models/skill_template_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/url_request.dart';
@@ -12,11 +13,17 @@ class const ResolveSkillUrlTemplate() {
     required Map<String, dynamic> inputs,
     required Map<String, String> credentials,
     required Map<String, SkillTemplateInputDefinition> inputDefinitions,
+    Map<String, dynamic>? schema,
     Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
         const {},
   }) {
+    final normalizedInputs = normalizeSkillTemplateInputs(
+      inputs,
+      inputDefinitions,
+      schema: schema,
+    );
     final context = _TemplateContext(
-      inputs: inputs,
+      inputs: normalizedInputs,
       credentials: credentials,
       inputDefinitions: inputDefinitions,
       credentialDefinitions: credentialDefinitions,
@@ -59,7 +66,9 @@ class const ResolveSkillUrlTemplate() {
     final bodyTemplate = _canonicalizeBody(body);
     context.ensureRequiredReferences(bodyTemplate);
     final rendered = _render(bodyTemplate, context);
-    if (template.resolvedBodyFormat == SkillUrlTemplateBodyFormat.text) {
+    if (template.resolvedBodyFormat
+        case SkillUrlTemplateBodyFormat.text ||
+            SkillUrlTemplateBodyFormat.form) {
       return rendered;
     }
 
@@ -83,6 +92,7 @@ class const ResolveSkillUrlTemplate() {
 
   String _render(String source, _TemplateContext context) {
     try {
+      _ensureSkillTemplateLiquidFilters();
       return Liquid().parse(source).render(context.values);
     } on Object catch (_, stackTrace) {
       Error.throwWithStackTrace(
@@ -93,14 +103,121 @@ class const ResolveSkillUrlTemplate() {
   }
 }
 
-void validateSkillTemplateTool({
-  required String templateJson,
-  required String inputsJson,
-  required Map<String, SkillCredentialAttributeDefinition>
-  credentialDefinitions,
+Map<String, dynamic> normalizeSkillTemplateInputs(
+  Map<String, dynamic> inputs,
+  Map<String, SkillTemplateInputDefinition> definitions, {
+  Map<String, dynamic>? schema,
 }) {
-  final template = SkillUrlTemplate.fromJsonString(templateJson);
-  final inputDefinitions = SkillTemplateInputDefinition.parseMap(inputsJson);
+  final normalized = <String, dynamic>{};
+  for (final entry in inputs.entries) {
+    if (entry.key == 'credentialId') continue;
+    if (!definitions.containsKey(entry.key)) {
+      throw FormatException('Unknown input: ${entry.key}.');
+    }
+  }
+  for (final entry in definitions.entries) {
+    final value = inputs[entry.key] ?? entry.value.defaultValue;
+    if (value == null) {
+      if (!entry.value.optional) {
+        throw FormatException('Missing required input: ${entry.key}.');
+      }
+      continue;
+    }
+    _validateInputValue(entry.key, value, entry.value);
+    normalized[entry.key] = value;
+  }
+  _validateSchemaAlternatives(schema, normalized);
+  return normalized;
+}
+
+void _validateSchemaAlternatives(
+  Map<String, dynamic>? schema,
+  Map<String, dynamic> inputs,
+) {
+  final alternatives = schema?['anyOf'] ?? schema?['oneOf'];
+  if (alternatives is! List || alternatives.isEmpty) return;
+  final satisfied = alternatives.any((alternative) {
+    if (alternative is! Map) return false;
+    final required = alternative['required'];
+    if (required is! List) return true;
+    return required.whereType<String>().every(inputs.containsKey);
+  });
+  if (!satisfied) {
+    throw const FormatException('Input does not satisfy schema alternatives.');
+  }
+}
+
+void _validateInputValue(
+  String name,
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
+  final validType = switch (definition.type.trim().toLowerCase()) {
+    'string' => value is String,
+    'boolean' => value is bool,
+    'integer' => value is int,
+    'number' => value is num,
+    'array' => value is List,
+    'object' => value is Map,
+    _ => throw FormatException('Unsupported input type: ${definition.type}.'),
+  };
+  if (!validType) {
+    throw FormatException('Input $name must be a ${definition.type}.');
+  }
+  if (definition.enumValues.isNotEmpty &&
+      !definition.enumValues.any((candidate) => candidate == value)) {
+    throw FormatException(
+      'Input $name must be one of ${definition.enumValues}.',
+    );
+  }
+  if (value is num &&
+      ((definition.minimum != null && value < definition.minimum!) ||
+          (definition.maximum != null && value > definition.maximum!))) {
+    throw FormatException('Input $name is outside its allowed range.');
+  }
+  if (value is List && definition.items != null) {
+    for (final item in value) {
+      _validateInputValue('$name[]', item, definition.items!);
+    }
+  }
+  if (value is Map) {
+    if (!definition.additionalProperties &&
+        value.keys.any((key) => !definition.properties.containsKey(key))) {
+      throw FormatException('Input $name contains an unknown property.');
+    }
+    for (final entry in definition.properties.entries) {
+      final nestedValue = value[entry.key];
+      if (nestedValue == null) {
+        if (!entry.value.optional) {
+          throw FormatException('Missing required input: $name.${entry.key}.');
+        }
+        continue;
+      }
+      _validateInputValue('$name.${entry.key}', nestedValue, entry.value);
+    }
+  }
+}
+
+void validateSkillTemplateDefinition(SkillTemplateDefinition definition) {
+  if (definition.version != 1) {
+    throw FormatException(
+      'Unsupported skill template version: ${definition.version}.',
+    );
+  }
+  _validateInputDefinitions(definition.inputs);
+  _validateInputSchema(definition.inputSchema);
+
+  final template = definition.request;
+  final uri = Uri.tryParse(_templateUrlForValidation(template.url));
+  if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
+    throw const FormatException('Skill template URL must use HTTP or HTTPS.');
+  }
+  if (template.timeout <= Duration.zero) {
+    throw const FormatException('Skill template timeout must be positive.');
+  }
+
+  final inputDefinitions = definition.inputs;
+  final credentialDefinitions = definition.credentialDefinitions;
   if (inputDefinitions.containsKey('credentialId')) {
     throw const FormatException(
       'credentialId is reserved for skill credential selection.',
@@ -118,7 +235,10 @@ void validateSkillTemplateTool({
   final body = template.body;
   if (body == null) return;
   references.validate(body);
-  if (template.resolvedBodyFormat == SkillUrlTemplateBodyFormat.text) return;
+  if (template.resolvedBodyFormat
+      case SkillUrlTemplateBodyFormat.text || SkillUrlTemplateBodyFormat.form) {
+    return;
+  }
 
   _validateJsonFilters(body, inputDefinitions);
 
@@ -135,6 +255,99 @@ void validateSkillTemplateTool({
         stackTrace,
       );
     }
+  }
+}
+
+String _templateUrlForValidation(String value) => value.replaceAllMapped(
+  RegExp(r'\{\{.*?\}\}'),
+  (match) => match.group(0)?.contains('credential.') == true
+      ? 'https://example.com'
+      : 'value',
+);
+
+void _validateInputSchema(Map<String, Object?> schema) {
+  if (schema['type'] != null && schema['type'] != 'object') {
+    throw const FormatException('Skill inputSchema must be an object schema.');
+  }
+  if (schema['additionalProperties'] != false) {
+    throw const FormatException(
+      'Skill inputSchema must reject unknown inputs.',
+    );
+  }
+  final properties = schema['properties'];
+  if (properties is! Map) {
+    throw const FormatException('Skill inputSchema requires properties.');
+  }
+  if (properties.keys.any((key) => key is! String) ||
+      properties.values.any((value) => value is! Map)) {
+    throw const FormatException(
+      'Skill inputSchema properties must be named objects.',
+    );
+  }
+  final required = schema['required'];
+  if (required != null &&
+      (required is! List || !required.every((value) => value is String))) {
+    throw const FormatException('Skill inputSchema required must be strings.');
+  }
+  final propertyNames = properties.keys.map((key) => '$key').toSet();
+  final requiredNames = required is List
+      ? required.whereType<String>().toSet()
+      : const <String>{};
+  if (!requiredNames.every(propertyNames.contains)) {
+    throw const FormatException(
+      'Skill inputSchema required fields must be declared properties.',
+    );
+  }
+}
+
+void _validateInputDefinitions(
+  Map<String, SkillTemplateInputDefinition> definitions,
+) {
+  for (final entry in definitions.entries) {
+    _validateInputDefinition(entry.key, entry.value);
+  }
+}
+
+void _validateInputDefinition(
+  String name,
+  SkillTemplateInputDefinition definition,
+) {
+  const supportedTypes = {
+    'string',
+    'number',
+    'integer',
+    'boolean',
+    'array',
+    'object',
+  };
+  final type = definition.type.trim().toLowerCase();
+  if (!supportedTypes.contains(type)) {
+    throw FormatException('Unsupported input type: ${definition.type}.');
+  }
+  if (definition.minimum != null &&
+      definition.maximum != null &&
+      definition.minimum! > definition.maximum!) {
+    throw FormatException('Input $name has an invalid range.');
+  }
+  if (definition.enumValues.isNotEmpty) {
+    for (final value in definition.enumValues) {
+      _validateInputValue('$name enum', value, definition);
+    }
+  }
+  if (definition.defaultValue != null) {
+    _validateInputValue('$name default', definition.defaultValue, definition);
+  }
+  if (type != 'array' && definition.items != null) {
+    throw FormatException('Only array input $name may declare items.');
+  }
+  if (type != 'object' && definition.properties.isNotEmpty) {
+    throw FormatException('Only object input $name may declare properties.');
+  }
+  if (definition.items != null) {
+    _validateInputDefinition('$name[]', definition.items!);
+  }
+  for (final entry in definition.properties.entries) {
+    _validateInputDefinition('$name.${entry.key}', entry.value);
   }
 }
 
@@ -204,9 +417,6 @@ void _validateJsonFilters(
   }
 }
 
-String canonicalSkillUrlTemplateJson(String templateJson) =>
-    SkillUrlTemplate.fromJsonString(templateJson).toJsonString();
-
 final _liquidReferencePattern = RegExp(
   r'\b(input|credential)\.([A-Za-z0-9_]+)\b',
 );
@@ -253,7 +463,15 @@ const _allowedTopLevelReferences = {
   'true',
   'unless',
   'url_encode',
+  'uri_encode',
 };
+
+void _ensureSkillTemplateLiquidFilters() {
+  FilterRegistry.register(
+    'uri_encode',
+    (value, _, _) => Uri.encodeComponent('${value ?? ''}'),
+  );
+}
 
 String _canonicalizeBody(String value) {
   return _canonicalizeTemplate(
@@ -351,6 +569,7 @@ String _renderJsonBodySample(
   required Set<String> omittedCredentialKeys,
 }) {
   try {
+    _ensureSkillTemplateLiquidFilters();
     return Liquid().parse(value).render({
       'input': {
         for (final entry in inputDefinitions.entries)

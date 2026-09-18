@@ -1,10 +1,8 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const anthropicSkill = AppSkillDefinition(
+final anthropicSkill = AppSkillDefinition(
   identifier: 'anthropic',
   slug: 'anthropic',
   title: 'Anthropic',
@@ -15,14 +13,25 @@ a public URL. Prefer it when the conversation already uses Anthropic models.
 ''',
   requiresCredential: true,
   compatibleModelProviderIds: ['anthropic'],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'web_search',
       title: 'Web search',
       description: 'Answer a question using Claude web search.',
       inputJsonSchema: _webSearchInputSchema,
       requiresCredential: true,
-      callback: _webSearch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.anthropic.com/v1/messages',
+        inputSchema: _webSearchInputSchema,
+        headers: {
+          'x-api-key': '{{ credential.apiKey }}',
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: _webSearchBody,
+        bodyFormat: .json,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'web_fetch',
@@ -30,7 +39,17 @@ a public URL. Prefer it when the conversation already uses Anthropic models.
       description: 'Ask Claude to inspect and summarize a public URL.',
       inputJsonSchema: _webFetchInputSchema,
       requiresCredential: true,
-      callback: _webFetch,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.anthropic.com/v1/messages',
+        inputSchema: _webFetchInputSchema,
+        headers: {
+          'x-api-key': '{{ credential.apiKey }}',
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: _webFetchBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -39,7 +58,7 @@ const Map<String, Object> _webSearchInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'claude-sonnet-4-20250514'},
     'maxUses': {'type': 'integer', 'minimum': 1},
     'allowedDomains': {
       'type': 'array',
@@ -63,76 +82,40 @@ const Map<String, Object> _webFetchInputSchema = {
   'type': 'object',
   'properties': {
     'url': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'claude-sonnet-4-20250514'},
   },
   'required': ['url'],
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _webSearch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  return _message(context, input, textInput(input, 'question'));
+const _webSearchBody = '''
+{
+  "model": {{ input.model | json }},
+  "max_tokens": 1024,
+  "tools": [{
+    "type": "web_search_20260318",
+    "name": "web_search"
+    {% if input.maxUses != nil %},"max_uses":{{ input.maxUses | json }}{% endif %}
+    {% if input.allowedDomains != nil %},"allowed_domains":{{ input.allowedDomains | json }}{% endif %}
+    {% if input.blockedDomains != nil %},"blocked_domains":{{ input.blockedDomains | json }}{% endif %}
+    {% if input.responseInclusion != nil %},"response_inclusion":{{ input.responseInclusion | json }}{% endif %}
+    {% if input.country != nil or input.region != nil or input.city != nil or input.timezone != nil %},"user_location":{
+      "type":"approximate"
+      {% if input.country != nil %},"country":{{ input.country | json }}{% endif %}
+      {% if input.region != nil %},"region":{{ input.region | json }}{% endif %}
+      {% if input.city != nil %},"city":{{ input.city | json }}{% endif %}
+      {% if input.timezone != nil %},"timezone":{{ input.timezone | json }}{% endif %}
+    }{% endif %}
+  }],
+  "messages": [{"role":"user","content":{{ input.question | json }}}]
 }
+''';
 
-CancelableOperation<Object?> _webFetch(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  return _message(
-    context,
-    input,
-    'Fetch and summarize: ${textInput(input, 'url')}',
-  );
+const _webFetchBody = '''
+{
+  "model": {{ input.model | json }},
+  "max_tokens": 1024,
+  "tools": [{"type":"web_search_20260318","name":"web_search"}],
+  "messages": [{"role":"user","content":{{ input.url | prepend: "Fetch and summarize: " | json }}}]
 }
-
-CancelableOperation<Object?> _message(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  String text,
-) {
-  return postJson(
-    context,
-    'https://api.anthropic.com/v1/messages',
-    {'x-api-key': apiKey(input), 'anthropic-version': '2023-06-01'},
-    {
-      'model': stringInput(
-        input,
-        'model',
-        defaultValue: 'claude-sonnet-4-20250514',
-      ),
-      'max_tokens': 1024,
-      'tools': [_webSearchTool(input)],
-      'messages': [
-        {'role': 'user', 'content': text},
-      ],
-    },
-  );
-}
-
-Map<String, Object?> _webSearchTool(Map<String, dynamic> input) {
-  final tool = <String, Object?>{
-    'type': 'web_search_20260318',
-    'name': 'web_search',
-  };
-  putIfPresent(tool, 'max_uses', positiveIntInput(input, 'maxUses'));
-  putIfPresent(
-    tool,
-    'allowed_domains',
-    stringListInput(input, 'allowedDomains'),
-  );
-  putIfPresent(
-    tool,
-    'blocked_domains',
-    stringListInput(input, 'blockedDomains'),
-  );
-  putIfPresent(
-    tool,
-    'response_inclusion',
-    stringInput(input, 'responseInclusion'),
-  );
-  putIfPresent(tool, 'user_location', approximateLocation(input));
-
-  return tool;
-}
+''';

@@ -275,7 +275,7 @@ void main() {
         );
 
         expect(resolved, same(expected));
-        expect(resolved?.fullName, 'skill__app__agents__list_agents');
+        expect(resolved?.fullName, 'skill__app_native__agents__list_agents');
         if (resolved == null) fail('Expected nested skill target.');
         await provider.grantToolForConversation(
           conversationId: conversationId,

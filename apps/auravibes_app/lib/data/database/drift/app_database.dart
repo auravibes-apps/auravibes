@@ -45,6 +45,7 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_model_selecti
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
@@ -130,7 +131,10 @@ class AppDatabase extends _$AppDatabase {
   static const int _recentModelSelectionsSchemaVersion =
       _conversationPinOrderingSchemaVersion + 1;
   static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _forkSchemaVersion;
+  static const int _skillTemplateDefinitionSchemaVersion =
+      _forkSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _skillTemplateDefinitionSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -166,6 +170,11 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _runCoreUpgrades(m, from);
+    await _runSkillUpgrades(m, from);
+  }
+
+  Future<void> _runCoreUpgrades(Migrator m, int from) async {
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
@@ -176,6 +185,10 @@ extension on AppDatabase {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
+  }
+
+  Future<void> _runSkillUpgrades(Migrator m, int from) async {
+    await _upgradeSkillTemplateDefinitionSchema(m, from);
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {
@@ -280,6 +293,64 @@ extension on AppDatabase {
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
     );
+  }
+
+  Future<void> _upgradeSkillTemplateDefinitionSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._skillTemplateDefinitionSchemaVersion ||
+        !await _tableExists('skill_template_tools')) {
+      return;
+    }
+    await _addSkillTemplateDefinitionColumns(m);
+    await _backfillSkillTemplateDefinitions();
+  }
+
+  Future<void> _addSkillTemplateDefinitionColumns(Migrator m) async {
+    if (!await _columnExists('skill_template_tools', 'definition_json')) {
+      await m.addColumn(skillTemplateTools, skillTemplateTools.definitionJson);
+    }
+    if (await _columnExists(
+      'skill_template_tools',
+      'credential_definition_id',
+    )) {
+      return;
+    }
+
+    await m.addColumn(
+      skillTemplateTools,
+      skillTemplateTools.credentialDefinitionId,
+    );
+  }
+
+  Future<void> _backfillSkillTemplateDefinitions() async {
+    final rows = await select(skillTemplateTools).get();
+    for (final row in rows) {
+      if (row.definitionJson != '{}') continue;
+      await _backfillSkillTemplateDefinition(
+        row.id,
+        row.templateJson,
+        row.inputsJson,
+      );
+    }
+  }
+
+  Future<void> _backfillSkillTemplateDefinition(
+    String id,
+    String templateJson,
+    String inputsJson,
+  ) async {
+    final definition = SkillTemplateDefinition.fromLegacyJson(
+      templateJson: templateJson,
+      inputsJson: inputsJson,
+    ).toJsonString();
+    final _ =
+        await (update(
+          skillTemplateTools,
+        )..where((table) => table.id.equals(id))).write(
+          SkillTemplateToolsCompanion(definitionJson: .new(definition)),
+        );
   }
 }
 

@@ -15,6 +15,7 @@ abstract final class SkillToolSlugs {
   static const createUserSkill = 'create_user_skill';
   static const updateUserSkill = 'update_user_skill';
   static const deleteUserSkill = 'delete_user_skill';
+  static const cloneAppSkill = 'clone_app_skill';
   static const listSkillTemplateTools = 'list_skill_template_tools';
   static const getSkillTemplateTool = 'get_skill_template_tool';
   static const createSkillTemplateTool = 'create_skill_template_tool';
@@ -149,8 +150,7 @@ List<ToolSpec> _appSkillToolSpecs(
   List<AppSkillCredentialCandidate> candidates,
 ) {
   return [
-    for (final tool in skill.nativeTools)
-      ?_appSkillToolSpec(skill, tool, candidates),
+    for (final tool in skill.tools) ?_appSkillToolSpec(skill, tool, candidates),
   ];
 }
 
@@ -175,11 +175,23 @@ ToolSpec? _appSkillToolSpec(
 String _appSkillToolName(
   AppSkillDefinition skill,
   AppSkillToolDefinition tool,
-) => AgentResolvedToolName.skillNative(
-  tableId: tool.slug,
-  skillSlug: skill.slug,
-  toolIdentifier: tool.slug,
-).fullName;
+) => _appSkillToolTarget(skill, tool).fullName;
+
+AgentResolvedToolName _appSkillToolTarget(
+  AppSkillDefinition skill,
+  AppSkillToolDefinition tool,
+) => switch (skill.kind) {
+  .template => .skillAppTemplate(
+    tableId: tool.slug,
+    skillSlug: skill.slug,
+    toolIdentifier: tool.slug,
+  ),
+  .native => .skillNative(
+    tableId: tool.slug,
+    skillSlug: skill.slug,
+    toolIdentifier: tool.slug,
+  ),
+};
 
 final buildAppSkillNativeToolSpecsUsecaseProvider =
     Provider<BuildAppSkillNativeToolSpecsUsecase>((ref) {

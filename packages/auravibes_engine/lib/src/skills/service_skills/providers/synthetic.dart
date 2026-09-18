@@ -14,7 +14,8 @@ service or model-provider credentials.
 ''',
   requiresCredential: true,
   compatibleModelProviderIds: ['synthetic'],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',

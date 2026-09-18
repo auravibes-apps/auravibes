@@ -4,10 +4,10 @@ import 'package:auravibes_engine/auravibes_engine.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 
 final runSkillUrlTemplateUsecaseProvider =
-    Provider<package_skills.RunSkillUrlTemplate>((ref) {
+    Provider<package_skills.SkillTemplateExecutor>((ref) {
       final urlService = UrlService();
 
-      return package_skills.RunSkillUrlTemplate(
+      return package_skills.SkillTemplateExecutor(
         const package_skills.ResolveSkillUrlTemplate(),
         AppSkillHttpClientAdapter(urlService).execute,
       );

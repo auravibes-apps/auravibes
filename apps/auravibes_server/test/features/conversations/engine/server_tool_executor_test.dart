@@ -124,7 +124,7 @@ void main() {
     );
   });
 
-  test('compiled DuckDuckGo callback uses injected HTTP client', () async {
+  test('compiled DuckDuckGo template uses injected HTTP client', () async {
     UrlRequest? captured;
     final result = await runCompiledServiceSkillTool(
       skillSlug: 'duckduckgo',
@@ -145,7 +145,7 @@ void main() {
 
     expect(captured?.url, 'https://html.duckduckgo.com/html/');
     expect(captured?.method, UrlRequestMethod.post);
-    expect(result, contains('"provider":"duckduckgo"'));
+    expect(result, '<html></html>');
   });
 
   test('dynamic skill cannot supply a compiled callback', () async {

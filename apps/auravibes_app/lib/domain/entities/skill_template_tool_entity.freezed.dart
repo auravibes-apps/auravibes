@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SkillTemplateToolEntity {
 
- String get id; String get skillId; SkillTemplateToolType get templateType; String get title; String get description; String get slug; String get templateJson; String get inputsJson; bool get isEnabled; bool get requiresCredential; DateTime get createdAt; DateTime get updatedAt;
+ String get id; String get skillId; SkillTemplateToolType get templateType; String get title; String get description; String get slug; bool get isEnabled; bool get requiresCredential; DateTime get createdAt; DateTime get updatedAt; String get templateJson; String get inputsJson; String get definitionJson; String? get credentialDefinitionId;
 /// Create a copy of SkillTemplateToolEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $SkillTemplateToolEntityCopyWith<SkillTemplateToolEntity> get copyWith => _$Skil
 @override
 bool operator ==(Object other) {
   final _this = this as SkillTemplateToolEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.skillId, _this.skillId) || other.skillId == _this.skillId)&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.skillId, _this.skillId) || other.skillId == _this.skillId)&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.definitionJson, _this.definitionJson) || other.definitionJson == _this.definitionJson)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillTemplateToolEntity;
-  return Object.hash(runtimeType,_this.id,_this.skillId,_this.templateType,_this.title,_this.description,_this.slug,_this.templateJson,_this.inputsJson,_this.isEnabled,_this.requiresCredential,_this.createdAt,_this.updatedAt);
+  return Object.hash(runtimeType,_this.id,_this.skillId,_this.templateType,_this.title,_this.description,_this.slug,_this.isEnabled,_this.requiresCredential,_this.createdAt,_this.updatedAt,_this.templateJson,_this.inputsJson,_this.definitionJson,_this.credentialDefinitionId);
 }
 
 @override
 String toString() {
   final _this = this as SkillTemplateToolEntity;
-  return 'SkillTemplateToolEntity(id: ${_this.id}, skillId: ${_this.skillId}, templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, slug: ${_this.slug}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, isEnabled: ${_this.isEnabled}, requiresCredential: ${_this.requiresCredential}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
+  return 'SkillTemplateToolEntity(id: ${_this.id}, skillId: ${_this.skillId}, templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, slug: ${_this.slug}, isEnabled: ${_this.isEnabled}, requiresCredential: ${_this.requiresCredential}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, definitionJson: ${_this.definitionJson}, credentialDefinitionId: ${_this.credentialDefinitionId})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $SkillTemplateToolEntityCopyWith<$Res>  {
   factory $SkillTemplateToolEntityCopyWith(SkillTemplateToolEntity value, $Res Function(SkillTemplateToolEntity) _then) = _$SkillTemplateToolEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String skillId, SkillTemplateToolType templateType, String title, String description, String slug, String templateJson, String inputsJson, bool isEnabled, bool requiresCredential, DateTime createdAt, DateTime updatedAt
+ String id, String skillId, SkillTemplateToolType templateType, String title, String description, String slug, bool isEnabled, bool requiresCredential, DateTime createdAt, DateTime updatedAt, String templateJson, String inputsJson, String definitionJson, String? credentialDefinitionId
 });
 
 
@@ -68,7 +68,7 @@ class _$SkillTemplateToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? skillId = null,Object? templateType = null,Object? title = null,Object? description = null,Object? slug = null,Object? templateJson = null,Object? inputsJson = null,Object? isEnabled = null,Object? requiresCredential = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? skillId = null,Object? templateType = null,Object? title = null,Object? description = null,Object? slug = null,Object? isEnabled = null,Object? requiresCredential = null,Object? createdAt = null,Object? updatedAt = null,Object? templateJson = null,Object? inputsJson = null,Object? definitionJson = null,Object? credentialDefinitionId = freezed,}) {
   return _then(SkillTemplateToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,skillId: null == skillId ? _self.skillId : skillId // ignore: cast_nullable_to_non_nullable
@@ -76,13 +76,15 @@ as String,templateType: null == templateType ? _self.templateType : templateType
 as SkillTemplateToolType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
-as String,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
-as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
+as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
+as String,definitionJson: null == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
+as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -167,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  String templateJson,  String inputsJson,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolEntity() when $default != null:
-return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.templateJson,_that.inputsJson,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId);case _:
   return orElse();
 
 }
@@ -188,10 +190,10 @@ return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.desc
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  String templateJson,  String inputsJson,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId)  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolEntity():
-return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.templateJson,_that.inputsJson,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +210,10 @@ return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.desc
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  String templateJson,  String inputsJson,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String skillId,  SkillTemplateToolType templateType,  String title,  String description,  String slug,  bool isEnabled,  bool requiresCredential,  DateTime createdAt,  DateTime updatedAt,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolEntity() when $default != null:
-return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.templateJson,_that.inputsJson,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.description,_that.slug,_that.isEnabled,_that.requiresCredential,_that.createdAt,_that.updatedAt,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId);case _:
   return null;
 
 }
@@ -223,7 +225,7 @@ return $default(_that.id,_that.skillId,_that.templateType,_that.title,_that.desc
 
 
 class _SkillTemplateToolEntity extends SkillTemplateToolEntity {
-  const _SkillTemplateToolEntity({required this.id, required this.skillId, required this.templateType, required this.title, required this.description, required this.slug, required this.templateJson, required this.inputsJson, required this.isEnabled, required this.requiresCredential, required this.createdAt, required this.updatedAt}): super._();
+  const _SkillTemplateToolEntity({required this.id, required this.skillId, required this.templateType, required this.title, required this.description, required this.slug, required this.isEnabled, required this.requiresCredential, required this.createdAt, required this.updatedAt, this.templateJson = '', this.inputsJson = '', this.definitionJson = '{}', this.credentialDefinitionId}): super._();
   
 
 @override final  String id;
@@ -232,12 +234,14 @@ class _SkillTemplateToolEntity extends SkillTemplateToolEntity {
 @override final  String title;
 @override final  String description;
 @override final  String slug;
-@override final  String templateJson;
-@override final  String inputsJson;
 @override final  bool isEnabled;
 @override final  bool requiresCredential;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
+@override@JsonKey() final  String templateJson;
+@override@JsonKey() final  String inputsJson;
+@override@JsonKey() final  String definitionJson;
+@override final  String? credentialDefinitionId;
 
 /// Create a copy of SkillTemplateToolEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -249,18 +253,18 @@ _$SkillTemplateToolEntityCopyWith<_SkillTemplateToolEntity> get copyWith => __$S
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.skillId, skillId) || other.skillId == skillId)&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.skillId, skillId) || other.skillId == skillId)&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.definitionJson, definitionJson) || other.definitionJson == definitionJson)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,skillId,templateType,title,description,slug,templateJson,inputsJson,isEnabled,requiresCredential,createdAt,updatedAt);
+    return Object.hash(runtimeType,id,skillId,templateType,title,description,slug,isEnabled,requiresCredential,createdAt,updatedAt,templateJson,inputsJson,definitionJson,credentialDefinitionId);
 }
 
 @override
 String toString() {
-    return 'SkillTemplateToolEntity(id: $id, skillId: $skillId, templateType: $templateType, title: $title, description: $description, slug: $slug, templateJson: $templateJson, inputsJson: $inputsJson, isEnabled: $isEnabled, requiresCredential: $requiresCredential, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'SkillTemplateToolEntity(id: $id, skillId: $skillId, templateType: $templateType, title: $title, description: $description, slug: $slug, isEnabled: $isEnabled, requiresCredential: $requiresCredential, createdAt: $createdAt, updatedAt: $updatedAt, templateJson: $templateJson, inputsJson: $inputsJson, definitionJson: $definitionJson, credentialDefinitionId: $credentialDefinitionId)';
 }
 
 
@@ -271,7 +275,7 @@ abstract mixin class _$SkillTemplateToolEntityCopyWith<$Res> implements $SkillTe
   factory _$SkillTemplateToolEntityCopyWith(_SkillTemplateToolEntity value, $Res Function(_SkillTemplateToolEntity) _then) = __$SkillTemplateToolEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String skillId, SkillTemplateToolType templateType, String title, String description, String slug, String templateJson, String inputsJson, bool isEnabled, bool requiresCredential, DateTime createdAt, DateTime updatedAt
+ String id, String skillId, SkillTemplateToolType templateType, String title, String description, String slug, bool isEnabled, bool requiresCredential, DateTime createdAt, DateTime updatedAt, String templateJson, String inputsJson, String definitionJson, String? credentialDefinitionId
 });
 
 
@@ -288,7 +292,7 @@ class __$SkillTemplateToolEntityCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? skillId = null,Object? templateType = null,Object? title = null,Object? description = null,Object? slug = null,Object? templateJson = null,Object? inputsJson = null,Object? isEnabled = null,Object? requiresCredential = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? skillId = null,Object? templateType = null,Object? title = null,Object? description = null,Object? slug = null,Object? isEnabled = null,Object? requiresCredential = null,Object? createdAt = null,Object? updatedAt = null,Object? templateJson = null,Object? inputsJson = null,Object? definitionJson = null,Object? credentialDefinitionId = freezed,}) {
   return _then(_SkillTemplateToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,skillId: null == skillId ? _self.skillId : skillId // ignore: cast_nullable_to_non_nullable
@@ -296,13 +300,15 @@ as String,templateType: null == templateType ? _self.templateType : templateType
 as SkillTemplateToolType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,slug: null == slug ? _self.slug : slug // ignore: cast_nullable_to_non_nullable
-as String,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
-as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
 as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
+as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
+as String,definitionJson: null == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
+as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -312,7 +318,7 @@ as DateTime,
 /// @nodoc
 mixin _$SkillTemplateToolToCreate {
 
- SkillTemplateToolType get templateType; String get title; String get description; String get templateJson; String get inputsJson; bool get requiresCredential; bool get isEnabled;
+ SkillTemplateToolType get templateType; String get title; String get description; String get templateJson; String get inputsJson; String get definitionJson; String? get credentialDefinitionId; bool get requiresCredential; bool get isEnabled;
 /// Create a copy of SkillTemplateToolToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -324,20 +330,20 @@ $SkillTemplateToolToCreateCopyWith<SkillTemplateToolToCreate> get copyWith => _$
 @override
 bool operator ==(Object other) {
   final _this = this as SkillTemplateToolToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToCreate&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToCreate&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.definitionJson, _this.definitionJson) || other.definitionJson == _this.definitionJson)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillTemplateToolToCreate;
-  return Object.hash(runtimeType,_this.templateType,_this.title,_this.description,_this.templateJson,_this.inputsJson,_this.requiresCredential,_this.isEnabled);
+  return Object.hash(runtimeType,_this.templateType,_this.title,_this.description,_this.templateJson,_this.inputsJson,_this.definitionJson,_this.credentialDefinitionId,_this.requiresCredential,_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as SkillTemplateToolToCreate;
-  return 'SkillTemplateToolToCreate(templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
+  return 'SkillTemplateToolToCreate(templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, definitionJson: ${_this.definitionJson}, credentialDefinitionId: ${_this.credentialDefinitionId}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -348,7 +354,7 @@ abstract mixin class $SkillTemplateToolToCreateCopyWith<$Res>  {
   factory $SkillTemplateToolToCreateCopyWith(SkillTemplateToolToCreate value, $Res Function(SkillTemplateToolToCreate) _then) = _$SkillTemplateToolToCreateCopyWithImpl;
 @useResult
 $Res call({
- SkillTemplateToolType templateType, String title, String description, String templateJson, String inputsJson, bool requiresCredential, bool isEnabled
+ SkillTemplateToolType templateType, String title, String description, String templateJson, String inputsJson, String definitionJson, String? credentialDefinitionId, bool requiresCredential, bool isEnabled
 });
 
 
@@ -365,14 +371,16 @@ class _$SkillTemplateToolToCreateCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? templateType = null,Object? title = null,Object? description = null,Object? templateJson = null,Object? inputsJson = null,Object? requiresCredential = null,Object? isEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? templateType = null,Object? title = null,Object? description = null,Object? templateJson = null,Object? inputsJson = null,Object? definitionJson = null,Object? credentialDefinitionId = freezed,Object? requiresCredential = null,Object? isEnabled = null,}) {
   return _then(SkillTemplateToolToCreate(
 templateType: null == templateType ? _self.templateType : templateType // ignore: cast_nullable_to_non_nullable
 as SkillTemplateToolType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
 as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
-as String,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
+as String,definitionJson: null == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
+as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -459,10 +467,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  bool requiresCredential,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId,  bool requiresCredential,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToCreate() when $default != null:
-return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId,_that.requiresCredential,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -480,10 +488,10 @@ return $default(_that.templateType,_that.title,_that.description,_that.templateJ
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  bool requiresCredential,  bool isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId,  bool requiresCredential,  bool isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToCreate():
-return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId,_that.requiresCredential,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -500,10 +508,10 @@ return $default(_that.templateType,_that.title,_that.description,_that.templateJ
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  bool requiresCredential,  bool isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SkillTemplateToolType templateType,  String title,  String description,  String templateJson,  String inputsJson,  String definitionJson,  String? credentialDefinitionId,  bool requiresCredential,  bool isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToCreate() when $default != null:
-return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.templateType,_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.definitionJson,_that.credentialDefinitionId,_that.requiresCredential,_that.isEnabled);case _:
   return null;
 
 }
@@ -515,14 +523,16 @@ return $default(_that.templateType,_that.title,_that.description,_that.templateJ
 
 
 class _SkillTemplateToolToCreate extends SkillTemplateToolToCreate {
-  const _SkillTemplateToolToCreate({required this.templateType, required this.title, required this.description, required this.templateJson, required this.inputsJson, this.requiresCredential = false, this.isEnabled = true}): super._();
+  const _SkillTemplateToolToCreate({required this.templateType, required this.title, required this.description, this.templateJson = '', this.inputsJson = '', this.definitionJson = '{}', this.credentialDefinitionId, this.requiresCredential = false, this.isEnabled = true}): super._();
   
 
 @override final  SkillTemplateToolType templateType;
 @override final  String title;
 @override final  String description;
-@override final  String templateJson;
-@override final  String inputsJson;
+@override@JsonKey() final  String templateJson;
+@override@JsonKey() final  String inputsJson;
+@override@JsonKey() final  String definitionJson;
+@override final  String? credentialDefinitionId;
 @override@JsonKey() final  bool requiresCredential;
 @override@JsonKey() final  bool isEnabled;
 
@@ -536,18 +546,18 @@ _$SkillTemplateToolToCreateCopyWith<_SkillTemplateToolToCreate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToCreate&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToCreate&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.definitionJson, definitionJson) || other.definitionJson == definitionJson)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,templateType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+    return Object.hash(runtimeType,templateType,title,description,templateJson,inputsJson,definitionJson,credentialDefinitionId,requiresCredential,isEnabled);
 }
 
 @override
 String toString() {
-    return 'SkillTemplateToolToCreate(templateType: $templateType, title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+    return 'SkillTemplateToolToCreate(templateType: $templateType, title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, definitionJson: $definitionJson, credentialDefinitionId: $credentialDefinitionId, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
 }
 
 
@@ -558,7 +568,7 @@ abstract mixin class _$SkillTemplateToolToCreateCopyWith<$Res> implements $Skill
   factory _$SkillTemplateToolToCreateCopyWith(_SkillTemplateToolToCreate value, $Res Function(_SkillTemplateToolToCreate) _then) = __$SkillTemplateToolToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- SkillTemplateToolType templateType, String title, String description, String templateJson, String inputsJson, bool requiresCredential, bool isEnabled
+ SkillTemplateToolType templateType, String title, String description, String templateJson, String inputsJson, String definitionJson, String? credentialDefinitionId, bool requiresCredential, bool isEnabled
 });
 
 
@@ -575,14 +585,16 @@ class __$SkillTemplateToolToCreateCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? templateType = null,Object? title = null,Object? description = null,Object? templateJson = null,Object? inputsJson = null,Object? requiresCredential = null,Object? isEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? templateType = null,Object? title = null,Object? description = null,Object? templateJson = null,Object? inputsJson = null,Object? definitionJson = null,Object? credentialDefinitionId = freezed,Object? requiresCredential = null,Object? isEnabled = null,}) {
   return _then(_SkillTemplateToolToCreate(
 templateType: null == templateType ? _self.templateType : templateType // ignore: cast_nullable_to_non_nullable
 as SkillTemplateToolType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,templateJson: null == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
 as String,inputsJson: null == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
-as String,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
+as String,definitionJson: null == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
+as String,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,requiresCredential: null == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -594,7 +606,7 @@ as bool,
 /// @nodoc
 mixin _$SkillTemplateToolToUpdate {
 
- String? get title; String? get description; String? get templateJson; String? get inputsJson; bool? get requiresCredential; bool? get isEnabled;
+ String? get title; String? get description; String? get definitionJson; String? get templateJson; String? get inputsJson; String? get credentialDefinitionId; bool get clearCredentialDefinition; bool? get requiresCredential; bool? get isEnabled;
 /// Create a copy of SkillTemplateToolToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -606,20 +618,20 @@ $SkillTemplateToolToUpdateCopyWith<SkillTemplateToolToUpdate> get copyWith => _$
 @override
 bool operator ==(Object other) {
   final _this = this as SkillTemplateToolToUpdate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.definitionJson, _this.definitionJson) || other.definitionJson == _this.definitionJson)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.clearCredentialDefinition, _this.clearCredentialDefinition) || other.clearCredentialDefinition == _this.clearCredentialDefinition)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as SkillTemplateToolToUpdate;
-  return Object.hash(runtimeType,_this.title,_this.description,_this.templateJson,_this.inputsJson,_this.requiresCredential,_this.isEnabled);
+  return Object.hash(runtimeType,_this.title,_this.description,_this.definitionJson,_this.templateJson,_this.inputsJson,_this.credentialDefinitionId,_this.clearCredentialDefinition,_this.requiresCredential,_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as SkillTemplateToolToUpdate;
-  return 'SkillTemplateToolToUpdate(title: ${_this.title}, description: ${_this.description}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
+  return 'SkillTemplateToolToUpdate(title: ${_this.title}, description: ${_this.description}, definitionJson: ${_this.definitionJson}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, credentialDefinitionId: ${_this.credentialDefinitionId}, clearCredentialDefinition: ${_this.clearCredentialDefinition}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -630,7 +642,7 @@ abstract mixin class $SkillTemplateToolToUpdateCopyWith<$Res>  {
   factory $SkillTemplateToolToUpdateCopyWith(SkillTemplateToolToUpdate value, $Res Function(SkillTemplateToolToUpdate) _then) = _$SkillTemplateToolToUpdateCopyWithImpl;
 @useResult
 $Res call({
- String? title, String? description, String? templateJson, String? inputsJson, bool? requiresCredential, bool? isEnabled
+ String? title, String? description, String? definitionJson, String? templateJson, String? inputsJson, String? credentialDefinitionId, bool clearCredentialDefinition, bool? requiresCredential, bool? isEnabled
 });
 
 
@@ -647,13 +659,16 @@ class _$SkillTemplateToolToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? description = freezed,Object? templateJson = freezed,Object? inputsJson = freezed,Object? requiresCredential = freezed,Object? isEnabled = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? description = freezed,Object? definitionJson = freezed,Object? templateJson = freezed,Object? inputsJson = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? requiresCredential = freezed,Object? isEnabled = freezed,}) {
   return _then(SkillTemplateToolToUpdate(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,definitionJson: freezed == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
 as String?,templateJson: freezed == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
 as String?,inputsJson: freezed == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
-as String?,requiresCredential: freezed == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
+as String?,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,clearCredentialDefinition: null == clearCredentialDefinition ? _self.clearCredentialDefinition : clearCredentialDefinition // ignore: cast_nullable_to_non_nullable
+as bool,requiresCredential: freezed == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
@@ -740,10 +755,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? description,  String? templateJson,  String? inputsJson,  bool? requiresCredential,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? description,  String? definitionJson,  String? templateJson,  String? inputsJson,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? requiresCredential,  bool? isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToUpdate() when $default != null:
-return $default(_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.definitionJson,_that.templateJson,_that.inputsJson,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.requiresCredential,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -761,10 +776,10 @@ return $default(_that.title,_that.description,_that.templateJson,_that.inputsJso
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? description,  String? templateJson,  String? inputsJson,  bool? requiresCredential,  bool? isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? description,  String? definitionJson,  String? templateJson,  String? inputsJson,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? requiresCredential,  bool? isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToUpdate():
-return $default(_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.definitionJson,_that.templateJson,_that.inputsJson,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.requiresCredential,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -781,10 +796,10 @@ return $default(_that.title,_that.description,_that.templateJson,_that.inputsJso
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? description,  String? templateJson,  String? inputsJson,  bool? requiresCredential,  bool? isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? description,  String? definitionJson,  String? templateJson,  String? inputsJson,  String? credentialDefinitionId,  bool clearCredentialDefinition,  bool? requiresCredential,  bool? isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _SkillTemplateToolToUpdate() when $default != null:
-return $default(_that.title,_that.description,_that.templateJson,_that.inputsJson,_that.requiresCredential,_that.isEnabled);case _:
+return $default(_that.title,_that.description,_that.definitionJson,_that.templateJson,_that.inputsJson,_that.credentialDefinitionId,_that.clearCredentialDefinition,_that.requiresCredential,_that.isEnabled);case _:
   return null;
 
 }
@@ -796,13 +811,16 @@ return $default(_that.title,_that.description,_that.templateJson,_that.inputsJso
 
 
 class _SkillTemplateToolToUpdate extends SkillTemplateToolToUpdate {
-  const _SkillTemplateToolToUpdate({this.title, this.description, this.templateJson, this.inputsJson, this.requiresCredential, this.isEnabled}): super._();
+  const _SkillTemplateToolToUpdate({this.title, this.description, this.definitionJson, this.templateJson, this.inputsJson, this.credentialDefinitionId, this.clearCredentialDefinition = false, this.requiresCredential, this.isEnabled}): super._();
   
 
 @override final  String? title;
 @override final  String? description;
+@override final  String? definitionJson;
 @override final  String? templateJson;
 @override final  String? inputsJson;
+@override final  String? credentialDefinitionId;
+@override@JsonKey() final  bool clearCredentialDefinition;
 @override final  bool? requiresCredential;
 @override final  bool? isEnabled;
 
@@ -816,18 +834,18 @@ _$SkillTemplateToolToUpdateCopyWith<_SkillTemplateToolToUpdate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.definitionJson, definitionJson) || other.definitionJson == definitionJson)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.clearCredentialDefinition, clearCredentialDefinition) || other.clearCredentialDefinition == clearCredentialDefinition)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+    return Object.hash(runtimeType,title,description,definitionJson,templateJson,inputsJson,credentialDefinitionId,clearCredentialDefinition,requiresCredential,isEnabled);
 }
 
 @override
 String toString() {
-    return 'SkillTemplateToolToUpdate(title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+    return 'SkillTemplateToolToUpdate(title: $title, description: $description, definitionJson: $definitionJson, templateJson: $templateJson, inputsJson: $inputsJson, credentialDefinitionId: $credentialDefinitionId, clearCredentialDefinition: $clearCredentialDefinition, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
 }
 
 
@@ -838,7 +856,7 @@ abstract mixin class _$SkillTemplateToolToUpdateCopyWith<$Res> implements $Skill
   factory _$SkillTemplateToolToUpdateCopyWith(_SkillTemplateToolToUpdate value, $Res Function(_SkillTemplateToolToUpdate) _then) = __$SkillTemplateToolToUpdateCopyWithImpl;
 @override @useResult
 $Res call({
- String? title, String? description, String? templateJson, String? inputsJson, bool? requiresCredential, bool? isEnabled
+ String? title, String? description, String? definitionJson, String? templateJson, String? inputsJson, String? credentialDefinitionId, bool clearCredentialDefinition, bool? requiresCredential, bool? isEnabled
 });
 
 
@@ -855,13 +873,16 @@ class __$SkillTemplateToolToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of SkillTemplateToolToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? description = freezed,Object? templateJson = freezed,Object? inputsJson = freezed,Object? requiresCredential = freezed,Object? isEnabled = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? description = freezed,Object? definitionJson = freezed,Object? templateJson = freezed,Object? inputsJson = freezed,Object? credentialDefinitionId = freezed,Object? clearCredentialDefinition = null,Object? requiresCredential = freezed,Object? isEnabled = freezed,}) {
   return _then(_SkillTemplateToolToUpdate(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,definitionJson: freezed == definitionJson ? _self.definitionJson : definitionJson // ignore: cast_nullable_to_non_nullable
 as String?,templateJson: freezed == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable
 as String?,inputsJson: freezed == inputsJson ? _self.inputsJson : inputsJson // ignore: cast_nullable_to_non_nullable
-as String?,requiresCredential: freezed == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
+as String?,credentialDefinitionId: freezed == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
+as String?,clearCredentialDefinition: null == clearCredentialDefinition ? _self.clearCredentialDefinition : clearCredentialDefinition // ignore: cast_nullable_to_non_nullable
+as bool,requiresCredential: freezed == requiresCredential ? _self.requiresCredential : requiresCredential // ignore: cast_nullable_to_non_nullable
 as bool?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));

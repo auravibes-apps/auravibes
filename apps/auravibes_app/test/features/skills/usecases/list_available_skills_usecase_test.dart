@@ -565,7 +565,7 @@ class const _FakeAppSkillCandidates([final Set<String> readySlugs = const {}])
   @override
   bool isCredentialRequired(AppSkillDefinition skill) {
     return skill.requiresCredential ||
-        skill.nativeTools.any((tool) => tool.requiresCredential);
+        skill.tools.any((tool) => tool.requiresCredential);
   }
 
   @override
@@ -574,7 +574,7 @@ class const _FakeAppSkillCandidates([final Set<String> readySlugs = const {}])
     required AppSkillDefinition skill,
   }) async {
     if (skill.identifier == agentsSkillSlug) return true;
-    final serverNativeTools = skill.nativeTools
+    final serverNativeTools = skill.tools
         .where((tool) => tool.urlTemplate != null)
         .toList(growable: false);
     if (serverNativeTools.isEmpty) return false;

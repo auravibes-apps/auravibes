@@ -1,10 +1,7 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
-import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final parallelSkill = AppSkillDefinition(
@@ -17,22 +14,31 @@ Use Parallel for fast web search, URL extraction, or larger research tasks.
 Prefer tasks when the request needs deeper synthesis.
 ''',
   requiresCredential: true,
-  nativeTools: [
-    const AppSkillToolDefinition(
+  kind: .template,
+  tools: [
+    AppSkillToolDefinition(
       slug: 'search',
       title: 'Search',
       description: 'Search for web results and excerpts.',
       inputJsonSchema: _searchInputSchema,
       requiresCredential: true,
-      callback: _search,
+      urlTemplate: _template(
+        'https://api.parallel.ai/v1/search',
+        _searchBody,
+        _searchInputSchema,
+      ),
     ),
-    const AppSkillToolDefinition(
+    AppSkillToolDefinition(
       slug: 'extract',
       title: 'Extract',
       description: 'Extract content from a URL.',
       inputJsonSchema: _extractInputSchema,
       requiresCredential: true,
-      callback: _extract,
+      urlTemplate: _template(
+        'https://api.parallel.ai/v1/extract',
+        _extractBody,
+        _extractInputSchema,
+      ),
     ),
     AppSkillToolDefinition(
       slug: 'tasks',
@@ -43,7 +49,7 @@ Prefer tasks when the request needs deeper synthesis.
       urlTemplate: _template(
         'https://api.parallel.ai/v1/tasks',
         '{"input":{{ input.question | json }}}',
-        questionInputs,
+        answerInputSchema,
       ),
     ),
   ],
@@ -52,19 +58,19 @@ Prefer tasks when the request needs deeper synthesis.
 AppSkillUrlTemplate _template(
   String url,
   String body,
-  Map<String, SkillTemplateInputDefinition> inputs,
+  Map<String, Object> inputSchema,
 ) {
   return AppSkillUrlTemplate(
     template: .new(
       url: url,
-      method: UrlRequestMethod.post,
+      method: .post,
       headers: {
         'x-api-key': '{{ credential.apiKey }}',
         'content-type': 'application/json',
       },
       body: body,
     ),
-    inputs: inputs,
+    inputs: SkillTemplateInputDefinition.fromJsonSchema(inputSchema),
     credentialDefinitions: apiKeyCredentialDefinitions,
   );
 }
@@ -117,84 +123,29 @@ const Map<String, Object> _extractInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _search(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final searchQueries = stringListInput(input, 'searchQueries');
-  final body = <String, Object?>{
-    'search_queries': searchQueries ?? [textInput(input, 'query')],
-    'max_chars_total': positiveIntInput(input, 'maxCharsTotal') ?? 6000,
-  };
-  putIfPresent(body, 'mode', stringInput(input, 'mode'));
-  putIfPresent(body, 'session_id', stringInput(input, 'sessionId'));
-  putIfPresent(body, 'client_model', stringInput(input, 'clientModel'));
-  putIfPresent(
-    body,
-    'include_domains',
-    stringListInput(input, 'includeDomains'),
-  );
-  putIfPresent(
-    body,
-    'exclude_domains',
-    stringListInput(input, 'excludeDomains'),
-  );
-  putIfPresent(body, 'after_date', stringInput(input, 'afterDate'));
-  putIfPresent(body, 'max_age_seconds', _maxAgeSecondsInput(input));
-  putIfPresent(
-    body,
-    'timeout_seconds',
-    positiveIntInput(input, 'timeoutSeconds'),
-  );
-  putIfPresent(
-    body,
-    'disable_cache_fallback',
-    boolInput(input, 'disableCacheFallback'),
-  );
-  putIfPresent(
-    body,
-    'max_chars_per_result',
-    positiveIntInput(input, 'maxCharsPerResult'),
-  );
-  putIfPresent(body, 'location', stringInput(input, 'location'));
-  putIfPresent(body, 'max_results', positiveIntInput(input, 'maxResults'));
-  putIfPresent(body, 'objective', stringInput(input, 'objective'));
-  return _post(context, input, 'search', body);
+const _searchBody = '''
+{
+  "search_queries": {% if input.searchQueries %}{{ input.searchQueries | json }}{% else %}[{{ input.query | json }}]{% endif %},
+  "max_chars_total": {% if input.maxCharsTotal != nil %}{{ input.maxCharsTotal | json }}{% else %}6000{% endif %}
+  {% if input.mode != nil %},"mode":{{ input.mode | json }}{% endif %}
+  {% if input.sessionId != nil %},"session_id":{{ input.sessionId | json }}{% endif %}
+  {% if input.clientModel != nil %},"client_model":{{ input.clientModel | json }}{% endif %}
+  {% if input.includeDomains != nil %},"include_domains":{{ input.includeDomains | json }}{% endif %}
+  {% if input.excludeDomains != nil %},"exclude_domains":{{ input.excludeDomains | json }}{% endif %}
+  {% if input.afterDate != nil %},"after_date":{{ input.afterDate | json }}{% endif %}
+  {% if input.maxAgeSeconds != nil %},"max_age_seconds":{{ input.maxAgeSeconds | json }}{% endif %}
+  {% if input.timeoutSeconds != nil %},"timeout_seconds":{{ input.timeoutSeconds | json }}{% endif %}
+  {% if input.disableCacheFallback != nil %},"disable_cache_fallback":{{ input.disableCacheFallback | json }}{% endif %}
+  {% if input.maxCharsPerResult != nil %},"max_chars_per_result":{{ input.maxCharsPerResult | json }}{% endif %}
+  {% if input.location != nil %},"location":{{ input.location | json }}{% endif %}
+  {% if input.maxResults != nil %},"max_results":{{ input.maxResults | json }}{% endif %}
+  {% if input.objective != nil %},"objective":{{ input.objective | json }}{% endif %}
 }
+''';
 
-int? _maxAgeSecondsInput(Map<String, dynamic> input) {
-  final value = input['maxAgeSeconds'];
-  return value is int && value >= 0 ? value : null;
-}
-
-CancelableOperation<Object?> _extract(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'urls': stringListInput(input, 'urls') ?? const [],
-  };
-  putIfPresent(body, 'max_chars', positiveIntInput(input, 'maxChars'));
-  putIfPresent(
-    body,
-    'max_chars_total',
-    positiveIntInput(input, 'maxCharsTotal'),
-  );
-  putIfPresent(
-    body,
-    'timeout_seconds',
-    positiveIntInput(input, 'timeoutSeconds'),
-  );
-  return _post(context, input, 'extract', body);
-}
-
-CancelableOperation<Object?> _post(
-  SkillHttpClient context,
-  Map<String, dynamic> input,
-  String tool,
-  Map<String, Object?> body,
-) {
-  return postJson(context, 'https://api.parallel.ai/v1/$tool', {
-    'x-api-key': apiKey(input),
-  }, body);
-}
+const _extractBody = '''
+{"urls":{{ input.urls | json }}
+{% if input.maxChars != nil %},"max_chars":{{ input.maxChars | json }}{% endif %}
+{% if input.maxCharsTotal != nil %},"max_chars_total":{{ input.maxCharsTotal | json }}{% endif %}
+{% if input.timeoutSeconds != nil %},"timeout_seconds":{{ input.timeoutSeconds | json }}{% endif %}}
+''';

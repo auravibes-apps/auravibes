@@ -61,6 +61,7 @@ typedef _ConversationSkillRequest = ({
 
 typedef _AppSkillEnabledRequest = ({
   String id,
+  SkillKind kind,
   bool enabled,
   String? slug,
   String? title,
@@ -94,8 +95,6 @@ final _blankTool = SkillTemplateToolEntity(
   title: '',
   description: '',
   slug: '',
-  templateJson: '',
-  inputsJson: '',
   isEnabled: false,
   requiresCredential: false,
   createdAt: .new(1970),
@@ -439,11 +438,20 @@ extension CloudSkillStoreRuntimeOperations on CloudSkillStore {
   /// Matches the server's cloud template-tool materialization policy.
   Future<bool> userSkillReady(SkillEntity skill) async {
     if (!skill.isEnabled) return false;
-    final hasCredential = await _hasSkillCredential(skill);
+    final skillCredentialDefinitionId = skill.credentialDefinitionId;
+    for (final tool in await tools(skill.id)) {
+      if (!tool.isEnabled) continue;
+      if (!tool.requiresCredential) return true;
 
-    return (await tools(skill.id)).any(
-      (tool) => tool.isEnabled && (!tool.requiresCredential || hasCredential),
-    );
+      final credentialDefinitionId =
+          tool.credentialDefinitionId ?? skillCredentialDefinitionId;
+      if (credentialDefinitionId != null &&
+          (await credentials(credentialDefinitionId)).isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<List<({String skillId})>> selectionResources(
@@ -641,11 +649,17 @@ extension _CloudSkillStoreToolMapping on CloudSkillStore {
   SkillTemplateToolEntity _toolCreateText(
     SkillTemplateToolEntity tool,
     SkillTemplateToolToCreate value,
-  ) => tool.copyWith(
-    description: value.description,
-    templateJson: canonicalSkillUrlTemplateJson(value.templateJson),
-    inputsJson: value.inputsJson,
-  );
+  ) {
+    final definition = _createToolDefinition(value);
+
+    return tool.copyWith(
+      description: value.description,
+      definitionJson: definition.toJsonString(),
+      templateJson: definition.legacyTemplateJson,
+      inputsJson: definition.legacyInputsJson,
+      credentialDefinitionId: value.credentialDefinitionId,
+    );
+  }
 
   SkillTemplateToolEntity _toolCreateState(
     SkillTemplateToolEntity tool,
@@ -681,17 +695,7 @@ extension _CloudSkillStoreToolMapping on CloudSkillStore {
   SkillTemplateToolEntity _toolUpdateText(
     SkillTemplateToolEntity tool,
     SkillTemplateToolToUpdate value,
-  ) {
-    final templateJson = value.templateJson;
-
-    return tool.copyWith(
-      description: value.description ?? tool.description,
-      templateJson: templateJson == null
-          ? tool.templateJson
-          : canonicalSkillUrlTemplateJson(templateJson),
-      inputsJson: value.inputsJson ?? tool.inputsJson,
-    );
-  }
+  ) => _toolUpdateCredential(_toolUpdateDefinition(tool, value), tool, value);
 
   SkillTemplateToolEntity _toolUpdateState(
     SkillTemplateToolEntity tool,
@@ -700,6 +704,32 @@ extension _CloudSkillStoreToolMapping on CloudSkillStore {
     isEnabled: value.isEnabled ?? tool.isEnabled,
     requiresCredential: value.requiresCredential ?? tool.requiresCredential,
     updatedAt: DateTime.now().toUtc(),
+  );
+}
+
+extension _CloudSkillStoreToolUpdateMapping on CloudSkillStore {
+  SkillTemplateToolEntity _toolUpdateDefinition(
+    SkillTemplateToolEntity tool,
+    SkillTemplateToolToUpdate value,
+  ) {
+    final definition = _updateToolDefinition(value);
+
+    return tool.copyWith(
+      description: value.description ?? tool.description,
+      definitionJson: definition?.toJsonString() ?? tool.definitionJson,
+      templateJson: definition?.legacyTemplateJson ?? tool.templateJson,
+      inputsJson: definition?.legacyInputsJson ?? tool.inputsJson,
+    );
+  }
+
+  SkillTemplateToolEntity _toolUpdateCredential(
+    SkillTemplateToolEntity tool,
+    SkillTemplateToolEntity source,
+    SkillTemplateToolToUpdate value,
+  ) => tool.copyWith(
+    credentialDefinitionId: value.clearCredentialDefinition
+        ? null
+        : value.credentialDefinitionId ?? source.credentialDefinitionId,
   );
 }
 
@@ -998,6 +1028,7 @@ extension _CloudSkillStoreAppSkillMapping on CloudSkillStore {
   SkillEntity _appSkillFromValues(
     ({
       String id,
+      SkillKind kind,
       bool enabled,
       String? slug,
       String? title,
@@ -1010,6 +1041,7 @@ extension _CloudSkillStoreAppSkillMapping on CloudSkillStore {
     return _appSkillState((
       skill: _appSkillIdentity(
         id: request.id,
+        kind: request.kind,
         slug: request.slug,
         title: request.title,
       ),
@@ -1022,13 +1054,14 @@ extension _CloudSkillStoreAppSkillMapping on CloudSkillStore {
 
   SkillEntity _appSkillIdentity({
     required String id,
+    required SkillKind kind,
     required String? slug,
     required String? title,
   }) => _blankSkill.copyWith(
     source: SkillSource.app,
     id: id,
     workspaceId: workspaceId,
-    kind: SkillKind.native,
+    kind: kind,
     title: title ?? id,
     slug: slug ?? id,
   );
@@ -1056,6 +1089,7 @@ extension _CloudSkillStoreAppSkillOperations on CloudSkillStore {
   Future<void> _createAppSkill(
     ({
       String id,
+      SkillKind kind,
       bool enabled,
       String? slug,
       String? title,
@@ -1066,6 +1100,7 @@ extension _CloudSkillStoreAppSkillOperations on CloudSkillStore {
   ) async {
     final appSkill = _appSkillFromValues((
       id: request.id,
+      kind: request.kind,
       enabled: request.enabled,
       slug: request.slug,
       title: request.title,
@@ -1141,13 +1176,6 @@ extension _CloudSkillStoreConversationMapping on CloudSkillStore {
           if (request.isAppSkill) 'source': 'app',
         },
       );
-
-  Future<bool> _hasSkillCredential(SkillEntity skill) async {
-    final credentialDefinitionId = skill.credentialDefinitionId;
-    if (credentialDefinitionId == null) return false;
-
-    return (await credentials(credentialDefinitionId)).isNotEmpty;
-  }
 
   Future<List<WorkspaceResource>> _active(WorkspaceResourceKind kind) async =>
       (await _store.watch(kind).first)
@@ -1269,10 +1297,22 @@ extension _CloudSkillStoreToolParsing on CloudSkillStore {
   SkillTemplateToolEntity _toolText(
     SkillTemplateToolEntity tool,
     Map<String, dynamic> data,
-  ) => tool.copyWith(
-    templateJson: data['templateJson'] as String,
-    inputsJson: data['inputsJson'] as String,
-    isEnabled: data['isEnabled'] as bool,
+  ) {
+    final definitionJson = _definitionJson(data);
+    final definition = definitionJson == '{}'
+        ? null
+        : SkillTemplateDefinition.fromJsonString(definitionJson);
+
+    return _toolTextValues(tool, data, definitionJson, definition);
+  }
+
+  ({String template, String inputs}) _legacyToolDefinition(
+    Map<String, dynamic> data,
+    SkillTemplateDefinition? definition,
+  ) => (
+    template:
+        data['templateJson'] as String? ?? definition?.legacyTemplateJson ?? '',
+    inputs: data['inputsJson'] as String? ?? definition?.legacyInputsJson ?? '',
   );
 
   SkillTemplateToolEntity _toolState(
@@ -1289,6 +1329,25 @@ extension _CloudSkillStoreToolParsing on CloudSkillStore {
     SkillTemplateToolEntity value, {
     required String skillSlug,
   }) => {..._toolIdentityData(value, skillSlug), ..._toolContentData(value)};
+}
+
+extension _CloudSkillStoreToolTextMapping on CloudSkillStore {
+  SkillTemplateToolEntity _toolTextValues(
+    SkillTemplateToolEntity tool,
+    Map<String, dynamic> data,
+    String definitionJson,
+    SkillTemplateDefinition? definition,
+  ) {
+    final legacy = _legacyToolDefinition(data, definition);
+    final text = tool.copyWith(
+      definitionJson: definitionJson,
+      credentialDefinitionId: data['credentialDefinitionId'] as String?,
+      templateJson: legacy.template,
+      inputsJson: legacy.inputs,
+    );
+
+    return text.copyWith(isEnabled: data['isEnabled'] as bool? ?? true);
+  }
 }
 
 extension _CloudSkillStoreDefinitionCredential on CloudSkillStore {
@@ -1401,9 +1460,60 @@ Map<String, Object?> _toolIdentityData(
 Map<String, Object?> _toolContentData(SkillTemplateToolEntity value) => {
   'templateJson': value.templateJson,
   'inputsJson': value.inputsJson,
+  'definitionJson': value.definitionJson,
+  'credentialDefinitionId': ?value.credentialDefinitionId,
   'isEnabled': value.isEnabled,
   'requiresCredential': value.requiresCredential,
 };
+
+SkillTemplateDefinition _createToolDefinition(SkillTemplateToolToCreate value) {
+  final source = value.definitionJson.trim();
+  if (source.isNotEmpty && source != '{}') {
+    return SkillTemplateDefinition.fromJsonString(source);
+  }
+
+  return SkillTemplateDefinition.fromLegacyJson(
+    templateJson: value.templateJson,
+    inputsJson: value.inputsJson,
+  );
+}
+
+SkillTemplateDefinition? _updateToolDefinition(
+  SkillTemplateToolToUpdate value,
+) {
+  final source = value.definitionJson;
+  if (source != null && source.trim().isNotEmpty && source != '{}') {
+    return SkillTemplateDefinition.fromJsonString(source);
+  }
+  final template = value.templateJson;
+  final inputs = value.inputsJson;
+  if (template != null && inputs != null) {
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: template,
+      inputsJson: inputs,
+    );
+  }
+
+  return null;
+}
+
+String _definitionJson(Map<String, dynamic> data) {
+  final source = data['definitionJson'];
+  if (source is String && source.trim().isNotEmpty && source != '{}') {
+    return SkillTemplateDefinition.fromJsonString(source).toJsonString();
+  }
+
+  final template = data['templateJson'];
+  final inputs = data['inputsJson'];
+  if (template is String && inputs is String) {
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: template,
+      inputsJson: inputs,
+    ).toJsonString();
+  }
+
+  return '{}';
+}
 
 SkillCredentialForEdit _credentialForEditValue(
   String workspaceId,

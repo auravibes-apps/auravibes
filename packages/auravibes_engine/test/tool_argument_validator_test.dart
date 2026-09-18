@@ -140,6 +140,36 @@ void main() {
     );
   });
 
+  test('rejects numeric values outside schema ranges', () {
+    const rangedSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'limit': {'type': 'integer', 'minimum': 1, 'maximum': 10},
+      },
+    };
+
+    expect(
+      () => validateToolArguments(rangedSchema, {'limit': 0}),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          r'Value at $.limit is below minimum',
+        ),
+      ),
+    );
+    expect(
+      () => validateToolArguments(rangedSchema, {'limit': 11}),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          r'Value at $.limit is above maximum',
+        ),
+      ),
+    );
+  });
+
   test('validates nested values and every supported scalar type', () {
     const nestedSchema = <String, Object?>{
       'type': 'object',

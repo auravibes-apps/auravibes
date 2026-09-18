@@ -200,7 +200,7 @@ class const _FakeAppSkillCandidates()
   @override
   bool isCredentialRequired(AppSkillDefinition skill) {
     return skill.requiresCredential ||
-        skill.nativeTools.any((tool) => tool.requiresCredential);
+        skill.tools.any((tool) => tool.requiresCredential);
   }
 
   @override
@@ -208,6 +208,6 @@ class const _FakeAppSkillCandidates()
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    return skill.nativeTools.any((tool) => !tool.requiresCredential);
+    return skill.tools.any((tool) => !tool.requiresCredential);
   }
 }
