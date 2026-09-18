@@ -131,6 +131,8 @@
     "empty_title": "No hay conexiones",
     "empty_subtitle": "Agrega un proveedor de modelo o credencial de habilidad para conectar este espacio de trabajo.",
     "empty_filter": "No hay conexiones de {type}",
+    "empty_search": "No hay conexiones que coincidan con la búsqueda o los filtros.",
+    "search_placeholder": "Buscar conexiones...",
     "delete_credential_title": "Eliminar credencial de habilidad",
     "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
     "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
@@ -146,7 +148,11 @@
       "all": "Todas",
       "model_providers": "Proveedores de modelo",
       "skill_credentials": "Credenciales de habilidad",
-      "mcp_servers": "Servidores MCP"
+      "mcp_servers": "Servidores MCP",
+      "oauth": "OAuth",
+      "failed": "Fallidas",
+      "expiring": "Por expirar",
+      "needs_auth": "Necesitan autenticación"
     },
     "type": {
       "model_provider": "Proveedor de Modelo",
@@ -464,6 +470,11 @@
     "error_app_skill_disabled": "La habilidad no está habilitada en este espacio de trabajo.",
     "empty_title": "No hay habilidades disponibles",
     "empty_subtitle": "Crea una habilidad para hacerla disponible en conversaciones",
+    "search_placeholder": "Buscar habilidades...",
+    "search_no_results": "Ninguna habilidad coincide con estos filtros",
+    "filter_all": "Todas",
+    "filter_source": "Fuente",
+    "filter_status": "Estado",
     "app_read_only": "Las habilidades de la app vienen integradas y solo se pueden activar o desactivar para este espacio de trabajo.",
     "slug_label": "Slug",
     "title_label": "Título",
@@ -474,6 +485,7 @@
     "edit_content": "Editar contenido",
     "content_empty": "Sin contenido todavía",
     "enabled_label": "Activada",
+    "disabled_label": "Desactivada",
     "credential_optional_label": "La credencial es opcional",
     "credential_optional_hint": "Permite cargar esta habilidad aunque no se haya guardado una credencial.",
     "source": {

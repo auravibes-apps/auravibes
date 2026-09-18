@@ -2,6 +2,7 @@
 // Required: Local builders keep this small screen readable.
 // Required: Feature widgets keep closely related private widgets together.
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -13,6 +14,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -21,6 +23,15 @@ const _skillScreenIconSize = 48.0;
 const _skillScreenListPadding = 8.0;
 const _skillScreenRunSpacing = 4.0;
 const _skillScreenSpacing = 8.0;
+const _skillDescriptionMaxLines = 2;
+const _searchEmptyTokenLength = 0;
+const _searchSingleCharacterTokenLength = 1;
+const _searchShortTokenLength = 2;
+const _searchMediumTokenMinLength = 3;
+const _searchMediumTokenMaxLength = 4;
+const _searchNoEditDistance = 0;
+const _searchSingleEditDistance = 1;
+const _searchMultipleEditDistance = 2;
 
 class const SkillsScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
@@ -317,20 +328,499 @@ class const _SkillsScreenLoadedContent({
   required final ValueChanged<WorkspaceSkill> onDeleteSkill,
   required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
   onSkillEnabledChanged,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final searchQuery = useState('');
+    final sourceFilter = useState<SkillSource?>(null);
+    final enabledFilter = useState<bool?>(null);
+
+    return _SkillsScreenLoadedContentData(
+      context,
+      this,
+      searchQuery,
+      sourceFilter,
+      enabledFilter,
+    ).child;
+  }
+}
+
+typedef _SkillsScreenSearchActions = ({
+  ValueChanged<String> onSearchChanged,
+  ValueChanged<SkillSource?> onSourceChanged,
+  ValueChanged<bool?> onEnabledChanged,
+});
+
+typedef _SkillsScreenSkillActions = ({
+  VoidCallback onCreateSkill,
+  ValueChanged<WorkspaceSkill> onOpenSkill,
+  ValueChanged<WorkspaceSkill> onDeleteSkill,
+  void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
+  onSkillEnabledChanged,
+});
+
+class _SkillsScreenLoadedContentData {
+  new(
+    BuildContext context,
+    _SkillsScreenLoadedContent screen,
+    ValueNotifier<String> searchQuery,
+    ValueNotifier<SkillSource?> sourceFilter,
+    ValueNotifier<bool?> enabledFilter,
+  ) : child = _SkillsScreenLoadedContentViewData(
+        context,
+        screen,
+        _loadedSkillFilters(searchQuery, sourceFilter, enabledFilter),
+        _loadedSearchActions(searchQuery, sourceFilter, enabledFilter),
+        _loadedSkillActions(screen),
+      ).child;
+
+  final Widget child;
+}
+
+class _SkillsScreenLoadedContentViewData {
+  new(
+    BuildContext context,
+    _SkillsScreenLoadedContent screen,
+    _SkillsFilterState filters,
+    _SkillsScreenSearchActions searchActions,
+    _SkillsScreenSkillActions skillActions,
+  ) : child = screen.skills.isEmpty
+          ? _SkillsScreenEmpty(onCreateSkill: skillActions.onCreateSkill)
+          : _SkillsScreenLoadedView(
+              source: filters.source,
+              skills: _filterSkills(context, screen.skills, filters),
+              enabled: filters.enabled,
+              onSearchChanged: searchActions.onSearchChanged,
+              onSourceChanged: searchActions.onSourceChanged,
+              onEnabledChanged: searchActions.onEnabledChanged,
+              onOpenSkill: skillActions.onOpenSkill,
+              onDeleteSkill: skillActions.onDeleteSkill,
+              onSkillEnabledChanged: skillActions.onSkillEnabledChanged,
+            );
+
+  final Widget child;
+}
+
+_SkillsFilterState _loadedSkillFilters(
+  ValueNotifier<String> searchQuery,
+  ValueNotifier<SkillSource?> sourceFilter,
+  ValueNotifier<bool?> enabledFilter,
+) => (
+  queryTokens: _searchTokens(searchQuery.value),
+  source: sourceFilter.value,
+  enabled: enabledFilter.value,
+);
+
+_SkillsScreenSearchActions _loadedSearchActions(
+  ValueNotifier<String> searchQuery,
+  ValueNotifier<SkillSource?> sourceFilter,
+  ValueNotifier<bool?> enabledFilter,
+) => (
+  onSearchChanged: (value) => searchQuery.value = value,
+  onSourceChanged: (value) => sourceFilter.value = value,
+  onEnabledChanged: (value) => enabledFilter.value = value,
+);
+
+_SkillsScreenSkillActions _loadedSkillActions(
+  _SkillsScreenLoadedContent screen,
+) => (
+  onCreateSkill: screen.onCreateSkill,
+  onOpenSkill: screen.onOpenSkill,
+  onDeleteSkill: screen.onDeleteSkill,
+  onSkillEnabledChanged: screen.onSkillEnabledChanged,
+);
+
+class const _SkillsScreenLoadedView({
+  required final List<WorkspaceSkill> skills,
+  required final SkillSource? source,
+  required final bool? enabled,
+  required final ValueChanged<String> onSearchChanged,
+  required final ValueChanged<SkillSource?> onSourceChanged,
+  required final ValueChanged<bool?> onEnabledChanged,
+  required final ValueChanged<WorkspaceSkill> onOpenSkill,
+  required final ValueChanged<WorkspaceSkill> onDeleteSkill,
+  required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
+  onSkillEnabledChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _SkillsScreenFilters(
+        source: source,
+        enabled: enabled,
+        onSearchChanged: onSearchChanged,
+        onSourceChanged: onSourceChanged,
+        onEnabledChanged: onEnabledChanged,
+      ),
+      Expanded(
+        child: _SkillsScreenFilteredList(
+          skills: skills,
+          onOpenSkill: onOpenSkill,
+          onDeleteSkill: onDeleteSkill,
+          onSkillEnabledChanged: onSkillEnabledChanged,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _SkillsScreenFilteredList({
+  required final List<WorkspaceSkill> skills,
+  required final ValueChanged<WorkspaceSkill> onOpenSkill,
+  required final ValueChanged<WorkspaceSkill> onDeleteSkill,
+  required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
+  onSkillEnabledChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => skills.isEmpty
+      ? const _SkillsScreenSearchEmpty()
+      : _SkillsList(
+          skills: skills,
+          onOpenSkill: onOpenSkill,
+          onDeleteSkill: onDeleteSkill,
+          onSkillEnabledChanged: onSkillEnabledChanged,
+        );
+}
+
+class const _SkillsScreenFilters({
+  required final SkillSource? source,
+  required final bool? enabled,
+  required final ValueChanged<String> onSearchChanged,
+  required final ValueChanged<SkillSource?> onSourceChanged,
+  required final ValueChanged<bool?> onEnabledChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (skills.isEmpty) {
-      return _SkillsScreenEmpty(onCreateSkill: onCreateSkill);
-    }
+    final spacing = context.auraTheme.fromSpacing(.sm);
 
-    return _SkillsList(
-      skills: skills,
-      onOpenSkill: onOpenSkill,
-      onDeleteSkill: onDeleteSkill,
-      onSkillEnabledChanged: onSkillEnabledChanged,
+    return Padding(
+      padding: EdgeInsets.only(left: spacing, top: spacing, right: spacing),
+      child: _SkillsScreenFilterFields(
+        source: source,
+        enabled: enabled,
+        onSearchChanged: onSearchChanged,
+        onSourceChanged: onSourceChanged,
+        onEnabledChanged: onEnabledChanged,
+      ),
     );
   }
+}
+
+class const _SkillsScreenFilterFields({
+  required final SkillSource? source,
+  required final bool? enabled,
+  required final ValueChanged<String> onSearchChanged,
+  required final ValueChanged<SkillSource?> onSourceChanged,
+  required final ValueChanged<bool?> onEnabledChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      _SkillsScreenSearchInput(onChanged: onSearchChanged),
+      _SkillsScreenFilterRow(
+        source: source,
+        enabled: enabled,
+        onSourceChanged: onSourceChanged,
+        onEnabledChanged: onEnabledChanged,
+      ),
+    ],
+    spacing: .sm,
+  );
+}
+
+class const _SkillsScreenSearchInput({
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraInput(
+    placeholder: const TextLocale(LocaleKeys.skills_screen_search_placeholder),
+    prefixIcon: const AuraIcon(Icons.search),
+    size: .small,
+    onChanged: onChanged,
+  );
+}
+
+class const _SkillsScreenFilterRow({
+  required final SkillSource? source,
+  required final bool? enabled,
+  required final ValueChanged<SkillSource?> onSourceChanged,
+  required final ValueChanged<bool?> onEnabledChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => _SkillsScreenFilterRowData(
+    source: source,
+    enabled: enabled,
+    onSourceChanged: onSourceChanged,
+    onEnabledChanged: onEnabledChanged,
+  ).child;
+}
+
+class _SkillsScreenFilterRowData {
+  new({
+    required SkillSource? source,
+    required bool? enabled,
+    required ValueChanged<SkillSource?> onSourceChanged,
+    required ValueChanged<bool?> onEnabledChanged,
+  }) : child = Row(
+         children: [
+           Expanded(
+             child: _SkillsFilter(
+               labelKey: LocaleKeys.skills_screen_filter_source,
+               options: _skillSourceFilterOptions,
+               value: _sourceFilterValue(source),
+               onChanged: (value) =>
+                   onSourceChanged(_skillSourceFromFilterValue(value)),
+               key: const ValueKey('skills-source-filter'),
+             ),
+           ),
+           const SizedBox(width: _skillScreenSpacing),
+           Expanded(
+             child: _SkillsFilter(
+               labelKey: LocaleKeys.skills_screen_filter_status,
+               options: _skillStatusFilterOptions,
+               value: _statusFilterValue(enabled),
+               onChanged: (value) =>
+                   onEnabledChanged(_enabledFromFilterValue(value)),
+               key: const ValueKey('skills-status-filter'),
+             ),
+           ),
+         ],
+       );
+
+  final Widget child;
+}
+
+class const _SkillsFilter({
+  required final String labelKey,
+  required final List<AuraDropdownOption<String>> options,
+  required final String value,
+  required final ValueChanged<String?> onChanged,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraDropdownSelector<String>(
+    options: options,
+    value: value,
+    onChanged: onChanged,
+    label: TextLocale(labelKey),
+  );
+}
+
+class const _SkillsScreenSearchEmpty() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Center(
+    child: AuraColumn(
+      children: [
+        AuraIcon(Icons.search_off, size: .large),
+        AuraText(
+          child: TextLocale(LocaleKeys.skills_screen_search_no_results),
+          textAlign: .center,
+        ),
+      ],
+      spacing: .sm,
+      mainAxisSize: .min,
+    ),
+  );
+}
+
+const _skillSourceFilterOptions = <AuraDropdownOption<String>>[
+  AuraDropdownOption(
+    value: 'all',
+    child: TextLocale(LocaleKeys.skills_screen_filter_all),
+  ),
+  AuraDropdownOption(
+    value: 'app',
+    child: TextLocale(LocaleKeys.skills_screen_source_app),
+  ),
+  AuraDropdownOption(
+    value: 'user',
+    child: TextLocale(LocaleKeys.skills_screen_source_user),
+  ),
+];
+
+const _skillStatusFilterOptions = <AuraDropdownOption<String>>[
+  AuraDropdownOption(
+    value: 'all',
+    child: TextLocale(LocaleKeys.skills_screen_filter_all),
+  ),
+  AuraDropdownOption(
+    value: 'enabled',
+    child: TextLocale(LocaleKeys.skills_screen_enabled_label),
+  ),
+  AuraDropdownOption(
+    value: 'disabled',
+    child: TextLocale(LocaleKeys.skills_screen_disabled_label),
+  ),
+];
+
+String _sourceFilterValue(SkillSource? source) => source?.name ?? 'all';
+
+SkillSource? _skillSourceFromFilterValue(String? value) => switch (value) {
+  'app' => .app,
+  'user' => .user,
+  _ => null,
+};
+
+String _statusFilterValue(bool? enabled) => switch (enabled) {
+  null => 'all',
+  true => 'enabled',
+  false => 'disabled',
+};
+
+bool? _enabledFromFilterValue(String? value) => switch (value) {
+  'enabled' => true,
+  'disabled' => false,
+  _ => null,
+};
+
+typedef _SkillsFilterState = ({
+  List<String> queryTokens,
+  SkillSource? source,
+  bool? enabled,
+});
+
+List<WorkspaceSkill> _filterSkills(
+  BuildContext context,
+  List<WorkspaceSkill> skills,
+  _SkillsFilterState filters,
+) => skills
+    .where((skill) => _matchesSkillFilters(context, skill, filters))
+    .toList();
+
+bool _matchesSkillFilters(
+  BuildContext context,
+  WorkspaceSkill skill,
+  _SkillsFilterState filters,
+) {
+  if (!_matchesSkillMetadata(skill, filters)) return false;
+
+  return _matchesSkillQuery(context, skill, filters.queryTokens);
+}
+
+bool _matchesSkillMetadata(WorkspaceSkill skill, _SkillsFilterState filters) =>
+    (filters.source == null || skill.source == filters.source) &&
+    (filters.enabled == null || skill.isEnabled == filters.enabled);
+
+bool _matchesSkillQuery(
+  BuildContext context,
+  WorkspaceSkill skill,
+  List<String> queryTokens,
+) =>
+    queryTokens.isEmpty ||
+    queryTokens.every(
+      (queryToken) => _skillSearchValues(
+        context,
+        skill,
+      ).any((value) => _matchesSearchToken(queryToken, value)),
+    );
+
+bool _matchesSearchToken(String queryToken, String value) {
+  final normalizedValue = value.toLowerCase();
+  if (normalizedValue.contains(queryToken)) return true;
+
+  return _searchTokens(value).any(
+    (valueToken) =>
+        _editDistance(queryToken, valueToken) <=
+        _maxSearchEditDistance(queryToken.length),
+  );
+}
+
+List<String> _searchTokens(String value) => value
+    .toLowerCase()
+    .split(RegExp(r'[\s_./-]+'))
+    .where((token) => token.isNotEmpty)
+    .toList();
+
+int _maxSearchEditDistance(int tokenLength) => switch (tokenLength) {
+  _searchEmptyTokenLength ||
+  _searchSingleCharacterTokenLength ||
+  _searchShortTokenLength => _searchNoEditDistance,
+  _searchMediumTokenMinLength ||
+  _searchMediumTokenMaxLength => _searchSingleEditDistance,
+  _ => _searchMultipleEditDistance,
+};
+
+int _editDistance(String left, String right) =>
+    left == right ? _searchNoEditDistance : _calculateEditDistance(left, right);
+
+int _calculateEditDistance(String left, String right) {
+  var previousRow = List<int>.generate(right.length + 1, (index) => index);
+  for (var leftIndex = 1; leftIndex <= left.length; leftIndex++) {
+    previousRow = _editDistanceRow((
+      left: left,
+      right: right,
+      leftIndex: leftIndex,
+      previousRow: previousRow,
+    ));
+  }
+
+  return previousRow.last;
+}
+
+typedef _EditDistanceRowState = ({
+  String left,
+  String right,
+  int leftIndex,
+  List<int> previousRow,
+});
+
+List<int> _editDistanceRow(_EditDistanceRowState state) {
+  final currentRow = <int>[
+    state.leftIndex,
+    ...List<int>.filled(state.right.length, 0),
+  ];
+  for (var rightIndex = 1; rightIndex <= state.right.length; rightIndex++) {
+    currentRow[rightIndex] = _editDistanceCell(state, currentRow, rightIndex);
+  }
+
+  return currentRow;
+}
+
+int _editDistanceCell(
+  _EditDistanceRowState state,
+  List<int> currentRow,
+  int rightIndex,
+) {
+  final substitutionCost = _editDistanceSubstitutionCost(
+    state.left.codeUnitAt(state.leftIndex - 1),
+    state.right.codeUnitAt(rightIndex - 1),
+    state.previousRow[rightIndex - 1],
+  );
+
+  return _minimumEditDistance(
+    currentRow[rightIndex - 1],
+    state.previousRow[rightIndex],
+    substitutionCost,
+  );
+}
+
+int _editDistanceSubstitutionCost(
+  int leftCodeUnit,
+  int rightCodeUnit,
+  int diagonal,
+) =>
+    diagonal +
+    (leftCodeUnit == rightCodeUnit
+        ? _searchNoEditDistance
+        : _searchSingleEditDistance);
+
+int _minimumEditDistance(int left, int top, int diagonal) => math.min(
+  math.min(left + _searchSingleEditDistance, top + _searchSingleEditDistance),
+  diagonal,
+);
+
+Iterable<String> _skillSearchValues(
+  BuildContext context,
+  WorkspaceSkill skill,
+) sync* {
+  yield skill.title;
+  final titleKey = skill.titleKey;
+  if (titleKey != null) yield titleKey.tr(context: context);
+  yield skill.slug;
+  yield skill.source.name;
+  yield _skillSourceLabel(context, skill.source);
+  yield skill.kind.name;
+  yield _skillKindLabel(context, skill.kind);
 }
 
 class const _SkillsScreenEmpty({required final VoidCallback onCreateSkill})
@@ -516,7 +1006,7 @@ class const _SkillTileDescription({required final String description})
         color: context.auraColors.onSurfaceVariant,
         fontWeight: context.auraTheme.typography.fontWeightRegular,
       ),
-      maxLines: 2,
+      maxLines: _skillDescriptionMaxLines,
       overflow: .ellipsis,
     );
   }
@@ -530,27 +1020,24 @@ class const _SkillTileTags({required final WorkspaceSkill skill})
       spacing: _skillScreenSpacing,
       runSpacing: _skillScreenRunSpacing,
       children: [
-        _SkillChip(label: _sourceLabel(context)),
-        _SkillChip(label: _kindLabel(context)),
+        _SkillChip(label: _skillSourceLabel(context, skill.source)),
+        _SkillChip(label: _skillKindLabel(context, skill.kind)),
         _SkillChip(label: skill.slug),
       ],
     );
   }
+}
 
-  String _sourceLabel(BuildContext context) {
-    return switch (skill.source) {
+String _skillSourceLabel(BuildContext context, SkillSource source) =>
+    switch (source) {
       .user => LocaleKeys.skills_screen_source_user.tr(context: context),
       .app => LocaleKeys.skills_screen_source_app.tr(context: context),
     };
-  }
 
-  String _kindLabel(BuildContext context) {
-    return switch (skill.kind) {
-      .template => LocaleKeys.skills_screen_kind_template.tr(context: context),
-      .native => LocaleKeys.skills_screen_kind_native.tr(context: context),
-    };
-  }
-}
+String _skillKindLabel(BuildContext context, SkillKind kind) => switch (kind) {
+  .template => LocaleKeys.skills_screen_kind_template.tr(context: context),
+  .native => LocaleKeys.skills_screen_kind_native.tr(context: context),
+};
 
 class const _SkillTileActions({
   required final WorkspaceSkill skill,
