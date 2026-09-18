@@ -88,6 +88,9 @@ class const MarionetteExtensions(final MarionetteExtensionActions _actions) {
 }
 
 final class MarionetteExtensionBootstrap {
+  static const _workspaceIdDescription =
+      'Stable identifier of an existing local workspace.';
+
   static const _navigateSchema = ExtensionInputSchema(
     required: ['route', 'workspaceId'],
     properties: {
@@ -96,7 +99,7 @@ final class MarionetteExtensionBootstrap {
         enumValues: MarionetteDevelopmentState.allowedRouteValues,
       ),
       'workspaceId': ExtensionParam.string(
-        description: 'Stable identifier of an existing local workspace.',
+        description: _workspaceIdDescription,
         minLength: 1,
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
@@ -110,7 +113,7 @@ final class MarionetteExtensionBootstrap {
     required: ['workspaceId'],
     properties: {
       'workspaceId': ExtensionParam.string(
-        description: 'Stable identifier of an existing local workspace.',
+        description: _workspaceIdDescription,
         minLength: 1,
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
@@ -120,7 +123,7 @@ final class MarionetteExtensionBootstrap {
     required: ['workspaceId', 'modelSelectionId'],
     properties: {
       'workspaceId': ExtensionParam.string(
-        description: 'Stable identifier of an existing local workspace.',
+        description: _workspaceIdDescription,
         minLength: 1,
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
