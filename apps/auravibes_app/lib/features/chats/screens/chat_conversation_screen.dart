@@ -562,7 +562,7 @@ _LoadedChatConversationSelectorCallbacks _loadedConversationSelectorCallbacks(
   _LoadedRuntimeRequest request,
 ) => (
   onModelChanged: _loadedConversationModelChanged(request),
-  onModelSelectionChanged: _modelSelectionChanged(request),
+  onModelSelectionChanged: _loadedConversationModelChanged(request),
   onAgentChanged: _agentChanged(request),
   onSkillsPress: _loadedConversationSkillsPress(request),
   continueAgent: _loadedConversationContinue(request),
@@ -653,18 +653,6 @@ _ContinueCallbackRequest _loadedConversationContinueRequest(
   conversationId: request.conversation.id,
   isInputBusy: isInputBusy,
 );
-
-ValueChanged<String?> _modelSelectionChanged(_LoadedRuntimeRequest request) =>
-    (modelId) => unawaited(
-      request.ref
-          .read(
-            conversationChatProvider(
-              request.workspaceId,
-              request.conversation.id,
-            ).notifier,
-          )
-          .setModel(modelId),
-    );
 
 ValueChanged<String?> _agentChanged(_LoadedRuntimeRequest request) =>
     (agentId) => unawaited(
