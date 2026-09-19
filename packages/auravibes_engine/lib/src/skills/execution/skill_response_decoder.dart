@@ -159,9 +159,9 @@ final class _SseTextAccumulator {
     _text.write(value);
   }
 
-  void _collectCitations(Object? value) {
+  void _collectCitations(Object value) {
     if (value is List) {
-      value.forEach(_collectCitations);
+      value.whereType<Object>().forEach(_collectCitations);
 
       return;
     }
@@ -173,7 +173,7 @@ final class _SseTextAccumulator {
       final title = value['title'];
       _citations[url] = title is String && title.isNotEmpty ? title : url;
     }
-    value.values.forEach(_collectCitations);
+    value.values.whereType<Object>().forEach(_collectCitations);
   }
 
   void _reconcile(String value) {

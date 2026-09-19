@@ -399,24 +399,53 @@ String _appendDurableSkillActivations(
 List<String> _durableSkillActivations(Iterable<MessageEntity> messages) {
   final latestBySkill = <String, String>{};
   for (final message in messages) {
-    final toolCalls =
-        message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
-    for (final toolCall in toolCalls) {
-      if (toolCall.name != activateSkillToolName ||
-          toolCall.resultStatus != ToolCallResultStatus.success) {
-        continue;
-      }
-      final response = toolCall.responseRaw;
-      if (response == null || !response.startsWith('<skill_content ')) {
-        continue;
-      }
-      final slug = toolCall.arguments['slug'];
-      final key = slug is String && slug.isNotEmpty ? slug : toolCall.id;
-      latestBySkill[key] = response;
-    }
+    _collectDurableSkillActivations(
+      latestBySkill,
+      message.metadata?.toolCalls ?? const <MessageToolCallEntity>[],
+    );
   }
 
   return latestBySkill.values.toList(growable: false);
+}
+
+void _collectDurableSkillActivations(
+  Map<String, String> latestBySkill,
+  Iterable<MessageToolCallEntity> toolCalls,
+) {
+  for (final toolCall in toolCalls) {
+    final activation = _durableSkillActivation(toolCall);
+    if (activation == null) continue;
+    latestBySkill[activation.key] = activation.response;
+  }
+}
+
+({String key, String response})? _durableSkillActivation(
+  MessageToolCallEntity toolCall,
+) {
+  if (!_isSuccessfulSkillActivation(toolCall)) return null;
+  final response = _skillActivationResponse(toolCall);
+  if (response == null) return null;
+
+  return (key: _skillActivationKey(toolCall), response: response);
+}
+
+bool _isSuccessfulSkillActivation(MessageToolCallEntity toolCall) =>
+    toolCall.name == activateSkillToolName &&
+    toolCall.resultStatus == ToolCallResultStatus.success;
+
+String? _skillActivationResponse(MessageToolCallEntity toolCall) {
+  final response = toolCall.responseRaw;
+  if (response == null || !response.startsWith('<skill_content ')) {
+    return null;
+  }
+
+  return response;
+}
+
+String _skillActivationKey(MessageToolCallEntity toolCall) {
+  final slug = toolCall.arguments['slug'];
+
+  return slug is String && slug.isNotEmpty ? slug : toolCall.id;
 }
 
 Future<CompactionExecutionState> _completeLocalCompaction(

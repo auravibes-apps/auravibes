@@ -39,6 +39,13 @@ typedef _SkillToolExecutionRequest = ({
   SkillCommandTarget command,
 });
 
+typedef _SkillActivation = ({
+  AvailableSkill skill,
+  _SkillManifestRequest manifestRequest,
+  SkillManifest manifest,
+  List<SkillCredentialOption> credentials,
+});
+
 class const _SkillManifestRequest({
   required final String conversationId,
   required final String workspaceId,
@@ -98,57 +105,124 @@ Future<Object?> _activate(
   RunSkillCommandUsecase usecase,
   _RunSkillCommandRequest commandRequest,
 ) async {
-  final target = SkillActivationTarget.fromArguments(
-    Map<String, Object?>.from(commandRequest.arguments),
+  final activation = await _prepareActivation(usecase, commandRequest);
+
+  await _loadConversationSkill(usecase, activation.manifestRequest);
+
+  return buildSkillActivationResult(
+    manifest: activation.manifest,
+    content: activation.skill.content,
+    credentials: activation.credentials,
   );
-  final available = await usecase
-      .listAvailableSkillsUsecase(commandRequest.workspaceId)
-      .call(
-        conversationId: commandRequest.conversationId,
-        workspaceId: commandRequest.workspaceId,
-        filter: .catalog,
-      );
-  final skill = available
-      .where((candidate) => candidate.slug == target.slug)
-      .firstOrNull;
-  if (skill == null) throw StateError('Skill is unavailable: ${target.slug}');
-  final manifestRequest = _SkillManifestRequest(
-    conversationId: commandRequest.conversationId,
-    workspaceId: commandRequest.workspaceId,
-    slug: target.slug,
-    revision: target.revision,
-  );
-  final catalogManifest = await _manifestForAvailableSkill(
+}
+
+Future<_SkillActivation> _prepareActivation(
+  RunSkillCommandUsecase usecase,
+  _RunSkillCommandRequest request,
+) async {
+  final target = _activationTarget(request);
+  final skill = await _availableSkill(usecase, request, target);
+  final manifestRequest = _activationManifestRequest(request, target);
+  final manifest = await _manifestForAvailableSkill(
     usecase,
     manifestRequest,
     skill,
   );
-  if (catalogManifest.revision != target.revision) {
-    throw FormatException(
-      'Skill revision changed; use the current skill catalog to refresh: '
-      '${target.slug}',
+  _validateActivationRevision(manifest, target);
+
+  return (
+    skill: skill,
+    manifestRequest: manifestRequest,
+    manifest: manifest,
+    credentials: await _activationCredentials(
+      usecase,
+      manifestRequest,
+      manifest,
+    ),
+  );
+}
+
+SkillActivationTarget _activationTarget(_RunSkillCommandRequest request) =>
+    SkillActivationTarget.fromArguments(
+      Map<String, Object?>.from(request.arguments),
     );
+
+Future<AvailableSkill> _availableSkill(
+  RunSkillCommandUsecase usecase,
+  _RunSkillCommandRequest request,
+  SkillActivationTarget target,
+) async {
+  final available = await _availableSkills(usecase, request);
+  final skill = available
+      .where((candidate) => candidate.slug == target.slug)
+      .firstOrNull;
+  if (skill == null) throw StateError('Skill is unavailable: ${target.slug}');
+
+  return skill;
+}
+
+Future<List<AvailableSkill>> _availableSkills(
+  RunSkillCommandUsecase usecase,
+  _RunSkillCommandRequest request,
+) {
+  final listAvailableSkills = usecase.listAvailableSkillsUsecase(
+    request.workspaceId,
+  );
+
+  return listAvailableSkills(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    filter: .catalog,
+  );
+}
+
+_SkillManifestRequest _activationManifestRequest(
+  _RunSkillCommandRequest request,
+  SkillActivationTarget target,
+) => _SkillManifestRequest(
+  conversationId: request.conversationId,
+  workspaceId: request.workspaceId,
+  slug: target.slug,
+  revision: target.revision,
+);
+
+void _validateActivationRevision(
+  SkillManifest manifest,
+  SkillActivationTarget target,
+) {
+  if (manifest.revision == target.revision) return;
+
+  throw FormatException(
+    'Skill revision changed; use the current skill catalog to refresh: '
+    '${target.slug}',
+  );
+}
+
+Future<List<SkillCredentialOption>> _activationCredentials(
+  RunSkillCommandUsecase usecase,
+  _SkillManifestRequest request,
+  SkillManifest manifest,
+) {
+  if (!manifest.tools.any((tool) => tool.credentialRequired)) {
+    return Future.value(const <SkillCredentialOption>[]);
   }
+
+  return _loadActivationCredentials(usecase, request);
+}
+
+Future<List<SkillCredentialOption>> _loadActivationCredentials(
+  RunSkillCommandUsecase usecase,
+  _SkillManifestRequest request,
+) async {
   final listSkillCredentials =
       usecase.listCatalogSkillCredentials ?? usecase.listSkillCredentials;
-  final credentials =
-      catalogManifest.tools.any((tool) => tool.credentialRequired)
-      ? _credentialOptions(
-          await listSkillCredentials(
-            conversationId: commandRequest.conversationId,
-            workspaceId: commandRequest.workspaceId,
-            arguments: {'slug': target.slug},
-          ),
-        )
-      : const <SkillCredentialOption>[];
-
-  await _loadConversationSkill(usecase, manifestRequest);
-
-  return buildSkillActivationResult(
-    manifest: catalogManifest,
-    content: skill.content,
-    credentials: credentials,
+  final result = await listSkillCredentials(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    arguments: {'slug': request.slug},
   );
+
+  return _credentialOptions(result);
 }
 
 List<SkillCredentialOption> _credentialOptions(Map<String, Object?> result) {
@@ -360,11 +434,19 @@ Future<SkillManifest> _manifestForAvailableSkill(
     workspaceId: request.workspaceId,
     extraSkills: [skill],
   );
+
+  return _requiredSkillManifest(manifests, skill.slug);
+}
+
+SkillManifest _requiredSkillManifest(
+  List<SkillManifest> manifests,
+  String slug,
+) {
   final manifest = manifests
-      .where((candidate) => candidate.slug == skill.slug)
+      .where((candidate) => candidate.slug == slug)
       .firstOrNull;
   if (manifest == null) {
-    throw StateError('Skill manifest unavailable: ${skill.slug}');
+    throw StateError('Skill manifest unavailable: $slug');
   }
 
   return manifest;
