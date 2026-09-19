@@ -49,48 +49,19 @@ final class _SseTextAccumulator {
 
   static String? decode(String body) {
     final accumulator = _SseTextAccumulator();
-    String? eventType;
-    final data = StringBuffer();
+    _SseEventParser(accumulator).parse(body);
 
-    void consumeEvent() {
-      if (data.isEmpty) {
-        eventType = null;
+    return accumulator.result();
+  }
 
-        return;
-      }
-      accumulator.consume(eventType, data.toString());
-      data.clear();
-      eventType = null;
-    }
+  String? result() {
+    if (_text.isEmpty) return null;
+    if (_citations.isEmpty) return _text.toString();
 
-    for (final line in const LineSplitter().convert(body)) {
-      if (line.isEmpty) {
-        consumeEvent();
-
-        continue;
-      }
-      if (line.startsWith(':')) continue;
-      if (line.startsWith('event:')) {
-        if (data.isNotEmpty && _isJson(data.toString())) consumeEvent();
-        eventType = _fieldValue(line);
-
-        continue;
-      }
-      if (line.startsWith('data:')) {
-        if (data.isNotEmpty && _isJson(data.toString())) consumeEvent();
-        if (data.isNotEmpty) data.write('\n');
-        data.write(_fieldValue(line));
-      }
-    }
-    consumeEvent();
-
-    if (accumulator._text.isEmpty) return null;
-    if (accumulator._citations.isEmpty) return accumulator._text.toString();
-
-    final sources = accumulator._citations.entries
+    final sources = _citations.entries
         .map((entry) => '- [${entry.value}](${entry.key})')
         .join('\n');
-    return '${accumulator._text}\n\nSources:\n$sources';
+    return '$_text\n\nSources:\n$sources';
   }
 
   void consume(String? eventType, String rawData) {
@@ -125,33 +96,51 @@ final class _SseTextAccumulator {
   }
 
   String? _deltaText(Map<String, dynamic> event, String type) {
+    return _directDelta(event) ??
+        _choiceDelta(event) ??
+        _typedDelta(event, type);
+  }
+
+  String? _directDelta(Map<String, dynamic> event) {
     final delta = event['delta'];
     if (delta is String) return delta;
-    if (delta is Map) {
-      final text = _extractText(delta);
-      if (text.isNotEmpty) return text;
-    }
 
+    return delta is Map ? _nonEmptyText(delta) : null;
+  }
+
+  String? _choiceDelta(Map<String, dynamic> event) {
     final choices = event['choices'];
-    if (choices is List) {
-      for (final choice in choices.whereType<Map<Object?, Object?>>()) {
-        final choiceDelta = choice['delta'];
-        if (choiceDelta is String) return choiceDelta;
-        if (choiceDelta is Map) {
-          final text = _extractText(choiceDelta);
-          if (text.isNotEmpty) return text;
-        }
-        final choiceText = choice['text'];
-        if (choiceText is String && choiceText.isNotEmpty) return choiceText;
-      }
-    }
+    if (choices is! List) return null;
 
-    if (type.contains('delta') || type.contains('chunk')) {
-      final text = _extractText(event);
-      if (text.isNotEmpty) return text;
+    for (final choice in choices.whereType<Map<Object?, Object?>>()) {
+      final delta = _choiceDeltaValue(choice);
+      if (delta != null) return delta;
     }
 
     return null;
+  }
+
+  String? _choiceDeltaValue(Map<Object?, Object?> choice) {
+    final delta = choice['delta'];
+    if (delta is String) return delta;
+    if (delta is Map) {
+      final text = _nonEmptyText(delta);
+      if (text != null) return text;
+    }
+
+    final text = choice['text'];
+    return text is String && text.isNotEmpty ? text : null;
+  }
+
+  String? _typedDelta(Map<String, dynamic> event, String type) {
+    if (!type.contains('delta') && !type.contains('chunk')) return null;
+
+    return _nonEmptyText(event);
+  }
+
+  String? _nonEmptyText(Object value) {
+    final text = _extractText(value);
+    return text.isEmpty ? null : text;
   }
 
   void _appendDelta(String value) {
@@ -194,6 +183,53 @@ final class _SseTextAccumulator {
     _text
       ..clear()
       ..write(value);
+  }
+}
+
+final class _SseEventParser(final _SseTextAccumulator _accumulator) {
+  String? _eventType;
+  final StringBuffer _data = StringBuffer();
+
+  void parse(String body) {
+    const LineSplitter().convert(body).forEach(_consumeLine);
+    _consumeEvent();
+  }
+
+  void _consumeLine(String line) {
+    if (line.isEmpty) {
+      _consumeEvent();
+
+      return;
+    }
+    if (line.startsWith(':')) return;
+    if (line.startsWith('event:')) {
+      _consumeEventBeforeNewField();
+      _eventType = _fieldValue(line);
+
+      return;
+    }
+    if (line.startsWith('data:')) _consumeDataField(line);
+  }
+
+  void _consumeEventBeforeNewField() {
+    if (_data.isNotEmpty && _isJson(_data.toString())) _consumeEvent();
+  }
+
+  void _consumeDataField(String line) {
+    _consumeEventBeforeNewField();
+    if (_data.isNotEmpty) _data.write('\n');
+    _data.write(_fieldValue(line));
+  }
+
+  void _consumeEvent() {
+    if (_data.isEmpty) {
+      _eventType = null;
+
+      return;
+    }
+    _accumulator.consume(_eventType, _data.toString());
+    _data.clear();
+    _eventType = null;
   }
 }
 

@@ -25,7 +25,7 @@ typedef RunSkillNativeTool = Future<Object?> Function(
   RunSkillNativeToolRequest request,
 );
 
-typedef _RunSkillCommandRequest = ({
+typedef RunSkillCommandRequest = ({
   String conversationId,
   String workspaceId,
   String commandName,
@@ -70,13 +70,13 @@ class const RunSkillCommandUsecase({
   final ListSkillCredentials? listCatalogSkillCredentials,
   final RunSkillNativeTool? runSkillNativeTool,
 }) {
-  Future<Object?> call(_RunSkillCommandRequest request) =>
+  Future<Object?> call(RunSkillCommandRequest request) =>
       _runSkillCommand(this, request);
 }
 
 Future<Object?> _runSkillCommand(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) => switch (request.commandName) {
   activateSkillToolName => _activateSkillCommand(usecase, request),
   listSkillCredentialsToolName => _listSkillCredentialsCommand(
@@ -89,7 +89,7 @@ Future<Object?> _runSkillCommand(
 
 Future<Map<String, Object?>> _listSkillCredentialsCommand(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) => usecase.listSkillCredentials(
   conversationId: request.conversationId,
   workspaceId: request.workspaceId,
@@ -98,12 +98,12 @@ Future<Map<String, Object?>> _listSkillCredentialsCommand(
 
 Future<Object?> _activateSkillCommand(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) => _activate(usecase, request);
 
 Future<Object?> _activate(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest commandRequest,
+  RunSkillCommandRequest commandRequest,
 ) async {
   final activation = await _prepareActivation(usecase, commandRequest);
 
@@ -118,7 +118,7 @@ Future<Object?> _activate(
 
 Future<_SkillActivation> _prepareActivation(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) async {
   final target = _activationTarget(request);
   final skill = await _availableSkill(usecase, request, target);
@@ -142,14 +142,14 @@ Future<_SkillActivation> _prepareActivation(
   );
 }
 
-SkillActivationTarget _activationTarget(_RunSkillCommandRequest request) =>
+SkillActivationTarget _activationTarget(RunSkillCommandRequest request) =>
     SkillActivationTarget.fromArguments(
       Map<String, Object?>.from(request.arguments),
     );
 
 Future<AvailableSkill> _availableSkill(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
   SkillActivationTarget target,
 ) async {
   final available = await _availableSkills(usecase, request);
@@ -163,7 +163,7 @@ Future<AvailableSkill> _availableSkill(
 
 Future<List<AvailableSkill>> _availableSkills(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) {
   final listAvailableSkills = usecase.listAvailableSkillsUsecase(
     request.workspaceId,
@@ -177,7 +177,7 @@ Future<List<AvailableSkill>> _availableSkills(
 }
 
 _SkillManifestRequest _activationManifestRequest(
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
   SkillActivationTarget target,
 ) => _SkillManifestRequest(
   conversationId: request.conversationId,
@@ -252,12 +252,12 @@ Future<void> _loadConversationSkill(
 
 Future<Map<String, Object?>> _callSkillCommand(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) => _callTool(usecase, request);
 
 Future<Map<String, Object?>> _callTool(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) async {
   final command = await _validatedCallTool(usecase, request);
   final result = await _executeCallTool(usecase, request, command);
@@ -267,7 +267,7 @@ Future<Map<String, Object?>> _callTool(
 
 Future<SkillCommandTarget> _validatedCallTool(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
 ) => _RunSkillCommandValidation(usecase)._validatedCommand(
   request.conversationId,
   request.workspaceId,
@@ -276,7 +276,7 @@ Future<SkillCommandTarget> _validatedCallTool(
 
 Future<Object?> _executeCallTool(
   RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
+  RunSkillCommandRequest request,
   SkillCommandTarget command,
 ) async {
   final validation = _RunSkillCommandValidation(usecase);
