@@ -226,7 +226,22 @@ extension on _WorkspaceListActions {
   Future<void> switchWorkspace(WorkspaceEntity workspace) async {
     if (workspace.id == activeWorkspaceId) return;
 
-    final confirmed = await AuraDialogs.confirm(
+    if (await _confirmWorkspaceSwitch(workspace) != true || !context.mounted) {
+      return;
+    }
+
+    try {
+      await _selectWorkspace(workspace.id);
+      if (!context.mounted) return;
+
+      _navigateToWorkspace(workspace.id);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
+  Future<bool?> _confirmWorkspaceSwitch(WorkspaceEntity workspace) {
+    return AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.workspace_management_switch_title),
       message: Text(
@@ -236,20 +251,18 @@ extension on _WorkspaceListActions {
       ),
       actions: _switchConfirmationActions,
     );
-    if (confirmed != true || !context.mounted) return;
+  }
 
-    try {
-      final _ = await ref
-          .read(selectWorkspaceUsecaseProvider)
-          .call(workspaceId: workspace.id);
-      if (!context.mounted) return;
+  Future<void> _selectWorkspace(String workspaceId) {
+    return ref
+        .read(selectWorkspaceUsecaseProvider)
+        .call(workspaceId: workspaceId);
+  }
 
-      ref
-          .read(routerProvider)
-          .go(WorkspaceManagementRoute(workspaceId: workspace.id).location);
-    } on Object catch (error, stackTrace) {
-      if (context.mounted) _showError(context, error, stackTrace);
-    }
+  void _navigateToWorkspace(String workspaceId) {
+    ref
+        .read(routerProvider)
+        .go(WorkspaceManagementRoute(workspaceId: workspaceId).location);
   }
 
   void cancelEdit() {
