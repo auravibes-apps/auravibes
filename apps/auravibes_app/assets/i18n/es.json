@@ -380,6 +380,7 @@
       "delete_title": "Eliminar Conversación",
       "delete_confirm": "¿Estás seguro de que deseas eliminar esta conversación? Esta acción no se puede deshacer.",
       "pin": "Fijar conversación",
+      "jump_to_latest_message": "Ir al mensaje más reciente",
       "unpin": "Desfijar conversación",
       "delete_error": "No se pudo eliminar la conversación. Inténtalo de nuevo.",
       "fork": "Bifurcar conversación",
