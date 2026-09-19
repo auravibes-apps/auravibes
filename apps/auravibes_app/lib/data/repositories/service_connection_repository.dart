@@ -217,9 +217,19 @@ Future<void> _updateAppSkillCredential(
 Expression<bool> _appSkillCredentialUpdateFilter(
   ServiceConnections table,
   AppSkillCredentialUpdateRequest request,
-) =>
-    table.id.equals(request.id) &
-    table.workspaceId.equals(request.workspaceId) &
+) => _appSkillCredentialFilter(
+  table,
+  id: request.id,
+  workspaceId: request.workspaceId,
+);
+
+Expression<bool> _appSkillCredentialFilter(
+  ServiceConnections table, {
+  required String id,
+  required String workspaceId,
+}) =>
+    table.id.equals(id) &
+    table.workspaceId.equals(workspaceId) &
     table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name);
 
 Future<ServiceConnectionsCompanion> _appSkillCredentialUpdateCompanion(
@@ -607,9 +617,7 @@ Future<void> _deleteAppSkillCredential(
   );
   final _ = delete.where(
     (table) =>
-        table.id.equals(id) &
-        table.workspaceId.equals(workspaceId) &
-        table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name),
+        _appSkillCredentialFilter(table, id: id, workspaceId: workspaceId),
   );
   final _ = await delete.go();
 }

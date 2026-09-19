@@ -22,6 +22,11 @@ typedef _ConnectionLists = ({
   List<ServiceConnectionListItem> appSkillCredentials,
 });
 
+typedef _AdditionalConnectionLists = ({
+  List<ServiceConnectionListItem> mcpCredentials,
+  List<ServiceConnectionListItem> appSkillCredentials,
+});
+
 typedef _McpCredentialItemRequest = ({
   McpServersTable server,
   ServiceConnectionTable credential,
@@ -36,14 +41,20 @@ class const WatchServiceConnectionListItemsUsecase(
   final DateTime Function() _now,
 ) {
   Stream<List<ServiceConnectionListItem>> call(String workspaceId) {
-    return Rx.combineLatest5(
+    return Rx.combineLatest4(
       _modelConnectionRepository.watchModelConnections(
         .new(workspaces: [workspaceId]),
       ),
       _credentialDefinitionsRepository.watchDefinitions(workspaceId),
       _credentialsRepository.watchCredentialsForWorkspace(workspaceId),
-      _watchMcpCredentialItems(workspaceId),
-      _watchAppSkillCredentialItems(workspaceId),
+      Rx.combineLatest2(
+        _watchMcpCredentialItems(workspaceId),
+        _watchAppSkillCredentialItems(workspaceId),
+        (mcpCredentials, appSkillCredentials) => (
+          mcpCredentials: mcpCredentials,
+          appSkillCredentials: appSkillCredentials,
+        ),
+      ),
       _combineConnectionItems,
     );
   }
@@ -66,14 +77,10 @@ class const WatchServiceConnectionListItemsUsecase(
   Stream<List<ServiceConnectionListItem>> _watchAppSkillCredentialItems(
     String workspaceId,
   ) {
-    final query = _database.select(_database.serviceConnections)
-      ..where(
-        (table) =>
-            table.workspaceId.equals(workspaceId) &
-            table.kind.equals(
-              ServiceConnectionKindTable.appSkillCredential.name,
-            ),
-      );
+    final query = _database.select(_database.serviceConnections);
+    final _ = query.where(
+      (table) => _appSkillCredentialWorkspaceFilter(table, workspaceId),
+    );
 
     return query.watch().map(
       (rows) => rows.map(_appSkillCredentialItem).toList(),
@@ -171,15 +178,21 @@ List<ServiceConnectionListItem> _combineConnectionItems(
   List<ModelConnectionEntity> models,
   List<SkillCredentialDefinitionEntity> definitions,
   List<SkillCredentialEntity> credentials,
-  List<ServiceConnectionListItem> mcpCredentials,
-  List<ServiceConnectionListItem> appSkillCredentials,
+  _AdditionalConnectionLists additional,
 ) => _buildConnectionItems((
   modelConnections: models,
   definitions: definitions,
   credentials: credentials,
-  mcpCredentials: mcpCredentials,
-  appSkillCredentials: appSkillCredentials,
+  mcpCredentials: additional.mcpCredentials,
+  appSkillCredentials: additional.appSkillCredentials,
 ));
+
+Expression<bool> _appSkillCredentialWorkspaceFilter(
+  ServiceConnections table,
+  String workspaceId,
+) =>
+    table.workspaceId.equals(workspaceId) &
+    table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name);
 
 List<ServiceConnectionListItem> _buildConnectionItems(_ConnectionLists input) {
   return [
