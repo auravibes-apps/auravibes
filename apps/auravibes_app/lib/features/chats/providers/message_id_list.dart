@@ -415,6 +415,7 @@ MessageToolCallEntity _readCloudToolCall(
   id: call.id,
   name: call.name,
   argumentsRaw: call.argumentsJson,
+  userFacingDescription: call.userFacingDescription,
   argumentsDigest: call.argumentsDigest,
   turnId: message.turnId,
   turnRevision: message.turnRevision,

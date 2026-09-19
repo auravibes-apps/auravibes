@@ -472,6 +472,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.copy_tool_response';
   static const chats_screens_chat_conversation_tool_response_copied =
       'chats_screens.chat_conversation.tool_response_copied';
+  static const chats_screens_chat_conversation_copy_tool_arguments =
+      'chats_screens.chat_conversation.copy_tool_arguments';
+  static const chats_screens_chat_conversation_tool_arguments_copied =
+      'chats_screens.chat_conversation.tool_arguments_copied';
+  static const chats_screens_chat_conversation_tool_call_fallback_description =
+      'chats_screens.chat_conversation.tool_call_fallback_description';
   static const chats_screens_chat_conversation_a2ui_form_invalid =
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
@@ -922,6 +928,7 @@ abstract class LocaleKeys {
   static const common_reload = 'common.reload';
   static const common_details = 'common.details';
   static const common_show_more = 'common.show_more';
+  static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
   static const common_error_message = 'common.error_message';
   static const workspace_capabilities_unsupported_error =

@@ -345,6 +345,9 @@
       "message_copied": "Message copied",
       "copy_tool_response": "Copy tool response",
       "tool_response_copied": "Tool response copied",
+      "copy_tool_arguments": "Copy tool arguments",
+      "tool_arguments_copied": "Tool arguments copied",
+      "tool_call_fallback_description": "Review the arguments for {tool}",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
       "retry_error": "Could not retry this message. Its original content was kept.",
@@ -703,6 +706,7 @@
     "reload": "Reload",
     "details": "Details",
     "show_more": "Show more",
+    "show_less": "Show less",
     "error_title": "Something went wrong",
     "error_message": "Try again or reopen this screen."
   },

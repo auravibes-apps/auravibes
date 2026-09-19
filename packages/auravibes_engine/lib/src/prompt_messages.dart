@@ -1,5 +1,20 @@
 const skillContextMetadataKind = 'skill_context';
 
+const toolCallNarrationInstruction = '''
+Before calling one or more tools, write a short user-facing action label for the
+tool call. Describe only the immediate operation this tool call performs, based
+on its arguments. Use present tense and omit first-person phrasing.
+
+Do not include reasoning, chain of thought, prior failures, retries, fallback or
+alternative plans, uncertainty, or future steps. Do not explain why the tool is
+being called. Keep it to one concise sentence or verb phrase, ideally under 120
+characters. Do not put this description in tool arguments.
+
+Good: "Search current TCGplayer coverage."
+Bad: "The first endpoint was unavailable, so I will try a second source."
+Bad: "I will make one final attempt using an RSS feed."
+''';
+
 enum AgentPromptMessageType { text, system }
 
 enum AgentChatMessageRole { system, user, model, tool }

@@ -15,15 +15,19 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show AgentResolvedToolName, AgentToolGrantLevel, callSkillToolName;
+    show
+        AgentResolvedToolName,
+        AgentToolGrantLevel,
+        callSkillToolName,
+        normalizeToolCallUserFacingDescription;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -465,19 +469,40 @@ _ApprovalCardRequest _pagerApprovalCardRequest(
   PendingToolCall current,
 ) {
   final currentIndex = selection.clamped;
-  final actions = _pagerApprovalActions(request, current, currentIndex);
 
   return (
     workspaceId: request.workspaceId,
     conversationId: request.conversationId,
+    pendingCalls: request.pendingCalls,
     current: current,
     currentIndex: currentIndex,
     totalCount: request.pendingCalls.length,
     hasPrev: currentIndex > 0,
     hasNext: currentIndex < selection.lastIndex,
-    actions: actions,
+    actions: _pagerApprovalActions(request, current, currentIndex),
   );
 }
+
+bool _shouldShowModelDescription(
+  List<PendingToolCall> pendingCalls,
+  int currentIndex,
+  PendingToolCall current,
+) {
+  final currentDescription = _pendingToolCallDescription(current);
+
+  return !pendingCalls
+      .take(currentIndex)
+      .any(
+        (call) =>
+            call.messageId == current.messageId &&
+            _pendingToolCallDescription(call) == currentDescription,
+      );
+}
+
+String? _pendingToolCallDescription(PendingToolCall call) =>
+    agent.normalizeToolCallUserFacingDescription(
+      call.toolCall.userFacingDescription,
+    );
 
 typedef _ApprovalCardActions = ({
   VoidCallback? onPrev,
@@ -595,6 +620,7 @@ int _pendingToolCallPageIndex(_PagerIndexRequest request) {
 typedef _ApprovalCardRequest = ({
   String workspaceId,
   String conversationId,
+  List<PendingToolCall> pendingCalls,
   PendingToolCall current,
   int currentIndex,
   int totalCount,
@@ -759,7 +785,12 @@ class _ApprovalCardBodyChildren {
         ),
         _ToolCallInfo(
           displayName: displayName,
-          toolName: request.current.toolCall.name,
+          userFacingDescription: request.current.toolCall.userFacingDescription,
+          showModelDescription: _shouldShowModelDescription(
+            request.pendingCalls,
+            request.currentIndex,
+            request.current,
+          ),
           argumentsRaw: request.current.toolCall.argumentsRaw,
           sourceLabel: request.current.sourceLabel,
         ),
@@ -916,22 +947,24 @@ class const _NavButton({
 
 class const _ToolCallInfo({
   required final String displayName,
-  required final String toolName,
+  required final String? userFacingDescription,
+  required final bool showModelDescription,
   required final String argumentsRaw,
   required final String? sourceLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final decodedArgs = _approvalArgumentsPreview(
-      toolName: toolName,
-      argumentsRaw: argumentsRaw,
-    );
+    final argumentLines = _approvalArgumentLines(argumentsRaw);
+    final copyableArgs = _approvalArgumentsCopy(argumentsRaw);
 
     return _ToolCallInfoFrame(
       child: _ToolCallInfoContent(
         displayName: displayName,
+        userFacingDescription: userFacingDescription,
+        showModelDescription: showModelDescription,
         sourceLabel: sourceLabel,
-        decodedArgs: decodedArgs,
+        argumentLines: argumentLines,
+        copyableArgs: copyableArgs,
       ),
     );
   }
@@ -972,23 +1005,79 @@ BoxDecoration _toolCallInfoDecoration(BuildContext context) {
 
 class const _ToolCallInfoContent({
   required final String displayName,
+  required final String? userFacingDescription,
+  required final bool showModelDescription,
   required final String? sourceLabel,
-  required final String? decodedArgs,
+  required final List<_ApprovalArgumentLine>? argumentLines,
+  required final String? copyableArgs,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        _ToolCallName(displayName: displayName),
-        if (sourceLabel case final sourceLabel? when sourceLabel.isNotEmpty)
-          _ToolCallSource(sourceLabel: sourceLabel),
-        if (decodedArgs case final decodedArgs?)
-          _ToolCallArgumentsPreview(value: decodedArgs),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .start,
+    children: _ToolCallInfoChildren(
+      displayName: displayName,
+      userFacingDescription: userFacingDescription,
+      showModelDescription: showModelDescription,
+      sourceLabel: sourceLabel,
+      argumentLines: argumentLines,
+      copyableArgs: copyableArgs,
+    ).values,
+  );
 }
+
+class _ToolCallInfoChildren {
+  new({
+    required String displayName,
+    required String? userFacingDescription,
+    required bool showModelDescription,
+    required String? sourceLabel,
+    required List<_ApprovalArgumentLine>? argumentLines,
+    required String? copyableArgs,
+  }) : values = [
+         _ToolCallName(displayName: displayName),
+         _ToolCallDescription(
+           text: _toolCallDescriptionText(displayName, userFacingDescription),
+           visible: showModelDescription,
+         ),
+         _ToolCallSource(sourceLabel: sourceLabel),
+         if (argumentLines case final lines? when lines.isNotEmpty)
+           _ToolCallArgumentsPreview(
+             lines: lines,
+             copyValue: copyableArgs ?? '',
+             key: ValueKey<String>(copyableArgs ?? ''),
+           ),
+       ];
+
+  final List<Widget> values;
+}
+
+class const _ToolCallDescription({
+  required final String text,
+  required final bool visible,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Visibility(
+    child: Padding(
+      padding: EdgeInsets.only(
+        top: context.auraTheme.fromSpacing(.xs),
+        bottom: context.auraTheme.fromSpacing(.xs),
+      ),
+      child: Text(
+        text,
+        style: .new(
+          color: context.auraColors.onSurface,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+        ),
+      ),
+    ),
+    visible: visible,
+  );
+}
+
+String _toolCallDescriptionText(String displayName, String? value) =>
+    agent.normalizeToolCallUserFacingDescription(value) ??
+    LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
+        .tr(namedArgs: {'tool': displayName});
 
 class const _ToolCallName({required final String displayName})
     extends StatelessWidget {
@@ -1008,15 +1097,18 @@ class const _ToolCallName({required final String displayName})
   }
 }
 
-class const _ToolCallSource({required final String sourceLabel})
+class const _ToolCallSource({required final String? sourceLabel})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final value = sourceLabel;
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+
     final colors = context.auraColors;
     final typography = context.auraTheme.typography;
 
     return Text(
-      sourceLabel,
+      value,
       style: .new(
         color: colors.onSurfaceVariant,
         fontSize: typography.fontSizeXs,
@@ -1026,27 +1118,134 @@ class const _ToolCallSource({required final String sourceLabel})
   }
 }
 
-class const _ToolCallArgumentsPreview({required final String value})
-    extends StatelessWidget {
+class _ToolCallArgumentsPreview extends StatefulWidget {
+  const new({required this.lines, required this.copyValue, super.key});
+
+  final List<_ApprovalArgumentLine> lines;
+  final String copyValue;
+
+  @override
+  State<_ToolCallArgumentsPreview> createState() =>
+      _ToolCallArgumentsPreviewState();
+}
+
+const _collapsedToolCallArgumentLineCount = 3;
+
+class _ToolCallArgumentsPreviewState extends State<_ToolCallArgumentsPreview> {
+  var _expanded = false;
+
+  bool get _hasMoreLines =>
+      widget.lines.length > _collapsedToolCallArgumentLineCount;
+
   @override
   Widget build(BuildContext context) => AuraColumn(
-    children: _ToolCallArgumentsChildren(value: value, context: context).values,
+    children: _ToolCallArgumentsPreviewChildren(
+      lines: widget.lines,
+      expanded: _expanded,
+      copyValue: widget.copyValue,
+      hasMoreLines: _hasMoreLines,
+      onToggle: () => setState(() => _expanded = !_expanded),
+    ).values,
+    spacing: .xs,
   );
 }
 
-class _ToolCallArgumentsChildren {
-  new({required String value, required BuildContext context})
-    : values = [
-        const AuraSizedBox(height: .xs),
-        Text(
-          value,
-          style: _toolCallArgumentsStyle(context),
-          overflow: .ellipsis,
-          maxLines: 3,
-        ),
-      ];
+class _ToolCallArgumentsPreviewChildren {
+  new({
+    required List<_ApprovalArgumentLine> lines,
+    required bool expanded,
+    required String copyValue,
+    required bool hasMoreLines,
+    required VoidCallback onToggle,
+  }) : values = [
+         const AuraSizedBox(height: .xs),
+         _ToolCallArgumentLines(
+           lines: expanded
+               ? lines
+               : lines.take(_collapsedToolCallArgumentLineCount).toList(),
+           maxLines: expanded ? null : 1,
+           copyValue: copyValue,
+         ),
+         if (hasMoreLines)
+           _ToolCallArgumentsExpandButton(
+             expanded: expanded,
+             onPressed: onToggle,
+           ),
+       ];
 
   final List<Widget> values;
+}
+
+class const _ToolCallArgumentLines({
+  required final List<_ApprovalArgumentLine> lines,
+  required final int? maxLines,
+  required final String copyValue,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .start,
+    children: [
+      Expanded(
+        child: AuraColumn(
+          children: [
+            for (final line in lines)
+              _ToolCallArgumentLine(line: line, maxLines: maxLines),
+          ],
+          spacing: .xs,
+        ),
+      ),
+      _ToolCallArgumentsCopyButton(content: copyValue),
+    ],
+  );
+}
+
+class const _ToolCallArgumentsExpandButton({
+  required final bool expanded,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: AuraRow(
+      children: [
+        TextLocale(
+          expanded ? LocaleKeys.common_show_less : LocaleKeys.common_show_more,
+        ),
+        AuraIcon(
+          expanded ? Icons.expand_less : Icons.expand_more,
+          size: .small,
+          tint: .primary,
+        ),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
+    ),
+    variant: .ghost,
+    size: .small,
+  );
+}
+
+typedef _ApprovalArgumentLine = ({String path, String value});
+
+class const _ToolCallArgumentLine({
+  required final _ApprovalArgumentLine line,
+  final int? maxLines,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text.rich(
+    TextSpan(
+      children: [
+        if (line.path.isNotEmpty)
+          TextSpan(
+            text: '${line.path}: ',
+            style: _toolCallArgumentKeyStyle(context),
+          ),
+        TextSpan(text: line.value, style: _toolCallArgumentsStyle(context)),
+      ],
+    ),
+    overflow: maxLines == null ? TextOverflow.clip : TextOverflow.ellipsis,
+    maxLines: maxLines,
+  );
 }
 
 TextStyle _toolCallArgumentsStyle(BuildContext context) {
@@ -1056,6 +1255,50 @@ TextStyle _toolCallArgumentsStyle(BuildContext context) {
     color: context.auraColors.onSurfaceVariant,
     fontSize: typography.fontSizeXs,
   );
+}
+
+TextStyle _toolCallArgumentKeyStyle(BuildContext context) =>
+    _toolCallArgumentsStyle(context)
+        .copyWith(color: context.auraColors.onSurface, fontWeight: .w600);
+
+class const _ToolCallArgumentsCopyButton({required final String content})
+    extends StatefulWidget {
+  @override
+  State<_ToolCallArgumentsCopyButton> createState() =>
+      _ToolCallArgumentsCopyButtonState();
+}
+
+class _ToolCallArgumentsCopyButtonState
+    extends State<_ToolCallArgumentsCopyButton> {
+  var _copied = false;
+
+  IconData get _copyIcon => _copied ? Icons.check : Icons.copy_outlined;
+
+  String get _copyTooltip =>
+      (_copied
+              ? LocaleKeys.chats_screens_chat_conversation_tool_arguments_copied
+              : LocaleKeys.chats_screens_chat_conversation_copy_tool_arguments)
+          .tr();
+
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: _copyIcon,
+    onPressed: () => unawaited(_copyArguments()),
+    size: .small,
+    tooltip: _copyTooltip,
+  );
+
+  Future<void> _copyArguments() async {
+    if (widget.content.isEmpty) return;
+
+    try {
+      await Clipboard.setData(.new(text: widget.content));
+    } on Object {
+      return;
+    }
+
+    if (mounted) setState(() => _copied = true);
+  }
 }
 
 const JsonEncoder _approvalArgumentsEncoder = .withIndent('  ');
@@ -1073,15 +1316,23 @@ const _sensitiveKeyParts = [
 
 typedef _ApprovalDecodeResult = ({bool success, Object? value});
 
-String? _approvalArgumentsPreview({
-  required String toolName,
-  required String argumentsRaw,
-}) {
+List<_ApprovalArgumentLine>? _approvalArgumentLines(String argumentsRaw) {
+  final decoded = _decodeApprovalArguments(argumentsRaw);
+  if (!decoded.success) {
+    final value = ToolMetadataDecoder.decode(argumentsRaw);
+
+    return value == null ? null : [(path: '', value: value)];
+  }
+
+  return _flattenApprovalArgumentLines(_redactCredentialValues(decoded.value));
+}
+
+String? _approvalArgumentsCopy(String argumentsRaw) {
   final decoded = _decodeApprovalArguments(argumentsRaw);
   if (!decoded.success) return ToolMetadataDecoder.decode(argumentsRaw);
 
   return _approvalArgumentsEncoder.convert(
-    _buildApprovalPreview(toolName, decoded.value),
+    _redactCredentialValues(decoded.value),
   );
 }
 
@@ -1093,36 +1344,59 @@ _ApprovalDecodeResult _decodeApprovalArguments(String argumentsRaw) {
   }
 }
 
-Map<String, Object?> _buildApprovalPreview(String toolName, Object? decoded) {
-  final urlSummary = _urlRequestSummary(decoded);
-  final preview = <String, Object?>{};
-  if (urlSummary == null) {
-    preview['arguments'] = _redactCredentialValues(decoded);
-  }
+List<_ApprovalArgumentLine> _flattenApprovalArgumentLines(
+  Object? value, [
+  String path = '',
+]) => switch (value) {
+  final Map<Object?, Object?> map => _flattenApprovalMap(map, path),
+  final List<Object?> list => _flattenApprovalList(list, path),
+  _ => [(path: path, value: _formatApprovalArgumentValue(value))],
+};
 
-  _addSkillPreview(preview, toolName);
-  _addRequestPreview(preview, urlSummary);
-
-  return preview;
-}
-
-void _addSkillPreview(Map<String, Object?> preview, String toolName) {
-  final skillTool = ToolNameFormatter.parseSkillToolName(toolName);
-  if (skillTool == null) return;
-
-  preview['skill'] = {
-    'source': skillTool.source,
-    'skill': skillTool.skillSlug.toHumanReadable(),
-    'tool': skillTool.toolSlug.toHumanReadable(),
-  };
-}
-
-void _addRequestPreview(
-  Map<String, Object?> preview,
-  Map<String, String>? urlSummary,
+List<_ApprovalArgumentLine> _flattenApprovalMap(
+  Map<Object?, Object?> value,
+  String path,
 ) {
-  if (urlSummary != null) preview['request'] = urlSummary;
+  if (value.isEmpty) return [(path: path, value: '{}')];
+
+  return [
+    for (final entry in value.entries)
+      ..._flattenApprovalArgumentLines(
+        entry.value,
+        _approvalArgumentPath(path, entry.key),
+      ),
+  ];
 }
+
+List<_ApprovalArgumentLine> _flattenApprovalList(
+  List<Object?> value,
+  String path,
+) {
+  if (value.isEmpty) return [(path: path, value: '[]')];
+
+  return [
+    for (var index = 0; index < value.length; index++)
+      ..._flattenApprovalArgumentLines(
+        value[index],
+        _approvalArgumentIndexPath(path, index),
+      ),
+  ];
+}
+
+String _approvalArgumentPath(String path, Object? key) {
+  final keyText = key.toString();
+
+  return path.isEmpty ? keyText : '$path.$keyText';
+}
+
+String _approvalArgumentIndexPath(String path, int index) =>
+    path.isEmpty ? '[$index]' : '$path[$index]';
+
+String _formatApprovalArgumentValue(Object? value) => switch (value) {
+  null => 'null',
+  final String string => string,
+  _ => value.toString(),
+};
 
 Object? _redactCredentialValues(Object? value) => switch (value) {
   final List<Object?> list => _redactList(list),
@@ -1164,52 +1438,6 @@ bool _isSensitiveKey(Object? key) {
 
   return normalized == 'authorization' ||
       _sensitiveKeyParts.any(normalized.contains);
-}
-
-Map<String, String>? _urlRequestSummary(Object? arguments) {
-  final request = _urlRequest(arguments);
-  if (request == null) return null;
-
-  final url = request['url'];
-  if (url is! String) return null;
-
-  final uri = Uri.tryParse(url);
-  if (uri == null || uri.host.isEmpty) return null;
-
-  return _formatUrlRequestSummary(request, uri);
-}
-
-Map<Object?, Object?>? _urlRequest(Object? arguments) {
-  if (arguments is! Map) return null;
-
-  final request = arguments.cast<Object?, Object?>();
-  final input = request['input'];
-  if (request['url'] is String || input is! String) return request;
-
-  return _decodeUrlRequestInput(input) ?? request;
-}
-
-Map<Object?, Object?>? _decodeUrlRequestInput(String input) {
-  try {
-    final decoded = jsonDecode(input);
-
-    return decoded is Map ? decoded.cast<Object?, Object?>() : null;
-  } on Exception {
-    return null;
-  }
-}
-
-Map<String, String> _formatUrlRequestSummary(
-  Map<Object?, Object?> request,
-  Uri uri,
-) {
-  final method = request['method'];
-
-  return {
-    'method': method is String ? method.toUpperCase() : 'GET',
-    'host': uri.host,
-    'path': uri.path.isEmpty ? '/' : uri.path,
-  };
 }
 
 class const _ConfirmationButtons({

@@ -345,6 +345,9 @@
       "message_copied": "Mensaje copiado",
       "copy_tool_response": "Copiar respuesta de la herramienta",
       "tool_response_copied": "Respuesta de la herramienta copiada",
+      "copy_tool_arguments": "Copiar argumentos de la herramienta",
+      "tool_arguments_copied": "Argumentos de la herramienta copiados",
+      "tool_call_fallback_description": "Revisa los argumentos de {tool}",
       "a2ui_form_invalid": "Revisa tus respuestas e inténtalo de nuevo.",
       "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "retry_error": "No se pudo reintentar este mensaje. Se conservó su contenido original.",
@@ -703,6 +706,7 @@
     "reload": "Recargar",
     "details": "Detalles",
     "show_more": "Ver más",
+    "show_less": "Ver menos",
     "error_title": "Algo salió mal",
     "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."
   },
