@@ -214,6 +214,7 @@ _generateStreamRequest(_GenerationStreamRequest request) =>
 List<Message> _genkitHistory(_SendMessageRequest request) => [
   if (request.a2uiRuntime?.enabled == true)
     ChatMessage.system(auraChatCatalogSystemPrompt()),
+  ChatMessage.system(toolCallNarrationInstruction),
   ...request.history,
 ].map(request.service._toGenkitMessage).toList();
 

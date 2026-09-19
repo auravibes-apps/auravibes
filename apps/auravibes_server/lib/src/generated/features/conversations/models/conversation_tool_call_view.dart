@@ -21,6 +21,7 @@ abstract class ConversationToolCallView
     required this.name,
     required this.argumentsJson,
     required this.argumentsDigest,
+    this.userFacingDescription,
     required this.status,
     this.decision,
     this.resultJson,
@@ -36,6 +37,7 @@ abstract class ConversationToolCallView
     required String name,
     required String argumentsJson,
     required String argumentsDigest,
+    String? userFacingDescription,
     required String status,
     String? decision,
     String? resultJson,
@@ -54,6 +56,8 @@ abstract class ConversationToolCallView
       name: jsonSerialization['name'] as String,
       argumentsJson: jsonSerialization['argumentsJson'] as String,
       argumentsDigest: jsonSerialization['argumentsDigest'] as String,
+      userFacingDescription:
+          jsonSerialization['userFacingDescription'] as String?,
       status: jsonSerialization['status'] as String,
       decision: jsonSerialization['decision'] as String?,
       resultJson: jsonSerialization['resultJson'] as String?,
@@ -79,6 +83,8 @@ abstract class ConversationToolCallView
 
   String argumentsDigest;
 
+  String? userFacingDescription;
+
   String status;
 
   String? decision;
@@ -101,6 +107,7 @@ abstract class ConversationToolCallView
     String? name,
     String? argumentsJson,
     String? argumentsDigest,
+    String? userFacingDescription,
     String? status,
     String? decision,
     String? resultJson,
@@ -118,6 +125,8 @@ abstract class ConversationToolCallView
       'name': name,
       'argumentsJson': argumentsJson,
       'argumentsDigest': argumentsDigest,
+      if (userFacingDescription != null)
+        'userFacingDescription': userFacingDescription,
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
@@ -137,6 +146,8 @@ abstract class ConversationToolCallView
       'name': name,
       'argumentsJson': argumentsJson,
       'argumentsDigest': argumentsDigest,
+      if (userFacingDescription != null)
+        'userFacingDescription': userFacingDescription,
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
@@ -162,6 +173,7 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     required String name,
     required String argumentsJson,
     required String argumentsDigest,
+    String? userFacingDescription,
     required String status,
     String? decision,
     String? resultJson,
@@ -175,6 +187,7 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
          name: name,
          argumentsJson: argumentsJson,
          argumentsDigest: argumentsDigest,
+         userFacingDescription: userFacingDescription,
          status: status,
          decision: decision,
          resultJson: resultJson,
@@ -194,6 +207,7 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     String? name,
     String? argumentsJson,
     String? argumentsDigest,
+    Object? userFacingDescription = _Undefined,
     String? status,
     Object? decision = _Undefined,
     Object? resultJson = _Undefined,
@@ -208,6 +222,9 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
       name: name ?? this.name,
       argumentsJson: argumentsJson ?? this.argumentsJson,
       argumentsDigest: argumentsDigest ?? this.argumentsDigest,
+      userFacingDescription: userFacingDescription is String?
+          ? userFacingDescription
+          : this.userFacingDescription,
       status: status ?? this.status,
       decision: decision is String? ? decision : this.decision,
       resultJson: resultJson is String? ? resultJson : this.resultJson,

@@ -821,6 +821,7 @@ void main() {
           executor: (_, _, tool, request) async {
             executorInvocations++;
             expect(tool.descriptor.fullName, 'skill__user__research__search');
+            expect(request.userFacingDescription, isNull);
             executedArguments = request.arguments;
             return {'ok': true};
           },
@@ -835,6 +836,7 @@ void main() {
               id: 'approved-nested-args',
               name: callSkillToolName,
               arguments: wrapperArguments,
+              userFacingDescription: 'Search the selected skill.',
             ),
           ),
           ServerToolDisposition.awaitingApproval,
@@ -845,6 +847,7 @@ void main() {
         ))!;
         expect(pending.name, 'skill__user__research__search');
         expect(jsonDecode(pending.argumentsJson), wrapperArguments);
+        expect(pending.userFacingDescription, 'Search the selected skill.');
         await ConversationToolCall.db.updateRow(
           fixture.database,
           pending.copyWith(
@@ -862,6 +865,7 @@ void main() {
             id: 'approved-nested-args',
             name: callSkillToolName,
             arguments: wrapperArguments,
+            userFacingDescription: 'Search the selected skill.',
           ),
         );
         final firstResume = resume();

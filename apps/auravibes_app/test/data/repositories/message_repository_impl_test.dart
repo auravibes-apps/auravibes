@@ -271,6 +271,7 @@ void main() {
               id: 'tool-a',
               name: 'tool_a',
               argumentsRaw: '{}',
+              userFacingDescription: 'Inspect the first result.',
             ),
             MessageToolCallEntity(
               id: 'tool-b',
@@ -333,6 +334,12 @@ void main() {
         );
         expect(
           toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-a')
+              .userFacingDescription,
+          'Inspect the first result.',
+        );
+        expect(
+          toolCalls
               .singleWhere((toolCall) => toolCall.id == 'tool-b')
               .resultStatus,
           ToolCallResultStatus.executionError,
@@ -349,6 +356,12 @@ void main() {
               .singleWhere((toolCall) => toolCall.id == 'tool-a')
               .resultStatus,
           ToolCallResultStatus.success,
+        );
+        expect(
+          afterStalePatch?.metadata?.toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-a')
+              .userFacingDescription,
+          'Inspect the first result.',
         );
         expect(
           afterStalePatch?.metadata?.toolCalls

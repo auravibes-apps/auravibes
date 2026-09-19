@@ -1263,6 +1263,54 @@ void main() {
       );
     });
 
+    testWidgets('shows a tool-call description beside its title', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-description',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{"input": "test.txt"}',
+        userFacingDescription: 'I am going to inspect the file.',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final label = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-description')),
+      );
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('I am going to inspect the file.'),
+      );
+      final row = tester.getRect(
+        find.byKey(const ValueKey('activity_tool_tc-description')),
+      );
+      final status = tester.getRect(find.text('Completed'));
+      expect(status.right, greaterThan(row.center.dx));
+      expect(row.right - status.right, lessThan(100));
+    });
+
     testWidgets('reveals a finished activity run in three compact levels', (
       tester,
     ) async {

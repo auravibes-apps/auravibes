@@ -225,28 +225,38 @@ void main() {
         createdAt: now,
         updatedAt: now,
       );
-      ConversationToolCall call(String id, String name, String result) =>
-          ConversationToolCall(
-            workspaceId: 1,
-            conversationId: 1,
-            turnId: 1,
-            messageId: 1,
-            stableId: id,
-            name: name,
-            argumentsJson: '{}',
-            argumentsDigest: '$id-digest',
-            status: 'success',
-            resultJson: result,
-            revision: 1,
-            createdAt: now,
-            updatedAt: now,
-          );
+      ConversationToolCall call(
+        String id,
+        String name,
+        String result, {
+        String? userFacingDescription,
+      }) => ConversationToolCall(
+        workspaceId: 1,
+        conversationId: 1,
+        turnId: 1,
+        messageId: 1,
+        stableId: id,
+        name: name,
+        argumentsJson: '{}',
+        argumentsDigest: '$id-digest',
+        userFacingDescription: userFacingDescription,
+        status: 'success',
+        resultJson: result,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
 
       expect(
         persistedProviderToolExchanges(
           messages: [assistant],
           calls: [
-            call('call-a', 'a', 'a-result'),
+            call(
+              'call-a',
+              'a',
+              'a-result',
+              userFacingDescription: 'Search for the answer.',
+            ),
             // B has been approved and completed when the job resumes.
             call('call-b', 'b', 'b-result'),
           ],

@@ -6,6 +6,7 @@ fields:
   name: String
   argumentsJson: String
   argumentsDigest: String
+  userFacingDescription: String?
   status: String
   decision: String?
   resultJson: String?

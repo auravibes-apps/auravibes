@@ -75,14 +75,9 @@ abstract final class CloudMessageTools {
     ConversationMessageView message,
     int turnRevision,
   ) => PendingToolCall(
-    toolCall: .new(
-      id: call.id,
-      name: call.name,
-      argumentsRaw: call.argumentsJson,
-      argumentsDigest: call.argumentsDigest,
+    toolCall: _readCloudToolCall(call, message).copyWith(
       turnId: message.turnId ?? call.turnId,
       turnRevision: turnRevision,
-      responseRaw: call.resultJson,
     ),
     messageId: call.messageId,
     sourceConversationId: state.conversation.id,

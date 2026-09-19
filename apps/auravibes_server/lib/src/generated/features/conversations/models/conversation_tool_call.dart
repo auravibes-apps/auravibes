@@ -24,6 +24,7 @@ abstract class ConversationToolCall
     required this.name,
     required this.argumentsJson,
     required this.argumentsDigest,
+    this.userFacingDescription,
     required this.status,
     this.decision,
     this.decisionByUserId,
@@ -44,6 +45,7 @@ abstract class ConversationToolCall
     required String name,
     required String argumentsJson,
     required String argumentsDigest,
+    String? userFacingDescription,
     required String status,
     String? decision,
     String? decisionByUserId,
@@ -67,6 +69,8 @@ abstract class ConversationToolCall
       name: jsonSerialization['name'] as String,
       argumentsJson: jsonSerialization['argumentsJson'] as String,
       argumentsDigest: jsonSerialization['argumentsDigest'] as String,
+      userFacingDescription:
+          jsonSerialization['userFacingDescription'] as String?,
       status: jsonSerialization['status'] as String,
       decision: jsonSerialization['decision'] as String?,
       decisionByUserId: jsonSerialization['decisionByUserId'] as String?,
@@ -107,6 +111,8 @@ abstract class ConversationToolCall
 
   String argumentsDigest;
 
+  String? userFacingDescription;
+
   String status;
 
   String? decision;
@@ -139,6 +145,7 @@ abstract class ConversationToolCall
     String? name,
     String? argumentsJson,
     String? argumentsDigest,
+    String? userFacingDescription,
     String? status,
     String? decision,
     String? decisionByUserId,
@@ -161,6 +168,8 @@ abstract class ConversationToolCall
       'name': name,
       'argumentsJson': argumentsJson,
       'argumentsDigest': argumentsDigest,
+      if (userFacingDescription != null)
+        'userFacingDescription': userFacingDescription,
       'status': status,
       if (decision != null) 'decision': decision,
       if (decisionByUserId != null) 'decisionByUserId': decisionByUserId,
@@ -185,6 +194,8 @@ abstract class ConversationToolCall
       'name': name,
       'argumentsJson': argumentsJson,
       'argumentsDigest': argumentsDigest,
+      if (userFacingDescription != null)
+        'userFacingDescription': userFacingDescription,
       'status': status,
       if (decision != null) 'decision': decision,
       if (decisionByUserId != null) 'decisionByUserId': decisionByUserId,
@@ -237,6 +248,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
     required String name,
     required String argumentsJson,
     required String argumentsDigest,
+    String? userFacingDescription,
     required String status,
     String? decision,
     String? decisionByUserId,
@@ -255,6 +267,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
          name: name,
          argumentsJson: argumentsJson,
          argumentsDigest: argumentsDigest,
+         userFacingDescription: userFacingDescription,
          status: status,
          decision: decision,
          decisionByUserId: decisionByUserId,
@@ -279,6 +292,7 @@ class _ConversationToolCallImpl extends ConversationToolCall {
     String? name,
     String? argumentsJson,
     String? argumentsDigest,
+    Object? userFacingDescription = _Undefined,
     String? status,
     Object? decision = _Undefined,
     Object? decisionByUserId = _Undefined,
@@ -298,6 +312,9 @@ class _ConversationToolCallImpl extends ConversationToolCall {
       name: name ?? this.name,
       argumentsJson: argumentsJson ?? this.argumentsJson,
       argumentsDigest: argumentsDigest ?? this.argumentsDigest,
+      userFacingDescription: userFacingDescription is String?
+          ? userFacingDescription
+          : this.userFacingDescription,
       status: status ?? this.status,
       decision: decision is String? ? decision : this.decision,
       decisionByUserId: decisionByUserId is String?
@@ -355,6 +372,12 @@ class ConversationToolCallUpdateTable
   _is.ColumnValue<String, String> argumentsDigest(String value) =>
       _is.ColumnValue(
         table.argumentsDigest,
+        value,
+      );
+
+  _is.ColumnValue<String, String> userFacingDescription(String? value) =>
+      _is.ColumnValue(
+        table.userFacingDescription,
         value,
       );
 
@@ -439,6 +462,10 @@ class ConversationToolCallTable extends _is.Table<int?> {
       'argumentsDigest',
       this,
     );
+    userFacingDescription = _is.ColumnString(
+      'userFacingDescription',
+      this,
+    );
     status = _is.ColumnString(
       'status',
       this,
@@ -491,6 +518,8 @@ class ConversationToolCallTable extends _is.Table<int?> {
 
   late final _is.ColumnString argumentsDigest;
 
+  late final _is.ColumnString userFacingDescription;
+
   late final _is.ColumnString status;
 
   late final _is.ColumnString decision;
@@ -518,6 +547,7 @@ class ConversationToolCallTable extends _is.Table<int?> {
     name,
     argumentsJson,
     argumentsDigest,
+    userFacingDescription,
     status,
     decision,
     decisionByUserId,
