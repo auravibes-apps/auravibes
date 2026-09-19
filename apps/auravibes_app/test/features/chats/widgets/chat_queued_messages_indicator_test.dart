@@ -26,11 +26,16 @@ class const _EasyLocalizationTestWrapper({required final Widget child})
 }
 
 void main() {
-  Widget buildSubject({required List<ConversationQueuedDraft> queuedDrafts}) {
+  Widget buildSubject({
+    required List<ConversationQueuedDraft> queuedDrafts,
+    ValueChanged<ChatDraft>? onEditDraft,
+    void Function(ProviderContainer)? onContainer,
+  }) {
     final container = ProviderContainer(
       overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
     );
     addTearDown(container.dispose);
+    onContainer?.call(container);
 
     return UncontrolledProviderScope(
       container: container,
@@ -44,6 +49,7 @@ void main() {
                   child: ChatQueuedMessagesIndicator(
                     conversationId: 'conv-1',
                     queuedDrafts: queuedDrafts,
+                    onEditDraft: onEditDraft,
                   ),
                 ),
               ),
@@ -124,5 +130,44 @@ void main() {
     await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));
 
     expect(find.byIcon(Icons.close), findsNWidgets(2));
+  });
+
+  testWidgets('loads edited draft before removing it from the queue', (
+    tester,
+  ) async {
+    const draft = ChatDraft(text: 'Edited message');
+    final queuedDraft = ConversationQueuedDraft(id: 'queued-0', draft: draft);
+    ChatDraft? loadedDraft;
+    var queueState = <String, List<ConversationQueuedDraft>>{};
+    var queueWasPresentWhenLoaded = false;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        queuedDrafts: [queuedDraft],
+        onContainer: (value) {
+          final subscription = value.listen(
+            conversationSendQueueProvider,
+            (_, next) => queueState = next,
+          );
+          addTearDown(subscription.close);
+          final enqueuedDraft = value
+              .read(conversationSendQueueProvider.notifier)
+              .enqueue(conversationId: 'conv-1', draft: draft);
+          expect(enqueuedDraft.draft, same(draft));
+        },
+        onEditDraft: (value) {
+          loadedDraft = value;
+          queueWasPresentWhenLoaded = queueState.isNotEmpty;
+        },
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pump();
+
+    expect(loadedDraft, same(draft));
+    expect(queueWasPresentWhenLoaded, isTrue);
+    expect(queueState, isEmpty);
   });
 }

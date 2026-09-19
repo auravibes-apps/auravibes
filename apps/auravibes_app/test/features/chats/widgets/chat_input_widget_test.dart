@@ -65,6 +65,7 @@ void main() {
     String? continueDisabledHint,
     Widget? disabledHint,
     bool isCompacting = false,
+    ChatDraft? draftToLoad,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -93,6 +94,7 @@ void main() {
                         agentSheetControl: agentSheetControl,
                         modelCompactControl: modelCompactControl,
                         agentCompactControl: agentCompactControl,
+                        draftToLoad: draftToLoad,
                         modalitiesInput: modalitiesInput,
                         onContinueAgent: onContinueAgent,
                         continueDisabledHint: continueDisabledHint,
@@ -152,6 +154,47 @@ void main() {
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
+  });
+
+  testWidgets('loads a queued draft with its attachments', (tester) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    ChatDraft? sentDraft;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'file'],
+        draftToLoad: const ChatDraft(
+          text: 'Edited message',
+          attachments: [attachment],
+        ),
+        onSendMessage: (draft) => sentDraft = draft,
+      ),
+    );
+
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Edited message',
+    );
+    await tester.pump();
+    final sendButton = find.descendant(
+      of: find.byKey(const ValueKey<String>('chat_send_button')),
+      matching: find.byType(AuraButton),
+    );
+    expect(tester.widget<AuraButton>(sendButton).disabled, isFalse);
+
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+
+    expect(sentDraft?.text, 'Edited message');
+    expect(sentDraft?.attachments, [attachment]);
   });
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {

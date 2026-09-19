@@ -6,7 +6,7 @@ part 'conversation_queued_draft.g.dart';
 
 class ConversationQueuedDraft({
   required final String id,
-  required ChatDraft draft,
+  required final ChatDraft draft,
 }) extends AgentQueuedDraft {
   this : super(content: _contentForDraft(draft), payload: draft);
 }

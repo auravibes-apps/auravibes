@@ -69,6 +69,7 @@ class const ChatInputWidget({
   required final Widget agentSheetControl,
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
+  final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
   final VoidCallback? onContinueAgent,
@@ -144,6 +145,9 @@ abstract final class _ChatInputHooksFactory {
       hooks: hooks,
       input: input,
     );
+    useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
+      input.draftToLoad,
+    ]);
 
     return _assembleChatInputState((
       ref: ref,
@@ -187,6 +191,17 @@ abstract final class _ChatInputHooksFactory {
 
     return actions;
   }
+}
+
+Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
+  if (draft == null) return null;
+
+  var disposed = false;
+  scheduleMicrotask(() {
+    if (!disposed) actions.loadDraft(draft);
+  });
+
+  return () => disposed = true;
 }
 
 typedef _ChatInputAttachmentCapabilities = ({
@@ -305,6 +320,7 @@ _ChatInputActions _createChatInputActions(_ChatInputActionsRequest request) =>
       hooks: request.hooks,
       input: request.input,
       isEmpty: request.isEmpty,
+      attachmentUsecase: request.ref.read(localChatAttachmentUsecaseProvider),
     );
 
 _ChatInputState _assembleChatInputState(
@@ -475,6 +491,7 @@ class const _ChatInputActions({
   required final _ChatInputHooks hooks,
   required final ChatInputWidget input,
   required final bool isEmpty,
+  required final LocalChatAttachmentUsecase attachmentUsecase,
 });
 
 extension on _ChatInputActions {
@@ -483,22 +500,34 @@ extension on _ChatInputActions {
 }
 
 extension _ChatInputDraftActions on _ChatInputActions {
+  void loadDraft(ChatDraft draft) {
+    final draftAttachmentPaths = draft.attachments
+        .map((attachment) => attachment.localPath)
+        .toSet();
+    for (final attachment in _draft.attachments.value) {
+      if (!draftAttachmentPaths.contains(attachment.localPath)) {
+        deleteUnsentAttachment(attachment);
+      }
+    }
+
+    _draft.controller.value = .new(
+      text: draft.text,
+      selection: .collapsed(offset: draft.text.length),
+    );
+    _draft.attachments.value = draft.attachments;
+    _draft.focusNode.requestFocus();
+  }
+
   void disposeDraft() {
     if (_recording.isRecording.value || _recording.isStartingRecording.value) {
-      unawaited(
-        ref.read(localChatAttachmentUsecaseProvider).cancelVoiceRecording(),
-      );
+      unawaited(attachmentUsecase.cancelVoiceRecording());
     }
     _draft.attachments.value.forEach(deleteUnsentAttachment);
     _recording.recordingTimer.value?.cancel();
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
-    unawaited(
-      ref
-          .read(localChatAttachmentUsecaseProvider)
-          .deleteAttachment(attachment.localPath),
-    );
+    unawaited(attachmentUsecase.deleteAttachment(attachment.localPath));
   }
 
   void clearRecordingState() {
