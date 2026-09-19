@@ -47,6 +47,7 @@ ToolCatalog<T> buildToolCatalog<T>(
       ToolSpec(
         name: finalName,
         description: candidate.spec.description,
+        requiresCredential: candidate.spec.requiresCredential,
         inputJsonSchema: candidate.spec.inputJsonSchema,
       ),
     );

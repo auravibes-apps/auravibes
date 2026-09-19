@@ -4,14 +4,14 @@ import 'package:test/test.dart';
 void main() {
   group('AgentToolNameResolver', () {
     const resolver = AgentToolNameResolver(
-      skillControlToolNames: {'load_skill'},
+      skillControlToolNames: {activateSkillToolName},
     );
 
     test('resolves skill control names from configured set', () {
-      final tool = resolver.resolve('load_skill');
+      final tool = resolver.resolve(activateSkillToolName);
 
       expect(tool?.kind, AgentResolvedToolKind.skillControl);
-      expect(tool?.toolIdentifier, 'load_skill');
+      expect(tool?.toolIdentifier, activateSkillToolName);
     });
 
     test('resolves user skill tool names', () {

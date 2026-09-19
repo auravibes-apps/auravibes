@@ -33,9 +33,16 @@ abstract final class LogRedaction {
     null => 'null',
     String() => value,
     StackTrace() => '$value',
+    final FormatException error => _formatExceptionText(error),
     final GenkitException error => _genkitExceptionText(error),
     _ => '${value.runtimeType}',
   };
+
+  static String _formatExceptionText(FormatException error) {
+    final message = error.message;
+
+    return message.isEmpty ? 'FormatException' : 'FormatException: $message';
+  }
 
   static String _genkitExceptionText(GenkitException error) {
     final details = error.details;

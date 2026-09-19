@@ -178,24 +178,27 @@ Future<SkillManifest?> buildCloudSkillManifest({
             (tool) => SkillManifestTool(
               name: tool.descriptor.toolIdentifier,
               description: tool.spec.description,
+              credentialRequired: tool.spec.requiresCredential,
               inputJsonSchema: tool.spec.inputJsonSchema,
             ),
           )
           .toList()
         ..sort((left, right) => left.name.compareTo(right.name));
-  final canonical = jsonEncode({
-    'identity': userSkill?['id'] ?? appSkill?.identifier ?? slug,
-    'slug': slug,
-    'title': title,
-    'instructions': instructions,
-    'tools': manifestTools.map((tool) => tool.toJson()).toList(),
-  });
-  final hash = await Sha256().hash(utf8.encode(canonical));
+  final revision = buildSkillRevision(
+    identity: userSkill?['id'] as String? ?? appSkill?.identifier ?? slug,
+    slug: slug,
+    title: title,
+    description:
+        userSkill?['description'] as String? ?? appSkill?.description ?? '',
+    instructions: instructions,
+    tools: manifestTools,
+  );
   return SkillManifest(
     slug: slug,
     title: title,
-    instructions: instructions,
-    revision: base64UrlEncode(hash.bytes),
+    description:
+        userSkill?['description'] as String? ?? appSkill?.description ?? '',
+    revision: revision,
     tools: manifestTools,
   );
 }
@@ -225,7 +228,8 @@ Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
       manifest.revision != command.revision ||
       !manifest.tools.any((tool) => tool.name == command.tool)) {
     throw FormatException(
-      'Skill manifest changed; call load_skill or list_skills to refresh: ${command.skill}',
+      'Skill manifest changed; use the current skill catalog to refresh: '
+      '${command.skill}',
     );
   }
   validateToolArguments(target.spec.inputJsonSchema, command.args);
@@ -252,52 +256,28 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
           cloudServiceSkillReady(skill, serviceConnections))
         skill.slug,
   ];
-  final selected = <String>[
-    for (final skill in userSkills)
-      if (skill['id'] case final String id)
-        if (selectedSkillIds.contains(id))
-          if (skill['slug'] case final String slug) slug,
-    if (!isChildConversation && selectedSkillIds.contains(agentsSkillSlug))
-      agentsSkillSlug,
-    for (final skill in serviceSkillDefinitions)
-      if (selectedSkillIds.contains(skill.identifier) ||
-          selectedSkillIds.contains(skill.slug))
-        skill.slug,
+  final slugs = selectable.toSet().toList()..sort();
+  final descriptor = AgentResolvedToolName.skillControl(
+    toolIdentifier: activateSkillToolName,
+  );
+  return [
+    ServerResolvedTool(
+      descriptor: descriptor,
+      spec: ToolSpec(
+        name: activateSkillToolName,
+        description: 'Activate one skill from the current skill catalog.',
+        inputJsonSchema: {
+          'type': 'object',
+          'properties': {
+            'slug': {'type': 'string', 'enum': slugs},
+            'revision': {'type': 'string'},
+          },
+          'required': ['slug', 'revision'],
+          'additionalProperties': false,
+        },
+      ),
+    ),
   ];
-  final loadable =
-      selectable
-          .where((slug) => !selected.contains(slug))
-          .toSet()
-          .toList(growable: false)
-        ..sort();
-  selected.sort();
-  return <(String, List<String>)>[
-        (loadSkillToolName, loadable),
-        (unloadSkillToolName, selected),
-      ]
-      .map((spec) {
-        final descriptor = AgentResolvedToolName.skillControl(
-          toolIdentifier: spec.$1,
-        );
-        return ServerResolvedTool(
-          descriptor: descriptor,
-          spec: ToolSpec(
-            name: spec.$1,
-            description: spec.$1 == loadSkillToolName
-                ? 'Load one skill for the current conversation.'
-                : 'Unload one skill from the current conversation.',
-            inputJsonSchema: {
-              'type': 'object',
-              'properties': {
-                'slug': {'type': 'string', 'enum': spec.$2},
-              },
-              'required': ['slug'],
-              'additionalProperties': false,
-            },
-          ),
-        );
-      })
-      .toList(growable: false);
 }
 
 bool cloudUserSkillReady(
@@ -377,6 +357,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
             requiresCredential: tool['requiresCredential'] == true,
             credentialIds: credentialIds,
           ),
+          requiresCredential: tool['requiresCredential'] == true,
         ),
       ),
     );
@@ -393,6 +374,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
           toolIdentifier: spec.name,
           description: spec.description,
           inputJsonSchema: spec.inputJsonSchema,
+          requiresCredential: spec.requiresCredential,
         ),
       ),
     );
@@ -423,6 +405,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
             requiresCredential: tool.requiresCredential,
             credentialIds: credentialIds,
           ),
+          requiresCredential: tool.requiresCredential,
         ),
       );
     }
@@ -538,6 +521,7 @@ ServerResolvedTool _nativeTool({
   required String toolIdentifier,
   required String description,
   required Map<String, Object?> inputJsonSchema,
+  required bool requiresCredential,
 }) {
   final descriptor = AgentResolvedToolName.skillNative(
     tableId: 'skill__app_native__${skillSlug}__$toolIdentifier',
@@ -559,6 +543,7 @@ ServerResolvedTool _appTemplateTool({
   required String toolIdentifier,
   required String description,
   required Map<String, Object?> inputJsonSchema,
+  required bool requiresCredential,
 }) {
   final descriptor = AgentResolvedToolName.skillAppTemplate(
     tableId: 'skill__app_template__${skillSlug}__$toolIdentifier',
@@ -570,6 +555,7 @@ ServerResolvedTool _appTemplateTool({
     spec: ToolSpec(
       name: descriptor.fullName,
       description: description,
+      requiresCredential: requiresCredential,
       inputJsonSchema: inputJsonSchema,
     ),
   );
@@ -622,10 +608,6 @@ AgentToolPermissionResult resolveCloudToolPermission({
 AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
 ) {
-  if (descriptor.kind == AgentResolvedToolKind.skillControl &&
-      descriptor.toolIdentifier == listSkillsToolName) {
-    return AgentToolPermissionResult.granted;
-  }
   if ((descriptor.isSkill ||
           descriptor.kind == AgentResolvedToolKind.skillControl) &&
       serverToolIsExecutable(descriptor)) {
@@ -782,6 +764,7 @@ class ServerToolRuntime({
               toolIdentifier: runSubAgentToolName,
               description: runSubAgentToolSpec.description,
               inputJsonSchema: runSubAgentToolSpec.inputJsonSchema,
+              requiresCredential: runSubAgentToolSpec.requiresCredential,
             ),
           ]
         : const <ServerResolvedTool>[];
@@ -1622,6 +1605,11 @@ class ServerToolRuntime({
   }
 
   String _boundedJson(Object? value) {
+    if (value is SkillActivationResult) {
+      return value.value.length <= maxResultCharacters
+          ? value.value
+          : jsonEncode({'error': 'Skill content is too large.'});
+    }
     final encoded = jsonEncode(value);
     return encoded.length <= maxResultCharacters
         ? encoded

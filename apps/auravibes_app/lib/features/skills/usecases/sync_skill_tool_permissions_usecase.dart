@@ -328,8 +328,7 @@ abstract final class SkillPermissionTools {
   static bool isSkillPermissionToolName(String toolName) {
     final resolved = const AgentToolNameResolver(
       skillControlToolNames: {
-        loadSkillToolName,
-        unloadSkillToolName,
+        activateSkillToolName,
         SkillToolNames.listCredentials,
       },
     ).resolve(toolName);

@@ -92,7 +92,7 @@ void main() {
         isA<FormatException>().having(
           (error) => error.message,
           'message',
-          contains('list_skills to refresh'),
+          contains('current skill catalog to refresh'),
         ),
       ),
     );
@@ -109,16 +109,20 @@ void main() {
     );
   });
 
-  test('cloud skill control defaults allow list and confirm mutations', () {
+  test('cloud skill controls require confirmation', () {
     expect(
       defaultCloudToolPermission(
-        AgentResolvedToolName.skillControl(toolIdentifier: listSkillsToolName),
+        AgentResolvedToolName.skillControl(
+          toolIdentifier: listSkillCredentialsToolName,
+        ),
       ),
-      AgentToolPermissionResult.granted,
+      AgentToolPermissionResult.needsConfirmation,
     );
     expect(
       defaultCloudToolPermission(
-        AgentResolvedToolName.skillControl(toolIdentifier: loadSkillToolName),
+        AgentResolvedToolName.skillControl(
+          toolIdentifier: activateSkillToolName,
+        ),
       ),
       AgentToolPermissionResult.needsConfirmation,
     );

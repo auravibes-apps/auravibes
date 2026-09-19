@@ -132,7 +132,7 @@ void main() {
         ).thenAnswer(
           (_) async => createToolRow(
             id: 'workspace-tool-id',
-            toolId: 'load_skill',
+            toolId: 'activate_skill',
             workspaceToolsGroupId: 'skills-group',
           ),
         );
@@ -143,7 +143,7 @@ void main() {
         );
 
         expect(result?.id, 'workspace-tool-id');
-        expect(result?.toolId, 'load_skill');
+        expect(result?.toolId, 'activate_skill');
       });
     });
 

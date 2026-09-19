@@ -57,6 +57,54 @@ void main() {
       expect(result, 'safe body');
     });
 
+    test('assembles SSE deltas before returning a template response', () async {
+      final executor = _executor((request) {
+        return const UrlResponse(
+          statusCode: 200,
+          body: _sseResponse,
+          headers: {
+            'content-type': ['text/event-stream'],
+          },
+          elapsed: .zero,
+        );
+      });
+
+      final result = await executor
+          .run(
+            skill: _templateSkill,
+            toolSlug: 'search',
+            input: {'query': 'flutter'},
+            credentials: const {'apiKey': 'secret'},
+          )
+          .value;
+
+      expect(result, 'Hello from a skill template.');
+    });
+
+    test('assembles nested chat completion SSE deltas', () async {
+      final executor = _executor((request) {
+        return const UrlResponse(
+          statusCode: 200,
+          body: _chatCompletionsSseResponse,
+          headers: {
+            'content-type': ['text/event-stream'],
+          },
+          elapsed: .zero,
+        );
+      });
+
+      final result = await executor
+          .run(
+            skill: _templateSkill,
+            toolSlug: 'search',
+            input: {'query': 'flutter'},
+            credentials: const {'apiKey': 'secret'},
+          )
+          .value;
+
+      expect(result, 'Hello from chat completions.');
+    });
+
     test('merges external credential definitions into a manifest', () async {
       late UrlRequest capturedRequest;
       final executor = SkillTemplateExecutor(const ResolveSkillUrlTemplate(), (
@@ -468,4 +516,25 @@ const _duckDuckGoHtml = '''
   <a class="result__a" href="https://example.com/second">Second result</a>
   <span class="result__snippet">Another result</span>
 </div>
+''';
+
+const _sseResponse = '''
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"Hello from "}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","delta":"a skill template."}
+
+event: response.completed
+data: {"type":"response.completed","response":{"output_text":"Hello from a skill template."}}
+
+''';
+
+const _chatCompletionsSseResponse = '''
+data: {"choices":[{"delta":{"content":"Hello from "}}]}
+
+data: {"choices":[{"delta":{"content":"chat completions."}}]}
+
+data: [DONE]
+
 ''';

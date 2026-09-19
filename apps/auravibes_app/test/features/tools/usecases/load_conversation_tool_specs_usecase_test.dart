@@ -500,13 +500,8 @@ void main() {
     test('appends dynamic skill tool specs', () async {
       final skillSpecs = [
         ToolSpec(
-          name: loadSkillToolName,
-          description: 'load skill',
-          inputJsonSchema: {},
-        ),
-        ToolSpec(
-          name: unloadSkillToolName,
-          description: 'unload skill',
+          name: activateSkillToolName,
+          description: 'activate skill',
           inputJsonSchema: {},
         ),
       ];
@@ -514,19 +509,9 @@ void main() {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository([
           WorkspaceToolEntity(
-            id: 'load-tool-id',
+            id: 'activate-tool-id',
             workspaceId: 'ws-1',
-            toolId: loadSkillToolName,
-            isEnabled: true,
-            permissionMode: .alwaysAsk,
-            createdAt: .new(2026),
-            updatedAt: .new(2026),
-            workspaceToolsGroupId: 'skills-group',
-          ),
-          WorkspaceToolEntity(
-            id: 'unload-tool-id',
-            workspaceId: 'ws-1',
-            toolId: unloadSkillToolName,
+            toolId: activateSkillToolName,
             isEnabled: true,
             permissionMode: .alwaysAsk,
             createdAt: .new(2026),
@@ -546,8 +531,7 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
-        loadSkillToolName,
-        unloadSkillToolName,
+        activateSkillToolName,
         runSubAgentToolName,
       ]);
     });
@@ -620,13 +604,8 @@ void main() {
     test('keeps dynamic skill control specs available for the agent', () async {
       final skillSpecs = [
         ToolSpec(
-          name: loadSkillToolName,
-          description: 'load skill',
-          inputJsonSchema: {},
-        ),
-        ToolSpec(
-          name: unloadSkillToolName,
-          description: 'unload skill',
+          name: activateSkillToolName,
+          description: 'activate skill',
           inputJsonSchema: {},
         ),
         ToolSpec(
@@ -650,8 +629,7 @@ void main() {
       );
 
       expect(result.map((spec) => spec.name), [
-        loadSkillToolName,
-        unloadSkillToolName,
+        activateSkillToolName,
         SkillToolNames.listCredentials,
         runSubAgentToolName,
       ]);

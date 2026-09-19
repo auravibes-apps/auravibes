@@ -22,7 +22,6 @@ import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_u
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -41,9 +40,6 @@ import '../../../test_mocks.dart';
 
 class _MockLoadConversationSkillUsecase extends Mock
     implements LoadConversationSkillUsecase;
-
-class _MockUnloadConversationSkillUsecase extends Mock
-    implements UnloadConversationSkillUsecase;
 
 class _MockRunSkillTemplateToolUsecase extends Mock
     implements RunSkillTemplateToolUsecase;
@@ -383,7 +379,7 @@ void main() {
           )
           .descriptor,
       provider
-          .toExecution(.skillControl(toolIdentifier: loadSkillToolName))
+          .toExecution(.skillControl(toolIdentifier: activateSkillToolName))
           .descriptor,
       provider
           .toExecution(.skillCommand(commandName: callSkillToolName))
@@ -480,9 +476,33 @@ void main() {
     );
   });
 
-  test('runs skill load and unload control tools', () async {
+  test('runs activation through the combined skill command runner', () async {
     final loadSkill = _MockLoadConversationSkillUsecase();
-    final unloadSkill = _MockUnloadConversationSkillUsecase();
+    final listSkills = _MockListAvailableSkillsUsecase();
+    final manifests = _MockBuildLoadedSkillManifestsUsecase();
+    const skill = AvailableSkill(
+      source: SkillSource.user,
+      id: 'skill-1',
+      slug: 'skill-1',
+      title: 'Skill',
+      description: 'Use skill.',
+      content: 'Use skill.',
+      kind: .template,
+    );
+    final manifest = SkillManifest(
+      slug: 'skill-1',
+      title: 'Skill',
+      description: 'Use skill.',
+      revision: 'rev-1',
+      tools: [],
+    );
+    when(
+      () => listSkills.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        filter: .catalog,
+      ),
+    ).thenAnswer((_) async => const [skill]);
     when(
       () => loadSkill.call(
         conversationId: 'conversation-1',
@@ -491,12 +511,12 @@ void main() {
       ),
     ).thenAnswer((_) => Future<void>.value());
     when(
-      () => unloadSkill.call(
+      () => manifests.call(
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        slug: 'skill-1',
+        extraSkills: any(named: 'extraSkills'),
       ),
-    ).thenAnswer((_) => Future<void>.value());
+    ).thenAnswer((_) async => [manifest]);
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
       mcpToolCaller: ({
@@ -505,47 +525,28 @@ void main() {
         required arguments,
       }) async => 'mcp result',
       loadConversationSkillUsecase: (_) => loadSkill,
-      unloadConversationSkillUsecase: (_) => unloadSkill,
+      runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
+      runAppSkillToolUsecase: _MockRunAppSkillToolUsecase(),
+      buildLoadedSkillManifestsUsecase: manifests,
+      buildSkillTemplateToolSpecsUsecase:
+          _MockBuildSkillTemplateToolSpecsUsecase(),
+      buildAppSkillNativeToolSpecsUsecase:
+          _MockBuildAppSkillNativeToolSpecsUsecase(),
+      listAvailableSkillsUsecase: (_) => listSkills,
     );
 
     expect(
       await provider.runSkillControlTool((
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
-        toolIdentifier: loadSkillToolName,
-        arguments: {'slug': 'skill-1'},
+        toolIdentifier: activateSkillToolName,
+        arguments: {'slug': 'skill-1', 'revision': 'rev-1'},
       )),
-      'Skill "skill-1" loaded.',
-    );
-    expect(
-      await provider.runSkillControlTool((
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-        toolIdentifier: unloadSkillToolName,
-        arguments: {'slug': 'skill-1'},
-      )),
-      'Skill "skill-1" unloaded.',
-    );
-  });
-
-  test('rejects skill control calls without a slug', () {
-    final provider = AppResolvedToolProvider(
-      agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller: ({
-        required mcpServerId,
-        required toolIdentifier,
-        required arguments,
-      }) async => 'mcp result',
-    );
-
-    expect(
-      () => provider.runSkillControlTool((
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-        toolIdentifier: loadSkillToolName,
-        arguments: {},
-      )),
-      throwsA(isA<FormatException>()),
+      isA<SkillActivationResult>().having(
+        (result) => result.value,
+        'value',
+        contains('<skill_content slug="skill-1"'),
+      ),
     );
   });
 
@@ -701,8 +702,6 @@ void main() {
         }) async => 'mcp result',
         loadConversationSkillUsecase: (_) =>
             _MockLoadConversationSkillUsecase(),
-        unloadConversationSkillUsecase: (_) =>
-            _MockUnloadConversationSkillUsecase(),
         runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
         runAppSkillToolUsecase: _MockRunAppSkillToolUsecase(),
         buildLoadedSkillManifestsUsecase:
@@ -717,20 +716,6 @@ void main() {
         skillCredentialsRepository: _MockSkillCredentialsRepository(),
       );
 
-      expect(
-        await provider.runSkillControlTool((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolIdentifier: listSkillsToolName,
-          arguments: const {},
-        )),
-        {
-          'loadable': const <Map<String, Object?>>[],
-          'loaded': <Map<String, Object?>>[
-            {'slug': 'openai', 'title': 'openai'},
-          ],
-        },
-      );
       expect(
         await provider.runSkillControlTool((
           conversationId: 'conversation-1',
@@ -763,7 +748,7 @@ void main() {
         SkillManifest(
           slug: 'openai',
           title: 'OpenAI',
-          instructions: 'Use OpenAI.',
+          description: 'Use OpenAI.',
           revision: 'rev-1',
           tools: [
             SkillManifestTool(
@@ -824,8 +809,6 @@ void main() {
         required arguments,
       }) async => 'mcp result',
       loadConversationSkillUsecase: (_) => _MockLoadConversationSkillUsecase(),
-      unloadConversationSkillUsecase: (_) =>
-          _MockUnloadConversationSkillUsecase(),
       runSkillTemplateToolUsecase: _MockRunSkillTemplateToolUsecase(),
       runAppSkillToolUsecase: appSkillTool,
       buildLoadedSkillManifestsUsecase: manifests,
@@ -856,6 +839,81 @@ void main() {
       ),
     ).called(1);
   });
+
+  test(
+    'unwraps approved skill command arguments before native execution',
+    () async {
+      final appSkillTool = _MockRunAppSkillToolUsecase();
+      final conversationRepository = MockConversationRepository();
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer(
+            (_) async => ConversationEntity(
+              id: 'conversation-1',
+              title: 'Conversation',
+              workspaceId: 'workspace-1',
+              isPinned: false,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
+            ),
+          );
+      when(
+        () => appSkillTool.callCancelable(
+          workspaceId: 'workspace-1',
+          skillSlug: 'codex',
+          toolSlug: 'web_search',
+          arguments: {
+            'question': 'latest AuraVibes news',
+            'credentialId': 'model:codex-1',
+          },
+        ),
+      ).thenReturn(CancelableOperation.fromFuture(.value('native result')));
+
+      final service = ResolvedToolService(
+        agentCancellationRuntime: cancellationRuntime,
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async => 'mcp result',
+        conversationRepository: conversationRepository,
+        runAppSkillToolUsecase: appSkillTool,
+      );
+
+      final result = await service(
+        conversationId: 'conversation-1',
+        tool: ResolvedTool.skillCommand(
+          commandName: callSkillToolName,
+          target: AgentResolvedToolName.skillNative(
+            tableId: 'web_search',
+            skillSlug: 'codex',
+            toolIdentifier: 'web_search',
+          ),
+        ),
+        arguments: {
+          'skill': 'codex',
+          'tool': 'web_search',
+          'revision': 'rev-1',
+          'args': {
+            'question': 'latest AuraVibes news',
+            'credentialId': 'model:codex-1',
+          },
+        },
+      );
+
+      expect(result, 'native result');
+      verify(
+        () => appSkillTool.callCancelable(
+          workspaceId: 'workspace-1',
+          skillSlug: 'codex',
+          toolSlug: 'web_search',
+          arguments: {
+            'question': 'latest AuraVibes news',
+            'credentialId': 'model:codex-1',
+          },
+        ),
+      ).called(1);
+    },
+  );
 
   test('runs and rejects sub-agent tools', () async {
     final provider = AppResolvedToolProvider(
@@ -1158,38 +1216,26 @@ void main() {
     );
   });
 
-  test(
-    'throws when skill load and unload usecases are not configured',
-    () async {
-      final provider = AppResolvedToolProvider(
-        agentCancellationRuntime: cancellationRuntime,
-        mcpToolCaller: ({
-          required mcpServerId,
-          required toolIdentifier,
-          required arguments,
-        }) => Future.value('mcp result'),
-      );
+  test('throws when skill activation runner is not configured', () {
+    final provider = AppResolvedToolProvider(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) => Future.value('mcp result'),
+    );
 
-      await expectLater(
-        provider.runSkillControlTool((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolIdentifier: loadSkillToolName,
-          arguments: const {'slug': 'skill-1'},
-        )),
-        throwsA(isA<StateError>()),
-      );
-      await expectLater(
-        provider.runSkillControlTool((
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolIdentifier: unloadSkillToolName,
-          arguments: const {'slug': 'skill-1'},
-        )),
-        throwsA(isA<StateError>()),
-      );
-    },
-  );
+    expect(
+      () => provider.runSkillControlTool((
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        toolIdentifier: activateSkillToolName,
+        arguments: const {'slug': 'skill-1', 'revision': 'rev-1'},
+      )),
+      throwsStateError,
+    );
+  });
 
   test('provider creates the shared tool runner', () {
     final database = AppDatabase(

@@ -114,55 +114,51 @@ void main() {
     });
 
     group('skill tools', () {
-      test(
-        'load and unload use stored permissions as skill commands',
-        () async {
-          final conversationToolsRepository =
-              fixture.conversationToolsRepository;
-          final syncSkillToolPermissionsUsecase =
-              MockSyncSkillToolPermissionsUsecase();
-          final usecase = ResolveToolApprovalDecisionUsecase(
-            conversationToolsRepository: conversationToolsRepository,
-            toolsGroupsRepository: fixture.toolsGroupsRepository,
-            workspaceToolsRepository: fixture.workspaceToolsRepository,
-            syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
-          );
+      test('skill command permissions use stored grants', () async {
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final syncSkillToolPermissionsUsecase =
+            MockSyncSkillToolPermissionsUsecase();
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+        );
 
-          for (final toolName in [
-            agent.loadSkillToolName,
-            agent.unloadSkillToolName,
-          ]) {
-            final permissionId = '$toolName-permission';
-            when(
-              () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
-                conversationId: 'conv-1',
-                workspaceId: 'ws-1',
-                toolName: toolName,
-              ),
-            ).thenAnswer((_) async => permissionId);
-            when(
-              () => conversationToolsRepository.checkToolPermission(
-                conversationId: 'conv-1',
-                workspaceId: 'ws-1',
-                toolId: permissionId,
-              ),
-            ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
-
-            final decision = await usecase(
+        for (final toolName in [
+          agent.activateSkillToolName,
+          agent.listSkillCredentialsToolName,
+        ]) {
+          final permissionId = '$toolName-permission';
+          when(
+            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolCallId: 'tc-1',
-              resolvedTool: ResolvedTool.skillCommand(commandName: toolName),
-            );
+              toolName: toolName,
+            ),
+          ).thenAnswer((_) async => permissionId);
+          when(
+            () => conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: permissionId,
+            ),
+          ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
-            expect(
-              decision.permissionResult,
-              ToolPermissionResult.needsConfirmation,
-            );
-            expect(decision.permissionTableId, permissionId);
-          }
-        },
-      );
+          final decision = await usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: 'tc-1',
+            resolvedTool: ResolvedTool.skillCommand(commandName: toolName),
+          );
+
+          expect(
+            decision.permissionResult,
+            ToolPermissionResult.needsConfirmation,
+          );
+          expect(decision.permissionTableId, permissionId);
+        }
+      });
 
       test('nested grants stay isolated to exact effective target', () async {
         final conversationToolsRepository = fixture.conversationToolsRepository;
@@ -276,25 +272,18 @@ void main() {
         );
       });
 
-      test('grants list_skills without permission lookup', () async {
+      test('does not bypass permission lookup for activation', () async {
         final decision = await fixture.usecase(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
           toolCallId: 'tc-1',
           resolvedTool: ResolvedTool.skillCommand(
-            commandName: agent.listSkillsToolName,
+            commandName: agent.activateSkillToolName,
           ),
         );
 
-        expect(decision.permissionResult, ToolPermissionResult.granted);
+        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
         expect(decision.permissionTableId, isNull);
-        final _ = verifyNever(
-          () => fixture.conversationToolsRepository.checkToolPermission(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            toolId: any(named: 'toolId'),
-          ),
-        );
       });
 
       test(

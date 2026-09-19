@@ -99,33 +99,56 @@ void main() {
     );
   });
 
-  test('conversation-selected skills provide context without an agent', () {
+  test('cloud skill catalog is system context without an agent', () {
     expect(
       buildCloudSkillContextMessages(
-        conversationSkills: const [
-          AgentSkill(title: 'Research', content: 'Use primary sources.'),
+        skillCatalog: const [
+          SkillCatalogEntry(
+            slug: 'research',
+            title: 'Research',
+            description: 'Find sources.',
+            revision: 'revision-1',
+            active: true,
+          ),
         ],
+        catalogRevision: 'catalog-1',
         agentSkills: const [],
       ),
       [
         {
-          'role': 'user',
-          'content': '<skill><name>Research</name><content>Use primary sources.</content></skill>',
+          'role': 'system',
+          'content':
+              '<skill_catalog revision="catalog-1">'
+              '{"skills":[{"slug":"research","title":"Research","description":"Find sources.","revision":"revision-1","active":true}]}'
+              '</skill_catalog>',
         },
       ],
     );
   });
 
+  test('compaction keeps unique durable skill activation envelopes', () {
+    expect(
+      appendDurableSkillActivations('summary', const [
+        '<skill_content slug="research">body</skill_content>',
+        '<skill_content slug="research">body</skill_content>',
+      ]),
+      'summary\n\n<durable_skill_activations>\n'
+      '<skill_content slug="research">body</skill_content>\n'
+      '</durable_skill_activations>',
+    );
+  });
+
   test('cloud skill context includes manifest revision and schema', () {
     final messages = buildCloudSkillContextMessages(
-      conversationSkills: [
+      skillCatalog: const [],
+      agentSkills: [
         AgentSkill(
           title: 'Research',
           content: 'Use primary sources.',
           manifest: SkillManifest(
             slug: 'research',
             title: 'Research',
-            instructions: 'Use primary sources.',
+            description: 'Find sources.',
             revision: 'revision-1',
             tools: [
               SkillManifestTool(
@@ -142,14 +165,13 @@ void main() {
           ),
         ),
       ],
-      agentSkills: const [],
     );
 
     final content = messages.single['content']! as String;
-    expect(content, contains('<skill_manifest>'));
-    expect(content, contains('&quot;slug&quot;:&quot;research&quot;'));
-    expect(content, contains('&quot;name&quot;:&quot;search&quot;'));
-    expect(content, contains('&quot;revision&quot;:&quot;revision-1&quot;'));
+    expect(content, contains('<skill_tools>'));
+    expect(content, contains('"tools"'));
+    expect(content, contains('"name":"search"'));
+    expect(content, contains('"revision":"revision-1"'));
   });
 
   test('refresh retains all completed tool exchanges in order', () {

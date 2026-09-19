@@ -2,39 +2,21 @@ import 'dart:collection';
 
 import 'package:auravibes_engine/src/tool_spec.dart';
 
-const listSkillsToolName = 'list_skills';
-const loadSkillToolName = 'load_skill';
-const unloadSkillToolName = 'unload_skill';
+const activateSkillToolName = 'activate_skill';
 const listSkillCredentialsToolName = 'list_skill_credentials';
 const callSkillToolName = 'call_skill_tool';
 
 const skillCommandToolNames = <String>{
-  listSkillsToolName,
-  loadSkillToolName,
-  unloadSkillToolName,
+  activateSkillToolName,
   listSkillCredentialsToolName,
   callSkillToolName,
 };
 
 List<ToolSpec> buildSkillCommandToolSpecs() => [
   ToolSpec(
-    name: listSkillsToolName,
-    description: 'List skills available to load and skills currently loaded.',
-    inputJsonSchema: const {
-      'type': 'object',
-      'properties': <String, Object?>{},
-      'additionalProperties': false,
-    },
-  ),
-  ToolSpec(
-    name: loadSkillToolName,
-    description: 'Load one skill for the current conversation.',
-    inputJsonSchema: _skillSlugSchema,
-  ),
-  ToolSpec(
-    name: unloadSkillToolName,
-    description: 'Unload one skill from the current conversation.',
-    inputJsonSchema: _skillSlugSchema,
+    name: activateSkillToolName,
+    description: 'Activate one skill from the current skill catalog.',
+    inputJsonSchema: _skillActivationSchema,
   ),
   ToolSpec(
     name: listSkillCredentialsToolName,
@@ -66,6 +48,34 @@ const _skillSlugSchema = <String, Object?>{
   'required': ['slug'],
   'additionalProperties': false,
 };
+
+const _skillActivationSchema = <String, Object?>{
+  'type': 'object',
+  'properties': {
+    'slug': {'type': 'string'},
+    'revision': {'type': 'string'},
+  },
+  'required': ['slug', 'revision'],
+  'additionalProperties': false,
+};
+
+class SkillActivationTarget._({
+  required final String slug,
+  required final String revision,
+}) {
+  factory fromArguments(Map<String, Object?> arguments) {
+    final slug = arguments['slug'];
+    final revision = arguments['revision'];
+    if (slug is! String || slug.isEmpty) {
+      throw const FormatException('slug must be a non-empty string');
+    }
+    if (revision is! String || revision.isEmpty) {
+      throw const FormatException('revision must be a non-empty string');
+    }
+
+    return SkillActivationTarget._(slug: slug, revision: revision);
+  }
+}
 
 class SkillCommandTarget._({
   required final String skill,
@@ -112,21 +122,21 @@ class SkillManifest {
   new({
     required this.slug,
     required this.title,
-    required this.instructions,
+    required this.description,
     required this.revision,
     required Iterable<SkillManifestTool> tools,
   }) : tools = List.unmodifiable(tools.toList()..sort(_compareTools));
 
   final String slug;
   final String title;
-  final String instructions;
+  final String description;
   final String revision;
   final List<SkillManifestTool> tools;
 
   Map<String, Object?> toJson() => {
     'slug': slug,
     'title': title,
-    'instructions': instructions,
+    'description': description,
     'revision': revision,
     'tools': tools.map((tool) => tool.toJson()).toList(growable: false),
   };
@@ -140,15 +150,18 @@ class SkillManifestTool {
     required this.name,
     required this.description,
     required Map<String, Object?> inputJsonSchema,
+    this.credentialRequired = false,
   }) : inputJsonSchema = _freezeMap(inputJsonSchema);
 
   final String name;
   final String description;
   final Map<String, Object?> inputJsonSchema;
+  final bool credentialRequired;
 
   Map<String, Object?> toJson() => {
     'name': name,
     'description': description,
+    if (credentialRequired) 'credentialRequired': true,
     'inputSchema': inputJsonSchema,
   };
 }

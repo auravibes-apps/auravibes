@@ -412,10 +412,14 @@ void main() {
       };
       expect(
         fixedSchemas.keys,
-        containsAll([loadSkillToolName, unloadSkillToolName]),
+        containsAll([
+          activateSkillToolName,
+          listSkillCredentialsToolName,
+          callSkillToolName,
+        ]),
       );
       expect(
-        _propertySchema(specs, loadSkillToolName, 'slug')['enum'],
+        _propertySchema(specs, activateSkillToolName, 'slug')['enum'],
         equals(null),
       );
 
@@ -452,7 +456,7 @@ void main() {
       );
     });
 
-    test('builds loaded skill content as XML user context messages', () async {
+    test('builds catalog metadata without loaded skill bodies', () async {
       final workspace = await workspaceRepository.createWorkspace(
         const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
@@ -473,6 +477,15 @@ void main() {
         skill.id,
         isLoaded: true,
       );
+      final buildTemplateSpecs = BuildSkillTemplateToolSpecsUsecase(
+        (_) => listAvailableSkillsUsecase,
+        toolsRepository,
+        skillCredentialsRepository,
+      );
+      final buildNativeSpecs = BuildAppSkillNativeToolSpecsUsecase(
+        (_) => listAvailableSkillsUsecase,
+        .new(() => serviceConnectionRepository),
+      );
       final usecase = BuildSkillContextMessagesService(
         listAvailableSkillsUsecase.call,
         .new(
@@ -485,6 +498,11 @@ void main() {
             const AppSkillRegistry(),
           ).call,
         ),
+        .new(
+          (workspaceId) => listAvailableSkillsUsecase,
+          buildTemplateSpecs,
+          buildNativeSpecs,
+        ),
       );
 
       final messages = await usecase.call(
@@ -492,13 +510,11 @@ void main() {
         workspaceId: workspace.id,
       );
 
-      expect(messages.single.role, ChatMessageRole.user);
-      expect(messages.single.metadata['kind'], skillContextMetadataKind);
-      expect(messages.single.text, contains('<name>Example Services'));
-      expect(
-        messages.single.text,
-        contains('<content>Use &lt;company&gt; &amp; account data.'),
-      );
+      expect(messages.single.role, ChatMessageRole.system);
+      expect(messages.single.metadata['kind'], skillCatalogMetadataKind);
+      expect(messages.single.text, contains('<skill_catalog'));
+      expect(messages.single.text, contains('Example Services'));
+      expect(messages.single.text, isNot(contains('<content>')));
     });
 
     test('blocks credential-backed skills without credentials', () async {

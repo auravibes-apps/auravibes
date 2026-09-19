@@ -292,7 +292,7 @@ void main() {
     );
 
     test(
-      'skill load state does not change provider tool schemas',
+      'skill activation does not change provider tool schemas',
       () async {
         final fixture = await prepare();
         final now = DateTime.now().toUtc();
@@ -302,7 +302,13 @@ void main() {
             workspaceId: fixture.workspaceId,
             resourceKind: WorkspaceResourceKind.skill,
             resourceId: 'research',
-            data: jsonEncode({'slug': 'research', 'isEnabled': true}),
+            data: jsonEncode({
+              'slug': 'research',
+              'title': 'Research',
+              'description': 'Use primary sources.',
+              'content': 'Use primary sources.',
+              'isEnabled': true,
+            }),
             revision: 1,
             createdAt: now,
             updatedAt: now,
@@ -334,23 +340,30 @@ void main() {
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
         );
-        final load = controls.singleWhere(
-          (tool) => tool.spec.name == loadSkillToolName,
+        final activate = controls.singleWhere(
+          (tool) => tool.spec.name == activateSkillToolName,
         );
+        final revision = (await buildCloudSkillCatalog(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          activeSkillIds: const {},
+          isChildConversation: false,
+        )).single.revision;
 
         final beforeSpecs = [for (final tool in controls) tool.spec];
         final result = await const ServerToolExecutorService().call(
           fixture.database,
           fixture.turn,
-          load,
-          const ServerToolRequest(
-            id: 'load-research',
-            name: loadSkillToolName,
-            arguments: {'slug': 'research'},
+          activate,
+          ServerToolRequest(
+            id: 'activate-research',
+            name: activateSkillToolName,
+            arguments: {'slug': 'research', 'revision': revision},
           ),
         );
 
-        expect(result, {'skillId': 'research', 'selected': true});
+        expect(result, isA<SkillActivationResult>());
+        expect(result.toString(), contains('<skill_content'));
         expect(
           await WorkspaceResource.db.findFirstRow(
             fixture.database,
@@ -982,7 +995,7 @@ void main() {
               fixture.database,
               fixture.turn,
               parentTool,
-              const ServerToolRequest(
+              ServerToolRequest(
                 id: 'cancel-during-child-launch',
                 name: 'skill__app_native__agents__run_sub_agent',
                 arguments: {'title': 'Child', 'prompt': 'Do the work.'},
@@ -1060,7 +1073,7 @@ void main() {
               fixture.database,
               fixture.turn,
               parentTool,
-              const ServerToolRequest(
+              ServerToolRequest(
                 id: 'cancel-after-child-continuation',
                 name: 'skill__app_native__agents__run_sub_agent',
                 arguments: {'title': 'Child', 'prompt': 'Do the work.'},
@@ -1153,7 +1166,13 @@ void main() {
             workspaceId: fixture.workspaceId,
             resourceKind: WorkspaceResourceKind.skill,
             resourceId: 'research',
-            data: jsonEncode({'slug': 'research', 'isEnabled': true}),
+            data: jsonEncode({
+              'slug': 'research',
+              'title': 'Research',
+              'description': 'Use primary sources.',
+              'content': 'Use primary sources.',
+              'isEnabled': true,
+            }),
             revision: 1,
             createdAt: now,
             updatedAt: now,
@@ -1179,11 +1198,17 @@ void main() {
             updatedAt: now,
           ),
         );
-        final load = (await ServerToolRuntime().loadTools(
+        final activate = (await ServerToolRuntime().loadTools(
           fixture.database,
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
-        )).singleWhere((tool) => tool.spec.name == loadSkillToolName);
+        )).singleWhere((tool) => tool.spec.name == activateSkillToolName);
+        final revision = (await buildCloudSkillCatalog(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          activeSkillIds: const {},
+          isChildConversation: false,
+        )).single.revision;
         final eventCount = (await WorkspaceEvent.db.find(
           fixture.database,
           where: (table) => table.workspaceId.equals(fixture.workspaceId),
@@ -1199,11 +1224,11 @@ void main() {
             ).call(
               fixture.database,
               fixture.turn,
-              load,
-              const ServerToolRequest(
-                id: 'cancel-during-load-skill',
-                name: loadSkillToolName,
-                arguments: {'slug': 'research'},
+              activate,
+              ServerToolRequest(
+                id: 'cancel-during-activate-skill',
+                name: activateSkillToolName,
+                arguments: {'slug': 'research', 'revision': revision},
               ),
             );
         await entered.future.timeout(const Duration(seconds: 2));

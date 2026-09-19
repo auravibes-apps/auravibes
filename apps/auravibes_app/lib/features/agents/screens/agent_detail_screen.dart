@@ -20,6 +20,8 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show activateSkillToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -1921,9 +1923,7 @@ extension on _AgentToolPermissionsDialogState {
       skill?.title ?? fallbackSlug.toHumanReadable();
 
   bool _isSkillControlTool(String toolId) =>
-      toolId == 'load_skill' ||
-      toolId == 'unload_skill' ||
-      toolId == 'list_skill_credentials';
+      toolId == activateSkillToolName || toolId == 'list_skill_credentials';
 
   AgentToolPermissionMode _value(String toolId) =>
       widget.values[toolId] ?? AgentToolPermissionMode.workspaceDefault;

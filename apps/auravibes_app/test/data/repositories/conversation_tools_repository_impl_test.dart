@@ -540,7 +540,7 @@ void main() {
         (_) async => WorkspaceToolEntity(
           id: 'workspace-tool-id',
           workspaceId: testWorkspaceId,
-          toolId: 'load_skill',
+          toolId: 'activate_skill',
           isEnabled: true,
           permissionMode: .alwaysAsk,
           createdAt: .new(2026),

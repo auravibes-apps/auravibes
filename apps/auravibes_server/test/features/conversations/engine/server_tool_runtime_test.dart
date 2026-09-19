@@ -76,16 +76,18 @@ void main() {
   });
 
   test('builds audited cloud skill selection patches', () {
-    final load = cloudSkillSelectionPatchRequest(
+    final activation = cloudSkillSelectionPatchRequest(
       workspaceId: 7,
       turnRequestId: 'turn-1',
       conversationId: 'conversation-1',
       skillId: 'research',
       isAppSkill: false,
-      controlName: loadSkillToolName,
-      toolCallId: 'call-load-1',
+      toolCallId: 'call-activate-1',
     );
-    expect(load.requestId, 'turn-1:call-load-1:load_skill:research');
+    expect(
+      activation.requestId,
+      'turn-1:call-activate-1:activate_skill:research',
+    );
     expect(
       cloudSkillSelectionPatchRequest(
         workspaceId: 7,
@@ -93,41 +95,26 @@ void main() {
         conversationId: 'conversation-1',
         skillId: 'research',
         isAppSkill: false,
-        controlName: loadSkillToolName,
-        toolCallId: 'call-load-2',
+        toolCallId: 'call-activate-2',
       ).requestId,
-      isNot(load.requestId),
+      isNot(activation.requestId),
     );
-    expect(load.operations.single.operation.name, 'create');
+    expect(activation.operations.single.operation.name, 'create');
     expect(
-      load.operations.single.data,
+      activation.operations.single.data,
       '{"id":"conversation-1:research","conversationId":"conversation-1","skillId":"research"}',
     );
 
-    final unload = cloudSkillSelectionPatchRequest(
-      workspaceId: 7,
-      turnRequestId: 'turn-1',
-      conversationId: 'conversation-1',
-      skillId: 'research',
-      isAppSkill: false,
-      controlName: unloadSkillToolName,
-      toolCallId: 'call-unload-1',
-      existingRevision: 3,
-    );
-    expect(unload.operations.single.operation.name, 'delete');
-    expect(unload.operations.single.expectedRevision, 3);
-
-    final appLoad = cloudSkillSelectionPatchRequest(
+    final appActivation = cloudSkillSelectionPatchRequest(
       workspaceId: 7,
       turnRequestId: 'turn-1',
       conversationId: 'conversation-1',
       skillId: agentsSkillSlug,
       isAppSkill: true,
-      controlName: loadSkillToolName,
-      toolCallId: 'call-app-load-1',
+      toolCallId: 'call-app-activate-1',
     );
     expect(
-      appLoad.operations.single.data,
+      appActivation.operations.single.data,
       '{"id":"conversation-1:agents","conversationId":"conversation-1","skillId":"agents","source":"app"}',
     );
   });
@@ -155,10 +142,7 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(controls.map((tool) => tool.spec.name), [
-      loadSkillToolName,
-      unloadSkillToolName,
-    ]);
+    expect(controls.map((tool) => tool.spec.name), [activateSkillToolName]);
     expect(
       controls.first.spec.inputJsonSchema['properties'],
       containsPair(
@@ -170,13 +154,8 @@ void main() {
       ),
     );
     expect(
-      controls.last.spec.inputJsonSchema['properties'],
-      {
-        'slug': {
-          'type': 'string',
-          'enum': ['research'],
-        },
-      },
+      controls.first.spec.inputJsonSchema['properties'],
+      containsPair('revision', {'type': 'string'}),
     );
     expect(
       defaultCloudToolPermission(controls.first.descriptor),
@@ -363,7 +342,7 @@ void main() {
 
     expect(
       controls
-          .firstWhere((tool) => tool.spec.name == loadSkillToolName)
+          .firstWhere((tool) => tool.spec.name == activateSkillToolName)
           .spec
           .inputJsonSchema['properties'],
       isNot(
@@ -667,28 +646,6 @@ void main() {
         'search',
       ),
       isFalse,
-    );
-  });
-
-  test('duplicate skill controls with distinct call IDs are no-ops', () {
-    const requests = [
-      (id: 'load-1', control: loadSkillToolName, selected: true),
-      (id: 'load-2', control: loadSkillToolName, selected: true),
-      (id: 'unload-1', control: unloadSkillToolName, selected: false),
-      (id: 'unload-2', control: unloadSkillToolName, selected: false),
-    ];
-
-    expect(requests.map((request) => request.id).toSet(), hasLength(4));
-    expect(
-      requests
-          .map(
-            (request) => cloudSkillControlIsNoop(
-              controlName: request.control,
-              isSelected: request.selected,
-            ),
-          )
-          .every((value) => value),
-      isTrue,
     );
   });
 

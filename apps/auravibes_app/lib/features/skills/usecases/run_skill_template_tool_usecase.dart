@@ -242,7 +242,7 @@ extension on RunSkillTemplateToolUsecase {
       return null;
     }
 
-    final normalizedCredentialId = _credentialId(request);
+    final normalizedCredentialId = await _credentialId(request);
     if (normalizedCredentialId == null) return null;
 
     final credential = await _skillCredentialsRepository.getCredentialById(
@@ -257,22 +257,60 @@ extension on RunSkillTemplateToolUsecase {
     return credential;
   }
 
-  String? _credentialId(_CredentialResolutionRequest request) {
+  Future<String?> _credentialId(_CredentialResolutionRequest request) {
     final normalizedCredentialId = request.credentialId?.trim();
-    if (normalizedCredentialId == null || normalizedCredentialId.isEmpty) {
-      return _missingCredentialId(request.requiresCredential);
+    if (normalizedCredentialId case final credentialId?
+        when credentialId.isNotEmpty) {
+      return Future.value(credentialId);
     }
+    if (!request.requiresCredential) return Future<String?>.value();
 
-    return normalizedCredentialId;
+    return _implicitCredentialId(request);
   }
 
-  String? _missingCredentialId(bool isRequired) {
-    if (isRequired) {
+  Future<String> _implicitCredentialId(
+    _CredentialResolutionRequest request,
+  ) async {
+    final credentialDefinitionId = request.credentialDefinitionId;
+    if (credentialDefinitionId == null) {
+      throw StateError('Skill tool requires a credential definition.');
+    }
+
+    final candidates = await _credentialsForDefinition(
+      request.workspaceId,
+      credentialDefinitionId,
+    );
+    final available = _enabledCredentials(candidates, request.workspaceId);
+
+    return _singleCredentialId(available);
+  }
+
+  Future<List<SkillCredentialEntity>> _credentialsForDefinition(
+    String workspaceId,
+    String credentialDefinitionId,
+  ) => _skillCredentialsRepository.getCredentialsForDefinition(
+    workspaceId: workspaceId,
+    credentialDefinitionId: credentialDefinitionId,
+  );
+
+  List<SkillCredentialEntity> _enabledCredentials(
+    List<SkillCredentialEntity> candidates,
+    String workspaceId,
+  ) => candidates
+      .where(
+        (candidate) =>
+            candidate.workspaceId == workspaceId && candidate.isEnabled,
+      )
+      .toList(growable: false);
+
+  String _singleCredentialId(List<SkillCredentialEntity> credentials) {
+    if (credentials.length == 1) return credentials.single.id;
+
+    return _missingCredentialId();
+  }
+
+  Never _missingCredentialId() =>
       throw StateError('Skill tool requires a credentialId argument.');
-    }
-
-    return null;
-  }
 
   void _ensureCredentialAvailable(
     SkillCredentialEntity? credential,

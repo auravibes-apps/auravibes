@@ -1,11 +1,8 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:crypto/crypto.dart';
 import 'package:riverpod/riverpod.dart';
 
 class const BuildLoadedSkillManifestsUsecase(
@@ -161,6 +158,7 @@ extension on BuildLoadedSkillManifestsUsecase {
       name: resolved.toolIdentifier,
       description: spec.description,
       inputJsonSchema: spec.inputJsonSchema,
+      credentialRequired: spec.requiresCredential,
     ),
   );
 
@@ -177,7 +175,7 @@ extension on BuildLoadedSkillManifestsUsecase {
     return SkillManifest(
       slug: skill.slug,
       title: skill.title,
-      instructions: skill.content,
+      description: skill.description,
       revision: _manifestRevision(skill, tools),
       tools: tools,
     );
@@ -194,42 +192,17 @@ extension on BuildLoadedSkillManifestsUsecase {
   String _manifestRevision(
     AvailableSkill skill,
     List<SkillManifestTool> tools,
-  ) => sha256
-      .convert(utf8.encode(jsonEncode(_manifestPayload(skill, tools))))
-      .toString();
-
-  Map<String, Object?> _manifestPayload(
-    AvailableSkill skill,
-    List<SkillManifestTool> tools,
-  ) => switch (_canonicalJson({
-    'identity': _identity(skill),
-    'slug': skill.slug,
-    'title': skill.title,
-    'instructions': skill.content,
-    'tools': [for (final tool in tools) tool.toJson()],
-  })) {
-    final Map<String, Object?> map => map,
-    _ => throw StateError('Manifest payload must be a map'),
-  };
+  ) => buildSkillRevision(
+    identity: _identity(skill),
+    slug: skill.slug,
+    title: skill.title,
+    description: skill.description,
+    instructions: skill.content,
+    tools: tools,
+  );
 
   String _identity(AvailableSkill skill) => '${skill.source.name}:${skill.id}';
 }
-
-Object? _canonicalJson(Object? value) => switch (value) {
-  final Map<Object?, Object?> map => _canonicalMap(map),
-  final Iterable<Object?> values => _canonicalList(values),
-  _ => value,
-};
-
-Map<String, Object?> _canonicalMap(Map<Object?, Object?> map) {
-  final keys = map.keys.cast<String>().toList()..sort();
-
-  return {for (final key in keys) key: _canonicalJson(map[key])};
-}
-
-List<Object?> _canonicalList(Iterable<Object?> values) => [
-  for (final value in values) _canonicalJson(value),
-];
 
 final buildLoadedSkillManifestsUsecaseProvider =
     Provider<BuildLoadedSkillManifestsUsecase>((ref) {
