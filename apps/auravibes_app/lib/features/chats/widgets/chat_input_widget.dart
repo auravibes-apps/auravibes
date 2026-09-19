@@ -320,7 +320,6 @@ _ChatInputActions _createChatInputActions(_ChatInputActionsRequest request) =>
       hooks: request.hooks,
       input: request.input,
       isEmpty: request.isEmpty,
-      attachmentUsecase: request.ref.read(localChatAttachmentUsecaseProvider),
     );
 
 _ChatInputState _assembleChatInputState(
@@ -486,13 +485,24 @@ void _showAgentSelectorSheet(BuildContext context, Widget sheetControl) {
   );
 }
 
-class const _ChatInputActions({
+class _ChatInputActions({
   required final WidgetRef ref,
   required final _ChatInputHooks hooks,
   required final ChatInputWidget input,
   required final bool isEmpty,
-  required final LocalChatAttachmentUsecase attachmentUsecase,
-});
+}) {
+  LocalChatAttachmentUsecase? _attachmentUsecase;
+
+  LocalChatAttachmentUsecase get attachmentUsecase {
+    final cached = _attachmentUsecase;
+    if (cached != null) return cached;
+
+    final created = ref.read(localChatAttachmentUsecaseProvider);
+    _attachmentUsecase = created;
+
+    return created;
+  }
+}
 
 extension on _ChatInputActions {
   _ChatInputDraftHooks get _draft => hooks.draft;
@@ -501,6 +511,9 @@ extension on _ChatInputActions {
 
 extension _ChatInputDraftActions on _ChatInputActions {
   void loadDraft(ChatDraft draft) {
+    if (draft.attachments.isNotEmpty) {
+      final _ = attachmentUsecase;
+    }
     final draftAttachmentPaths = draft.attachments
         .map((attachment) => attachment.localPath)
         .toSet();
@@ -623,7 +636,7 @@ extension _ChatInputRecordingActions on _ChatInputActions {
   Future<void> _cancelRecording() async {
     if (_recording.isStartingRecording.value) return;
 
-    await ref.read(localChatAttachmentUsecaseProvider).cancelVoiceRecording();
+    await attachmentUsecase.cancelVoiceRecording();
     clearRecordingState();
   }
 }
@@ -633,17 +646,13 @@ extension _ChatInputFileActions on _ChatInputActions {
     String path,
     String displayName,
   ) {
-    return ref
-        .read(localChatAttachmentUsecaseProvider)
-        .copyIntoAppStorage(
-          path,
-          displayName: AttachmentDisplayNames.unique(
-            displayName,
-            _draft.attachments.value.map(
-              (attachment) => attachment.displayName,
-            ),
-          ),
-        );
+    return attachmentUsecase.copyIntoAppStorage(
+      path,
+      displayName: AttachmentDisplayNames.unique(
+        displayName,
+        _draft.attachments.value.map((attachment) => attachment.displayName),
+      ),
+    );
   }
 
   bool _supportsAttachment(MessageAttachmentToCreate attachment) {
@@ -731,9 +740,7 @@ extension _ChatInputRecordingLifecycleActions on _ChatInputActions {
   }
 
   Future<void> _startVoiceRecording() {
-    final start = ref
-        .read(localChatAttachmentUsecaseProvider)
-        .startVoiceRecording();
+    final start = attachmentUsecase.startVoiceRecording();
     _recording.recordingStart.value = start;
 
     return start;
@@ -833,9 +840,7 @@ extension _ChatInputRecordingResultActions on _ChatInputActions {
 
   Future<MessageAttachmentToCreate?> _stopVoiceRecording() async {
     try {
-      final attachment = await ref
-          .read(localChatAttachmentUsecaseProvider)
-          .stopVoiceRecording();
+      final attachment = await attachmentUsecase.stopVoiceRecording();
       clearRecordingState();
 
       return attachment;
