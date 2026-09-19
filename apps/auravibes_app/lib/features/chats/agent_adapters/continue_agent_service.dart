@@ -263,7 +263,7 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
     required String conversationId,
     AgentIterationContext? context,
   }) async {
-    await _clearInlineGenerationErrors(conversationId);
+    await _prepareInlineGenerationErrors(conversationId, context);
     final retryUserMessageIds = await _retryUserMessageIds(
       conversationId,
       context,
@@ -274,7 +274,27 @@ mixin _ContinueAgentCall on _ContinueAgentServiceDependencies {
       retryUserMessageIds: retryUserMessageIds,
     );
 
-    return await _runContinuation(request);
+    return await _runContinuationWithRetryCleanup(request);
+  }
+
+  Future<void> _prepareInlineGenerationErrors(
+    String conversationId,
+    AgentIterationContext? context,
+  ) async {
+    if (context?.origin != AgentIterationOrigin.manualContinue) {
+      await _clearInlineGenerationErrors(conversationId);
+    }
+  }
+
+  Future<ContinueAgentResult> _runContinuationWithRetryCleanup(
+    _ContinueAgentRequest request,
+  ) async {
+    final result = await _runContinuation(request);
+    if (request.context?.origin == AgentIterationOrigin.manualContinue) {
+      await _clearInlineGenerationErrors(request.conversationId);
+    }
+
+    return result;
   }
 
   Future<ContinueAgentResult> _runContinuation(
@@ -333,13 +353,12 @@ extension _ContinueAgentFailurePersistence
     }
 
     try {
-      final messages = await this.messageRepository.getMessagesByStatus(
+      final requestedMessageIds = context?.ackMessageIds ?? const <String>[];
+
+      return await _findRetryableUserMessageIds(
         conversationId,
-        .error,
+        requestedMessageIds,
       );
-      for (final message in messages) {
-        if (message.isUser) return [message.id];
-      }
     } on Object catch (error, stackTrace) {
       monitoringService.trackError(
         'Failed to find errored user message for retry',
@@ -350,6 +369,56 @@ extension _ContinueAgentFailurePersistence
 
     return const [];
   }
+
+  Future<List<String>> _findRetryableUserMessageIds(
+    String conversationId,
+    List<String> requestedMessageIds,
+  ) {
+    if (requestedMessageIds.isNotEmpty) {
+      return _findRequestedRetryUserMessageIds(
+        conversationId,
+        requestedMessageIds,
+      );
+    }
+
+    return _findErroredRetryUserMessageIds(conversationId);
+  }
+
+  Future<List<String>> _findRequestedRetryUserMessageIds(
+    String conversationId,
+    List<String> requestedMessageIds,
+  ) async {
+    for (final messageId in requestedMessageIds) {
+      final message = await this.messageRepository.getMessageById(messageId);
+      if (message == null) continue;
+      if (message.conversationId != conversationId) continue;
+      if (!_isRetryableUserMessage(message)) continue;
+
+      return [message.id];
+    }
+
+    return const [];
+  }
+
+  Future<List<String>> _findErroredRetryUserMessageIds(
+    String conversationId,
+  ) async {
+    final messages = await this.messageRepository.getMessagesByStatus(
+      conversationId,
+      .error,
+    );
+    for (final message in messages) {
+      if (_isRetryableUserMessage(message)) return [message.id];
+    }
+
+    return const [];
+  }
+
+  bool _isRetryableUserMessage(MessageEntity message) =>
+      message.isUser &&
+      !message.isForkReference &&
+      message.hasValidContent &&
+      (message.status == .error || message.status == .unfinished);
 
   Future<void> _markRetryUsersSending(List<String> messageIds) async {
     try {

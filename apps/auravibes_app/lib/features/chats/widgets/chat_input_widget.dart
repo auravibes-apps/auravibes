@@ -568,6 +568,7 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
       final attachment = await _copyAttachment(path, displayName);
       if (!_supportsAttachment(attachment)) {
         deleteUnsentAttachment(attachment);
+        _showAttachmentError(_attachmentUnsupportedKey);
         _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
 
         return;

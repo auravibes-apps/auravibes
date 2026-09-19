@@ -6,7 +6,7 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adap
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillDefinition, agentsSkillSlug;
+    show AppSkillDefinition, AppSkillDefinitionKind, agentsSkillSlug;
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -111,7 +111,7 @@ WorkspaceSkill _appWorkspaceSkill(
     slug: skill.slug,
     title: skill.title,
     description: skill.description,
-    kind: .native,
+    kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
     isEnabled: isEnabled,
     titleKey: skill.titleKey,
     descriptionKey: skill.descriptionKey,

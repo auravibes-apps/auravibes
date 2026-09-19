@@ -19,6 +19,7 @@ import 'package:auravibes_engine/auravibes_engine.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 
 typedef _TemplateExecutionRequest = ({
+  package_skills.SkillTemplateDefinition definition,
   SkillUrlTemplate template,
   Map<String, dynamic> inputs,
   Map<String, String> credentials,
@@ -48,6 +49,7 @@ typedef _CredentialResolutionRequest = ({
 });
 
 typedef _TemplateInputRequest = ({
+  package_skills.SkillTemplateDefinition definition,
   SkillTemplateToolEntity tool,
   Map<String, dynamic> arguments,
   Map<String, String> credentials,
@@ -60,7 +62,7 @@ class const RunSkillTemplateToolUsecase(
   final SkillCredentialDefinitionsRepository
   _skillCredentialDefinitionsRepository,
   final SkillCredentialsRepository _skillCredentialsRepository,
-  final package_skills.RunSkillUrlTemplate _runSkillUrlTemplateUsecase,
+  final package_skills.SkillTemplateExecutor _templateExecutor,
   final Future<WorkspaceSession> Function(String workspaceId) _workspaceSession,
 ) {
   Future<Object?> call({
@@ -149,24 +151,38 @@ extension on RunSkillTemplateToolUsecase {
     _TemplateToolRequest request,
   ) async {
     final credential = await _resolveCredential(_credentialRequest(request));
-    final credentialDefinitions = await _credentialDefinitions(
-      request.skill.credentialDefinitionId,
+    final definition = _definition(request.tool);
+    final storedCredentialDefinitions = await _storedCredentialDefinitions(
+      request,
     );
     final credentialAttributes = await _credentialAttributes(credential);
 
     return _templateRequest((
+      definition: definition,
       tool: request.tool,
       arguments: request.arguments,
       credentials: credentialAttributes,
-      credentialDefinitions: credentialDefinitions,
+      credentialDefinitions: {
+        ...definition.credentialDefinitions,
+        ...storedCredentialDefinitions,
+      },
     ));
   }
+
+  Future<Map<String, SkillCredentialAttributeDefinition>>
+  _storedCredentialDefinitions(_TemplateToolRequest request) =>
+      _credentialDefinitions(
+        request.tool.credentialDefinitionId ??
+            request.skill.credentialDefinitionId,
+      );
 
   _CredentialResolutionRequest _credentialRequest(
     _TemplateToolRequest request,
   ) => (
     workspaceId: request.workspaceId,
-    credentialDefinitionId: request.skill.credentialDefinitionId,
+    credentialDefinitionId:
+        request.tool.credentialDefinitionId ??
+        request.skill.credentialDefinitionId,
     credentialId: request.arguments['credentialId'] as String?,
     requiresCredential: request.tool.requiresCredential,
   );
@@ -179,15 +195,23 @@ extension on RunSkillTemplateToolUsecase {
     return _skillCredentialsRepository.readCredentialAttributes(credential.id);
   }
 
-  _TemplateExecutionRequest _templateRequest(_TemplateInputRequest request) => (
-    template: SkillUrlTemplate.fromJsonString(request.tool.templateJson),
-    inputs: request.arguments,
-    credentials: request.credentials,
-    inputDefinitions: SkillTemplateInputDefinition.parseMap(
-      request.tool.inputsJson,
-    ),
-    credentialDefinitions: request.credentialDefinitions,
-  );
+  _TemplateExecutionRequest _templateRequest(_TemplateInputRequest request) {
+    final definition = request.definition;
+    final template = definition.request;
+    final inputs = request.arguments;
+    final credentials = request.credentials;
+    final inputDefinitions = definition.inputs;
+    final credentialDefinitions = request.credentialDefinitions;
+
+    return (
+      definition: definition,
+      template: template,
+      inputs: inputs,
+      credentials: credentials,
+      inputDefinitions: inputDefinitions,
+      credentialDefinitions: credentialDefinitions,
+    );
+  }
 
   Future<Object?> _executeTemplate(_TemplateExecutionRequest request) async {
     final response = await _runTemplateCall(request);
@@ -196,12 +220,12 @@ extension on RunSkillTemplateToolUsecase {
   }
 
   Future<UrlResponse> _runTemplateCall(_TemplateExecutionRequest request) =>
-      _runSkillUrlTemplateUsecase
+      _templateExecutor
           .call(
-            template: request.template,
+            definition: request.definition,
             inputs: request.inputs,
             credentials: request.credentials,
-            inputDefinitions: request.inputDefinitions,
+            schema: request.definition.inputSchema,
             credentialDefinitions: request.credentialDefinitions,
           )
           .value;
@@ -275,6 +299,22 @@ extension on RunSkillTemplateToolUsecase {
       credential.workspaceId == workspaceId &&
       credential.credentialDefinitionId == credentialDefinitionId &&
       credential.isEnabled;
+}
+
+extension on RunSkillTemplateToolUsecase {
+  package_skills.SkillTemplateDefinition _definition(
+    SkillTemplateToolEntity tool,
+  ) {
+    final source = tool.definitionJson.trim();
+    if (source.isNotEmpty && source != '{}') {
+      return package_skills.SkillTemplateDefinition.fromJsonString(source);
+    }
+
+    return package_skills.SkillTemplateDefinition.fromLegacyJson(
+      templateJson: tool.templateJson,
+      inputsJson: tool.inputsJson,
+    );
+  }
 }
 
 extension on RunSkillTemplateToolUsecase {

@@ -1,5 +1,5 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/models/skill_template_definition.dart';
 
 const Map<String, dynamic> defaultAppSkillToolInputJsonSchema = {
   'type': 'object',
@@ -14,14 +14,19 @@ class const AppSkillToolDefinition({
   final Map<String, dynamic> inputJsonSchema =
       defaultAppSkillToolInputJsonSchema,
   final AppSkillUrlTemplate? urlTemplate,
-  final AppSkillToolCallback? callback,
   final bool requiresCredential = false,
   final String? titleKey,
   final String? descriptionKey,
 }) {
-  this
-    : assert(
-        urlTemplate == null || callback == null,
-        'AppSkillToolDefinition cannot use both urlTemplate and callback.',
-      );
+  SkillTemplateDefinition? get definition {
+    final template = urlTemplate;
+    return template == null
+        ? null
+        : SkillTemplateDefinition(
+            request: template.template,
+            inputs: template.inputs,
+            credentialDefinitions: template.credentialDefinitions,
+            inputSchemaOverride: Map<String, Object?>.from(inputJsonSchema),
+          );
+  }
 }

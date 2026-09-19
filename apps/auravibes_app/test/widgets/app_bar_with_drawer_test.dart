@@ -2,6 +2,7 @@ import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
@@ -46,6 +47,64 @@ void main() {
     );
 
     expect(find.byIcon(Icons.settings), findsOneWidget);
+  });
+
+  testWidgets('keeps menu access beside an explicit leading action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const Scaffold(
+          appBar: AuraAppBarWithDrawer(
+            title: Text('Test AppBar'),
+            leading: AuraIconButton(icon: Icons.arrow_back),
+          ),
+        ),
+        theme: .new(extensions: [AuraTheme.light]),
+      ),
+    );
+
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    expect(
+      tester.widget<AppBar>(find.byType(AppBar)).leadingWidth,
+      kToolbarHeight * 2,
+    );
+  });
+
+  testWidgets('adds back access for a nested route', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/parent',
+          builder: (_, _) => const Scaffold(body: Text('Parent')),
+          routes: [
+            GoRoute(
+              path: 'child',
+              builder: (_, _) => const Scaffold(
+                appBar: AuraAppBarWithDrawer(title: Text('Child')),
+              ),
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/parent/child',
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        theme: .new(extensions: [AuraTheme.light]),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Parent'), findsOneWidget);
   });
 
   testWidgets('preferredSize includes bottom height', (tester) {

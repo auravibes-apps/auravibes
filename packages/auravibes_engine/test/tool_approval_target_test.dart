@@ -23,8 +23,8 @@ void main() {
   });
 
   test('resolves call_skill_tool to exact nested target', () async {
-    final nestedTarget = AgentResolvedToolName.skillNative(
-      tableId: 'skill__app__duckduckgo__search',
+    final nestedTarget = AgentResolvedToolName.skillAppTemplate(
+      tableId: 'skill__app_template__duckduckgo__search',
       skillSlug: 'duckduckgo',
       toolIdentifier: 'search',
     );
@@ -45,7 +45,7 @@ void main() {
       },
     );
 
-    expect(target?.fullName, 'skill__app__duckduckgo__search');
+    expect(target?.fullName, 'skill__app_template__duckduckgo__search');
     expect(target, same(nestedTarget));
   });
 

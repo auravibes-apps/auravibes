@@ -166,6 +166,10 @@ abstract class LocaleKeys {
       'service_connections.empty_subtitle';
   static const service_connections_empty_filter =
       'service_connections.empty_filter';
+  static const service_connections_empty_search =
+      'service_connections.empty_search';
+  static const service_connections_search_placeholder =
+      'service_connections.search_placeholder';
   static const service_connections_delete_credential_title =
       'service_connections.delete_credential_title';
   static const service_connections_delete_credential_confirm =
@@ -192,6 +196,14 @@ abstract class LocaleKeys {
       'service_connections.filter.skill_credentials';
   static const service_connections_filter_mcp_servers =
       'service_connections.filter.mcp_servers';
+  static const service_connections_filter_oauth =
+      'service_connections.filter.oauth';
+  static const service_connections_filter_failed =
+      'service_connections.filter.failed';
+  static const service_connections_filter_expiring =
+      'service_connections.filter.expiring';
+  static const service_connections_filter_needs_auth =
+      'service_connections.filter.needs_auth';
   static const service_connections_type_model_provider =
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
@@ -438,6 +450,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.send_error';
   static const chats_screens_chat_conversation_continue_agent =
       'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_retry_message =
+      'chats_screens.chat_conversation.retry_message';
   static const chats_screens_chat_conversation_submit_answers =
       'chats_screens.chat_conversation.submit_answers';
   static const chats_screens_chat_conversation_form_submitted =
@@ -462,6 +476,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
+  static const chats_screens_chat_conversation_retry_error =
+      'chats_screens.chat_conversation.retry_error';
   static const chats_screens_chat_conversation_generation_credits_error =
       'chats_screens.chat_conversation.generation_credits_error';
   static const chats_screens_chat_conversation_rate_limit_retry =
@@ -610,6 +626,10 @@ abstract class LocaleKeys {
   static const tools_screen_disabled_in_workspace =
       'tools_screen.disabled_in_workspace';
   static const tools_screen_manage_title = 'tools_screen.manage_title';
+  static const tools_screen_expand_all_groups =
+      'tools_screen.expand_all_groups';
+  static const tools_screen_collapse_all_groups =
+      'tools_screen.collapse_all_groups';
   static const tools_screen_load_error = 'tools_screen.load_error';
   static const skills_screen_title = 'skills_screen.title';
   static const skills_screen_detail_title = 'skills_screen.detail_title';
@@ -632,6 +652,13 @@ abstract class LocaleKeys {
       'skills_screen.error_app_skill_disabled';
   static const skills_screen_empty_title = 'skills_screen.empty_title';
   static const skills_screen_empty_subtitle = 'skills_screen.empty_subtitle';
+  static const skills_screen_search_placeholder =
+      'skills_screen.search_placeholder';
+  static const skills_screen_search_no_results =
+      'skills_screen.search_no_results';
+  static const skills_screen_filter_all = 'skills_screen.filter_all';
+  static const skills_screen_filter_source = 'skills_screen.filter_source';
+  static const skills_screen_filter_status = 'skills_screen.filter_status';
   static const skills_screen_app_read_only = 'skills_screen.app_read_only';
   static const skills_screen_slug_label = 'skills_screen.slug_label';
   static const skills_screen_title_label = 'skills_screen.title_label';
@@ -645,6 +672,7 @@ abstract class LocaleKeys {
   static const skills_screen_edit_content = 'skills_screen.edit_content';
   static const skills_screen_content_empty = 'skills_screen.content_empty';
   static const skills_screen_enabled_label = 'skills_screen.enabled_label';
+  static const skills_screen_disabled_label = 'skills_screen.disabled_label';
   static const skills_screen_credential_optional_label =
       'skills_screen.credential_optional_label';
   static const skills_screen_credential_optional_hint =
@@ -688,6 +716,15 @@ abstract class LocaleKeys {
   static const skills_tool_url_label = 'skills_tool.url_label';
   static const skills_tool_url_hint = 'skills_tool.url_hint';
   static const skills_tool_method_label = 'skills_tool.method_label';
+  static const skills_tool_headers_section_title =
+      'skills_tool.headers_section_title';
+  static const skills_tool_headers_hint = 'skills_tool.headers_hint';
+  static const skills_tool_header_key_label = 'skills_tool.header_key_label';
+  static const skills_tool_header_value_label =
+      'skills_tool.header_value_label';
+  static const skills_tool_header_value_placeholder =
+      'skills_tool.header_value_placeholder';
+  static const skills_tool_add_header = 'skills_tool.add_header';
   static const skills_tool_query_section_title =
       'skills_tool.query_section_title';
   static const skills_tool_query_hint = 'skills_tool.query_hint';
@@ -698,6 +735,7 @@ abstract class LocaleKeys {
   static const skills_tool_add_query = 'skills_tool.add_query';
   static const skills_tool_body_format_label = 'skills_tool.body_format_label';
   static const skills_tool_body_format_json = 'skills_tool.body_format_json';
+  static const skills_tool_body_format_form = 'skills_tool.body_format_form';
   static const skills_tool_body_format_text = 'skills_tool.body_format_text';
   static const skills_tool_body_label = 'skills_tool.body_label';
   static const skills_tool_body_hint = 'skills_tool.body_hint';
@@ -722,10 +760,38 @@ abstract class LocaleKeys {
       'skills_tool.input_description_hint';
   static const skills_tool_input_optional_label =
       'skills_tool.input_optional_label';
+  static const skills_tool_input_default_label =
+      'skills_tool.input_default_label';
+  static const skills_tool_input_default_hint =
+      'skills_tool.input_default_hint';
+  static const skills_tool_input_enum_label = 'skills_tool.input_enum_label';
+  static const skills_tool_input_enum_hint = 'skills_tool.input_enum_hint';
+  static const skills_tool_input_minimum_label =
+      'skills_tool.input_minimum_label';
+  static const skills_tool_input_maximum_label =
+      'skills_tool.input_maximum_label';
+  static const skills_tool_input_items_type_label =
+      'skills_tool.input_items_type_label';
+  static const skills_tool_input_nested_properties_label =
+      'skills_tool.input_nested_properties_label';
+  static const skills_tool_input_nested_properties_hint =
+      'skills_tool.input_nested_properties_hint';
   static const skills_tool_requires_credential_label =
       'skills_tool.requires_credential_label';
   static const skills_tool_requires_credential_hint =
       'skills_tool.requires_credential_hint';
+  static const skills_tool_credential_definition_label =
+      'skills_tool.credential_definition_label';
+  static const skills_tool_credential_definition_hint =
+      'skills_tool.credential_definition_hint';
+  static const skills_tool_preview_label = 'skills_tool.preview_label';
+  static const skills_tool_preview_error = 'skills_tool.preview_error';
+  static const skills_tool_advanced_definition_label =
+      'skills_tool.advanced_definition_label';
+  static const skills_tool_advanced_definition_hint =
+      'skills_tool.advanced_definition_hint';
+  static const skills_tool_advanced_definition_toggle =
+      'skills_tool.advanced_definition_toggle';
   static const skills_tool_add_input = 'skills_tool.add_input';
   static const skill_credentials_definitions_title =
       'skill_credentials_definitions.title';

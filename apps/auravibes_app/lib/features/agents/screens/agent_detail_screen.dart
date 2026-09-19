@@ -18,6 +18,7 @@ import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -550,7 +551,7 @@ class const _AgentDetailAppBar({required final _AgentDetailScreenState state})
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: TextLocale(
         state.widget.agentId == null
             ? LocaleKeys.agents_create
@@ -2690,6 +2691,7 @@ extension on WorkspaceSkill {
   DisableSkillRequest _enableRequest(String workspaceId) => (
     workspaceId: workspaceId,
     source: source,
+    kind: kind,
     skillId: id,
     isEnabled: true,
     slug: null,

@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.d
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -336,7 +337,7 @@ class const _ToolsScreenAppBar({
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.tools_screen_title),
       actions: [
         _AddMcpButton(workspaceId: workspaceId),

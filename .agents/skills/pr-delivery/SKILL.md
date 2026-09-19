@@ -78,7 +78,15 @@ Build a short plan by reading the applicable workflow jobs:
 - Match workflow events, target branches, path filters, job `if` expressions,
   matrix inputs, `needs`, and intentional skips against the changed paths.
 - Run each applicable local `run` block with its workflow working directory and
-  environment. Use the project wrappers required by `AGENTS.md`.
+  environment. Use the project wrappers required by `AGENTS.md`. For behavior
+  changes, start with the smallest focused tests covering the changed files or
+  behavior; do not run the full test suite as the initial preflight. Reserve a
+  full suite for an explicit request, a workflow that requires it, or a broad
+  change where no meaningful focused check exists.
+- For documentation, skill, workflow, or other configuration-only changes that
+  do not alter runtime behavior, skip tests. Run the relevant syntax, schema,
+  workflow, or diff checks instead. Do not silently replace missing focused
+  coverage with a full suite; report the validation gap.
 - For a local composite or reusable workflow, read it and include its commands.
   For hosted actions, secrets, external services, or unavailable operating
   systems, mark the check remote-only instead of inventing a local substitute.
@@ -135,6 +143,37 @@ Before fixing anything, compare `headRefOid` with the SHA that was pushed. A
 dependency bot, workflow, or another user may have added a commit. Discard
 stale conclusions, inspect the new diff, and wait for the new head.
 
+### Verify Sonar findings separately
+
+A successful `SonarCloud Code Analysis` check or `Quality Gate passed` message
+does not prove that the PR has no live Sonar issues. After the checks finish and
+the PR head matches the pushed SHA:
+
+1. Find the Sonar check's `link` with `gh pr checks "$pr" --json name,link`.
+   Treat a missing link as unverified unless the workflow explicitly explains
+   why Sonar is not expected for these paths.
+2. Read the Sonar project key (`id`) and PR number (`pullRequest`) from the
+   linked dashboard URL. Query SonarCloud's PR-scoped issues endpoint with
+   `resolved=false` and paginate until its reported total is covered. Use an
+   existing `SONAR_TOKEN` only when the project requires authentication; never
+   print it.
+
+   ```bash
+   curl --fail --silent --show-error --get \
+     --data-urlencode "componentKeys=$sonar_project" \
+     --data-urlencode "pullRequest=$pr" \
+     --data-urlencode "resolved=false" \
+     --data-urlencode "ps=100" \
+     'https://sonarcloud.io/api/issues/search'
+   ```
+3. A non-zero unresolved issue count is a delivery blocker, even when the
+   quality gate is green. Record each issue's key, severity, type, component,
+   line, and message, then fix it or report it as a blocker. A failed,
+   inaccessible, stale, or skipped Sonar analysis is unverified, not green.
+
+This independent issue query is required because Sonar can pass its configured
+quality gate while the PR still lists new issues.
+
 For every failed check, read the complete failed-step log with `gh run view
 <run-id> --log-failed` or follow the check link when it is external. Collect all
 failures from the finished run before applying fixes, unless a cancelled or
@@ -144,9 +183,10 @@ Use the actual job and log to choose the fix:
 
 - Fix code, test, formatting, analysis, dependency, generation, or platform
   failures in the repository and rerun their workflow commands locally.
-- For Sonar, inspect the reported issue and quality-gate output. Fix the cause.
-  A scan skipped for a fork or missing token is unverified, even if its parent
-  job passed. Do not lower the quality gate or suppress an issue to hide it.
+- For Sonar, inspect the reported issue and quality-gate output, then run the
+  PR-scoped unresolved-issue query above. Fix every returned issue. A scan
+  skipped for a fork or missing token is unverified, even if its parent job
+  passed. Do not lower the quality gate or suppress an issue to hide it.
 - For `DIRTY` or `CONFLICTING` merge state, fetch the PR base, merge it into the
   branch, resolve the conflict, rerun local gates, commit, push, and restart
   the full wait. Do not rebase or force-push.
@@ -169,6 +209,9 @@ Report a green PR only when:
 - local `HEAD`, the remote branch, and the PR `headRefOid` match;
 - every expected check for that head finished successfully, with only
   workflow-explained non-required skips;
+- Sonar's current PR analysis was independently queried for unresolved issues
+  and returned zero, or Sonar was explicitly workflow-explained as not
+  applicable for the changed paths;
 - no check is pending, failed, or cancelled; and
 - GitHub reports `mergeable: MERGEABLE` and `mergeStateStatus: CLEAN`.
 

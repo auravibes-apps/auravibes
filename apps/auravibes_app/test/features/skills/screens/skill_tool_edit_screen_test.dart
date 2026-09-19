@@ -150,20 +150,25 @@ void main() {
     expect(find.text('Inputs JSON'), findsNothing);
     expect(find.text('Requires credential'), findsOneWidget);
 
-    Future<void> enterLabeledField(String label, String value) async {
+    Future<void> enterLabeledField(
+      String label,
+      String value, {
+      bool last = false,
+    }) async {
       final input = find.byWidgetPredicate((widget) {
         if (widget is! AuraInput) return false;
         final labelWidget = widget.label;
 
         return labelWidget is Text && labelWidget.data == label;
-      }).first;
+      });
+      final selectedInput = last ? input.last : input.first;
       await tester.scrollUntilVisible(
-        input,
+        selectedInput,
         200,
         scrollable: find.byType(Scrollable).first,
       );
       final field = find.descendant(
-        of: input,
+        of: selectedInput,
         matching: find.byType(TextFormField),
       );
       await tester.enterText(field, value);
@@ -184,11 +189,16 @@ void main() {
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('POST').last);
     final _ = await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Add header'));
+    await tester.tap(find.text('Add header'));
+    final _ = await tester.pumpAndSettle();
+    await enterLabeledField('Name', 'Authorization');
+    await enterLabeledField('Value', 'Bearer {{ credential.api_key }}');
     await tester.ensureVisible(find.text('Add query parameter'));
     await tester.tap(find.text('Add query parameter'));
     final _ = await tester.pumpAndSettle();
     await enterLabeledField('Key', 'token');
-    await enterLabeledField('Value', '{credential:api_key}');
+    await enterLabeledField('Value', '{credential:api_key}', last: true);
     await enterLabeledField(
       'Request body',
       '{"company_id":{{ input.company_id | json }}}',
@@ -207,6 +217,7 @@ void main() {
     expect(jsonDecode(templateJson), {
       'url': 'https://example.com/company',
       'method': 'POST',
+      'headers': {'Authorization': 'Bearer {{ credential.api_key }}'},
       'query': {'token': '{{ credential.api_key }}'},
       'body': '{"company_id":{{ input.company_id | json }}}',
       'bodyFormat': 'json',

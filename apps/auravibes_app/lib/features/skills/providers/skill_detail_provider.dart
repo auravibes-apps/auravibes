@@ -109,7 +109,7 @@ _SkillDetailRequest _skillDetailRequest(_SkillDetailRequestInput request) {
 Future<SkillDetail?> _buildSkillDetail(_SkillDetailRequest request) async {
   final sourceSkill = request.sourceSkill;
   final appSkill = request.appSkill;
-  if (sourceSkill != null && !_isNativeAppRecord(sourceSkill, appSkill)) {
+  if (sourceSkill != null && !_isAppRecord(sourceSkill, appSkill)) {
     return SkillDetail.fromUserSkill(sourceSkill);
   }
 
@@ -163,12 +163,10 @@ Future<SkillEntity?> _loadSourceSkill(
   return ref.watch(skillsRepositoryProvider).getSkillById(skillId);
 }
 
-bool _isNativeAppRecord(
-  SkillEntity sourceSkill,
-  AppSkillDefinition? appSkill,
-) =>
+bool _isAppRecord(SkillEntity sourceSkill, AppSkillDefinition? appSkill) =>
     sourceSkill.source == SkillSource.app &&
-    sourceSkill.kind == SkillKind.native &&
+    (sourceSkill.kind == SkillKind.native ||
+        sourceSkill.kind == SkillKind.template) &&
     appSkill != null;
 
 Future<bool> _loadEnabledState(_EnabledStateRequest request) async {

@@ -251,7 +251,7 @@ void main() {
           }) async {
             resolvedCommand = command;
 
-            return AgentResolvedToolName.skillNative(
+            return AgentResolvedToolName.skillAppTemplate(
               tableId: 'search',
               skillSlug: 'duckduckgo',
               toolIdentifier: 'search',
@@ -291,7 +291,10 @@ void main() {
                     ),
                   ).captured.single
                   as ResolvedTool;
-          expect(approvalTool.fullName, 'skill__app__duckduckgo__search');
+          expect(
+            approvalTool.fullName,
+            'skill__app_template__duckduckgo__search',
+          );
           expect(resolvedCommand?.skill, 'duckduckgo');
           expect(resolvedCommand?.tool, 'search');
           expect(decision.permissionResult, AgentToolPermissionResult.granted);

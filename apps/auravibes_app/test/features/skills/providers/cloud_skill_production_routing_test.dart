@@ -217,6 +217,7 @@ void main() {
       await container.read(disableSkillUsecaseProvider(workspaceId))((
         workspaceId: workspaceId,
         source: SkillSource.user,
+        kind: SkillKind.template,
         skillId: skill.id,
         isEnabled: false,
         slug: null,
@@ -227,6 +228,7 @@ void main() {
       await container.read(disableSkillUsecaseProvider(workspaceId))((
         workspaceId: workspaceId,
         source: SkillSource.app,
+        kind: SkillKind.native,
         skillId: 'agents',
         isEnabled: true,
         slug: 'agents',

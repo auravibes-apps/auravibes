@@ -72,12 +72,18 @@ extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
   SkillTemplateToolsCompanion _addToolCreationFields(
     SkillTemplateToolsCompanion companion,
     SkillTemplateToolToCreate tool,
-  ) => companion.copyWith(
-    templateJson: .new(tool.templateJson),
-    inputsJson: .new(tool.inputsJson),
-    requiresCredential: .new(tool.requiresCredential),
-    isEnabled: .new(tool.isEnabled),
-  );
+  ) {
+    final definition = _createDefinition(tool);
+
+    return companion.copyWith(
+      definitionJson: .new(definition.toJsonString()),
+      templateJson: .new(definition.legacyTemplateJson),
+      inputsJson: .new(definition.legacyInputsJson),
+      credentialDefinitionId: .new(tool.credentialDefinitionId),
+      requiresCredential: .new(tool.requiresCredential),
+      isEnabled: .new(tool.isEnabled),
+    );
+  }
 
   SkillTemplateToolsCompanion _updateToolCompanion(
     SkillTemplateToolToUpdate tool,
@@ -88,18 +94,80 @@ extension SkillTemplateToolsCompanionMappings on SkillTemplateToolsRepository {
   SkillTemplateToolsCompanion _addToolUpdateFields(
     SkillTemplateToolsCompanion companion,
     SkillTemplateToolToUpdate tool,
+  ) {
+    final definition = _definitionUpdate(tool);
+    final updated = companion.copyWith(
+      title: _trimmedValue(tool.title),
+      description: _trimmedValue(tool.description),
+      requiresCredential: .absentIfNull(tool.requiresCredential),
+      isEnabled: .absentIfNull(tool.isEnabled),
+    );
+
+    return _addToolDefinitionFields(
+      _addToolCredentialFields(updated, tool),
+      definition,
+      tool,
+    );
+  }
+
+  SkillTemplateToolsCompanion _addToolDefinitionFields(
+    SkillTemplateToolsCompanion companion,
+    SkillTemplateDefinition? definition,
+    SkillTemplateToolToUpdate tool,
   ) => companion.copyWith(
-    title: _trimmedValue(tool.title),
-    description: _trimmedValue(tool.description),
-    templateJson: .absentIfNull(tool.templateJson),
-    inputsJson: .absentIfNull(tool.inputsJson),
-    requiresCredential: .absentIfNull(tool.requiresCredential),
-    isEnabled: .absentIfNull(tool.isEnabled),
+    definitionJson: definition == null
+        ? const Value.absent()
+        : .new(definition.toJsonString()),
+    templateJson: definition == null
+        ? .absentIfNull(tool.templateJson)
+        : .new(definition.legacyTemplateJson),
+    inputsJson: definition == null
+        ? .absentIfNull(tool.inputsJson)
+        : .new(definition.legacyInputsJson),
+  );
+
+  SkillTemplateToolsCompanion _addToolCredentialFields(
+    SkillTemplateToolsCompanion companion,
+    SkillTemplateToolToUpdate tool,
+  ) => companion.copyWith(
+    credentialDefinitionId: tool.clearCredentialDefinition
+        ? const Value<String?>(null)
+        : .absentIfNull(tool.credentialDefinitionId),
   );
 
   Value<String>? _trimmedValue(String? value) {
     return value == null ? const Value.absent() : .new(value.trim());
   }
+
+  SkillTemplateDefinition? _definitionUpdate(SkillTemplateToolToUpdate tool) {
+    if (tool.definitionJson case final definition?) {
+      return _definition(definition);
+    }
+    final template = tool.templateJson;
+    final inputs = tool.inputsJson;
+    if (template != null && inputs != null) {
+      return SkillTemplateDefinition.fromLegacyJson(
+        templateJson: template,
+        inputsJson: inputs,
+      );
+    }
+
+    return null;
+  }
+
+  SkillTemplateDefinition _createDefinition(SkillTemplateToolToCreate tool) {
+    if (tool.definitionJson.trim().isNotEmpty && tool.definitionJson != '{}') {
+      return _definition(tool.definitionJson);
+    }
+
+    return SkillTemplateDefinition.fromLegacyJson(
+      templateJson: tool.templateJson,
+      inputsJson: tool.inputsJson,
+    );
+  }
+
+  SkillTemplateDefinition _definition(String value) =>
+      SkillTemplateDefinition.fromJsonString(value);
 }
 
 extension on SkillTemplateToolsRepository {
@@ -129,8 +197,10 @@ extension on SkillTemplateToolsRepository {
     title: table.title,
     description: table.description,
     slug: table.slug,
+    definitionJson: table.definitionJson,
     templateJson: table.templateJson,
     inputsJson: table.inputsJson,
+    credentialDefinitionId: table.credentialDefinitionId,
   );
 
   SkillTemplateToolEntity _withToolState(
@@ -163,8 +233,6 @@ final _emptySkillTemplateToolEntity = SkillTemplateToolEntity(
   title: '',
   description: '',
   slug: '',
-  templateJson: '',
-  inputsJson: '',
   isEnabled: false,
   requiresCredential: false,
   createdAt: .new(0),

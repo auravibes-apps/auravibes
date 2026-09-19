@@ -96,6 +96,7 @@ class const _ResponsiveDrawerView({
     ),
     isDarkMode: Theme.of(context).brightness == Brightness.dark,
     controller: state._controller,
+    initiallyOpen: MediaQuery.sizeOf(context).width >= 600,
   );
 }
 

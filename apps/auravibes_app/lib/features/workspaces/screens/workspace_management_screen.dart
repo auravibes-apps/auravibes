@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -90,7 +91,7 @@ class const _WorkspaceManagementAppBar()
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.workspace_management_title),
       leading: Semantics(
         key: const ValueKey<String>('workspace_management_back'),

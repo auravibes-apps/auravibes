@@ -677,7 +677,7 @@ void main() {
       expect(effectiveUsecase.lastArgumentsRaw, argumentsRaw);
       expect(
         decisionUsecase.lastResolvedTool?.fullName,
-        'skill__app__agents__list_agents',
+        'skill__app_native__agents__list_agents',
       );
     });
 

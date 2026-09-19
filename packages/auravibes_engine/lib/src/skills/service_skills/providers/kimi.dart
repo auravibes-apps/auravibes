@@ -1,10 +1,8 @@
-import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
-const kimiSkill = AppSkillDefinition(
+final kimiSkill = AppSkillDefinition(
   identifier: 'kimi',
   slug: 'kimi',
   title: 'Kimi / Moonshot',
@@ -19,14 +17,24 @@ the workspace already has Moonshot model credentials.
     'moonshotai-cn',
     'kimi-for-coding',
   ],
-  nativeTools: [
+  kind: .template,
+  tools: [
     AppSkillToolDefinition(
       slug: 'web_search_chat',
       title: 'Web search chat',
       description: 'Answer a question with Kimi web-enabled chat.',
       inputJsonSchema: _webSearchChatInputSchema,
       requiresCredential: true,
-      callback: _webSearchChat,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.moonshot.ai/v1/chat/completions',
+        inputSchema: _webSearchChatInputSchema,
+        headers: {
+          'authorization': 'Bearer {{ credential.apiKey }}',
+          'content-type': 'application/json',
+        },
+        body: _webSearchChatBody,
+        bodyFormat: .json,
+      ),
     ),
   ],
 );
@@ -35,7 +43,7 @@ const Map<String, Object> _webSearchChatInputSchema = {
   'type': 'object',
   'properties': {
     'question': {'type': 'string'},
-    'model': {'type': 'string'},
+    'model': {'type': 'string', 'default': 'kimi-k2.6'},
     'temperature': {'type': 'number'},
     'maxTokens': {'type': 'integer', 'minimum': 1},
   },
@@ -43,27 +51,13 @@ const Map<String, Object> _webSearchChatInputSchema = {
   'additionalProperties': false,
 };
 
-CancelableOperation<Object?> _webSearchChat(
-  Map<String, dynamic> input,
-  SkillHttpClient context,
-) {
-  final body = <String, Object?>{
-    'model': stringInput(input, 'model', defaultValue: 'kimi-k2.6'),
-    'thinking': {'type': 'disabled'},
-    'tools': [
-      {
-        'type': 'builtin_function',
-        'function': {'name': r'$web_search'},
-      },
-    ],
-    'messages': [
-      {'role': 'user', 'content': textInput(input, 'question')},
-    ],
-  };
-  putIfPresent(body, 'temperature', input['temperature']);
-  putIfPresent(body, 'max_tokens', positiveIntInput(input, 'maxTokens'));
-
-  return postJson(context, 'https://api.moonshot.ai/v1/chat/completions', {
-    'authorization': 'Bearer ${apiKey(input)}',
-  }, body);
+const _webSearchChatBody = r'''
+{
+  "model": {{ input.model | json }},
+  "thinking": {"type":"disabled"},
+  "tools": [{"type":"builtin_function","function":{"name":"$web_search"}}],
+  "messages": [{"role":"user","content":{{ input.question | json }}}]
+  {% if input.temperature != nil %},"temperature":{{ input.temperature | json }}{% endif %}
+  {% if input.maxTokens != nil %},"max_tokens":{{ input.maxTokens | json }}{% endif %}
 }
+''';

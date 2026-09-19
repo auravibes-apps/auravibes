@@ -397,7 +397,7 @@ void main() {
           },
         ],
       ),
-      service.nativeTools.every((tool) => !tool.requiresCredential),
+      service.tools.every((tool) => !tool.requiresCredential),
     );
   });
 

@@ -33,7 +33,7 @@ class const ListAppSkillCredentialCandidatesUsecase(
 
   bool isCredentialRequired(AppSkillDefinition skill) {
     return skill.requiresCredential ||
-        skill.nativeTools.any((tool) => tool.requiresCredential);
+        skill.tools.any((tool) => tool.requiresCredential);
   }
 
   Future<bool> hasUsableNativeTool({
@@ -83,11 +83,7 @@ class const ListAppSkillCredentialCandidatesUsecase(
   ];
 
   List<AppSkillToolDefinition> _usableNativeTools(AppSkillDefinition skill) {
-    final isServiceSkill = _isServiceSkill(skill);
-
-    return skill.nativeTools
-        .where((tool) => _isUsableNativeTool(tool, isServiceSkill))
-        .toList(growable: false);
+    return skill.tools.where(_isUsableNativeTool).toList(growable: false);
   }
 
   bool _hasCredentiallessTool(List<AppSkillToolDefinition> tools) =>
@@ -111,12 +107,8 @@ bool _isUsableCloudCredential(
     connection.isEnabled &&
     connection.hasSecret;
 
-bool _isServiceSkill(AppSkillDefinition skill) => serviceSkillDefinitions.any(
-  (candidate) => candidate.identifier == skill.identifier,
-);
-
-bool _isUsableNativeTool(AppSkillToolDefinition tool, bool isServiceSkill) =>
-    tool.urlTemplate != null || (isServiceSkill && tool.callback != null);
+bool _isUsableNativeTool(AppSkillToolDefinition tool) =>
+    tool.urlTemplate != null;
 
 final listAppSkillCredentialCandidatesUsecaseProvider =
     Provider<ListAppSkillCredentialCandidatesUsecase>((ref) {

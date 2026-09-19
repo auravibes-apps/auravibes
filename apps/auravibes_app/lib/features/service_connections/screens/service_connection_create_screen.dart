@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -533,7 +534,7 @@ class const _ServiceConnectionCreateAppBar()
 
   @override
   Widget build(BuildContext context) {
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.service_connections_create_title),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
@@ -912,7 +913,7 @@ bool _canCreateAppSkillCredential(AppSkillDefinition skill) {
   if (skill.compatibleModelProviderIds.isNotEmpty) return false;
 
   return skill.requiresCredential ||
-      skill.nativeTools.any((tool) => tool.requiresCredential);
+      skill.tools.any((tool) => tool.requiresCredential);
 }
 
 String _credentialValueLabel(BuildContext context, String? appSkillId) {

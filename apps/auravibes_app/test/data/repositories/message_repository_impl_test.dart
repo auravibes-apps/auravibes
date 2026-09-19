@@ -576,6 +576,26 @@ void main() {
       expect(patched.status, MessageStatus.sent);
     });
 
+    test('patchMessage allows retrying an errored user message', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'retry me',
+          messageType: .text,
+          isUser: true,
+          status: .error,
+        ),
+      );
+
+      final patched = await repository.patchMessage(
+        created.id,
+        const MessagePatch(status: .sending),
+      );
+
+      expect(patched.status, MessageStatus.sending);
+      expect(patched.content, 'retry me');
+    });
+
     test(
       'owner can resolve a legacy sent message with pending tools',
       () async {

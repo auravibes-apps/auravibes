@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
     show appSkillRegistryProvider;
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
@@ -24,6 +25,7 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillToolDefinition;
@@ -288,6 +290,24 @@ extension on _SkillDetailScreenState {
     }
   }
 
+  Future<void> _cloneAppSkill(BuildContext context, SkillDetail detail) async {
+    _updateState(() => _isSaving = true);
+    try {
+      final _ = await _cloneAppSkillWithUsecase(detail.slug);
+      if (!context.mounted) return;
+
+      _finishDuplicate(context);
+    } on Object {
+      if (context.mounted) _showSaveError(context);
+    } finally {
+      if (mounted) _updateState(() => _isSaving = false);
+    }
+  }
+
+  Future<SkillEntity> _cloneAppSkillWithUsecase(String slug) => ref
+      .read(cloneAppSkillUsecaseProvider(widget.workspaceId))
+      .call(widget.workspaceId, slug);
+
   void _finishDuplicate(BuildContext context) {
     ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
     if (!context.mounted) return;
@@ -447,6 +467,10 @@ class _SkillDetailAppBarActions {
   new(_SkillDetailAppBarActionsRequest request)
     : values = [
         if (!request.isCreate)
+          if (request.currentDetail case final detail?
+              when !detail.isUserSkill && detail.kind == SkillKind.template)
+            _SkillDetailCloneButton(state: request.state, detail: detail),
+        if (!request.isCreate)
           if (request.userSkillDetail case final detail?) ...[
             _SkillDetailDuplicateButton(state: request.state, detail: detail),
             _SkillDetailDeleteButton(state: request.state, detail: detail),
@@ -470,7 +494,7 @@ class const _SkillDetailAppBar({
   Widget build(BuildContext context) {
     final isCreate = state._isCreate;
 
-    return AuraAppBar(
+    return AuraAppBarWithDrawer(
       title: _SkillDetailAppBarTitle(isCreate: isCreate),
       actions: _SkillDetailAppBarActions((
         state: state,
@@ -504,6 +528,22 @@ class const _SkillDetailDuplicateButton({
       onPressed: state._isSaving
           ? null
           : () => state._duplicateSkill(context, detail),
+      tooltip: LocaleKeys.skills_screen_duplicate.tr(context: context),
+    );
+  }
+}
+
+class const _SkillDetailCloneButton({
+  required final _SkillDetailScreenState state,
+  required final SkillDetail detail,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraIconButton(
+      icon: Icons.copy_all_outlined,
+      onPressed: state._isSaving
+          ? null
+          : () => state._cloneAppSkill(context, detail),
       tooltip: LocaleKeys.skills_screen_duplicate.tr(context: context),
     );
   }

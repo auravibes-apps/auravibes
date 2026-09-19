@@ -65,6 +65,13 @@ void main() {
       expect(actions.actionCalls, 6);
       expect(actions.lastFeatureFlag, (flag: 'a2ui', enabled: true));
     });
+
+    test('ignores the VM service isolate parameter', () async {
+      final result = await dispatcher.seedDemoData({'isolateId': 'isolate-1'});
+
+      expect(result, isA<MarionetteExtensionSuccess>());
+      expect(actions.actionCalls, 1);
+    });
   });
 
   test('registration exposes only schema-backed allowlisted tools', () {

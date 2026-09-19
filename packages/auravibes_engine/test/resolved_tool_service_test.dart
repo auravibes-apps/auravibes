@@ -197,4 +197,12 @@ class const _FakeResolvedToolProvider()
     return 'native-skill:${request.workspaceId}:'
         '${request.skillSlug}:${request.toolSlug}';
   }
+
+  @override
+  Future<Object?> runSkillAppTemplateTool(
+    SkillAppTemplateToolRequest request,
+  ) async {
+    return 'app-template:${request.workspaceId}:${request.skillSlug}:'
+        '${request.toolSlug}';
+  }
 }

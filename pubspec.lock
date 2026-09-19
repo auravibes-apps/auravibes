@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: anthropic_sdk_dart
-      sha256: c6156e106927eea40b75c4a97f193ea93e12adb033c41d51742b61b7ea122f17
+      sha256: "68e4f7d5a7dd441e49d7faaaf81ce75cb1190d682da928c083cc22b807533192"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "8.0.0"
   archive:
     dependency: transitive
     description:
@@ -915,26 +915,26 @@ packages:
     dependency: transitive
     description:
       name: genkit
-      sha256: c97f77d2336b8e06eed6325a1f109d89a5f27f404f2cbe002be64d756f11a319
+      sha256: e3e1a83c6d407da8408d86bee4fc91049129ea03f3da5e473500df7404cf3363
       url: "https://pub.dev"
     source: hosted
-    version: "0.16.1"
+    version: "0.17.0"
   genkit_anthropic:
     dependency: transitive
     description:
       name: genkit_anthropic
-      sha256: "7ff9a55364b199b57142ebc700f2cd4d52584bb697250f201c6300ae326b6d6e"
+      sha256: "9fecf8f97b889a07ee83241bc554095758012f08444d5f4a40ddd4ac11a86b54"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "0.4.0"
   genkit_openai:
     dependency: transitive
     description:
       name: genkit_openai
-      sha256: "5ea93a4fc377e96944f73f11114dfde3dfb5a77775c5bde1e9006e20213c8df4"
+      sha256: "09d1c8031a66bef489a99104179e44b9a70ce63ac802afa3e7b9c168beba3323"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.1"
+    version: "0.5.0"
   genui:
     dependency: transitive
     description:
@@ -1280,7 +1280,7 @@ packages:
     source: hosted
     version: "0.6.0"
   marionette_mcp:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: marionette_mcp
       sha256: "24a2b3277c659367e3d6c306d35d35600fc78c5d28512f06bc843cb2e65e21b3"
@@ -1451,18 +1451,10 @@ packages:
     dependency: transitive
     description:
       name: openai_dart
-      sha256: "96f86ce316c92e5198550168235782ba84695808d85d8b971592c43826d65fba"
+      sha256: "75612562082498b8271ffa030308db032c65b68aa862b458ee752376e0341311"
       url: "https://pub.dev"
     source: hosted
-    version: "5.0.0"
-  opentelemetry:
-    dependency: transitive
-    description:
-      name: opentelemetry
-      sha256: "92d63a2e0731d34a7548add82420b8f3819ccda569f9bdfdcc4b25e00fe88da4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.18.11"
+    version: "8.1.0"
   package_config:
     dependency: transitive
     description:
@@ -1631,14 +1623,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
-  protobuf:
-    dependency: transitive
-    description:
-      name: protobuf
-      sha256: "13b6717366aa7ec3792dd62c19c7d33a785708224365f2db23c5ca01f1c1a0f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   provider:
     dependency: transitive
     description:
@@ -1671,14 +1655,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   rational:
     dependency: transitive
     description:
@@ -1867,10 +1843,10 @@ packages:
     dependency: transitive
     description:
       name: schemantic
-      sha256: "3597f1c6bfcfc95e92bb215a8868be0494105b6b6c12228b184253616047d5d2"
+      sha256: "1252e78063c2d124831337bf8e9d146cbd6d9cf575f5346a9c85c5911c430239"
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.2"
+    version: "0.2.3"
   serverpod:
     dependency: transitive
     description:

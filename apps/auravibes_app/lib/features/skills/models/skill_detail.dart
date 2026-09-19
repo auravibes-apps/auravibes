@@ -1,6 +1,6 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillDefinition, AppSkillToolDefinition;
+    show AppSkillDefinition, AppSkillDefinitionKind, AppSkillToolDefinition;
 
 typedef SkillDetailNativeValues = ({
   String title,
@@ -57,14 +57,16 @@ class _NativeSkillDetail extends SkillDetail {
         source: SkillSource.app,
         id: request.appSkill.identifier,
         workspaceId: request.workspaceId,
-        kind: .native,
+        kind: request.appSkill.kind == AppSkillDefinitionKind.template
+            ? .template
+            : .native,
         title: values.title,
         slug: values.slug,
         description: values.description,
         content: values.content,
         isEnabled: request.isEnabled,
         isCredentialOptional: values.isCredentialOptional,
-        appTools: request.appSkill.nativeTools,
+        appTools: request.appSkill.tools,
         titleKey: values.titleKey,
         descriptionKey: values.descriptionKey,
         contentKey: values.contentKey,

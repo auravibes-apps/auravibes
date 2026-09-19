@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
@@ -22,18 +20,17 @@ void main() {
   });
 
   group('RunAppSkillToolUsecase', () {
-    test('all service native tools have an executor', () {
+    test('all service template tools have an executor', () {
       final missingExecutors = [
         for (final skill in serviceSkillDefinitions)
-          for (final tool in skill.nativeTools)
-            if (tool.urlTemplate == null && tool.callback == null)
-              '${skill.slug}.${tool.slug}',
+          for (final tool in skill.tools)
+            if (tool.urlTemplate == null) '${skill.slug}.${tool.slug}',
       ];
 
       expect(missingExecutors, isEmpty);
     });
 
-    test('executes DuckDuckGo callback scraper without credentials', () async {
+    test('executes DuckDuckGo raw HTML template without credentials', () async {
       var capturedRequest = const UrlRequest(url: '');
       final usecase = _usecase(
         executeUrl: (request) async {
@@ -56,10 +53,7 @@ void main() {
         arguments: {'query': 'flutter jobs', 'maxResults': 1},
       );
 
-      expect(
-        result,
-        '{"provider":"duckduckgo","query":"flutter jobs","sources":[{"title":"Flutter Jobs","url":"https://example.com/jobs","snippet":"Remote & mobile roles"}]}',
-      );
+      expect(result, _duckDuckGoHtml);
       expect(capturedRequest.method, UrlRequestMethod.post);
       expect(capturedRequest.url, 'https://html.duckduckgo.com/html/');
       expect(capturedRequest.body, contains('q=flutter+jobs'));
@@ -259,7 +253,7 @@ void main() {
       expect(capturedRequest.headers['x-api-key'], 'exa-key');
     });
 
-    test('executes pending OpenAI callback request', () async {
+    test('executes OpenAI declarative request', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       var capturedRequest = const UrlRequest(url: '');
       when(() => serviceConnections.getById('connection-1'))
@@ -314,7 +308,10 @@ void main() {
       );
     });
 
-    test('executes Codex callback with refreshed OAuth credential', () async {
+    const codexRefreshTestName =
+        'executes Codex declarative request with refreshed OAuth '
+        'credential';
+    test(codexRefreshTestName, () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       var capturedRequest = const UrlRequest(url: '');
@@ -337,6 +334,8 @@ void main() {
       );
       when(() => oauthCredentials.getValidAccessToken('codex-connection'))
           .thenAnswer((_) async => 'fresh-token');
+      const responseBody =
+          '{"output_text":"Answer with source","output":[{"type":"message","content":[{"type":"output_text","text":"Answer with source","annotations":[{"type":"url_citation","url":"https://example.com","title":"Example"}]}]}]}';
       final usecase = _usecase(
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
@@ -346,9 +345,7 @@ void main() {
         executeUrl: (request) async {
           capturedRequest = request;
 
-          return _response(
-            '{"output_text":"Answer with source","output":[{"type":"message","content":[{"type":"output_text","text":"Answer with source","annotations":[{"type":"url_citation","url":"https://example.com","title":"Example"}]}]}]}',
-          );
+          return _response(responseBody);
         },
       );
 
@@ -367,7 +364,6 @@ void main() {
           'city': 'San Francisco',
           'timezone': 'America/Los_Angeles',
           'includeImages': true,
-          'maxOutputTokens': 512,
         },
       );
 
@@ -394,13 +390,11 @@ void main() {
         capturedRequest.body,
         contains('search_content_types":["text","image"]'),
       );
-      expect(capturedRequest.body, contains('max_output_tokens":512'));
       expect(capturedRequest.body, contains('latest Flutter news'));
-      expect(result, contains('Answer with source'));
-      expect(result, contains('https://example.com'));
+      expect(result, responseBody);
     });
 
-    test('aggregates Codex annotation events into final sources', () async {
+    test('returns raw Codex SSE content', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       when(() => serviceConnections.getById('codex-annotation-connection'))
@@ -423,6 +417,11 @@ void main() {
         () =>
             oauthCredentials.getValidAccessToken('codex-annotation-connection'),
       ).thenAnswer((_) async => 'fresh-token');
+      const responseBody = '''
+data: {"type":"response.output_text.delta","delta":"Final answer with citation"}
+data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","title":"Pokemon.com","url":"https://www.pokemon.com/news"}}
+data: [DONE]
+''';
       final usecase = _usecase(
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
@@ -431,11 +430,7 @@ void main() {
             _candidate('codex', id: 'model:codex-annotation-connection'),
           ],
         },
-        executeUrl: (_) async => _response('''
-data: {"type":"response.output_text.delta","delta":"Final answer with citation"}
-data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","title":"Pokemon.com","url":"https://www.pokemon.com/news"}}
-data: [DONE]
-'''),
+        executeUrl: (_) async => _response(responseBody),
       );
 
       final result = await usecase.call(
@@ -447,16 +442,10 @@ data: [DONE]
           'credentialId': 'model:codex-annotation-connection',
         },
       );
-      final resultText = (result ?? fail('Expected Codex result')) as String;
-      final decoded = jsonDecode(resultText) as Map<String, dynamic>;
-
-      expect(decoded['answer'], 'Final answer with citation');
-      expect(decoded['sources'], [
-        {'url': 'https://www.pokemon.com/news', 'title': 'Pokemon.com'},
-      ]);
+      expect(result, responseBody);
     });
 
-    test('keeps SSE parsing as Codex fallback', () async {
+    test('returns raw Codex SSE content for fallback responses', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       when(() => serviceConnections.getById('codex-sse-connection')).thenAnswer(
@@ -476,17 +465,18 @@ data: [DONE]
           );
       when(() => oauthCredentials.getValidAccessToken('codex-sse-connection'))
           .thenAnswer((_) async => 'fresh-token');
+      const responseBody = '''
+data: {"type":"response.output_text.delta","delta":"Streamed answer"}
+data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","title":"Example","url":"https://example.com"}}
+data: [DONE]
+''';
       final usecase = _usecase(
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
         candidatesBySlug: {
           'codex': [_candidate('codex', id: 'model:codex-sse-connection')],
         },
-        executeUrl: (_) async => _response('''
-data: {"type":"response.output_text.delta","delta":"Streamed answer"}
-data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","title":"Example","url":"https://example.com"}}
-data: [DONE]
-'''),
+        executeUrl: (_) async => _response(responseBody),
       );
 
       final result = await usecase.call(
@@ -498,13 +488,7 @@ data: [DONE]
           'credentialId': 'model:codex-sse-connection',
         },
       );
-      final resultText = (result ?? fail('Expected Codex result')) as String;
-      final decoded = jsonDecode(resultText) as Map<String, dynamic>;
-
-      expect(decoded['answer'], 'Streamed answer');
-      expect(decoded['sources'], [
-        {'url': 'https://example.com', 'title': 'Example'},
-      ]);
+      expect(result, responseBody);
     });
 
     test('requires credential for Brave', () async {
@@ -559,10 +543,7 @@ RunAppSkillToolUsecase _usecase({
     serviceConnections ?? _MockServiceConnectionRepository(),
     _MockSkillCredentialsRepository(),
     _FakeAppSkillCandidates(candidatesBySlug),
-    .new(
-      .new(const ResolveSkillUrlTemplate(), httpClient.execute),
-      httpClient.execute,
-    ),
+    .new(.new(const ResolveSkillUrlTemplate(), httpClient.execute)),
     oauthCredentials,
   );
 }
@@ -581,7 +562,7 @@ class const _FakeAppSkillCandidates(
   @override
   bool isCredentialRequired(AppSkillDefinition skill) {
     return skill.requiresCredential ||
-        skill.nativeTools.any((tool) => tool.requiresCredential);
+        skill.tools.any((tool) => tool.requiresCredential);
   }
 
   @override
@@ -589,7 +570,7 @@ class const _FakeAppSkillCandidates(
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    if (skill.nativeTools.any((tool) => !tool.requiresCredential)) {
+    if (skill.tools.any((tool) => !tool.requiresCredential)) {
       return true;
     }
 

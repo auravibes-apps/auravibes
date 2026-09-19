@@ -172,14 +172,14 @@ void main() {
           () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolName: 'skill__app__duckduckgo__search',
+            toolName: 'skill__app_template__duckduckgo__search',
           ),
         ).thenAnswer((_) async => 'duckduckgo-search');
         when(
           () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolName: 'skill__app__weather__search',
+            toolName: 'skill__app_template__weather__search',
           ),
         ).thenAnswer((_) async => 'weather-search');
         when(
@@ -210,7 +210,7 @@ void main() {
             toolCallId: toolCallId,
             resolvedTool: ResolvedTool.skillCommand(
               commandName: agent.callSkillToolName,
-              target: .skillNative(
+              target: .skillAppTemplate(
                 tableId: 'search',
                 skillSlug: skill,
                 toolIdentifier: 'search',
@@ -235,7 +235,7 @@ void main() {
           () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
-            toolName: 'skill__app__duckduckgo__search',
+            toolName: 'skill__app_template__duckduckgo__search',
           ),
         ).thenAnswer((_) async => null);
         when(
@@ -258,7 +258,7 @@ void main() {
           toolCallId: 'tc-1',
           resolvedTool: ResolvedTool.skillCommand(
             commandName: agent.callSkillToolName,
-            target: .skillNative(
+            target: .skillAppTemplate(
               tableId: 'search',
               skillSlug: 'duckduckgo',
               toolIdentifier: 'search',
@@ -306,7 +306,7 @@ void main() {
             () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolName: 'skill__app__agents__run_sub_agent',
+              toolName: 'skill__app_native__agents__run_sub_agent',
             ),
           ).thenAnswer((_) async => 'run-sub-agent-permission');
           when(

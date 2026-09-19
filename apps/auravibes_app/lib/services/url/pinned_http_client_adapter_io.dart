@@ -51,6 +51,25 @@ HttpClient _defaultHttpClient() =>
 Future<ConnectionTask<Socket>> Function(Uri, String?, int?) _connectionFactory(
   InternetAddress resolvedAddress,
 ) =>
-    (target, _, _) => Socket.startConnect(resolvedAddress, target.port);
+    (target, _, _) => _connect(resolvedAddress, target);
+
+Future<ConnectionTask<Socket>> _connect(
+  InternetAddress resolvedAddress,
+  Uri target,
+) async {
+  final connection = await Socket.startConnect(resolvedAddress, target.port);
+  if (target.scheme != 'https') return connection;
+
+  return ConnectionTask.fromSocket(
+    _secureSocket(connection.socket, target.host),
+    connection.cancel,
+  );
+}
+
+Future<Socket> _secureSocket(Future<Socket> socket, String host) async {
+  final connected = await socket;
+
+  return await SecureSocket.secure(connected, host: host);
+}
 
 typedef PinnedHttpClientAdapterImplementation = PinnedHttpClientAdapterIo;

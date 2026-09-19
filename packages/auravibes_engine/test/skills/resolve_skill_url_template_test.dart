@@ -7,17 +7,21 @@ void main() {
   group('skill template validation', () {
     test('preserves validation classification and canonical JSON', () {
       void validateBody(String body, {String? bodyFormat}) {
-        validateSkillTemplateTool(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'body': body,
-            'bodyFormat': ?bodyFormat,
-          }),
-          inputsJson: jsonEncode({
-            'filters': {'description': 'Filters', 'type': 'array'},
-            'location': {'description': 'Optional location', 'optional': true},
-          }),
-          credentialDefinitions: const {},
+        validateSkillTemplateDefinition(
+          SkillTemplateDefinition.fromLegacyJson(
+            templateJson: jsonEncode({
+              'url': 'https://example.com',
+              'body': body,
+              'bodyFormat': ?bodyFormat,
+            }),
+            inputsJson: jsonEncode({
+              'filters': {'description': 'Filters', 'type': 'array'},
+              'location': {
+                'description': 'Optional location',
+                'optional': true,
+              },
+            }),
+          ),
         );
       }
 
@@ -75,14 +79,15 @@ void main() {
         ),
       );
       expect(
-        () => validateSkillTemplateTool(
-          templateJson: jsonEncode({
-            'url': 'https://example.com/{{ input.credentialId }}',
-          }),
-          inputsJson: jsonEncode({
-            'credentialId': {'description': 'Credential id'},
-          }),
-          credentialDefinitions: const {},
+        () => validateSkillTemplateDefinition(
+          SkillTemplateDefinition.fromLegacyJson(
+            templateJson: jsonEncode({
+              'url': 'https://example.com/{{ input.credentialId }}',
+            }),
+            inputsJson: jsonEncode({
+              'credentialId': {'description': 'Credential id'},
+            }),
+          ),
         ),
         throwsA(
           isA<FormatException>().having(
@@ -93,12 +98,12 @@ void main() {
         ),
       );
       expect(
-        canonicalSkillUrlTemplateJson(
+        SkillUrlTemplate.fromJsonString(
           jsonEncode({
             'url': 'https://example.com/{input:query}',
             'body': '{"query":"{input:query}"}',
           }),
-        ),
+        ).toJsonString(),
         [
           '{"url":"https://example.com/{{ input.query }}","method":"GET",',
           r'"body":"{\"query\":{{ input.query | json }}}",',
@@ -203,6 +208,73 @@ void main() {
         'https://example.com/?q=third',
       ]);
       expect(resolve('last').url, 'https://example.com/?q=last');
+    });
+
+    test('renders form bodies with URL encoding and defaults', () {
+      final request = resolver(
+        template: const SkillUrlTemplate(
+          url: 'https://example.com/search',
+          method: .post,
+          body:
+              'q={{ input.query | url_encode }}'
+              '${"&"}region={{ input.region | url_encode }}',
+          bodyFormat: .form,
+        ),
+        inputs: {'query': 'a & b'},
+        credentials: const {},
+        inputDefinitions: const {
+          'query': SkillTemplateInputDefinition(description: 'Query'),
+          'region': SkillTemplateInputDefinition(
+            description: 'Region',
+            optional: true,
+            defaultValue: 'us-en',
+          ),
+        },
+      );
+
+      expect(request.body, contains('a+%26+b'));
+      expect(request.body, contains('region=us-en'));
+      expect(request.format, UrlResponseFormat.defaultFormat);
+    });
+
+    test('rejects unknown and invalid typed inputs', () {
+      const definitions = {
+        'limit': SkillTemplateInputDefinition(
+          description: 'Limit',
+          type: 'integer',
+          minimum: 1,
+          maximum: 10,
+        ),
+        'options': SkillTemplateInputDefinition(
+          description: 'Options',
+          type: 'object',
+          properties: {
+            'mode': SkillTemplateInputDefinition(
+              description: 'Mode',
+              enumValues: ['fast', 'deep'],
+            ),
+          },
+        ),
+      };
+
+      expect(
+        () => normalizeSkillTemplateInputs({
+          'limit': 2,
+          'unknown': true,
+        }, definitions),
+        throwsFormatException,
+      );
+      expect(
+        () => normalizeSkillTemplateInputs({'limit': 11}, definitions),
+        throwsFormatException,
+      );
+      expect(
+        () => normalizeSkillTemplateInputs({
+          'limit': 2,
+          'options': {'unexpected': true},
+        }, definitions),
+        throwsFormatException,
+      );
     });
   });
 
@@ -380,6 +452,68 @@ void main() {
         ),
         throwsFormatException,
       );
+    });
+
+    test('round-trips a strict versioned manifest', () {
+      final definition = SkillTemplateDefinition.fromJsonMap({
+        'version': 1,
+        'inputSchema': {
+          'type': 'object',
+          'properties': {
+            'query': {'type': 'string'},
+          },
+          'required': ['query'],
+          'additionalProperties': false,
+        },
+        'request': {'url': 'https://example.com/search', 'method': 'GET'},
+        'credentialSchema': {
+          'apiKey': {'description': 'API key'},
+        },
+      });
+
+      validateSkillTemplateDefinition(definition);
+      final manifest = Map<String, Object?>.from(
+        jsonDecode(definition.toJsonString()) as Map,
+      );
+      expect(manifest['version'], 1);
+      expect(definition.inputs['query']!.optional, isFalse);
+      expect(
+        () => SkillTemplateDefinition.fromJsonMap({
+          ...manifest,
+          'unexpected': true,
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('renders a redacted request preview without sending it', () {
+      const definition = SkillTemplateDefinition(
+        request: SkillUrlTemplate(
+          url: 'https://example.com/search',
+          headers: {'authorization': 'Bearer {{ credential.apiKey }}'},
+          query: {'token': '{{ credential.apiKey }}'},
+          body: '''
+{"query":{{ input.query | json }},
+"token":{{ credential.apiKey | json }}}
+''',
+          bodyFormat: .json,
+        ),
+        inputs: {'query': SkillTemplateInputDefinition(description: 'Query')},
+        credentialDefinitions: {
+          'apiKey': SkillCredentialAttributeDefinition(description: 'API key'),
+        },
+      );
+
+      final preview = renderSkillTemplatePreview(
+        definition: definition,
+        inputs: const {'query': 'cats'},
+      );
+
+      expect(preview.method, 'GET');
+      expect(preview.headers['authorization'], 'Bearer [REDACTED]');
+      expect(preview.query['token'], '[REDACTED]');
+      expect(preview.body, contains('[REDACTED]'));
+      expect(preview.body, isNot(contains('api-secret')));
     });
   });
 
