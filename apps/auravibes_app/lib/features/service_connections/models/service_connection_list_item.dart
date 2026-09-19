@@ -82,6 +82,32 @@ class const ServiceConnectionListItem({
          canReconnect: false,
        );
 
+  new _fromAppSkillCredential({
+    required String id,
+    required String workspaceId,
+    required String name,
+    required String serviceId,
+    required String? keySuffix,
+    required bool hasSecret,
+  }) : this(
+         id: id,
+         workspaceId: workspaceId,
+         name: name,
+         serviceName: serviceId,
+         kind: .skillCredential,
+         keySuffix: keySuffix,
+         credentialDefinitionId: null,
+         mcpServerId: null,
+         authenticationType: null,
+         displayStatus: hasSecret ? .connected : .unknown,
+         expiresAt: null,
+         lastRefreshedAt: null,
+         lastAuthError: null,
+         metadataValues: const [],
+         canRefresh: false,
+         canReconnect: false,
+       );
+
   factory fromMcpCredential(ServiceConnectionMcpCredential data) =
       ServiceConnectionListItem._fromMcpCredential;
 
@@ -125,6 +151,22 @@ class const ServiceConnectionListItem({
     required SkillCredentialEntity credential,
     required SkillCredentialDefinitionEntity? definition,
   }) => ._fromSkillCredential(credential: credential, definition: definition);
+
+  factory fromAppSkillCredential({
+    required String id,
+    required String workspaceId,
+    required String name,
+    required String serviceId,
+    required String? keySuffix,
+    required bool hasSecret,
+  }) => ._fromAppSkillCredential(
+    id: id,
+    workspaceId: workspaceId,
+    name: name,
+    serviceId: serviceId,
+    keySuffix: keySuffix,
+    hasSecret: hasSecret,
+  );
 
   static ServiceConnectionListItem fromModelConnection(
     ModelConnectionEntity connection,

@@ -1,6 +1,7 @@
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/cloud_service_connection_usecases.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -58,8 +59,28 @@ Future<Future<void> Function(String id)> _deleteSkillCredential(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
 
-  return gateway == null
-      ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-      : CloudServiceConnectionUsecases(.new(gateway)).deleteById;
+  if (gateway != null) {
+    return CloudServiceConnectionUsecases(.new(gateway)).deleteById;
+  }
+
+  final skillCredentials = ref.watch(skillCredentialsRepositoryProvider);
+  final serviceConnections = ref.watch(serviceConnectionRepositoryProvider);
+
+  Future<void> deleteLocalCredential(String id) async {
+    final appSkillCredential = await serviceConnections
+        .getAppSkillCredentialForEdit(id, workspaceId: workspaceId);
+    if (appSkillCredential != null) {
+      await serviceConnections.deleteAppSkillCredential(
+        id,
+        workspaceId: workspaceId,
+      );
+
+      return;
+    }
+
+    await skillCredentials.deleteCredential(id);
+  }
+
+  return deleteLocalCredential;
 }
 // Top-level API/provider declarations are required by their consumers.

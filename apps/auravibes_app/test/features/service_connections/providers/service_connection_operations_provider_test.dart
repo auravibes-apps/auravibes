@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -6,8 +9,46 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockServiceConnectionRepository extends Mock
+    implements ServiceConnectionRepository;
 
 void main() {
+  test(
+    'keeps local operations alive while async dependencies resolve',
+    () async {
+      final sessionReady = Completer<WorkspaceSession>();
+      final gatewayReady = Completer<CloudWorkspaceStateGateway?>();
+      const session = WorkspaceSession(
+        LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider('workspace')
+              .overrideWith((_) => sessionReady.future),
+          cloudWorkspaceStateGatewayProvider.overrideWith(
+            (_, _) => gatewayReady.future,
+          ),
+          serviceConnectionRepositoryProvider.overrideWithValue(
+            _MockServiceConnectionRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final operations = container.read(
+        serviceConnectionOperationsProvider('workspace').future,
+      );
+      await Future<void>.delayed(.zero);
+      sessionReady.complete(session);
+      await Future<void>.delayed(.zero);
+      gatewayReady.complete(null);
+
+      expect(await operations, isA<ServiceConnectionOperations>());
+    },
+  );
+
   test('cloud create never constructs local credential repository', () async {
     final gateway = CloudWorkspaceStateGateway.forTesting(
       workspace: const CloudWorkspaceRef(

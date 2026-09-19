@@ -16,18 +16,23 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
   Ref ref,
   String workspaceId,
 ) async {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(workspaceId).future,
-  );
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
-  if (gateway != null) {
-    return _cloudServiceConnectionOperations(gateway);
-  }
-  final local = ref.watch(serviceConnectionRepositoryProvider);
+  final keepAlive = ref.keepAlive();
+  try {
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayProvider(session).future,
+    );
+    if (gateway != null) {
+      return _cloudServiceConnectionOperations(gateway);
+    }
+    final local = ref.watch(serviceConnectionRepositoryProvider);
 
-  return _localServiceConnectionOperations(local, workspaceId);
+    return _localServiceConnectionOperations(local, workspaceId);
+  } finally {
+    keepAlive.close();
+  }
 }
 
 typedef _CreateServiceConnection = Future<void> Function({

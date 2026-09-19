@@ -99,6 +99,11 @@ class const ServiceConnectionRepository(
     AppSkillCredentialCreateRequest request,
   ) => _createAppSkillCredential(this, request);
 
+  Future<void> deleteAppSkillCredential(
+    String id, {
+    required String workspaceId,
+  }) => _deleteAppSkillCredential(this, id, workspaceId: workspaceId);
+
   Future<ServiceConnectionSecret> readSecret(String id) =>
       _readSecret(this, id);
 
@@ -589,6 +594,23 @@ Future<void> _deleteOwnedMcpCredential(
     repository._database.serviceConnections,
   );
   final _ = delete.where((table) => _ownedMcpCredentialFilter(table, id));
+  final _ = await delete.go();
+}
+
+Future<void> _deleteAppSkillCredential(
+  ServiceConnectionRepository repository,
+  String id, {
+  required String workspaceId,
+}) async {
+  final delete = repository._database.delete(
+    repository._database.serviceConnections,
+  );
+  final _ = delete.where(
+    (table) =>
+        table.id.equals(id) &
+        table.workspaceId.equals(workspaceId) &
+        table.kind.equals(ServiceConnectionKindTable.appSkillCredential.name),
+  );
   final _ = await delete.go();
 }
 

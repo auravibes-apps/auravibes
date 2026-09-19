@@ -19,6 +19,7 @@ typedef _ConnectionLists = ({
   List<SkillCredentialDefinitionEntity> definitions,
   List<SkillCredentialEntity> credentials,
   List<ServiceConnectionListItem> mcpCredentials,
+  List<ServiceConnectionListItem> appSkillCredentials,
 });
 
 typedef _McpCredentialItemRequest = ({
@@ -35,13 +36,14 @@ class const WatchServiceConnectionListItemsUsecase(
   final DateTime Function() _now,
 ) {
   Stream<List<ServiceConnectionListItem>> call(String workspaceId) {
-    return Rx.combineLatest4(
+    return Rx.combineLatest5(
       _modelConnectionRepository.watchModelConnections(
         .new(workspaces: [workspaceId]),
       ),
       _credentialDefinitionsRepository.watchDefinitions(workspaceId),
       _credentialsRepository.watchCredentialsForWorkspace(workspaceId),
       _watchMcpCredentialItems(workspaceId),
+      _watchAppSkillCredentialItems(workspaceId),
       _combineConnectionItems,
     );
   }
@@ -60,6 +62,34 @@ class const WatchServiceConnectionListItemsUsecase(
 
     return query.watch().map(_mcpCredentialRows);
   }
+
+  Stream<List<ServiceConnectionListItem>> _watchAppSkillCredentialItems(
+    String workspaceId,
+  ) {
+    final query = _database.select(_database.serviceConnections)
+      ..where(
+        (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.kind.equals(
+              ServiceConnectionKindTable.appSkillCredential.name,
+            ),
+      );
+
+    return query.watch().map(
+      (rows) => rows.map(_appSkillCredentialItem).toList(),
+    );
+  }
+
+  ServiceConnectionListItem _appSkillCredentialItem(
+    ServiceConnectionTable connection,
+  ) => ServiceConnectionListItem.fromAppSkillCredential(
+    id: connection.id,
+    workspaceId: connection.workspaceId,
+    name: connection.name,
+    serviceId: connection.serviceId,
+    keySuffix: connection.keySuffix,
+    hasSecret: connection.encryptedAuthValue != null,
+  );
 
   List<ServiceConnectionListItem> _mcpCredentialRows(List<TypedResult> rows) =>
       rows.map(_mcpCredentialItem).toList();
@@ -142,11 +172,13 @@ List<ServiceConnectionListItem> _combineConnectionItems(
   List<SkillCredentialDefinitionEntity> definitions,
   List<SkillCredentialEntity> credentials,
   List<ServiceConnectionListItem> mcpCredentials,
+  List<ServiceConnectionListItem> appSkillCredentials,
 ) => _buildConnectionItems((
   modelConnections: models,
   definitions: definitions,
   credentials: credentials,
   mcpCredentials: mcpCredentials,
+  appSkillCredentials: appSkillCredentials,
 ));
 
 List<ServiceConnectionListItem> _buildConnectionItems(_ConnectionLists input) {
@@ -155,6 +187,7 @@ List<ServiceConnectionListItem> _buildConnectionItems(_ConnectionLists input) {
       ServiceConnectionListItem.fromModelConnection,
     ),
     ..._skillCredentialItems(input.definitions, input.credentials),
+    ...input.appSkillCredentials,
     ...input.mcpCredentials,
   ]..sort((a, b) => a.name.compareTo(b.name));
 }
