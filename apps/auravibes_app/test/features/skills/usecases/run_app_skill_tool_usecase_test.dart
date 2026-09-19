@@ -394,7 +394,7 @@ void main() {
       expect(result, responseBody);
     });
 
-    test('returns raw Codex SSE content', () async {
+    test('assembles Codex SSE content with citation links', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       when(() => serviceConnections.getById('codex-annotation-connection'))
@@ -442,10 +442,15 @@ data: [DONE]
           'credentialId': 'model:codex-annotation-connection',
         },
       );
-      expect(result, responseBody);
+      expect(
+        result,
+        'Final answer with citation\n\n'
+        'Sources:\n'
+        '- [Pokemon.com](https://www.pokemon.com/news)',
+      );
     });
 
-    test('returns raw Codex SSE content for fallback responses', () async {
+    test('assembles Codex SSE content for fallback responses', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       when(() => serviceConnections.getById('codex-sse-connection')).thenAnswer(
@@ -488,7 +493,12 @@ data: [DONE]
           'credentialId': 'model:codex-sse-connection',
         },
       );
-      expect(result, responseBody);
+      expect(
+        result,
+        'Streamed answer\n\n'
+        'Sources:\n'
+        '- [Example](https://example.com)',
+      );
     });
 
     test('requires credential for Brave', () async {

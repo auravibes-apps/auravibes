@@ -38,6 +38,21 @@ class const ConversationCompactionResult({
   required final AgentCompactionRangeSelected range,
 });
 
+String appendDurableSkillActivations(
+  String summary,
+  Iterable<String> activations,
+) {
+  final unique = <String>{
+    for (final activation in activations)
+      if (activation.isNotEmpty) activation,
+  };
+  if (unique.isEmpty) return summary;
+
+  return '$summary\n\n<durable_skill_activations>\n'
+      '${unique.join('\n\n')}\n'
+      '</durable_skill_activations>';
+}
+
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
@@ -56,16 +71,153 @@ String providerCredential(String providerId, String secret) {
 
 List<Map<String, dynamic>> buildCloudSkillContextMessages({
   String? agentContent,
-  required Iterable<AgentSkill> conversationSkills,
+  required Iterable<SkillCatalogEntry> skillCatalog,
+  String? catalogRevision,
   required Iterable<AgentSkill> agentSkills,
 }) => const BuildSkillContextMessages()
     .compose(
       agentContent: agentContent,
-      conversationSkills: conversationSkills,
+      conversationSkills: const [],
+      skillCatalog: skillCatalog,
+      catalogRevision: catalogRevision,
       agentSkills: agentSkills,
     )
     .map((message) => {'role': message.role.name, 'content': message.content})
     .toList(growable: false);
+
+Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
+  Session session, {
+  required int workspaceId,
+  required Iterable<String> activeSkillIds,
+  required bool isChildConversation,
+}) async {
+  final resources = await WorkspaceResource.db.find(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+  );
+  final userSkills = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.skill &&
+            _jsonObject(resource.data)['source'] != 'app',
+      )
+      .map(
+        (resource) => {
+          'id': resource.resourceId,
+          ..._jsonObject(resource.data),
+        },
+      )
+      .toList(growable: false);
+  final templateTools = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.skillTemplateTool,
+      )
+      .map(
+        (resource) => {
+          'id': resource.resourceId,
+          ..._jsonObject(resource.data),
+        },
+      )
+      .toList(growable: false);
+  final appSkillSettings = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.skillSetting,
+      )
+      .map((resource) => _jsonObject(resource.data))
+      .toList(growable: false);
+  final serviceConnections = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.serviceConnection,
+      )
+      .map(
+        (resource) => {
+          'id': resource.resourceId,
+          ..._jsonObject(resource.data),
+        },
+      )
+      .toList(growable: false);
+  final candidates =
+      <
+        ({
+          String id,
+          String slug,
+          String title,
+          String description,
+        })
+      >[];
+  for (final skill in userSkills) {
+    final id = skill['id'];
+    final slug = skill['slug'];
+    final title = skill['title'];
+    if (id is! String ||
+        slug is! String ||
+        title is! String ||
+        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+      continue;
+    }
+    candidates.add((
+      id: id,
+      slug: slug,
+      title: title,
+      description: skill['description'] as String? ?? '',
+    ));
+  }
+  if (!isChildConversation &&
+      cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
+    candidates.add((
+      id: agentsSkillSlug,
+      slug: agentsSkillSlug,
+      title: agentsSkillTitle,
+      description: '',
+    ));
+  }
+  for (final skill in serviceSkillDefinitions) {
+    if (!cloudAppSkillEnabled(skill.identifier, appSkillSettings) ||
+        !cloudServiceSkillReady(skill, serviceConnections)) {
+      continue;
+    }
+    candidates.add((
+      id: skill.identifier,
+      slug: skill.slug,
+      title: skill.title,
+      description: skill.description,
+    ));
+  }
+  final candidateIds = candidates.map((candidate) => candidate.id).toSet();
+  final tools = materializeCloudSkillTools(
+    selectedSkillIds: candidateIds,
+    userSkills: userSkills,
+    templateTools: templateTools,
+    appSkillSettings: appSkillSettings,
+    serviceConnections: serviceConnections,
+    isChildConversation: isChildConversation,
+  );
+  final entries = <SkillCatalogEntry>[];
+  for (final candidate in candidates) {
+    final manifest = await buildCloudSkillManifest(
+      slug: candidate.slug,
+      userSkills: userSkills,
+      tools: tools,
+    );
+    if (manifest == null) continue;
+    entries.add(
+      SkillCatalogEntry(
+        slug: candidate.slug,
+        title: candidate.title,
+        description: candidate.description,
+        revision: manifest.revision,
+        active:
+            activeSkillIds.contains(candidate.id) ||
+            activeSkillIds.contains(candidate.slug),
+      ),
+    );
+  }
+  return entries..sort((left, right) => left.slug.compareTo(right.slug));
+}
 
 List<Map<String, dynamic>> cloudRequestMessagesWithToolExchanges({
   required Iterable<Map<String, dynamic>> baseMessages,
@@ -775,15 +927,16 @@ final class const ServerConversationEngineHost({
       job,
       conversation: conversation,
     );
+    final skillCatalog = await buildCloudSkillCatalog(
+      session,
+      workspaceId: job.workspaceId,
+      activeSkillIds: {...conversationSkillIds, ...agentContext.skillIds},
+      isChildConversation: conversation.parentConversationStableId != null,
+    );
     final messages = [
       ...buildCloudSkillContextMessages(
         agentContent: agentContext.content,
-        conversationSkills: await _skillsForIds(
-          session,
-          job.workspaceId,
-          conversationSkillIds,
-          isChildConversation: conversation.parentConversationStableId != null,
-        ),
+        skillCatalog: skillCatalog,
         agentSkills: await _skillsForIds(
           session,
           job.workspaceId,
@@ -1041,7 +1194,38 @@ final class const ServerConversationEngineHost({
         'compaction_summary',
       );
     }
-    return ConversationCompactionResult(summary: summary, range: range);
+    return ConversationCompactionResult(
+      summary: appendDurableSkillActivations(
+        summary,
+        await _durableSkillActivations(session, job.workspaceId, range),
+      ),
+      range: range,
+    );
+  }
+
+  Future<List<String>> _durableSkillActivations(
+    Session session,
+    int workspaceId,
+    AgentCompactionRangeSelected range,
+  ) async {
+    final messageIds = range.messageIds.map(int.parse).toSet();
+    if (messageIds.isEmpty) return const [];
+    final calls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.messageId.inSet(messageIds) &
+          table.name.equals(activateSkillToolName),
+      orderBy: (table) => table.id,
+    );
+    final latestBySkill = <String, String>{};
+    for (final call in calls) {
+      final result = call.resultJson;
+      if (result == null || !result.startsWith('<skill_content ')) continue;
+      latestBySkill[_activationSkillKey(call)] = result;
+    }
+
+    return latestBySkill.values.toList(growable: false);
   }
 
   Future<_ProviderConfig> _loadConfig(
@@ -1156,6 +1340,19 @@ final class const ServerConversationEngineHost({
       rethrow;
     }
   }
+}
+
+String _activationSkillKey(ConversationToolCall call) {
+  try {
+    final arguments = jsonDecode(call.argumentsJson);
+    if (arguments is Map && arguments['slug'] is String) {
+      return arguments['slug']! as String;
+    }
+  } on FormatException {
+    // Fall back to the tool-call identity for malformed historical input.
+  }
+
+  return call.stableId;
 }
 
 Map<String, Object?> _providerTool(ServerResolvedTool tool) => {

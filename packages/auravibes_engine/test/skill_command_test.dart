@@ -8,15 +8,27 @@ void main() {
 
     expect(before, after);
     expect(before.map((spec) => spec.name), [
-      listSkillsToolName,
-      loadSkillToolName,
-      unloadSkillToolName,
+      activateSkillToolName,
       listSkillCredentialsToolName,
       callSkillToolName,
     ]);
     expect(
       before.any((spec) => spec.inputJsonSchema.toString().contains('enum')),
       isFalse,
+    );
+  });
+
+  test('activation target requires a catalog revision', () {
+    final target = SkillActivationTarget.fromArguments({
+      'slug': 'research',
+      'revision': 'skill-7',
+    });
+
+    expect(target.slug, 'research');
+    expect(target.revision, 'skill-7');
+    expect(
+      () => SkillActivationTarget.fromArguments({'slug': 'research'}),
+      throwsFormatException,
     );
   });
 
@@ -82,7 +94,7 @@ void main() {
     final manifest = SkillManifest(
       slug: 'research',
       title: 'Research',
-      instructions: 'Use cited sources.',
+      description: 'Find sources.',
       revision: 'skill-7',
       tools: [
         SkillManifestTool(
@@ -103,7 +115,7 @@ void main() {
     expect(manifest.toJson(), {
       'slug': 'research',
       'title': 'Research',
-      'instructions': 'Use cited sources.',
+      'description': 'Find sources.',
       'revision': 'skill-7',
       'tools': [
         {
@@ -144,7 +156,7 @@ void main() {
     final manifest = SkillManifest(
       slug: 'research',
       title: 'Research',
-      instructions: 'Use cited sources.',
+      description: 'Find sources.',
       revision: 'skill-7',
       tools: [
         SkillManifestTool(

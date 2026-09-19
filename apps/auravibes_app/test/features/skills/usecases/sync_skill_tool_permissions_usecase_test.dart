@@ -7,7 +7,8 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ToolSpec, activateSkillToolName, listSkillCredentialsToolName;
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,8 +82,8 @@ void main() {
 
     test('creates skills group and default ask tool rows', () async {
       final spec = ToolSpec(
-        name: 'load_skill',
-        description: 'Load a skill',
+        name: activateSkillToolName,
+        description: 'Activate a skill',
         inputJsonSchema: {'type': 'object'},
       );
       stubSpecs(dynamic: [spec]);
@@ -299,16 +300,12 @@ void main() {
 
     test('isSkillPermissionToolName identifies skill permission subjects', () {
       expect(
-        SkillPermissionTools.isSkillPermissionToolName('load_skill'),
-        isTrue,
-      );
-      expect(
-        SkillPermissionTools.isSkillPermissionToolName('unload_skill'),
+        SkillPermissionTools.isSkillPermissionToolName(activateSkillToolName),
         isTrue,
       );
       expect(
         SkillPermissionTools.isSkillPermissionToolName(
-          'list_skill_credentials',
+          listSkillCredentialsToolName,
         ),
         isTrue,
       );

@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
@@ -40,13 +39,6 @@ typedef _SkillToolExecutionRequest = ({
   SkillCommandTarget command,
 });
 
-typedef _SkillFilterRequest = ({
-  RunSkillCommandUsecase usecase,
-  String conversationId,
-  String workspaceId,
-  SkillLoadFilter filter,
-});
-
 class const _SkillManifestRequest({
   required final String conversationId,
   required final String workspaceId,
@@ -59,8 +51,6 @@ class const RunSkillCommandUsecase({
   listAvailableSkillsUsecase,
   required final LoadConversationSkillUsecase Function(String workspaceId)
   loadConversationSkillUsecase,
-  required final UnloadConversationSkillUsecase Function(String workspaceId)
-  unloadConversationSkillUsecase,
   required final BuildLoadedSkillManifestsUsecase
   buildLoadedSkillManifestsUsecase,
   required final BuildSkillTemplateToolSpecsUsecase
@@ -70,19 +60,18 @@ class const RunSkillCommandUsecase({
   required final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
   required final RunAppSkillToolUsecase runAppSkillToolUsecase,
   required final ListSkillCredentials listSkillCredentials,
+  final ListSkillCredentials? listCatalogSkillCredentials,
   final RunSkillNativeTool? runSkillNativeTool,
 }) {
-  Future<Map<String, Object?>> call(_RunSkillCommandRequest request) =>
+  Future<Object?> call(_RunSkillCommandRequest request) =>
       _runSkillCommand(this, request);
 }
 
-Future<Map<String, Object?>> _runSkillCommand(
+Future<Object?> _runSkillCommand(
   RunSkillCommandUsecase usecase,
   _RunSkillCommandRequest request,
 ) => switch (request.commandName) {
-  listSkillsToolName => _listSkillsCommand(usecase, request),
-  loadSkillToolName => _loadSkillCommand(usecase, request),
-  unloadSkillToolName => _unloadSkillCommand(usecase, request),
+  activateSkillToolName => _activateSkillCommand(usecase, request),
   listSkillCredentialsToolName => _listSkillCredentialsCommand(
     usecase,
     request,
@@ -90,45 +79,6 @@ Future<Map<String, Object?>> _runSkillCommand(
   callSkillToolName => _callSkillCommand(usecase, request),
   _ => throw FormatException('Unknown skill command: ${request.commandName}'),
 };
-
-Future<Map<String, Object?>> _listSkillsCommand(
-  RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
-) => _listSkills(usecase, request.conversationId, request.workspaceId);
-
-Future<Map<String, Object?>> _listSkills(
-  RunSkillCommandUsecase usecase,
-  String conversationId,
-  String workspaceId,
-) async => {
-  'loadable': await _listSkillsForFilter((
-    usecase: usecase,
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    filter: .loadable,
-  )),
-  'loaded': await _listSkillsForFilter((
-    usecase: usecase,
-    conversationId: conversationId,
-    workspaceId: workspaceId,
-    filter: .loaded,
-  )),
-};
-
-Future<List<Map<String, String>>> _listSkillsForFilter(
-  _SkillFilterRequest request,
-) async {
-  final skills = await _availableSkills(request);
-
-  return _sortedSkillSummaries(skills);
-}
-
-Future<List<AvailableSkill>> _availableSkills(_SkillFilterRequest request) =>
-    request.usecase.listAvailableSkillsUsecase(request.workspaceId)(
-      conversationId: request.conversationId,
-      workspaceId: request.workspaceId,
-      filter: request.filter,
-    );
 
 Future<Map<String, Object?>> _listSkillCredentialsCommand(
   RunSkillCommandUsecase usecase,
@@ -139,26 +89,80 @@ Future<Map<String, Object?>> _listSkillCredentialsCommand(
   arguments: request.arguments,
 );
 
-Future<Map<String, Object?>> _loadSkillCommand(
+Future<Object?> _activateSkillCommand(
   RunSkillCommandUsecase usecase,
   _RunSkillCommandRequest request,
-) => _load(usecase, request);
+) => _activate(usecase, request);
 
-Future<Map<String, Object?>> _load(
+Future<Object?> _activate(
   RunSkillCommandUsecase usecase,
   _RunSkillCommandRequest commandRequest,
 ) async {
-  final slug = _slug(commandRequest.arguments);
+  final target = SkillActivationTarget.fromArguments(
+    Map<String, Object?>.from(commandRequest.arguments),
+  );
+  final available = await usecase
+      .listAvailableSkillsUsecase(commandRequest.workspaceId)
+      .call(
+        conversationId: commandRequest.conversationId,
+        workspaceId: commandRequest.workspaceId,
+        filter: .catalog,
+      );
+  final skill = available
+      .where((candidate) => candidate.slug == target.slug)
+      .firstOrNull;
+  if (skill == null) throw StateError('Skill is unavailable: ${target.slug}');
   final manifestRequest = _SkillManifestRequest(
     conversationId: commandRequest.conversationId,
     workspaceId: commandRequest.workspaceId,
-    slug: slug,
-    revision: null,
+    slug: target.slug,
+    revision: target.revision,
   );
-  await _loadConversationSkill(usecase, manifestRequest);
-  final manifest = await _loadSkillManifest(usecase, manifestRequest);
+  final catalogManifest = await _manifestForAvailableSkill(
+    usecase,
+    manifestRequest,
+    skill,
+  );
+  if (catalogManifest.revision != target.revision) {
+    throw FormatException(
+      'Skill revision changed; use the current skill catalog to refresh: '
+      '${target.slug}',
+    );
+  }
+  final listSkillCredentials =
+      usecase.listCatalogSkillCredentials ?? usecase.listSkillCredentials;
+  final credentials =
+      catalogManifest.tools.any((tool) => tool.credentialRequired)
+      ? _credentialOptions(
+          await listSkillCredentials(
+            conversationId: commandRequest.conversationId,
+            workspaceId: commandRequest.workspaceId,
+            arguments: {'slug': target.slug},
+          ),
+        )
+      : const <SkillCredentialOption>[];
 
-  return _loadedSkillResult(slug, manifest);
+  await _loadConversationSkill(usecase, manifestRequest);
+
+  return buildSkillActivationResult(
+    manifest: catalogManifest,
+    content: skill.content,
+    credentials: credentials,
+  );
+}
+
+List<SkillCredentialOption> _credentialOptions(Map<String, Object?> result) {
+  final values = result['credentials'];
+  if (values is! Iterable) return const [];
+
+  return [
+    for (final value in values)
+      if (value is Map && value['id'] is String && value['name'] is String)
+        SkillCredentialOption(
+          credentialId: value['id']! as String,
+          displayName: value['name']! as String,
+        ),
+  ];
 }
 
 Future<void> _loadConversationSkill(
@@ -171,27 +175,6 @@ Future<void> _loadConversationSkill(
       workspaceId: request.workspaceId,
       slug: request.slug,
     );
-
-Future<Map<String, Object?>> _unloadSkillCommand(
-  RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
-) => _unload(usecase, request);
-
-Future<Map<String, Object?>> _unload(
-  RunSkillCommandUsecase usecase,
-  _RunSkillCommandRequest request,
-) async {
-  final slug = _slug(request.arguments);
-  await usecase
-      .unloadConversationSkillUsecase(request.workspaceId)
-      .call(
-        conversationId: request.conversationId,
-        workspaceId: request.workspaceId,
-        slug: slug,
-      );
-
-  return {'unloaded': slug};
-}
 
 Future<Map<String, Object?>> _callSkillCommand(
   RunSkillCommandUsecase usecase,
@@ -236,20 +219,6 @@ Future<Object?> _executeCallTool(
     command: command,
   ));
 }
-
-String _slug(Map<String, dynamic> arguments) {
-  final slug = arguments['slug'] ?? arguments['skillSlug'];
-  if (slug is! String || slug.isEmpty) {
-    throw const FormatException('Skill command requires a slug.');
-  }
-
-  return slug;
-}
-
-List<Map<String, String>> _sortedSkillSummaries(List<AvailableSkill> skills) =>
-    [
-      for (final skill in skills) {'slug': skill.slug, 'title': skill.title},
-    ]..sort((left, right) => left['slug']!.compareTo(right['slug']!));
 
 class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
   Future<SkillCommandTarget> _validatedCommand(
@@ -305,7 +274,7 @@ class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
     }
     if (request.revision != null && manifest.revision != request.revision) {
       throw FormatException(
-        'Skill manifest changed; call load_skill or list_skills to refresh: '
+        'Skill manifest changed; use the current skill catalog to refresh: '
         '${request.slug}',
       );
     }
@@ -373,18 +342,6 @@ List<AgentResolvedToolName> _resolvedSkillTools(List<ToolSpec> specs) {
       .toList();
 }
 
-Future<SkillManifest> _loadSkillManifest(
-  RunSkillCommandUsecase usecase,
-  _SkillManifestRequest request,
-) async {
-  final manifest = await _findSkillManifest(usecase, request);
-  if (manifest == null) {
-    throw StateError('Loaded skill not found: ${request.slug}');
-  }
-
-  return manifest;
-}
-
 Future<SkillManifest?> _findSkillManifest(
   RunSkillCommandUsecase usecase,
   _SkillManifestRequest request,
@@ -393,8 +350,25 @@ Future<SkillManifest?> _findSkillManifest(
   workspaceId: request.workspaceId,
 )).where((candidate) => candidate.slug == request.slug).firstOrNull;
 
-Map<String, Object?> _loadedSkillResult(String slug, SkillManifest manifest) =>
-    {'loaded': slug, 'manifest': manifest.toJson()};
+Future<SkillManifest> _manifestForAvailableSkill(
+  RunSkillCommandUsecase usecase,
+  _SkillManifestRequest request,
+  AvailableSkill skill,
+) async {
+  final manifests = await usecase.buildLoadedSkillManifestsUsecase.call(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    extraSkills: [skill],
+  );
+  final manifest = manifests
+      .where((candidate) => candidate.slug == skill.slug)
+      .firstOrNull;
+  if (manifest == null) {
+    throw StateError('Skill manifest unavailable: ${skill.slug}');
+  }
+
+  return manifest;
+}
 
 class const _RunSkillCommandExecution(final RunSkillCommandUsecase _usecase) {
   Future<Object?> _runSkillTool(_SkillToolExecutionRequest request) =>

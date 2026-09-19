@@ -26,10 +26,8 @@ class const BuildSkillContextMessagesService(
     final context = await _loadContext(conversationId, workspaceId);
     final agentMessages = _builder.compose(
       agentContent: context.selectedAgent?.content,
-      conversationSkills: _toAgentSkills(
-        context.loadedSkills,
-        context.manifestsBySlug,
-      ),
+      conversationSkills: const [],
+      skillCatalog: _catalogEntries(context),
       agentSkills: _toAgentSkills(context.agentSkills, context.manifestsBySlug),
     );
 
@@ -39,6 +37,7 @@ class const BuildSkillContextMessagesService(
 
 typedef _SkillContextData = ({
   AgentEntity? selectedAgent,
+  List<AvailableSkill> catalogSkills,
   List<AvailableSkill> loadedSkills,
   List<AvailableSkill> agentSkills,
   Map<String, SkillManifest> manifestsBySlug,
@@ -49,17 +48,18 @@ extension on BuildSkillContextMessagesService {
     String conversationId,
     String workspaceId,
   ) async {
+    final catalogSkills = await _catalogSkills(conversationId, workspaceId);
     final loadedSkills = await _loadedSkills(conversationId, workspaceId);
     final selectedAgent = await _selectedAgent(conversationId, workspaceId);
     final agentSkills = await _agentSkills(conversationId, workspaceId);
-    final manifests = await _manifests(
-      conversationId,
-      workspaceId,
-      agentSkills,
-    );
+    final manifests = await _manifests(conversationId, workspaceId, [
+      ...catalogSkills,
+      ...agentSkills,
+    ]);
 
     return (
       selectedAgent: selectedAgent,
+      catalogSkills: catalogSkills,
       loadedSkills: loadedSkills,
       agentSkills: agentSkills,
       manifestsBySlug: {
@@ -67,6 +67,15 @@ extension on BuildSkillContextMessagesService {
       },
     );
   }
+
+  Future<List<AvailableSkill>> _catalogSkills(
+    String conversationId,
+    String workspaceId,
+  ) => _listAvailableSkillsUsecase(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+    filter: SkillLoadFilter.catalog,
+  );
 
   Future<List<AvailableSkill>> _loadedSkills(
     String conversationId,
@@ -109,6 +118,23 @@ extension on BuildSkillContextMessagesService {
 List<ChatMessage> _toChatMessages(List<agent.AgentChatMessage> messages) => [
   for (final message in messages) _toChatMessage(message),
 ];
+
+List<SkillCatalogEntry> _catalogEntries(_SkillContextData context) {
+  final activeSlugs = context.loadedSkills.map((skill) => skill.slug).toSet();
+  final manifests = context.manifestsBySlug;
+
+  return [
+    for (final skill in context.catalogSkills)
+      if (manifests[skill.slug] case final manifest?)
+        SkillCatalogEntry(
+          slug: skill.slug,
+          title: skill.title,
+          description: skill.description,
+          revision: manifest.revision,
+          active: activeSlugs.contains(skill.slug),
+        ),
+  ]..sort((left, right) => left.slug.compareTo(right.slug));
+}
 
 ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(
   role: _chatMessageRole(message.role),

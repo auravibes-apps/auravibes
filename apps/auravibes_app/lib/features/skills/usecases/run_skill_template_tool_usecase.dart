@@ -242,7 +242,7 @@ extension on RunSkillTemplateToolUsecase {
       return null;
     }
 
-    final normalizedCredentialId = _credentialId(request);
+    final normalizedCredentialId = await _credentialId(request);
     if (normalizedCredentialId == null) return null;
 
     final credential = await _skillCredentialsRepository.getCredentialById(
@@ -257,22 +257,37 @@ extension on RunSkillTemplateToolUsecase {
     return credential;
   }
 
-  String? _credentialId(_CredentialResolutionRequest request) {
+  Future<String?> _credentialId(_CredentialResolutionRequest request) async {
     final normalizedCredentialId = request.credentialId?.trim();
     if (normalizedCredentialId == null || normalizedCredentialId.isEmpty) {
-      return _missingCredentialId(request.requiresCredential);
+      if (!request.requiresCredential) return null;
+      final credentialDefinitionId = request.credentialDefinitionId;
+      if (credentialDefinitionId == null) {
+        throw StateError('Skill tool requires a credential definition.');
+      }
+
+      final candidates = await _skillCredentialsRepository
+          .getCredentialsForDefinition(
+            workspaceId: request.workspaceId,
+            credentialDefinitionId: credentialDefinitionId,
+          );
+      final available = candidates
+          .where(
+            (candidate) =>
+                candidate.workspaceId == request.workspaceId &&
+                candidate.isEnabled,
+          )
+          .toList(growable: false);
+      if (available.length == 1) return available.single.id;
+
+      return _missingCredentialId();
     }
 
     return normalizedCredentialId;
   }
 
-  String? _missingCredentialId(bool isRequired) {
-    if (isRequired) {
+  Never _missingCredentialId() =>
       throw StateError('Skill tool requires a credentialId argument.');
-    }
-
-    return null;
-  }
 
   void _ensureCredentialAvailable(
     SkillCredentialEntity? credential,

@@ -326,7 +326,7 @@ void main() {
           const [
             ChatMessage(
               role: .user,
-              content: '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
+              content: '<skill><name>Research</name><skill_tools>{&quot;tools&quot;:[]}</skill_tools></skill>',
               metadata: {'kind': skillContextMetadataKind},
             ),
           ],
@@ -410,7 +410,7 @@ void main() {
         );
         expect(
           sentMessages.last.map((message) => message.text).join(),
-          contains('<skill_manifest>'),
+          contains('<skill_tools>'),
         );
       },
     );
@@ -622,7 +622,7 @@ void main() {
         );
         final tools = [
           ToolSpec(
-            name: 'load_skill',
+            name: 'activate_skill',
             description: 'Load a skill',
             inputJsonSchema: {},
           ),

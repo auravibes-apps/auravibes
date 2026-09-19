@@ -2276,6 +2276,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  toon_dart:
+    dependency: transitive
+    description:
+      name: toon_dart
+      sha256: "3448f6237bb4fd93f3b1f24a49eb6604d97553140e3fb7d09bf0529cb4530717"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0+4"
   tuple:
     dependency: transitive
     description:

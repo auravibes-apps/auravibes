@@ -8,19 +8,182 @@ import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_u
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('activates a catalog skill and returns its body envelope', () async {
+    final load = _LoadRecorder();
+    final credentialCalls = <Map<String, dynamic>>[];
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _LoadedSkills(
+        skills: const [
+          AvailableSkill(
+            source: SkillSource.user,
+            id: 'research-skill-row',
+            slug: 'research',
+            title: 'Research',
+            description: 'Search sources.',
+            content: 'Use research instructions.',
+            kind: .template,
+          ),
+        ],
+      ),
+      loadConversationSkillUsecase: (_) => load,
+      buildLoadedSkillManifestsUsecase: _Manifests(credentialRequired: true),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      listCatalogSkillCredentials:
+          ({
+            required conversationId,
+            required workspaceId,
+            required arguments,
+          }) async {
+            credentialCalls.add(arguments);
+
+            return const {
+              'credentials': [
+                {'id': 'credential-1', 'name': 'Personal account'},
+              ],
+            };
+          },
+    );
+
+    final result = await usecase.call((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      commandName: activateSkillToolName,
+      arguments: const {'slug': 'research', 'revision': 'r1'},
+    ));
+
+    expect(result, isA<SkillActivationResult>());
+    if (result is! SkillActivationResult) {
+      fail('Expected a skill activation result.');
+    }
+    final activation = result;
+    expect(
+      activation.value,
+      allOf(
+        startsWith('<skill_content slug="research"'),
+        contains('Use research instructions.'),
+        contains('<skill_tools>'),
+        contains('<skill_credentials>'),
+        contains('credential-1,Personal account'),
+      ),
+    );
+    expect(load.calls, 1);
+    expect(credentialCalls, [
+      {'slug': 'research'},
+    ]);
+  });
+
+  test('does not persist selection when catalog credentials fail', () async {
+    final load = _LoadRecorder();
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _LoadedSkills(
+        skills: const [
+          AvailableSkill(
+            source: SkillSource.user,
+            id: 'research-skill-row',
+            slug: 'research',
+            title: 'Research',
+            description: 'Search sources.',
+            content: 'Use research instructions.',
+            kind: .template,
+          ),
+        ],
+      ),
+      loadConversationSkillUsecase: (_) => load,
+      buildLoadedSkillManifestsUsecase: _Manifests(credentialRequired: true),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      listCatalogSkillCredentials:
+          ({
+            required conversationId,
+            required workspaceId,
+            required arguments,
+          }) async {
+            throw StateError('credential lookup failed');
+          },
+    );
+
+    await expectLater(
+      usecase.call((
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        commandName: activateSkillToolName,
+        arguments: const {'slug': 'research', 'revision': 'r1'},
+      )),
+      throwsStateError,
+    );
+    expect(load.calls, 0);
+  });
+
+  test(
+    'rejects a stale activation revision before persisting selection',
+    () async {
+      final load = _LoadRecorder();
+      final usecase = RunSkillCommandUsecase(
+        listAvailableSkillsUsecase: (_) => _LoadedSkills(
+          skills: const [
+            AvailableSkill(
+              source: SkillSource.user,
+              id: 'research-skill-row',
+              slug: 'research',
+              title: 'Research',
+              description: 'Search sources.',
+              content: 'Use research instructions.',
+              kind: .template,
+            ),
+          ],
+        ),
+        loadConversationSkillUsecase: (_) => load,
+        buildLoadedSkillManifestsUsecase: _Manifests(),
+        buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+        buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+        runSkillTemplateToolUsecase: _TemplateRunner(),
+        runAppSkillToolUsecase: _NativeRunner(),
+        listSkillCredentials: ({
+          required conversationId,
+          required workspaceId,
+          required arguments,
+        }) async => const {},
+      );
+
+      await expectLater(
+        usecase.call((
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          commandName: activateSkillToolName,
+          arguments: const {'slug': 'research', 'revision': 'stale'},
+        )),
+        throwsFormatException,
+      );
+      expect(load.calls, 0);
+    },
+  );
+
   test('rejects invalid target arguments before either runner', () async {
     final templateRunner = _TemplateRunner();
     final nativeRunner = _NativeRunner();
     final usecase = RunSkillCommandUsecase(
       listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
       loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      unloadConversationSkillUsecase: (_) => _UnusedUnload(),
       buildLoadedSkillManifestsUsecase: _Manifests(),
       buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
       buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
@@ -85,7 +248,6 @@ void main() {
       final usecase = RunSkillCommandUsecase(
         listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
         loadConversationSkillUsecase: (_) => _UnusedLoad(),
-        unloadConversationSkillUsecase: (_) => _UnusedUnload(),
         buildLoadedSkillManifestsUsecase: manifests,
         buildSkillTemplateToolSpecsUsecase: templateSpecs,
         buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
@@ -145,7 +307,6 @@ void main() {
     final usecase = RunSkillCommandUsecase(
       listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
       loadConversationSkillUsecase: (_) => _UnusedLoad(),
-      unloadConversationSkillUsecase: (_) => _UnusedUnload(),
       buildLoadedSkillManifestsUsecase: manifests,
       buildSkillTemplateToolSpecsUsecase: const _SkillSpecs([]),
       buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
@@ -187,7 +348,8 @@ void main() {
   });
 }
 
-class _Manifests implements BuildLoadedSkillManifestsUsecase {
+class _Manifests({final bool credentialRequired = false})
+    implements BuildLoadedSkillManifestsUsecase {
   @override
   Future<List<SkillManifest>> call({
     required String conversationId,
@@ -197,7 +359,7 @@ class _Manifests implements BuildLoadedSkillManifestsUsecase {
     SkillManifest(
       slug: 'research',
       title: 'Research',
-      instructions: 'Search.',
+      description: 'Search.',
       revision: 'r1',
       tools: [
         SkillManifestTool(
@@ -211,6 +373,7 @@ class _Manifests implements BuildLoadedSkillManifestsUsecase {
             'required': ['limit'],
             'additionalProperties': false,
           },
+          credentialRequired: credentialRequired,
         ),
       ],
     ),
@@ -232,7 +395,7 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
       SkillManifest(
         slug: agentsSkillSlug,
         title: agentsSkillTitle,
-        instructions: agentsSkillContent,
+        description: 'Run sub-agents.',
         revision: 'agents-r1',
         tools: [
           SkillManifestTool(
@@ -249,7 +412,19 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
   }
 }
 
-class _LoadedSkills implements ListAvailableSkillsUsecase {
+class _LoadedSkills({
+  final List<AvailableSkill> skills = const [
+    AvailableSkill(
+      source: SkillSource.user,
+      id: 'github-skill-row',
+      slug: 'github',
+      title: 'GitHub',
+      description: 'Manage GitHub issues.',
+      content: 'Create issues when requested.',
+      kind: .template,
+    ),
+  ],
+}) implements ListAvailableSkillsUsecase {
   int calls = 0;
   String? lastConversationId;
   String? lastWorkspaceId;
@@ -266,17 +441,23 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
     lastWorkspaceId = workspaceId;
     filters.add(filter);
 
-    return const [
-      AvailableSkill(
-        source: SkillSource.user,
-        id: 'github-skill-row',
-        slug: 'github',
-        title: 'GitHub',
-        description: 'Manage GitHub issues.',
-        content: 'Create issues when requested.',
-        kind: .template,
-      ),
-    ];
+    return skills;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _LoadRecorder implements LoadConversationSkillUsecase {
+  int calls = 0;
+
+  @override
+  Future<void> call({
+    required String conversationId,
+    required String workspaceId,
+    required String slug,
+  }) async {
+    calls++;
   }
 
   @override
@@ -333,11 +514,6 @@ class _UnusedListSkills implements ListAvailableSkillsUsecase {
 }
 
 class _UnusedLoad implements LoadConversationSkillUsecase {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _UnusedUnload implements UnloadConversationSkillUsecase {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

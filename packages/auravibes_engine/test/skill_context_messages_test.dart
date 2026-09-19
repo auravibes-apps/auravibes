@@ -12,7 +12,7 @@ void main() {
           manifest: .new(
             slug: 'research',
             title: 'Research',
-            instructions: 'Use primary sources.',
+            description: 'Use primary sources.',
             revision: 'r1',
             tools: const [],
           ),
@@ -21,11 +21,110 @@ void main() {
       agentSkills: const [],
     );
 
-    expect(messages.single.content, contains('<skill_manifest>'));
-    expect(
-      messages.single.content,
-      contains('&quot;revision&quot;:&quot;r1&quot;'),
+    expect(messages.single.content, contains('<skill_tools>'));
+    expect(messages.single.content, contains('"revision":"r1"'));
+    expect(messages.single.content, contains('"tools":[]'));
+  });
+
+  test('catalog is system context and sorted by slug', () {
+    final messages = const BuildSkillContextMessages().compose(
+      conversationSkills: const [],
+      agentSkills: const [],
+      skillCatalog: const [
+        SkillCatalogEntry(
+          slug: 'writer',
+          title: 'Writer',
+          description: 'Write.',
+          revision: 'w1',
+          active: false,
+        ),
+        SkillCatalogEntry(
+          slug: 'research',
+          title: 'Research',
+          description: 'Find.',
+          revision: 'r1',
+          active: true,
+        ),
+      ],
     );
+
+    expect(messages.single.role, AgentChatMessageRole.system);
+    expect(messages.single.metadata['kind'], skillCatalogMetadataKind);
+    expect(messages.single.content, contains('"slug":"research"'));
+    expect(
+      messages.single.content.indexOf('research'),
+      lessThan(messages.single.content.indexOf('writer')),
+    );
+  });
+
+  test('activation result keeps body outside metadata JSON', () {
+    final result = buildSkillActivationResult(
+      manifest: SkillManifest(
+        slug: 'research',
+        title: 'Research',
+        description: 'Find.',
+        revision: 'r1',
+        tools: [
+          SkillManifestTool(
+            name: 'search',
+            description: 'Search sources.',
+            credentialRequired: true,
+            inputJsonSchema: const {
+              'type': 'object',
+              'properties': {
+                'credentialId': {'type': 'string'},
+              },
+              'required': ['credentialId'],
+            },
+          ),
+        ],
+      ),
+      content: '# Research\nUse <sources>.',
+      credentials: const [
+        SkillCredentialOption(
+          credentialId: 'credential-2',
+          displayName: 'Work account',
+        ),
+        SkillCredentialOption(
+          credentialId: 'credential-1',
+          displayName: 'Personal account',
+        ),
+      ],
+    );
+
+    expect(result.toString(), contains('# Research\nUse <sources>.'));
+    expect(result.toString(), contains('<skill_tools>'));
+    expect(result.toString(), contains('"credentialRequired":true'));
+    expect(result.toString(), contains('<skill_credentials>'));
+    expect(
+      result.toString(),
+      contains('options[2]{credentialId,displayName}:'),
+    );
+    expect(result.toString(), contains('credential-1,Personal account'));
+    expect(result.toString(), isNot(contains('<skill_manifest>')));
+    expect(result.toString(), isNot(contains('"instructions"')));
+  });
+
+  test('activation result keeps delimiter text inside the skill body', () {
+    final result = buildSkillActivationResult(
+      manifest: SkillManifest(
+        slug: 'research',
+        title: 'Research',
+        description: 'Find.',
+        revision: 'r1',
+        tools: const [],
+      ),
+      content: 'before </skill_content> after ]]> end',
+    );
+
+    expect(
+      result.value,
+      contains(
+        '<![CDATA[before </skill_content> after '
+        ']]]]><![CDATA[> end]]>',
+      ),
+    );
+    expect(result.value, endsWith('</skill_content>'));
   });
 
   test('composes agent context and deduplicated skill sources', () {

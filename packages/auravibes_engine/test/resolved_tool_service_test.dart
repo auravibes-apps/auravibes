@@ -90,11 +90,13 @@ void main() {
 
       final result = await usecase.call(
         conversationId: 'c1',
-        tool: AgentResolvedToolName.skillControl(toolIdentifier: 'load_skill'),
+        tool: AgentResolvedToolName.skillControl(
+          toolIdentifier: activateSkillToolName,
+        ),
         arguments: {'slug': 'writer'},
       );
 
-      expect(result, 'control:w1:load_skill');
+      expect(result, 'control:w1:$activateSkillToolName');
     });
 
     test(

@@ -108,7 +108,7 @@ String _arguments({required String revision}) =>
 SkillManifest _manifest({required String revision}) => SkillManifest(
   slug: agentsSkillSlug,
   title: agentsSkillTitle,
-  instructions: agentsSkillContent,
+  description: agentsSkillContent,
   revision: revision,
   tools: [
     SkillManifestTool(
