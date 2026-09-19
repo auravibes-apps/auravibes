@@ -17,25 +17,44 @@ class const ChatQueuedMessagesIndicator({
   Widget build(BuildContext context, WidgetRef ref) {
     if (queuedDrafts.isEmpty) return const SizedBox.shrink();
 
+    return _QueuedMessagesContent(
+      conversationId: conversationId,
+      queuedDrafts: queuedDrafts,
+      onEditDraft: onEditDraft,
+    );
+  }
+}
+
+class const _QueuedMessagesContent({
+  required final String conversationId,
+  required final List<ConversationQueuedDraft> queuedDrafts,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(conversationSendQueueProvider.notifier);
-    final onEditDraft = this.onEditDraft;
+    void remove(String draftId) =>
+        notifier.remove(conversationId: conversationId, draftId: draftId);
 
     return _QueuedMessagesLayout(
       queuedDrafts: queuedDrafts,
       onClear: () => notifier.clear(conversationId),
-      onRemove: (draftId) =>
-          notifier.remove(conversationId: conversationId, draftId: draftId),
-      onEditDraft: onEditDraft == null
-          ? null
-          : (draft) {
-              onEditDraft(draft.draft);
-              notifier.remove(
-                conversationId: conversationId,
-                draftId: draft.id,
-              );
-            },
+      onRemove: remove,
+      onEditDraft: _createEditDraftCallback(onEditDraft, remove),
     );
   }
+}
+
+ValueChanged<ConversationQueuedDraft>? _createEditDraftCallback(
+  ValueChanged<ChatDraft>? onEditDraft,
+  void Function(String draftId) onRemove,
+) {
+  if (onEditDraft == null) return null;
+
+  return (draft) {
+    onEditDraft(draft.draft);
+    onRemove(draft.id);
+  };
 }
 
 class const _QueuedMessagesLayout({
@@ -169,12 +188,7 @@ class const _QueuedDraftTextRow({
 
     return Row(
       children: [
-        Expanded(
-          child: AuraText(
-            child: Text(draft.content, overflow: .ellipsis, maxLines: 1),
-            style: .caption,
-          ),
-        ),
+        _QueuedDraftText(content: draft.content),
         if (onEditDraft != null) ...[
           const AuraSizedBox(width: .xs),
           _QueuedDraftEditButton(draft: draft, onEdit: onEditDraft),
@@ -196,6 +210,17 @@ class const _QueuedDraftEditButton({
     onPressed: () => onEdit(draft),
     size: .large,
     tooltip: LocaleKeys.common_edit.tr(),
+  );
+}
+
+class const _QueuedDraftText({required final String content})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: AuraText(
+      child: Text(content, overflow: .ellipsis, maxLines: 1),
+      style: .caption,
+    ),
   );
 }
 

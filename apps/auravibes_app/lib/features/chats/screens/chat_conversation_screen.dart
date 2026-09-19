@@ -1148,6 +1148,20 @@ class const _ChatConversationAppBar({
 
 class const _ChatConversationBody({
   required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ChatConversationControls(data: data),
+      _ChatConversationMessageList(data: data),
+      if (_hasChatConversationStatus(data) || data.showInputComposer)
+        _ChatConversationStatusAndComposer(data: data),
+    ],
+  );
+}
+
+class const _ChatConversationStatusAndComposer({
+  required final _LoadedChatConversationData data,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -1156,17 +1170,29 @@ class const _ChatConversationBody({
 
     final onEditDraft = data.showInputComposer ? editDraft : null;
 
-    return AuraColumn(
-      children: [
-        _ChatConversationControls(data: data),
-        _ChatConversationMessageList(data: data),
-        if (_hasChatConversationStatus(data))
-          _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
-        if (data.showInputComposer)
-          _ChatComposer(data: data, draftToLoad: draftToLoad.value),
-      ],
+    return _ChatConversationStatusAndComposerView(
+      data: data,
+      draftToLoad: draftToLoad.value,
+      onEditDraft: onEditDraft,
     );
   }
+}
+
+class const _ChatConversationStatusAndComposerView({
+  required final _LoadedChatConversationData data,
+  required final ChatDraft? draftToLoad,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (_hasChatConversationStatus(data))
+        _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
+      if (data.showInputComposer)
+        _ChatComposer(data: data, draftToLoad: draftToLoad),
+    ],
+    mainAxisSize: .min,
+  );
 }
 
 class const _ChatConversationMessageList({
