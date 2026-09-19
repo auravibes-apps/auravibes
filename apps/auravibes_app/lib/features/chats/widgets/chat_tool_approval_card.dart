@@ -395,13 +395,21 @@ void _restorePendingCalls(
 }
 
 String _pendingToolCallKey(PendingToolCall pendingCall, String conversationId) {
-  final sourceConversationId = pendingCall.sourceConversationId.isEmpty
-      ? conversationId
-      : pendingCall.sourceConversationId;
+  final sourceConversationId = _pendingToolCallConversationId(
+    pendingCall,
+    conversationId,
+  );
 
   return '$sourceConversationId:'
       '${pendingCall.messageId}:${pendingCall.toolCall.id}';
 }
+
+String _pendingToolCallConversationId(
+  PendingToolCall pendingCall,
+  String fallbackConversationId,
+) => pendingCall.sourceConversationId.isEmpty
+    ? fallbackConversationId
+    : pendingCall.sourceConversationId;
 
 typedef _HideApprovalCalls = Set<String>? Function(
   Iterable<PendingToolCall> calls,
@@ -456,9 +464,18 @@ class const _PendingToolCallsPagerContentBuilder({
       request.conversationId,
     );
     final current = request.pendingCalls[selection.clamped];
+    final conversationId = _pendingToolCallConversationId(
+      current,
+      request.conversationId,
+    );
 
     return _PendingToolCallsPagerContent(
-      request: _pagerApprovalCardRequest(request, selection, current),
+      request: _pagerApprovalCardRequest(
+        request,
+        selection,
+        current,
+        conversationId,
+      ),
     );
   }
 }
@@ -467,14 +484,13 @@ _ApprovalCardRequest _pagerApprovalCardRequest(
   _PendingToolCallsPagerContentRequest request,
   _PendingToolCallsPageSelection selection,
   PendingToolCall current,
+  String conversationId,
 ) {
   final currentIndex = selection.clamped;
 
   return (
     workspaceId: request.workspaceId,
-    conversationId: current.sourceConversationId.isEmpty
-        ? request.conversationId
-        : current.sourceConversationId,
+    conversationId: conversationId,
     pendingCalls: request.pendingCalls,
     current: current,
     currentIndex: currentIndex,
