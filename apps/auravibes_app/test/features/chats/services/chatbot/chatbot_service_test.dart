@@ -124,11 +124,12 @@ void main() {
       expect(capturedRequest?.tools?.single.name, 'lookup_weather');
       expect(capturedRequest?.messages.map((message) => message.role.value), [
         'system',
+        'system',
         'user',
         'model',
         'tool',
       ]);
-      expect(capturedRequest?.messages[2].text, 'model part');
+      expect(capturedRequest?.messages[3].text, 'model part');
     });
 
     test('preserves reasoning emitted before a text chunk', () async {
@@ -297,14 +298,13 @@ void main() {
         ).toList();
 
         final skillContextResult =
-            capturedRequest?.messages.firstOrNull?.content.single
-                    .toJson()['toolResponse']
+            capturedRequest?.messages[1].content.single.toJson()['toolResponse']
                 as Map<String, Object?>?;
         final replayedRequest =
-            capturedRequest?.messages[1].content.single.toJson()['toolRequest']
+            capturedRequest?.messages[2].content.single.toJson()['toolRequest']
                 as Map<String, Object?>?;
         final replayedResult =
-            capturedRequest?.messages[2].content.single.toJson()['toolResponse']
+            capturedRequest?.messages[3].content.single.toJson()['toolResponse']
                 as Map<String, Object?>?;
         final refs = [
           skillContextResult?['ref'],

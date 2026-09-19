@@ -18,6 +18,7 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     required String id,
     required String name,
     required String argumentsRaw,
+    @JsonKey(includeIfNull: false) String? userFacingDescription,
     @JsonKey(includeIfNull: false) String? argumentsDigest,
     @JsonKey(includeIfNull: false) String? turnId,
     @JsonKey(includeIfNull: false) int? turnRevision,

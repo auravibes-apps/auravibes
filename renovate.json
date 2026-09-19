@@ -59,6 +59,13 @@
       "additionalBranchPrefix": ""
     },
     {
+      "description": "Update Dart test packages across the workspace together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["test", "test_api"],
+      "groupName": "Dart test",
+      "additionalBranchPrefix": ""
+    },
+    {
       "description": "Automerge minor and patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true

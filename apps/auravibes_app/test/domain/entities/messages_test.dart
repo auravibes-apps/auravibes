@@ -24,6 +24,17 @@ void main() {
       expect(toolCall.arguments, <String, dynamic>{});
     });
 
+    test('old records decode without a user-facing description', () {
+      final toolCall = MessageToolCallEntity.fromJson(const <String, dynamic>{
+        'id': 'call_legacy',
+        'name': 'test_tool',
+        'argumentsRaw': '{}',
+      });
+
+      expect(toolCall.userFacingDescription, isNull);
+      expect(toolCall.toJson(), isNot(contains('userFacingDescription')));
+    });
+
     test('isResolved true when resultStatus is non-null', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_3',

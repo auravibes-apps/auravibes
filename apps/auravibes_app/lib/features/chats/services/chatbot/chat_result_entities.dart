@@ -6,15 +6,12 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   List<MessageToolCallEntity> get entityTools {
     final allToolCalls = output.toolCalls;
     if (allToolCalls.isEmpty) return [];
+    final userFacingDescription = normalizeToolCallUserFacingDescription(
+      output.text,
+    );
 
     return allToolCalls
-        .map(
-          (tc) => MessageToolCallEntity(
-            id: tc.callId,
-            name: tc.toolName,
-            argumentsRaw: tc.argumentsRaw,
-          ),
-        )
+        .map((tc) => _entityToolCall(tc, userFacingDescription))
         .toList();
   }
 
@@ -38,6 +35,16 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   int entityTotalTokens() =>
       usage?.totalTokens ?? (entityPromptTokens() + entityCompletionTokens());
 }
+
+MessageToolCallEntity _entityToolCall(
+  ChatMessageToolCall toolCall,
+  String? userFacingDescription,
+) => MessageToolCallEntity(
+  id: toolCall.callId,
+  name: toolCall.toolName,
+  argumentsRaw: toolCall.argumentsRaw,
+  userFacingDescription: userFacingDescription,
+);
 
 MessageMetadataEntity? _toEntityMetadata(ChatResult<ChatMessage> result) {
   final toolCalls = result.entityTools;

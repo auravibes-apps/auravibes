@@ -1935,6 +1935,9 @@ class const _ActivityToolCallRow({
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
+    final description = normalizeToolCallUserFacingDescription(
+      toolCall.userFacingDescription,
+    );
     final onOpenSubAgent = openSubAgent;
 
     return Column(
@@ -1955,26 +1958,48 @@ class const _ActivityToolCallRow({
                   horizontal: .sm,
                   vertical: .xs,
                 ),
-                semanticLabel: '$displayName ${statusKey.tr()}',
+                semanticLabel: [
+                  displayName,
+                  if (description != null) description,
+                  statusKey.tr(),
+                ].join(' '),
                 child: Row(
                   children: [
                     Icon(_statusIcon(), size: 14, color: statusColor),
                     const AuraSizedBox(width: .xs),
                     Expanded(
-                      child: Text(
-                        displayName,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: displayName),
+                            if (description != null)
+                              TextSpan(
+                                text: ' · $description',
+                                style: TextStyle(
+                                  color: statusColor.withValues(alpha: .72),
+                                  fontSize:
+                                      context.auraTheme.typography.fontSizeXs,
+                                  fontFamily: context
+                                      .auraTheme
+                                      .typography
+                                      .bodyFontFamily,
+                                ),
+                              ),
+                          ],
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: context.auraTheme.typography.fontSizeSm,
+                            fontFamily:
+                                context.auraTheme.typography.bodyFontFamily,
+                          ),
+                        ),
+                        key: ValueKey('activity_tool_label_${toolCall.id}'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: context.auraTheme.typography.fontSizeSm,
-                          fontFamily:
-                              context.auraTheme.typography.bodyFontFamily,
-                        ),
                       ),
                     ),
                     const AuraSizedBox(width: .xs),
-                    Flexible(
+                    Expanded(
                       child: Text(
                         statusKey.tr(),
                         maxLines: 1,

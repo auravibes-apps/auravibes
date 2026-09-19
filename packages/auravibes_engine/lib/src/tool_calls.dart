@@ -6,6 +6,36 @@ enum AgentToolCallLifecycle {
   failed,
 }
 
+const maxToolCallUserFacingDescriptionCharacters = 240;
+
+String? normalizeToolCallUserFacingDescription(Object? content) {
+  final text = switch (content) {
+    final String value => value,
+    final List<Object?> value =>
+      value.map(_toolCallTextPart).whereType<String>().join(),
+    _ => null,
+  };
+  if (text == null) return null;
+
+  final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.isEmpty) return null;
+  if (normalized.length <= maxToolCallUserFacingDescriptionCharacters) {
+    return normalized;
+  }
+
+  final truncated = normalized
+      .substring(0, maxToolCallUserFacingDescriptionCharacters - 1)
+      .trimRight();
+  return '$truncated…';
+}
+
+String? _toolCallTextPart(Object? part) {
+  if (part is String) return part;
+  if (part is! Map || part['text'] is! String) return null;
+
+  return part['text']! as String;
+}
+
 extension AgentToolCallLifecycleX on AgentToolCallLifecycle {
   bool get isPending => this == AgentToolCallLifecycle.pending;
   bool get isResolved => !isPending;

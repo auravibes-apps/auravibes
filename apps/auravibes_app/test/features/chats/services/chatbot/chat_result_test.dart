@@ -103,6 +103,55 @@ void main() {
       expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');
     });
 
+    test('attaches the model preamble to every tool call in a batch', () {
+      final res = ChatResult<ChatMessage>(
+        output: ChatMessage(
+          role: .model,
+          content: 'I will search for the requested item.',
+          parts: [
+            ToolRequestPart(
+              toolRequest: .new(
+                ref: 'call-1',
+                name: 'search',
+                input: const {'query': 'item'},
+              ),
+            ),
+            ToolRequestPart(
+              toolRequest: .new(
+                ref: 'call-2',
+                name: 'open',
+                input: const {'id': 'item-1'},
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        res.entityTools.map((tool) => tool.userFacingDescription),
+        List.filled(2, 'I will search for the requested item.'),
+      );
+    });
+
+    test('leaves missing model preambles null', () {
+      final res = ChatResult<ChatMessage>(
+        output: ChatMessage(
+          role: .model,
+          parts: [
+            ToolRequestPart(
+              toolRequest: .new(
+                ref: 'call-1',
+                name: 'search',
+                input: const {'query': 'item'},
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(res.entityTools.single.userFacingDescription, isNull);
+    });
+
     test('extracts map tool call arguments as JSON', () {
       final toolRequestPart = ToolRequestPart(
         toolRequest: .new(

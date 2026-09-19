@@ -1,11 +1,14 @@
 // Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -48,6 +51,7 @@ void main() {
     String messageId = 'msg-1',
     String toolName = 'built_in_1_read_file',
     String argumentsRaw = '{"input": "test.txt"}',
+    String? userFacingDescription,
     String? argumentsDigest,
     String? turnId,
     int? turnRevision,
@@ -57,6 +61,7 @@ void main() {
         id: toolCallId,
         name: toolName,
         argumentsRaw: argumentsRaw,
+        userFacingDescription: userFacingDescription,
         argumentsDigest: argumentsDigest,
         turnId: turnId,
         turnRevision: turnRevision,
@@ -157,6 +162,99 @@ void main() {
       expect(find.text('Read File'), findsOneWidget);
     });
 
+    testWidgets(
+      'shows the model action description separately from arguments',
+      (tester) async {
+        final pendingCalls = [
+          _createPendingToolCall(
+            userFacingDescription: 'I will search for the requested item.',
+            argumentsRaw: '{"arg1":"search","arg2":"item"}',
+          ),
+        ];
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            overrides: [
+              pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ],
+          ),
+        );
+
+        expect(
+          find.text('I will search for the requested item.'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('arg1: search'), findsOneWidget);
+        expect(find.textContaining('arg2: item'), findsOneWidget);
+      },
+    );
+
+    testWidgets('clamps long argument values while collapsed', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(
+                  argumentsRaw: jsonEncode({'query': 'x' * 500}),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      final argument = tester.widget<Text>(find.textContaining('query:'));
+      expect(argument.maxLines, 1);
+      expect(argument.overflow, TextOverflow.ellipsis);
+    });
+
+    testWidgets('uses deterministic fallback when description is absent', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [_createPendingToolCall()],
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+    });
+
+    testWidgets('shows a batch description once while paging calls', (
+      tester,
+    ) async {
+      const description = 'I will search and then open the result.';
+      final pendingCalls = [
+        _createPendingToolCall(userFacingDescription: description),
+        _createPendingToolCall(
+          toolCallId: 'tc-2',
+          userFacingDescription: description,
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text(description), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_next')),
+      );
+      await tester.pump();
+      expect(find.text(description), findsNothing);
+    });
+
     testWidgets('shows effective skill target for local approval', (
       tester,
     ) async {
@@ -180,7 +278,6 @@ void main() {
       expect(find.text('Duck Duck Go: Search'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
       expect(find.textContaining('DuckDuckGo'), findsOneWidget);
-      expect(find.textContaining('Search'), findsOneWidget);
       expect(find.textContaining('secret-key'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });
@@ -211,7 +308,6 @@ void main() {
       expect(find.text('Duck Duck Go: Search'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
       expect(find.textContaining('DuckDuckGo'), findsOneWidget);
-      expect(find.textContaining('Search'), findsOneWidget);
       expect(find.textContaining('secret-value'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });
@@ -259,9 +355,90 @@ void main() {
       expect(find.textContaining('query'), findsOneWidget);
     });
 
-    testWidgets('shows URL request summary from native tool input', (
-      tester,
-    ) async {
+    testWidgets('copies all arguments as stable JSON', (tester) async {
+      String? copiedContent;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedContent = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      final pendingCalls = [
+        _createPendingToolCall(
+          argumentsRaw: '{"query":"test query","limit":10}',
+        ),
+      ];
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.copy_outlined));
+      await tester.pump();
+
+      expect(
+        copiedContent,
+        '{\n'
+        '  "query": "test query",\n'
+        '  "limit": 10\n'
+        '}',
+      );
+      expect(find.byIcon(Icons.check), findsOneWidget);
+    });
+
+    testWidgets('flattens arguments and expands long input', (tester) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          argumentsRaw: jsonEncode({
+            'arg1': 'search',
+            'arg2': 'item',
+            'arg3': {
+              'something': 'my search',
+              'items': ['first', 'second'],
+            },
+            'arg4': 'last',
+          }),
+        ),
+      ];
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.textContaining('arg1: search'), findsOneWidget);
+      expect(find.textContaining('arg3.something: my search'), findsOneWidget);
+      expect(find.textContaining('arg4: last'), findsNothing);
+      expect(find.text('Show more'), findsOneWidget);
+
+      await tester.tap(find.text('Show more'));
+      await tester.pump();
+
+      expect(find.textContaining('arg4: last'), findsOneWidget);
+      expect(find.textContaining('arg3.items[0]: first'), findsOneWidget);
+      expect(find.text('Show less'), findsOneWidget);
+    });
+
+    testWidgets('flattens nested URL input', (tester) async {
       const toolCall = MessageToolCallEntity(
         id: 'tc-1',
         name: 'native_1_url',
@@ -283,10 +460,15 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('"method": "POST"'), findsOneWidget);
-      expect(find.textContaining('"host": "example.com"'), findsOneWidget);
-      expect(find.textContaining('"path": "/api/items"'), findsOneWidget);
-      expect(find.textContaining('Authorization'), findsNothing);
+      expect(find.textContaining('input.method: post'), findsOneWidget);
+      expect(
+        find.textContaining('input.url: https://example.com/api/items'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('input.headers.Authorization: ****'),
+        findsOneWidget,
+      );
       expect(find.textContaining('secret-token'), findsNothing);
     });
 
@@ -314,7 +496,7 @@ void main() {
 
       expect(find.textContaining('secret-token'), findsNothing);
       expect(find.textContaining('secret-key'), findsNothing);
-      expect(find.textContaining('****'), findsOneWidget);
+      expect(find.textContaining('****'), findsNWidgets(2));
       expect(find.textContaining('visible'), findsOneWidget);
     });
 

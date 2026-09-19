@@ -684,6 +684,7 @@ class const ServerToolRequest({
   required final String id,
   required final String name,
   required final Map<String, dynamic> arguments,
+  final String? userFacingDescription,
 });
 
 class const ServerToolAwaitingSubAgents({
@@ -919,6 +920,8 @@ class ServerToolRuntime({
         id: request.id,
         name: isNestedSkillCall ? callSkillToolName : request.name,
         arguments: storedArguments,
+        userFacingDescription:
+            existing.userFacingDescription ?? request.userFacingDescription,
       );
       if (isNestedSkillCall) {
         tool = currentTools
@@ -1028,6 +1031,7 @@ class ServerToolRuntime({
           id: request.id,
           name: permissionDescriptor.fullName,
           arguments: Map<String, dynamic>.from(command.args),
+          userFacingDescription: request.userFacingDescription,
         );
       } on Object catch (error) {
         final call =
@@ -1082,6 +1086,7 @@ class ServerToolRuntime({
             id: request.id,
             name: permissionDescriptor.fullName,
             arguments: request.arguments,
+            userFacingDescription: request.userFacingDescription,
           )
         : request;
     if (existing == null &&
@@ -1148,7 +1153,16 @@ class ServerToolRuntime({
       throw const ConversationCancelledException();
     }
     try {
-      final result = await executor(session, turn, tool, executionRequest);
+      final result = await executor(
+        session,
+        turn,
+        tool,
+        ServerToolRequest(
+          id: executionRequest.id,
+          name: executionRequest.name,
+          arguments: executionRequest.arguments,
+        ),
+      );
       if (result case ServerToolAwaitingSubAgents(:final children)) {
         await _finish(
           session,
@@ -1287,6 +1301,9 @@ class ServerToolRuntime({
         name: request.name,
         argumentsJson: argumentsJson,
         argumentsDigest: digest,
+        userFacingDescription: normalizeToolCallUserFacingDescription(
+          request.userFacingDescription,
+        ),
         status: status,
         revision: 1,
         createdAt: now,

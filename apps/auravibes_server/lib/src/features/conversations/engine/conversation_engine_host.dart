@@ -350,6 +350,7 @@ final class const ServerConversationEngineHost({
             id: call.stableId,
             name: call.name,
             arguments: _jsonObject(call.argumentsJson),
+            userFacingDescription: call.userFacingDescription,
           ),
         );
         if (disposition == ServerToolDisposition.awaitingApproval) {
@@ -554,16 +555,28 @@ final class const ServerConversationEngineHost({
       final requests = _toolRequests(providerResponse.raw);
       if (requests.isEmpty) break;
       final assistantToolMessage = _assistantToolMessage(providerResponse.raw);
+      final userFacingDescription = normalizeToolCallUserFacingDescription(
+        assistantToolMessage['content'],
+      );
+      final describedRequests = [
+        for (final request in requests)
+          ServerToolRequest(
+            id: request.id,
+            name: request.name,
+            arguments: request.arguments,
+            userFacingDescription: userFacingDescription,
+          ),
+      ];
       await persistProviderToolBatch(
         session,
         assistantMessageId: turn.assistantMessageId!,
         assistantMessage: assistantToolMessage,
-        requests: requests,
+        requests: describedRequests,
       );
 
       var paused = false;
       final awaitingSubAgentToolCallIds = <String>[];
-      for (final request in requests) {
+      for (final request in describedRequests) {
         final disposition = await runtime.handle(
           session,
           turn: turn,
@@ -613,7 +626,7 @@ final class const ServerConversationEngineHost({
             table.turnId.equals(turn.id),
       );
       final toolResults = <Map<String, dynamic>>[];
-      for (final request in requests) {
+      for (final request in describedRequests) {
         final call = calls.where((item) => item.stableId == request.id).first;
         toolResults.add({
           'role': 'tool',
@@ -776,6 +789,7 @@ final class const ServerConversationEngineHost({
       conversation: conversation,
     );
     final messages = [
+      {'role': 'system', 'content': toolCallNarrationInstruction},
       ...buildCloudSkillContextMessages(
         agentContent: agentContext.content,
         conversationSkills: await _skillsForIds(

@@ -663,6 +663,8 @@ MessageToolCallEntity _mergeToolCall(
   if (current == null) return incoming;
 
   return incoming.copyWith(
+    userFacingDescription:
+        incoming.userFacingDescription ?? current.userFacingDescription,
     resultStatus: _mergeToolCallResultStatus(
       current.resultStatus,
       incoming.resultStatus,
