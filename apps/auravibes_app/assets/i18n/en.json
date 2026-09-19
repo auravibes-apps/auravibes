@@ -967,6 +967,8 @@
     "name_too_short_error": "Workspace name must be at least {min} characters",
     "name_too_long_error": "Workspace name must be at most {max} characters",
     "no_workspaces": "No workspaces available",
+    "switch_title": "Switch workspace?",
+    "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",
     "loading": "Loading workspaces...",
     "load_error": "Failed to load workspaces. Please try again.",

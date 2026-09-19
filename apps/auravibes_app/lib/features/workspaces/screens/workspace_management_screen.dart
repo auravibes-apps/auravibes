@@ -4,12 +4,13 @@ import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
-import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
@@ -32,6 +33,10 @@ const _deleteConfirmationActions = AuraConfirmDialogActions(
 );
 const _removeConfirmationActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_remove),
+  cancelLabel: TextLocale(LocaleKeys.common_cancel),
+);
+const _switchConfirmationActions = AuraConfirmDialogActions(
+  confirmLabel: TextLocale(LocaleKeys.common_confirm),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
 );
 
@@ -218,8 +223,33 @@ class const _WorkspaceListActions({
 });
 
 extension on _WorkspaceListActions {
-  void switchWorkspace(String workspaceId) {
-    ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(workspaceId);
+  Future<void> switchWorkspace(WorkspaceEntity workspace) async {
+    if (workspace.id == activeWorkspaceId) return;
+
+    final confirmed = await AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(LocaleKeys.workspace_management_switch_title),
+      message: Text(
+        LocaleKeys.workspace_management_switch_confirm.tr(
+          namedArgs: {'name': workspace.name},
+        ),
+      ),
+      actions: _switchConfirmationActions,
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final _ = await ref
+          .read(selectWorkspaceUsecaseProvider)
+          .call(workspaceId: workspace.id);
+      if (!context.mounted) return;
+
+      ref
+          .read(routerProvider)
+          .go(WorkspaceManagementRoute(workspaceId: workspace.id).location);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
   }
 
   void cancelEdit() {
@@ -932,7 +962,7 @@ class const _LocalWorkspaceTile({
       identifier: selectorId,
       child: AuraTile(
         child: _WorkspaceName(name: workspace.name, isActive: isActive),
-        onTap: () => actions.switchWorkspace(workspace.id),
+        onTap: () => actions.switchWorkspace(workspace),
         variant: .ghost,
         trailing: _LocalWorkspaceMenu(workspace: workspace, actions: actions),
       ),
@@ -992,7 +1022,7 @@ class const _ConnectedWorkspaceTile({
           accountEmail: accountEmail,
           isActive: isActive,
         ),
-        onTap: () => actions.switchWorkspace(workspace.id),
+        onTap: () => actions.switchWorkspace(workspace),
         variant: .ghost,
         trailing: _ConnectedWorkspaceMenu(
           workspace: workspace,
