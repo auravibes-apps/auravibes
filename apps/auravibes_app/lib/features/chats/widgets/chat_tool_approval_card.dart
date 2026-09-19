@@ -472,7 +472,9 @@ _ApprovalCardRequest _pagerApprovalCardRequest(
 
   return (
     workspaceId: request.workspaceId,
-    conversationId: request.conversationId,
+    conversationId: current.sourceConversationId.isEmpty
+        ? request.conversationId
+        : current.sourceConversationId,
     pendingCalls: request.pendingCalls,
     current: current,
     currentIndex: currentIndex,
