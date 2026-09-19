@@ -1154,9 +1154,44 @@ class const _ChatConversationBody({
     children: [
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
-      if (_hasChatConversationStatus(data)) _ChatConversationStatus(data: data),
-      if (data.showInputComposer) _ChatComposer(data: data),
+      if (_hasChatConversationStatus(data) || data.showInputComposer)
+        _ChatConversationStatusAndComposer(data: data),
     ],
+  );
+}
+
+class const _ChatConversationStatusAndComposer({
+  required final _LoadedChatConversationData data,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final draftToLoad = useState<ChatDraft?>(null);
+    void editDraft(ChatDraft draft) => draftToLoad.value = draft;
+
+    final onEditDraft = data.showInputComposer ? editDraft : null;
+
+    return _ChatConversationStatusAndComposerView(
+      data: data,
+      draftToLoad: draftToLoad.value,
+      onEditDraft: onEditDraft,
+    );
+  }
+}
+
+class const _ChatConversationStatusAndComposerView({
+  required final _LoadedChatConversationData data,
+  required final ChatDraft? draftToLoad,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (_hasChatConversationStatus(data))
+        _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
+      if (data.showInputComposer)
+        _ChatComposer(data: data, draftToLoad: draftToLoad),
+    ],
+    mainAxisSize: .min,
   );
 }
 
@@ -1189,6 +1224,7 @@ class const _ChatConversationControls({
 
 class const _ChatConversationStatus({
   required final _LoadedChatConversationData data,
+  required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1199,7 +1235,7 @@ class const _ChatConversationStatus({
         if (retryAt != null && !data.hidesStoppedRun)
           _RateLimitRetryIndicator(retryAt: retryAt),
         if (data.state.queuedDrafts.isNotEmpty)
-          _QueuedMessagesStatus(data: data),
+          _QueuedMessagesStatus(data: data, onEditDraft: onEditDraft),
         if (data.state.hasPendingApprovals) _ApprovalStatus(data: data),
       ],
       mainAxisSize: .min,
@@ -1209,11 +1245,13 @@ class const _ChatConversationStatus({
 
 class const _QueuedMessagesStatus({
   required final _LoadedChatConversationData data,
+  required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ChatQueuedMessagesIndicator(
     conversationId: data.conversation.id,
     queuedDrafts: data.state.queuedDrafts,
+    onEditDraft: onEditDraft,
   );
 }
 
@@ -1235,8 +1273,10 @@ bool _hasChatConversationStatus(_LoadedChatConversationData data) {
       state.hasPendingApprovals;
 }
 
-class const _ChatComposer({required final _LoadedChatConversationData data})
-    extends ConsumerWidget {
+class const _ChatComposer({
+  required final _LoadedChatConversationData data,
+  required final ChatDraft? draftToLoad,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelStatus = _modelStatus(ref);
@@ -1245,6 +1285,7 @@ class const _ChatComposer({required final _LoadedChatConversationData data})
       data: data,
       modelStatus: modelStatus,
       canCompact: _canCompact(ref, modelStatus.available),
+      draftToLoad: draftToLoad,
     );
   }
 
@@ -1271,9 +1312,11 @@ class _ChatComposerView extends StatelessWidget {
     required _LoadedChatConversationData data,
     required _ChatComposerModelStatus modelStatus,
     required bool canCompact,
+    required ChatDraft? draftToLoad,
   }) : offstage = data.state.hasPendingApprovals,
        input = _ChatComposerInput(
          data: data,
+         draftToLoad: draftToLoad,
          canCompact: canCompact,
          modelUnavailable: modelStatus.missing,
          compactDisabledHint: modelStatus.hint,
@@ -1340,6 +1383,7 @@ _ChatComposerModelStatus _chatComposerModelStatus(
 class _ChatComposerInput extends StatelessWidget {
   new({
     required this.data,
+    required this.draftToLoad,
     required this.canCompact,
     required this.modelUnavailable,
     required this.compactDisabledHint,
@@ -1372,6 +1416,7 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
+         draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
          onContinueAgent: onContinueAgent,
@@ -1388,6 +1433,7 @@ class _ChatComposerInput extends StatelessWidget {
        );
 
   final _LoadedChatConversationData data;
+  final ChatDraft? draftToLoad;
   final bool canCompact;
   final bool modelUnavailable;
   final String? compactDisabledHint;

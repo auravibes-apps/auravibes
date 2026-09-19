@@ -69,6 +69,7 @@ class const ChatInputWidget({
   required final Widget agentSheetControl,
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
+  final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
   final VoidCallback? onContinueAgent,
@@ -108,6 +109,7 @@ class const _ChatInputRecordingHooks({
 class const _ChatInputHooks({
   required final _ChatInputDraftHooks draft,
   required final _ChatInputRecordingHooks recording,
+  required final ObjectRef<LocalChatAttachmentUsecase?> attachmentUsecase,
 });
 
 typedef _ChatInputStateRequest = ({
@@ -134,8 +136,11 @@ abstract final class _ChatInputHooksFactory {
     recordingStart: useRef<Future<void>?>(null),
   );
 
-  static _ChatInputHooks hooks() =>
-      _ChatInputHooks(draft: draft(), recording: recording());
+  static _ChatInputHooks hooks() => _ChatInputHooks(
+    draft: draft(),
+    recording: recording(),
+    attachmentUsecase: useRef<LocalChatAttachmentUsecase?>(null),
+  );
 
   static _ChatInputState state(WidgetRef ref, ChatInputWidget input) {
     final hooks = _ChatInputHooksFactory.hooks();
@@ -144,6 +149,9 @@ abstract final class _ChatInputHooksFactory {
       hooks: hooks,
       input: input,
     );
+    useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
+      input.draftToLoad,
+    ]);
 
     return _assembleChatInputState((
       ref: ref,
@@ -187,6 +195,17 @@ abstract final class _ChatInputHooksFactory {
 
     return actions;
   }
+}
+
+Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
+  if (draft == null) return null;
+
+  var disposed = false;
+  scheduleMicrotask(() {
+    if (!disposed) actions.loadDraft(draft);
+  });
+
+  return () => disposed = true;
 }
 
 typedef _ChatInputAttachmentCapabilities = ({
@@ -480,25 +499,57 @@ class const _ChatInputActions({
 extension on _ChatInputActions {
   _ChatInputDraftHooks get _draft => hooks.draft;
   _ChatInputRecordingHooks get _recording => hooks.recording;
+
+  LocalChatAttachmentUsecase get _attachmentUsecase {
+    final cached = hooks.attachmentUsecase.value;
+    if (cached != null) return cached;
+
+    final created = ref.read(localChatAttachmentUsecaseProvider);
+    hooks.attachmentUsecase.value = created;
+
+    return created;
+  }
 }
 
 extension _ChatInputDraftActions on _ChatInputActions {
+  void loadDraft(ChatDraft draft) {
+    _cacheAttachmentUsecase(draft);
+    _deleteReplacedAttachments(draft);
+    _draft.controller.value = .new(
+      text: draft.text,
+      selection: .collapsed(offset: draft.text.length),
+    );
+    _draft.attachments.value = draft.attachments;
+    _draft.focusNode.requestFocus();
+  }
+
+  void _cacheAttachmentUsecase(ChatDraft draft) {
+    if (draft.attachments.isNotEmpty) {
+      final _ = _attachmentUsecase;
+    }
+  }
+
+  void _deleteReplacedAttachments(ChatDraft draft) {
+    final draftAttachmentPaths = draft.attachments
+        .map((attachment) => attachment.localPath)
+        .toSet();
+    for (final attachment in _draft.attachments.value) {
+      if (!draftAttachmentPaths.contains(attachment.localPath)) {
+        deleteUnsentAttachment(attachment);
+      }
+    }
+  }
+
   void disposeDraft() {
     if (_recording.isRecording.value || _recording.isStartingRecording.value) {
-      unawaited(
-        ref.read(localChatAttachmentUsecaseProvider).cancelVoiceRecording(),
-      );
+      unawaited(_attachmentUsecase.cancelVoiceRecording());
     }
     _draft.attachments.value.forEach(deleteUnsentAttachment);
     _recording.recordingTimer.value?.cancel();
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
-    unawaited(
-      ref
-          .read(localChatAttachmentUsecaseProvider)
-          .deleteAttachment(attachment.localPath),
-    );
+    unawaited(_attachmentUsecase.deleteAttachment(attachment.localPath));
   }
 
   void clearRecordingState() {
@@ -594,7 +645,7 @@ extension _ChatInputRecordingActions on _ChatInputActions {
   Future<void> _cancelRecording() async {
     if (_recording.isStartingRecording.value) return;
 
-    await ref.read(localChatAttachmentUsecaseProvider).cancelVoiceRecording();
+    await _attachmentUsecase.cancelVoiceRecording();
     clearRecordingState();
   }
 }
@@ -604,17 +655,13 @@ extension _ChatInputFileActions on _ChatInputActions {
     String path,
     String displayName,
   ) {
-    return ref
-        .read(localChatAttachmentUsecaseProvider)
-        .copyIntoAppStorage(
-          path,
-          displayName: AttachmentDisplayNames.unique(
-            displayName,
-            _draft.attachments.value.map(
-              (attachment) => attachment.displayName,
-            ),
-          ),
-        );
+    return _attachmentUsecase.copyIntoAppStorage(
+      path,
+      displayName: AttachmentDisplayNames.unique(
+        displayName,
+        _draft.attachments.value.map((attachment) => attachment.displayName),
+      ),
+    );
   }
 
   bool _supportsAttachment(MessageAttachmentToCreate attachment) {
@@ -702,9 +749,7 @@ extension _ChatInputRecordingLifecycleActions on _ChatInputActions {
   }
 
   Future<void> _startVoiceRecording() {
-    final start = ref
-        .read(localChatAttachmentUsecaseProvider)
-        .startVoiceRecording();
+    final start = _attachmentUsecase.startVoiceRecording();
     _recording.recordingStart.value = start;
 
     return start;
@@ -804,9 +849,7 @@ extension _ChatInputRecordingResultActions on _ChatInputActions {
 
   Future<MessageAttachmentToCreate?> _stopVoiceRecording() async {
     try {
-      final attachment = await ref
-          .read(localChatAttachmentUsecaseProvider)
-          .stopVoiceRecording();
+      final attachment = await _attachmentUsecase.stopVoiceRecording();
       clearRecordingState();
 
       return attachment;
