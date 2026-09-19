@@ -755,6 +755,81 @@ void main() {
         );
       },
     );
+
+    test(
+      'persists activated skill bodies in local compaction summaries',
+      () async {
+        final activation = buildSkillActivationResult(
+          manifest: .new(
+            slug: 'research',
+            title: 'Research',
+            description: 'Search sources.',
+            revision: 'r1',
+            tools: const [],
+          ),
+          content: 'Use research instructions.',
+        ).value;
+        final messages = [
+          _makeMessage(content: 'Use research.'),
+          _makeMessage(
+            id: 'msg-2',
+            isUser: false,
+            content: '',
+            metadata: .new(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'activate-1',
+                  name: activateSkillToolName,
+                  argumentsRaw: '{"slug":"research","revision":"r1"}',
+                  responseRaw: activation,
+                  resultStatus: .success,
+                ),
+              ],
+            ),
+          ),
+          _makeMessage(id: 'msg-3', content: 'Continue.'),
+          _makeMessage(id: 'msg-4', isUser: false, content: 'Done'),
+        ];
+
+        when(() => fixture.mockConversationRepo.getConversationById('conv-1'))
+            .thenAnswer((_) async => _makeConversation());
+        when(
+          () => fixture.mockModelSelectionRepo.getWorkspaceModelSelectionById(
+            'model-1',
+          ),
+        ).thenAnswer((_) async => _makeModelSelection());
+        when(() => fixture.mockMessageRepo.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
+        when(() => fixture.mockChatbotService.sendMessage(any(), any()))
+            .thenAnswer(
+              (_) => Stream.value(
+                ChatResult<ChatMessage>(
+                  output: ChatMessage.model('Summary'),
+                  usage: const LanguageModelUsage(),
+                ),
+              ),
+            );
+
+        final _ = await fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.manual,
+        );
+
+        final captured =
+            verify(() => fixture.mockMessageRepo.createMessage(captureAny()))
+                    .captured
+                    .single
+                as MessageToCreate;
+        expect(
+          captured.content,
+          allOf(
+            contains('<durable_skill_activations>'),
+            contains(activation),
+            contains('</durable_skill_activations>'),
+          ),
+        );
+      },
+    );
   });
 }
 

@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -29,6 +30,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         ChatMessage,
         ChatResult,
+        activateSkillToolName,
         conversationCompactionRequestPrompt,
         conversationCompactionSystemPrompt,
         requireCompactionSummary;
@@ -45,6 +47,7 @@ typedef _LocalCompactionRequest = ({
 
 typedef _CompactionInput = ({
   List<ChatMessage> chatHistory,
+  List<MessageEntity> messages,
   CompactionRange range,
 });
 
@@ -307,7 +310,10 @@ extension on CompactConversationUsecase {
     );
     await _persistCompactionSummary(
       conversationId: request.conversationId,
-      summaryText: summaryText,
+      summaryText: _appendDurableSkillActivations(
+        summaryText,
+        _durableSkillActivations(input.messages),
+      ),
       range: input.range,
       trigger: request.trigger,
     );
@@ -322,11 +328,11 @@ extension on CompactConversationUsecase {
     );
     final range = request.selectRange(messages);
     if (range == null) throw const CompactionUnsafeException();
+    final compactableMessages = _compactableMessages(messages, range);
 
     return (
-      chatHistory: await _buildCompactionPrompt(
-        _compactableMessages(messages, range),
-      ),
+      chatHistory: await _buildCompactionPrompt(compactableMessages),
+      messages: compactableMessages,
       range: range,
     );
   }
@@ -373,6 +379,73 @@ extension on CompactConversationUsecase {
       );
     }
   }
+}
+
+String _appendDurableSkillActivations(
+  String summary,
+  Iterable<String> activations,
+) {
+  final uniqueActivations = <String>{
+    for (final activation in activations)
+      if (activation.isNotEmpty) activation,
+  };
+  if (uniqueActivations.isEmpty) return summary;
+
+  return '$summary\n\n<durable_skill_activations>\n'
+      '${uniqueActivations.join('\n\n')}\n'
+      '</durable_skill_activations>';
+}
+
+List<String> _durableSkillActivations(Iterable<MessageEntity> messages) {
+  final latestBySkill = <String, String>{};
+  for (final message in messages) {
+    _collectDurableSkillActivations(
+      latestBySkill,
+      message.metadata?.toolCalls ?? const <MessageToolCallEntity>[],
+    );
+  }
+
+  return latestBySkill.values.toList(growable: false);
+}
+
+void _collectDurableSkillActivations(
+  Map<String, String> latestBySkill,
+  Iterable<MessageToolCallEntity> toolCalls,
+) {
+  for (final toolCall in toolCalls) {
+    final activation = _durableSkillActivation(toolCall);
+    if (activation == null) continue;
+    latestBySkill[activation.key] = activation.response;
+  }
+}
+
+({String key, String response})? _durableSkillActivation(
+  MessageToolCallEntity toolCall,
+) {
+  if (!_isSuccessfulSkillActivation(toolCall)) return null;
+  final response = _skillActivationResponse(toolCall);
+  if (response == null) return null;
+
+  return (key: _skillActivationKey(toolCall), response: response);
+}
+
+bool _isSuccessfulSkillActivation(MessageToolCallEntity toolCall) =>
+    toolCall.name == activateSkillToolName &&
+    toolCall.resultStatus == ToolCallResultStatus.success;
+
+String? _skillActivationResponse(MessageToolCallEntity toolCall) {
+  final response = toolCall.responseRaw;
+  if (response == null || !response.startsWith('<skill_content ')) {
+    return null;
+  }
+
+  return response;
+}
+
+String _skillActivationKey(MessageToolCallEntity toolCall) {
+  final slug = toolCall.arguments['slug'];
+
+  return slug is String && slug.isNotEmpty ? slug : toolCall.id;
 }
 
 Future<CompactionExecutionState> _completeLocalCompaction(

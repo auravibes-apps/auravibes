@@ -29,7 +29,6 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -76,8 +75,6 @@ class ResolvedToolService {
     ConversationRepository? conversationRepository,
     LoadConversationSkillUsecase Function(String workspaceId)?
     loadConversationSkillUsecase,
-    UnloadConversationSkillUsecase Function(String workspaceId)?
-    unloadConversationSkillUsecase,
     RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
     RunAppSkillToolUsecase? runAppSkillToolUsecase,
     BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
@@ -99,7 +96,6 @@ class ResolvedToolService {
            mcpToolCaller: mcpToolCaller,
            conversationRepository: conversationRepository,
            loadConversationSkillUsecase: loadConversationSkillUsecase,
-           unloadConversationSkillUsecase: unloadConversationSkillUsecase,
            runSkillTemplateToolUsecase: runSkillTemplateToolUsecase,
            runAppSkillToolUsecase: runAppSkillToolUsecase,
            buildLoadedSkillManifestsUsecase: buildLoadedSkillManifestsUsecase,
@@ -157,8 +153,6 @@ class const AppResolvedToolProvider({
   final ConversationRepository? conversationRepository,
   final LoadConversationSkillUsecase Function(String workspaceId)?
   loadConversationSkillUsecase,
-  final UnloadConversationSkillUsecase Function(String workspaceId)?
-  unloadConversationSkillUsecase,
   final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
   final RunAppSkillToolUsecase? runAppSkillToolUsecase,
   final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
@@ -253,7 +247,11 @@ class const AppResolvedToolProvider({
       workspaceId: input.workspaceId,
       skillSlug: input.skillSlug,
       toolSlug: input.toolSlug,
-      arguments: input.arguments,
+      arguments: _unwrapSkillCommandArguments(
+        skillSlug: input.skillSlug,
+        toolSlug: input.toolSlug,
+        arguments: input.arguments,
+      ),
     );
   }
 
@@ -265,7 +263,11 @@ class const AppResolvedToolProvider({
         workspaceId: input.workspaceId,
         skillSlug: input.skillSlug,
         toolSlug: input.toolSlug,
-        arguments: input.arguments,
+        arguments: _unwrapSkillCommandArguments(
+          skillSlug: input.skillSlug,
+          toolSlug: input.toolSlug,
+          arguments: input.arguments,
+        ),
         provider: this,
       ),
     );
@@ -293,6 +295,21 @@ class const AppResolvedToolProvider({
 
     return operation.valueOrCancellation();
   }
+}
+
+Map<String, dynamic> _unwrapSkillCommandArguments({
+  required String skillSlug,
+  required String toolSlug,
+  required Map<String, dynamic> arguments,
+}) {
+  if (arguments['skill'] != skillSlug || arguments['tool'] != toolSlug) {
+    return arguments;
+  }
+
+  final nestedArguments = arguments['args'];
+  if (nestedArguments is! Map) return arguments;
+
+  return Map<String, dynamic>.from(nestedArguments);
 }
 
 Future<Object?> _runSkillControlRequest(
@@ -447,72 +464,18 @@ Future<Object?> _runSkillControlTool({
   required _SkillControlToolDependencies dependencies,
 }) {
   if (request.toolIdentifier == SkillToolNames.listCredentials) {
-    return _listSkillCredentials(request: request, dependencies: dependencies);
+    return _listSkillCredentials(
+      request: request,
+      dependencies: dependencies,
+      filter: .loaded,
+    );
   }
-
-  final slug = _requiredControlSlug(request.arguments);
-
-  if (request.toolIdentifier == agent.loadSkillToolName) {
-    return _runLoadSkill(request, dependencies, slug);
-  }
-
-  return _runUnloadSkill(request, dependencies, slug);
-}
-
-String _requiredControlSlug(Map<String, dynamic> arguments) {
-  final slug = arguments['slug'] ?? arguments['skillSlug'];
-  if (slug is! String || slug.isEmpty) {
-    throw const FormatException('Skill control tools require a slug.');
-  }
-
-  return slug;
-}
-
-Future<String> _runLoadSkill(
-  _SkillControlToolRequest request,
-  _SkillControlToolDependencies dependencies,
-  String slug,
-) async {
-  final usecase = dependencies.loadConversationSkillUsecase?.call(
-    request.workspaceId,
+  throw StateError(
+    'Skill activation requires the configured skill command runner.',
   );
-  if (usecase == null) {
-    throw StateError('LoadConversationSkillUsecase is not configured.');
-  }
-  await usecase.call(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    slug: slug,
-  );
-
-  return 'Skill "$slug" loaded.';
-}
-
-Future<String> _runUnloadSkill(
-  _SkillControlToolRequest request,
-  _SkillControlToolDependencies dependencies,
-  String slug,
-) async {
-  final usecase = dependencies.unloadConversationSkillUsecase?.call(
-    request.workspaceId,
-  );
-  if (usecase == null) {
-    throw StateError('UnloadConversationSkillUsecase is not configured.');
-  }
-  await usecase.call(
-    conversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    slug: slug,
-  );
-
-  return 'Skill "$slug" unloaded.';
 }
 
 class const _SkillControlToolDependencies({
-  required final LoadConversationSkillUsecase Function(String workspaceId)?
-  loadConversationSkillUsecase,
-  required final UnloadConversationSkillUsecase Function(String workspaceId)?
-  unloadConversationSkillUsecase,
   required final ListAvailableSkillsUsecase Function(String workspaceId)?
   listAvailableSkillsUsecase,
   required final ListAppSkillCredentialCandidatesUsecase?
@@ -583,13 +546,14 @@ Future<Object?> _runSubAgentToolWithRunner(
 Future<Object> _listSkillCredentials({
   required _SkillControlToolRequest request,
   required _SkillControlToolDependencies dependencies,
+  required SkillLoadFilter filter,
 }) async {
   final credentialRequest = _SkillCredentialRequest(
     request: request,
     dependencies: dependencies,
     skillSlug: _requiredSkillSlug(request.arguments),
   );
-  final skill = await _loadedSkillForCredential(credentialRequest);
+  final skill = await _loadedSkillForCredential(credentialRequest, filter);
 
   return await _credentialsForLoadedSkill(credentialRequest, skill);
 }
@@ -678,21 +642,23 @@ Future<List<SkillCredentialEntity>> _loadCredentialsForDefinition(
 
 Future<AvailableSkill?> _loadedSkillForCredential(
   _SkillCredentialRequest credentialRequest,
+  SkillLoadFilter filter,
 ) async {
-  final loadedSkills = await _loadCredentialSkills(credentialRequest);
+  final loadedSkills = await _loadCredentialSkills(credentialRequest, filter);
 
   return _findLoadedSkill(loadedSkills, credentialRequest.skillSlug);
 }
 
 Future<List<AvailableSkill>> _loadCredentialSkills(
   _SkillCredentialRequest credentialRequest,
+  SkillLoadFilter filter,
 ) {
   final listSkills = _requiredCredentialSkillLister(credentialRequest);
 
   return listSkills.call(
     conversationId: credentialRequest.request.conversationId,
     workspaceId: credentialRequest.request.workspaceId,
-    filter: .loaded,
+    filter: filter,
   );
 }
 
@@ -880,8 +846,7 @@ bool _hasCombinedSkillCommandDependencies(AppResolvedToolProvider provider) {
       provider.runSkillTemplateToolUsecase != null &&
       provider.runAppSkillToolUsecase != null &&
       provider.listAvailableSkillsUsecase != null &&
-      provider.loadConversationSkillUsecase != null &&
-      provider.unloadConversationSkillUsecase != null;
+      provider.loadConversationSkillUsecase != null;
 }
 
 Future<Object?> _runConfiguredSkillCommand(
@@ -896,6 +861,7 @@ class _ConfiguredSkillCommandRunner {
     _usecase = _buildConfiguredSkillCommand(
       _configuredSkillCommandDependencies(_provider),
       _listSkillCredentialsForCommand,
+      _listCatalogSkillCredentialsForCommand,
       _runSkillNativeTool,
     );
   }
@@ -921,6 +887,33 @@ class _ConfiguredSkillCommandRunner {
     required String conversationId,
     required String workspaceId,
     required Map<String, dynamic> arguments,
+  }) {
+    return _listSkillCredentialsForCommandWithFilter(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      arguments: arguments,
+      filter: .loaded,
+    );
+  }
+
+  Future<Map<String, Object?>> _listCatalogSkillCredentialsForCommand({
+    required String conversationId,
+    required String workspaceId,
+    required Map<String, dynamic> arguments,
+  }) {
+    return _listSkillCredentialsForCommandWithFilter(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      arguments: arguments,
+      filter: .catalog,
+    );
+  }
+
+  Future<Map<String, Object?>> _listSkillCredentialsForCommandWithFilter({
+    required String conversationId,
+    required String workspaceId,
+    required Map<String, dynamic> arguments,
+    required SkillLoadFilter filter,
   }) async {
     final result = await _listSkillCredentials(
       request: _skillCredentialsCommandRequest(
@@ -929,6 +922,7 @@ class _ConfiguredSkillCommandRunner {
         arguments,
       ),
       dependencies: _skillControlToolDependencies(_provider),
+      filter: filter,
     );
 
     return _credentialMap(result);
@@ -992,8 +986,6 @@ class const _ConfiguredSkillCommandDependencies(
   listAvailableSkillsUsecase,
   final LoadConversationSkillUsecase Function(String workspaceId)
   loadConversationSkillUsecase,
-  final UnloadConversationSkillUsecase Function(String workspaceId)
-  unloadConversationSkillUsecase,
   final BuildLoadedSkillManifestsUsecase buildLoadedSkillManifestsUsecase,
   final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecsUsecase,
   final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase,
@@ -1009,7 +1001,6 @@ _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
   return _ConfiguredSkillCommandDependencies(
     r(provider.listAvailableSkillsUsecase),
     r(provider.loadConversationSkillUsecase),
-    r(provider.unloadConversationSkillUsecase),
     r(provider.buildLoadedSkillManifestsUsecase),
     r(provider.buildSkillTemplateToolSpecsUsecase),
     r(provider.buildAppSkillNativeToolSpecsUsecase),
@@ -1021,12 +1012,12 @@ _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
 RunSkillCommandUsecase _buildConfiguredSkillCommand(
   _ConfiguredSkillCommandDependencies deps,
   ListSkillCredentials listSkillCredentials,
+  ListSkillCredentials listCatalogSkillCredentials,
   RunSkillNativeTool runSkillNativeTool,
 ) {
   return RunSkillCommandUsecase(
     listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
     loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
-    unloadConversationSkillUsecase: deps.unloadConversationSkillUsecase,
     buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
     buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
     buildAppSkillNativeToolSpecsUsecase:
@@ -1034,6 +1025,7 @@ RunSkillCommandUsecase _buildConfiguredSkillCommand(
     runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
     runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
     listSkillCredentials: listSkillCredentials,
+    listCatalogSkillCredentials: listCatalogSkillCredentials,
     runSkillNativeTool: runSkillNativeTool,
   );
 }
@@ -1042,8 +1034,6 @@ _SkillControlToolDependencies _skillControlToolDependencies(
   AppResolvedToolProvider provider,
 ) {
   return _SkillControlToolDependencies(
-    loadConversationSkillUsecase: provider.loadConversationSkillUsecase,
-    unloadConversationSkillUsecase: provider.unloadConversationSkillUsecase,
     listAvailableSkillsUsecase: provider.listAvailableSkillsUsecase,
     listAppSkillCredentialCandidatesUsecase:
         provider.listAppSkillCredentialCandidatesUsecase,
@@ -1072,8 +1062,6 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     conversationRepository: ref.watch(conversationRepositoryProvider),
     loadConversationSkillUsecase: (workspaceId) =>
         container.read(loadConversationSkillUsecaseProvider(workspaceId)),
-    unloadConversationSkillUsecase: (workspaceId) =>
-        container.read(unloadConversationSkillUsecaseProvider(workspaceId)),
     runSkillTemplateToolUsecase: ref.watch(runSkillTemplateToolUsecaseProvider),
     runAppSkillToolUsecase: ref.watch(runAppSkillToolUsecaseProvider),
     buildLoadedSkillManifestsUsecase: ref.watch(

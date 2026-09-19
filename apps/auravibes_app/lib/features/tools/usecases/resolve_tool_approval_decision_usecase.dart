@@ -27,13 +27,6 @@ class ResolveToolApprovalDecisionUsecase({
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (_isListSkillsTool(resolvedTool)) {
-      return ToolApprovalDecision(
-        toolCallId: toolCallId,
-        permissionResult: .granted,
-      );
-    }
-
     final permissionTableId = await resolvePermissionTableId(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -116,10 +109,6 @@ class ResolveToolApprovalDecisionUsecase({
       resolvedTool.isSkillTemplate ||
       resolvedTool.isSkillNative;
 }
-
-bool _isListSkillsTool(ResolvedTool tool) =>
-    (tool.isSkillControl || tool.isSkillCommand) &&
-    tool.toolIdentifier == agent.listSkillsToolName;
 
 ToolApprovalDecision _notConfiguredDecision(String toolCallId) =>
     ToolApprovalDecision(

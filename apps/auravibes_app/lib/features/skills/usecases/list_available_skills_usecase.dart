@@ -502,12 +502,14 @@ _SharedSkillDependencies _sharedSkillDependencies(
 
 enum SkillLoadFilter {
   loadable,
-  loaded;
+  loaded,
+  catalog;
 
   bool matches({required bool isLoaded}) {
     return switch (this) {
       .loadable => !isLoaded,
       .loaded => isLoaded,
+      .catalog => true,
     };
   }
 }

@@ -85,7 +85,7 @@ void main() {
         'search',
       ]);
       expect(manifests.single.revision, isNotEmpty);
-      expect(manifests.single.instructions, 'Use primary sources.');
+      expect(manifests.single.description, 'Research sources.');
     },
   );
 }

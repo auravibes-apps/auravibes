@@ -19,6 +19,7 @@ ToolSpec? materializeSkillTool(SkillToolMaterializationInput input) {
   return ToolSpec(
     name: input.name,
     description: input.description,
+    requiresCredential: input.requiresCredential,
     inputJsonSchema: materializeSkillToolSchema(
       input.schema,
       requiresCredential: input.requiresCredential,
