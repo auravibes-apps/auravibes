@@ -1204,6 +1204,10 @@ abstract class LocaleKeys {
       'workspace_management.name_too_long_error';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
+  static const workspace_management_switch_title =
+      'workspace_management.switch_title';
+  static const workspace_management_switch_confirm =
+      'workspace_management.switch_confirm';
   static const workspace_management_switch_error =
       'workspace_management.switch_error';
   static const workspace_management_loading = 'workspace_management.loading';

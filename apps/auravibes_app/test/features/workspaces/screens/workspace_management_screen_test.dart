@@ -5,10 +5,12 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
@@ -21,8 +23,33 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 class _FakeGoRouter implements GoRouter {
+  String? lastLocation;
+
+  @override
+  void go(String location, {Object? extra}) {
+    lastLocation = location;
+  }
+
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _FakeWorkspaceSelectionRepository
+    implements WorkspaceSelectionRepository {
+  String? selectedWorkspaceId;
+
+  @override
+  Future<void> clearIfMatches(String workspaceId) async {
+    if (selectedWorkspaceId == workspaceId) selectedWorkspaceId = null;
+  }
+
+  @override
+  Future<String?> read() async => selectedWorkspaceId;
+
+  @override
+  Future<void> save(String workspaceId) async {
+    selectedWorkspaceId = workspaceId;
+  }
 }
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
@@ -203,6 +230,7 @@ void main() {
       WorkspaceRepository? repo,
       List<CloudAccountSession> accounts = const [],
       bool cloudAuthenticationRequired = false,
+      WorkspaceSelectionRepository? selectionRepository,
     }) {
       final useRepo = repo ?? repository;
 
@@ -215,6 +243,13 @@ void main() {
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
+            if (selectionRepository != null) {
+              overrides.add(
+                lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
+                  selectionRepository,
+                ),
+              );
+            }
             if (loading) {
               overrides.add(
                 allWorkspacesProvider.overrideWith(
@@ -317,6 +352,88 @@ void main() {
         find.byKey(const ValueKey<String>('workspace_select_ws-2')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('confirms before switching workspace from a tile', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace B', type: .local),
+      );
+      final selectionRepository = _FakeWorkspaceSelectionRepository();
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          selectionRepository: selectionRepository,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Switch workspace?'), findsOneWidget);
+      expect(selectionRepository.selectedWorkspaceId, isNull);
+      expect(router.lastLocation, isNull);
+
+      final _ = await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Switch workspace?'), findsNothing);
+      expect(selectionRepository.selectedWorkspaceId, isNull);
+      expect(router.lastLocation, isNull);
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Confirm'));
+      await tester.pump(const Duration(milliseconds: 350));
+      final _ = await tester.pumpAndSettle();
+
+      expect(selectionRepository.selectedWorkspaceId, 'ws-2');
+      expect(router.lastLocation, '/workspaces/ws-2/more/manage-workspaces');
+    });
+
+    testWidgets('marks only the active workspace', (tester) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace B', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-2'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('workspace_select_ws-1')),
+          matching: find.text('Active'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+          matching: find.text('Active'),
+        ),
+        findsOneWidget,
+      );
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Switch workspace?'), findsNothing);
     });
 
     testWidgets('shows sign-in recovery for an expired cloud session', (
