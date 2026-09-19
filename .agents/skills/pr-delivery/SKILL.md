@@ -71,34 +71,34 @@ editing this skill.
    If the request only asks for inspection, report the divergence before any
    write.
 
-## Derive and run local checks
+## Derive and run minimal local checks
 
-Build a short plan by reading the applicable workflow jobs:
+Read applicable workflows to know what GitHub will run, but do not mirror their
+heavy commands locally. Before creating or updating a PR, run only the smallest
+checks that can catch Dart errors or regressions in the changed scope:
 
 - Match workflow events, target branches, path filters, job `if` expressions,
   matrix inputs, `needs`, and intentional skips against the changed paths.
-- Run each applicable local `run` block with its workflow working directory and
-  environment. Use the project wrappers required by `AGENTS.md`. For behavior
-  changes, start with the smallest focused tests covering the changed files or
-  behavior; do not run the full test suite as the initial preflight. Reserve a
-  full suite for an explicit request, a workflow that requires it, or a broad
-  change where no meaningful focused check exists.
-- For documentation, skill, workflow, or other configuration-only changes that
-  do not alter runtime behavior, skip tests. Run the relevant syntax, schema,
-  workflow, or diff checks instead. Do not silently replace missing focused
-  coverage with a full suite; report the validation gap.
-- For a local composite or reusable workflow, read it and include its commands.
-  For hosted actions, secrets, external services, or unavailable operating
+- For Dart behavior changes, run a focused test covering the changed behavior
+  and the smallest targeted analyzer command documented by `AGENTS.md`. If no
+  focused test exists, run the analyzer and report the coverage gap.
+- For Dart changes, run a formatter check on the changed Dart files or package
+  when formatting may have changed.
+- For documentation, skill, workflow, or other configuration-only changes,
+  skip Dart tests, analyzers, and app builds. Run only relevant syntax or diff
+  checks.
+- Do not run app builds, `flutter run`, full test suites, `melos run validate`,
+  `melos run test:ci`, dependency validation, import sorting, DCL, or other
+  workspace-wide/heavy checks as local preflight. Leave those to GitHub CI
+  unless the user explicitly requests them or a changed generated artifact
+  requires a narrowly scoped generator check.
+- For hosted actions, secrets, external services, or unavailable operating
   systems, mark the check remote-only instead of inventing a local substitute.
-- Run independent local gates when practical even after one failure. Collect
-  the full local failure set, fix causes, then run the complete applicable plan
-  again before delivery.
-- Treat a failed, timed-out, or unavailable relevant local gate as blocked. Do
-  not create or update a PR until the user explicitly accepts that blocker.
-  Missing Docker, PostgreSQL, or other test infrastructure is not a pass.
-- After generation or formatting, inspect the worktree. Follow `AGENTS.md` and
-  the workflow for generated artifacts. Never hand-edit generated output to
-  hide drift.
+- Treat a failed or timed-out selected local check as blocked. Do not expand
+  the local plan to compensate with heavier commands.
+- After required generation or formatting, inspect the worktree. Follow
+  `AGENTS.md` and the workflow for generated artifacts. Never hand-edit
+  generated output to hide drift.
 
 Finish local validation with the repository's documented status and diff
 checks. If intended work remains, stage and commit it using explicit file
