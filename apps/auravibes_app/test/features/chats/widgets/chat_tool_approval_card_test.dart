@@ -4,14 +4,18 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 
 void main() {
   Widget buildSubject({required List<Object> overrides}) {
@@ -55,6 +59,7 @@ void main() {
     String? argumentsDigest,
     String? turnId,
     int? turnRevision,
+    String sourceConversationId = '',
   }) {
     return PendingToolCall(
       toolCall: .new(
@@ -67,6 +72,7 @@ void main() {
         turnRevision: turnRevision,
       ),
       messageId: messageId,
+      sourceConversationId: sourceConversationId,
     );
   }
 
@@ -118,6 +124,59 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
       }
+    });
+
+    testWidgets('approves a child conversation tool call in its source', (
+      tester,
+    ) async {
+      final approvalProvider = _MockApproveToolCallProvider();
+      final agentService = _MockAuraAgentService();
+      when(
+        () => approvalProvider.loadToolCall(
+          messageId: 'child-message-1',
+          toolCallId: 'child-tool-1',
+          conversationId: 'child-1',
+        ),
+      ).thenAnswer((_) async => null);
+      when(() => agentService.tools).thenReturn(
+        agent.ToolsNamespace<ResolvedTool>(
+          approvals: approvalProvider,
+          skips: _MockSkipToolCallProvider(),
+          stopPending: _MockStopPendingToolCallsProvider(),
+          resume: _MockAgentToolResumeProvider(),
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(
+                  toolCallId: 'child-tool-1',
+                  messageId: 'child-message-1',
+                  sourceConversationId: 'child-1',
+                ),
+              ],
+            ),
+            auraAgentServiceProvider.overrideWithValue(agentService),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_allow_once')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      verify(
+        () => approvalProvider.loadToolCall(
+          messageId: 'child-message-1',
+          toolCallId: 'child-tool-1',
+          conversationId: 'child-1',
+        ),
+      ).called(1);
     });
 
     testWidgets('shows navigation chevrons for multiple pending calls', (
@@ -646,3 +705,18 @@ void main() {
     });
   });
 }
+
+class _MockAuraAgentService extends Mock
+    implements agent.AuraAgentService<ResolvedTool>;
+
+class _MockApproveToolCallProvider extends Mock
+    implements agent.ApproveToolCallProvider<ResolvedTool>;
+
+class _MockSkipToolCallProvider extends Mock
+    implements agent.SkipToolCallProvider;
+
+class _MockStopPendingToolCallsProvider extends Mock
+    implements agent.StopPendingToolCallsProvider;
+
+class _MockAgentToolResumeProvider extends Mock
+    implements agent.AgentToolResumeProvider;

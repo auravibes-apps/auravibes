@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -126,6 +127,23 @@ void main() {
       expect(result?.name, 'calculator');
       expect(result?.argumentsRaw, '{"input":"1+1"}');
     });
+
+    test(
+      'rejects tool call when message belongs to another conversation',
+      () async {
+        when(() => messageRepository.getMessageById(messageId))
+            .thenAnswer((_) async => message);
+
+        await expectLater(
+          provider.loadToolCall(
+            messageId: messageId,
+            toolCallId: 'tool-1',
+            conversationId: 'child-conversation-1',
+          ),
+          throwsA(isA<MessageValidationException>()),
+        );
+      },
+    );
 
     test('resolves approval through catalog model name', () async {
       final target = ResolvedTool.mcp(
