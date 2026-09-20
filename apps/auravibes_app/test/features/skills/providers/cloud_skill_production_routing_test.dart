@@ -36,6 +36,10 @@ import 'package:riverpod/riverpod.dart';
 
 class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
+class _Client extends Mock implements Client;
+
+class _SkillResourceEndpoint extends Mock implements EndpointSkillResource;
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -57,6 +61,9 @@ void main() {
         resourceId: 'fallback',
         fieldMask: const [],
       ),
+    );
+    registerFallbackValue(
+      ListSkillResourcesRequest(workspaceId: 0, skillId: ''),
     );
     registerFallbackValue((
       requestId: '',
@@ -84,11 +91,18 @@ void main() {
     ),
   );
 
-  test(
+    test(
     'cloud production providers never construct local skill storage',
     () async {
       final gateway = _Gateway();
+      final client = _Client();
+      final skillResource = _SkillResourceEndpoint();
       final resources = <WorkspaceResource>[];
+      when(() => gateway.client).thenReturn(client);
+      when(() => gateway.workspace).thenReturn(workspace.cloud!);
+      when(() => client.skillResource).thenReturn(skillResource);
+      when(() => skillResource.list(any()))
+          .thenAnswer((_) async => const []);
       when(() => gateway.watchResources(any())).thenAnswer((invocation) {
         final kinds =
             invocation.positionalArguments.single
