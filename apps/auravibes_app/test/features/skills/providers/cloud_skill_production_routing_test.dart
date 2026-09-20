@@ -91,7 +91,7 @@ void main() {
     ),
   );
 
-    test(
+  test(
     'cloud production providers never construct local skill storage',
     () async {
       final gateway = _Gateway();
@@ -101,8 +101,7 @@ void main() {
       when(() => gateway.client).thenReturn(client);
       when(() => gateway.workspace).thenReturn(workspace.cloud!);
       when(() => client.skillResource).thenReturn(skillResource);
-      when(() => skillResource.list(any()))
-          .thenAnswer((_) async => const []);
+      when(() => skillResource.list(any())).thenAnswer((_) async => const []);
       when(() => gateway.watchResources(any())).thenAnswer((invocation) {
         final kinds =
             invocation.positionalArguments.single
