@@ -145,8 +145,8 @@ class CloudWorkspaceResourceStore {
       _duplicateAgent = gateway.duplicateAgent,
       _putSecret = gateway.putSecret,
       _mutateCredential = gateway.mutateCredential,
-      _client = Future.value(gateway.client),
-      _cloudWorkspaceId = Future.value(gateway.workspace.cloudWorkspaceId);
+      _client = (() async => gateway.client),
+      _cloudWorkspaceId = (() async => gateway.workspace.cloudWorkspaceId);
 
   new deferred(Future<CloudWorkspaceStateGateway?> gateway)
     : _read = _deferredReadHandler(gateway),
@@ -155,8 +155,8 @@ class CloudWorkspaceResourceStore {
       _duplicateAgent = _deferredDuplicateAgentHandler(gateway),
       _putSecret = _deferredPutSecretHandler(gateway),
       _mutateCredential = _deferredMutateCredentialHandler(gateway),
-      _client = _deferredClient(gateway),
-      _cloudWorkspaceId = _deferredCloudWorkspaceId(gateway);
+      _client = (() => _deferredClient(gateway)),
+      _cloudWorkspaceId = (() => _deferredCloudWorkspaceId(gateway));
 
   new forTesting({
     required this._watch,
@@ -165,8 +165,8 @@ class CloudWorkspaceResourceStore {
     required this._mutateCredential,
     this._read = _unsupportedRead,
     this._duplicateAgent = _unsupportedDuplicateAgent,
-  }) : _client = Future.value(),
-       _cloudWorkspaceId = Future.value();
+  }) : _client = (() async => null),
+       _cloudWorkspaceId = (() async => null);
 
   final WorkspaceResourceRead _read;
   final Stream<List<WorkspaceResource>> Function(
@@ -181,12 +181,12 @@ class CloudWorkspaceResourceStore {
   final WorkspaceAgentDuplicate _duplicateAgent;
   final _WorkspaceSecretCall _putSecret;
   final _WorkspaceCredentialCall _mutateCredential;
-  final Future<Client?> _client;
-  final Future<int?> _cloudWorkspaceId;
+  final Future<Client?> Function() _client;
+  final Future<int?> Function() _cloudWorkspaceId;
 
-  Future<Client?> get client => _client;
+  Future<Client?> get client => _client();
 
-  Future<int?> get cloudWorkspaceId => _cloudWorkspaceId;
+  Future<int?> get cloudWorkspaceId => _cloudWorkspaceId();
 
   Future<ReadWorkspaceStateResponse> read({
     required List<WorkspaceResourcePageRequest> pages,
