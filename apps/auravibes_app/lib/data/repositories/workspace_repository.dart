@@ -51,6 +51,13 @@ mixin _WorkspaceRepositoryOperationsApi {
       WorkspaceRepositoryOperations(this as WorkspaceRepository)
           .createWorkspace(workspace);
 
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .duplicateWorkspace(id, name: name);
+
   Future<WorkspaceEntity> patchWorkspace(String id, WorkspacePatch workspace) =>
       WorkspaceRepositoryOperations(this as WorkspaceRepository)
           .patchWorkspace(id, workspace);
@@ -178,6 +185,11 @@ extension WorkspaceRepositoryOperations on WorkspaceRepository {
 
     return _mapToWorkspace(createdWorkspace);
   }
+
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) => _database.transaction(() => _duplicateWorkspace(id, name: name));
 
   Future<WorkspaceEntity> patchWorkspace(
     String id,
@@ -342,6 +354,33 @@ extension WorkspaceRepositoryQueryOperations on WorkspaceRepository {
 }
 
 extension on WorkspaceRepository {
+  Future<WorkspaceEntity> _duplicateWorkspace(
+    String id, {
+    required String name,
+  }) async {
+    final source = await _requireWorkspace(id);
+    final workspace = WorkspaceToCreate(name: name, type: .local);
+    final _ = await validateWorkspace(workspace);
+
+    final created = await _database.workspaceDao.insertWorkspace(
+      _mapToWorkspacesCompanion(workspace),
+    );
+    final settings = await _database.workspaceCompactionSettingsDao
+        .getByWorkspaceId(source.id);
+    if (settings != null) {
+      final _ = await _database.workspaceCompactionSettingsDao.upsert(
+        created.id,
+        .new(
+          autoCompactEnabled: .new(settings.autoCompactEnabled),
+          usagePercentageThreshold: .new(settings.usagePercentageThreshold),
+          remainingTokenThreshold: .new(settings.remainingTokenThreshold),
+        ),
+      );
+    }
+
+    return _mapToWorkspace(created);
+  }
+
   Future<WorkspacesTable> _requireWorkspace(String id) async {
     final workspace = await _database.workspaceDao.getWorkspaceById(id);
     if (workspace == null) throw WorkspaceNotFoundException(id);

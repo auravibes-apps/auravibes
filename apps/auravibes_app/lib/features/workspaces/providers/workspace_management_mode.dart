@@ -35,6 +35,7 @@ class WorkspaceManagementMode extends _$WorkspaceManagementMode {
 
 abstract final class WorkspaceManagementMutations {
   static final edit = Mutation<WorkspaceEntity>();
+  static final duplicate = Mutation<WorkspaceEntity>();
   static final delete = Mutation<void>();
   static final cloudAccount = Mutation<void>();
 }

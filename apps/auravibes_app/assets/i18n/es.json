@@ -954,6 +954,7 @@
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
     "create_button": "Crear Espacio de Trabajo",
+    "duplicate": "Duplicar Espacio de Trabajo",
     "create_title": "Crear Nuevo Espacio de Trabajo",
     "edit_button": "Guardar Cambios",
     "edit_title": "Editar Espacio de Trabajo",

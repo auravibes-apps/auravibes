@@ -1,7 +1,9 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -68,6 +70,81 @@ void main() {
       expect(result.length, 2);
       expect(result.firstOrNull?.name, 'Test Workspace 1');
       expect(result[1].name, 'Test Workspace 2');
+    });
+
+    test('duplicates safe settings without copying workspace data', () async {
+      const workspace = WorkspaceToCreate(
+        name: 'Source Workspace',
+        type: .local,
+      );
+      final source = await repository.createWorkspace(workspace);
+      final compactionRepository = WorkspaceCompactionSettingsRepository(
+        database.workspaceCompactionSettingsDao,
+      );
+      final _ = await compactionRepository.saveOverrides(
+        source.id,
+        const CompactionSettings(
+          autoCompactionEnabled: false,
+          usagePercentageThreshold: 55,
+          remainingTokenThreshold: 4000,
+        ),
+      );
+      final _ = await database.conversationDao.insertConversation(
+        .new(
+          workspaceId: Value(source.id),
+          title: const Value('Private conversation'),
+        ),
+      );
+      final _ = await database
+          .into(database.tools)
+          .insert(
+            ToolsCompanion.insert(
+              workspaceId: source.id,
+              toolId: 'private_tool',
+            ),
+          );
+      final _ = await database
+          .into(database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              name: 'Private credential',
+              serviceId: 'private-service',
+              kind: .skillCredential,
+              authenticationType: .apiKey,
+              encryptedAuthValue: const Value('encrypted-secret'),
+              workspaceId: source.id,
+            ),
+          );
+
+      final duplicate = await repository.duplicateWorkspace(
+        source.id,
+        name: 'Source Copy',
+      );
+
+      final copiedSettings = await compactionRepository.getEffectiveSettings(
+        duplicate.id,
+      );
+      expect(duplicate.type, WorkspaceType.local);
+      expect(copiedSettings.autoCompactionEnabled, isFalse);
+      expect(copiedSettings.usagePercentageThreshold, 55);
+      expect(copiedSettings.remainingTokenThreshold, 4000);
+      expect(
+        await database.conversationDao
+            .watchConversationsByWorkspace(duplicate.id)
+            .first,
+        isEmpty,
+      );
+      expect(
+        await database.workspaceToolsDao.getWorkspaceTools(duplicate.id),
+        isEmpty,
+      );
+      expect(
+        await (database.select(
+          database.serviceConnections,
+        )..where((row) => row.workspaceId.equals(duplicate.id))).get(),
+        isEmpty,
+      );
+      expect(await repository.getWorkspaceById(source.id), source);
     });
 
     test('should update a workspace', () async {

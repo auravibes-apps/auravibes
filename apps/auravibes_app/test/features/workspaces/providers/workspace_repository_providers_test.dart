@@ -33,6 +33,14 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   }
 
   @override
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<bool> deleteWorkspace(String id) {
     throw UnimplementedError();
   }
