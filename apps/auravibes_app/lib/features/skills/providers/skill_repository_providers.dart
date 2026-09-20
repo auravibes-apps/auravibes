@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -20,6 +21,11 @@ SkillsRepository skillsRepository(Ref ref) {
 @Riverpod(keepAlive: true)
 SkillTemplateToolsRepository skillTemplateToolsRepository(Ref ref) {
   return SkillTemplateToolsRepository(ref.watch(appDatabaseProvider));
+}
+
+@Riverpod(keepAlive: true)
+SkillResourcesRepository skillResourcesRepository(Ref ref) {
+  return SkillResourcesRepository(ref.watch(appDatabaseProvider));
 }
 
 @Riverpod(keepAlive: true)

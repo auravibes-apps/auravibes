@@ -1,0 +1,9 @@
+class: CreateSkillResourceRequest
+fields:
+  workspaceId: int
+  requestId: String
+  skillId: String
+  resourceId: String
+  title: String
+  description: String
+  content: String

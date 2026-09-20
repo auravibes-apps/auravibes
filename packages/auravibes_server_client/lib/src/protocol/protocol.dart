@@ -23,6 +23,8 @@ import 'package:auravibes_server_client/src/protocol/features/model_connections/
     as _i5hnstsl;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/workspace_model_selection_view.dart'
     as _i9qkc4pk;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/skill_resource_view.dart'
+    as _ik6yq8th;
 import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/workspace_resource.dart'
     as _iar0fwau;
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
@@ -183,6 +185,13 @@ import 'features/objects/models/object_reference.dart' as _ino5s3hv;
 import 'features/objects/models/object_result.dart' as _is4lmm7s;
 import 'features/objects/models/object_upload.dart' as _i6zmsyes;
 import 'features/objects/models/workspace_object.dart' as _i52p5grh;
+import 'features/skills/models/create_skill_resource_request.dart' as _izb0w3ju;
+import 'features/skills/models/delete_skill_resource_request.dart' as _if1jjut9;
+import 'features/skills/models/get_skill_resource_request.dart' as _io015z1p;
+import 'features/skills/models/list_skill_resources_request.dart' as _iur8dzti;
+import 'features/skills/models/skill_resource.dart' as _injkqvvw;
+import 'features/skills/models/skill_resource_view.dart' as _ijpixh1a;
+import 'features/skills/models/update_skill_resource_request.dart' as _i7qp26ki;
 import 'features/sync/stream/models/workspace_stream_envelope.dart'
     as _i0ekjn7l;
 import 'features/sync/stream/models/workspace_stream_envelope_kind.dart'
@@ -372,6 +381,13 @@ export 'features/objects/models/object_reference.dart';
 export 'features/objects/models/object_result.dart';
 export 'features/objects/models/object_upload.dart';
 export 'features/objects/models/workspace_object.dart';
+export 'features/skills/models/create_skill_resource_request.dart';
+export 'features/skills/models/delete_skill_resource_request.dart';
+export 'features/skills/models/get_skill_resource_request.dart';
+export 'features/skills/models/list_skill_resources_request.dart';
+export 'features/skills/models/skill_resource.dart';
+export 'features/skills/models/skill_resource_view.dart';
+export 'features/skills/models/update_skill_resource_request.dart';
 export 'features/sync/stream/models/workspace_stream_envelope.dart';
 export 'features/sync/stream/models/workspace_stream_envelope_kind.dart';
 export 'features/sync/stream/models/workspace_subscribe_request.dart';
@@ -753,6 +769,27 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _i52p5grh.WorkspaceObject) {
       return _i52p5grh.WorkspaceObject.fromJson(data) as T;
+    }
+    if (t == _izb0w3ju.CreateSkillResourceRequest) {
+      return _izb0w3ju.CreateSkillResourceRequest.fromJson(data) as T;
+    }
+    if (t == _if1jjut9.DeleteSkillResourceRequest) {
+      return _if1jjut9.DeleteSkillResourceRequest.fromJson(data) as T;
+    }
+    if (t == _io015z1p.GetSkillResourceRequest) {
+      return _io015z1p.GetSkillResourceRequest.fromJson(data) as T;
+    }
+    if (t == _iur8dzti.ListSkillResourcesRequest) {
+      return _iur8dzti.ListSkillResourcesRequest.fromJson(data) as T;
+    }
+    if (t == _injkqvvw.SkillResource) {
+      return _injkqvvw.SkillResource.fromJson(data) as T;
+    }
+    if (t == _ijpixh1a.SkillResourceView) {
+      return _ijpixh1a.SkillResourceView.fromJson(data) as T;
+    }
+    if (t == _i7qp26ki.UpdateSkillResourceRequest) {
+      return _i7qp26ki.UpdateSkillResourceRequest.fromJson(data) as T;
     }
     if (t == _i0ekjn7l.WorkspaceStreamEnvelope) {
       return _i0ekjn7l.WorkspaceStreamEnvelope.fromJson(data) as T;
@@ -1424,6 +1461,44 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _i52p5grh.WorkspaceObject.fromJson(data) : null)
           as T;
     }
+    if (t == _isc.getType<_izb0w3ju.CreateSkillResourceRequest?>()) {
+      return (data != null
+              ? _izb0w3ju.CreateSkillResourceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_if1jjut9.DeleteSkillResourceRequest?>()) {
+      return (data != null
+              ? _if1jjut9.DeleteSkillResourceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_io015z1p.GetSkillResourceRequest?>()) {
+      return (data != null
+              ? _io015z1p.GetSkillResourceRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iur8dzti.ListSkillResourcesRequest?>()) {
+      return (data != null
+              ? _iur8dzti.ListSkillResourcesRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_injkqvvw.SkillResource?>()) {
+      return (data != null ? _injkqvvw.SkillResource.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_ijpixh1a.SkillResourceView?>()) {
+      return (data != null ? _ijpixh1a.SkillResourceView.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_i7qp26ki.UpdateSkillResourceRequest?>()) {
+      return (data != null
+              ? _i7qp26ki.UpdateSkillResourceRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i0ekjn7l.WorkspaceStreamEnvelope?>()) {
       return (data != null
               ? _i0ekjn7l.WorkspaceStreamEnvelope.fromJson(data)
@@ -1846,6 +1921,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == List<String>) {
       return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
+    if (t == List<_ik6yq8th.SkillResourceView>) {
+      return (data as List)
+              .map((e) => deserialize<_ik6yq8th.SkillResourceView>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_ib73r5sl.CloudWorkspaceSummary>) {
       return (data as List)
               .map((e) => deserialize<_ib73r5sl.CloudWorkspaceSummary>(e))
@@ -1990,6 +2071,13 @@ class Protocol extends _isc.SerializationManager {
       _is4lmm7s.ObjectResult => 'ObjectResult',
       _i6zmsyes.ObjectUpload => 'ObjectUpload',
       _i52p5grh.WorkspaceObject => 'WorkspaceObject',
+      _izb0w3ju.CreateSkillResourceRequest => 'CreateSkillResourceRequest',
+      _if1jjut9.DeleteSkillResourceRequest => 'DeleteSkillResourceRequest',
+      _io015z1p.GetSkillResourceRequest => 'GetSkillResourceRequest',
+      _iur8dzti.ListSkillResourcesRequest => 'ListSkillResourcesRequest',
+      _injkqvvw.SkillResource => 'SkillResource',
+      _ijpixh1a.SkillResourceView => 'SkillResourceView',
+      _i7qp26ki.UpdateSkillResourceRequest => 'UpdateSkillResourceRequest',
       _i0ekjn7l.WorkspaceStreamEnvelope => 'WorkspaceStreamEnvelope',
       _i4zgsr0a.WorkspaceStreamEnvelopeKind => 'WorkspaceStreamEnvelopeKind',
       _ig40wm3p.WorkspaceSubscribeRequest => 'WorkspaceSubscribeRequest',
@@ -2259,6 +2347,20 @@ class Protocol extends _isc.SerializationManager {
         return 'ObjectUpload';
       case _i52p5grh.WorkspaceObject():
         return 'WorkspaceObject';
+      case _izb0w3ju.CreateSkillResourceRequest():
+        return 'CreateSkillResourceRequest';
+      case _if1jjut9.DeleteSkillResourceRequest():
+        return 'DeleteSkillResourceRequest';
+      case _io015z1p.GetSkillResourceRequest():
+        return 'GetSkillResourceRequest';
+      case _iur8dzti.ListSkillResourcesRequest():
+        return 'ListSkillResourcesRequest';
+      case _injkqvvw.SkillResource():
+        return 'SkillResource';
+      case _ijpixh1a.SkillResourceView():
+        return 'SkillResourceView';
+      case _i7qp26ki.UpdateSkillResourceRequest():
+        return 'UpdateSkillResourceRequest';
       case _i0ekjn7l.WorkspaceStreamEnvelope():
         return 'WorkspaceStreamEnvelope';
       case _i4zgsr0a.WorkspaceStreamEnvelopeKind():
@@ -2695,6 +2797,27 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceObject') {
       return deserialize<_i52p5grh.WorkspaceObject>(data['data']);
+    }
+    if (dataClassName == 'CreateSkillResourceRequest') {
+      return deserialize<_izb0w3ju.CreateSkillResourceRequest>(data['data']);
+    }
+    if (dataClassName == 'DeleteSkillResourceRequest') {
+      return deserialize<_if1jjut9.DeleteSkillResourceRequest>(data['data']);
+    }
+    if (dataClassName == 'GetSkillResourceRequest') {
+      return deserialize<_io015z1p.GetSkillResourceRequest>(data['data']);
+    }
+    if (dataClassName == 'ListSkillResourcesRequest') {
+      return deserialize<_iur8dzti.ListSkillResourcesRequest>(data['data']);
+    }
+    if (dataClassName == 'SkillResource') {
+      return deserialize<_injkqvvw.SkillResource>(data['data']);
+    }
+    if (dataClassName == 'SkillResourceView') {
+      return deserialize<_ijpixh1a.SkillResourceView>(data['data']);
+    }
+    if (dataClassName == 'UpdateSkillResourceRequest') {
+      return deserialize<_i7qp26ki.UpdateSkillResourceRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceStreamEnvelope') {
       return deserialize<_i0ekjn7l.WorkspaceStreamEnvelope>(data['data']);

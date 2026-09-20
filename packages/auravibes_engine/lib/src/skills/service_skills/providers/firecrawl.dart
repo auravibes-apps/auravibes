@@ -1,4 +1,5 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_resource_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
@@ -18,6 +19,72 @@ discovering URLs, or extracting structured data from public pages.
 ''',
   requiresCredential: true,
   kind: .template,
+  resources: const [
+    AppSkillResourceDefinition(
+      slug: 'search_map_and_scrape_controls',
+      title: 'Search, map, and scrape controls',
+      description:
+          'Use Firecrawl source filters, URL maps, and content formats.',
+      content: '''
+Firecrawl search has provider-specific filter values:
+
+```json
+{"query":"Flutter 3.47 migration guide","limit":5,"sources":["web"],"categories":["research"]}
+```
+
+Use `sources` with `web`, `news`, or `images`; use `categories` with `github`,
+`research`, or `pdf`. `tbs` accepts values such as `qdr:d`, `qdr:w`, or
+`qdr:m` for recency. `includeDomains` is safer than relying on query wording
+when results must come from a known site.
+
+`map` with `sitemapOnly: true` returns a URL inventory without page content.
+Set `includeSubdomains: true` only when related subdomains are in scope;
+`ignoreSitemap: true` forces discovery beyond the site's sitemap.
+
+```json
+{"url":"<site-url>","limit":50,"sitemapOnly":true,"includeSubdomains":false}
+```
+
+For `scrape`, `formats: ["markdown"]` is the compact readable form and
+`formats: ["links"]` adds a link inventory. Set `onlyMainContent: true` to
+drop navigation and other page chrome.
+
+```json
+{"url":"<page-url>","formats":["markdown","links"],"onlyMainContent":true}
+```
+''',
+    ),
+    AppSkillResourceDefinition(
+      slug: 'extract_schema_contract',
+      title: 'Extract schema contract',
+      description: 'Use Firecrawl extraction for small normalized records.',
+      content: '''
+`extract` takes `urls`, not a single `url`. Its `schema` is the output
+contract; `prompt` supplies normalization rules that a type declaration cannot
+express.
+
+```json
+{
+  "urls": ["<product-page-1>", "<product-page-2>"],
+  "prompt": "Extract one record per page. Normalize prices to numbers and use null when absent.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {"type": "string"},
+      "price": {"type": "number"},
+      "availability": {"type": "string"}
+    },
+    "required": ["name"]
+  }
+}
+```
+
+Keep schemas small and make only truly necessary fields `required`. Use
+`scrape` with `formats: ["markdown"]` when the user needs page text; do not
+use `extract` as a substitute for full-page content.
+''',
+    ),
+  ],
   tools: [
     _tool(
       'search',

@@ -1,0 +1,9 @@
+class: UpdateSkillResourceRequest
+fields:
+  workspaceId: int
+  requestId: String
+  resourceId: String
+  expectedRevision: int
+  title: String
+  description: String
+  content: String

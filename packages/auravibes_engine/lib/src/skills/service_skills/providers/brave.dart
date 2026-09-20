@@ -1,4 +1,5 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_resource_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
@@ -15,6 +16,35 @@ or compact context for grounding an answer. Prefer it for broad web discovery.
   ''',
   requiresCredential: true,
   kind: .template,
+  resources: const [
+    AppSkillResourceDefinition(
+      slug: 'query_operators_and_paging',
+      title: 'Query operators and paging',
+      description:
+          'Use Brave query grammar, freshness values, and page offsets.',
+      content: '''
+Brave search operators live inside `query`; they are not separate inputs.
+
+```json
+{"query":"Flutter migration filetype:pdf site:docs.flutter.dev","maxResults":10,"offset":0,"freshness":"py"}
+```
+
+Useful operators:
+
+- `site:domain` restricts results to a domain; `filetype:pdf` targets files.
+- `intitle:term` targets page titles; `inbody:"exact phrase"` targets body text.
+- Quotes require an exact phrase; `-term` excludes a term; `OR` must be uppercase.
+
+Keep queries under 600 characters and 75 words for `web_search` and
+`llm_context`. `freshness` accepts `pd`, `pw`, `pm`, `py`, or a range such as
+`2026-01-01to2026-03-31`.
+
+For `web_search`, `maxResults` becomes the page size and `offset` is a page
+number from 0 to 9, not an item index. Increment `offset` by one for the next
+page; overlapping results are possible.
+''',
+    ),
+  ],
   tools: [
     AppSkillToolDefinition(
       slug: 'web_search',

@@ -22,6 +22,7 @@ import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definitions_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
+import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
@@ -116,6 +117,12 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                     ),
                     TypedGoRoute<SkillToolEditRoute>(
                       path: ':skillId/tools/:toolId',
+                    ),
+                    TypedGoRoute<SkillResourceCreateRoute>(
+                      path: ':skillId/resources/new',
+                    ),
+                    TypedGoRoute<SkillResourceEditRoute>(
+                      path: ':skillId/resources/:resourceId',
                     ),
                     TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
                   ],
@@ -410,6 +417,31 @@ class SkillToolEditRoute({
       workspaceId: workspaceId,
       skillId: skillId,
       toolId: toolId,
+    );
+  }
+}
+
+class SkillResourceCreateRoute({
+  required final String workspaceId,
+  required final String skillId,
+}) extends GoRouteData with $SkillResourceCreateRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillResourceEditScreen(workspaceId: workspaceId, skillId: skillId);
+  }
+}
+
+class SkillResourceEditRoute({
+  required final String workspaceId,
+  required final String skillId,
+  required final String resourceId,
+}) extends GoRouteData with $SkillResourceEditRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SkillResourceEditScreen(
+      workspaceId: workspaceId,
+      skillId: skillId,
+      resourceId: resourceId,
     );
   }
 }

@@ -140,6 +140,18 @@ import 'package:auravibes_server_client/src/protocol/features/objects/models/get
     as _ixm7fyok;
 import 'package:auravibes_server_client/src/protocol/features/objects/models/object_result.dart'
     as _iw6nkrbk;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/create_skill_resource_request.dart'
+    as _iwogob7t;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/delete_skill_resource_request.dart'
+    as _i7c8ynea;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/get_skill_resource_request.dart'
+    as _im6sxc0b;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/list_skill_resources_request.dart'
+    as _itskuffv;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/skill_resource_view.dart'
+    as _ik6yq8th;
+import 'package:auravibes_server_client/src/protocol/features/skills/models/update_skill_resource_request.dart'
+    as _io809sbc;
 import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_stream_envelope.dart'
     as _ifwc6wsw;
 import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_subscribe_request.dart'
@@ -862,6 +874,53 @@ class EndpointObject extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointSkillResource extends _isc.EndpointRef {
+  EndpointSkillResource(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'skillResource';
+
+  _ida.Future<List<_ik6yq8th.SkillResourceView>> list(
+    _itskuffv.ListSkillResourcesRequest request,
+  ) => caller.callServerEndpoint<List<_ik6yq8th.SkillResourceView>>(
+    'skillResource',
+    'list',
+    {'request': request},
+  );
+
+  _ida.Future<_ik6yq8th.SkillResourceView?> get(
+    _im6sxc0b.GetSkillResourceRequest request,
+  ) => caller.callServerEndpoint<_ik6yq8th.SkillResourceView?>(
+    'skillResource',
+    'get',
+    {'request': request},
+  );
+
+  _ida.Future<_ik6yq8th.SkillResourceView> create(
+    _iwogob7t.CreateSkillResourceRequest request,
+  ) => caller.callServerEndpoint<_ik6yq8th.SkillResourceView>(
+    'skillResource',
+    'create',
+    {'request': request},
+  );
+
+  _ida.Future<_ik6yq8th.SkillResourceView> update(
+    _io809sbc.UpdateSkillResourceRequest request,
+  ) => caller.callServerEndpoint<_ik6yq8th.SkillResourceView>(
+    'skillResource',
+    'update',
+    {'request': request},
+  );
+
+  _ida.Future<void> delete(_i7c8ynea.DeleteSkillResourceRequest request) =>
+      caller.callServerEndpoint<void>(
+        'skillResource',
+        'delete',
+        {'request': request},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointWorkspaceStream extends _isc.EndpointRef {
   EndpointWorkspaceStream(_isc.EndpointCaller caller) : super(caller);
 
@@ -1129,6 +1188,7 @@ class Client extends _isc.ServerpodClientShared {
     mcpServer = EndpointMcpServer(this);
     modelConnection = EndpointModelConnection(this);
     object = EndpointObject(this);
+    skillResource = EndpointSkillResource(this);
     workspaceStream = EndpointWorkspaceStream(this);
     workspaceSecret = EndpointWorkspaceSecret(this);
     workspaceState = EndpointWorkspaceState(this);
@@ -1154,6 +1214,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointObject object;
 
+  late final EndpointSkillResource skillResource;
+
   late final EndpointWorkspaceStream workspaceStream;
 
   late final EndpointWorkspaceSecret workspaceSecret;
@@ -1175,6 +1237,7 @@ class Client extends _isc.ServerpodClientShared {
     'mcpServer': mcpServer,
     'modelConnection': modelConnection,
     'object': object,
+    'skillResource': skillResource,
     'workspaceStream': workspaceStream,
     'workspaceSecret': workspaceSecret,
     'workspaceState': workspaceState,

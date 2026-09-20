@@ -1,6 +1,10 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillDefinition, AppSkillDefinitionKind, AppSkillToolDefinition;
+    show
+        AppSkillDefinition,
+        AppSkillDefinitionKind,
+        AppSkillResourceDefinition,
+        AppSkillToolDefinition;
 
 typedef SkillDetailNativeValues = ({
   String title,
@@ -33,6 +37,7 @@ class const SkillDetail({
   required final bool isCredentialOptional,
   final String? credentialDefinitionId,
   final List<AppSkillToolDefinition> appTools = const [],
+  final List<AppSkillResourceDefinition> appResources = const [],
   final String? titleKey,
   final String? descriptionKey,
   final String? contentKey,
@@ -67,6 +72,7 @@ class _NativeSkillDetail extends SkillDetail {
         isEnabled: request.isEnabled,
         isCredentialOptional: values.isCredentialOptional,
         appTools: request.appSkill.tools,
+        appResources: request.appSkill.resources,
         titleKey: values.titleKey,
         descriptionKey: values.descriptionKey,
         contentKey: values.contentKey,

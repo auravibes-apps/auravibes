@@ -104,6 +104,54 @@ final class SkillTemplateToolsRepositoryProvider
 String _$skillTemplateToolsRepositoryHash() =>
     r'3e0af71dddf7851850a7cdf8c827aeaec2387972';
 
+@ProviderFor(skillResourcesRepository)
+final skillResourcesRepositoryProvider = SkillResourcesRepositoryProvider._();
+
+final class SkillResourcesRepositoryProvider
+    extends
+        $FunctionalProvider<
+          SkillResourcesRepository,
+          SkillResourcesRepository,
+          SkillResourcesRepository
+        >
+    with $Provider<SkillResourcesRepository> {
+  SkillResourcesRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'skillResourcesRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$skillResourcesRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<SkillResourcesRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SkillResourcesRepository create(Ref ref) {
+    return skillResourcesRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SkillResourcesRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SkillResourcesRepository>(value),
+    );
+  }
+}
+
+String _$skillResourcesRepositoryHash() =>
+    r'0ce525a2babab32fd9f4210c1b1775de80dec614';
+
 @ProviderFor(skillCredentialDefinitionsRepository)
 final skillCredentialDefinitionsRepositoryProvider =
     SkillCredentialDefinitionsRepositoryProvider._();

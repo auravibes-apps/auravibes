@@ -518,6 +518,26 @@
       "quote": "Quote"
     }
   },
+  "skills_resource": {
+    "section_title": "Resources",
+    "empty": "No skill resources",
+    "create_title": "New skill resource",
+    "edit_title": "Edit skill resource",
+    "view_title": "Skill resource",
+    "not_found": "Skill resource not found",
+    "load_error": "Error loading skill resources",
+    "save_error": "Unable to save skill resource",
+    "delete_title": "Delete skill resource",
+    "delete_confirm": "Delete this skill resource?",
+    "slug_label": "Slug",
+    "title_label": "Title",
+    "description_label": "Description",
+    "edit_description": "Edit description",
+    "description_empty": "No description yet",
+    "content_label": "Content",
+    "edit_content": "Edit content",
+    "content_empty": "No content yet"
+  },
   "skills_selector": {
     "title": "Conversation skills",
     "error": "Error loading conversation skills",

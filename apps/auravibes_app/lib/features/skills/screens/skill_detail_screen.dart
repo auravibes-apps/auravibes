@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
@@ -14,6 +15,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credentials_provid
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart'
     show appSkillRegistryProvider;
+import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.dart';
@@ -28,7 +30,7 @@ import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillToolDefinition;
+    show AppSkillResourceDefinition, AppSkillToolDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -868,8 +870,17 @@ class const _SkillDetailRelatedContent({
 
   void _addRelatedSections(List<Widget> children, SkillDetail? detail) {
     _addAppSkillCredentials(children, detail);
+    _addSkillResources(children, detail);
     _addSkillTools(children, detail);
     _addAppSkillTools(children, detail);
+  }
+
+  void _addSkillResources(List<Widget> children, SkillDetail? detail) {
+    if (detail == null) return;
+    if (!detail.isUserSkill && detail.appResources.isEmpty) return;
+    children
+      ..add(const SizedBox(height: 12))
+      ..add(_SkillResourcesCard(workspaceId: workspaceId, detail: detail));
   }
 
   void _addAppSkillCredentials(List<Widget> children, SkillDetail? detail) {
@@ -902,6 +913,204 @@ class const _SkillDetailRelatedContent({
       ..add(const SizedBox(height: 12))
       ..add(_AppSkillToolsCard(tools: detail.appTools));
   }
+}
+
+class const _SkillResourcesCard({
+  required final String workspaceId,
+  required final SkillDetail detail,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (detail.isUserSkill) {
+      final resourcesAsync = ref.watch(
+        skillResourcesProvider(workspaceId, detail.id),
+      );
+      final actions = _SkillResourcesActions(
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        skillId: detail.id,
+      );
+
+      return AuraCard(
+        child: _SkillResourcesUserContent(
+          resourcesAsync: resourcesAsync,
+          onCreate: actions.create,
+          onOpen: actions.open,
+        ),
+      );
+    }
+
+    return AuraCard(
+      child: _SkillResourcesAppContent(
+        workspaceId: workspaceId,
+        skillId: detail.id,
+        resources: detail.appResources,
+      ),
+    );
+  }
+}
+
+class _SkillResourcesActions {
+  new({
+    required this.context,
+    required this.ref,
+    required this.workspaceId,
+    required this.skillId,
+  });
+
+  final BuildContext context;
+  final WidgetRef ref;
+  final String workspaceId;
+  final String skillId;
+
+  void create() => unawaited(_open());
+
+  Future<void> open(String resourceId) => _open(resourceId);
+
+  Future<void> _open([String? resourceId]) async {
+    final result = await context.push<bool>(
+      '/workspaces/$workspaceId/more/skills/$skillId/resources/${resourceId ?? 'new'}',
+    );
+    if (result == true) {
+      ref.invalidate(skillResourcesProvider(workspaceId, skillId));
+    }
+  }
+}
+
+class const _SkillResourcesUserContent({
+  required final AsyncValue<List<SkillResourceEntity>> resourcesAsync,
+  required final VoidCallback onCreate,
+  required final Future<void> Function(String) onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _SkillResourcesHeader(onCreate: onCreate),
+      switch (resourcesAsync) {
+        AsyncData(:final value) => _SkillResourcesDataContent(
+          resources: value,
+          onOpen: onOpen,
+        ),
+        AsyncLoading() => const Center(child: AuraSpinner(size: .small)),
+        AsyncError() => const AuraText(
+          child: TextLocale(LocaleKeys.skills_resource_load_error),
+          tint: .error,
+        ),
+      },
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesHeader({required final VoidCallback onCreate})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(
+        child: AuraText(
+          child: TextLocale(LocaleKeys.skills_resource_section_title),
+          style: .heading4,
+        ),
+      ),
+      AuraIconButton(
+        icon: Icons.add,
+        onPressed: onCreate,
+        tooltip: LocaleKeys.skills_resource_create_title.tr(context: context),
+      ),
+    ],
+  );
+}
+
+class const _SkillResourcesDataContent({
+  required final List<SkillResourceEntity> resources,
+  required final Future<void> Function(String) onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (resources.isEmpty) {
+      return const AuraText(
+        child: TextLocale(LocaleKeys.skills_resource_empty),
+      );
+    }
+
+    return AuraColumn(
+      children: [
+        for (final resource in resources)
+          _SkillResourceTile(
+            title: resource.title,
+            slug: resource.slug,
+            description: resource.description,
+            onOpen: () => unawaited(onOpen(resource.id)),
+          ),
+      ],
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _SkillResourcesAppContent({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.skills_resource_section_title),
+        style: .heading4,
+      ),
+      for (final resource in resources)
+        _SkillResourceTile(
+          title: resource.title,
+          slug: resource.slug,
+          description: resource.description,
+          onOpen: () => unawaited(
+            context.push<bool>(
+              '/workspaces/$workspaceId/more/skills/$skillId/resources/${resource.slug}',
+            ),
+          ),
+        ),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceTile({
+  required final String title,
+  required final String slug,
+  required final String description,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: AuraColumn(
+      children: [
+        AuraText(child: Text(title)),
+        AuraBadge.text(
+          child: Text(
+            slug,
+            style: .new(
+              fontFamily: context.auraTheme.typography.monoFontFamily,
+            ),
+          ),
+          variant: .outlined,
+          size: .small,
+        ),
+        if (description.trim().isNotEmpty) AuraText(child: Text(description)),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+    ),
+    onTap: onOpen,
+    variant: .ghost,
+    leading: const AuraIcon(Icons.menu_book_outlined),
+    trailing: const AuraIcon(Icons.chevron_right),
+  );
 }
 
 class const _SkillToolsCard({

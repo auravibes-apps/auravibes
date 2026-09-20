@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/skills/models/app_skill_resource_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 
 class const AppSkillDefinition({
@@ -8,6 +9,7 @@ class const AppSkillDefinition({
   required final String content,
   final AppSkillDefinitionKind kind = AppSkillDefinitionKind.native,
   final List<AppSkillToolDefinition> tools = const [],
+  final List<AppSkillResourceDefinition> resources = const [],
   final bool requiresCredential = false,
   final List<String> compatibleModelProviderIds = const [],
   final String? titleKey,

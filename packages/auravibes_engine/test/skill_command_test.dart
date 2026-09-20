@@ -11,6 +11,7 @@ void main() {
       activateSkillToolName,
       listSkillCredentialsToolName,
       callSkillToolName,
+      loadSkillResourceToolName,
     ]);
     expect(
       before.any((spec) => spec.inputJsonSchema.toString().contains('enum')),
@@ -28,6 +29,20 @@ void main() {
     expect(target.revision, 'skill-7');
     expect(
       () => SkillActivationTarget.fromArguments({'slug': 'research'}),
+      throwsFormatException,
+    );
+  });
+
+  test('resource target requires skill and resource slugs', () {
+    final target = SkillResourceTarget.fromArguments({
+      'skill': 'research',
+      'resource': 'refund-policy',
+    });
+
+    expect(target.skill, 'research');
+    expect(target.resource, 'refund-policy');
+    expect(
+      () => SkillResourceTarget.fromArguments({'skill': 'research'}),
       throwsFormatException,
     );
   });

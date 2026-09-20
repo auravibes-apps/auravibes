@@ -5,11 +5,13 @@ import 'package:auravibes_engine/src/tool_spec.dart';
 const activateSkillToolName = 'activate_skill';
 const listSkillCredentialsToolName = 'list_skill_credentials';
 const callSkillToolName = 'call_skill_tool';
+const loadSkillResourceToolName = 'load_skill_resource';
 
 const skillCommandToolNames = <String>{
   activateSkillToolName,
   listSkillCredentialsToolName,
   callSkillToolName,
+  loadSkillResourceToolName,
 };
 
 List<ToolSpec> buildSkillCommandToolSpecs() => [
@@ -35,6 +37,19 @@ List<ToolSpec> buildSkillCommandToolSpecs() => [
         'revision': {'type': 'string'},
       },
       'required': ['skill', 'tool', 'args', 'revision'],
+      'additionalProperties': false,
+    },
+  ),
+  ToolSpec(
+    name: loadSkillResourceToolName,
+    description: 'Load one resource from an activated skill.',
+    inputJsonSchema: const {
+      'type': 'object',
+      'properties': {
+        'skill': {'type': 'string'},
+        'resource': {'type': 'string'},
+      },
+      'required': ['skill', 'resource'],
       'additionalProperties': false,
     },
   ),
@@ -115,6 +130,24 @@ class SkillCommandTarget._({
       args: _freezeMap(normalizedArgs),
       revision: revision,
     );
+  }
+}
+
+class SkillResourceTarget._({
+  required final String skill,
+  required final String resource,
+}) {
+  factory fromArguments(Map<String, Object?> arguments) {
+    final skill = arguments['skill'];
+    final resource = arguments['resource'];
+    if (skill is! String || skill.isEmpty) {
+      throw const FormatException('skill must be a non-empty string');
+    }
+    if (resource is! String || resource.isEmpty) {
+      throw const FormatException('resource must be a non-empty string');
+    }
+
+    return SkillResourceTarget._(skill: skill, resource: resource);
   }
 }
 

@@ -143,6 +143,18 @@ import 'package:auravibes_server/src/generated/features/objects/models/get_downl
     as _i3be6nne;
 import 'package:auravibes_server/src/generated/features/objects/models/object_result.dart'
     as _ixfb6cdh;
+import 'package:auravibes_server/src/generated/features/skills/models/create_skill_resource_request.dart'
+    as _iv65f6mc;
+import 'package:auravibes_server/src/generated/features/skills/models/delete_skill_resource_request.dart'
+    as _iuwrl6dt;
+import 'package:auravibes_server/src/generated/features/skills/models/get_skill_resource_request.dart'
+    as _i9vy3rak;
+import 'package:auravibes_server/src/generated/features/skills/models/list_skill_resources_request.dart'
+    as _i92s6a70;
+import 'package:auravibes_server/src/generated/features/skills/models/skill_resource_view.dart'
+    as _i8gs5y5r;
+import 'package:auravibes_server/src/generated/features/skills/models/update_skill_resource_request.dart'
+    as _is4f2agc;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_stream_envelope.dart'
     as _ipwuwfuw;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
@@ -357,6 +369,8 @@ class TestEndpoints {
 
   late final _ObjectEndpoint object;
 
+  late final _SkillResourceEndpoint skillResource;
+
   late final _WorkspaceStreamEndpoint workspaceStream;
 
   late final _WorkspaceSecretEndpoint workspaceSecret;
@@ -406,6 +420,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     object = _ObjectEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    skillResource = _SkillResourceEndpoint(
       endpoints,
       serializationManager,
     );
@@ -2129,6 +2147,162 @@ class _ObjectEndpoint {
         var _localCallContext = await _endpointDispatch.getMethodCallContext(
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'object',
+          methodName: 'delete',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _SkillResourceEndpoint {
+  _SkillResourceEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<List<_i8gs5y5r.SkillResourceView>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i92s6a70.ListSkillResourcesRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'skillResource',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'skillResource',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_i8gs5y5r.SkillResourceView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i8gs5y5r.SkillResourceView?> get(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i9vy3rak.GetSkillResourceRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'skillResource',
+            method: 'get',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'skillResource',
+          methodName: 'get',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i8gs5y5r.SkillResourceView?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i8gs5y5r.SkillResourceView> create(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iv65f6mc.CreateSkillResourceRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'skillResource',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'skillResource',
+          methodName: 'create',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i8gs5y5r.SkillResourceView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i8gs5y5r.SkillResourceView> update(
+    _ist.TestSessionBuilder sessionBuilder,
+    _is4f2agc.UpdateSkillResourceRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'skillResource',
+            method: 'update',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'skillResource',
+          methodName: 'update',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i8gs5y5r.SkillResourceView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> delete(
+    _ist.TestSessionBuilder sessionBuilder,
+    _iuwrl6dt.DeleteSkillResourceRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'skillResource',
+            method: 'delete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'skillResource',
           methodName: 'delete',
           parameters: _ist.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,

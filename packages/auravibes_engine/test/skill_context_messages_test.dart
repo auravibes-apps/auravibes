@@ -127,6 +127,49 @@ void main() {
     expect(result.value, endsWith('</skill_content>'));
   });
 
+  test(
+    'activation serializes sorted resource summaries and resource content',
+    () {
+      final result = buildSkillActivationResult(
+        manifest: SkillManifest(
+          slug: 'research',
+          title: 'Research',
+          description: 'Find.',
+          revision: 'r1',
+          tools: const [],
+        ),
+        content: 'instructions',
+        resources: const [
+          SkillResourceSummary(
+            slug: 'z-guide',
+            title: 'Z guide',
+            description: 'Last',
+          ),
+          SkillResourceSummary(
+            slug: 'a-guide',
+            title: 'A guide',
+            description: 'First',
+          ),
+        ],
+      );
+
+      expect(result.value, contains('<skill_resources>'));
+      expect(
+        result.value.indexOf('a-guide'),
+        lessThan(result.value.indexOf('z-guide')),
+      );
+
+      final resource = buildSkillResourceResult(
+        skillSlug: 'research',
+        resourceSlug: 'a-guide',
+        title: 'A guide',
+        content: 'before ]]> after',
+      );
+      expect(resource.value, contains('<skill_resource skill="research"'));
+      expect(resource.value, contains('before ]]]]><![CDATA[> after'));
+    },
+  );
+
   test('composes agent context and deduplicated skill sources', () {
     final messages = const BuildSkillContextMessages().compose(
       agentContent: 'You are precise.',

@@ -14,6 +14,21 @@ typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
   required Map<String, dynamic> arguments,
 });
 
+typedef ListSkillResourceSummaries =
+    Future<List<SkillResourceSummary>> Function({
+      required String conversationId,
+      required String workspaceId,
+      required String skillSlug,
+    });
+
+typedef LoadSkillResourceContent =
+    Future<({String title, String content})?> Function({
+      required String conversationId,
+      required String workspaceId,
+      required String skillSlug,
+      required String resourceSlug,
+    });
+
 typedef RunSkillNativeToolRequest = ({
   String conversationId,
   String workspaceId,
@@ -68,6 +83,8 @@ class const RunSkillCommandUsecase({
   required final RunAppSkillToolUsecase runAppSkillToolUsecase,
   required final ListSkillCredentials listSkillCredentials,
   final ListSkillCredentials? listCatalogSkillCredentials,
+  final ListSkillResourceSummaries? listSkillResourceSummaries,
+  final LoadSkillResourceContent? loadSkillResourceContent,
   final RunSkillNativeTool? runSkillNativeTool,
 }) {
   Future<Object?> call(RunSkillCommandRequest request) =>
@@ -83,6 +100,7 @@ Future<Object?> _runSkillCommand(
     usecase,
     request,
   ),
+  loadSkillResourceToolName => _loadSkillResourceCommand(usecase, request),
   callSkillToolName => _callSkillCommand(usecase, request),
   _ => throw FormatException('Unknown skill command: ${request.commandName}'),
 };
@@ -108,11 +126,56 @@ Future<Object?> _activate(
   final activation = await _prepareActivation(usecase, commandRequest);
 
   await _loadConversationSkill(usecase, activation.manifestRequest);
+  final resources = await usecase.listSkillResourceSummaries?.call(
+    conversationId: commandRequest.conversationId,
+    workspaceId: commandRequest.workspaceId,
+    skillSlug: activation.skill.slug,
+  );
 
   return buildSkillActivationResult(
     manifest: activation.manifest,
     content: activation.skill.content,
     credentials: activation.credentials,
+    resources: resources ?? const [],
+  );
+}
+
+Future<Object?> _loadSkillResourceCommand(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+) async {
+  final target = SkillResourceTarget.fromArguments(
+    Map<String, Object?>.from(request.arguments),
+  );
+  final manifest = await _findSkillManifest(
+    usecase,
+    .new(
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      slug: target.skill,
+      revision: null,
+    ),
+  );
+  if (manifest == null) {
+    throw StateError('Skill is not loaded: ${target.skill}');
+  }
+  final resource = await usecase.loadSkillResourceContent?.call(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    skillSlug: target.skill,
+    resourceSlug: target.resource,
+  );
+  if (resource == null) {
+    throw StateError(
+      'Skill resource is unavailable: ${target.skill}/${target.resource}',
+    );
+  }
+
+  return buildSkillResourceResult(
+    skillSlug: target.skill,
+    resourceSlug: target.resource,
+    title: resource.title,
+    content: resource.content,
   );
 }
 

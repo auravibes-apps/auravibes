@@ -14,6 +14,7 @@ import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dar
 import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_template_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
@@ -36,6 +37,7 @@ import 'package:auravibes_app/data/database/drift/tables/model_providers_table_t
 import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
+import 'package:auravibes_app/data/database/drift/tables/skill_resources.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_template_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
@@ -91,6 +93,7 @@ part 'app_database.g.dart';
     SkillCredentialDefinitions,
     Skills,
     SkillTemplateTools,
+    SkillResources,
     ConversationSkills,
     AppSkillWorkspaceSettings,
     RecentModelSelections,
@@ -114,6 +117,7 @@ part 'app_database.g.dart';
     SkillCredentialDefinitionsDao,
     SkillsDao,
     SkillTemplateToolsDao,
+    SkillResourcesDao,
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
     RecentModelSelectionsDao,
@@ -133,8 +137,9 @@ class AppDatabase extends _$AppDatabase {
   static const int _forkSchemaVersion = _recentModelSelectionsSchemaVersion + 1;
   static const int _skillTemplateDefinitionSchemaVersion =
       _forkSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _skillTemplateDefinitionSchemaVersion;
+  static const int _skillResourceSchemaVersion =
+      _skillTemplateDefinitionSchemaVersion + 1;
+  static const int _currentSchemaVersion = _skillResourceSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -189,6 +194,9 @@ extension on AppDatabase {
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
     await _upgradeSkillTemplateDefinitionSchema(m, from);
+    if (from < AppDatabase._skillResourceSchemaVersion) {
+      await m.createTable(skillResources);
+    }
   }
 
   Future<void> _upgradeAgentsSchema(Migrator m, int from) async {

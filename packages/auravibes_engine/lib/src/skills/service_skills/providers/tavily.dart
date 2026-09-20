@@ -1,4 +1,5 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_resource_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
@@ -13,6 +14,31 @@ crawling, and research workflows.
 ''',
   requiresCredential: true,
   kind: .template,
+  resources: const [
+    AppSkillResourceDefinition(
+      slug: 'search_quality_controls',
+      title: 'Search quality controls',
+      description:
+          'Tune Tavily depth, evidence chunks, result count, and answer mode.',
+      content: '''
+Tavily's recommended agent defaults are deliberate:
+
+```json
+{"query":"compare Postgres and SQLite for an offline-first app","searchDepth":"advanced","chunksPerSource":3,"maxResults":5,"includeAnswer":false}
+```
+
+Use `maxResults: 5` for a focused answer and 10 for broader research.
+`chunksPerSource: 3` gives stronger evidence per source. Keep
+`includeAnswer: false` when the agent must inspect and cite sources; enable it
+only when a quick answer seed is useful.
+
+For time-sensitive discovery, combine `topic: "news"` with `timeRange` such
+as `day`, `week`, `month`, or `year`. Use `startDate` and `endDate` for an
+explicit range. Use `includeDomains` for authoritative sources and
+`excludeDomains` for known noise.
+''',
+    ),
+  ],
   tools: [
     _tool(
       'search',

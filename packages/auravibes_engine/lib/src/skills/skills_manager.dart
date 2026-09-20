@@ -8,10 +8,11 @@ const skillsManagerSkillDefinition = AppSkillDefinition(
   identifier: skillsManagerSkillSlug,
   slug: skillsManagerSkillSlug,
   title: 'Skills Manager',
-  description: 'Create and edit user skills and skill template tools.',
+  description: 'Create and edit user skills, resources, and tools.',
   content: '''
-Use this skill to create, inspect, edit, and delete user skills, skill template tools, and skill credential definitions.
-When creating a skill, add the skill instructions, any needed template tool definitions, and any needed credential definitions.
+Use this skill to create, inspect, edit, and delete user skills, skill resources, skill template tools, and skill credential definitions.
+Create the parent skill first, then create resources separately with the resource tools. Resources are one-level text or Markdown references loaded only after the parent skill is activated.
+When creating a skill, add the skill instructions, any needed resources, template tool definitions, and credential definitions.
 Inspect existing workspace skills, template tools, and credential definitions before creating new records.
 When a skill needs credentials, first create or find the credential definition, then pass its definitionId as credentialDefinitionId when creating or updating the skill. Do not use credential definition slug for skill associations.
 Credential definition attributes are secret by default. Set secret false only for safe display values like account id, region, tenant, username, or base path.
@@ -46,6 +47,31 @@ Only create user skills from explicit user intent.
       slug: 'delete_user_skill',
       title: 'Delete user skill',
       description: 'Delete a user-owned skill by slug.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'list_skill_resources',
+      title: 'List skill resources',
+      description: 'List resources for a user skill.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'get_skill_resource',
+      title: 'Get skill resource',
+      description: 'Get a resource for a user skill by slug.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'create_skill_resource',
+      title: 'Create skill resource',
+      description: 'Create a text or Markdown resource for a user skill.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'update_skill_resource',
+      title: 'Update skill resource',
+      description: 'Update a user skill resource by slug.',
+    ),
+    AppSkillToolDefinition(
+      slug: 'delete_skill_resource',
+      title: 'Delete skill resource',
+      description: 'Delete a user skill resource by slug.',
     ),
     AppSkillToolDefinition(
       slug: 'clone_app_skill',
@@ -147,6 +173,38 @@ final List<ToolSpec> skillsManagerToolSpecs = [
     'delete_user_skill',
     'Delete a user-created skill by slug.',
     _schema(['skillSlug']),
+  ),
+  _spec(
+    'list_skill_resources',
+    'List resources for a user skill.',
+    _schema(['skillSlug']),
+  ),
+  _spec(
+    'get_skill_resource',
+    'Get a resource for a user skill by slug.',
+    _schema(['skillSlug', 'resourceSlug']),
+  ),
+  _spec(
+    'create_skill_resource',
+    'Create a text or Markdown resource for a user skill.',
+    _schema(['skillSlug', 'title', 'description', 'content']),
+  ),
+  _spec(
+    'update_skill_resource',
+    'Update a user skill resource by slug.',
+    _schema(
+      ['skillSlug', 'resourceSlug'],
+      extra: const {
+        'title': 'string',
+        'description': 'string',
+        'content': 'string',
+      },
+    ),
+  ),
+  _spec(
+    'delete_skill_resource',
+    'Delete a user skill resource by slug.',
+    _schema(['skillSlug', 'resourceSlug']),
   ),
   _spec(
     'clone_app_skill',

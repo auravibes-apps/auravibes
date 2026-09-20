@@ -984,6 +984,29 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           ? now
           : null,
     );
+    if (operation.operation == WorkspacePatchOperationKind.delete &&
+        operation.resourceKind == WorkspaceResourceKind.skill) {
+      final resources = await SkillResource.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.skillId.equals(operation.resourceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final resource in resources) {
+        await SkillResource.db.updateRow(
+          session,
+          resource.copyWith(
+            deletedAt: now,
+            revision: resource.revision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
+    }
     return WorkspaceResource.db.updateRow(
       session,
       updated,
