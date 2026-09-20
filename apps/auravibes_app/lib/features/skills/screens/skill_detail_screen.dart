@@ -94,22 +94,15 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewData = _detailViewData();
-
     return PopScope(
-      child: AuraScreen(
-        child: _SkillDetailBody(state: this, detailAsync: viewData.detailAsync),
-        appBar: _SkillDetailAppBar(
-          state: this,
-          currentDetail: viewData.currentDetail,
-          userSkillDetail: viewData.userSkillDetail,
-        ),
-      ),
+      child: _SkillDetailScreenContent(state: this),
       canPop: !_isDirty,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_handleBack(context));
-      },
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(context, didPop),
     );
+  }
+
+  void _onPopInvoked(BuildContext context, bool didPop) {
+    if (!didPop) unawaited(_handleBack(context));
   }
 
   void _onTitleChanged() {
@@ -254,27 +247,31 @@ String _localizedValue(BuildContext context, String? key, String fallback) =>
 extension on _SkillDetailScreenState {
   Future<void> _handleBack(BuildContext context) async {
     if (!_isDirty) {
-      if (context.mounted) Navigator.of(context).pop();
+      _popIfMounted(context);
 
       return;
     }
 
-    final shouldDiscard = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_title),
-      message: const TextLocale(
-        LocaleKeys.skills_screen_unsaved_changes_message,
-      ),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.skills_screen_discard_changes),
-        cancelLabel: TextLocale(LocaleKeys.skills_screen_continue),
-      ),
-      isDestructive: true,
-    );
+    final shouldDiscard = await _confirmDiscard(context);
     if (shouldDiscard != true || !context.mounted) return;
 
     _updateState(() => _savedFormValues = _currentFormValues());
-    Navigator.of(context).pop();
+    _popIfMounted(context);
+  }
+
+  Future<bool?> _confirmDiscard(BuildContext context) => AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_title),
+    message: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_message),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.skills_screen_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.skills_screen_continue),
+    ),
+    isDestructive: true,
+  );
+
+  void _popIfMounted(BuildContext context) {
+    if (context.mounted) Navigator.of(context).pop();
   }
 
   Future<void> _save(BuildContext context) async {
@@ -507,6 +504,24 @@ class const _SkillDetailBody({
     _SkillDetailLoadingState() => const _SkillLoading(),
     _SkillDetailErrorState() => const _SkillLoadError(),
   };
+}
+
+class const _SkillDetailScreenContent({
+  required final _SkillDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewData = state._detailViewData();
+
+    return AuraScreen(
+      child: _SkillDetailBody(state: state, detailAsync: viewData.detailAsync),
+      appBar: _SkillDetailAppBar(
+        state: state,
+        currentDetail: viewData.currentDetail,
+        userSkillDetail: viewData.userSkillDetail,
+      ),
+    );
+  }
 }
 
 class const _SkillDetailReadyForm({
