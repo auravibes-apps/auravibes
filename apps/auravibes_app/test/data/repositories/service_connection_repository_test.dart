@@ -164,6 +164,36 @@ void main() {
         'Cleared',
       );
     });
+
+    test('deletes only the app skill credential in its workspace', () async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final encryption = EncryptionService(_FakeSecretKeyManager());
+      final repository = ServiceConnectionRepository(database, encryption);
+      final id = await _insertConnection(
+        database,
+        encryption,
+        workspaceId: 'workspace-1',
+        name: 'SearXNG instance',
+        serviceId: 'searxng',
+        kind: .appSkillCredential,
+      );
+      final otherWorkspaceId = await _insertConnection(
+        database,
+        encryption,
+        workspaceId: 'workspace-2',
+        name: 'Other SearXNG instance',
+        serviceId: 'searxng',
+        kind: .appSkillCredential,
+      );
+
+      await repository.deleteAppSkillCredential(id, workspaceId: 'workspace-1');
+
+      expect(await repository.getById(id), equals(null));
+      expect(await repository.getById(otherWorkspaceId), isNot(equals(null)));
+    });
   });
 }
 

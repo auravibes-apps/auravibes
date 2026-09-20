@@ -220,6 +220,7 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
   final message = await messageRepository.getMessageById(request.messageId);
   if (message == null) return null;
   if (message.conversationId != request.conversationId) {
+    _logToolApprovalOwnershipMismatch(request, message.conversationId);
     throw const MessageValidationException('Fork reference is read-only');
   }
 
@@ -227,6 +228,16 @@ Future<agent.AgentApprovableToolCall?> _loadToolCall(
   if (toolCall == null) return null;
 
   return _toApprovableToolCall(message.conversationId, toolCall);
+}
+
+void _logToolApprovalOwnershipMismatch(
+  _ToolCallLookupRequest request,
+  String actualConversationId,
+) {
+  _logger.warning(
+    'Tool approval message ownership mismatch '
+    'request=$request actualConversationId=$actualConversationId',
+  );
 }
 
 MessageToolCallEntity? _findToolCall(

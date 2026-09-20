@@ -530,6 +530,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.delete_confirm';
   static const chats_screens_chat_conversation_pin =
       'chats_screens.chat_conversation.pin';
+  static const chats_screens_chat_conversation_jump_to_latest_message =
+      'chats_screens.chat_conversation.jump_to_latest_message';
   static const chats_screens_chat_conversation_unpin =
       'chats_screens.chat_conversation.unpin';
   static const chats_screens_chat_conversation_delete_error =
@@ -1224,6 +1226,10 @@ abstract class LocaleKeys {
       'workspace_management.name_too_long_error';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
+  static const workspace_management_switch_title =
+      'workspace_management.switch_title';
+  static const workspace_management_switch_confirm =
+      'workspace_management.switch_confirm';
   static const workspace_management_switch_error =
       'workspace_management.switch_error';
   static const workspace_management_loading = 'workspace_management.loading';

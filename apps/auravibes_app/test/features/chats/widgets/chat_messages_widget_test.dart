@@ -389,6 +389,57 @@ void main() {
       expect(find.byType(ListView), findsOneWidget);
     });
 
+    testWidgets('jumps to latest message after scrolling away', (tester) async {
+      final messages = [
+        for (var index = 0; index < 20; index++)
+          _createMessage(
+            id: 'message-$index',
+            content: List.filled(8, 'Message $index').join('\n'),
+          ),
+      ];
+      final messageEntitiesById = {
+        for (final message in messages) message.id: message,
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [for (final message in messages) message.id],
+          messageEntitiesById: messageEntitiesById,
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messageEntitiesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+      expect(scrollable.position.maxScrollExtent, greaterThan(64));
+      expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+
+      scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('chat_jump_to_latest')));
+      await tester.pumpAndSettle();
+
+      expect(
+        scrollable.position.pixels,
+        closeTo(scrollable.position.minScrollExtent, .5),
+      );
+      expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+    });
+
     for (final status in [MessageStatus.error, MessageStatus.unfinished]) {
       testWidgets('shows retry action for user $status messages', (
         tester,

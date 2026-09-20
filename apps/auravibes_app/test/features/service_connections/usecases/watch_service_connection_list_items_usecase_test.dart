@@ -195,6 +195,33 @@ void main() {
         everyElement(isNot(contains('secret-token'))),
       );
     });
+
+    test('includes local app-skill credentials', () async {
+      final fixture = await _createFixture();
+      addTearDown(fixture.close);
+      final _ = await fixture.database
+          .into(fixture.database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              name: 'SearXNG instance',
+              serviceId: 'searxng',
+              kind: .appSkillCredential,
+              authenticationType: .apiKey,
+              encryptedAuthValue: const Value('ciphertext'),
+              keySuffix: const Value('ample.com'),
+              workspaceId: fixture.workspace.id,
+            ),
+          );
+
+      final items = await _createUsecase(fixture)(fixture.workspace.id).first;
+
+      final item = items.single;
+      expect(item.name, 'SearXNG instance');
+      expect(item.serviceName, 'searxng');
+      expect(item.kind, ServiceConnectionListItemKind.skillCredential);
+      expect(item.keySuffix, 'ample.com');
+      expect(item.displayStatus, ServiceConnectionDisplayStatus.connected);
+    });
   });
 }
 

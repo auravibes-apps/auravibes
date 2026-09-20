@@ -45,6 +45,7 @@ import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
+const _latestMessageScrollThreshold = 64.0;
 
 class const ChatMessagesWidget({
   required final String workspaceId,
@@ -158,33 +159,70 @@ class const ChatMessagesWidget({
     final compactionCount = isCompacting ? 1 : 0;
     final itemCount = data.length + thinkingCount + compactionCount;
 
-    return ListView.separated(
-      reverse: true,
-      controller: controller,
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) => _buildChatTimelineItem(
-        index: index,
-        data: data,
-        showThinking: showThinking,
-        isCompacting: isCompacting,
-        thinkingCount: thinkingCount,
-        compactionCount: compactionCount,
-        disclosureController: controller,
-        onDisclosureChanged: updateDisclosure,
-        parentConversationId: parentConversationId,
-        childConversations: childConversations,
-        workspaceId: workspaceId,
-        a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
-        replayPayloadsByMessageId: submittedA2uiReplayPayloads,
-        conversation: conversation,
-        retryableMessageId: retryableMessageId,
-        onRetryMessage: onRetryMessage,
-      ),
-      separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
-      itemCount: itemCount,
-      addAutomaticKeepAlives: false,
-      scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+    void jumpToLatest() {
+      if (!controller.hasClients) return;
+      unawaited(
+        controller.animateTo(
+          controller.position.minScrollExtent,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        ListView.separated(
+          reverse: true,
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          itemBuilder: (context, index) => _buildChatTimelineItem(
+            index: index,
+            data: data,
+            showThinking: showThinking,
+            isCompacting: isCompacting,
+            thinkingCount: thinkingCount,
+            compactionCount: compactionCount,
+            disclosureController: controller,
+            onDisclosureChanged: updateDisclosure,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
+            workspaceId: workspaceId,
+            a2uiRuntime: isTopLevelConversation ? a2uiRuntime : null,
+            replayPayloadsByMessageId: submittedA2uiReplayPayloads,
+            conversation: conversation,
+            retryableMessageId: retryableMessageId,
+            onRetryMessage: onRetryMessage,
+          ),
+          separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
+          itemCount: itemCount,
+          addAutomaticKeepAlives: false,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        ),
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: ListenableBuilder(
+            listenable: controller,
+            builder: (context, child) =>
+                controller.hasClients &&
+                    controller.offset > _latestMessageScrollThreshold
+                ? child!
+                : const SizedBox.shrink(),
+            child: AuraIconButton(
+              key: const ValueKey('chat_jump_to_latest'),
+              icon: Icons.keyboard_arrow_down_rounded,
+              onPressed: jumpToLatest,
+              size: .large,
+              variant: .elevated,
+              tooltip: LocaleKeys
+                  .chats_screens_chat_conversation_jump_to_latest_message
+                  .tr(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
