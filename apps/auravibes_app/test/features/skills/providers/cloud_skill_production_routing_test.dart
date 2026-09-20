@@ -82,14 +82,13 @@ void main() {
   });
 
   const workspaceId = 'local-cloud';
-  const workspace = WorkspaceSession(
-    CloudWorkspaceRef(
-      localWorkspaceId: workspaceId,
-      serverUrl: 'https://example.com',
-      accountId: 'account',
-      cloudWorkspaceId: 7,
-    ),
+  const cloudWorkspace = CloudWorkspaceRef(
+    localWorkspaceId: workspaceId,
+    serverUrl: 'https://example.com',
+    accountId: 'account',
+    cloudWorkspaceId: 7,
   );
+  const workspace = WorkspaceSession(cloudWorkspace);
 
   test(
     'cloud production providers never construct local skill storage',
@@ -99,7 +98,7 @@ void main() {
       final skillResource = _SkillResourceEndpoint();
       final resources = <WorkspaceResource>[];
       when(() => gateway.client).thenReturn(client);
-      when(() => gateway.workspace).thenReturn(workspace.cloud!);
+      when(() => gateway.workspace).thenReturn(cloudWorkspace);
       when(() => client.skillResource).thenReturn(skillResource);
       when(() => skillResource.list(any())).thenAnswer((_) async => const []);
       when(() => gateway.watchResources(any())).thenAnswer((invocation) {
