@@ -54,7 +54,6 @@ export 'src/skills/execution/run_skill_url_template.dart';
 export 'src/skills/execution/skill_http_client.dart';
 export 'src/skills/execution/skill_template_preview.dart';
 export 'src/skills/models/app_skill_definition.dart';
-export 'src/skills/models/app_skill_resource_definition.dart';
 export 'src/skills/models/app_skill_tool_definition.dart';
 export 'src/skills/models/app_skill_url_template.dart';
 export 'src/skills/models/skill_credential_attribute_definition.dart';
