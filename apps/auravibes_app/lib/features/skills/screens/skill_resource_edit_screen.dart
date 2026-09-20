@@ -18,6 +18,12 @@ import 'package:material_ui/material_ui.dart';
 
 const _skillResourceContentMaxCharacters = 50000;
 
+typedef _SkillResourceViewData = ({
+  AsyncValue<SkillResourceEntity?>? resourceAsync,
+  SkillResourceEntity? resource,
+  AppSkillResourceDefinition? staticResource,
+});
+
 class const SkillResourceEditScreen({
   required final String workspaceId,
   required final String skillId,
@@ -52,24 +58,26 @@ class _SkillResourceEditScreenState
     final detailAsync = ref.watch(
       skillDetailProvider(widget.workspaceId, widget.skillId),
     );
+    final viewData = _viewData(detailAsync.value);
+    _initialize(viewData.resource, viewData.staticResource);
+
+    return _SkillResourceScreenView(
+      state: this,
+      viewData: viewData,
+      titleKey: _titleKey(viewData.staticResource),
+    );
+  }
+
+  _SkillResourceViewData _viewData(SkillDetail? detail) {
     final resourceId = widget.resourceId;
     final resourceAsync = resourceId == null
         ? null
         : ref.watch(skillResourceProvider(widget.workspaceId, resourceId));
-    final staticResource = _staticResource(detailAsync.value);
-    final resource = resourceAsync?.value;
-    _initialize(resource, staticResource);
 
-    return AuraScreen(
-      child: _SkillResourceBody(
-        state: this,
-        resourceAsync: resourceAsync,
-        resource: resource,
-        staticResource: staticResource,
-      ),
-      appBar: AuraAppBarWithDrawer(
-        title: TextLocale(_titleKey(staticResource)),
-      ),
+    return (
+      resourceAsync: resourceAsync,
+      resource: resourceAsync?.value,
+      staticResource: _staticResource(detail),
     );
   }
 
@@ -97,18 +105,37 @@ class _SkillResourceEditScreenState
     if (!_isCreate && resource == null && staticResource == null) return;
 
     if (resource case final value?) {
-      _titleController.text = value.title;
-      _descriptionController.text = value.description;
-      _contentController.text = value.content;
+      _setFieldValues(value.title, value.description, value.content);
     } else if (staticResource case final value?) {
-      _titleController.text = value.title;
-      _descriptionController.text = value.description;
-      _contentController.text = value.content;
+      _setFieldValues(value.title, value.description, value.content);
     }
     _initialized = true;
   }
 
+  void _setFieldValues(String title, String description, String content) {
+    _titleController.text = title;
+    _descriptionController.text = description;
+    _contentController.text = content;
+  }
+
   void _updateState(VoidCallback callback) => setState(callback);
+}
+
+class const _SkillResourceScreenView({
+  required final _SkillResourceEditScreenState state,
+  required final _SkillResourceViewData viewData,
+  required final String titleKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraScreen(
+    child: _SkillResourceBody(
+      state: state,
+      resourceAsync: viewData.resourceAsync,
+      resource: viewData.resource,
+      staticResource: viewData.staticResource,
+    ),
+    appBar: AuraAppBarWithDrawer(title: TextLocale(titleKey)),
+  );
 }
 
 extension on _SkillResourceEditScreenState {
@@ -138,17 +165,7 @@ extension on _SkillResourceEditScreenState {
     if (_isSaving) return;
     _updateState(() => _isSaving = true);
     try {
-      if (_isCreate) {
-        final _ = await ref.read(
-          createSkillResourceUsecaseProvider(widget.workspaceId),
-        )(widget.skillId, _createValue());
-      } else {
-        final resourceId = widget.resourceId;
-        if (resourceId == null) return;
-        final _ = await ref.read(
-          updateSkillResourceUsecaseProvider(widget.workspaceId),
-        )(resourceId, _updateValue());
-      }
+      await _saveResource();
       ref.invalidate(
         skillResourcesProvider(widget.workspaceId, widget.skillId),
       );
@@ -158,6 +175,21 @@ extension on _SkillResourceEditScreenState {
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _saveResource() async {
+    if (_isCreate) {
+      final _ = await ref.read(
+        createSkillResourceUsecaseProvider(widget.workspaceId),
+      )(widget.skillId, _createValue());
+
+      return;
+    }
+    final resourceId = widget.resourceId;
+    if (resourceId == null) return;
+    final _ = await ref.read(
+      updateSkillResourceUsecaseProvider(widget.workspaceId),
+    )(resourceId, _updateValue());
   }
 
   SkillResourceToCreate _createValue() => SkillResourceToCreate(
@@ -175,13 +207,13 @@ extension on _SkillResourceEditScreenState {
   Future<void> _delete(BuildContext context) async {
     final resourceId = widget.resourceId;
     if (resourceId == null) return;
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (_) => const _SkillResourceDeleteDialog(),
-    );
-    if (shouldDelete != true || !context.mounted) return;
+    if (!await _confirmDelete(context) || !context.mounted) return;
 
     _updateState(() => _isSaving = true);
+    await _performDelete(context, resourceId);
+  }
+
+  Future<void> _performDelete(BuildContext context, String resourceId) async {
     try {
       final _ = await ref.read(deleteSkillResourceProvider(widget.workspaceId))(
         resourceId,
@@ -195,6 +227,15 @@ extension on _SkillResourceEditScreenState {
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
     }
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _SkillResourceDeleteDialog(),
+    );
+
+    return result == true;
   }
 
   void _showSaveError(BuildContext context) {
@@ -225,66 +266,143 @@ class const _SkillResourceBody({
     if (state.widget.resourceId != null &&
         resource == null &&
         staticResource == null) {
-      if (resourceAsync == null || resourceAsync is AsyncLoading) {
-        return const Center(child: AuraSpinner());
-      }
-
-      return const Center(
-        child: AuraText(
-          child: TextLocale(LocaleKeys.skills_resource_not_found),
-        ),
-      );
+      return _SkillResourceNotFound(resourceAsync: resourceAsync);
     }
 
+    return _SkillResourceForm(
+      state: state,
+      resource: resource,
+      staticResource: staticResource,
+    );
+  }
+}
+
+class const _SkillResourceNotFound({
+  required final AsyncValue<SkillResourceEntity?>? resourceAsync,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (resourceAsync == null || resourceAsync is AsyncLoading) {
+      return const Center(child: AuraSpinner());
+    }
+
+    return const Center(
+      child: AuraText(child: TextLocale(LocaleKeys.skills_resource_not_found)),
+    );
+  }
+}
+
+class const _SkillResourceForm({
+  required final _SkillResourceEditScreenState state,
+  required final SkillResourceEntity? resource,
+  required final AppSkillResourceDefinition? staticResource,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final isReadOnly = staticResource != null;
     final slug = resource?.slug ?? staticResource?.slug;
 
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        AuraCard(
-          child: AuraColumn(
-            children: [
-              if (slug case final slug?) _SkillResourceSlugField(slug: slug),
-              AuraInput(
-                controller: state._titleController,
-                label: Text(
-                  LocaleKeys.skills_resource_title_label.tr(context: context),
-                ),
-                enabled: !isReadOnly,
-              ),
-              MarkdownPreviewField(
-                controller: state._descriptionController,
-                titleKey: LocaleKeys.skills_resource_description_label,
-                editKey: LocaleKeys.skills_resource_edit_description,
-                emptyKey: LocaleKeys.skills_resource_description_empty,
-                onEdit: () => state._editDescription(context),
-                isReadOnly: isReadOnly,
-              ),
-              MarkdownPreviewField(
-                controller: state._contentController,
-                titleKey: LocaleKeys.skills_resource_content_label,
-                editKey: LocaleKeys.skills_resource_edit_content,
-                emptyKey: LocaleKeys.skills_resource_content_empty,
-                onEdit: () => state._editContent(context),
-                isReadOnly: isReadOnly,
-              ),
-              if (!isReadOnly)
-                _SkillResourceActions(
-                  state: state,
-                  onDelete: state._isCreate
-                      ? null
-                      : () => state._delete(context),
-                  onSave: () => state._save(context),
-                ),
-            ],
-            spacing: .md,
-            crossAxisAlignment: .start,
-          ),
+        _SkillResourceFormCard(
+          state: state,
+          isReadOnly: isReadOnly,
+          slug: slug,
         ),
       ],
     );
   }
+}
+
+class const _SkillResourceFormCard({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+  required final String? slug,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: AuraColumn(
+      children: [
+        _SkillResourceIdentityFields(
+          state: state,
+          isReadOnly: isReadOnly,
+          slug: slug,
+        ),
+        _SkillResourceContentFields(state: state, isReadOnly: isReadOnly),
+        if (!isReadOnly) _SkillResourceFormActions(state: state),
+      ],
+      spacing: .md,
+      crossAxisAlignment: .start,
+    ),
+  );
+}
+
+class const _SkillResourceIdentityFields({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+  required final String? slug,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (slug case final slug?) _SkillResourceSlugField(slug: slug),
+      AuraInput(
+        controller: state._titleController,
+        label: Text(
+          LocaleKeys.skills_resource_title_label.tr(context: context),
+        ),
+        enabled: !isReadOnly,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceContentFields({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _SkillResourceDescriptionField(state: state, isReadOnly: isReadOnly),
+      _SkillResourceContentField(state: state, isReadOnly: isReadOnly),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceDescriptionField({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MarkdownPreviewField(
+    controller: state._descriptionController,
+    titleKey: LocaleKeys.skills_resource_description_label,
+    editKey: LocaleKeys.skills_resource_edit_description,
+    emptyKey: LocaleKeys.skills_resource_description_empty,
+    onEdit: () => state._editDescription(context),
+    isReadOnly: isReadOnly,
+  );
+}
+
+class const _SkillResourceContentField({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => MarkdownPreviewField(
+    controller: state._contentController,
+    titleKey: LocaleKeys.skills_resource_content_label,
+    editKey: LocaleKeys.skills_resource_edit_content,
+    emptyKey: LocaleKeys.skills_resource_content_empty,
+    onEdit: () => state._editContent(context),
+    isReadOnly: isReadOnly,
+  );
 }
 
 class const _SkillResourceSlugField({required final String slug})
@@ -307,18 +425,10 @@ class const _SkillResourceActions({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final onDelete = this.onDelete;
-
     return Row(
       children: [
         if (onDelete case final delete?)
-          AuraButton(
-            onPressed: delete,
-            child: Text(
-              LocaleKeys.skills_resource_delete_title.tr(context: context),
-            ),
-            variant: .outlined,
-          ),
+          _SkillResourceDeleteButton(onPressed: delete),
         const Spacer(),
         AuraButton(
           onPressed: onSave,
@@ -328,6 +438,27 @@ class const _SkillResourceActions({
       ],
     );
   }
+}
+
+class const _SkillResourceFormActions({
+  required final _SkillResourceEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillResourceActions(
+    state: state,
+    onDelete: state._isCreate ? null : () => state._delete(context),
+    onSave: () => state._save(context),
+  );
+}
+
+class const _SkillResourceDeleteButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: Text(LocaleKeys.skills_resource_delete_title.tr(context: context)),
+    variant: .outlined,
+  );
 }
 
 class const _SkillResourceDeleteDialog() extends StatelessWidget {

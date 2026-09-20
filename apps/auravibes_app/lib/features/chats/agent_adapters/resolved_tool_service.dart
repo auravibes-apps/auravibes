@@ -865,9 +865,11 @@ class _ConfiguredSkillCommandRunner {
   new(this._provider) {
     _usecase = _buildConfiguredSkillCommand(
       _configuredSkillCommandDependencies(_provider),
-      _listSkillCredentialsForCommand,
-      _listCatalogSkillCredentialsForCommand,
-      _runSkillNativeTool,
+      (
+        listSkillCredentials: _listSkillCredentialsForCommand,
+        listCatalogSkillCredentials: _listCatalogSkillCredentialsForCommand,
+        runSkillNativeTool: _runSkillNativeTool,
+      ),
     );
   }
 
@@ -1000,6 +1002,12 @@ class const _ConfiguredSkillCommandDependencies(
   skillResourceResolver,
 );
 
+typedef _ConfiguredSkillCommandCallbacks = ({
+  ListSkillCredentials listSkillCredentials,
+  ListSkillCredentials listCatalogSkillCredentials,
+  RunSkillNativeTool runSkillNativeTool,
+});
+
 _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
   AppResolvedToolProvider provider,
 ) {
@@ -1020,49 +1028,95 @@ _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
 
 RunSkillCommandUsecase _buildConfiguredSkillCommand(
   _ConfiguredSkillCommandDependencies deps,
-  ListSkillCredentials listSkillCredentials,
-  ListSkillCredentials listCatalogSkillCredentials,
-  RunSkillNativeTool runSkillNativeTool,
+  _ConfiguredSkillCommandCallbacks callbacks,
 ) {
-  final resourceResolver = deps.skillResourceResolver;
-
-  return RunSkillCommandUsecase(
-    listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
-    loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
-    buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
-    buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
-    buildAppSkillNativeToolSpecsUsecase:
-        deps.buildAppSkillNativeToolSpecsUsecase,
-    runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
-    runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
-    listSkillCredentials: listSkillCredentials,
-    listCatalogSkillCredentials: listCatalogSkillCredentials,
-    listSkillResourceSummaries: resourceResolver == null
-        ? null
-        : ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-          }) => resourceResolver(workspaceId).list(workspaceId, skillSlug),
-    loadSkillResourceContent: resourceResolver == null
-        ? null
-        : ({
-            required conversationId,
-            required workspaceId,
-            required skillSlug,
-            required resourceSlug,
-          }) async {
-            final resource = await resourceResolver(workspaceId)
-                .get(workspaceId, skillSlug, resourceSlug);
-            if (resource == null) return null;
-
-            final title = resource.summary.title;
-            final content = resource.content;
-
-            return (title: title, content: content);
-          },
-    runSkillNativeTool: runSkillNativeTool,
+  final resourceCallbacks = _configuredSkillResourceCallbacks(
+    deps.skillResourceResolver,
   );
+
+  return .fromDependencies((
+    core: _coreSkillCommandDependencies(deps),
+    optional: _optionalSkillCommandDependencies(callbacks, resourceCallbacks),
+  ));
+}
+
+RunSkillCommandCoreDependencies _coreSkillCommandDependencies(
+  _ConfiguredSkillCommandDependencies deps,
+) => (
+  listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
+  loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
+  buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
+  buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
+  buildAppSkillNativeToolSpecsUsecase: deps.buildAppSkillNativeToolSpecsUsecase,
+  runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
+  runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
+);
+
+RunSkillCommandOptionalDependencies _optionalSkillCommandDependencies(
+  _ConfiguredSkillCommandCallbacks callbacks,
+  _SkillResourceCallbacks resourceCallbacks,
+) => (
+  listSkillCredentials: callbacks.listSkillCredentials,
+  listCatalogSkillCredentials: callbacks.listCatalogSkillCredentials,
+  listSkillResourceSummaries: resourceCallbacks.summaries,
+  loadSkillResourceContent: resourceCallbacks.content,
+  runSkillNativeTool: callbacks.runSkillNativeTool,
+);
+
+typedef _SkillResourceCallbacks = ({
+  ListSkillResourceSummaries? summaries,
+  LoadSkillResourceContent? content,
+});
+
+_SkillResourceCallbacks _configuredSkillResourceCallbacks(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) => (
+  summaries: _listSkillResourceSummaries(resourceResolver),
+  content: _loadSkillResourceContent(resourceResolver),
+);
+
+ListSkillResourceSummaries? _listSkillResourceSummaries(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) {
+  if (resourceResolver == null) return null;
+
+  return ({
+    required conversationId,
+    required workspaceId,
+    required skillSlug,
+  }) => resourceResolver(workspaceId).list(workspaceId, skillSlug);
+}
+
+LoadSkillResourceContent? _loadSkillResourceContent(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) {
+  final resolver = resourceResolver;
+  if (resolver == null) return null;
+
+  return ({
+    required conversationId,
+    required workspaceId,
+    required skillSlug,
+    required resourceSlug,
+  }) => _resolveSkillResourceContent(
+    resolver,
+    workspaceId,
+    skillSlug,
+    resourceSlug,
+  );
+}
+
+Future<({String title, String content})?> _resolveSkillResourceContent(
+  SkillResourceResolver Function(String workspaceId) resolver,
+  String workspaceId,
+  String skillSlug,
+  String resourceSlug,
+) async {
+  final resource = await resolver(workspaceId)
+      .get(workspaceId, skillSlug, resourceSlug);
+  if (resource == null) return null;
+
+  return (title: resource.summary.title, content: resource.content);
 }
 
 _SkillControlToolDependencies _skillControlToolDependencies(

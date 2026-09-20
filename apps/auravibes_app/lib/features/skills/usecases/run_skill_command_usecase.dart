@@ -40,6 +40,31 @@ typedef RunSkillNativeTool = Future<Object?> Function(
   RunSkillNativeToolRequest request,
 );
 
+typedef RunSkillCommandCoreDependencies = ({
+  ListAvailableSkillsUsecase Function(String workspaceId)
+  listAvailableSkillsUsecase,
+  LoadConversationSkillUsecase Function(String workspaceId)
+  loadConversationSkillUsecase,
+  BuildLoadedSkillManifestsUsecase buildLoadedSkillManifestsUsecase,
+  BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecsUsecase,
+  BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase,
+  RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
+  RunAppSkillToolUsecase runAppSkillToolUsecase,
+});
+
+typedef RunSkillCommandOptionalDependencies = ({
+  ListSkillCredentials listSkillCredentials,
+  ListSkillCredentials? listCatalogSkillCredentials,
+  ListSkillResourceSummaries? listSkillResourceSummaries,
+  LoadSkillResourceContent? loadSkillResourceContent,
+  RunSkillNativeTool? runSkillNativeTool,
+});
+
+typedef RunSkillCommandDependencies = ({
+  RunSkillCommandCoreDependencies core,
+  RunSkillCommandOptionalDependencies optional,
+});
+
 typedef RunSkillCommandRequest = ({
   String conversationId,
   String workspaceId,
@@ -87,6 +112,33 @@ class const RunSkillCommandUsecase({
   final LoadSkillResourceContent? loadSkillResourceContent,
   final RunSkillNativeTool? runSkillNativeTool,
 }) {
+  // ignore: unnecessary_type_name_in_constructor - Required by Dart primary constructor syntax.
+  RunSkillCommandUsecase.fromDependencies(
+    RunSkillCommandDependencies dependencies,
+  ) : this(
+        listAvailableSkillsUsecase:
+            dependencies.core.listAvailableSkillsUsecase,
+        loadConversationSkillUsecase:
+            dependencies.core.loadConversationSkillUsecase,
+        buildLoadedSkillManifestsUsecase:
+            dependencies.core.buildLoadedSkillManifestsUsecase,
+        buildSkillTemplateToolSpecsUsecase:
+            dependencies.core.buildSkillTemplateToolSpecsUsecase,
+        buildAppSkillNativeToolSpecsUsecase:
+            dependencies.core.buildAppSkillNativeToolSpecsUsecase,
+        runSkillTemplateToolUsecase:
+            dependencies.core.runSkillTemplateToolUsecase,
+        runAppSkillToolUsecase: dependencies.core.runAppSkillToolUsecase,
+        listSkillCredentials: dependencies.optional.listSkillCredentials,
+        listCatalogSkillCredentials:
+            dependencies.optional.listCatalogSkillCredentials,
+        listSkillResourceSummaries:
+            dependencies.optional.listSkillResourceSummaries,
+        loadSkillResourceContent:
+            dependencies.optional.loadSkillResourceContent,
+        runSkillNativeTool: dependencies.optional.runSkillNativeTool,
+      );
+
   Future<Object?> call(RunSkillCommandRequest request) =>
       _runSkillCommand(this, request);
 }
@@ -126,19 +178,31 @@ Future<Object?> _activate(
   final activation = await _prepareActivation(usecase, commandRequest);
 
   await _loadConversationSkill(usecase, activation.manifestRequest);
-  final resources = await usecase.listSkillResourceSummaries?.call(
-    conversationId: commandRequest.conversationId,
-    workspaceId: commandRequest.workspaceId,
-    skillSlug: activation.skill.slug,
+  final resources = await _activationResources(
+    usecase,
+    commandRequest,
+    activation.skill.slug,
   );
 
   return buildSkillActivationResult(
     manifest: activation.manifest,
     content: activation.skill.content,
     credentials: activation.credentials,
-    resources: resources ?? const [],
+    resources: resources,
   );
 }
+
+Future<List<SkillResourceSummary>> _activationResources(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  String skillSlug,
+) async =>
+    await usecase.listSkillResourceSummaries?.call(
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      skillSlug: skillSlug,
+    ) ??
+    const [];
 
 Future<Object?> _loadSkillResourceCommand(
   RunSkillCommandUsecase usecase,
@@ -147,6 +211,27 @@ Future<Object?> _loadSkillResourceCommand(
   final target = SkillResourceTarget.fromArguments(
     Map<String, Object?>.from(request.arguments),
   );
+  await _ensureSkillLoaded(usecase, request, target);
+  final resource = await _loadSkillResource(usecase, request, target);
+
+  return _buildSkillResourceResult(target, resource);
+}
+
+Object _buildSkillResourceResult(
+  SkillResourceTarget target,
+  ({String title, String content}) resource,
+) => buildSkillResourceResult(
+  skillSlug: target.skill,
+  resourceSlug: target.resource,
+  title: resource.title,
+  content: resource.content,
+);
+
+Future<void> _ensureSkillLoaded(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  SkillResourceTarget target,
+) async {
   final manifest = await _findSkillManifest(
     usecase,
     .new(
@@ -159,6 +244,13 @@ Future<Object?> _loadSkillResourceCommand(
   if (manifest == null) {
     throw StateError('Skill is not loaded: ${target.skill}');
   }
+}
+
+Future<({String title, String content})> _loadSkillResource(
+  RunSkillCommandUsecase usecase,
+  RunSkillCommandRequest request,
+  SkillResourceTarget target,
+) async {
   final resource = await usecase.loadSkillResourceContent?.call(
     conversationId: request.conversationId,
     workspaceId: request.workspaceId,
@@ -171,12 +263,7 @@ Future<Object?> _loadSkillResourceCommand(
     );
   }
 
-  return buildSkillResourceResult(
-    skillSlug: target.skill,
-    resourceSlug: target.resource,
-    title: resource.title,
-    content: resource.content,
-  );
+  return resource;
 }
 
 Future<_SkillActivation> _prepareActivation(

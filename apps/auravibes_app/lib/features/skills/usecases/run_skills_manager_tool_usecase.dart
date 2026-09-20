@@ -717,7 +717,7 @@ extension _RunSkillsManagerResources on RunSkillsManagerToolUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final resource = await _getSkillResource(workspaceId, arguments);
-    final deleted = await deleteSkillResource(
+    final deleted = await SkillResourceOperations.delete(
       resource.id,
       resourcesRepository: resourceRepository,
       cloudStore: cloudStore,

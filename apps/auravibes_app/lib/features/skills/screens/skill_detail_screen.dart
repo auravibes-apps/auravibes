@@ -922,33 +922,59 @@ class const _SkillResourcesCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (detail.isUserSkill) {
-      final resourcesAsync = ref.watch(
-        skillResourcesProvider(workspaceId, detail.id),
-      );
-      final actions = _SkillResourcesActions(
-        context: context,
-        ref: ref,
+      return _SkillResourcesUserCard(
         workspaceId: workspaceId,
         skillId: detail.id,
-      );
-
-      return AuraCard(
-        child: _SkillResourcesUserContent(
-          resourcesAsync: resourcesAsync,
-          onCreate: actions.create,
-          onOpen: actions.open,
-        ),
       );
     }
 
+    return _SkillResourcesAppCard(
+      workspaceId: workspaceId,
+      skillId: detail.id,
+      resources: detail.appResources,
+    );
+  }
+}
+
+class const _SkillResourcesUserCard({
+  required final String workspaceId,
+  required final String skillId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resourcesAsync = ref.watch(
+      skillResourcesProvider(workspaceId, skillId),
+    );
+    final actions = _SkillResourcesActions(
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      skillId: skillId,
+    );
+
     return AuraCard(
-      child: _SkillResourcesAppContent(
-        workspaceId: workspaceId,
-        skillId: detail.id,
-        resources: detail.appResources,
+      child: _SkillResourcesUserContent(
+        resourcesAsync: resourcesAsync,
+        onCreate: actions.create,
+        onOpen: actions.open,
       ),
     );
   }
+}
+
+class const _SkillResourcesAppCard({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: _SkillResourcesAppContent(
+      workspaceId: workspaceId,
+      skillId: skillId,
+      resources: resources,
+    ),
+  );
 }
 
 class _SkillResourcesActions {
@@ -1059,24 +1085,61 @@ class const _SkillResourcesAppContent({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      const AuraText(
-        child: TextLocale(LocaleKeys.skills_resource_section_title),
-        style: .heading4,
+      const _SkillResourcesAppHeader(),
+      _SkillResourcesAppList(
+        workspaceId: workspaceId,
+        skillId: skillId,
+        resources: resources,
       ),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesAppHeader() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.skills_resource_section_title),
+    style: .heading4,
+  );
+}
+
+class const _SkillResourcesAppList({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
       for (final resource in resources)
-        _SkillResourceTile(
-          title: resource.title,
-          slug: resource.slug,
-          description: resource.description,
-          onOpen: () => unawaited(
-            context.push<bool>(
-              '/workspaces/$workspaceId/more/skills/$skillId/resources/${resource.slug}',
-            ),
-          ),
+        _SkillResourcesAppTile(
+          workspaceId: workspaceId,
+          skillId: skillId,
+          resource: resource,
         ),
     ],
     spacing: .sm,
     crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesAppTile({
+  required final String workspaceId,
+  required final String skillId,
+  required final AppSkillResourceDefinition resource,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillResourceTile(
+    title: resource.title,
+    slug: resource.slug,
+    description: resource.description,
+    onOpen: () => unawaited(
+      context.push<bool>(
+        '/workspaces/$workspaceId/more/skills/$skillId/resources/${resource.slug}',
+      ),
+    ),
   );
 }
 
@@ -1088,28 +1151,45 @@ class const _SkillResourceTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: AuraColumn(
-      children: [
-        AuraText(child: Text(title)),
-        AuraBadge.text(
-          child: Text(
-            slug,
-            style: .new(
-              fontFamily: context.auraTheme.typography.monoFontFamily,
-            ),
-          ),
-          variant: .outlined,
-          size: .small,
-        ),
-        if (description.trim().isNotEmpty) AuraText(child: Text(description)),
-      ],
-      spacing: .xs,
-      crossAxisAlignment: .start,
+    child: _SkillResourceTileContent(
+      title: title,
+      slug: slug,
+      description: description,
     ),
     onTap: onOpen,
     variant: .ghost,
     leading: const AuraIcon(Icons.menu_book_outlined),
     trailing: const AuraIcon(Icons.chevron_right),
+  );
+}
+
+class const _SkillResourceTileContent({
+  required final String title,
+  required final String slug,
+  required final String description,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      AuraText(child: Text(title)),
+      _SkillResourceSlugBadge(slug: slug),
+      if (description.trim().isNotEmpty) AuraText(child: Text(description)),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceSlugBadge({required final String slug})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraBadge.text(
+    child: Text(
+      slug,
+      style: .new(fontFamily: context.auraTheme.typography.monoFontFamily),
+    ),
+    variant: .outlined,
+    size: .small,
   );
 }
 

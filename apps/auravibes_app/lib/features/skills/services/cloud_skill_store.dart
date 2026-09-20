@@ -203,26 +203,18 @@ extension CloudSkillStoreToolApi on CloudSkillStore {
 
 extension CloudSkillStoreResourceApi on CloudSkillStore {
   Future<List<SkillResourceEntity>> resources(String skillId) async {
-    final client = await _store.client;
-    final workspaceId = await _cloudWorkspaceId();
-    if (client == null) {
-      throw StateError('Cloud skill resource store is unavailable');
-    }
-    final views = await client.skillResource.list(
-      .new(workspaceId: workspaceId, skillId: skillId),
+    final api = await _resourceApi();
+    final views = await api.client.skillResource.list(
+      .new(workspaceId: api.workspaceId, skillId: skillId),
     );
 
     return views.map(_resource).toList();
   }
 
   Future<SkillResourceEntity?> resource(String resourceId) async {
-    final client = await _store.client;
-    final workspaceId = await _cloudWorkspaceId();
-    if (client == null) {
-      throw StateError('Cloud skill resource store is unavailable');
-    }
-    final view = await client.skillResource.get(
-      .new(workspaceId: workspaceId, resourceId: resourceId),
+    final api = await _resourceApi();
+    final view = await api.client.skillResource.get(
+      .new(workspaceId: api.workspaceId, resourceId: resourceId),
     );
 
     return view == null ? null : _resource(view);
@@ -232,14 +224,10 @@ extension CloudSkillStoreResourceApi on CloudSkillStore {
     String skillId,
     SkillResourceToCreate value,
   ) async {
-    final client = await _store.client;
-    final workspaceId = await _cloudWorkspaceId();
-    if (client == null) {
-      throw StateError('Cloud skill resource store is unavailable');
-    }
-    final view = await client.skillResource.create(
+    final api = await _resourceApi();
+    final view = await api.client.skillResource.create(
       .new(
-        workspaceId: workspaceId,
+        workspaceId: api.workspaceId,
         requestId: const UuidV7().generate(),
         skillId: skillId,
         resourceId: const UuidV7().generate(),
@@ -260,37 +248,36 @@ extension CloudSkillStoreResourceApi on CloudSkillStore {
     if (current == null) {
       throw StateError('Skill resource not found: $resourceId');
     }
-    final client = await _store.client;
-    final workspaceId = await _cloudWorkspaceId();
-    if (client == null) {
-      throw StateError('Cloud skill resource store is unavailable');
-    }
-    final view = await client.skillResource.update(
-      .new(
-        workspaceId: workspaceId,
-        requestId: const UuidV7().generate(),
-        resourceId: resourceId,
-        expectedRevision: currentRevision(current),
-        title: value.title ?? current.title,
-        description: value.description ?? current.description,
-        content: value.content ?? current.content,
-      ),
-    );
+    final api = await _resourceApi();
+    final view = await _updateResourceView(api, resourceId, value, current);
 
     return _resource(view);
   }
 
+  Future<SkillResourceView> _updateResourceView(
+    ({Client client, int workspaceId}) api,
+    String resourceId,
+    SkillResourceToUpdate value,
+    SkillResourceEntity current,
+  ) => api.client.skillResource.update(
+    .new(
+      workspaceId: api.workspaceId,
+      requestId: const UuidV7().generate(),
+      resourceId: resourceId,
+      expectedRevision: currentRevision(current),
+      title: value.title ?? current.title,
+      description: value.description ?? current.description,
+      content: value.content ?? current.content,
+    ),
+  );
+
   Future<bool> deleteResource(String resourceId) async {
     final current = await resource(resourceId);
     if (current == null) return false;
-    final client = await _store.client;
-    final workspaceId = await _cloudWorkspaceId();
-    if (client == null) {
-      throw StateError('Cloud skill resource store is unavailable');
-    }
-    await client.skillResource.delete(
+    final api = await _resourceApi();
+    await api.client.skillResource.delete(
       .new(
-        workspaceId: workspaceId,
+        workspaceId: api.workspaceId,
         requestId: const UuidV7().generate(),
         resourceId: resourceId,
         expectedRevision: currentRevision(current),
@@ -302,11 +289,15 @@ extension CloudSkillStoreResourceApi on CloudSkillStore {
 }
 
 extension _CloudSkillStoreResourceOperations on CloudSkillStore {
-  Future<int> _cloudWorkspaceId() async {
+  Future<({Client client, int workspaceId})> _resourceApi() async {
+    final client = await _store.client;
     final id = await _store.cloudWorkspaceId;
+    if (client == null) {
+      throw StateError('Cloud skill resource store is unavailable');
+    }
     if (id == null) throw StateError('Cloud workspace id is unavailable');
 
-    return id;
+    return (client: client, workspaceId: id);
   }
 
   SkillResourceEntity _resource(SkillResourceView view) =>

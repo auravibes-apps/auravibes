@@ -91,21 +91,30 @@ extension on DuplicateSkillUsecase {
         ? await cloud.resources(skillId)
         : await _localResources(skillId);
     for (final resource in resources) {
-      final value = SkillResourceToCreate(
-        title: resource.title,
-        description: resource.description,
-        content: resource.content,
-      );
-      if (cloud != null) {
-        final _ = await cloud.createResource(duplicateId, value);
-      } else {
-        final repository = resourceRepository;
-        if (repository == null) {
-          throw StateError('Skill resource store is unavailable');
-        }
-        final _ = await repository.createResource(duplicateId, value);
-      }
+      await _copyResource(cloud, duplicateId, resource);
     }
+  }
+
+  Future<void> _copyResource(
+    CloudSkillStore? cloud,
+    String duplicateId,
+    SkillResourceEntity resource,
+  ) async {
+    final value = SkillResourceToCreate(
+      title: resource.title,
+      description: resource.description,
+      content: resource.content,
+    );
+    if (cloud != null) {
+      final _ = await cloud.createResource(duplicateId, value);
+
+      return;
+    }
+    final repository = resourceRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
+    final _ = await repository.createResource(duplicateId, value);
   }
 
   Future<void> _createTool(

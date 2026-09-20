@@ -9,18 +9,18 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
-const skillResourceDescriptionMaxCharacters = 240;
-const skillResourceContentMaxCharacters = 50000;
-const skillResourceLimit = 100;
-
 class const ResolvedSkillResource({
   required final SkillResourceSummary summary,
   required final String content,
 });
 
-extension on SkillResourceEntity {
-  SkillResourceSummary get summary =>
-      SkillResourceSummary(slug: slug, title: title, description: description);
+abstract final class SkillResourceSummaryMapper {
+  static SkillResourceSummary from(SkillResourceEntity resource) =>
+      SkillResourceSummary(
+        slug: resource.slug,
+        title: resource.title,
+        description: resource.description,
+      );
 }
 
 class const SkillResourceResolver(
@@ -43,7 +43,7 @@ class const SkillResourceResolver(
     return (await _resources(
       workspaceId,
       skillSlug,
-    )).map((resource) => resource.summary).toList(growable: false);
+    )).map(SkillResourceSummaryMapper.from).toList(growable: false);
   }
 
   Future<ResolvedSkillResource?> get(
@@ -52,22 +52,18 @@ class const SkillResourceResolver(
     String resourceSlug,
   ) async {
     final appSkill = _appSkillRegistry.getBySlug(skillSlug);
-    if (appSkill != null) {
-      final resource = appSkill.resources
-          .where((candidate) => candidate.slug == resourceSlug)
-          .firstOrNull;
-      if (resource == null) return null;
+    if (appSkill != null) return _appResource(appSkill, resourceSlug);
 
-      return ResolvedSkillResource(
-        summary: resource.summary,
-        content: resource.content,
-      );
-    }
+    return await _userResource(workspaceId, skillSlug, resourceSlug);
+  }
 
-    final resource = (await _resources(
-      workspaceId,
-      skillSlug,
-    )).where((candidate) => candidate.slug == resourceSlug).firstOrNull;
+  ResolvedSkillResource? _appResource(
+    AppSkillDefinition skill,
+    String resourceSlug,
+  ) {
+    final resource = skill.resources
+        .where((candidate) => candidate.slug == resourceSlug)
+        .firstOrNull;
     if (resource == null) return null;
 
     return ResolvedSkillResource(
@@ -76,20 +72,49 @@ class const SkillResourceResolver(
     );
   }
 
+  Future<ResolvedSkillResource?> _userResource(
+    String workspaceId,
+    String skillSlug,
+    String resourceSlug,
+  ) async {
+    final resource = (await _resources(
+      workspaceId,
+      skillSlug,
+    )).where((candidate) => candidate.slug == resourceSlug).firstOrNull;
+    if (resource == null) return null;
+
+    return ResolvedSkillResource(
+      summary: SkillResourceSummaryMapper.from(resource),
+      content: resource.content,
+    );
+  }
+
   Future<List<SkillResourceEntity>> _resources(
     String workspaceId,
     String skillSlug,
-  ) async {
+  ) {
     final cloud = cloudStore;
-    if (cloud != null) {
-      final skill = (await cloud.skills())
-          .where((candidate) => candidate.slug == skillSlug)
-          .firstOrNull;
-      if (skill == null) return const [];
+    if (cloud != null) return _cloudResources(cloud, skillSlug);
 
-      return await cloud.resources(skill.id);
-    }
+    return _localResources(workspaceId, skillSlug);
+  }
 
+  Future<List<SkillResourceEntity>> _cloudResources(
+    CloudSkillStore cloud,
+    String skillSlug,
+  ) async {
+    final skill = (await cloud.skills())
+        .where((candidate) => candidate.slug == skillSlug)
+        .firstOrNull;
+    if (skill == null) return const [];
+
+    return await cloud.resources(skill.id);
+  }
+
+  Future<List<SkillResourceEntity>> _localResources(
+    String workspaceId,
+    String skillSlug,
+  ) async {
     final skill = await _skillsRepository?.getSkillBySlug(
       workspaceId,
       skillSlug,
@@ -112,7 +137,11 @@ class const CreateSkillResourceUsecase(
     String skillId,
     SkillResourceToCreate value,
   ) async {
-    _validate(value.title, value.description, value.content);
+    _SkillResourceValidation.validate(
+      value.title,
+      value.description,
+      value.content,
+    );
     await _ensureCapacity(skillId);
     final cloud = cloudStore;
     if (cloud != null) return await cloud.createResource(skillId, value);
@@ -129,9 +158,10 @@ class const CreateSkillResourceUsecase(
     final resources = cloud != null
         ? await cloud.resources(skillId)
         : await _resourcesRepository?.getSkillResources(skillId) ?? const [];
-    if (resources.length >= skillResourceLimit) {
+    if (resources.length >= _SkillResourceValidation.limit) {
       throw StateError(
-        'A skill cannot contain more than $skillResourceLimit resources.',
+        'A skill cannot contain more than '
+        '${_SkillResourceValidation.limit} resources.',
       );
     }
   }
@@ -144,17 +174,31 @@ class const UpdateSkillResourceUsecase(
   Future<SkillResourceEntity> call(
     String resourceId,
     SkillResourceToUpdate value,
-  ) async {
-    if (value.title != null ||
-        value.description != null ||
-        value.content != null) {
-      _validate(
-        value.title ?? '',
-        value.description ?? '',
-        value.content ?? '',
-        allowEmpty: true,
-      );
+  ) {
+    _validateUpdate(value);
+
+    return _updateResource(resourceId, value);
+  }
+
+  void _validateUpdate(SkillResourceToUpdate value) {
+    if (value.title == null &&
+        value.description == null &&
+        value.content == null) {
+      return;
     }
+
+    _SkillResourceValidation.validate(
+      value.title ?? '',
+      value.description ?? '',
+      value.content ?? '',
+      allowEmpty: true,
+    );
+  }
+
+  Future<SkillResourceEntity> _updateResource(
+    String resourceId,
+    SkillResourceToUpdate value,
+  ) async {
     final cloud = cloudStore;
     if (cloud != null) return await cloud.updateResource(resourceId, value);
     final repository = _resourcesRepository;
@@ -166,34 +210,42 @@ class const UpdateSkillResourceUsecase(
   }
 }
 
-Future<bool> deleteSkillResource(
-  String resourceId, {
-  required SkillResourcesRepository? resourcesRepository,
-  required CloudSkillStore? cloudStore,
-}) {
-  if (cloudStore != null) return cloudStore.deleteResource(resourceId);
-  final repository = resourcesRepository;
-  if (repository == null) {
-    throw StateError('Skill resource store is unavailable');
-  }
+abstract final class SkillResourceOperations {
+  static Future<bool> delete(
+    String resourceId, {
+    required SkillResourcesRepository? resourcesRepository,
+    required CloudSkillStore? cloudStore,
+  }) {
+    if (cloudStore != null) return cloudStore.deleteResource(resourceId);
+    final repository = resourcesRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
 
-  return repository.deleteResource(resourceId);
+    return repository.deleteResource(resourceId);
+  }
 }
 
-void _validate(
-  String title,
-  String description,
-  String content, {
-  bool allowEmpty = false,
-}) {
-  if (!allowEmpty && title.trim().isEmpty) {
-    throw const FormatException('Resource title is required.');
-  }
-  if (description.length > skillResourceDescriptionMaxCharacters) {
-    throw const FormatException('Resource description is too long.');
-  }
-  if (content.length > skillResourceContentMaxCharacters) {
-    throw const FormatException('Resource content is too long.');
+abstract final class _SkillResourceValidation {
+  static const descriptionMaxCharacters = 240;
+  static const contentMaxCharacters = 50000;
+  static const limit = 100;
+
+  static void validate(
+    String title,
+    String description,
+    String content, {
+    bool allowEmpty = false,
+  }) {
+    if (!allowEmpty && title.trim().isEmpty) {
+      throw const FormatException('Resource title is required.');
+    }
+    if (description.length > descriptionMaxCharacters) {
+      throw const FormatException('Resource description is too long.');
+    }
+    if (content.length > contentMaxCharacters) {
+      throw const FormatException('Resource content is too long.');
+    }
   }
 }
 
@@ -227,7 +279,7 @@ deleteSkillResourceProvider =
           ? ref.watch(skillResourcesRepositoryProvider)
           : null;
 
-      return (resourceId) => deleteSkillResource(
+      return (resourceId) => SkillResourceOperations.delete(
         resourceId,
         resourcesRepository: repository,
         cloudStore: cloud,

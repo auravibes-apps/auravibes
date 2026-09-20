@@ -55,22 +55,39 @@ class const CloneAppSkillUsecase(
     List<AppSkillResourceDefinition> resources,
   ) async {
     for (final resource in resources) {
-      final value = SkillResourceToCreate(
+      await _cloneResource(skillId, resource);
+    }
+  }
+
+  Future<void> _cloneResource(
+    String skillId,
+    AppSkillResourceDefinition resource,
+  ) async {
+    await _createResource(skillId, _resourceValue(resource));
+  }
+
+  SkillResourceToCreate _resourceValue(AppSkillResourceDefinition resource) =>
+      SkillResourceToCreate(
         title: resource.title,
         description: resource.description,
         content: resource.content,
       );
-      final cloud = cloudStore;
-      if (cloud != null) {
-        final _ = await cloud.createResource(skillId, value);
-      } else {
-        final repository = resourceRepository;
-        if (repository == null) {
-          throw StateError('Skill resource store is unavailable');
-        }
-        final _ = await repository.createResource(skillId, value);
-      }
+
+  Future<void> _createResource(
+    String skillId,
+    SkillResourceToCreate value,
+  ) async {
+    final cloud = cloudStore;
+    if (cloud != null) {
+      final _ = await cloud.createResource(skillId, value);
+
+      return;
     }
+    final repository = resourceRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
+    final _ = await repository.createResource(skillId, value);
   }
 }
 
