@@ -58,6 +58,7 @@ void main() {
 
       final router = GoRouter(
         routes: [
+          GoRoute(path: '/home', builder: (_, _) => const SizedBox.shrink()),
           GoRoute(
             path: '/skills/:id',
             builder: (_, _) => SkillDetailScreen(
@@ -78,7 +79,7 @@ void main() {
             ),
           ),
         ],
-        initialLocation: '/skills/searxng',
+        initialLocation: '/home',
       );
       addTearDown(router.dispose);
 
@@ -108,6 +109,8 @@ void main() {
       final _ = await tester.pumpAndSettle();
       final _ = await tester.pump();
       final _ = await tester.pumpAndSettle();
+      final _ = router.push('/skills/searxng');
+      final _ = await tester.pumpAndSettle();
       await pumpUntilFound(tester, find.byType(Scrollable));
       final addCredential = find.text('Add Credential');
       await tester.scrollUntilVisible(
@@ -119,6 +122,9 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Unsaved changes'), findsNothing);
     },
   );
 }
