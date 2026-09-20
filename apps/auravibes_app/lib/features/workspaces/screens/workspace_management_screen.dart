@@ -307,6 +307,10 @@ extension on _WorkspaceListActions {
     });
     if (!context.mounted) return;
 
+    _handleDuplicateResult();
+  }
+
+  void _handleDuplicateResult() {
     switch (ref.read(WorkspaceManagementMutations.duplicate)) {
       case MutationSuccess():
         ref.invalidate(allWorkspacesProvider);

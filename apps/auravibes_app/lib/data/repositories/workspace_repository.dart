@@ -359,27 +359,39 @@ extension on WorkspaceRepository {
     required String name,
   }) async {
     final source = await _requireWorkspace(id);
-    final workspace = WorkspaceToCreate(name: name, type: .local);
-    final _ = await validateWorkspace(workspace);
-
-    final created = await _database.workspaceDao.insertWorkspace(
-      _mapToWorkspacesCompanion(workspace),
-    );
-    final settings = await _database.workspaceCompactionSettingsDao
-        .getByWorkspaceId(source.id);
-    if (settings != null) {
-      final _ = await _database.workspaceCompactionSettingsDao.upsert(
-        created.id,
-        .new(
-          autoCompactEnabled: .new(settings.autoCompactEnabled),
-          usagePercentageThreshold: .new(settings.usagePercentageThreshold),
-          remainingTokenThreshold: .new(settings.remainingTokenThreshold),
-        ),
-      );
-    }
+    final created = await _createDuplicateWorkspace(name);
+    await _copyCompactionSettings(source.id, created.id);
 
     return _mapToWorkspace(created);
   }
+
+  Future<WorkspacesTable> _createDuplicateWorkspace(String name) async {
+    final workspace = WorkspaceToCreate(name: name, type: .local);
+    final _ = await validateWorkspace(workspace);
+
+    return await _database.workspaceDao.insertWorkspace(
+      _mapToWorkspacesCompanion(workspace),
+    );
+  }
+
+  Future<void> _copyCompactionSettings(String sourceId, String targetId) async {
+    final settings = await _database.workspaceCompactionSettingsDao
+        .getByWorkspaceId(sourceId);
+    if (settings == null) return;
+
+    final _ = await _database.workspaceCompactionSettingsDao.upsert(
+      targetId,
+      _compactionSettingsCompanion(settings),
+    );
+  }
+
+  WorkspaceCompactionSettingsCompanion _compactionSettingsCompanion(
+    WorkspaceCompactionSettingsTable settings,
+  ) => .new(
+    autoCompactEnabled: .new(settings.autoCompactEnabled),
+    usagePercentageThreshold: .new(settings.usagePercentageThreshold),
+    remainingTokenThreshold: .new(settings.remainingTokenThreshold),
+  );
 
   Future<WorkspacesTable> _requireWorkspace(String id) async {
     final workspace = await _database.workspaceDao.getWorkspaceById(id);

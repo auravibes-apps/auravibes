@@ -10,16 +10,26 @@ class const DuplicateWorkspaceUseCase({
   required final ValidateWorkspaceNameUseCase _validateName,
 }) {
   Future<WorkspaceEntity> call(String workspaceId) async {
-    final source = await _repository.getWorkspaceById(workspaceId);
-    if (source == null) throw WorkspaceNotFoundException(workspaceId);
-
-    final names = (await _repository.getAllWorkspaces())
-        .map((workspace) => workspace.name)
-        .toSet();
-    final name = _nextCopyName(source.name, names);
+    final source = await _sourceWorkspace(workspaceId);
+    final name = await _copyName(source.name);
     _validateName.call(name: name);
 
     return await _repository.duplicateWorkspace(workspaceId, name: name);
+  }
+
+  Future<WorkspaceEntity> _sourceWorkspace(String workspaceId) async {
+    final source = await _repository.getWorkspaceById(workspaceId);
+    if (source == null) throw WorkspaceNotFoundException(workspaceId);
+
+    return source;
+  }
+
+  Future<String> _copyName(String originalName) async {
+    final names = (await _repository.getAllWorkspaces())
+        .map((workspace) => workspace.name)
+        .toSet();
+
+    return _nextCopyName(originalName, names);
   }
 }
 
