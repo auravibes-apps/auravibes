@@ -1,5 +1,5 @@
-import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skill_context_messages.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 
 class const AppSkillResourceDefinition({
   required final String slug,
