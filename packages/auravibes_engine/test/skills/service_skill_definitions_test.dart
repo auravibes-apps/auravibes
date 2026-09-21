@@ -45,6 +45,32 @@ void main() {
       }
     });
 
+    test('resources are unique and complement a service tool', () {
+      final invalid = <String>[];
+      for (final skill in serviceSkillDefinitions) {
+        final toolSlugs = skill.tools.map((tool) => tool.slug).toSet();
+        final resourceSlugs = <String>{};
+        for (final resource in skill.resources) {
+          final path = '${skill.slug}.${resource.slug}';
+          if (resource.slug.isEmpty || !resourceSlugs.add(resource.slug)) {
+            invalid.add('$path has a duplicate or empty slug');
+          }
+          if (resource.title.isEmpty || resource.description.isEmpty) {
+            invalid.add('$path has incomplete summary metadata');
+          }
+          if (!toolSlugs.any(
+            (toolSlug) =>
+                resource.description.contains(toolSlug) ||
+                resource.content.contains(toolSlug),
+          )) {
+            invalid.add('$path does not reference a service tool');
+          }
+        }
+      }
+
+      expect(invalid, isEmpty);
+    });
+
     test('agent-facing text hides API internals', () {
       final leaks = <String>[];
       for (final skill in serviceSkillDefinitions) {
@@ -55,6 +81,23 @@ void main() {
           skill.description,
         );
         _collectInternalLeaks(leaks, '${skill.slug}.content', skill.content);
+        for (final resource in skill.resources) {
+          _collectInternalLeaks(
+            leaks,
+            '${skill.slug}.${resource.slug}.title',
+            resource.title,
+          );
+          _collectInternalLeaks(
+            leaks,
+            '${skill.slug}.${resource.slug}.description',
+            resource.description,
+          );
+          _collectInternalLeaks(
+            leaks,
+            '${skill.slug}.${resource.slug}.content',
+            resource.content,
+          );
+        }
         for (final tool in skill.tools) {
           _collectInternalLeaks(
             leaks,

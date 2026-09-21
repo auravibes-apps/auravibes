@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/daos/skill_resources_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -6,7 +7,9 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
 class SkillsRepository(AppDatabase database) {
+  final AppDatabase _database = database;
   final SkillsDao _dao = database.skillsDao;
+  final SkillResourcesDao _resourcesDao = database.skillResourcesDao;
 
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);
@@ -52,7 +55,11 @@ class SkillsRepository(AppDatabase database) {
     return _tableToEntity(table);
   }
 
-  Future<bool> deleteSkill(String skillId) => _dao.deleteSkill(skillId);
+  Future<bool> deleteSkill(String skillId) => _database.transaction(() async {
+    final _ = await _resourcesDao.deleteSkillResources(skillId);
+
+    return await _dao.deleteSkill(skillId);
+  });
 }
 
 extension SkillsRepositoryCompanionMappings on SkillsRepository {

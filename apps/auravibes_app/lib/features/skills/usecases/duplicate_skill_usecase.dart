@@ -1,6 +1,8 @@
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -14,6 +16,7 @@ class const DuplicateSkillUsecase(
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository,
   final CreateSkillUsecase _createSkillUsecase, {
   final CloudSkillStore? cloudStore,
+  final SkillResourcesRepository? resourceRepository,
 }) {
   Future<SkillEntity> call(String skillId) async {
     final skill = await _loadSkill(skillId);
@@ -23,6 +26,7 @@ class const DuplicateSkillUsecase(
     );
     final duplicate = await _createSkill(skill, title);
     await _copyTools(skill.id, duplicate.id);
+    await _copyResources(skill.id, duplicate.id);
 
     return duplicate;
   }
@@ -79,6 +83,38 @@ extension on DuplicateSkillUsecase {
     );
 
     return _createTool(duplicateId, value);
+  }
+
+  Future<void> _copyResources(String skillId, String duplicateId) async {
+    final cloud = cloudStore;
+    final resources = cloud != null
+        ? await cloud.resources(skillId)
+        : await _localResources(skillId);
+    for (final resource in resources) {
+      await _copyResource(cloud, duplicateId, resource);
+    }
+  }
+
+  Future<void> _copyResource(
+    CloudSkillStore? cloud,
+    String duplicateId,
+    SkillResourceEntity resource,
+  ) async {
+    final value = SkillResourceToCreate(
+      title: resource.title,
+      description: resource.description,
+      content: resource.content,
+    );
+    if (cloud != null) {
+      final _ = await cloud.createResource(duplicateId, value);
+
+      return;
+    }
+    final repository = resourceRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
+    final _ = await repository.createResource(duplicateId, value);
   }
 
   Future<void> _createTool(
@@ -141,6 +177,15 @@ extension on DuplicateSkillUsecase {
 
     return repository.getSkillTools(skillId);
   }
+
+  Future<List<SkillResourceEntity>> _localResources(String skillId) {
+    final repository = resourceRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
+
+    return repository.getSkillResources(skillId);
+  }
 }
 
 final ProviderFamily<DuplicateSkillUsecase, String>
@@ -155,5 +200,8 @@ duplicateSkillUsecaseProvider = Provider.family<DuplicateSkillUsecase, String>((
     cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
     ref.watch(createSkillUsecaseProvider(workspaceId)),
     cloudStore: cloud,
+    resourceRepository: cloud == null
+        ? ref.watch(skillResourcesRepositoryProvider)
+        : null,
   );
 });

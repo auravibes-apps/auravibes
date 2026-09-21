@@ -55,6 +55,18 @@ void main() {
               ],
             };
           },
+      listSkillResourceSummaries:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+          }) async => const [
+            SkillResourceSummary(
+              slug: 'refund_policy',
+              title: 'Refund policy',
+              description: 'Refund rules.',
+            ),
+          ],
     );
 
     final result = await usecase.call((
@@ -77,12 +89,58 @@ void main() {
         contains('<skill_tools>'),
         contains('<skill_credentials>'),
         contains('credential-1,Personal account'),
+        contains('<skill_resources>'),
+        contains('refund_policy,Refund policy,Refund rules.'),
       ),
     );
     expect(load.calls, 1);
     expect(credentialCalls, [
       {'slug': 'research'},
     ]);
+  });
+
+  test('loads a resource as a bounded thread result', () async {
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
+      loadConversationSkillUsecase: (_) => _UnusedLoad(),
+      buildLoadedSkillManifestsUsecase: _Manifests(),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      loadSkillResourceContent:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+            required resourceSlug,
+          }) async => (
+            title: 'Refund policy',
+            content: 'Never refund outside the policy.',
+          ),
+    );
+
+    final result = await usecase.call((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      commandName: loadSkillResourceToolName,
+      arguments: const {'skill': 'research', 'resource': 'refund_policy'},
+    ));
+
+    expect(result, isA<SkillResourceResult>());
+    final resourceResult = result;
+    if (resourceResult is! SkillResourceResult) {
+      fail('Expected a skill resource result');
+    }
+
+    expect(resourceResult.value, contains('<skill_resource'));
+    expect(resourceResult.value, contains('CDATA'));
+    expect(resourceResult.value, contains('Never refund'));
   });
 
   test('does not persist selection when catalog credentials fail', () async {

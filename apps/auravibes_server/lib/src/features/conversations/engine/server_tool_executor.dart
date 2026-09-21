@@ -14,6 +14,7 @@ import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
+import '../../skills/repositories/skill_resource_repository.dart';
 import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
@@ -320,6 +321,9 @@ class const ServerToolExecutorService({
     if (tool.descriptor.toolIdentifier == callSkillToolName) {
       return _runDispatchedSkill(session, turn, request);
     }
+    if (tool.descriptor.toolIdentifier == loadSkillResourceToolName) {
+      return _loadSkillResource(session, turn, request.arguments);
+    }
     if (tool.descriptor.toolIdentifier != activateSkillToolName) {
       throw const ServerToolNotConfiguredException();
     }
@@ -356,6 +360,12 @@ class const ServerToolExecutorService({
             serviceConnections: state.serviceConnections,
           )
         : const <SkillCredentialOption>[];
+    final resources = await _skillResourceSummaries(
+      session,
+      turn,
+      target.slug,
+      skillId,
+    );
     if (!state.selectedSkillIds.contains(skillId) &&
         !state.authorizedSkillIds.contains(skillId)) {
       await _throwIfCancelled(session, turn);
@@ -382,7 +392,86 @@ class const ServerToolExecutorService({
       manifest: manifest,
       content: _skillContent(target.slug, state),
       credentials: credentials,
+      resources: resources,
     );
+  }
+
+  Future<Object?> _loadSkillResource(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final target = SkillResourceTarget.fromArguments(
+      Map<String, Object?>.from(arguments),
+    );
+    final state = await _skillCommandState(session, turn);
+    final skillId = _availableSkillId(target.skill, state);
+    if (skillId == null || !state.authorizedSkillIds.contains(skillId)) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final appSkill = serviceSkillDefinitions
+        .where(
+          (skill) =>
+              skill.slug == target.skill || skill.identifier == target.skill,
+        )
+        .firstOrNull;
+    if (appSkill != null) {
+      final resource = appSkill.resources
+          .where((candidate) => candidate.slug == target.resource)
+          .firstOrNull;
+      if (resource == null) {
+        throw const ServerToolNotConfiguredException();
+      }
+      return buildSkillResourceResult(
+        skillSlug: target.skill,
+        resourceSlug: target.resource,
+        title: resource.title,
+        content: resource.content,
+      );
+    }
+    final resource = await SkillResourceDataRepository().findBySlug(
+      session,
+      workspaceId: turn.workspaceId,
+      skillId: skillId,
+      slug: target.resource,
+    );
+    if (resource == null) throw const ServerToolNotConfiguredException();
+
+    return buildSkillResourceResult(
+      skillSlug: target.skill,
+      resourceSlug: resource.slug,
+      title: resource.title,
+      content: resource.content,
+    );
+  }
+
+  Future<List<SkillResourceSummary>> _skillResourceSummaries(
+    Session session,
+    ConversationTurn turn,
+    String slug,
+    String skillId,
+  ) async {
+    final appSkill = serviceSkillDefinitions
+        .where((skill) => skill.slug == slug || skill.identifier == slug)
+        .firstOrNull;
+    if (appSkill != null) {
+      return appSkill.resources.map((resource) => resource.summary).toList();
+    }
+    final resources = await SkillResourceDataRepository().list(
+      session,
+      workspaceId: turn.workspaceId,
+      skillId: skillId,
+    );
+
+    return resources
+        .map(
+          (resource) => SkillResourceSummary(
+            slug: resource.slug,
+            title: resource.title,
+            description: resource.description,
+          ),
+        )
+        .toList();
   }
 
   Future<Object?> _runDispatchedSkill(

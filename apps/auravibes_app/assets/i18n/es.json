@@ -523,6 +523,26 @@
       "quote": "Cita"
     }
   },
+  "skills_resource": {
+    "section_title": "Recursos",
+    "empty": "No hay recursos de habilidad",
+    "create_title": "Nuevo recurso de habilidad",
+    "edit_title": "Editar recurso de habilidad",
+    "view_title": "Recurso de habilidad",
+    "not_found": "Recurso de habilidad no encontrado",
+    "load_error": "Error al cargar recursos de habilidad",
+    "save_error": "No se pudo guardar el recurso de habilidad",
+    "delete_title": "Eliminar recurso de habilidad",
+    "delete_confirm": "¿Eliminar este recurso de habilidad?",
+    "slug_label": "Slug",
+    "title_label": "Título",
+    "description_label": "Descripción",
+    "edit_description": "Editar descripción",
+    "description_empty": "Sin descripción todavía",
+    "content_label": "Contenido",
+    "edit_content": "Editar contenido",
+    "content_empty": "Sin contenido todavía"
+  },
   "skills_selector": {
     "title": "Habilidades de la conversación",
     "error": "Error al cargar habilidades de la conversación",

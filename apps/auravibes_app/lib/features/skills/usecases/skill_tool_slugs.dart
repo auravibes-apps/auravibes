@@ -15,6 +15,11 @@ abstract final class SkillToolSlugs {
   static const createUserSkill = 'create_user_skill';
   static const updateUserSkill = 'update_user_skill';
   static const deleteUserSkill = 'delete_user_skill';
+  static const listSkillResources = 'list_skill_resources';
+  static const getSkillResource = 'get_skill_resource';
+  static const createSkillResource = 'create_skill_resource';
+  static const updateSkillResource = 'update_skill_resource';
+  static const deleteSkillResource = 'delete_skill_resource';
   static const cloneAppSkill = 'clone_app_skill';
   static const listSkillTemplateTools = 'list_skill_template_tools';
   static const getSkillTemplateTool = 'get_skill_template_tool';

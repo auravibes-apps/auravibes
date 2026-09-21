@@ -14,6 +14,55 @@ documents against a query.
   ''',
   requiresCredential: true,
   kind: .template,
+  resources: const [
+    AppSkillResourceDefinition(
+      slug: 'reader_url_and_document_modes',
+      title: 'Reader URL and document modes',
+      description: 'Pass original URLs and use Reader for known pages or PDFs.',
+      content: '''
+`reader_fetch` expects the original target URL. The template adds the Reader
+prefix, so do not pass a prebuilt Reader URL.
+
+```json
+{"url":"<page-or-pdf-url>"}
+```
+
+Reader returns cleaned Markdown and can read PDFs. Use it for a known page;
+use `search` when the URL is not known yet, then pass the selected URL to
+`reader_fetch` unchanged.
+
+```json
+{"query":"Flutter plugin compatibility breaking changes"}
+```
+''',
+    ),
+    AppSkillResourceDefinition(
+      slug: 'rerank_document_contract',
+      title: 'Rerank document contract',
+      description:
+          'Give Jina comparable strings and use topN as a result count.',
+      content: '''
+`rerank.documents` must contain passages as strings, not URLs or result
+objects. Include a source label in each string if the winning passage needs
+traceability.
+
+```json
+{
+  "query":"requirements for offline synchronization",
+  "documents":[
+    "Source A: offline writes queue locally and replay after reconnect.",
+    "Source B: synchronization requires a live connection before writes."
+  ],
+  "topN":1
+}
+```
+
+`topN` is the maximum number of passages returned, not a relevance threshold;
+keep it no larger than the document count. Split long pages into comparable
+passages before calling `rerank`.
+''',
+    ),
+  ],
   tools: [
     const AppSkillToolDefinition(
       slug: 'reader_fetch',

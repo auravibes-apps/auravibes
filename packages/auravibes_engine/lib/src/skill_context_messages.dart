@@ -31,6 +31,23 @@ class const SkillActivationResult(final String value) {
   String toString() => value;
 }
 
+class const SkillResourceResult(final String value) {
+  @override
+  String toString() => value;
+}
+
+class const SkillResourceSummary({
+  required final String slug,
+  required final String title,
+  required final String description,
+}) {
+  Map<String, Object?> toJson() => {
+    'slug': slug,
+    'title': title,
+    'description': description,
+  };
+}
+
 String buildSkillCatalogRevision(Iterable<SkillCatalogEntry> entries) {
   final sorted = entries.toList()
     ..sort((left, right) => left.slug.compareTo(right.slug));
@@ -81,6 +98,7 @@ SkillActivationResult buildSkillActivationResult({
   required SkillManifest manifest,
   required String content,
   Iterable<SkillCredentialOption> credentials = const [],
+  Iterable<SkillResourceSummary> resources = const [],
 }) {
   final slug = _xmlAttributeEscape.convert(manifest.slug);
   final title = _xmlAttributeEscape.convert(manifest.title);
@@ -89,14 +107,31 @@ SkillActivationResult buildSkillActivationResult({
   final credentialOptions = _xmlTextEscape.convert(
     _skillCredentialsToon(credentials),
   );
+  final resourceOptions = _xmlTextEscape.convert(
+    _skillResourcesToon(resources),
+  );
   return SkillActivationResult(
     '<skill_content slug="$slug" title="$title" revision="$revision">'
     '${_xmlCdata(content)}'
     '<skill_tools>$tools</skill_tools>'
     '<skill_credentials>$credentialOptions</skill_credentials>'
+    '<skill_resources>$resourceOptions</skill_resources>'
     '</skill_content>',
   );
 }
+
+SkillResourceResult buildSkillResourceResult({
+  required String skillSlug,
+  required String resourceSlug,
+  required String title,
+  required String content,
+}) => SkillResourceResult(
+  '<skill_resource skill="${_xmlAttributeEscape.convert(skillSlug)}" '
+  'slug="${_xmlAttributeEscape.convert(resourceSlug)}" '
+  'title="${_xmlAttributeEscape.convert(title)}">'
+  '${_xmlCdata(content)}'
+  '</skill_resource>',
+);
 
 String _xmlCdata(String value) =>
     '<![CDATA[${value.replaceAll(']]>', ']]]]><![CDATA[>')}]]>';
@@ -114,6 +149,14 @@ String _skillCredentialsToon(Iterable<SkillCredentialOption> credentials) {
     ..sort((left, right) => left.credentialId.compareTo(right.credentialId));
   return toonEncode({
     'options': sorted.map((credential) => credential.toJson()).toList(),
+  });
+}
+
+String _skillResourcesToon(Iterable<SkillResourceSummary> resources) {
+  final sorted = resources.toList()
+    ..sort((left, right) => left.slug.compareTo(right.slug));
+  return toonEncode({
+    'resources': sorted.map((resource) => resource.toJson()).toList(),
   });
 }
 

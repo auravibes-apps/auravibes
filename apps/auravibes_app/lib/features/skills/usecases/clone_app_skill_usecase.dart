@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -36,14 +38,56 @@ class const CloneAppSkillUsecase(
   _createCredentialDefinitionUsecase,
   final CreateSkillTemplateToolUsecase _createToolUsecase, {
   final CloudSkillStore? cloudStore,
+  final SkillResourcesRepository? resourceRepository,
 }) {
   Future<SkillEntity> call(String workspaceId, String appSkillSlug) async {
     final appSkill = _cloneableAppSkill(appSkillSlug);
     final title = await _copyTitle(workspaceId, appSkill.title);
     final skill = await _createClone(workspaceId, title, appSkill);
     await _cloneTools(workspaceId, skill, title, appSkill.tools);
+    await _cloneResources(skill.id, appSkill.resources);
 
     return skill;
+  }
+
+  Future<void> _cloneResources(
+    String skillId,
+    List<AppSkillResourceDefinition> resources,
+  ) async {
+    for (final resource in resources) {
+      await _cloneResource(skillId, resource);
+    }
+  }
+
+  Future<void> _cloneResource(
+    String skillId,
+    AppSkillResourceDefinition resource,
+  ) async {
+    await _createResource(skillId, _resourceValue(resource));
+  }
+
+  SkillResourceToCreate _resourceValue(AppSkillResourceDefinition resource) =>
+      SkillResourceToCreate(
+        title: resource.title,
+        description: resource.description,
+        content: resource.content,
+      );
+
+  Future<void> _createResource(
+    String skillId,
+    SkillResourceToCreate value,
+  ) async {
+    final cloud = cloudStore;
+    if (cloud != null) {
+      final _ = await cloud.createResource(skillId, value);
+
+      return;
+    }
+    final repository = resourceRepository;
+    if (repository == null) {
+      throw StateError('Skill resource store is unavailable');
+    }
+    final _ = await repository.createResource(skillId, value);
   }
 }
 
@@ -192,5 +236,8 @@ cloneAppSkillUsecaseProvider = Provider.family<CloneAppSkillUsecase, String>((
     ref.watch(createSkillCredentialDefinitionUsecaseProvider(workspaceId)),
     ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
     cloudStore: cloud,
+    resourceRepository: cloud == null
+        ? ref.watch(skillResourcesRepositoryProvider)
+        : null,
   );
 });

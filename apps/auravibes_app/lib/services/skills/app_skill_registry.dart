@@ -85,6 +85,7 @@ AppSkillDefinition _localizedDefinitionWithTools(
   description: definition.description,
   content: definition.content,
   tools: tools,
+  resources: definition.resources,
   titleKey: LocaleKeys.app_skills_skills_manager_title,
   descriptionKey: LocaleKeys.app_skills_skills_manager_description,
   contentKey: LocaleKeys.app_skills_skills_manager_content,

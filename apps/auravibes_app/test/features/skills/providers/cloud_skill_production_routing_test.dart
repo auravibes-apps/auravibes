@@ -36,6 +36,10 @@ import 'package:riverpod/riverpod.dart';
 
 class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
+class _Client extends Mock implements Client;
+
+class _SkillResourceEndpoint extends Mock implements EndpointSkillResource;
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -58,6 +62,9 @@ void main() {
         fieldMask: const [],
       ),
     );
+    registerFallbackValue(
+      ListSkillResourcesRequest(workspaceId: 0, skillId: ''),
+    );
     registerFallbackValue((
       requestId: '',
       resourceOperation: WorkspacePatchOperation(
@@ -75,20 +82,25 @@ void main() {
   });
 
   const workspaceId = 'local-cloud';
-  const workspace = WorkspaceSession(
-    CloudWorkspaceRef(
-      localWorkspaceId: workspaceId,
-      serverUrl: 'https://example.com',
-      accountId: 'account',
-      cloudWorkspaceId: 7,
-    ),
+  const cloudWorkspace = CloudWorkspaceRef(
+    localWorkspaceId: workspaceId,
+    serverUrl: 'https://example.com',
+    accountId: 'account',
+    cloudWorkspaceId: 7,
   );
+  const workspace = WorkspaceSession(cloudWorkspace);
 
   test(
     'cloud production providers never construct local skill storage',
     () async {
       final gateway = _Gateway();
+      final client = _Client();
+      final skillResource = _SkillResourceEndpoint();
       final resources = <WorkspaceResource>[];
+      when(() => gateway.client).thenReturn(client);
+      when(() => gateway.workspace).thenReturn(cloudWorkspace);
+      when(() => client.skillResource).thenReturn(skillResource);
+      when(() => skillResource.list(any())).thenAnswer((_) async => const []);
       when(() => gateway.watchResources(any())).thenAnswer((invocation) {
         final kinds =
             invocation.positionalArguments.single

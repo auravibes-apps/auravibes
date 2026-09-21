@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -132,6 +133,17 @@ const _blankCredentialForEdit = SkillCredentialForEdit(
   isEnabled: false,
 );
 
+final _blankResource = SkillResourceEntity(
+  id: '',
+  skillId: '',
+  title: '',
+  slug: '',
+  description: '',
+  content: '',
+  createdAt: .new(1970),
+  updatedAt: .new(1970),
+);
+
 class CloudSkillStore(
   final CloudWorkspaceResourceStore _store,
   final String workspaceId,
@@ -187,6 +199,121 @@ extension CloudSkillStoreToolApi on CloudSkillStore {
       _apiTools(skillId);
 
   Future<void> deleteTool(String id) => _apiDeleteTool(id);
+}
+
+extension CloudSkillStoreResourceApi on CloudSkillStore {
+  Future<List<SkillResourceEntity>> resources(String skillId) async {
+    final api = await _resourceApi();
+    final views = await api.client.skillResource.list(
+      .new(workspaceId: api.workspaceId, skillId: skillId),
+    );
+
+    return views.map(_resource).toList();
+  }
+
+  Future<SkillResourceEntity?> resource(String resourceId) async {
+    final api = await _resourceApi();
+    final view = await api.client.skillResource.get(
+      .new(workspaceId: api.workspaceId, resourceId: resourceId),
+    );
+
+    return view == null ? null : _resource(view);
+  }
+
+  Future<SkillResourceEntity> createResource(
+    String skillId,
+    SkillResourceToCreate value,
+  ) async {
+    final api = await _resourceApi();
+    final view = await api.client.skillResource.create(
+      .new(
+        workspaceId: api.workspaceId,
+        requestId: const UuidV7().generate(),
+        skillId: skillId,
+        resourceId: const UuidV7().generate(),
+        title: value.title,
+        description: value.description,
+        content: value.content,
+      ),
+    );
+
+    return _resource(view);
+  }
+
+  Future<SkillResourceEntity> updateResource(
+    String resourceId,
+    SkillResourceToUpdate value,
+  ) async {
+    final current = await resource(resourceId);
+    if (current == null) {
+      throw StateError('Skill resource not found: $resourceId');
+    }
+    final api = await _resourceApi();
+    final view = await _updateResourceView(api, resourceId, value, current);
+
+    return _resource(view);
+  }
+
+  Future<SkillResourceView> _updateResourceView(
+    ({Client client, int workspaceId}) api,
+    String resourceId,
+    SkillResourceToUpdate value,
+    SkillResourceEntity current,
+  ) => api.client.skillResource.update(
+    .new(
+      workspaceId: api.workspaceId,
+      requestId: const UuidV7().generate(),
+      resourceId: resourceId,
+      expectedRevision: currentRevision(current),
+      title: value.title ?? current.title,
+      description: value.description ?? current.description,
+      content: value.content ?? current.content,
+    ),
+  );
+
+  Future<bool> deleteResource(String resourceId) async {
+    final current = await resource(resourceId);
+    if (current == null) return false;
+    final api = await _resourceApi();
+    await api.client.skillResource.delete(
+      .new(
+        workspaceId: api.workspaceId,
+        requestId: const UuidV7().generate(),
+        resourceId: resourceId,
+        expectedRevision: currentRevision(current),
+      ),
+    );
+
+    return true;
+  }
+}
+
+extension _CloudSkillStoreResourceOperations on CloudSkillStore {
+  Future<({Client client, int workspaceId})> _resourceApi() async {
+    final client = await _store.client;
+    final id = await _store.cloudWorkspaceId;
+    if (client == null) {
+      throw StateError('Cloud skill resource store is unavailable');
+    }
+    if (id == null) throw StateError('Cloud workspace id is unavailable');
+
+    return (client: client, workspaceId: id);
+  }
+
+  SkillResourceEntity _resource(SkillResourceView view) =>
+      _blankResource.copyWith(
+        id: view.id,
+        skillId: view.skillId,
+        title: view.title,
+        slug: view.slug,
+        description: view.description,
+        content: view.content,
+        revision: view.revision,
+        createdAt: view.createdAt,
+        updatedAt: view.updatedAt,
+      );
+
+  int currentRevision(SkillResourceEntity resource) => resource.revision;
 }
 
 extension CloudSkillStoreCredentialApi on CloudSkillStore {

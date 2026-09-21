@@ -1605,9 +1605,14 @@ class ServerToolRuntime({
   }
 
   String _boundedJson(Object? value) {
-    if (value is SkillActivationResult) {
-      return value.value.length <= maxResultCharacters
-          ? value.value
+    final specialResult = switch (value) {
+      SkillActivationResult(:final value) => value,
+      SkillResourceResult(:final value) => value,
+      _ => null,
+    };
+    if (specialResult != null) {
+      return specialResult.length <= maxResultCharacters
+          ? specialResult
           : jsonEncode({'error': 'Skill content is too large.'});
     }
     final encoded = jsonEncode(value);

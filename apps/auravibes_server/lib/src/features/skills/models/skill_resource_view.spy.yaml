@@ -1,0 +1,11 @@
+class: SkillResourceView
+fields:
+  id: String
+  skillId: String
+  title: String
+  slug: String
+  description: String
+  content: String
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

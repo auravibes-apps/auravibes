@@ -25,6 +25,7 @@ import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
@@ -84,6 +85,7 @@ class ResolvedToolService {
     runSkillsManagerToolUsecase,
     ListAvailableSkillsUsecase Function(String workspaceId)?
     listAvailableSkillsUsecase,
+    SkillResourceResolver Function(String workspaceId)? skillResourceResolver,
     ListAppSkillCredentialCandidatesUsecase?
     listAppSkillCredentialCandidatesUsecase,
     AppSkillRegistry? appSkillRegistry,
@@ -105,6 +107,7 @@ class ResolvedToolService {
                buildAppSkillNativeToolSpecsUsecase,
            runSkillsManagerToolUsecase: runSkillsManagerToolUsecase,
            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+           skillResourceResolver: skillResourceResolver,
            listAppSkillCredentialCandidatesUsecase:
                listAppSkillCredentialCandidatesUsecase,
            appSkillRegistry: appSkillRegistry,
@@ -163,6 +166,8 @@ class const AppResolvedToolProvider({
   runSkillsManagerToolUsecase,
   final ListAvailableSkillsUsecase Function(String workspaceId)?
   listAvailableSkillsUsecase,
+  final SkillResourceResolver Function(String workspaceId)?
+  skillResourceResolver,
   final ListAppSkillCredentialCandidatesUsecase?
   listAppSkillCredentialCandidatesUsecase,
   final AppSkillRegistry? appSkillRegistry,
@@ -860,9 +865,11 @@ class _ConfiguredSkillCommandRunner {
   new(this._provider) {
     _usecase = _buildConfiguredSkillCommand(
       _configuredSkillCommandDependencies(_provider),
-      _listSkillCredentialsForCommand,
-      _listCatalogSkillCredentialsForCommand,
-      _runSkillNativeTool,
+      (
+        listSkillCredentials: _listSkillCredentialsForCommand,
+        listCatalogSkillCredentials: _listCatalogSkillCredentialsForCommand,
+        runSkillNativeTool: _runSkillNativeTool,
+      ),
     );
   }
 
@@ -991,12 +998,21 @@ class const _ConfiguredSkillCommandDependencies(
   final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase,
   final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
   final RunAppSkillToolUsecase runAppSkillToolUsecase,
+  final SkillResourceResolver Function(String workspaceId)?
+  skillResourceResolver,
 );
+
+typedef _ConfiguredSkillCommandCallbacks = ({
+  ListSkillCredentials listSkillCredentials,
+  ListSkillCredentials listCatalogSkillCredentials,
+  RunSkillNativeTool runSkillNativeTool,
+});
 
 _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
   AppResolvedToolProvider provider,
 ) {
   const r = _requiredConfigured;
+  final resourceResolver = provider.skillResourceResolver;
 
   return _ConfiguredSkillCommandDependencies(
     r(provider.listAvailableSkillsUsecase),
@@ -1006,28 +1022,101 @@ _ConfiguredSkillCommandDependencies _configuredSkillCommandDependencies(
     r(provider.buildAppSkillNativeToolSpecsUsecase),
     r(provider.runSkillTemplateToolUsecase),
     r(provider.runAppSkillToolUsecase),
+    resourceResolver,
   );
 }
 
 RunSkillCommandUsecase _buildConfiguredSkillCommand(
   _ConfiguredSkillCommandDependencies deps,
-  ListSkillCredentials listSkillCredentials,
-  ListSkillCredentials listCatalogSkillCredentials,
-  RunSkillNativeTool runSkillNativeTool,
+  _ConfiguredSkillCommandCallbacks callbacks,
 ) {
-  return RunSkillCommandUsecase(
-    listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
-    loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
-    buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
-    buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
-    buildAppSkillNativeToolSpecsUsecase:
-        deps.buildAppSkillNativeToolSpecsUsecase,
-    runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
-    runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
-    listSkillCredentials: listSkillCredentials,
-    listCatalogSkillCredentials: listCatalogSkillCredentials,
-    runSkillNativeTool: runSkillNativeTool,
+  final resourceCallbacks = _configuredSkillResourceCallbacks(
+    deps.skillResourceResolver,
   );
+
+  return .fromDependencies((
+    core: _coreSkillCommandDependencies(deps),
+    optional: _optionalSkillCommandDependencies(callbacks, resourceCallbacks),
+  ));
+}
+
+RunSkillCommandCoreDependencies _coreSkillCommandDependencies(
+  _ConfiguredSkillCommandDependencies deps,
+) => (
+  listAvailableSkillsUsecase: deps.listAvailableSkillsUsecase,
+  loadConversationSkillUsecase: deps.loadConversationSkillUsecase,
+  buildLoadedSkillManifestsUsecase: deps.buildLoadedSkillManifestsUsecase,
+  buildSkillTemplateToolSpecsUsecase: deps.buildSkillTemplateToolSpecsUsecase,
+  buildAppSkillNativeToolSpecsUsecase: deps.buildAppSkillNativeToolSpecsUsecase,
+  runSkillTemplateToolUsecase: deps.runSkillTemplateToolUsecase,
+  runAppSkillToolUsecase: deps.runAppSkillToolUsecase,
+);
+
+RunSkillCommandOptionalDependencies _optionalSkillCommandDependencies(
+  _ConfiguredSkillCommandCallbacks callbacks,
+  _SkillResourceCallbacks resourceCallbacks,
+) => (
+  listSkillCredentials: callbacks.listSkillCredentials,
+  listCatalogSkillCredentials: callbacks.listCatalogSkillCredentials,
+  listSkillResourceSummaries: resourceCallbacks.summaries,
+  loadSkillResourceContent: resourceCallbacks.content,
+  runSkillNativeTool: callbacks.runSkillNativeTool,
+);
+
+typedef _SkillResourceCallbacks = ({
+  ListSkillResourceSummaries? summaries,
+  LoadSkillResourceContent? content,
+});
+
+_SkillResourceCallbacks _configuredSkillResourceCallbacks(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) => (
+  summaries: _listSkillResourceSummaries(resourceResolver),
+  content: _loadSkillResourceContent(resourceResolver),
+);
+
+ListSkillResourceSummaries? _listSkillResourceSummaries(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) {
+  if (resourceResolver == null) return null;
+
+  return ({
+    required conversationId,
+    required workspaceId,
+    required skillSlug,
+  }) => resourceResolver(workspaceId).list(workspaceId, skillSlug);
+}
+
+LoadSkillResourceContent? _loadSkillResourceContent(
+  SkillResourceResolver Function(String workspaceId)? resourceResolver,
+) {
+  final resolver = resourceResolver;
+  if (resolver == null) return null;
+
+  return ({
+    required conversationId,
+    required workspaceId,
+    required skillSlug,
+    required resourceSlug,
+  }) => _resolveSkillResourceContent(
+    resolver,
+    workspaceId,
+    skillSlug,
+    resourceSlug,
+  );
+}
+
+Future<({String title, String content})?> _resolveSkillResourceContent(
+  SkillResourceResolver Function(String workspaceId) resolver,
+  String workspaceId,
+  String skillSlug,
+  String resourceSlug,
+) async {
+  final resource = await resolver(workspaceId)
+      .get(workspaceId, skillSlug, resourceSlug);
+  if (resource == null) return null;
+
+  return (title: resource.summary.title, content: resource.content);
 }
 
 _SkillControlToolDependencies _skillControlToolDependencies(
@@ -1077,6 +1166,8 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         container.read(runSkillsManagerToolUsecaseProvider(workspaceId)),
     listAvailableSkillsUsecase: (workspaceId) =>
         container.read(listAvailableSkillsUsecaseProvider(workspaceId)),
+    skillResourceResolver: (workspaceId) =>
+        container.read(skillResourceResolverProvider(workspaceId)),
     listAppSkillCredentialCandidatesUsecase: ref.watch(
       listAppSkillCredentialCandidatesUsecaseProvider,
     ),
