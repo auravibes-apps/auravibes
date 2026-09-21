@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -298,6 +299,26 @@ extension on _WorkspaceListActions {
     });
     if (!context.mounted) return;
     _handleEditResult();
+  }
+
+  Future<void> duplicate(WorkspaceEntity workspace) async {
+    final _ = await WorkspaceManagementMutations.duplicate.run(ref, (_) {
+      return ref.read(duplicateWorkspaceUseCaseProvider).call(workspace.id);
+    });
+    if (!context.mounted) return;
+
+    _handleDuplicateResult();
+  }
+
+  void _handleDuplicateResult() {
+    switch (ref.read(WorkspaceManagementMutations.duplicate)) {
+      case MutationSuccess():
+        ref.invalidate(allWorkspacesProvider);
+      case MutationError(:final error):
+        _showError(context, error);
+      case MutationIdle() || MutationPending():
+        break;
+    }
   }
 
   Future<void> confirmDelete(WorkspaceEntity workspace) async {
@@ -994,7 +1015,7 @@ class const _LocalWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_editItem(), _deleteItem()],
+        items: [_editItem(), _duplicateItem(), _deleteItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1013,6 +1034,13 @@ class const _LocalWorkspaceMenu({
       title: const TextLocale(LocaleKeys.common_delete),
       onTap: () => actions.confirmDelete(workspace),
       variant: .error,
+    );
+  }
+
+  AuraPopupMenuItem _duplicateItem() {
+    return AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.workspace_management_duplicate),
+      onTap: () => actions.duplicate(workspace),
     );
   }
 }

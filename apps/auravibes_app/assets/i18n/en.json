@@ -954,6 +954,7 @@
   "workspace_management": {
     "title": "Manage Workspaces",
     "create_button": "Create Workspace",
+    "duplicate": "Duplicate Workspace",
     "create_title": "Create New Workspace",
     "edit_button": "Save Changes",
     "edit_title": "Edit Workspace",

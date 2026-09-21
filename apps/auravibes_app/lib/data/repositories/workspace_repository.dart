@@ -51,6 +51,13 @@ mixin _WorkspaceRepositoryOperationsApi {
       WorkspaceRepositoryOperations(this as WorkspaceRepository)
           .createWorkspace(workspace);
 
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) =>
+      WorkspaceRepositoryOperations(this as WorkspaceRepository)
+          .duplicateWorkspace(id, name: name);
+
   Future<WorkspaceEntity> patchWorkspace(String id, WorkspacePatch workspace) =>
       WorkspaceRepositoryOperations(this as WorkspaceRepository)
           .patchWorkspace(id, workspace);
@@ -178,6 +185,11 @@ extension WorkspaceRepositoryOperations on WorkspaceRepository {
 
     return _mapToWorkspace(createdWorkspace);
   }
+
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) => _database.transaction(() => _duplicateWorkspace(id, name: name));
 
   Future<WorkspaceEntity> patchWorkspace(
     String id,
@@ -342,6 +354,45 @@ extension WorkspaceRepositoryQueryOperations on WorkspaceRepository {
 }
 
 extension on WorkspaceRepository {
+  Future<WorkspaceEntity> _duplicateWorkspace(
+    String id, {
+    required String name,
+  }) async {
+    final source = await _requireWorkspace(id);
+    final created = await _createDuplicateWorkspace(name);
+    await _copyCompactionSettings(source.id, created.id);
+
+    return _mapToWorkspace(created);
+  }
+
+  Future<WorkspacesTable> _createDuplicateWorkspace(String name) async {
+    final workspace = WorkspaceToCreate(name: name, type: .local);
+    final _ = await validateWorkspace(workspace);
+
+    return await _database.workspaceDao.insertWorkspace(
+      _mapToWorkspacesCompanion(workspace),
+    );
+  }
+
+  Future<void> _copyCompactionSettings(String sourceId, String targetId) async {
+    final settings = await _database.workspaceCompactionSettingsDao
+        .getByWorkspaceId(sourceId);
+    if (settings == null) return;
+
+    final _ = await _database.workspaceCompactionSettingsDao.upsert(
+      targetId,
+      _compactionSettingsCompanion(settings),
+    );
+  }
+
+  WorkspaceCompactionSettingsCompanion _compactionSettingsCompanion(
+    WorkspaceCompactionSettingsTable settings,
+  ) => .new(
+    autoCompactEnabled: .new(settings.autoCompactEnabled),
+    usagePercentageThreshold: .new(settings.usagePercentageThreshold),
+    remainingTokenThreshold: .new(settings.remainingTokenThreshold),
+  );
+
   Future<WorkspacesTable> _requireWorkspace(String id) async {
     final workspace = await _database.workspaceDao.getWorkspaceById(id);
     if (workspace == null) throw WorkspaceNotFoundException(id);

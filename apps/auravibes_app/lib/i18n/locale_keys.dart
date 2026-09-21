@@ -1176,6 +1176,8 @@ abstract class LocaleKeys {
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_create_button =
       'workspace_management.create_button';
+  static const workspace_management_duplicate =
+      'workspace_management.duplicate';
   static const workspace_management_create_title =
       'workspace_management.create_title';
   static const workspace_management_edit_button =
