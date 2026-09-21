@@ -372,7 +372,7 @@ Widget _buildChatTimelineItem({
 
   final item = data[index - thinkingCount - compactionCount];
   final messageId = switch (item) {
-    _ActivityRunTimelineItem() => null,
+    _ActivityRunTimelineItem(:final run) => run.responseMessageId,
     _MessageTimelineItem(:final source) => source.message.id,
   };
   final child = switch (item) {
@@ -383,6 +383,12 @@ Widget _buildChatTimelineItem({
       parentConversationId: parentConversationId,
       childConversations: childConversations,
       workspaceId: workspaceId,
+      a2uiRuntime: a2uiRuntime,
+      a2uiReplayPayloads: run.responseMessageId == null
+          ? const []
+          : replayPayloadsByMessageId[run.responseMessageId] ?? const [],
+      canRetry: run.responseMessageId == retryableMessageId,
+      onRetryMessage: onRetryMessage,
     ),
     _MessageTimelineItem(:final source, :final activityRenderedInSession) =>
       _ChatMessageTimelineItem(
@@ -452,10 +458,15 @@ class _MessageTimelineItem extends _ChatTimelineItem {
 }
 
 class _ActivityRun {
-  const _ActivityRun(this.sources, {this.activityContentMessageIds = const {}});
+  const _ActivityRun(
+    this.sources, {
+    this.activityContentMessageIds = const {},
+    this.responseMessageId,
+  });
 
   final List<_ResolvedChatMessage> sources;
   final Set<String> activityContentMessageIds;
+  final String? responseMessageId;
 
   String get id => sources.first.message.id;
 }
@@ -491,6 +502,10 @@ class _ActivityThinkingEntry extends _ActivityRunEntry {
   final String content;
 }
 
+class _ActivityResponseEntry extends _ActivityRunEntry {
+  const _ActivityResponseEntry();
+}
+
 class _ActivityToolGroupEntry extends _ActivityRunEntry {
   const _ActivityToolGroupEntry(this.toolCalls);
 
@@ -508,32 +523,33 @@ List<_ActivityRunEntry> _buildActivityRunEntries(_ActivityRun run) {
   }
 
   for (final source in run.sources) {
-    if (run.activityContentMessageIds.contains(source.message.id)) {
-      final content = source.message.content.trim();
-      if (content.isNotEmpty) {
-        addToolGroup();
-        entries.add(
-          _ActivityNarrativeEntry(
-            messageId: source.message.id,
-            content: content,
-          ),
-        );
-      }
-    }
+    final messageId = source.message.id;
 
     final thinking = source.message.metadata?.thinking?.trim();
     if (thinking != null && thinking.isNotEmpty) {
       addToolGroup();
       entries.add(
-        _ActivityThinkingEntry(messageId: source.message.id, content: thinking),
+        _ActivityThinkingEntry(messageId: messageId, content: thinking),
       );
+    }
+
+    if (run.responseMessageId == messageId) {
+      entries.add(const _ActivityResponseEntry());
+    } else if (run.activityContentMessageIds.contains(messageId)) {
+      final content = source.message.content.trim();
+      if (content.isNotEmpty) {
+        addToolGroup();
+        entries.add(
+          _ActivityNarrativeEntry(messageId: messageId, content: content),
+        );
+      }
     }
 
     for (final toolCall
         in source.message.metadata?.toolCalls ??
             const <MessageToolCallEntity>[]) {
       toolCalls.add((
-        messageId: source.message.id,
+        messageId: messageId,
         toolCall: toolCall,
         isForkReference: source.message.isForkReference,
         isStreaming: source.isStreaming,
@@ -563,16 +579,16 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
   final activitySources = <_ResolvedChatMessage>[];
   final activityContentMessageIds = <String>{};
 
-  void addActivityRun() {
+  void addActivityRun({String? responseMessageId}) {
     if (activitySources.isEmpty) return;
-    items.add(
-      _ActivityRunTimelineItem(
-        _ActivityRun(
-          List.of(activitySources),
-          activityContentMessageIds: Set.of(activityContentMessageIds),
-        ),
-      ),
+    final run = _ActivityRun(
+      List.of(activitySources),
+      activityContentMessageIds: Set.of(activityContentMessageIds),
+      responseMessageId: responseMessageId,
     );
+    if (_buildActivityRunEntries(run).isNotEmpty) {
+      items.add(_ActivityRunTimelineItem(run));
+    }
     activitySources.clear();
     activityContentMessageIds.clear();
   }
@@ -593,6 +609,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
       messages,
       index,
     );
+    final hasToolCalls = message.metadata?.toolCalls.isNotEmpty == true;
     final hasActivity =
         !_isTimelineBoundary(message) &&
         (_hasAssistantActivity(message) ||
@@ -600,16 +617,13 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
 
     if (hasActivity) {
       final isFinalResponse =
-          hasVisibleResponse && !hasFollowingAssistantActivity;
+          hasVisibleResponse && !hasFollowingAssistantActivity && !hasToolCalls;
       activitySources.add(source);
       if (hasVisibleResponse && !isFinalResponse) {
         activityContentMessageIds.add(message.id);
       }
       if (isFinalResponse) {
-        addActivityRun();
-        items.add(
-          _MessageTimelineItem(source, activityRenderedInSession: true),
-        );
+        addActivityRun(responseMessageId: message.id);
       }
       continue;
     }
@@ -1390,11 +1404,29 @@ class const _AssistantActivityRun({
   required final String parentConversationId,
   required final List<ConversationEntity> childConversations,
   required final String workspaceId,
+  final ChatA2uiRuntime? a2uiRuntime,
+  final List<String> a2uiReplayPayloads = const [],
+  final bool canRetry = false,
+  final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activityEntries = _buildActivityRunEntries(run);
+    final responseEntryIndex = activityEntries.indexWhere(
+      (entry) => entry is _ActivityResponseEntry,
+    );
+    final entriesBeforeResponse = responseEntryIndex < 0
+        ? activityEntries
+        : activityEntries.take(responseEntryIndex).toList(growable: false);
+    final entriesAfterResponse = responseEntryIndex < 0
+        ? const <_ActivityRunEntry>[]
+        : activityEntries.skip(responseEntryIndex + 1).toList(growable: false);
+    final responseSource = responseEntryIndex < 0
+        ? null
+        : run.sources.firstWhere(
+            (source) => source.message.id == run.responseMessageId,
+          );
     final toolGroupEntries = [
       for (final entry in activityEntries)
         if (entry is _ActivityToolGroupEntry) entry,
@@ -1558,47 +1590,56 @@ class const _AssistantActivityRun({
         );
       }
     }
-    final hasOuterDisclosure = activityEntries.length > 1;
+    final hasOuterDisclosure =
+        entriesBeforeResponse.length + entriesAfterResponse.length > 1;
     final activityLabel = toolCalls.isEmpty
         ? LocaleKeys.chats_screens_chat_conversation_activity_thinking.tr()
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
-    final activityContent = AuraColumn(
+    Widget activityEntry(_ActivityRunEntry entry) {
+      if (entry case _ActivityNarrativeEntry(
+        :final messageId,
+        :final content,
+      )) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
+          child: _ActivityNarrative(
+            key: ValueKey('activity_narrative_$messageId'),
+            content: content,
+          ),
+        );
+      }
+      if (entry case _ActivityThinkingEntry(:final messageId, :final content)) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
+          child: _ActivityThinkingCard(
+            key: ValueKey('activity_thinking_$messageId'),
+            content: content,
+          ),
+        );
+      }
+      final toolContent =
+          toolContents[_activityToolGroupId(entry as _ActivityToolGroupEntry)]!;
+      return toolContent;
+    }
+
+    Widget activityContent(Iterable<_ActivityRunEntry> entries) => AuraColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final entry in activityEntries)
-          if (entry case _ActivityNarrativeEntry(
-            :final messageId,
-            :final content,
-          ))
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: context.auraTheme.fromSpacing(.xs),
-              ),
-              child: _ActivityNarrative(
-                key: ValueKey('activity_narrative_$messageId'),
-                content: content,
-              ),
-            )
-          else if (entry case _ActivityThinkingEntry(
-            :final messageId,
-            :final content,
-          ))
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: context.auraTheme.fromSpacing(.xs),
-              ),
-              child: _ActivityThinkingCard(
-                key: ValueKey('activity_thinking_$messageId'),
-                content: content,
-              ),
-            )
-          else
-            toolContents[_activityToolGroupId(
-              entry as _ActivityToolGroupEntry,
-            )]!,
-      ],
+      children: [for (final entry in entries) activityEntry(entry)],
     );
+
+    final responseContent = responseSource == null
+        ? null
+        : _ChatMessageContent(
+            message: responseSource.message,
+            isStreaming: responseSource.isStreaming,
+            workspaceId: workspaceId,
+            conversationId: parentConversationId,
+            a2uiRuntime: a2uiRuntime,
+            a2uiReplayPayloads: a2uiReplayPayloads,
+            canRetry: canRetry,
+            onRetryMessage: onRetryMessage,
+          );
 
     return AuraColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1615,15 +1656,38 @@ class const _AssistantActivityRun({
               () => traceExpanded.value = !traceExpanded.value,
             ),
           ),
-        if (hasOuterDisclosure && traceExpanded.value)
+        if (hasOuterDisclosure &&
+            traceExpanded.value &&
+            entriesBeforeResponse.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(
               left: context.auraTheme.fromSpacing(.sm),
               top: context.auraTheme.fromSpacing(.xs),
             ),
-            child: activityContent,
+            child: activityContent(entriesBeforeResponse),
           ),
-        if (!hasOuterDisclosure) activityContent,
+        if (responseSource != null &&
+            !hasOuterDisclosure &&
+            entriesBeforeResponse.isNotEmpty)
+          activityContent(entriesBeforeResponse),
+        if (responseContent != null) responseContent,
+        if (responseSource != null &&
+            hasOuterDisclosure &&
+            traceExpanded.value &&
+            entriesAfterResponse.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.only(
+              left: context.auraTheme.fromSpacing(.sm),
+              top: context.auraTheme.fromSpacing(.xs),
+            ),
+            child: activityContent(entriesAfterResponse),
+          ),
+        if (responseSource != null &&
+            !hasOuterDisclosure &&
+            entriesAfterResponse.isNotEmpty)
+          activityContent(entriesAfterResponse),
+        if (responseSource == null && !hasOuterDisclosure)
+          activityContent(entriesBeforeResponse),
       ],
     );
   }
