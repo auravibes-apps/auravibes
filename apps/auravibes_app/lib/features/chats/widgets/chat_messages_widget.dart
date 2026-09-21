@@ -1340,6 +1340,15 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   }
 }
 
+Widget _chatMarkdown({required String content, required TextStyle style}) =>
+    MouseRegion(
+      cursor: SystemMouseCursors.text,
+      child: DefaultSelectionStyle(
+        mouseCursor: MouseCursor.defer,
+        child: GptMarkdown(content, style: style),
+      ),
+    );
+
 class const _AiMessageContent({
   required final String content,
   required final DateTime timestamp,
@@ -1355,8 +1364,8 @@ class const _AiMessageContent({
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GptMarkdown(
-          content,
+        _chatMarkdown(
+          content: content,
           style: TextStyle(
             color: auraColors.onSurface,
             fontSize: typography.fontSizeBase,
@@ -1637,8 +1646,8 @@ class const _ActivityNarrative({required final String content, super.key})
     final typography = context.auraTheme.typography;
 
     return SelectionArea(
-      child: GptMarkdown(
-        content,
+      child: _chatMarkdown(
+        content: content,
         style: TextStyle(
           color: colors.onSurfaceVariant,
           fontSize: typography.fontSizeSm,
@@ -1686,8 +1695,8 @@ class const _ActivityThinkingCard({required final String content, super.key})
           ),
           const AuraSizedBox(height: .xs),
           SelectionArea(
-            child: GptMarkdown(
-              content,
+            child: _chatMarkdown(
+              content: content,
               style: TextStyle(
                 color: colors.onSurfaceVariant,
                 fontSize: typography.fontSizeSm,
