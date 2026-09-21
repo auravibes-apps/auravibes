@@ -109,33 +109,29 @@ void main() {
       );
     });
 
-    test(
-      'builds agents skill with agent discovery and execution tools',
-      () async {
-        final listUsecase = _MockListAvailableSkillsUsecase();
-        final usecase = BuildAppSkillNativeToolSpecsUsecase(
-          (_) => listUsecase,
-          const _FakeAppSkillCandidates({}),
-        );
-        when(
-          () => listUsecase.call(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            filter: .loaded,
-          ),
-        ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
+    test('builds agents skill with agent discovery tool', () async {
+      final listUsecase = _MockListAvailableSkillsUsecase();
+      final usecase = BuildAppSkillNativeToolSpecsUsecase(
+        (_) => listUsecase,
+        const _FakeAppSkillCandidates({}),
+      );
+      when(
+        () => listUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          filter: .loaded,
+        ),
+      ).thenAnswer((_) async => [_appSkill(agentsSkillSlug)]);
 
-        final specs = await usecase.call(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-        );
+      final specs = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
 
-        expect(specs.map((spec) => spec.name), [
-          'skill__app_native__agents__list_agents',
-          'skill__app_native__agents__run_sub_agent',
-        ]);
-      },
-    );
+      expect(specs.map((spec) => spec.name), [
+        'skill__app_native__agents__list_agents',
+      ]);
+    });
 
     test(
       'records model provider credential reuse for overlapping providers',
