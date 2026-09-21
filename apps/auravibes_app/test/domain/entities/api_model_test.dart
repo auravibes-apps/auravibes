@@ -188,7 +188,7 @@ void main() {
       expect(modelWith(1000001).hasVeryLargeContext, isTrue);
     });
 
-    test('isCodexRuntimeModel only allows supported Codex backend models', () {
+    test('isCodexRuntimeModel only allows priority-mode Codex models', () {
       const canonical = ApiModelEntity(
         modelProvider: 'openai',
         id: 'gpt-5.5',
@@ -210,15 +210,7 @@ void main() {
         supportsPriorityMode: false,
         family: 'gpt',
       );
-      final codexSpark = canonical.copyWith(
-        id: 'gpt-5.3-codex-spark',
-        supportsPriorityMode: false,
-        family: 'gpt-codex-spark',
-        isCanonical: false,
-      );
-
       expect(canonical.isCodexRuntimeModel, isTrue);
-      expect(codexSpark.isCodexRuntimeModel, isTrue);
       expect(alias.isCodexRuntimeModel, isFalse);
       expect(oldModel.isCodexRuntimeModel, isFalse);
     });

@@ -407,16 +407,16 @@ void main() {
     });
 
     test(
-      'keeps Codex tool-call support independent from priority mode',
+      'projects priority Codex models with tool-call and modality support',
       () async {
         final selections = [
           _makeSelection(
-            selectionId: 'sel-codex-spark',
+            selectionId: 'sel-codex-tools',
             modelConnectionId: 'conn-codex',
             modelConnectionName: 'Codex',
             providerId: 'openai',
             providerName: 'OpenAI',
-            modelId: 'gpt-5-spark',
+            modelId: 'gpt-5.5',
             connectionProviderId: ModelProviderOAuthProfiles.providerId,
           ),
         ];
@@ -428,13 +428,13 @@ void main() {
         const openAIModels = [
           ApiModelEntity(
             modelProvider: 'openai',
-            id: 'gpt-5-spark',
-            name: 'GPT-5 Spark',
+            id: 'gpt-5.5',
+            name: 'GPT-5.5',
             limitContext: 1050000,
             limitOutput: 128000,
-            modalitiesInput: ['text'],
+            modalitiesInput: ['text', 'image'],
             modalitiesOutput: ['text'],
-            family: 'gpt-codex-spark',
+            supportsPriorityMode: true,
             supportsToolCalls: true,
           ),
         ];
@@ -475,6 +475,10 @@ void main() {
         final result = await container.read(provider.future);
 
         expect(result.single.workspaceModelSelection.supportsToolCalls, isTrue);
+        expect(result.single.workspaceModelSelection.modalitiesInput, [
+          'text',
+          'image',
+        ]);
       },
     );
   });

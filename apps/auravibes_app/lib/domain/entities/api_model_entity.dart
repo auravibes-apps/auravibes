@@ -150,7 +150,7 @@ extension ApiModelEntityCapabilities on ApiModelEntity {
       limitOutput > 0;
 
   bool get isCodexRuntimeModel =>
-      (supportsPriorityMode || family == 'gpt-codex-spark') &&
+      supportsPriorityMode &&
       modalitiesInput.contains('text') &&
       modalitiesOutput.contains('text') &&
       limitOutput > 0;
