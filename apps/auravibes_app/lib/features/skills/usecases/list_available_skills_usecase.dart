@@ -361,22 +361,33 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
   Future<AvailableSkill?> _toAvailableAppSkill(
     _AppSkillAvailabilityRequest request,
   ) async {
-    if (!await _isAppSkillEnabled(
-      request.cloud,
-      request.workspaceId,
-      request.skill,
-    )) {
+    final skill = request.skill;
+    if (!await _isAppSkillEnabled(request.cloud, request.workspaceId, skill)) {
       return null;
     }
 
-    final isLoaded = request.loadedAppIds.contains(request.skill.identifier);
+    final credentialReadiness = await _credentialReadinessForAppSkillRequest(
+      request,
+    );
+    if (credentialReadiness == null) {
+      return null;
+    }
+
+    return _availableAppSkill(skill, credentialReadiness: credentialReadiness);
+  }
+
+  Future<SkillCredentialReadiness?> _credentialReadinessForAppSkillRequest(
+    _AppSkillAvailabilityRequest request,
+  ) async {
+    final skill = request.skill;
+    final isLoaded = request.loadedAppIds.contains(skill.identifier);
     final hasUsableTool = await _hasUsableAppSkillToolForRuntime(
       request.cloud,
       request.workspaceId,
-      request.skill,
+      skill,
     );
     final credentialReadiness = _appSkillCredentialReadiness(
-      request.skill,
+      skill,
       hasUsableTool,
     );
     if (!_isAppSkillAvailable(
@@ -388,10 +399,7 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
       return null;
     }
 
-    return _availableAppSkill(
-      request.skill,
-      credentialReadiness: credentialReadiness,
-    );
+    return credentialReadiness;
   }
 
   bool _isAppSkillAvailable(
