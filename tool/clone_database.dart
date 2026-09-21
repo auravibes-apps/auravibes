@@ -1,10 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:path/path.dart' as path;
-import 'package:sqlite3/sqlite3.dart';
 
 import 'database_directory.dart';
 
@@ -19,21 +16,19 @@ Future<void> main(List<String> arguments) async {
 
     final directory =
         options.databaseDirectory ?? await applicationDocumentsDirectory();
-    final databaseName = AppStorageNamespace.forHashSource(options.hashSource);
-    final databaseFile = File(path.join(directory, '$databaseName.sqlite'));
-    if (!databaseFile.existsSync()) {
-      throw StateError('Database not found: ${databaseFile.path}');
-    }
+    final defaultDatabase = File(
+      path.join(directory, '${AppStorageNamespace.forHashSource(null)}.sqlite'),
+    );
+    final scopedDatabase = File(
+      path.join(
+        directory,
+        '${AppStorageNamespace.forHashSource(options.hashSource)}.sqlite',
+      ),
+    );
 
-    final database = sqlite3.open(databaseFile.path);
-    try {
-      final rows = database.select(options.sql);
-      for (final row in rows) {
-        stdout.writeln(jsonEncode(row.map(_jsonEntry)));
-      }
-    } finally {
-      database.close();
-    }
+    if (scopedDatabase.existsSync() || !defaultDatabase.existsSync()) return;
+
+    final _ = await defaultDatabase.copy(scopedDatabase.path);
   } on FormatException catch (error) {
     stderr
       ..writeln(error.message)
@@ -45,20 +40,15 @@ Future<void> main(List<String> arguments) async {
   }
 }
 
-MapEntry<String, Object?> _jsonEntry(String key, Object? value) =>
-    MapEntry(key, value is Uint8List ? base64Encode(value) : value);
-
 final class _Options._({
   required final String? databaseDirectory,
   required final String hashSource,
   required final bool help,
-  required final String sql,
 }) {
   factory parse(List<String> arguments) {
     String? databaseDirectory;
-    var hashSource = Directory.current.absolute.path;
+    var hashSource = _currentWorktreePath();
     var help = false;
-    final sql = <String>[];
 
     for (var index = 0; index < arguments.length; index++) {
       switch (arguments[index]) {
@@ -69,17 +59,14 @@ final class _Options._({
         case '--help' || '-h':
           help = true;
         default:
-          sql.add(arguments[index]);
+          throw FormatException('Unknown option: ${arguments[index]}');
       }
     }
-
-    if (!help && sql.isEmpty) throw const FormatException('Missing SQL query.');
 
     return ._(
       databaseDirectory: databaseDirectory,
       hashSource: hashSource,
       help: help,
-      sql: sql.join(' '),
     );
   }
 
@@ -92,18 +79,22 @@ final class _Options._({
   }
 }
 
+String _currentWorktreePath() {
+  final result = Process.runSync('git', ['rev-parse', '--show-toplevel']);
+  final worktree = '${result.stdout}'.trim();
+  if (result.exitCode == 0 && worktree.isNotEmpty) return worktree;
+
+  return Directory.current.absolute.path;
+}
+
 const _usage = '''
-Execute SQL against the dev database scoped by DB_HASH_SOURCE.
+Clone the unscoped AuraVibes dev database into a new worktree scope.
 
 Usage:
-  fvm dart run tool/db_query.dart [options] "SQL"
+  fvm dart run tool/clone_database.dart [options]
 
 Options:
-  --hash-source PATH         DB_HASH_SOURCE value (default: current directory)
+  --hash-source PATH         Worktree path to hash (default: current directory)
   --database-directory PATH Override the platform documents directory
   -h, --help                 Show this help
-
-Examples:
-  fvm dart run tool/db_query.dart "SELECT id, name FROM workspaces"
-  fvm dart run tool/db_query.dart --hash-source ../other "PRAGMA user_version"
 ''';

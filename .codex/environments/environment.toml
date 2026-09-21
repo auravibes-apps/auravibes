@@ -3,7 +3,7 @@ version = 1
 name = "AuraVibes Flutter"
 
 [setup]
-script = "fvm use"
+script = "fvm use && fvm dart run tool/clone_database.dart"
 
 [[actions]]
 name = "Bootstrap"
@@ -34,7 +34,7 @@ command = "fvm dart run melos run test"
 name = "Start macOS App"
 icon = "run"
 command = '''
-worktree="$PWD"
+worktree="$(git rev-parse --show-toplevel)"
 source "$worktree/scripts/serverpod_worktree_env.sh"
 cd "$worktree/apps/auravibes_app"
 fvm flutter run -d macos --flavor dev \
@@ -46,7 +46,7 @@ platform = "darwin"
 name = "Start Linux App"
 icon = "run"
 command = '''
-worktree="$PWD"
+worktree="$(git rev-parse --show-toplevel)"
 source "$worktree/scripts/serverpod_worktree_env.sh"
 cd "$worktree/apps/auravibes_app"
 fvm flutter run -d linux --flavor dev \
@@ -57,7 +57,7 @@ platform = "linux"
 [[actions]]
 name = "Start Windows App"
 icon = "run"
-command = "cd apps/auravibes_app && fvm flutter run -d windows --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/"
+command = "cmd /c scripts/start_windows_app.cmd"
 platform = "win32"
 
 [[actions]]
