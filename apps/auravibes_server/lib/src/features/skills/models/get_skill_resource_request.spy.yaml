@@ -1,0 +1,4 @@
+class: GetSkillResourceRequest
+fields:
+  workspaceId: int
+  resourceId: String

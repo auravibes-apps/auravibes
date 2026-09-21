@@ -141,6 +141,16 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                       factory: $SkillToolEditRoute._fromState,
                     ),
                     GoRouteData.$route(
+                      path: ':skillId/resources/new',
+                      hasOverriddenOnExit: false,
+                      factory: $SkillResourceCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':skillId/resources/:resourceId',
+                      hasOverriddenOnExit: false,
+                      factory: $SkillResourceEditRoute._fromState,
+                    ),
+                    GoRouteData.$route(
                       path: ':skillId',
                       hasOverriddenOnExit: false,
                       factory: $SkillDetailRoute._fromState,
@@ -823,6 +833,63 @@ mixin $SkillToolEditRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/tools/${Uri.encodeComponent(_self.toolId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SkillResourceCreateRoute on GoRouteData {
+  static SkillResourceCreateRoute _fromState(GoRouterState state) =>
+      SkillResourceCreateRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        skillId: state.pathParameters['skillId']!,
+      );
+
+  SkillResourceCreateRoute get _self => this as SkillResourceCreateRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/resources/new',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SkillResourceEditRoute on GoRouteData {
+  static SkillResourceEditRoute _fromState(GoRouterState state) =>
+      SkillResourceEditRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        skillId: state.pathParameters['skillId']!,
+        resourceId: state.pathParameters['resourceId']!,
+      );
+
+  SkillResourceEditRoute get _self => this as SkillResourceEditRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skills/${Uri.encodeComponent(_self.skillId)}/resources/${Uri.encodeComponent(_self.resourceId)}',
   );
 
   @override

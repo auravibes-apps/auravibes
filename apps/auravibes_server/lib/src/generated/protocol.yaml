@@ -62,6 +62,12 @@ object:
   - completeUpload:
   - getDownload:
   - delete:
+skillResource:
+  - list:
+  - get:
+  - create:
+  - update:
+  - delete:
 workspaceStream:
   - subscribe:
 workspaceSecret:

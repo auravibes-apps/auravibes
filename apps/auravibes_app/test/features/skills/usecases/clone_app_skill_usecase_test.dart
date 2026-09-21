@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -26,6 +27,7 @@ void main() {
     final definitionsRepository = SkillCredentialDefinitionsRepository(
       database,
     );
+    final resourcesRepository = SkillResourcesRepository(database);
     final toolsRepository = SkillTemplateToolsRepository(database);
     final usecase = CloneAppSkillUsecase(
       const AppSkillRegistry(),
@@ -37,6 +39,7 @@ void main() {
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository: definitionsRepository,
       ),
+      resourceRepository: resourcesRepository,
     );
 
     final cloned = await usecase.call(workspace.id, 'brave');
@@ -62,6 +65,9 @@ void main() {
       expect(attributes.values, everyElement(isA<Map<String, Object?>>()));
       expect(attributes.values, everyElement(isNot(contains('value'))));
     }
+    final resources = await resourcesRepository.getSkillResources(cloned.id);
+    expect(resources, hasLength(1));
+    expect(resources.single.slug, 'query_operators_and_paging');
   });
 
   test('does not clone native app controls', () async {

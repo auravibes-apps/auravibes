@@ -11900,6 +11900,524 @@ class SkillTemplateToolsCompanion
   }
 }
 
+class $SkillResourcesTable extends SkillResources
+    with TableInfo<$SkillResourcesTable, SkillResourcesTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SkillResourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _skillIdMeta = const VerificationMeta(
+    'skillId',
+  );
+  @override
+  late final GeneratedColumn<String> skillId = GeneratedColumn<String>(
+    'skill_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES skills (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
+  @override
+  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
+    'slug',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    skillId,
+    title,
+    slug,
+    description,
+    content,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'skill_resources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SkillResourcesTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('skill_id')) {
+      context.handle(
+        _skillIdMeta,
+        skillId.isAcceptableOrUnknown(data['skill_id']!, _skillIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_skillIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('slug')) {
+      context.handle(
+        _slugMeta,
+        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slugMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {skillId, slug},
+  ];
+  @override
+  SkillResourcesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SkillResourcesTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      skillId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}skill_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      slug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slug'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+    );
+  }
+
+  @override
+  $SkillResourcesTable createAlias(String alias) {
+    return $SkillResourcesTable(attachedDatabase, alias);
+  }
+}
+
+class SkillResourcesTable extends DataClass
+    implements Insertable<SkillResourcesTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String skillId;
+  final String title;
+  final String slug;
+  final String description;
+  final String content;
+  const SkillResourcesTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.skillId,
+    required this.title,
+    required this.slug,
+    required this.description,
+    required this.content,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['skill_id'] = Variable<String>(skillId);
+    map['title'] = Variable<String>(title);
+    map['slug'] = Variable<String>(slug);
+    map['description'] = Variable<String>(description);
+    map['content'] = Variable<String>(content);
+    return map;
+  }
+
+  SkillResourcesCompanion toCompanion(bool nullToAbsent) {
+    return SkillResourcesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      skillId: Value(skillId),
+      title: Value(title),
+      slug: Value(slug),
+      description: Value(description),
+      content: Value(content),
+    );
+  }
+
+  factory SkillResourcesTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SkillResourcesTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      skillId: serializer.fromJson<String>(json['skillId']),
+      title: serializer.fromJson<String>(json['title']),
+      slug: serializer.fromJson<String>(json['slug']),
+      description: serializer.fromJson<String>(json['description']),
+      content: serializer.fromJson<String>(json['content']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'skillId': serializer.toJson<String>(skillId),
+      'title': serializer.toJson<String>(title),
+      'slug': serializer.toJson<String>(slug),
+      'description': serializer.toJson<String>(description),
+      'content': serializer.toJson<String>(content),
+    };
+  }
+
+  SkillResourcesTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? skillId,
+    String? title,
+    String? slug,
+    String? description,
+    String? content,
+  }) => SkillResourcesTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    skillId: skillId ?? this.skillId,
+    title: title ?? this.title,
+    slug: slug ?? this.slug,
+    description: description ?? this.description,
+    content: content ?? this.content,
+  );
+  SkillResourcesTable copyWithCompanion(SkillResourcesCompanion data) {
+    return SkillResourcesTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      skillId: data.skillId.present ? data.skillId.value : this.skillId,
+      title: data.title.present ? data.title.value : this.title,
+      slug: data.slug.present ? data.slug.value : this.slug,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      content: data.content.present ? data.content.value : this.content,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkillResourcesTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('skillId: $skillId, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('description: $description, ')
+          ..write('content: $content')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    skillId,
+    title,
+    slug,
+    description,
+    content,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SkillResourcesTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.skillId == this.skillId &&
+          other.title == this.title &&
+          other.slug == this.slug &&
+          other.description == this.description &&
+          other.content == this.content);
+}
+
+class SkillResourcesCompanion extends UpdateCompanion<SkillResourcesTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> skillId;
+  final Value<String> title;
+  final Value<String> slug;
+  final Value<String> description;
+  final Value<String> content;
+  final Value<int> rowid;
+  const SkillResourcesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.skillId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.slug = const Value.absent(),
+    this.description = const Value.absent(),
+    this.content = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SkillResourcesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String skillId,
+    required String title,
+    required String slug,
+    this.description = const Value.absent(),
+    required String content,
+    this.rowid = const Value.absent(),
+  }) : skillId = Value(skillId),
+       title = Value(title),
+       slug = Value(slug),
+       content = Value(content);
+  static Insertable<SkillResourcesTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? skillId,
+    Expression<String>? title,
+    Expression<String>? slug,
+    Expression<String>? description,
+    Expression<String>? content,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (skillId != null) 'skill_id': skillId,
+      if (title != null) 'title': title,
+      if (slug != null) 'slug': slug,
+      if (description != null) 'description': description,
+      if (content != null) 'content': content,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SkillResourcesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? skillId,
+    Value<String>? title,
+    Value<String>? slug,
+    Value<String>? description,
+    Value<String>? content,
+    Value<int>? rowid,
+  }) {
+    return SkillResourcesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      skillId: skillId ?? this.skillId,
+      title: title ?? this.title,
+      slug: slug ?? this.slug,
+      description: description ?? this.description,
+      content: content ?? this.content,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (skillId.present) {
+      map['skill_id'] = Variable<String>(skillId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (slug.present) {
+      map['slug'] = Variable<String>(slug.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkillResourcesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('skillId: $skillId, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('description: $description, ')
+          ..write('content: $content, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConversationSkillsTable extends ConversationSkills
     with TableInfo<$ConversationSkillsTable, ConversationSkillsTable> {
   @override
@@ -13167,6 +13685,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceCompactionSettingsTable(this);
   late final $SkillTemplateToolsTable skillTemplateTools =
       $SkillTemplateToolsTable(this);
+  late final $SkillResourcesTable skillResources = $SkillResourcesTable(this);
   late final $ConversationSkillsTable conversationSkills =
       $ConversationSkillsTable(this);
   late final $AppSkillWorkspaceSettingsTable appSkillWorkspaceSettings =
@@ -13261,6 +13780,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final SkillsDao skillsDao = SkillsDao(this as AppDatabase);
   late final SkillTemplateToolsDao skillTemplateToolsDao =
       SkillTemplateToolsDao(this as AppDatabase);
+  late final SkillResourcesDao skillResourcesDao = SkillResourcesDao(
+    this as AppDatabase,
+  );
   late final ConversationSkillsDao conversationSkillsDao =
       ConversationSkillsDao(this as AppDatabase);
   late final AppSkillWorkspaceSettingsDao appSkillWorkspaceSettingsDao =
@@ -13291,6 +13813,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversationTools,
     workspaceCompactionSettings,
     skillTemplateTools,
+    skillResources,
     conversationSkills,
     appSkillWorkspaceSettings,
     recentModelSelections,
@@ -13511,6 +14034,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('skill_template_tools', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'skills',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('skill_resources', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -19368,6 +19898,24 @@ final class $$SkillsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$SkillResourcesTable, List<SkillResourcesTable>>
+  _skillResourcesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.skillResources,
+    aliasName: 'skills__id__skill_resources__skill_id',
+  );
+
+  $$SkillResourcesTableProcessedTableManager get skillResourcesRefs {
+    final manager = $$SkillResourcesTableTableManager(
+      $_db,
+      $_db.skillResources,
+    ).filter((f) => f.skillId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_skillResourcesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<
     $ConversationSkillsTable,
     List<ConversationSkillsTable>
@@ -19550,6 +20098,31 @@ class $$SkillsTableFilterComposer
           }) => $$SkillTemplateToolsTableFilterComposer(
             $db: $db,
             $table: $db.skillTemplateTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> skillResourcesRefs(
+    Expression<bool> Function($$SkillResourcesTableFilterComposer f) f,
+  ) {
+    final $$SkillResourcesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skillResources,
+      getReferencedColumn: (t) => t.skillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillResourcesTableFilterComposer(
+            $db: $db,
+            $table: $db.skillResources,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -19842,6 +20415,31 @@ class $$SkillsTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> skillResourcesRefs<T extends Object>(
+    Expression<T> Function($$SkillResourcesTableAnnotationComposer a) f,
+  ) {
+    final $$SkillResourcesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skillResources,
+      getReferencedColumn: (t) => t.skillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillResourcesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.skillResources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> conversationSkillsRefs<T extends Object>(
     Expression<T> Function($$ConversationSkillsTableAnnotationComposer a) f,
   ) {
@@ -19887,6 +20485,7 @@ class $$SkillsTableTableManager
             bool credentialDefinitionId,
             bool agentSkillsRefs,
             bool skillTemplateToolsRefs,
+            bool skillResourcesRefs,
             bool conversationSkillsRefs,
           })
         > {
@@ -19979,6 +20578,7 @@ class $$SkillsTableTableManager
                 credentialDefinitionId = false,
                 agentSkillsRefs = false,
                 skillTemplateToolsRefs = false,
+                skillResourcesRefs = false,
                 conversationSkillsRefs = false,
               }) {
                 return PrefetchHooks(
@@ -19986,6 +20586,7 @@ class $$SkillsTableTableManager
                   explicitlyWatchedTables: [
                     if (agentSkillsRefs) db.agentSkills,
                     if (skillTemplateToolsRefs) db.skillTemplateTools,
+                    if (skillResourcesRefs) db.skillResources,
                     if (conversationSkillsRefs) db.conversationSkills,
                   ],
                   addJoins:
@@ -20073,6 +20674,27 @@ class $$SkillsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (skillResourcesRefs)
+                        await $_getPrefetchedData<
+                          SkillsTable,
+                          $SkillsTable,
+                          SkillResourcesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SkillsTableReferences
+                              ._skillResourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).skillResourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.skillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (conversationSkillsRefs)
                         await $_getPrefetchedData<
                           SkillsTable,
@@ -20119,6 +20741,7 @@ typedef $$SkillsTableProcessedTableManager =
         bool credentialDefinitionId,
         bool agentSkillsRefs,
         bool skillTemplateToolsRefs,
+        bool skillResourcesRefs,
         bool conversationSkillsRefs,
       })
     >;
@@ -25246,6 +25869,391 @@ typedef $$SkillTemplateToolsTableProcessedTableManager =
       SkillTemplateToolsTable,
       PrefetchHooks Function({bool skillId, bool credentialDefinitionId})
     >;
+typedef $$SkillResourcesTableCreateCompanionBuilder =
+    SkillResourcesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String skillId,
+      required String title,
+      required String slug,
+      Value<String> description,
+      required String content,
+      Value<int> rowid,
+    });
+typedef $$SkillResourcesTableUpdateCompanionBuilder =
+    SkillResourcesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> skillId,
+      Value<String> title,
+      Value<String> slug,
+      Value<String> description,
+      Value<String> content,
+      Value<int> rowid,
+    });
+
+final class $$SkillResourcesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SkillResourcesTable,
+          SkillResourcesTable
+        > {
+  $$SkillResourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $SkillsTable _skillIdTable(_$AppDatabase db) =>
+      db.skills.createAlias('skill_resources__skill_id__skills__id');
+
+  $$SkillsTableProcessedTableManager get skillId {
+    final $_column = $_itemColumn<String>('skill_id')!;
+
+    final manager = $$SkillsTableTableManager(
+      $_db,
+      $_db.skills,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_skillIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SkillResourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $SkillResourcesTable> {
+  $$SkillResourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$SkillsTableFilterComposer get skillId {
+    final $$SkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.skillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SkillResourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SkillResourcesTable> {
+  $$SkillResourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$SkillsTableOrderingComposer get skillId {
+    final $$SkillsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.skillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableOrderingComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SkillResourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SkillResourcesTable> {
+  $$SkillResourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get slug =>
+      $composableBuilder(column: $table.slug, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  $$SkillsTableAnnotationComposer get skillId {
+    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.skillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SkillResourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SkillResourcesTable,
+          SkillResourcesTable,
+          $$SkillResourcesTableFilterComposer,
+          $$SkillResourcesTableOrderingComposer,
+          $$SkillResourcesTableAnnotationComposer,
+          $$SkillResourcesTableCreateCompanionBuilder,
+          $$SkillResourcesTableUpdateCompanionBuilder,
+          (SkillResourcesTable, $$SkillResourcesTableReferences),
+          SkillResourcesTable,
+          PrefetchHooks Function({bool skillId})
+        > {
+  $$SkillResourcesTableTableManager(
+    _$AppDatabase db,
+    $SkillResourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SkillResourcesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SkillResourcesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SkillResourcesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> skillId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> slug = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SkillResourcesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                skillId: skillId,
+                title: title,
+                slug: slug,
+                description: description,
+                content: content,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String skillId,
+                required String title,
+                required String slug,
+                Value<String> description = const Value.absent(),
+                required String content,
+                Value<int> rowid = const Value.absent(),
+              }) => SkillResourcesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                skillId: skillId,
+                title: title,
+                slug: slug,
+                description: description,
+                content: content,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$SkillResourcesTable, SkillResourcesTable>(table),
+                  $$SkillResourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({skillId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (skillId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.skillId,
+                        referencedTable: $$SkillResourcesTableReferences
+                            ._skillIdTable(db),
+                        referencedColumn: $$SkillResourcesTableReferences
+                            ._skillIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SkillResourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SkillResourcesTable,
+      SkillResourcesTable,
+      $$SkillResourcesTableFilterComposer,
+      $$SkillResourcesTableOrderingComposer,
+      $$SkillResourcesTableAnnotationComposer,
+      $$SkillResourcesTableCreateCompanionBuilder,
+      $$SkillResourcesTableUpdateCompanionBuilder,
+      (SkillResourcesTable, $$SkillResourcesTableReferences),
+      SkillResourcesTable,
+      PrefetchHooks Function({bool skillId})
+    >;
 typedef $$ConversationSkillsTableCreateCompanionBuilder =
     ConversationSkillsCompanion Function({
       Value<String> id,
@@ -26327,6 +27335,8 @@ class $AppDatabaseManager {
       );
   $$SkillTemplateToolsTableTableManager get skillTemplateTools =>
       $$SkillTemplateToolsTableTableManager(_db, _db.skillTemplateTools);
+  $$SkillResourcesTableTableManager get skillResources =>
+      $$SkillResourcesTableTableManager(_db, _db.skillResources);
   $$ConversationSkillsTableTableManager get conversationSkills =>
       $$ConversationSkillsTableTableManager(_db, _db.conversationSkills);
   $$AppSkillWorkspaceSettingsTableTableManager get appSkillWorkspaceSettings =>

@@ -88,6 +88,16 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   }
 
   @override
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) async {
+    if (!await workspaceExists(id)) throw Exception('Workspace not found');
+
+    return await createWorkspace(.new(name: name, type: .local));
+  }
+
+  @override
   Future<WorkspaceEntity> patchWorkspace(
     String id,
     WorkspacePatch workspace,
@@ -479,6 +489,31 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Switch workspace?'), findsNothing);
+    });
+
+    testWidgets('duplicates a local workspace from its menu', (tester) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_menu_ws-1')),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Duplicate Workspace'), findsOneWidget);
+
+      await tester.tap(find.text('Duplicate Workspace'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        (await repository.getAllWorkspaces()).map(
+          (workspace) => workspace.name,
+        ),
+        contains('Workspace A Copy'),
+      );
     });
 
     testWidgets('shows sign-in recovery for an expired cloud session', (

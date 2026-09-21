@@ -92,6 +92,16 @@ import 'package:auravibes_server/src/generated/features/objects/models/delete_ob
     as _ikvc6p78;
 import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
     as _itlqxnii;
+import 'package:auravibes_server/src/generated/features/skills/models/create_skill_resource_request.dart'
+    as _iv65f6mc;
+import 'package:auravibes_server/src/generated/features/skills/models/delete_skill_resource_request.dart'
+    as _iuwrl6dt;
+import 'package:auravibes_server/src/generated/features/skills/models/get_skill_resource_request.dart'
+    as _i9vy3rak;
+import 'package:auravibes_server/src/generated/features/skills/models/list_skill_resources_request.dart'
+    as _i92s6a70;
+import 'package:auravibes_server/src/generated/features/skills/models/update_skill_resource_request.dart'
+    as _is4f2agc;
 import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i87sg8g4;
 import 'package:auravibes_server/src/generated/features/workspace_state/models/duplicate_workspace_agent_request.dart'
@@ -150,6 +160,7 @@ import '../features/mcp_servers/mcp_server_endpoint.dart' as _im1tu8co;
 import '../features/model_connections/model_connection_endpoint.dart'
     as _irncar1s;
 import '../features/objects/object_endpoint.dart' as _ia0f4jqg;
+import '../features/skills/skill_resource_endpoint.dart' as _ip6c362v;
 import '../features/sync/stream/workspace_stream_endpoint.dart' as _ifbwcqx4;
 import '../features/workspace_state/workspace_secret_endpoint.dart'
     as _i2j4mlvu;
@@ -212,6 +223,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'object',
+          null,
+        ),
+      'skillResource': _ip6c362v.SkillResourceEndpoint()
+        ..initialize(
+          server,
+          'skillResource',
           null,
         ),
       'workspaceStream': _ifbwcqx4.WorkspaceStreamEndpoint()
@@ -1395,6 +1412,117 @@ class Endpoints extends _is.EndpointDispatch {
                     session,
                     params['request'],
                   ),
+        ),
+      },
+    );
+    connectors['skillResource'] = _is.EndpointConnector(
+      name: 'skillResource',
+      endpoint: endpoints['skillResource']!,
+      methodConnectors: {
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i92s6a70.ListSkillResourcesRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['skillResource']
+                          as _ip6c362v.SkillResourceEndpoint)
+                      .list(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'get': _is.MethodConnector(
+          name: 'get',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i9vy3rak.GetSkillResourceRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['skillResource']
+                          as _ip6c362v.SkillResourceEndpoint)
+                      .get(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'create': _is.MethodConnector(
+          name: 'create',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iv65f6mc.CreateSkillResourceRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['skillResource']
+                          as _ip6c362v.SkillResourceEndpoint)
+                      .create(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'update': _is.MethodConnector(
+          name: 'update',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_is4f2agc.UpdateSkillResourceRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['skillResource']
+                          as _ip6c362v.SkillResourceEndpoint)
+                      .update(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'delete': _is.MethodConnector(
+          name: 'delete',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_iuwrl6dt.DeleteSkillResourceRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['skillResource']
+                          as _ip6c362v.SkillResourceEndpoint)
+                      .delete(
+                        session,
+                        params['request'],
+                      ),
         ),
       },
     );

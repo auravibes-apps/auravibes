@@ -9,6 +9,7 @@ import 'package:auravibes_app/data/repositories/conversation_skills_repository.d
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -128,6 +129,7 @@ void main() {
         skillsRepository,
         toolsRepository,
         createSkillUsecase,
+        resourceRepository: .new(database),
       );
     }
 
@@ -150,6 +152,8 @@ void main() {
     }
 
     RunSkillsManagerToolUsecase runSkillsManagerToolUsecase() {
+      final resourceRepository = SkillResourcesRepository(database);
+
       return RunSkillsManagerToolUsecase(
         skillsRepository,
         toolsRepository,
@@ -160,6 +164,9 @@ void main() {
         updateTemplateToolUsecase(),
         .new(skillCredentialDefinitionsRepository),
         .new(skillCredentialDefinitionsRepository),
+        resourceRepository: resourceRepository,
+        createSkillResourceUsecase: .new(resourceRepository),
+        updateSkillResourceUsecase: .new(resourceRepository),
       );
     }
 
@@ -1437,6 +1444,11 @@ void main() {
           _skillManagerTool('create_skill_credential_definition'),
           _skillManagerTool('update_skill_credential_definition'),
           _skillManagerTool('delete_skill_credential_definition'),
+          _skillManagerTool('list_skill_resources'),
+          _skillManagerTool('get_skill_resource'),
+          _skillManagerTool('create_skill_resource'),
+          _skillManagerTool('update_skill_resource'),
+          _skillManagerTool('delete_skill_resource'),
         ]),
       );
       final createSkillSpec = specs.singleWhere(
@@ -1493,6 +1505,39 @@ void main() {
         workspaceId: workspace.id,
         toolSlug: SkillToolSlugs.listSkillTemplateTools,
         arguments: {'skillSlug': 'example_services'},
+      ) as Map<String, Object?>;
+      final createdResource = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.createSkillResource,
+        arguments: {
+          'skillSlug': 'example_services',
+          'title': 'Refund Policy',
+          'description': 'Refund rules.',
+          'content': '# Refunds',
+        },
+      ) as Map<String, Object?>;
+      final listedResources = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.listSkillResources,
+        arguments: {'skillSlug': 'example_services'},
+      ) as Map<String, Object?>;
+      final foundResource = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.getSkillResource,
+        arguments: {
+          'skillSlug': 'example_services',
+          'resourceSlug': 'refund_policy',
+        },
+      ) as Map<String, Object?>;
+      final updatedResource = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.updateSkillResource,
+        arguments: {
+          'skillSlug': 'example_services',
+          'resourceSlug': 'refund_policy',
+          'title': 'Refund Rules',
+          'content': '# Updated refunds',
+        },
       ) as Map<String, Object?>;
       final foundTool = await runUsecase.call(
         workspaceId: workspace.id,
@@ -1586,6 +1631,14 @@ void main() {
           'toolSlug': 'find_company',
         },
       ) as Map<String, Object?>;
+      final deletedResource = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.deleteSkillResource,
+        arguments: {
+          'skillSlug': 'example_services',
+          'resourceSlug': 'refund_policy',
+        },
+      ) as Map<String, Object?>;
       final deletedSkill = await runUsecase.call(
         workspaceId: workspace.id,
         toolSlug: SkillToolSlugs.deleteUserSkill,
@@ -1649,6 +1702,21 @@ void main() {
         ),
       );
       expect(deletedTool, containsPair('status', 'deleted'));
+      expect(createdResource, containsPair('slug', 'refund_policy'));
+      expect(createdResource, containsPair('content', '# Refunds'));
+      expect(
+        listedResources['resources'],
+        isA<List<Object?>>().having(
+          (resources) => resources.length,
+          'length',
+          1,
+        ),
+      );
+      expect(foundResource, containsPair('title', 'Refund Policy'));
+      expect(foundResource, containsPair('description', 'Refund rules.'));
+      expect(updatedResource, containsPair('title', 'Refund Rules'));
+      expect(updatedResource, containsPair('content', '# Updated refunds'));
+      expect(deletedResource, containsPair('status', 'deleted'));
       expect(deletedSkill, containsPair('status', 'deleted'));
       expect(deletedDefinition, containsPair('status', 'deleted'));
       expect(

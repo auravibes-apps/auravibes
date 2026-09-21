@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
+import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/validate_workspace_name_use_case.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -47,6 +48,16 @@ class _FakeRepository implements WorkspaceRepository {
     _workspaces.add(entity);
 
     return entity;
+  }
+
+  @override
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) async {
+    if (!await workspaceExists(id)) throw WorkspaceNotFoundException(id);
+
+    return await createWorkspace(.new(name: name, type: .local));
   }
 
   @override
@@ -294,6 +305,42 @@ void main() {
         () => fixture.usecase.call(id: 'ws-1', name: 'a' * 21),
         throwsA(isA<WorkspaceValidationException>()),
       );
+    });
+  });
+
+  group('DuplicateWorkspaceUseCase', () {
+    test('copies workspace with the next available copy name', () async {
+      final repository = _FakeRepository();
+      final original = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Original', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Original Copy', type: .local),
+      );
+      final usecase = DuplicateWorkspaceUseCase(
+        repository: repository,
+        validateName: const ValidateWorkspaceNameUseCase(),
+      );
+
+      final duplicate = await usecase.call(original.id);
+
+      expect(duplicate.name, 'Original Copy 2');
+      expect(await repository.getWorkspaceById(original.id), original);
+    });
+
+    test('truncates long source names before adding copy suffix', () async {
+      final repository = _FakeRepository();
+      final original = await repository.createWorkspace(
+        const WorkspaceToCreate(name: '12345678901234567890', type: .local),
+      );
+      final usecase = DuplicateWorkspaceUseCase(
+        repository: repository,
+        validateName: const ValidateWorkspaceNameUseCase(),
+      );
+
+      final duplicate = await usecase.call(original.id);
+
+      expect(duplicate.name, '123456789012345 Copy');
     });
   });
 

@@ -1,0 +1,6 @@
+class: DeleteSkillResourceRequest
+fields:
+  workspaceId: int
+  requestId: String
+  resourceId: String
+  expectedRevision: int

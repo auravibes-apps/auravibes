@@ -648,6 +648,12 @@ abstract class LocaleKeys {
   static const skills_screen_duplicate = 'skills_screen.duplicate';
   static const skills_screen_delete_confirm = 'skills_screen.delete_confirm';
   static const skills_screen_save_error = 'skills_screen.save_error';
+  static const skills_screen_unsaved_changes_title =
+      'skills_screen.unsaved_changes_title';
+  static const skills_screen_unsaved_changes_message =
+      'skills_screen.unsaved_changes_message';
+  static const skills_screen_discard_changes = 'skills_screen.discard_changes';
+  static const skills_screen_continue = 'skills_screen.continue';
   static const skills_screen_not_found = 'skills_screen.not_found';
   static const skills_screen_load_error = 'skills_screen.load_error';
   static const skills_screen_error_title_required =
@@ -702,6 +708,28 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.bullets';
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
+  static const skills_resource_section_title = 'skills_resource.section_title';
+  static const skills_resource_empty = 'skills_resource.empty';
+  static const skills_resource_create_title = 'skills_resource.create_title';
+  static const skills_resource_edit_title = 'skills_resource.edit_title';
+  static const skills_resource_view_title = 'skills_resource.view_title';
+  static const skills_resource_not_found = 'skills_resource.not_found';
+  static const skills_resource_load_error = 'skills_resource.load_error';
+  static const skills_resource_save_error = 'skills_resource.save_error';
+  static const skills_resource_delete_title = 'skills_resource.delete_title';
+  static const skills_resource_delete_confirm =
+      'skills_resource.delete_confirm';
+  static const skills_resource_slug_label = 'skills_resource.slug_label';
+  static const skills_resource_title_label = 'skills_resource.title_label';
+  static const skills_resource_description_label =
+      'skills_resource.description_label';
+  static const skills_resource_edit_description =
+      'skills_resource.edit_description';
+  static const skills_resource_description_empty =
+      'skills_resource.description_empty';
+  static const skills_resource_content_label = 'skills_resource.content_label';
+  static const skills_resource_edit_content = 'skills_resource.edit_content';
+  static const skills_resource_content_empty = 'skills_resource.content_empty';
   static const skills_selector_title = 'skills_selector.title';
   static const skills_selector_error = 'skills_selector.error';
   static const skills_selector_loaded_title = 'skills_selector.loaded_title';
@@ -1176,6 +1204,8 @@ abstract class LocaleKeys {
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_create_button =
       'workspace_management.create_button';
+  static const workspace_management_duplicate =
+      'workspace_management.duplicate';
   static const workspace_management_create_title =
       'workspace_management.create_title';
   static const workspace_management_edit_button =

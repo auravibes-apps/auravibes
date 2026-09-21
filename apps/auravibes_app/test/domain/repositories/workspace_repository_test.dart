@@ -52,6 +52,17 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   }
 
   @override
+  Future<WorkspaceEntity> duplicateWorkspace(
+    String id, {
+    required String name,
+  }) async {
+    final source = await getWorkspaceById(id);
+    if (source == null) throw Exception('Workspace not found');
+
+    return await createWorkspace(.new(name: name, type: .local));
+  }
+
+  @override
   Future<WorkspaceEntity> patchWorkspace(
     String id,
     WorkspacePatch workspace,

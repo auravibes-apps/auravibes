@@ -470,6 +470,10 @@
     "duplicate": "Duplicate skill",
     "delete_confirm": "Delete this skill? This also removes its conversation load state and template tools.",
     "save_error": "Unable to save skill",
+    "unsaved_changes_title": "Unsaved changes",
+    "unsaved_changes_message": "You have unsaved changes. Discard them and leave?",
+    "discard_changes": "Discard",
+    "continue": "Continue",
     "not_found": "Skill not found",
     "load_error": "Error loading skills",
     "error_title_required": "Skill title is required",
@@ -518,6 +522,26 @@
       "code": "Code",
       "quote": "Quote"
     }
+  },
+  "skills_resource": {
+    "section_title": "Resources",
+    "empty": "No skill resources",
+    "create_title": "New skill resource",
+    "edit_title": "Edit skill resource",
+    "view_title": "Skill resource",
+    "not_found": "Skill resource not found",
+    "load_error": "Error loading skill resources",
+    "save_error": "Unable to save skill resource",
+    "delete_title": "Delete skill resource",
+    "delete_confirm": "Delete this skill resource?",
+    "slug_label": "Slug",
+    "title_label": "Title",
+    "description_label": "Description",
+    "edit_description": "Edit description",
+    "description_empty": "No description yet",
+    "content_label": "Content",
+    "edit_content": "Edit content",
+    "content_empty": "No content yet"
   },
   "skills_selector": {
     "title": "Conversation skills",
@@ -954,6 +978,7 @@
   "workspace_management": {
     "title": "Manage Workspaces",
     "create_button": "Create Workspace",
+    "duplicate": "Duplicate Workspace",
     "create_title": "Create New Workspace",
     "edit_button": "Save Changes",
     "edit_title": "Edit Workspace",

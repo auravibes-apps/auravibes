@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
@@ -14,6 +15,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credentials_provid
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart'
     show appSkillRegistryProvider;
+import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.dart';
@@ -28,7 +30,7 @@ import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillToolDefinition;
+    show AppSkillResourceDefinition, AppSkillToolDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +39,15 @@ import 'package:material_ui/material_ui.dart';
 import 'package:textf/textf.dart';
 
 const _skillDescriptionMaxCharacters = 1024;
+
+typedef _SkillDetailFormValues = ({
+  String title,
+  String description,
+  String content,
+  String? credentialDefinitionId,
+  bool isCredentialOptional,
+  bool isEnabled,
+});
 
 class const SkillDetailScreen({
   required final String workspaceId,
@@ -56,9 +67,27 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   bool _isEnabled = true;
   bool _initialized = false;
   bool _isSaving = false;
+  bool _isDirty = false;
+  bool _isUserSkill = false;
+  _SkillDetailFormValues _savedFormValues = (
+    title: '',
+    description: '',
+    content: '',
+    credentialDefinitionId: null,
+    isCredentialOptional: false,
+    isEnabled: true,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _initialized = widget.skillId == null;
+    _titleController.addListener(_onTitleChanged);
+  }
 
   @override
   void dispose() {
+    _titleController.removeListener(_onTitleChanged);
     _titleController.dispose();
     _descriptionController.dispose();
     _contentController.dispose();
@@ -67,23 +96,46 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewData = _detailViewData();
-
-    return AuraScreen(
-      child: _SkillDetailBody(state: this, detailAsync: viewData.detailAsync),
-      appBar: _SkillDetailAppBar(
-        state: this,
-        currentDetail: viewData.currentDetail,
-        userSkillDetail: viewData.userSkillDetail,
-      ),
+    return PopScope(
+      child: _SkillDetailScreenContent(state: this),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(context, didPop),
     );
   }
 
-  void _updateState(VoidCallback callback) => setState(callback);
+  void _onPopInvoked(BuildContext context, bool didPop) {
+    if (!didPop) unawaited(_handleBack(context));
+  }
+
+  void _onTitleChanged() {
+    if (!_initialized) return;
+
+    setState(() {
+      _isDirty = _isEditable && _currentFormValues() != _savedFormValues;
+    });
+  }
+
+  void _updateState(VoidCallback callback) {
+    setState(() {
+      callback();
+      _isDirty = _isEditable && _currentFormValues() != _savedFormValues;
+    });
+  }
 }
 
 extension on _SkillDetailScreenState {
   bool get _isCreate => widget.skillId == null;
+
+  bool get _isEditable => _isCreate || _isUserSkill;
+
+  _SkillDetailFormValues _currentFormValues() => (
+    title: _titleController.text,
+    description: _descriptionController.text,
+    content: _contentController.text,
+    credentialDefinitionId: _credentialDefinitionId,
+    isCredentialOptional: _isCredentialOptional,
+    isEnabled: _isEnabled,
+  );
 
   AsyncValue<SkillDetail?>? _detailAsync() {
     final skillId = widget.skillId;
@@ -150,10 +202,13 @@ extension on _SkillDetailScreenState {
   void _initializeForm(BuildContext context, SkillDetail detail) {
     if (_initialized) return;
 
+    _isUserSkill = detail.isUserSkill;
     _initializeTextFields(context, detail);
     _credentialDefinitionId = detail.credentialDefinitionId;
     _isCredentialOptional = detail.isCredentialOptional;
     _isEnabled = detail.isEnabled;
+    _savedFormValues = _currentFormValues();
+    _isDirty = false;
     _initialized = true;
   }
 
@@ -192,6 +247,35 @@ String _localizedValue(BuildContext context, String? key, String fallback) =>
     key?.tr(context: context) ?? fallback;
 
 extension on _SkillDetailScreenState {
+  Future<void> _handleBack(BuildContext context) async {
+    if (!_isDirty) {
+      _popIfMounted(context);
+
+      return;
+    }
+
+    final shouldDiscard = await _confirmDiscard(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _updateState(() => _savedFormValues = _currentFormValues());
+    _popIfMounted(context);
+  }
+
+  Future<bool?> _confirmDiscard(BuildContext context) => AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_title),
+    message: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_message),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.skills_screen_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.skills_screen_continue),
+    ),
+    isDestructive: true,
+  );
+
+  void _popIfMounted(BuildContext context) {
+    if (context.mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _save(BuildContext context) async {
     if (_isSaving) return;
     _updateState(() => _isSaving = true);
@@ -204,6 +288,7 @@ extension on _SkillDetailScreenState {
   Future<bool> _trySave(BuildContext context) async {
     try {
       await _saveSkill();
+      _savedFormValues = _currentFormValues();
 
       return true;
     } on Object {
@@ -423,6 +508,24 @@ class const _SkillDetailBody({
   };
 }
 
+class const _SkillDetailScreenContent({
+  required final _SkillDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewData = state._detailViewData();
+
+    return AuraScreen(
+      child: _SkillDetailBody(state: state, detailAsync: viewData.detailAsync),
+      appBar: _SkillDetailAppBar(
+        state: state,
+        currentDetail: viewData.currentDetail,
+        userSkillDetail: viewData.userSkillDetail,
+      ),
+    );
+  }
+}
+
 class const _SkillDetailReadyForm({
   required final _SkillDetailScreenState state,
   required final SkillDetail detail,
@@ -502,7 +605,7 @@ class const _SkillDetailAppBar({
         currentDetail: currentDetail,
         userSkillDetail: userSkillDetail,
       )).values,
-      leading: _SkillDetailBackButton(),
+      leading: _SkillDetailBackButton(state: state),
     );
   }
 }
@@ -578,12 +681,14 @@ class const _SkillDetailSaveButton({
   }
 }
 
-class _SkillDetailBackButton extends StatelessWidget {
+class const _SkillDetailBackButton({
+  required final _SkillDetailScreenState state,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraIconButton(
       icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: () => state._handleBack(context),
     );
   }
 }
@@ -868,8 +973,17 @@ class const _SkillDetailRelatedContent({
 
   void _addRelatedSections(List<Widget> children, SkillDetail? detail) {
     _addAppSkillCredentials(children, detail);
+    _addSkillResources(children, detail);
     _addSkillTools(children, detail);
     _addAppSkillTools(children, detail);
+  }
+
+  void _addSkillResources(List<Widget> children, SkillDetail? detail) {
+    if (detail == null) return;
+    if (!detail.isUserSkill && detail.appResources.isEmpty) return;
+    children
+      ..add(const SizedBox(height: 12))
+      ..add(_SkillResourcesCard(workspaceId: workspaceId, detail: detail));
   }
 
   void _addAppSkillCredentials(List<Widget> children, SkillDetail? detail) {
@@ -902,6 +1016,284 @@ class const _SkillDetailRelatedContent({
       ..add(const SizedBox(height: 12))
       ..add(_AppSkillToolsCard(tools: detail.appTools));
   }
+}
+
+class const _SkillResourcesCard({
+  required final String workspaceId,
+  required final SkillDetail detail,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (detail.isUserSkill) {
+      return _SkillResourcesUserCard(
+        workspaceId: workspaceId,
+        skillId: detail.id,
+      );
+    }
+
+    return _SkillResourcesAppCard(
+      workspaceId: workspaceId,
+      skillId: detail.id,
+      resources: detail.appResources,
+    );
+  }
+}
+
+class const _SkillResourcesUserCard({
+  required final String workspaceId,
+  required final String skillId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final resourcesAsync = ref.watch(
+      skillResourcesProvider(workspaceId, skillId),
+    );
+    final actions = _SkillResourcesActions(
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      skillId: skillId,
+    );
+
+    return AuraCard(
+      child: _SkillResourcesUserContent(
+        resourcesAsync: resourcesAsync,
+        onCreate: actions.create,
+        onOpen: actions.open,
+      ),
+    );
+  }
+}
+
+class const _SkillResourcesAppCard({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCard(
+    child: _SkillResourcesAppContent(
+      workspaceId: workspaceId,
+      skillId: skillId,
+      resources: resources,
+    ),
+  );
+}
+
+class _SkillResourcesActions {
+  new({
+    required this.context,
+    required this.ref,
+    required this.workspaceId,
+    required this.skillId,
+  });
+
+  final BuildContext context;
+  final WidgetRef ref;
+  final String workspaceId;
+  final String skillId;
+
+  void create() => unawaited(_open());
+
+  Future<void> open(String resourceId) => _open(resourceId);
+
+  Future<void> _open([String? resourceId]) async {
+    final result = await context.push<bool>(
+      '/workspaces/$workspaceId/more/skills/$skillId/resources/${resourceId ?? 'new'}',
+    );
+    if (result == true) {
+      ref.invalidate(skillResourcesProvider(workspaceId, skillId));
+    }
+  }
+}
+
+class const _SkillResourcesUserContent({
+  required final AsyncValue<List<SkillResourceEntity>> resourcesAsync,
+  required final VoidCallback onCreate,
+  required final Future<void> Function(String) onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _SkillResourcesHeader(onCreate: onCreate),
+      switch (resourcesAsync) {
+        AsyncData(:final value) => _SkillResourcesDataContent(
+          resources: value,
+          onOpen: onOpen,
+        ),
+        AsyncLoading() => const Center(child: AuraSpinner(size: .small)),
+        AsyncError() => const AuraText(
+          child: TextLocale(LocaleKeys.skills_resource_load_error),
+          tint: .error,
+        ),
+      },
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesHeader({required final VoidCallback onCreate})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(
+        child: AuraText(
+          child: TextLocale(LocaleKeys.skills_resource_section_title),
+          style: .heading4,
+        ),
+      ),
+      AuraIconButton(
+        icon: Icons.add,
+        onPressed: onCreate,
+        tooltip: LocaleKeys.skills_resource_create_title.tr(context: context),
+      ),
+    ],
+  );
+}
+
+class const _SkillResourcesDataContent({
+  required final List<SkillResourceEntity> resources,
+  required final Future<void> Function(String) onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (resources.isEmpty) {
+      return const AuraText(
+        child: TextLocale(LocaleKeys.skills_resource_empty),
+      );
+    }
+
+    return AuraColumn(
+      children: [
+        for (final resource in resources)
+          _SkillResourceTile(
+            title: resource.title,
+            slug: resource.slug,
+            description: resource.description,
+            onOpen: () => unawaited(onOpen(resource.id)),
+          ),
+      ],
+      crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _SkillResourcesAppContent({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const _SkillResourcesAppHeader(),
+      _SkillResourcesAppList(
+        workspaceId: workspaceId,
+        skillId: skillId,
+        resources: resources,
+      ),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesAppHeader() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.skills_resource_section_title),
+    style: .heading4,
+  );
+}
+
+class const _SkillResourcesAppList({
+  required final String workspaceId,
+  required final String skillId,
+  required final List<AppSkillResourceDefinition> resources,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      for (final resource in resources)
+        _SkillResourcesAppTile(
+          workspaceId: workspaceId,
+          skillId: skillId,
+          resource: resource,
+        ),
+    ],
+    spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesAppTile({
+  required final String workspaceId,
+  required final String skillId,
+  required final AppSkillResourceDefinition resource,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillResourceTile(
+    title: resource.title,
+    slug: resource.slug,
+    description: resource.description,
+    onOpen: () => unawaited(
+      context.push<bool>(
+        '/workspaces/$workspaceId/more/skills/$skillId/resources/${resource.slug}',
+      ),
+    ),
+  );
+}
+
+class const _SkillResourceTile({
+  required final String title,
+  required final String slug,
+  required final String description,
+  required final VoidCallback onOpen,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: _SkillResourceTileContent(
+      title: title,
+      slug: slug,
+      description: description,
+    ),
+    onTap: onOpen,
+    variant: .ghost,
+    leading: const AuraIcon(Icons.menu_book_outlined),
+    trailing: const AuraIcon(Icons.chevron_right),
+  );
+}
+
+class const _SkillResourceTileContent({
+  required final String title,
+  required final String slug,
+  required final String description,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      AuraText(child: Text(title)),
+      _SkillResourceSlugBadge(slug: slug),
+      if (description.trim().isNotEmpty) AuraText(child: Text(description)),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceSlugBadge({required final String slug})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraBadge.text(
+    child: Text(
+      slug,
+      style: .new(fontFamily: context.auraTheme.typography.monoFontFamily),
+    ),
+    variant: .outlined,
+    size: .small,
+  );
 }
 
 class const _SkillToolsCard({
