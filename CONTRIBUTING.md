@@ -32,11 +32,14 @@ fvm dart --version
 
 4. Make the smallest change that solves the problem. Follow the standards in
    [`AGENTS.md`](AGENTS.md) and the relevant package instructions.
-5. Run focused checks while iterating. Before opening a pull request, run:
+5. Run focused checks while iterating:
 
    ```bash
    fvm dart run melos run validate:quick
    ```
+
+   For the full pull request gate, see [Pull requests](#pull-requests) and
+   [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 6. Commit with a Conventional Commits message.
 7. Open a pull request against `main`, `dev`, or `stage`, as appropriate.
