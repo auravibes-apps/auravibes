@@ -1210,6 +1210,7 @@ class const _ToolCallArgumentLines({
               _ToolCallArgumentLine(line: line, maxLines: maxLines),
           ],
           spacing: .xs,
+          crossAxisAlignment: .start,
         ),
       ),
       _ToolCallArgumentsCopyButton(content: copyValue),
