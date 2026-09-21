@@ -131,17 +131,8 @@ abstract class _AgentDetailScreenStateBase
 
   bool get _isDirty {
     final initial = _initialSnapshot;
-    if (initial == null) return false;
 
-    final current = _editorSnapshot();
-
-    return current.name != initial.name ||
-        current.description != initial.description ||
-        current.content != initial.content ||
-        current.isEnabled != initial.isEnabled ||
-        current.visibility != initial.visibility ||
-        !_sameSet(current.skills, initial.skills) ||
-        !_sameMap(current.toolPermissionModes, initial.toolPermissionModes);
+    return initial != null && !_sameEditorSnapshot(_editorSnapshot(), initial);
   }
 
   @override
@@ -513,26 +504,50 @@ mixin _AgentDetailNavigation on _AgentDetailScreenStateBase {
 
     _closing = true;
     try {
-      final discard = await AuraDialogs.confirm(
-        context: context,
-        title: const TextLocale(LocaleKeys.agents_unsaved_changes_title),
-        message: const TextLocale(LocaleKeys.agents_unsaved_changes_message),
-        actions: const AuraConfirmDialogActions(
-          confirmLabel: TextLocale(LocaleKeys.agents_discard_changes),
-          cancelLabel: TextLocale(LocaleKeys.agents_keep_editing),
-        ),
-        isDestructive: true,
-      );
-      if (discard == true && mounted) Navigator.of(context).pop();
+      if (await _confirmDiscardChanges() == true && mounted) {
+        Navigator.of(context).pop();
+      }
     } finally {
       _closing = false;
     }
   }
 
+  Future<bool?> _confirmDiscardChanges() => AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(LocaleKeys.agents_unsaved_changes_title),
+    message: const TextLocale(LocaleKeys.agents_unsaved_changes_message),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.agents_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.agents_keep_editing),
+    ),
+    isDestructive: true,
+  );
+
   void _onPopInvokedWithResult(bool didPop, Object? _) {
     if (!didPop) unawaited(_requestClose());
   }
 }
+
+bool _sameEditorSnapshot(
+  _AgentEditorSnapshot first,
+  _AgentEditorSnapshot second,
+) =>
+    _sameEditorText(first, second) &&
+    _sameEditorSettings(first, second) &&
+    _sameSet(first.skills, second.skills) &&
+    _sameMap(first.toolPermissionModes, second.toolPermissionModes);
+
+bool _sameEditorText(_AgentEditorSnapshot first, _AgentEditorSnapshot second) =>
+    first.name == second.name &&
+    first.description == second.description &&
+    first.content == second.content;
+
+bool _sameEditorSettings(
+  _AgentEditorSnapshot first,
+  _AgentEditorSnapshot second,
+) =>
+    first.isEnabled == second.isEnabled &&
+    first.visibility == second.visibility;
 
 bool _sameSet<T>(Set<T> first, Set<T> second) {
   return first.length == second.length && first.containsAll(second);
