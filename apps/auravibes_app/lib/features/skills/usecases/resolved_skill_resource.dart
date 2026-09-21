@@ -9,6 +9,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/misc.dart';
 import 'package:riverpod/riverpod.dart';
 
+const _skillResourceStoreUnavailable = 'Skill resource store is unavailable';
+
 class const ResolvedSkillResource({
   required final SkillResourceSummary summary,
   required final String content,
@@ -122,7 +124,7 @@ class const SkillResourceResolver(
     if (skill == null) return const [];
     final repository = _resourcesRepository;
     if (repository == null) {
-      throw StateError('Skill resource store is unavailable');
+      throw StateError(_skillResourceStoreUnavailable);
     }
 
     return await repository.getSkillResources(skill.id);
@@ -147,7 +149,7 @@ class const CreateSkillResourceUsecase(
     if (cloud != null) return await cloud.createResource(skillId, value);
     final repository = _resourcesRepository;
     if (repository == null) {
-      throw StateError('Skill resource store is unavailable');
+      throw StateError(_skillResourceStoreUnavailable);
     }
 
     return await repository.createResource(skillId, value);
@@ -203,7 +205,7 @@ class const UpdateSkillResourceUsecase(
     if (cloud != null) return await cloud.updateResource(resourceId, value);
     final repository = _resourcesRepository;
     if (repository == null) {
-      throw StateError('Skill resource store is unavailable');
+      throw StateError(_skillResourceStoreUnavailable);
     }
 
     return await repository.updateResource(resourceId, value);
@@ -219,7 +221,7 @@ abstract final class SkillResourceOperations {
     if (cloudStore != null) return cloudStore.deleteResource(resourceId);
     final repository = resourcesRepository;
     if (repository == null) {
-      throw StateError('Skill resource store is unavailable');
+      throw StateError(_skillResourceStoreUnavailable);
     }
 
     return repository.deleteResource(resourceId);
