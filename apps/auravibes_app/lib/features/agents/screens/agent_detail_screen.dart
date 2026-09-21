@@ -24,7 +24,6 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show activateSkillToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -88,6 +87,16 @@ typedef _NewToolGroupRequest = ({
   List<WorkspaceToolEntity> visibleTools,
 });
 
+typedef _AgentEditorSnapshot = ({
+  String name,
+  String description,
+  String content,
+  bool isEnabled,
+  AgentVisibility visibility,
+  Set<AgentSkillRef> skills,
+  Map<String, AgentToolPermissionMode> toolPermissionModes,
+});
+
 class const AgentDetailScreen({
   required final String workspaceId,
   final String? agentId,
@@ -115,15 +124,32 @@ abstract class _AgentDetailScreenStateBase
   bool _loaded = false;
   bool _toolOverridesLoaded = false;
   bool _saving = false;
+  _AgentEditorSnapshot? _initialSnapshot;
 
   Listenable get _formListenable =>
       .merge([_nameController, _descriptionController, _contentController]);
+
+  bool get _isDirty {
+    final initial = _initialSnapshot;
+    if (initial == null) return false;
+
+    final current = _editorSnapshot();
+
+    return current.name != initial.name ||
+        current.description != initial.description ||
+        current.content != initial.content ||
+        current.isEnabled != initial.isEnabled ||
+        current.visibility != initial.visibility ||
+        !_sameSet(current.skills, initial.skills) ||
+        !_sameMap(current.toolPermissionModes, initial.toolPermissionModes);
+  }
 
   @override
   void initState() {
     super.initState();
     _nameFocusNode.addListener(_onNameFocusChanged);
     _descriptionFocusNode.addListener(_onDescriptionFocusChanged);
+    _markEditorSaved();
   }
 
   @override
@@ -139,6 +165,18 @@ abstract class _AgentDetailScreenStateBase
     _contentController.dispose();
     super.dispose();
   }
+
+  _AgentEditorSnapshot _editorSnapshot() => (
+    name: _nameController.text,
+    description: _descriptionController.text,
+    content: _contentController.text,
+    isEnabled: _isEnabled,
+    visibility: _visibility,
+    skills: Set.unmodifiable(_selectedSkills),
+    toolPermissionModes: Map.unmodifiable(_toolPermissionModes),
+  );
+
+  void _markEditorSaved() => _initialSnapshot = _editorSnapshot();
 
   void _onNameFocusChanged() {
     if (!_nameFocusNode.hasFocus) _markFieldTouched(.name);
@@ -162,7 +200,8 @@ class _AgentDetailScreenState extends _AgentDetailScreenStateBase
         _AgentDetailToolOverrides,
         _AgentDetailEditing,
         _AgentDetailSaving,
-        _AgentDetailSummaryActions {
+        _AgentDetailSummaryActions,
+        _AgentDetailNavigation {
   static const _compactLayoutWidth = 640.0;
 
   @override
@@ -193,7 +232,11 @@ mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
 
   void _setToolPermissionMode(String toolId, AgentToolPermissionMode value) {
     setState(() {
-      _toolPermissionModes[toolId] = value;
+      if (value == .workspaceDefault) {
+        final _ = _toolPermissionModes.remove(toolId);
+      } else {
+        _toolPermissionModes[toolId] = value;
+      }
     });
   }
 
@@ -275,6 +318,7 @@ mixin _AgentDetailToolOverrides on _AgentDetailScreenStateBase {
               MapEntry(override.toolId, override.permissionMode.agentMode),
         ),
       );
+    _markEditorSaved();
   }
 
   void _markAgentLoaded() {
@@ -374,7 +418,8 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
     final agent = await _saveAgent(draft);
     await (this as _AgentDetailScreenState)._saveToolOverrides(agent.id);
     final _ = ref.invalidate(agentsProvider(widget.workspaceId));
-    if (mounted) context.pop(true);
+    _markEditorSaved();
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   void _finishSaving() {
@@ -453,6 +498,49 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
       skills: draft.skills,
     );
   }
+}
+
+mixin _AgentDetailNavigation on _AgentDetailScreenStateBase {
+  bool _closing = false;
+
+  Future<void> _requestClose() async {
+    if (_closing || _saving) return;
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+
+      return;
+    }
+
+    _closing = true;
+    try {
+      final discard = await AuraDialogs.confirm(
+        context: context,
+        title: const TextLocale(LocaleKeys.agents_unsaved_changes_title),
+        message: const TextLocale(LocaleKeys.agents_unsaved_changes_message),
+        actions: const AuraConfirmDialogActions(
+          confirmLabel: TextLocale(LocaleKeys.agents_discard_changes),
+          cancelLabel: TextLocale(LocaleKeys.agents_keep_editing),
+        ),
+        isDestructive: true,
+      );
+      if (discard == true && mounted) Navigator.of(context).pop();
+    } finally {
+      _closing = false;
+    }
+  }
+
+  void _onPopInvokedWithResult(bool didPop, Object? _) {
+    if (!didPop) unawaited(_requestClose());
+  }
+}
+
+bool _sameSet<T>(Set<T> first, Set<T> second) {
+  return first.length == second.length && first.containsAll(second);
+}
+
+bool _sameMap<K, V>(Map<K, V> first, Map<K, V> second) {
+  return first.length == second.length &&
+      first.entries.every((entry) => second[entry.key] == entry.value);
 }
 
 bool _hasValidAgentDescription(String value) {
@@ -538,9 +626,13 @@ class const _AgentDetailScreenLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _AgentDetailBody(state: state, skills: skills, tools: tools),
-      appBar: _AgentDetailAppBar(state: state),
+    return PopScope<Object?>(
+      child: AuraScreen(
+        child: _AgentDetailBody(state: state, skills: skills, tools: tools),
+        appBar: _AgentDetailAppBar(state: state),
+      ),
+      canPop: false,
+      onPopInvokedWithResult: state._onPopInvokedWithResult,
     );
   }
 }
@@ -561,7 +653,7 @@ class const _AgentDetailAppBar({required final _AgentDetailScreenState state})
       ),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => unawaited(state._requestClose()),
       ),
     );
   }

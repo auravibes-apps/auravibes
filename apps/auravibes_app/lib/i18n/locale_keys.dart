@@ -267,6 +267,11 @@ abstract class LocaleKeys {
   static const agents_title = 'agents.title';
   static const agents_create = 'agents.create';
   static const agents_edit_title = 'agents.edit_title';
+  static const agents_unsaved_changes_title = 'agents.unsaved_changes_title';
+  static const agents_unsaved_changes_message =
+      'agents.unsaved_changes_message';
+  static const agents_discard_changes = 'agents.discard_changes';
+  static const agents_keep_editing = 'agents.keep_editing';
   static const agents_duplicate = 'agents.duplicate';
   static const agents_duplicate_error = 'agents.duplicate_error';
   static const agents_load_error = 'agents.load_error';
