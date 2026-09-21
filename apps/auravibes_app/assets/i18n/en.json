@@ -549,7 +549,10 @@
     "loaded_title": "Loaded",
     "loaded_empty": "No skills loaded",
     "available_title": "Available",
-    "available_empty": "No skills available"
+    "available_empty": "No skills available",
+    "credentials_ready": "Ready",
+    "credentials_missing": "Missing credentials",
+    "credentials_unknown": "Credential status unknown"
   },
   "skills_tool": {
     "section_title": "Template tools",

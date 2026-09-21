@@ -10,4 +10,7 @@ class const AvailableSkill({
   required final SkillKind kind,
   final bool isCredentialOptional = false,
   final String? credentialDefinitionId,
+  final SkillCredentialReadiness credentialReadiness = .unknown,
 });
+
+enum SkillCredentialReadiness { ready, missing, unknown }

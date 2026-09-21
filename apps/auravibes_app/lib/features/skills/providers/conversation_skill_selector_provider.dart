@@ -56,7 +56,14 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
 Future<({List<AvailableSkill> loaded, List<AvailableSkill> loadable})>
 _loadSelectorSkills(_SkillSelectorLoadRequest request) async {
   final loaded = await _loadSkillsForFilter(request, .loaded);
-  final loadable = await _loadSkillsForFilter(request, .loadable);
+  final selectable = await _loadSkillsForFilter(request, .selector);
+  final loadedIds = loaded.map((skill) => skill.id).toSet();
+  final loadable = _excludeLoadedSkills(selectable, loadedIds);
 
   return (loaded: loaded, loadable: loadable);
 }
+
+List<AvailableSkill> _excludeLoadedSkills(
+  List<AvailableSkill> selectable,
+  Set<String> loadedIds,
+) => selectable.where((skill) => !loadedIds.contains(skill.id)).toList();

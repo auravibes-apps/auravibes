@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -80,6 +81,62 @@ void main() {
 
         expect(loadable.map((skill) => skill.id), [optionalSkill.id]);
         expect(loaded.map((skill) => skill.id), [loadedSkill.id]);
+
+        final selectable = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: .selector,
+        );
+        expect(selectable.map((skill) => skill.id), [
+          blockedSkill.id,
+          optionalSkill.id,
+          loadedSkill.id,
+        ]);
+        expect(
+          selectable
+              .singleWhere((skill) => skill.id == blockedSkill.id)
+              .credentialReadiness,
+          SkillCredentialReadiness.missing,
+        );
+        expect(
+          selectable
+              .singleWhere((skill) => skill.id == optionalSkill.id)
+              .credentialReadiness,
+          SkillCredentialReadiness.ready,
+        );
+      },
+    );
+
+    test(
+      'marks credential readiness unknown when the check is unavailable',
+      () async {
+        const workspaceId = 'workspace-1';
+        const conversationId = 'conversation-1';
+        final skill = _skill(
+          id: 'unknown-skill',
+          workspaceId: workspaceId,
+          title: 'Unknown Skill',
+          slug: 'unknown_skill',
+          now: .new(2026),
+          credentialDefinitionId: 'credential-definition-1',
+        );
+        final usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([skill]),
+          const _FakeConversationSkillsRepository([]),
+          const _FakeAppSkillWorkspaceSettingsRepository(),
+          const AppSkillRegistry(),
+        );
+
+        final selectable = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: .selector,
+        );
+
+        expect(
+          selectable.single.credentialReadiness,
+          SkillCredentialReadiness.unknown,
+        );
       },
     );
 
@@ -267,6 +324,18 @@ void main() {
         );
 
         expect(skills.map((skill) => skill.slug), isNot(contains('openai')));
+
+        final selectable = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: .selector,
+        );
+        expect(
+          selectable
+              .singleWhere((skill) => skill.slug == 'openai')
+              .credentialReadiness,
+          SkillCredentialReadiness.missing,
+        );
       },
     );
 

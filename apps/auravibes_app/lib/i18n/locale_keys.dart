@@ -738,6 +738,12 @@ abstract class LocaleKeys {
       'skills_selector.available_title';
   static const skills_selector_available_empty =
       'skills_selector.available_empty';
+  static const skills_selector_credentials_ready =
+      'skills_selector.credentials_ready';
+  static const skills_selector_credentials_missing =
+      'skills_selector.credentials_missing';
+  static const skills_selector_credentials_unknown =
+      'skills_selector.credentials_unknown';
   static const skills_tool_section_title = 'skills_tool.section_title';
   static const skills_tool_empty = 'skills_tool.empty';
   static const skills_tool_create_title = 'skills_tool.create_title';

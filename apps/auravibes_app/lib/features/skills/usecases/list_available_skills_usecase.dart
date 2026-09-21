@@ -266,18 +266,25 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
     if (!skill.isEnabled) return null;
 
     final isLoaded = request.loadedUserIds.contains(skill.id);
-    if (!await _isUserSkillAvailable(request, isLoaded)) return null;
+    final credentialReadiness = await _userSkillCredentialReadiness(request);
+    if (!await _isUserSkillAvailable(request, isLoaded, credentialReadiness)) {
+      return null;
+    }
 
-    return skill.toAvailableSkill();
+    return skill.toAvailableSkill(credentialReadiness: credentialReadiness);
   }
 
   Future<bool> _isUserSkillAvailable(
     _UserSkillAvailabilityRequest request,
     bool isLoaded,
+    SkillCredentialReadiness credentialReadiness,
   ) async {
+    if (request.filter == .selector) return true;
+
     final isCredentialReady = await _isUserSkillCredentialReady(
       request,
       isLoaded,
+      credentialReadiness,
     );
 
     return _isUserSkillLoadable(request.skill, isLoaded, isCredentialReady) &&
@@ -299,15 +306,29 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
   Future<bool> _isUserSkillCredentialReady(
     _UserSkillAvailabilityRequest request,
     bool isLoaded,
+    SkillCredentialReadiness credentialReadiness,
   ) {
     final cloud = request.cloud;
-    if (cloud != null) {
-      return cloud.userSkillReady(request.skill);
+    if (cloud != null) return cloud.userSkillReady(request.skill);
+
+    return Future.value(isLoaded || credentialReadiness != .missing);
+  }
+
+  Future<SkillCredentialReadiness> _userSkillCredentialReadiness(
+    _UserSkillAvailabilityRequest request,
+  ) async {
+    final skill = request.skill;
+    if (skill.isCredentialOptional ||
+        skill.credentialDefinitionId?.isNotEmpty != true) {
+      return .ready;
     }
 
-    return isLoaded
-        ? Future.value(true)
-        : _isCredentialReady(request.workspaceId, request.skill);
+    final usecase = _checkSkillCredentialReadinessUsecase;
+    if (usecase == null) return .unknown;
+
+    return await usecase.call(workspaceId: request.workspaceId, skill: skill)
+        ? .ready
+        : .missing;
   }
 }
 
@@ -340,29 +361,56 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
   Future<AvailableSkill?> _toAvailableAppSkill(
     _AppSkillAvailabilityRequest request,
   ) async {
-    if (!await _isAppSkillEnabled(
+    final skill = request.skill;
+    if (!await _isAppSkillEnabled(request.cloud, request.workspaceId, skill)) {
+      return null;
+    }
+
+    final credentialReadiness = await _credentialReadinessForAppSkillRequest(
+      request,
+    );
+    if (credentialReadiness == null) {
+      return null;
+    }
+
+    return _availableAppSkill(skill, credentialReadiness: credentialReadiness);
+  }
+
+  Future<SkillCredentialReadiness?> _credentialReadinessForAppSkillRequest(
+    _AppSkillAvailabilityRequest request,
+  ) async {
+    final skill = request.skill;
+    final isLoaded = request.loadedAppIds.contains(skill.identifier);
+    final hasUsableTool = await _hasUsableAppSkillToolForRuntime(
       request.cloud,
       request.workspaceId,
-      request.skill,
+      skill,
+    );
+    final credentialReadiness = _appSkillCredentialReadiness(
+      skill,
+      hasUsableTool,
+    );
+    if (!_isAppSkillAvailable(
+      request,
+      isLoaded,
+      hasUsableTool,
+      credentialReadiness,
     )) {
       return null;
     }
 
-    final isLoaded = request.loadedAppIds.contains(request.skill.identifier);
-    if (!await _isAppSkillAvailable(request, isLoaded)) return null;
-
-    return _availableAppSkill(request.skill);
+    return credentialReadiness;
   }
 
-  Future<bool> _isAppSkillAvailable(
+  bool _isAppSkillAvailable(
     _AppSkillAvailabilityRequest request,
     bool isLoaded,
-  ) async {
-    final hasUsableTool = await _hasUsableAppSkillToolForRuntime(
-      request.cloud,
-      request.workspaceId,
-      request.skill,
-    );
+    bool hasUsableTool,
+    SkillCredentialReadiness credentialReadiness,
+  ) {
+    if (request.filter == .selector) {
+      return isLoaded || hasUsableTool || credentialReadiness == .missing;
+    }
 
     return _isAppSkillLoadable(isLoaded, hasUsableTool) &&
         request.filter.matches(isLoaded: isLoaded);
@@ -394,7 +442,10 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
   bool _isAppSkillLoadable(bool isLoaded, bool hasUsableTool) =>
       isLoaded || hasUsableTool;
 
-  AvailableSkill _availableAppSkill(AppSkillDefinition skill) => AvailableSkill(
+  AvailableSkill _availableAppSkill(
+    AppSkillDefinition skill, {
+    required SkillCredentialReadiness credentialReadiness,
+  }) => AvailableSkill(
     source: SkillSource.app,
     id: skill.identifier,
     slug: skill.slug,
@@ -402,13 +453,22 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     description: skill.description,
     content: skill.content,
     kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
+    credentialReadiness: credentialReadiness,
   );
 
-  Future<bool> _isCredentialReady(String workspaceId, SkillEntity skill) {
-    final usecase = _checkSkillCredentialReadinessUsecase;
-    if (usecase == null) return Future.value(true);
+  SkillCredentialReadiness _appSkillCredentialReadiness(
+    AppSkillDefinition skill,
+    bool hasUsableTool,
+  ) {
+    final requiresCredential =
+        skill.requiresCredential ||
+        skill.tools.any((tool) => tool.requiresCredential);
+    if (!requiresCredential) return .ready;
 
-    return usecase.call(workspaceId: workspaceId, skill: skill);
+    final usecase = _listAppSkillCredentialCandidatesUsecase;
+    if (usecase == null) return .unknown;
+
+    return hasUsableTool ? .ready : .missing;
   }
 
   Future<bool> _hasLocallyUsableAppSkillTool(
@@ -503,13 +563,14 @@ _SharedSkillDependencies _sharedSkillDependencies(
 enum SkillLoadFilter {
   loadable,
   loaded,
+  selector,
   catalog;
 
   bool matches({required bool isLoaded}) {
     return switch (this) {
       .loadable => !isLoaded,
       .loaded => isLoaded,
-      .catalog => true,
+      .selector || .catalog => true,
     };
   }
 }
@@ -531,7 +592,9 @@ extension on List<ConversationSkillEntity> {
 }
 
 extension on SkillEntity {
-  AvailableSkill toAvailableSkill() {
+  AvailableSkill toAvailableSkill({
+    required SkillCredentialReadiness credentialReadiness,
+  }) {
     return AvailableSkill(
       source: source,
       id: id,
@@ -542,6 +605,7 @@ extension on SkillEntity {
       kind: kind,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,
+      credentialReadiness: credentialReadiness,
     );
   }
 }
