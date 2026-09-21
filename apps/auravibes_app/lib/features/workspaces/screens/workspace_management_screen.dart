@@ -237,7 +237,14 @@ extension on _WorkspaceListActions {
 
       _navigateToWorkspace(workspace.id);
     } on Object catch (error, stackTrace) {
-      if (context.mounted) _showError(context, error, stackTrace);
+      if (context.mounted) {
+        _showError(
+          context,
+          error,
+          stackTrace,
+          LocaleKeys.workspace_management_switch_error,
+        );
+      }
     }
   }
 
@@ -1392,8 +1399,13 @@ String? _routeWorkspaceId(BuildContext context) {
   return GoRouterState.of(context).pathParameters['workspaceId'];
 }
 
-void _showError(BuildContext context, Object error, [StackTrace? stackTrace]) {
-  final message = _errorMessage(error);
+void _showError(
+  BuildContext context,
+  Object error, [
+  StackTrace? stackTrace,
+  String? fallbackKey,
+]) {
+  final message = _errorMessage(error, fallbackKey);
   _logUnexpectedError(error, stackTrace);
   final _ = AuraSnackBars.show(
     context: context,
@@ -1402,12 +1414,12 @@ void _showError(BuildContext context, Object error, [StackTrace? stackTrace]) {
   );
 }
 
-String _errorMessage(Object error) {
+String _errorMessage(Object error, [String? fallbackKey]) {
   return switch (error) {
     WorkspaceException(:final localizationKey, :final message) =>
       localizationKey?.tr() ?? message,
     AppCloudWorkspaceException(:final localizationKey) => localizationKey.tr(),
-    _ => LocaleKeys.workspace_management_unexpected_error.tr(),
+    _ => (fallbackKey ?? LocaleKeys.workspace_management_unexpected_error).tr(),
   };
 }
 
