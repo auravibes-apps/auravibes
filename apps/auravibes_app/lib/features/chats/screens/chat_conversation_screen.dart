@@ -1565,11 +1565,70 @@ class const _ChatControlsAlignment({
   @override
   Widget build(BuildContext context) => Align(
     alignment: Alignment.centerRight,
-    child: ConversationContextUsagePill(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
+    child: Row(
+      mainAxisSize: .min,
+      children: [
+        _ActiveSubAgentStatusPill(conversationId: conversationId),
+        ConversationContextUsagePill(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+      ],
     ),
   );
+}
+
+class const _ActiveSubAgentStatusPill({required final String conversationId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(
+      activeSubAgentRuntimeProvider.select(
+        (state) => state[conversationId]?.length ?? 0,
+      ),
+    );
+
+    if (count == 0) return const SizedBox.shrink();
+
+    final label = LocaleKeys
+        .chats_screens_chat_conversation_active_sub_agents_count
+        .plural(count);
+    final auraColors = context.auraColors;
+
+    return Padding(
+      padding: EdgeInsets.only(right: context.auraTheme.fromSpacing(.xs)),
+      child: AuraTooltip(
+        message: label,
+        child: Semantics(
+          key: const ValueKey<String>('chat_active_sub_agents'),
+          child: AuraContainer(
+            child: AuraRow(
+              children: [
+                const AuraIcon(
+                  Icons.smart_toy_outlined,
+                  size: .extraSmall,
+                  tint: .info,
+                ),
+                AuraBadge.count(count: count, variant: .info, size: .small),
+              ],
+              spacing: .xs,
+              mainAxisSize: .min,
+            ),
+            padding: const AuraEdgeInsetsGeometry.symmetric(
+              horizontal: .sm,
+              vertical: .xs,
+            ),
+            variant: .surfaceVariant,
+            borderRadius: context.auraTheme.fromBorderRadius(.full),
+            border: .fromBorderSide(.new(color: auraColors.outlineVariant)),
+          ),
+          container: true,
+          excludeSemantics: true,
+          label: label,
+        ),
+      ),
+    );
+  }
 }
 
 class const _RateLimitRetryIndicator({required final DateTime retryAt})

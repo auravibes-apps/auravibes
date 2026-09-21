@@ -13,6 +13,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -720,6 +721,132 @@ void main() {
 
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isCompacting, isTrue);
+  });
+
+  testWidgets('shows and updates active sub-agent status in chat controls', (
+    tester,
+  ) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _workspaceId)),
+          ),
+        ),
+        conversationSelectedProvider.overrideWithValue(_chatId),
+        conversationRepositoryProvider.overrideWithValue(
+          _StubConversationRepository(),
+        ),
+        conversationChatProvider(_workspaceId, _chatId).overrideWith(
+          () => _ResultChatNotifier(ConversationFound(conversation)),
+        ),
+        conversationBusyStateProvider.overrideWith(
+          (ref, _) async => const ConversationBusyState(
+            isStreaming: false,
+            hasPendingTools: false,
+          ),
+        ),
+        chatMessagesProvider.overrideWith(
+          (ref, _) => Stream.value(const <MessageEntity>[]),
+        ),
+        chatMessageIdsProvider.overrideWith((ref, _) => const <String>[]),
+        contextUsageProvider.overrideWith(
+          (ref, _) =>
+              ContextUsageData.compute(usedTokens: 0, limitTokens: null),
+        ),
+        pendingToolCallsProvider.overrideWith(
+          (ref, _) async => const <PendingToolCall>[],
+        ),
+        listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+            .overrideWith((ref) => Stream.value(const {})),
+        agentsProvider(_workspaceId)
+            .overrideWith((ref) => Stream.value(const [])),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp(
+                  home: const ChatConversationScreen(
+                    workspaceId: _workspaceId,
+                    chatId: _chatId,
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    final status = find.byKey(const ValueKey<String>('chat_active_sub_agents'));
+    expect(status, findsNothing);
+
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    await tester.pump();
+    expect(status, findsOneWidget);
+    expect(
+      find.descendant(of: status, matching: find.text('1')),
+      findsOneWidget,
+    );
+
+    final _ = runtime.start(parentId: _chatId, childId: 'child-2');
+    await tester.pump();
+    expect(
+      find.descendant(of: status, matching: find.text('2')),
+      findsOneWidget,
+    );
+
+    runtime.finish((
+      parentId: _chatId,
+      childId: 'child-1',
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
+    await tester.pump();
+    expect(
+      find.descendant(of: status, matching: find.text('1')),
+      findsOneWidget,
+    );
+
+    runtime.finish((
+      parentId: _chatId,
+      childId: 'child-2',
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
+    await tester.pump();
+    expect(status, findsNothing);
   });
 
   testWidgets('keeps input busy while busy state refreshes', (tester) async {
