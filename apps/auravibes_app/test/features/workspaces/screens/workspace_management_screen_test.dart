@@ -37,6 +37,7 @@ class _FakeGoRouter implements GoRouter {
 class _FakeWorkspaceSelectionRepository
     implements WorkspaceSelectionRepository {
   String? selectedWorkspaceId;
+  Exception? saveError;
 
   @override
   Future<void> clearIfMatches(String workspaceId) async {
@@ -48,6 +49,9 @@ class _FakeWorkspaceSelectionRepository
 
   @override
   Future<void> save(String workspaceId) async {
+    final error = saveError;
+    if (error != null) throw error;
+
     selectedWorkspaceId = workspaceId;
   }
 }
@@ -278,7 +282,9 @@ void main() {
             return ProviderScope(
               overrides: overrides.cast(),
               child: MaterialApp(
-                home: WorkspaceManagementScreen(workspaceId: workspaceId),
+                home: AuraSnackBarHost(
+                  child: WorkspaceManagementScreen(workspaceId: workspaceId),
+                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -400,6 +406,45 @@ void main() {
 
       expect(selectionRepository.selectedWorkspaceId, 'ws-2');
       expect(router.lastLocation, '/workspaces/ws-2/more/manage-workspaces');
+    });
+
+    testWidgets('shows switch-specific error when selection fails', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace B', type: .local),
+      );
+      final selectionRepository = _FakeWorkspaceSelectionRepository()
+        ..saveError = .new('selection failed');
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          selectionRepository: selectionRepository,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_select_ws-2')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text('Failed to switch workspace. Please try again.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('An unexpected error occurred. Please try again.'),
+        findsNothing,
+      );
+      expect(router.lastLocation, isNull);
     });
 
     testWidgets('marks only the active workspace', (tester) async {
