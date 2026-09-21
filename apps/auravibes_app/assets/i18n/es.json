@@ -371,6 +371,10 @@
       "activity_arguments": "Argumentos",
       "activity_result": "Resultado",
       "activity_open_sub_agent": "Abrir subagente",
+      "active_sub_agents_count": {
+        "one": "1 subagente en ejecución",
+        "other": "{} subagentes en ejecución"
+      },
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",

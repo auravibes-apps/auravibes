@@ -1565,10 +1565,101 @@ class const _ChatControlsAlignment({
   @override
   Widget build(BuildContext context) => Align(
     alignment: Alignment.centerRight,
-    child: ConversationContextUsagePill(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
+    child: Row(
+      mainAxisSize: .min,
+      children: [
+        _ActiveSubAgentStatusPill(conversationId: conversationId),
+        ConversationContextUsagePill(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+      ],
     ),
+  );
+}
+
+class const _ActiveSubAgentStatusPill({required final String conversationId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(
+      activeSubAgentRuntimeProvider.select(
+        (state) => state[conversationId]?.length ?? 0,
+      ),
+    );
+
+    if (count == 0) return const SizedBox.shrink();
+
+    final label = LocaleKeys
+        .chats_screens_chat_conversation_active_sub_agents_count
+        .plural(count);
+
+    return _ActiveSubAgentStatusView(count: count, label: label);
+  }
+}
+
+class const _ActiveSubAgentStatusView({
+  required final int count,
+  required final String label,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(right: context.auraTheme.fromSpacing(.xs)),
+    child: AuraTooltip(
+      message: label,
+      child: _ActiveSubAgentStatusSemantics(count: count, label: label),
+    ),
+  );
+}
+
+class const _ActiveSubAgentStatusSemantics({
+  required final int count,
+  required final String label,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return Semantics(
+      key: const ValueKey<String>('chat_active_sub_agents'),
+      child: _ActiveSubAgentStatusContainer(
+        count: count,
+        outlineColor: auraColors.outlineVariant,
+      ),
+      container: true,
+      excludeSemantics: true,
+      label: label,
+    );
+  }
+}
+
+class const _ActiveSubAgentStatusContainer({
+  required final int count,
+  required final Color outlineColor,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraContainer(
+    child: _ActiveSubAgentStatusRow(count: count),
+    padding: const AuraEdgeInsetsGeometry.symmetric(
+      horizontal: .sm,
+      vertical: .xs,
+    ),
+    variant: .surfaceVariant,
+    borderRadius: context.auraTheme.fromBorderRadius(.full),
+    border: .fromBorderSide(.new(color: outlineColor)),
+  );
+}
+
+class const _ActiveSubAgentStatusRow({required final int count})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      const AuraIcon(Icons.smart_toy_outlined, size: .extraSmall, tint: .info),
+      AuraBadge.count(count: count, variant: .info, size: .small),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
   );
 }
 
