@@ -78,7 +78,7 @@ final class ModelCapabilities {
       limitOutput > 0;
 
   bool get isCodexRuntimeModel =>
-      (supportsPriorityMode || family == 'gpt-codex-spark') &&
+      supportsPriorityMode &&
       inputModalities.contains('text') &&
       outputModalities.contains('text') &&
       limitOutput > 0;

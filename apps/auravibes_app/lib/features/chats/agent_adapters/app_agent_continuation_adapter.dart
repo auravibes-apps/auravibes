@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
@@ -183,7 +182,7 @@ WorkspaceModelSelectionWithConnectionEntity _copyWithCodexModel(
     modelName: openAIModel.name,
     supportsReasoning: openAIModel.supportsReasoning,
     supportsToolCalls: openAIModel.supportsToolCalls,
-    modalitiesInput: CodexInputModalities.forModel(openAIModel),
+    modalitiesInput: openAIModel.modalitiesInput,
     modalitiesOutput: openAIModel.modalitiesOutput,
   ),
 );
