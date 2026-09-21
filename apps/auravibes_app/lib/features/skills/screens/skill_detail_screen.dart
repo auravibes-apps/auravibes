@@ -38,6 +38,15 @@ import 'package:textf/textf.dart';
 
 const _skillDescriptionMaxCharacters = 1024;
 
+typedef _SkillDetailFormValues = ({
+  String title,
+  String description,
+  String content,
+  String? credentialDefinitionId,
+  bool isCredentialOptional,
+  bool isEnabled,
+});
+
 class const SkillDetailScreen({
   required final String workspaceId,
   final String? skillId,
@@ -56,9 +65,27 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   bool _isEnabled = true;
   bool _initialized = false;
   bool _isSaving = false;
+  bool _isDirty = false;
+  bool _isUserSkill = false;
+  _SkillDetailFormValues _savedFormValues = (
+    title: '',
+    description: '',
+    content: '',
+    credentialDefinitionId: null,
+    isCredentialOptional: false,
+    isEnabled: true,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _initialized = widget.skillId == null;
+    _titleController.addListener(_onTitleChanged);
+  }
 
   @override
   void dispose() {
+    _titleController.removeListener(_onTitleChanged);
     _titleController.dispose();
     _descriptionController.dispose();
     _contentController.dispose();
@@ -67,23 +94,46 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final viewData = _detailViewData();
-
-    return AuraScreen(
-      child: _SkillDetailBody(state: this, detailAsync: viewData.detailAsync),
-      appBar: _SkillDetailAppBar(
-        state: this,
-        currentDetail: viewData.currentDetail,
-        userSkillDetail: viewData.userSkillDetail,
-      ),
+    return PopScope(
+      child: _SkillDetailScreenContent(state: this),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) => _onPopInvoked(context, didPop),
     );
   }
 
-  void _updateState(VoidCallback callback) => setState(callback);
+  void _onPopInvoked(BuildContext context, bool didPop) {
+    if (!didPop) unawaited(_handleBack(context));
+  }
+
+  void _onTitleChanged() {
+    if (!_initialized) return;
+
+    setState(() {
+      _isDirty = _isEditable && _currentFormValues() != _savedFormValues;
+    });
+  }
+
+  void _updateState(VoidCallback callback) {
+    setState(() {
+      callback();
+      _isDirty = _isEditable && _currentFormValues() != _savedFormValues;
+    });
+  }
 }
 
 extension on _SkillDetailScreenState {
   bool get _isCreate => widget.skillId == null;
+
+  bool get _isEditable => _isCreate || _isUserSkill;
+
+  _SkillDetailFormValues _currentFormValues() => (
+    title: _titleController.text,
+    description: _descriptionController.text,
+    content: _contentController.text,
+    credentialDefinitionId: _credentialDefinitionId,
+    isCredentialOptional: _isCredentialOptional,
+    isEnabled: _isEnabled,
+  );
 
   AsyncValue<SkillDetail?>? _detailAsync() {
     final skillId = widget.skillId;
@@ -150,10 +200,13 @@ extension on _SkillDetailScreenState {
   void _initializeForm(BuildContext context, SkillDetail detail) {
     if (_initialized) return;
 
+    _isUserSkill = detail.isUserSkill;
     _initializeTextFields(context, detail);
     _credentialDefinitionId = detail.credentialDefinitionId;
     _isCredentialOptional = detail.isCredentialOptional;
     _isEnabled = detail.isEnabled;
+    _savedFormValues = _currentFormValues();
+    _isDirty = false;
     _initialized = true;
   }
 
@@ -192,6 +245,35 @@ String _localizedValue(BuildContext context, String? key, String fallback) =>
     key?.tr(context: context) ?? fallback;
 
 extension on _SkillDetailScreenState {
+  Future<void> _handleBack(BuildContext context) async {
+    if (!_isDirty) {
+      _popIfMounted(context);
+
+      return;
+    }
+
+    final shouldDiscard = await _confirmDiscard(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _updateState(() => _savedFormValues = _currentFormValues());
+    _popIfMounted(context);
+  }
+
+  Future<bool?> _confirmDiscard(BuildContext context) => AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_title),
+    message: const TextLocale(LocaleKeys.skills_screen_unsaved_changes_message),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.skills_screen_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.skills_screen_continue),
+    ),
+    isDestructive: true,
+  );
+
+  void _popIfMounted(BuildContext context) {
+    if (context.mounted) Navigator.of(context).pop();
+  }
+
   Future<void> _save(BuildContext context) async {
     if (_isSaving) return;
     _updateState(() => _isSaving = true);
@@ -204,6 +286,7 @@ extension on _SkillDetailScreenState {
   Future<bool> _trySave(BuildContext context) async {
     try {
       await _saveSkill();
+      _savedFormValues = _currentFormValues();
 
       return true;
     } on Object {
@@ -423,6 +506,24 @@ class const _SkillDetailBody({
   };
 }
 
+class const _SkillDetailScreenContent({
+  required final _SkillDetailScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final viewData = state._detailViewData();
+
+    return AuraScreen(
+      child: _SkillDetailBody(state: state, detailAsync: viewData.detailAsync),
+      appBar: _SkillDetailAppBar(
+        state: state,
+        currentDetail: viewData.currentDetail,
+        userSkillDetail: viewData.userSkillDetail,
+      ),
+    );
+  }
+}
+
 class const _SkillDetailReadyForm({
   required final _SkillDetailScreenState state,
   required final SkillDetail detail,
@@ -502,7 +603,7 @@ class const _SkillDetailAppBar({
         currentDetail: currentDetail,
         userSkillDetail: userSkillDetail,
       )).values,
-      leading: _SkillDetailBackButton(),
+      leading: _SkillDetailBackButton(state: state),
     );
   }
 }
@@ -578,12 +679,14 @@ class const _SkillDetailSaveButton({
   }
 }
 
-class _SkillDetailBackButton extends StatelessWidget {
+class const _SkillDetailBackButton({
+  required final _SkillDetailScreenState state,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraIconButton(
       icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: () => state._handleBack(context),
     );
   }
 }

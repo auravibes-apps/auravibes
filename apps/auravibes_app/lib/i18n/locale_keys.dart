@@ -648,6 +648,12 @@ abstract class LocaleKeys {
   static const skills_screen_duplicate = 'skills_screen.duplicate';
   static const skills_screen_delete_confirm = 'skills_screen.delete_confirm';
   static const skills_screen_save_error = 'skills_screen.save_error';
+  static const skills_screen_unsaved_changes_title =
+      'skills_screen.unsaved_changes_title';
+  static const skills_screen_unsaved_changes_message =
+      'skills_screen.unsaved_changes_message';
+  static const skills_screen_discard_changes = 'skills_screen.discard_changes';
+  static const skills_screen_continue = 'skills_screen.continue';
   static const skills_screen_not_found = 'skills_screen.not_found';
   static const skills_screen_load_error = 'skills_screen.load_error';
   static const skills_screen_error_title_required =
