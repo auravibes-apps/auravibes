@@ -254,7 +254,7 @@ void main() {
             oauthMetadata: const ServiceConnectionMetadata(
               accountId: 'account-1',
             ),
-            modelIds: const ['gpt-5.5', 'gpt-5.3-codex-spark'],
+            modelIds: const ['gpt-5.5'],
           ),
         );
 
@@ -283,7 +283,6 @@ void main() {
         expect(connection.metadataJson.value, contains('account-1'));
         expect(selections.map((selection) => selection.modelId.value), [
           'gpt-5.5',
-          'gpt-5.3-codex-spark',
         ]);
       });
 

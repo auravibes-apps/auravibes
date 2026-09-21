@@ -647,12 +647,12 @@ void main() {
           (_) async => const ApiModelEntity(
             modelProvider: 'openai',
             id: 'gpt-4',
-            name: 'GPT Codex Spark',
+            name: 'GPT-4',
             limitContext: 128000,
             limitOutput: 16384,
             modalitiesInput: ['text'],
             modalitiesOutput: ['text'],
-            family: 'gpt-codex-spark',
+            supportsPriorityMode: true,
             supportsToolCalls: true,
           ),
         );

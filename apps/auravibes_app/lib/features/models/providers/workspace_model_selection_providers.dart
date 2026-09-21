@@ -4,7 +4,6 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
-import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -79,7 +78,7 @@ class WorkspaceModelSelectionProviders {
     ApiModelEntity model,
   ) => selection.copyWith(
     modelName: model.name,
-    modalitiesInput: CodexInputModalities.forModel(model),
+    modalitiesInput: model.modalitiesInput,
     modalitiesOutput: model.modalitiesOutput,
     supportsReasoning: model.supportsReasoning,
     supportsToolCalls: model.supportsToolCalls,

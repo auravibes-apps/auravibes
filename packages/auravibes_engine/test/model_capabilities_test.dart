@@ -82,4 +82,17 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('requires priority mode for Codex runtime eligibility', () {
+    final model = ModelCapabilities(
+      id: 'gpt-5.5',
+      name: 'GPT-5.5',
+      limitContext: 400000,
+      limitOutput: 128000,
+      inputModalities: ['text'],
+      outputModalities: ['text'],
+    );
+
+    expect(model.isCodexRuntimeModel, isFalse);
+  });
 }
