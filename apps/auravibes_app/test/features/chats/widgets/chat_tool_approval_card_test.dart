@@ -245,6 +245,16 @@ void main() {
         );
         expect(find.textContaining('arg1: search'), findsOneWidget);
         expect(find.textContaining('arg2: item'), findsOneWidget);
+
+        final argumentColumn = tester.widget<Column>(
+          find
+              .ancestor(
+                of: find.textContaining('arg1: search'),
+                matching: find.byType(Column),
+              )
+              .first,
+        );
+        expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
       },
     );
 
