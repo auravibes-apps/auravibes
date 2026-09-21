@@ -45,7 +45,7 @@ AppSkillDefinition _agentsSkillDefinition() => AppSkillDefinition(
   title: agentsSkillTitle,
   description: 'Inspect enabled workspace agents.',
   content: agentsSkillContent,
-  tools: [_agentsListTool(), _agentsRunSubAgentTool()],
+  tools: [_agentsListTool()],
   titleKey: LocaleKeys.app_skills_agents_title,
   descriptionKey: LocaleKeys.app_skills_agents_description,
   contentKey: LocaleKeys.app_skills_agents_content,
@@ -57,15 +57,6 @@ AppSkillToolDefinition _agentsListTool() => AppSkillToolDefinition(
   description: listAgentsToolSpec.description,
   inputJsonSchema: Map<String, dynamic>.from(
     listAgentsToolSpec.inputJsonSchema,
-  ),
-);
-
-AppSkillToolDefinition _agentsRunSubAgentTool() => AppSkillToolDefinition(
-  slug: runSubAgentToolSpec.name,
-  title: runSubAgentToolSpec.name,
-  description: runSubAgentToolSpec.description,
-  inputJsonSchema: Map<String, dynamic>.from(
-    runSubAgentToolSpec.inputJsonSchema,
   ),
 );
 
