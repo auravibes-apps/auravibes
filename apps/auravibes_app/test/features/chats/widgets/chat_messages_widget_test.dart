@@ -718,6 +718,45 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
+    testWidgets('uses a click cursor for links in AI message content', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(
+                content: '[Open docs](https://example.com)',
+                isUser: false,
+              ),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Open docs')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.click,
+      );
+
+      await gesture.up();
+    });
+
     testWidgets('keeps text-only assistant metadata inline', (tester) async {
       final message = _createMessage(
         content: 'Text-only answer',
