@@ -529,7 +529,10 @@
     "loaded_title": "Cargadas",
     "loaded_empty": "No hay habilidades cargadas",
     "available_title": "Disponibles",
-    "available_empty": "No hay habilidades disponibles"
+    "available_empty": "No hay habilidades disponibles",
+    "credentials_ready": "Lista",
+    "credentials_missing": "Faltan credenciales",
+    "credentials_unknown": "Estado de credenciales desconocido"
   },
   "skills_tool": {
     "section_title": "Herramientas de plantilla",

@@ -279,6 +279,7 @@ class _SkillSelectorTileData {
          child: AuraColumn(
            children: [
              AuraText(child: Text(skill.title)),
+             _SkillCredentialBadge(readiness: skill.credentialReadiness),
              AuraText(child: Text(skill.description)),
            ],
            spacing: .xs,
@@ -292,4 +293,27 @@ class _SkillSelectorTileData {
        );
 
   final Widget child;
+}
+
+class const _SkillCredentialBadge({
+  required final SkillCredentialReadiness readiness,
+}) extends StatelessWidget {
+  String get _labelKey => switch (readiness) {
+    .ready => LocaleKeys.skills_selector_credentials_ready,
+    .missing => LocaleKeys.skills_selector_credentials_missing,
+    .unknown => LocaleKeys.skills_selector_credentials_unknown,
+  };
+
+  AuraBadgeVariant get _variant => switch (readiness) {
+    .ready => .success,
+    .missing => .warning,
+    .unknown => .neutral,
+  };
+
+  @override
+  Widget build(BuildContext context) => AuraBadge.text(
+    child: TextLocale(_labelKey),
+    variant: _variant,
+    size: .small,
+  );
 }
