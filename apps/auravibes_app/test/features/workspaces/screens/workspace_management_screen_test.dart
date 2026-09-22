@@ -516,6 +516,77 @@ void main() {
       );
     });
 
+    testWidgets('confirms before discarding dirty workspace edits', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_menu_ws-1')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Edit'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Workspace B');
+      await tester.pump();
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_management_back')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsOneWidget);
+      expect(find.text('Keep editing'), findsOneWidget);
+
+      final _ = await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsOneWidget);
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_cancel')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Discard'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace A');
+    });
+
+    testWidgets('saves workspace edits without showing discard confirmation', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_menu_ws-1')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Edit'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'Workspace B');
+      final _ = await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_save')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace B');
+    });
+
     testWidgets('shows sign-in recovery for an expired cloud session', (
       tester,
     ) async {

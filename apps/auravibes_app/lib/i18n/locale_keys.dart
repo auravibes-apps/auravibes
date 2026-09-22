@@ -1245,6 +1245,14 @@ abstract class LocaleKeys {
       'workspace_management.name_too_short_error';
   static const workspace_management_name_too_long_error =
       'workspace_management.name_too_long_error';
+  static const workspace_management_unsaved_changes_title =
+      'workspace_management.unsaved_changes_title';
+  static const workspace_management_unsaved_changes_message =
+      'workspace_management.unsaved_changes_message';
+  static const workspace_management_discard_changes =
+      'workspace_management.discard_changes';
+  static const workspace_management_keep_editing =
+      'workspace_management.keep_editing';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
   static const workspace_management_switch_title =

@@ -63,7 +63,7 @@ class const _CreateWorkspaceAppBar()
     title: const TextLocale(LocaleKeys.workspace_management_create_title),
     leading: AuraIconButton(
       icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: () => Navigator.of(context).maybePop(),
     ),
   );
 }

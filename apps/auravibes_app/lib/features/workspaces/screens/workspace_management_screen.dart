@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
@@ -103,7 +105,7 @@ class const _WorkspaceManagementAppBar()
         key: const ValueKey<String>('workspace_management_back'),
         child: AuraIconButton(
           icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
         identifier: 'workspace_management_back',
       ),
@@ -1267,24 +1269,80 @@ class const _EditWorkspaceTile({
 
 class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
   final _controller = TextEditingController();
+  bool _isDirty = false;
 
   @override
   void initState() {
     super.initState();
     _controller.text = widget.workspace.name;
+    _controller.addListener(_onNameChanged);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onNameChanged);
     _controller.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) => _WorkspaceEditRow(
-    controller: _controller,
-    onSave: widget.onSave,
-    onCancel: widget.onCancel,
+  Widget build(BuildContext context) => PopScope(
+    child: _WorkspaceEditRow(
+      controller: _controller,
+      onSave: widget.onSave,
+      onCancel: () => unawaited(_cancel(context)),
+    ),
+    canPop: !_isDirty,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) unawaited(_confirmBack(context));
+    },
+  );
+
+  void _onNameChanged() {
+    if (!mounted) return;
+
+    final isDirty = _controller.text != widget.workspace.name;
+    if (_isDirty == isDirty) return;
+
+    setState(() => _isDirty = isDirty);
+  }
+
+  Future<void> _cancel(BuildContext context) async {
+    if (!_isDirty) {
+      widget.onCancel();
+
+      return;
+    }
+
+    final shouldDiscard = await _confirmDiscard(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    widget.onCancel();
+  }
+
+  Future<void> _confirmBack(BuildContext context) async {
+    final shouldDiscard = await _confirmDiscard(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    final navigator = Navigator.of(context);
+    setState(() => _isDirty = false);
+    widget.onCancel();
+    navigator.pop();
+  }
+
+  Future<bool?> _confirmDiscard(BuildContext context) => AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(
+      LocaleKeys.workspace_management_unsaved_changes_title,
+    ),
+    message: const TextLocale(
+      LocaleKeys.workspace_management_unsaved_changes_message,
+    ),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.workspace_management_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
+    ),
+    isDestructive: true,
   );
 }
 

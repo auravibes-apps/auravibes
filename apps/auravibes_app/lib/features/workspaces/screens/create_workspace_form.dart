@@ -42,31 +42,80 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   final _name = TextEditingController();
   String _targetAccountId = _localTarget;
   bool _isCreating = false;
+  bool _isDirty = false;
   String? _errorText;
 
   @override
+  void initState() {
+    super.initState();
+    _name.addListener(_onNameChanged);
+  }
+
+  @override
   void dispose() {
+    _name.removeListener(_onNameChanged);
     _name.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _CreateWorkspaceAccountView(
-      accounts: ref.watch(cloudAccountsProvider),
-      name: _name,
-      targetAccountId: _targetAccountId,
-      errorText: _errorText,
-      isCreating: _isCreating,
-      onTargetAccountChanged: _setTargetAccount,
-      onAddCloudAccount: widget.onAddCloudAccount,
-      onCreate: _create,
+    return PopScope(
+      child: _CreateWorkspaceAccountView(
+        accounts: ref.watch(cloudAccountsProvider),
+        name: _name,
+        targetAccountId: _targetAccountId,
+        errorText: _errorText,
+        isCreating: _isCreating,
+        onTargetAccountChanged: _setTargetAccount,
+        onAddCloudAccount: widget.onAddCloudAccount,
+        onCreate: _create,
+      ),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_confirmBack());
+      },
     );
+  }
+
+  void _onNameChanged() {
+    if (!mounted) return;
+
+    final isDirty = _name.text.isNotEmpty;
+    if (_isDirty == isDirty) return;
+
+    setState(() => _isDirty = isDirty);
+  }
+
+  Future<void> _confirmBack() async {
+    final shouldDiscard = await AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(
+        LocaleKeys.workspace_management_unsaved_changes_title,
+      ),
+      message: const TextLocale(
+        LocaleKeys.workspace_management_unsaved_changes_message,
+      ),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(
+          LocaleKeys.workspace_management_discard_changes,
+        ),
+        cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
+      ),
+      isDestructive: true,
+    );
+    if (shouldDiscard != true || !mounted) return;
+
+    setState(() => _isDirty = false);
+    Navigator.of(context).pop();
   }
 
   void _setTargetAccount(String? accountId) {
     if (accountId == null) return;
-    setState(() => _targetAccountId = accountId);
+    setState(() {
+      _targetAccountId = accountId;
+      _isDirty = _name.text.isNotEmpty || accountId != _localTarget;
+    });
   }
 
   Future<void> _create() async {
@@ -140,7 +189,10 @@ mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
     if (_state._targetAccountId != _CreateWorkspaceFormState._localTarget) {
       ref.invalidate(cloudWorkspaceStateProvider(_state._targetAccountId));
     }
-    if (mounted) widget.onCreated(workspace);
+    if (mounted) {
+      _state._isDirty = false;
+      widget.onCreated(workspace);
+    }
   }
 
   Future<WorkspaceEntity> _validateAndCreateWorkspace(String name) {
