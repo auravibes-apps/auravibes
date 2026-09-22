@@ -94,6 +94,18 @@ abstract class LocaleKeys {
       'models_screens.add_provider.back_to_selection';
   static const models_screens_add_provider_create_button =
       'models_screens.add_provider.create_button';
+  static const models_screens_add_provider_verify_connection =
+      'models_screens.add_provider.verify_connection';
+  static const models_screens_add_provider_add_provider =
+      'models_screens.add_provider.add_provider';
+  static const models_screens_add_provider_save_changes =
+      'models_screens.add_provider.save_changes';
+  static const models_screens_add_provider_verification_success =
+      'models_screens.add_provider.verification_success';
+  static const models_screens_add_provider_verification_required =
+      'models_screens.add_provider.verification_required';
+  static const models_screens_add_provider_verification_expired =
+      'models_screens.add_provider.verification_expired';
   static const models_screens_add_provider_connect_browser =
       'models_screens.add_provider.connect_browser';
   static const models_screens_add_provider_use_device_code =

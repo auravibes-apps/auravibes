@@ -1,8 +1,12 @@
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'dart:async';
+
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -39,9 +43,38 @@ class _ServiceConnectionEditScreenState
   Future<_ConnectionEditState>? _futureValue;
   bool _initialized = false;
   bool _isSaving = false;
+  bool _isTestingModelProvider = false;
+  ModelProviderVerification? _modelProviderVerification;
+  Timer? _modelProviderVerificationExpiryTimer;
+  Exception? _modelProviderVerificationError;
+  var _modelProviderVerificationVersion = 0;
 
   Future<_ConnectionEditState> get _future =>
       _futureValue ?? (throw StateError('Edit state is not initialized'));
+
+  String? get _replacementModelProviderKey {
+    final key = _modelKeyController.text.trim();
+
+    return key.isEmpty ? null : key;
+  }
+
+  String? get _modelProviderVerificationErrorMessage {
+    final error = _modelProviderVerificationError;
+    if (error == null) return null;
+    if (error case ModelConnectionException(:final message)
+        when message.trim().isNotEmpty) {
+      return message;
+    }
+
+    return switch (error) {
+      ProviderVerificationExpiredException() =>
+        LocaleKeys.models_screens_add_provider_verification_expired.tr(),
+      ProviderVerificationRequiredException() ||
+      ProviderVerificationMismatchException() =>
+        LocaleKeys.models_screens_add_provider_verification_required.tr(),
+      _ => LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
+    };
+  }
 
   @override
   void initState() {
@@ -64,6 +97,7 @@ class _ServiceConnectionEditScreenState
     for (final controller in _secretControllers.values) {
       controller.dispose();
     }
+    _modelProviderVerificationExpiryTimer?.cancel();
     super.dispose();
   }
 
@@ -87,6 +121,130 @@ class _ServiceConnectionEditScreenState
   }
 
   void _refreshForm() => setState(() => _initialized = true);
+
+  void _invalidateModelProviderVerification() {
+    _modelProviderVerificationVersion++;
+    _modelProviderVerificationExpiryTimer?.cancel();
+    _modelProviderVerificationExpiryTimer = null;
+    _modelProviderVerification = null;
+    _modelProviderVerificationError = null;
+    _isTestingModelProvider = false;
+    _refreshForm();
+  }
+
+  Future<void> _verifyModelProvider(
+    BuildContext context,
+    _ModelProviderEditState state,
+  ) async {
+    if (_isSaving || _isTestingModelProvider) return;
+
+    final version = ++_modelProviderVerificationVersion;
+    _modelProviderVerificationExpiryTimer?.cancel();
+    _modelProviderVerificationExpiryTimer = null;
+    _modelProviderVerification = null;
+    _modelProviderVerificationError = null;
+    setState(() {
+      _isTestingModelProvider = true;
+      _initialized = true;
+    });
+
+    try {
+      final store = await ref.read(
+        modelConnectionStoreProvider(widget.workspaceId).future,
+      );
+      final verification = await store.verifyModelConnection(
+        _modelProviderVerificationRequest(state.connection),
+      );
+      if (!mounted || version != _modelProviderVerificationVersion) return;
+
+      setState(() {
+        _modelProviderVerification = verification;
+        _isTestingModelProvider = false;
+      });
+      _scheduleModelProviderVerificationExpiry(verification);
+      if (!context.mounted) return;
+
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: Text(
+          LocaleKeys.models_screens_add_provider_verification_success.tr(
+            args: [verification.modelCount.toString()],
+          ),
+        ),
+        variant: .success,
+      );
+    } on Exception catch (error) {
+      if (!mounted || version != _modelProviderVerificationVersion) return;
+
+      setState(() {
+        _isTestingModelProvider = false;
+        _modelProviderVerificationError = error;
+      });
+    }
+  }
+
+  ModelProviderVerificationRequest _modelProviderVerificationRequest(
+    ModelConnectionForEdit connection,
+  ) => ModelProviderVerificationRequest(
+    workspaceId: widget.workspaceId,
+    providerId: connection.modelId,
+    connectionId: connection.id,
+    expectedRevision: connection.revision,
+    url: _normalizedModelProviderUrl(_modelUrlController.text),
+    key: _replacementModelProviderKey,
+  );
+
+  String? _normalizedModelProviderUrl(String value) {
+    final url = value.trim();
+
+    return url.isEmpty ? null : url;
+  }
+
+  bool _modelProviderRequiresVerification(_ModelProviderEditState state) {
+    final urlChanged =
+        _normalizedModelProviderUrl(_modelUrlController.text) !=
+        state.connection.url;
+
+    return urlChanged || _replacementModelProviderKey != null;
+  }
+
+  bool _modelProviderVerificationIsCurrent(_ModelProviderEditState state) {
+    final verification = _modelProviderVerification;
+
+    return verification != null &&
+        verification.matches(
+          _modelProviderVerificationRequest(state.connection),
+        );
+  }
+
+  bool _modelProviderCanSave(_ModelProviderEditState state) {
+    if (_nameController.text.trim().isEmpty || _isSaving) return false;
+    if (!_modelProviderRequiresVerification(state)) return true;
+
+    return !_isTestingModelProvider &&
+        _modelProviderVerificationIsCurrent(state);
+  }
+
+  void _scheduleModelProviderVerificationExpiry(
+    ModelProviderVerification verification,
+  ) {
+    final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
+    _modelProviderVerificationExpiryTimer = .new(
+      remaining.isNegative ? Duration.zero : remaining,
+      () {
+        if (!identical(_modelProviderVerification, verification) || !mounted) {
+          return;
+        }
+
+        setState(() {
+          _modelProviderVerification = null;
+          _modelProviderVerificationExpiryTimer = null;
+          _modelProviderVerificationError =
+              const ProviderVerificationExpiredException();
+        });
+      },
+    );
+  }
 
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
@@ -365,6 +523,7 @@ class const _ModelProviderUpdateData({
   required final String name,
   required final String? key,
   required final String url,
+  required final ModelProviderVerification? verification,
 });
 
 _ModelProviderUpdateData _modelProviderUpdateData(
@@ -378,6 +537,7 @@ _ModelProviderUpdateData _modelProviderUpdateData(
     name: state._nameController.text.trim(),
     key: key.isEmpty ? null : key,
     url: state._modelUrlController.text.trim(),
+    verification: state._modelProviderVerification,
   );
 }
 
@@ -392,6 +552,7 @@ Future<void> _updateModelProvider(
   final _ = await store.updateModelConnection(
     data.connectionId,
     .new(name: data.name, key: data.key, url: data.url),
+    verification: data.verification,
   );
 }
 
@@ -617,6 +778,7 @@ class const _ConnectionEditSaveButton({
   required final VoidCallback onPressed,
   required final bool isSaving,
   required final bool canSave,
+  final String label = LocaleKeys.common_save,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -624,7 +786,7 @@ class const _ConnectionEditSaveButton({
       alignment: Alignment.centerRight,
       child: AuraButton(
         onPressed: onPressed,
-        child: const TextLocale(LocaleKeys.common_save),
+        child: TextLocale(label),
         isLoading: isSaving,
         disabled: isSaving || !canSave,
       ),
@@ -861,7 +1023,9 @@ class const _ModelProviderEditForm({
       children: [
         _ConnectionEditHeader(text: connection.modelId),
         _ModelProviderEditFields(owner: owner, suffix: connection.keySuffix),
-        _ModelProviderEditSaveButton(owner: owner),
+        _ModelProviderVerificationError(owner: owner),
+        _ModelProviderVerifyButton(state: state, owner: owner),
+        _ModelProviderEditSaveButton(state: state, owner: owner),
       ],
     );
   }
@@ -886,6 +1050,7 @@ class const _ModelProviderEditFields({
 }
 
 class const _ModelProviderEditSaveButton({
+  required final _ModelProviderEditState state,
   required final _ServiceConnectionEditScreenState owner,
 }) extends StatelessWidget {
   @override
@@ -893,7 +1058,41 @@ class const _ModelProviderEditSaveButton({
     return _ConnectionEditSaveButton(
       onPressed: () => owner._saveModelProvider(context),
       isSaving: owner._isSaving,
-      canSave: owner._nameController.text.trim().isNotEmpty,
+      canSave: owner._modelProviderCanSave(state),
+      label: LocaleKeys.models_screens_add_provider_save_changes,
+    );
+  }
+}
+
+class const _ModelProviderVerifyButton({
+  required final _ModelProviderEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => owner._verifyModelProvider(context, state),
+    child: const TextLocale(
+      LocaleKeys.models_screens_add_provider_verify_connection,
+    ),
+    variant: .outlined,
+    isLoading: owner._isTestingModelProvider,
+    isFullWidth: true,
+    disabled: owner._isSaving || owner._isTestingModelProvider,
+  );
+}
+
+class const _ModelProviderVerificationError({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final message = owner._modelProviderVerificationErrorMessage;
+    if (message == null) return const SizedBox.shrink();
+
+    return Text(
+      message,
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(color: context.auraColors.error),
     );
   }
 }
@@ -932,7 +1131,7 @@ class _ModelProviderKeyAuraInput extends AuraInput {
         ),
         keyboardType: .visiblePassword,
         obscureText: true,
-        onChanged: (_) => input.owner._refreshForm(),
+        onChanged: (_) => input.owner._invalidateModelProviderVerification(),
       );
 }
 
@@ -947,7 +1146,7 @@ class const _ModelProviderUrlInput({
         LocaleKeys.models_screens_add_provider_fields_url_label,
       ),
       keyboardType: .url,
-      onChanged: (_) => owner._refreshForm(),
+      onChanged: (_) => owner._invalidateModelProviderVerification(),
     );
   }
 }

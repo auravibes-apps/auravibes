@@ -15,6 +15,9 @@ abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
     String? key,
     String? url,
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
+    @Default(false) bool isTestingConnection,
+    @Default(false) bool isConnectionVerified,
+    @Default(0) int verifiedModelCount,
   }) = _AddModelProviderModel;
 
   bool get hasUnsavedChanges => this != const AddModelProviderModel();

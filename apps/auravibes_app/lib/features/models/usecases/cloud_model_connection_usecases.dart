@@ -15,6 +15,7 @@ typedef _UpdateModelConnectionRequest = ({
   String name,
   String? secret,
   String? url,
+  String? verificationReceipt,
 });
 
 typedef _SecretUpdate = ({
@@ -53,6 +54,16 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
   Future<ModelSyncResult> testAndSync(String connectionId) =>
       _gateway.testAndSyncModelConnection(connectionId: connectionId);
 
+  Future<VerifyModelConnectionResult> verifyDraft({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) => _gateway.verifyDraftModelConnection(
+    connectionId: connectionId,
+    expectedRevision: expectedRevision,
+    url: url,
+  );
+
   Future<ModelConnectionView> update(
     _UpdateModelConnectionRequest request,
   ) async {
@@ -73,6 +84,8 @@ extension CloudModelConnectionUsecasesActions on CloudModelConnectionUsecases {
     expectedRevision: connection.revision,
     name: request.name,
     url: request.url,
+    verificationReceipt: request.verificationReceipt,
+    hasSecretOverride: request.secret != null,
   );
 
   Future<void> delete(CloudModelConnection connection) =>

@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/models/cloud_model_resources.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/models/usecases/cloud_model_connection_usecases.dart';
@@ -47,10 +48,62 @@ mixin _CloudModelStoreConnectionMethods {
   CloudModelConnectionUsecases get _usecases;
   ModelProviderServices get _modelProviderServices;
 
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate connection,
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
   ) async {
-    await _testApiKeyConnection(connection);
+    final key = request.key?.trim();
+    final connectionId = request.connectionId;
+    if (connectionId != null && (key == null || key.isEmpty)) {
+      final revision = request.expectedRevision;
+      if (revision == null) {
+        throw const ProviderVerificationMismatchException();
+      }
+      final result = await _usecases.verifyDraft(
+        connectionId: connectionId,
+        expectedRevision: revision,
+        url: request.url,
+      );
+
+      return createModelProviderVerification(
+        request: request,
+        modelIds: result.modelIds,
+        serverReceipt: result.verificationReceipt,
+      );
+    }
+
+    if (key == null || key.isEmpty) {
+      throw StateError('Model provider API key is required');
+    }
+    final models = await _modelProviderServices.getWorkspaceModelSelections(
+      .new(type: .fromString(request.providerId), key: key, url: request.url),
+    );
+    if (models == null) {
+      throw StateError('Model provider connection test failed');
+    }
+
+    return createModelProviderVerification(
+      request: request,
+      modelIds: models.map((model) => model.modelId).toList(),
+    );
+  }
+
+  Future<ModelConnectionEntity> createModelConnection(
+    ModelConnectionToCreate connection, {
+    ModelProviderVerification? verification,
+  }) async {
+    final verificationRequest = ModelProviderVerificationRequest(
+      workspaceId: connection.workspaceId,
+      providerId: connection.modelId,
+      connectionId: null,
+      expectedRevision: null,
+      url: connection.url,
+      key: connection.key,
+    );
+    if (verification == null) {
+      await _testApiKeyConnection(connection);
+    } else {
+      _requireVerification(verification, verificationRequest);
+    }
     final id = const Uuid().v4();
     final created = await _createConnection(
       _usecases,
@@ -73,13 +126,47 @@ mixin _CloudModelStoreConnectionMethods {
 
   Future<ModelConnectionEntity> updateModelConnection(
     String id,
-    ModelConnectionToUpdate update,
-  ) async {
+    ModelConnectionToUpdate update, {
+    ModelProviderVerification? verification,
+  }) async {
     final existing = await _connectionById(id);
     if (existing == null) throw StateError('Model connection not found: $id');
 
-    await _testUpdatedApiKey(existing, update);
-    final updated = await _updateConnection(_usecases, existing, update);
+    final nextUrl = update.url ?? existing.url;
+    final key = _updatedSecret(update.key);
+    final urlChanged = update.url != null && nextUrl != existing.url;
+    String? verificationReceipt;
+    if (key != null || urlChanged) {
+      final verificationRequest = ModelProviderVerificationRequest(
+        workspaceId: _workspaceId,
+        providerId: existing.providerId,
+        connectionId: existing.id,
+        expectedRevision: existing.revision,
+        url: nextUrl,
+        key: key,
+      );
+      if (verification == null) {
+        if (key != null) {
+          await _testUpdatedApiKey(existing, update);
+        } else {
+          final result = await _usecases.verifyDraft(
+            connectionId: existing.id,
+            expectedRevision: existing.revision,
+            url: nextUrl,
+          );
+          verificationReceipt = result.verificationReceipt;
+        }
+      } else {
+        _requireVerification(verification, verificationRequest);
+        verificationReceipt = verification.serverReceipt;
+      }
+    }
+    final updated = await _updateConnection(
+      _usecases,
+      existing,
+      update,
+      verificationReceipt: verificationReceipt,
+    );
 
     return _connectionEntity(
       .fromView(updated),
@@ -173,12 +260,14 @@ Future<ModelConnectionView> _createConnection(
 Future<ModelConnectionView> _updateConnection(
   CloudModelConnectionUsecases usecases,
   CloudModelConnection existing,
-  ModelConnectionToUpdate update,
-) => usecases.update((
+  ModelConnectionToUpdate update, {
+  String? verificationReceipt,
+}) => usecases.update((
   connection: existing,
   name: update.name ?? existing.name,
   url: update.url ?? existing.url,
   secret: _updatedSecret(update.key),
+  verificationReceipt: verificationReceipt,
 ));
 
 String? _connectionSecret(ModelConnectionToCreate connection) =>
@@ -193,6 +282,18 @@ String? _updatedSecret(String? key) {
 bool? _updatedKeyOverride(String? key) =>
     key?.trim().isNotEmpty == true ? true : null;
 
+void _requireVerification(
+  ModelProviderVerification verification,
+  ModelProviderVerificationRequest request,
+) {
+  if (verification.isExpired) {
+    throw const ProviderVerificationExpiredException();
+  }
+  if (!verification.matches(request)) {
+    throw const ProviderVerificationMismatchException();
+  }
+}
+
 ModelConnectionForEdit _modelConnectionForEdit(
   CloudModelConnection item,
   String workspaceId,
@@ -202,6 +303,7 @@ ModelConnectionForEdit _modelConnectionForEdit(
   modelId: item.providerId,
   workspaceId: workspaceId,
   hasKey: item.hasSecret,
+  revision: item.revision,
   url: item.url,
   keySuffix: item.keySuffix,
 );

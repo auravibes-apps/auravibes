@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -17,7 +18,7 @@ typedef _ModelConnectionUpdatePayload = ({
   String? encryptedKey,
   bool hasUrlUpdate,
   String? keySuffix,
-  List<WorkspaceModelSelectionToCreate> models,
+  List<WorkspaceModelSelectionToCreate>? models,
   String? nextUrl,
 });
 
@@ -57,7 +58,7 @@ typedef _WorkspaceSelectionUpdateData = ({
 
 typedef _UpdatePayloadBuildData = ({
   _UpdateValidationData validation,
-  List<WorkspaceModelSelectionToCreate> models,
+  List<WorkspaceModelSelectionToCreate>? models,
   String? encryptedKey,
   String? existingKeySuffix,
 });
@@ -78,14 +79,34 @@ class ModelConnectionRepository({
       modelProviderServices ?? ModelProviderServices();
 
   @override
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate modelConnection,
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
   ) async {
+    final provider = await _modelProviderForUpdate(request.providerId);
+    final key = await _verificationKey(request);
+    final models = await _modelProviderServices.getWorkspaceModelSelections(
+      .new(type: .fromString(provider.type), key: key, url: request.url),
+    );
+    if (models == null) {
+      throw ModelConnectionNoModelsException(request.providerId);
+    }
+
+    return createModelProviderVerification(
+      request: request,
+      modelIds: models.map((model) => model.modelId).toList(),
+    );
+  }
+
+  @override
+  Future<ModelConnectionEntity> createModelConnection(
+    ModelConnectionToCreate modelConnection, {
+    ModelProviderVerification? verification,
+  }) async {
     if (modelConnection.authMode == ModelProviderAuthMode.oauth2) {
       return await _createOAuthModelConnection(modelConnection);
     }
 
-    return await _createApiKeyModelConnection(modelConnection);
+    return await _createApiKeyModelConnection(modelConnection, verification);
   }
 
   @override
@@ -102,10 +123,15 @@ class ModelConnectionRepository({
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
-    ModelConnectionToUpdate modelConnection,
-  ) async {
+    ModelConnectionToUpdate modelConnection, {
+    ModelProviderVerification? verification,
+  }) async {
     final existing = await _editableModelConnection(modelConnectionId);
-    final payload = await _updatePayload(existing, modelConnection);
+    final payload = await _updatePayload(
+      existing,
+      modelConnection,
+      verification,
+    );
     final updated = await _updateModelConnection(
       modelConnectionId,
       modelConnection,
@@ -164,9 +190,14 @@ class ModelConnectionRepository({
 extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
   Future<ModelConnectionEntity> _createApiKeyModelConnection(
     ModelConnectionToCreate modelConnection,
+    ModelProviderVerification? verification,
   ) async {
     final provider = await _modelProviderForCreate(modelConnection.modelId);
-    final data = await _apiKeyConnectionInsertData(modelConnection, provider);
+    final data = await _apiKeyConnectionInsertData(
+      modelConnection,
+      provider,
+      verification,
+    );
     final created = await _insertApiKeyConnection(data);
 
     return _modelProviderTableToEntity(created);
@@ -175,10 +206,16 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
   Future<_ApiKeyConnectionInsertData> _apiKeyConnectionInsertData(
     ModelConnectionToCreate modelConnection,
     ApiModelProvidersTable provider,
+    ModelProviderVerification? verification,
   ) async {
     final key = _requiredApiKey(modelConnection.key);
     final encryptedApiKey = await _encryptApiKey(key);
-    final models = await _modelsForCreate(modelConnection, provider, key);
+    final models = await _modelsForCreate(
+      modelConnection,
+      provider,
+      key,
+      verification,
+    );
 
     return (
       modelConnection: modelConnection,
@@ -218,6 +255,23 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
       ServiceConnectionSecretApiKey(apiKey: key),
     ),
   );
+
+  Future<String> _verificationKey(
+    ModelProviderVerificationRequest request,
+  ) async {
+    final key = request.key?.trim();
+    if (key != null && key.isNotEmpty) return key;
+
+    final connectionId = request.connectionId;
+    if (connectionId == null) {
+      throw const ModelConnectionException(
+        ModelConnectionRepository._missingApiKeyMessage,
+      );
+    }
+    final existing = await _editableModelConnection(connectionId);
+
+    return await _existingApiKey(existing.encryptedAuthValue);
+  }
 }
 
 extension ModelConnectionCreateValidation on ModelConnectionRepository {
@@ -225,7 +279,24 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
     ModelConnectionToCreate modelConnection,
     ApiModelProvidersTable provider,
     String key,
+    ModelProviderVerification? verification,
   ) async {
+    if (verification != null) {
+      _requireVerification(
+        verification,
+        .new(
+          workspaceId: modelConnection.workspaceId,
+          providerId: modelConnection.modelId,
+          connectionId: null,
+          expectedRevision: null,
+          url: modelConnection.url,
+          key: key,
+        ),
+      );
+
+      return _workspaceSelectionsFromIds(verification.modelIds);
+    }
+
     final modelType = _requiredCreateModelType(
       provider,
       modelConnection.modelId,
@@ -485,17 +556,30 @@ extension ModelConnectionUpdateValidation on ModelConnectionRepository {
   Future<_ModelConnectionUpdatePayload> _updatePayload(
     ServiceConnectionTable existing,
     ModelConnectionToUpdate modelConnection,
+    ModelProviderVerification? verification,
   ) async {
+    if (_updateKey(modelConnection.key) == null &&
+        modelConnection.url == null) {
+      return (
+        encryptedKey: null,
+        hasUrlUpdate: false,
+        keySuffix: null,
+        models: null,
+        nextUrl: existing.url,
+      );
+    }
+
     final validation = await _updateValidation(existing, modelConnection);
 
-    return await _completeUpdatePayload(existing, validation);
+    return await _completeUpdatePayload(existing, validation, verification);
   }
 
   Future<_ModelConnectionUpdatePayload> _completeUpdatePayload(
     ServiceConnectionTable existing,
     _UpdateValidationData validation,
+    ModelProviderVerification? verification,
   ) async {
-    final models = await _modelsForUpdate(existing, validation);
+    final models = await _modelsForUpdate(existing, validation, verification);
     final encryptedKey = await _updatedEncryptedKey(
       validation.key,
       existing.encryptedAuthValue,
@@ -571,10 +655,31 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
   String? _nextUpdateUrl(String? existingUrl, String? updatedUrl) =>
       updatedUrl == null ? existingUrl : _nextConnectionUrl(updatedUrl);
 
-  Future<List<WorkspaceModelSelectionToCreate>> _modelsForUpdate(
+  Future<List<WorkspaceModelSelectionToCreate>?> _modelsForUpdate(
     ServiceConnectionTable existing,
     _UpdateValidationData validation,
+    ModelProviderVerification? verification,
   ) async {
+    if (validation.key == null && validation.nextUrl == existing.url) {
+      return null;
+    }
+
+    if (verification != null) {
+      _requireVerification(
+        verification,
+        .new(
+          workspaceId: existing.workspaceId,
+          providerId: existing.serviceId,
+          connectionId: existing.id,
+          expectedRevision: null,
+          url: validation.nextUrl,
+          key: validation.key,
+        ),
+      );
+
+      return _workspaceSelectionsFromIds(verification.modelIds);
+    }
+
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       .new(
         type: .fromString(validation.provider.type),
@@ -588,6 +693,17 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
 
     return models;
   }
+
+  List<WorkspaceModelSelectionToCreate> _workspaceSelectionsFromIds(
+    List<String> modelIds,
+  ) => modelIds
+      .map(
+        (modelId) => WorkspaceModelSelectionToCreate(
+          modelId: modelId,
+          modelConnectionId: '',
+        ),
+      )
+      .toList();
 }
 
 extension ModelConnectionUpdateSupport on ModelConnectionRepository {
@@ -640,6 +756,18 @@ extension ModelConnectionUpdateSupport on ModelConnectionRepository {
   }
 }
 
+void _requireVerification(
+  ModelProviderVerification verification,
+  ModelProviderVerificationRequest request,
+) {
+  if (verification.isExpired) {
+    throw const ProviderVerificationExpiredException();
+  }
+  if (!verification.matches(request)) {
+    throw const ProviderVerificationMismatchException();
+  }
+}
+
 extension ModelConnectionUpdatePersistence on ModelConnectionRepository {
   ModelConnectionEntity _updatedModelConnectionEntity(
     ServiceConnectionTable? updated,
@@ -678,7 +806,10 @@ extension ModelConnectionUpdatePersistence on ModelConnectionRepository {
         );
     if (updatedConnection == null) return null;
 
-    await _replaceWorkspaceModelSelections(modelConnectionId, payload.models);
+    final models = payload.models;
+    if (models != null) {
+      await _replaceWorkspaceModelSelections(modelConnectionId, models);
+    }
 
     return updatedConnection;
   }

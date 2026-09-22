@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -209,6 +210,94 @@ void main() {
         verify(() => mockConnectionsDao.insertModelConnection(any())).called(1);
         verify(() => mockSelectionsDao.insertWorkspaceModelSelections(any()))
             .called(1);
+      });
+
+      test('verified create reuses discovered model ids', () async {
+        when(() => mockProvidersDao.getProviderById('openai'))
+            .thenAnswer((_) async => providerRow);
+        when(() => mockEncryptionService.encrypt(testKeyPayload))
+            .thenAnswer((_) async => 'encrypted-key');
+        when(() => mockConnectionsDao.insertModelConnection(any()))
+            .thenAnswer((_) async => connectionRow);
+        when(() => mockSelectionsDao.insertWorkspaceModelSelections(any()))
+            .thenAnswer((_) async {
+              return;
+            });
+        final verification = createModelProviderVerification(
+          request: const ModelProviderVerificationRequest(
+            workspaceId: 'ws-1',
+            providerId: 'openai',
+            connectionId: null,
+            expectedRevision: null,
+            url: null,
+            key: 'sk-test-api-key-123456',
+          ),
+          modelIds: const ['gpt-4', 'gpt-4o'],
+        );
+
+        final _ = await repository.createModelConnection(
+          const ModelConnectionToCreate(
+            name: 'Test',
+            workspaceId: 'ws-1',
+            modelId: 'openai',
+            key: 'sk-test-api-key-123456',
+          ),
+          verification: verification,
+        );
+
+        final _ = verifyNever(
+          () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+        );
+        final selections =
+            verify(
+                  () => mockSelectionsDao.insertWorkspaceModelSelections(
+                    captureAny(),
+                  ),
+                ).captured.single
+                as List<WorkspaceModelSelectionsCompanion>;
+        expect(selections.map((selection) => selection.modelId.value), [
+          'gpt-4',
+          'gpt-4o',
+        ]);
+      });
+
+      test('rejects mismatched verification before persistence', () async {
+        when(() => mockProvidersDao.getProviderById('openai'))
+            .thenAnswer((_) async => providerRow);
+        when(() => mockEncryptionService.encrypt(testKeyPayload))
+            .thenAnswer((_) async => 'encrypted-key');
+
+        final verification = createModelProviderVerification(
+          request: const ModelProviderVerificationRequest(
+            workspaceId: 'ws-1',
+            providerId: 'openai',
+            connectionId: null,
+            expectedRevision: null,
+            url: null,
+            key: 'different-key-123456',
+          ),
+          modelIds: const ['gpt-4'],
+        );
+
+        await expectLater(
+          repository.createModelConnection(
+            const ModelConnectionToCreate(
+              name: 'Test',
+              workspaceId: 'ws-1',
+              modelId: 'openai',
+              key: 'sk-test-api-key-123456',
+            ),
+            verification: verification,
+          ),
+          throwsA(isA<ProviderVerificationMismatchException>()),
+        );
+
+        final _ = verifyNever(
+          () => mockConnectionsDao.insertModelConnection(any()),
+        );
+        final _ = verifyNever(
+          () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
+        );
       });
 
       test('creates OAuth connection with supplied model ids', () async {
@@ -421,18 +510,14 @@ void main() {
       });
 
       test(
-        'accepts legacy plaintext encrypted key when key is unchanged',
+        'name-only update preserves a legacy key without decrypting it',
         () async {
-          final updatedRow = connectionRow.copyWith(name: 'Renamed Connection');
+          final existingRow = connectionRow.copyWith(
+            encryptedAuthValue: const Value('legacy-api-key'),
+          );
+          final updatedRow = existingRow.copyWith(name: 'Renamed Connection');
           when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
-              .thenAnswer((_) async => connectionRow);
-          when(() => mockProvidersDao.getProviderById('openai'))
-              .thenAnswer((_) async => providerRow);
-          when(() => mockEncryptionService.decrypt('encrypted-key'))
-              .thenAnswer((_) async => 'legacy-api-key');
-          when(
-            () => mockModelProviderServices.getWorkspaceModelSelections(any()),
-          ).thenAnswer((_) async => const []);
+              .thenAnswer((_) async => existingRow);
           when(() => mockConnectionsDao.updateModelConnection('conn-1', any()))
               .thenAnswer((_) async => updatedRow);
 
@@ -442,16 +527,65 @@ void main() {
           );
 
           expect(result.name, 'Renamed Connection');
-          final provider =
+          final companion =
               verify(
-                    () => mockModelProviderServices.getWorkspaceModelSelections(
+                    () => mockConnectionsDao.updateModelConnection(
+                      'conn-1',
                       captureAny(),
                     ),
                   ).captured.single
-                  as ModelProvider;
-          expect(provider.key, 'legacy-api-key');
+                  as ServiceConnectionsCompanion;
+          expect(companion.encryptedAuthValue.present, isFalse);
+          expect(companion.keySuffix.present, isFalse);
+          final _ = verifyNever(() => mockEncryptionService.decrypt(any()));
+          final _ = verifyNever(
+            () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+          );
         },
       );
+
+      test('verified URL update tests stored key once', () async {
+        final updatedRow = connectionRow.copyWith(
+          url: const Value('https://proxy.example.com'),
+        );
+        when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
+            .thenAnswer((_) async => connectionRow);
+        when(() => mockProvidersDao.getProviderById('openai'))
+            .thenAnswer((_) async => providerRow);
+        when(() => mockEncryptionService.decrypt('encrypted-key'))
+            .thenAnswer((_) async => existingKeyPayload);
+        when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
+            .thenAnswer(
+              (_) async => const [
+                WorkspaceModelSelectionToCreate(
+                  modelId: 'gpt-4o',
+                  modelConnectionId: '',
+                ),
+              ],
+            );
+        when(() => mockConnectionsDao.updateModelConnection('conn-1', any()))
+            .thenAnswer((_) async => updatedRow);
+
+        final verification = await repository.verifyModelConnection(
+          const ModelProviderVerificationRequest(
+            workspaceId: 'ws-1',
+            providerId: 'openai',
+            connectionId: 'conn-1',
+            expectedRevision: null,
+            url: 'https://proxy.example.com',
+            key: null,
+          ),
+        );
+        final _ = await repository.updateModelConnection(
+          'conn-1',
+          const ModelConnectionToUpdate(url: 'https://proxy.example.com'),
+          verification: verification,
+        );
+
+        verify(
+          () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+        ).called(1);
+      });
 
       test('encrypts replacement key', () async {
         final updatedRow = connectionRow.copyWith(
@@ -481,40 +615,54 @@ void main() {
             .called(1);
       });
 
-      test('preserves url when url update is omitted', () async {
-        final existingRow = connectionRow.copyWith(
-          url: const Value('https://proxy.example.com'),
-        );
-        final updatedRow = existingRow.copyWith(name: 'Renamed Connection');
-        when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
-            .thenAnswer((_) async => existingRow);
-        when(() => mockProvidersDao.getProviderById('openai'))
-            .thenAnswer((_) async => providerRow);
-        when(() => mockEncryptionService.decrypt('encrypted-key'))
-            .thenAnswer((_) async => existingKeyPayload);
-        when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
-            .thenAnswer((_) async => const []);
-        when(() => mockConnectionsDao.updateModelConnection('conn-1', any()))
-            .thenAnswer((_) async => updatedRow);
+      test(
+        'name-only update preserves URL without provider verification',
+        () async {
+          final existingRow = connectionRow.copyWith(
+            url: const Value('https://proxy.example.com'),
+          );
+          final updatedRow = existingRow.copyWith(name: 'Renamed Connection');
+          when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
+              .thenAnswer((_) async => existingRow);
+          when(() => mockProvidersDao.getProviderById('openai'))
+              .thenAnswer((_) async => providerRow);
+          when(() => mockEncryptionService.decrypt('encrypted-key'))
+              .thenAnswer((_) async => existingKeyPayload);
+          when(
+            () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+          ).thenAnswer((_) async => const []);
+          when(() => mockConnectionsDao.updateModelConnection('conn-1', any()))
+              .thenAnswer((_) async => updatedRow);
 
-        final result = await repository.updateModelConnection(
-          'conn-1',
-          const ModelConnectionToUpdate(name: 'Renamed Connection'),
-        );
+          final result = await repository.updateModelConnection(
+            'conn-1',
+            const ModelConnectionToUpdate(name: 'Renamed Connection'),
+          );
 
-        expect(result.url, 'https://proxy.example.com');
-        final companion =
-            verify(
-                  () => mockConnectionsDao.updateModelConnection(
-                    'conn-1',
-                    captureAny(),
-                  ),
-                ).captured.single
-                as ServiceConnectionsCompanion;
-        expect(companion.url.present, isFalse);
-      });
+          expect(result.url, 'https://proxy.example.com');
+          final companion =
+              verify(
+                    () => mockConnectionsDao.updateModelConnection(
+                      'conn-1',
+                      captureAny(),
+                    ),
+                  ).captured.single
+                  as ServiceConnectionsCompanion;
+          expect(companion.url.present, isFalse);
+          final _ = verifyNever(
+            () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+          );
+        },
+      );
 
       test('preserves existing selection ids for unchanged models', () async {
+        final existingRow = connectionRow.copyWith(
+          url: const Value('https://old.proxy.example.com'),
+        );
+        final updatedRow = existingRow.copyWith(
+          name: 'Renamed Connection',
+          url: const Value('https://proxy.example.com'),
+        );
         final existingSelection = WorkspaceModelSelectionTable(
           id: 'selection-existing',
           createdAt: now,
@@ -530,7 +678,7 @@ void main() {
           modelConnectionId: 'conn-1',
         );
         when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
-            .thenAnswer((_) async => connectionRow);
+            .thenAnswer((_) async => existingRow);
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
         when(() => mockEncryptionService.decrypt('encrypted-key'))
@@ -549,16 +697,20 @@ void main() {
               ],
             );
         when(() => mockConnectionsDao.updateModelConnection('conn-1', any()))
-            .thenAnswer((_) async => connectionRow);
+            .thenAnswer((_) async => updatedRow);
         when(() => mockSelectionsDao.getByModelConnectionId('conn-1'))
             .thenAnswer((_) async => [existingSelection, removedSelection]);
 
         final result = await repository.updateModelConnection(
           'conn-1',
-          const ModelConnectionToUpdate(name: 'Renamed Connection'),
+          const ModelConnectionToUpdate(
+            name: 'Renamed Connection',
+            url: 'https://proxy.example.com',
+          ),
         );
 
         expect(result.id, 'conn-1');
+        expect(result.url, 'https://proxy.example.com');
         final _ = verify(
           () => mockSelectionsDao.deleteByIds({'selection-removed'}),
         ).called(1);

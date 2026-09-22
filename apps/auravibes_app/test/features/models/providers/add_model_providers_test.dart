@@ -1,23 +1,50 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // ignore_for_file: cascade_invocations
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeModelConnectionRepository implements ModelConnectionRepository {
   ModelConnectionEntity? created;
+  ModelProviderVerification? verificationResult;
+  ModelProviderVerification? lastCreateVerification;
+  Exception? verificationError;
+  Future<ModelProviderVerification>? pendingVerification;
+
+  @override
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
+  ) async {
+    final error = verificationError;
+    if (error != null) throw error;
+    final pending = pendingVerification;
+    if (pending != null) return await pending;
+
+    return verificationResult ??
+        createModelProviderVerification(
+          request: request,
+          modelIds: const ['gpt-4o'],
+        );
+  }
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate toCreate,
-  ) async {
+    ModelConnectionToCreate toCreate, {
+    ModelProviderVerification? verification,
+  }) async {
+    lastCreateVerification = verification;
     created = .new(
       id: 'new-id',
       name: toCreate.name,
@@ -58,13 +85,14 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String _,
-    ModelConnectionToUpdate _,
-  ) {
+    ModelConnectionToUpdate _, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> deleteModelConnection(String _) {
+  Future<void> deleteModelConnection(String _) {
     throw UnimplementedError();
   }
 }
@@ -170,11 +198,11 @@ void main() {
       final container2 = ProviderContainer(
         overrides: [
           modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
           apiModelProvidersProvider.overrideWith((_, _) async => []),
         ],
       );
       addTearDown(container2.dispose);
-
       final notifier = container2.read(
         addModelProviderStateProvider('ws1').notifier,
       );
@@ -191,11 +219,11 @@ void main() {
       final providers = [
         const ApiModelProviderEntity(id: 'openai', name: 'OpenAI', type: null),
       ];
+      final repo = _FakeModelConnectionRepository();
       final container2 = ProviderContainer(
         overrides: [
-          modelConnectionRepositoryProvider.overrideWithValue(
-            _FakeModelConnectionRepository(),
-          ),
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
           apiModelProvidersProvider.overrideWith((_, _) async => providers),
         ],
       );
@@ -225,7 +253,6 @@ void main() {
         ],
       );
       addTearDown(container2.dispose);
-
       final notifier = container2.read(
         addModelProviderStateProvider('ws1').notifier,
       );
@@ -251,6 +278,300 @@ void main() {
       expect(container.read(addModelProviderStateProvider('ws1')).url, isNull);
     });
 
+    test('verification stores discovered model count', () async {
+      final repo = _FakeModelConnectionRepository();
+      final container2 = ProviderContainer(
+        overrides: [
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => [
+              const ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: null,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      notifier
+        ..setName('OpenAI')
+        ..setKey('valid-key')
+        ..setModel('openai');
+
+      final verification = await notifier.verifyModelProvider();
+
+      expect(verification?.modelIds, ['gpt-4o']);
+      expect(
+        container2
+            .read(addModelProviderStateProvider('ws1'))
+            .isConnectionVerified,
+        isTrue,
+      );
+      expect(
+        container2
+            .read(addModelProviderStateProvider('ws1'))
+            .verifiedModelCount,
+        1,
+      );
+    });
+
+    test('failed verification leaves add unavailable', () async {
+      final repo = _FakeModelConnectionRepository()
+        ..verificationError = const ModelConnectionException('invalid key');
+      final container2 = ProviderContainer(
+        overrides: [
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => [
+              const ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: null,
+              ),
+            ],
+          ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      notifier
+        ..setName('OpenAI')
+        ..setKey('valid-key')
+        ..setModel('openai');
+
+      await expectLater(
+        notifier.verifyModelProvider(),
+        throwsA(isA<ModelConnectionException>()),
+      );
+      final state = container2.read(addModelProviderStateProvider('ws1'));
+      expect(state.isTestingConnection, isFalse);
+      expect(state.isConnectionVerified, isFalse);
+      expect(
+        notifier.addModelProvider,
+        throwsA(isA<ProviderVerificationRequiredException>()),
+      );
+      expect(repo.created, isNull);
+    });
+
+    test(
+      'stale verification response is ignored after a field change',
+      () async {
+        final completer = Completer<ModelProviderVerification>();
+        final repo = _FakeModelConnectionRepository()
+          ..pendingVerification = completer.future;
+        final container2 = ProviderContainer(
+          overrides: [
+            modelConnectionRepositoryProvider.overrideWithValue(repo),
+            modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+            apiModelProvidersProvider.overrideWith(
+              (_, _) async => [
+                const ApiModelProviderEntity(
+                  id: 'openai',
+                  name: 'OpenAI',
+                  type: null,
+                ),
+              ],
+            ),
+          ],
+        );
+        addTearDown(container2.dispose);
+        final subscription = container2.listen(
+          addModelProviderStateProvider('ws1'),
+          // Keep notifier alive while the stale request resolves.
+          (_, _) {
+            assert(true, 'Listener intentionally keeps provider alive.');
+          },
+        );
+        addTearDown(subscription.close);
+
+        final notifier = container2.read(
+          addModelProviderStateProvider('ws1').notifier,
+        );
+        final _ = await container2.read(
+          apiModelProvidersProvider(workspaceId: 'ws1').future,
+        );
+        notifier
+          ..setName('OpenAI')
+          ..setKey('old-key')
+          ..setModel('openai');
+
+        final verificationFuture = notifier.verifyModelProvider();
+        await Future<void>.delayed(.zero);
+        notifier.setKey('new-key');
+        completer.complete(
+          createModelProviderVerification(
+            request: const ModelProviderVerificationRequest(
+              workspaceId: 'ws1',
+              providerId: 'openai',
+              connectionId: null,
+              expectedRevision: null,
+              url: null,
+              key: 'old-key',
+            ),
+            modelIds: const ['gpt-4o'],
+          ),
+        );
+        final _ = await verificationFuture;
+
+        final state = container2.read(addModelProviderStateProvider('ws1'));
+        expect(state.isTestingConnection, isFalse);
+        expect(state.isConnectionVerified, isFalse);
+        expect(state.key, 'new-key');
+      },
+    );
+
+    test('save rejects valid credentials without verification', () async {
+      final repo = _FakeModelConnectionRepository();
+      final container2 = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => [
+              const ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: null,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      notifier
+        ..setName('OpenAI')
+        ..setKey('valid-key')
+        ..setModel('openai');
+
+      await expectLater(
+        notifier.addModelProvider,
+        throwsA(isA<ProviderVerificationRequiredException>()),
+      );
+      expect(repo.created, isNull);
+    });
+
+    test('changing credentials invalidates verification', () async {
+      final repo = _FakeModelConnectionRepository();
+      final container2 = ProviderContainer(
+        overrides: [
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => [
+              const ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: null,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      notifier
+        ..setName('OpenAI')
+        ..setKey('valid-key')
+        ..setModel('openai');
+      final _ = await notifier.verifyModelProvider();
+
+      notifier.setKey('new-valid-key');
+
+      final state = container2.read(addModelProviderStateProvider('ws1'));
+      expect(state.isConnectionVerified, isFalse);
+      expect(state.verifiedModelCount, 0);
+    });
+
+    test('expired verification is cleared', () async {
+      final repo = _FakeModelConnectionRepository()
+        ..verificationResult = .new(
+          id: 'verification',
+          workspaceId: 'ws1',
+          providerId: 'openai',
+          connectionId: null,
+          expectedRevision: null,
+          url: null,
+          keyDigest: modelProviderKeyDigest('valid-key'),
+          modelIds: const ['gpt-4o'],
+          expiresAt: DateTime.now().toUtc().add(
+            const Duration(milliseconds: 10),
+          ),
+        );
+      final container2 = ProviderContainer(
+        overrides: [
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => [
+              const ApiModelProviderEntity(
+                id: 'openai',
+                name: 'OpenAI',
+                type: null,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      notifier
+        ..setName('OpenAI')
+        ..setKey('valid-key')
+        ..setModel('openai');
+      final _ = await notifier.verifyModelProvider();
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(
+        container2
+            .read(addModelProviderStateProvider('ws1'))
+            .isConnectionVerified,
+        isFalse,
+      );
+    });
+
     test('addModelProvider returns entity on success', () async {
       final repo = _FakeModelConnectionRepository();
       final container2 = ProviderContainer(
@@ -261,6 +582,7 @@ void main() {
             ),
           ),
           modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
           apiModelProvidersProvider.overrideWith(
             (_, _) async => [
               const ApiModelProviderEntity(
@@ -285,6 +607,7 @@ void main() {
         ..setKey('sk-valid-key-12345')
         ..setModel('openai');
 
+      final _ = await notifier.verifyModelProvider();
       final result = await notifier.addModelProvider();
       expect(result, isNotNull);
       expect(
@@ -305,6 +628,8 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _ThrowingModelConnectionRepository(),
           ),
+          modelConnectionStoreProvider('ws1')
+              .overrideWith((_) async => _ThrowingModelConnectionRepository()),
           apiModelProvidersProvider.overrideWith(
             (_, _) async => [
               const ApiModelProviderEntity(
@@ -329,6 +654,7 @@ void main() {
         ..setKey('sk-valid-key-12345')
         ..setModel('openai');
 
+      final _ = await notifier.verifyModelProvider();
       expect(notifier.addModelProvider, throwsA(isA<Exception>()));
     });
 
@@ -354,9 +680,18 @@ void main() {
 
 class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
   @override
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
+  ) async => createModelProviderVerification(
+    request: request,
+    modelIds: const ['gpt-4o'],
+  );
+
+  @override
   Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate toCreate,
-  ) async {
+    ModelConnectionToCreate toCreate, {
+    ModelProviderVerification? verification,
+  }) async {
     throw Exception('db connection failed');
   }
 
@@ -386,13 +721,14 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String _,
-    ModelConnectionToUpdate _,
-  ) {
+    ModelConnectionToUpdate _, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> deleteModelConnection(String _) {
+  Future<void> deleteModelConnection(String _) {
     throw UnimplementedError();
   }
 }

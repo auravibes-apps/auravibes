@@ -76,7 +76,7 @@
       "discard_changes": "Descartar",
       "keep_editing": "Seguir editando",
       "back_to_selection": "Volver a la selección de modelo",
-      "create_button": "Crear Proveedor",
+      "create_button": "Crear Proveedor", "verify_connection": "Verificar conexión", "add_provider": "Agregar proveedor", "save_changes": "Guardar cambios", "verification_success": "Conexión verificada - {} modelos disponibles", "verification_required": "Verifica la conexión antes de guardar.", "verification_expired": "La verificación expiró. Verifica la conexión de nuevo.",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
       "oauth_waiting": "Esperando autorización...",

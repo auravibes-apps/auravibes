@@ -76,7 +76,7 @@
       "discard_changes": "Discard",
       "keep_editing": "Keep editing",
       "back_to_selection": "Back to model selection",
-      "create_button": "Create Provider",
+      "create_button": "Create Provider", "verify_connection": "Verify connection", "add_provider": "Add provider", "save_changes": "Save changes", "verification_success": "Connected - {} models available", "verification_required": "Verify connection before saving.", "verification_expired": "Verification expired. Verify connection again.",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
       "oauth_waiting": "Waiting for authorization...",
