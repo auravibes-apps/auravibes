@@ -23,15 +23,6 @@ const Map<String, Object> fetchInputSchema = {
   'additionalProperties': false,
 };
 
-const Map<String, Object> answerInputSchema = {
-  'type': 'object',
-  'properties': {
-    'question': {'type': 'string'},
-  },
-  'required': ['question'],
-  'additionalProperties': false,
-};
-
 const Map<String, Object> jobIdInputSchema = {
   'type': 'object',
   'properties': {
