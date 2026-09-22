@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
@@ -173,6 +174,19 @@ mixin _MessageRepositoryMutationApi {
   }) =>
       MessageRepositoryMutationOperations(this as MessageRepository)
           .patchMessage(id, message, conversationId: conversationId);
+
+  Future<List<ToolCallApprovalBatchClaim>> claimToolCallBatch(
+    Iterable<ToolCallApprovalBatchItem> items, {
+    required bool approve,
+  }) =>
+      MessageRepositoryBatchOperations(this as MessageRepository)
+          .claimToolCallBatch(items, approve: approve);
+
+  Future<void> persistToolCallBatchResults(
+    Iterable<ToolCallExecutionBatchUpdate> updates,
+  ) =>
+      MessageRepositoryBatchOperations(this as MessageRepository)
+          .persistToolCallBatchResults(updates);
 }
 
 mixin _MessageRepositoryStateApi {
@@ -529,6 +543,205 @@ extension MessageRepositoryMutationOperations on MessageRepository {
     return await _mapToMessageWithAttachments(updatedMessage);
   }
 }
+
+class const MessageRepositoryBatchOperations(
+  final MessageRepository _repository,
+) {
+  Future<List<ToolCallApprovalBatchClaim>> claimToolCallBatch(
+    Iterable<ToolCallApprovalBatchItem> items, {
+    required bool approve,
+  }) async {
+    final input = items.toList(growable: false);
+    if (input.isEmpty) return const [];
+
+    return await _repository._database.transaction(() async {
+      final rowsById = <String, MessagesTable?>{};
+      for (final item in input) {
+        rowsById[item.messageId] ??= await _repository._database.messageDao
+            .getMessageById(item.messageId);
+      }
+
+      final claims = <String, ToolCallApprovalBatchClaim>{};
+      final updatesByMessage = <String, List<MessageToolCallEntity>>{};
+      final seen = <String>{};
+
+      for (final item in input) {
+        final identity = _batchItemIdentity(item);
+        if (!seen.add(identity)) {
+          claims[identity] = ToolCallApprovalBatchClaim(
+            item: item,
+            status: .alreadyHandled,
+          );
+          continue;
+        }
+
+        final row = rowsById[item.messageId];
+        final metadata = row == null
+            ? null
+            : MessageMetadataEntity.fromJsonString(row.metadata);
+        final toolCall = metadata?.toolCalls
+            .where((candidate) => candidate.id == item.toolCallId)
+            .firstOrNull;
+
+        if (!_matchesPendingCall(row, item, toolCall)) {
+          claims[identity] = ToolCallApprovalBatchClaim(
+            item: item,
+            status: _alreadyHandled(row, item, toolCall)
+                ? .alreadyHandled
+                : .conflicted,
+            toolCall: toolCall,
+          );
+          continue;
+        }
+
+        final pendingToolCall = toolCall;
+        final currentMetadata = metadata;
+        if (pendingToolCall == null || currentMetadata == null) {
+          claims[identity] = ToolCallApprovalBatchClaim(
+            item: item,
+            status: .conflicted,
+          );
+          continue;
+        }
+        final updatedToolCall = pendingToolCall.copyWith(
+          resultStatus: approve ? .running : .skippedByUser,
+        );
+        final currentCalls =
+            updatesByMessage[item.messageId] ??
+            List<MessageToolCallEntity>.of(currentMetadata.toolCalls);
+        final nextCalls = [
+          for (final candidate in currentCalls)
+            if (candidate.id == updatedToolCall.id)
+              updatedToolCall
+            else
+              candidate,
+        ];
+        updatesByMessage[item.messageId] = nextCalls;
+        claims[identity] = ToolCallApprovalBatchClaim(
+          item: item,
+          status: .claimed,
+          toolCall: toolCall,
+        );
+      }
+
+      for (final entry in updatesByMessage.entries) {
+        final row = rowsById[entry.key];
+        if (row == null) continue;
+        final metadata = MessageMetadataEntity.fromJsonString(row.metadata);
+        if (metadata == null) continue;
+        final updatedMetadata = metadata.copyWith(toolCalls: entry.value);
+        final _ = await _repository._database.messageDao.patchMessage(
+          entry.key,
+          _repository._mapPatchToMessagesCompanion(
+            .new(
+              metadata: updatedMetadata,
+              status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+            ),
+          ),
+        );
+      }
+
+      return [for (final item in input) ?claims[_batchItemIdentity(item)]];
+    });
+  }
+
+  Future<void> persistToolCallBatchResults(
+    Iterable<ToolCallExecutionBatchUpdate> updates,
+  ) async {
+    final input = updates.toList(growable: false);
+    if (input.isEmpty) return;
+
+    await _repository._database.transaction(() async {
+      final rowsById = <String, MessagesTable?>{};
+      final updatesByMessage = <String, List<ToolCallExecutionBatchUpdate>>{};
+      for (final update in input) {
+        rowsById[update.messageId] ??= await _repository._database.messageDao
+            .getMessageById(update.messageId);
+        (updatesByMessage[update.messageId] ??= []).add(update);
+      }
+
+      for (final entry in updatesByMessage.entries) {
+        final row = rowsById[entry.key];
+        if (row == null) continue;
+        final metadata = MessageMetadataEntity.fromJsonString(row.metadata);
+        if (metadata == null) continue;
+        final updatesById = {
+          for (final update in entry.value) update.toolCallId: update,
+        };
+        var changed = false;
+        final updatedToolCalls = [
+          for (final toolCall in metadata.toolCalls)
+            if (updatesById[toolCall.id] case final update?
+                when toolCall.resultStatus == .running)
+              (() {
+                changed = true;
+
+                return toolCall.copyWith(
+                  resultStatus: update.resultStatus,
+                  responseRaw: update.responseRaw,
+                );
+              })()
+            else
+              toolCall,
+        ];
+        if (!changed) continue;
+        final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
+        final _ = await _repository._database.messageDao.patchMessage(
+          entry.key,
+          _repository._mapPatchToMessagesCompanion(
+            .new(
+              metadata: updatedMetadata,
+              status: updatedMetadata.hasPendingToolCalls ? null : .sent,
+            ),
+          ),
+        );
+      }
+    });
+  }
+}
+
+bool _matchesPendingCall(
+  MessagesTable? row,
+  ToolCallApprovalBatchItem item,
+  MessageToolCallEntity? toolCall,
+) {
+  if (row == null || row.conversationId != item.conversationId) return false;
+  if (toolCall == null || !toolCall.isAwaitingApproval) return false;
+  if (item.argumentsDigest != null &&
+      toolCall.argumentsDigest != item.argumentsDigest) {
+    return false;
+  }
+  if (item.turnRevision != null && toolCall.turnRevision != item.turnRevision) {
+    return false;
+  }
+
+  return true;
+}
+
+bool _alreadyHandled(
+  MessagesTable? row,
+  ToolCallApprovalBatchItem item,
+  MessageToolCallEntity? toolCall,
+) {
+  if (row == null ||
+      row.conversationId != item.conversationId ||
+      toolCall == null ||
+      toolCall.isAwaitingApproval) {
+    return false;
+  }
+  if (item.argumentsDigest != null &&
+      toolCall.argumentsDigest != item.argumentsDigest) {
+    return false;
+  }
+  if (item.turnRevision != null && toolCall.turnRevision != item.turnRevision) {
+    return false;
+  }
+
+  return true;
+}
+
+String _batchItemIdentity(ToolCallApprovalBatchItem item) =>
+    '${item.conversationId}:${item.messageId}:${item.toolCallId}';
 
 extension on MessageRepository {
   Future<MessagesTable?> _patchMessageInTransaction(

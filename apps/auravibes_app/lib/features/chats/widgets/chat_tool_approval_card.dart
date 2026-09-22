@@ -9,6 +9,7 @@ import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
@@ -41,6 +42,26 @@ typedef _ActionErrorRequest = ({
   Object error,
   StackTrace stackTrace,
 });
+
+void _showApprovalActionError(_ActionErrorRequest request) {
+  final error = request.error;
+  final errorCode = error is CloudAppException ? error.code : null;
+  final errorSuffix = errorCode == null ? '' : ' ($errorCode)';
+  _logger.warning(
+    'Tool approval action failed$errorSuffix',
+    error,
+    request.stackTrace,
+  );
+  final _ = AuraSnackBars.show(
+    context: request.context,
+    content: TextLocale(
+      error is CloudAppException
+          ? CloudAppErrors.localizationKey(error)
+          : request.errorMessageKey,
+    ),
+    variant: .error,
+  );
+}
 
 class const ChatToolApprovalCard({
   required final String workspaceId,
@@ -414,6 +435,14 @@ String _pendingToolCallConversationId(
 typedef _HideApprovalCalls = Set<String>? Function(
   Iterable<PendingToolCall> calls,
 );
+
+String _pendingToolCallSourceConversationId(
+  PendingToolCall pendingCall,
+  String rootConversationId,
+) => pendingCall.sourceConversationId.isEmpty
+    ? rootConversationId
+    : pendingCall.sourceConversationId;
+
 typedef _StartApprovalDecision = Set<String>? Function();
 typedef _RestoreApprovalCalls = void Function(Set<String> keys);
 
@@ -492,6 +521,8 @@ _ApprovalCardRequest _pagerApprovalCardRequest(
     workspaceId: request.workspaceId,
     conversationId: conversationId,
     pendingCalls: request.pendingCalls,
+    onHideCalls: request.onHideCalls,
+    onRestoreCalls: request.onRestoreCalls,
     current: current,
     currentIndex: currentIndex,
     totalCount: request.pendingCalls.length,
@@ -639,6 +670,8 @@ typedef _ApprovalCardRequest = ({
   String workspaceId,
   String conversationId,
   List<PendingToolCall> pendingCalls,
+  _HideApprovalCalls onHideCalls,
+  _RestoreApprovalCalls onRestoreCalls,
   PendingToolCall current,
   int currentIndex,
   int totalCount,
@@ -812,9 +845,20 @@ class _ApprovalCardBodyChildren {
           argumentsRaw: request.current.toolCall.argumentsRaw,
           sourceLabel: request.current.sourceLabel,
         ),
+        if (request.pendingCalls.length > 1)
+          _BatchApprovalButtons(
+            workspaceId: request.workspaceId,
+            conversationId: request.conversationId,
+            pendingCalls: request.pendingCalls,
+            onHideCalls: request.onHideCalls,
+            onRestoreCalls: request.onRestoreCalls,
+          ),
         _ConfirmationButtons(
           workspaceId: request.workspaceId,
-          conversationId: request.conversationId,
+          conversationId: _pendingToolCallSourceConversationId(
+            request.current,
+            request.conversationId,
+          ),
           toolCall: request.current.toolCall,
           messageId: request.current.messageId,
           onDecisionStarted: request.actions.onDecisionStarted,
@@ -1459,6 +1503,109 @@ bool _isSensitiveKey(Object? key) {
       _sensitiveKeyParts.any(normalized.contains);
 }
 
+List<PendingToolCall> _uniquePendingToolCalls(
+  Iterable<PendingToolCall> pendingCalls,
+  String conversationId,
+) {
+  final seenKeys = <String>{};
+
+  return [
+    for (final pendingCall in pendingCalls)
+      if (seenKeys.add(_pendingToolCallKey(pendingCall, conversationId)))
+        pendingCall,
+  ];
+}
+
+class const _BatchApprovalButtons({
+  required final String workspaceId,
+  required final String conversationId,
+  required final List<PendingToolCall> pendingCalls,
+  required final _HideApprovalCalls onHideCalls,
+  required final _RestoreApprovalCalls onRestoreCalls,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraRow(
+    children: [
+      Expanded(
+        child: Semantics(
+          key: const ValueKey<String>('tool_approval_allow_all'),
+          child: AuraButton(
+            onPressed: () => unawaited(_runBatch(ref, context, approved: true)),
+            child: const TextLocale(LocaleKeys.tool_confirmation_allow_all),
+            variant: .outlined,
+            size: .small,
+          ),
+          identifier: 'tool_approval_allow_all',
+        ),
+      ),
+      Expanded(
+        child: Semantics(
+          key: const ValueKey<String>('tool_approval_deny_all'),
+          child: AuraButton(
+            onPressed: () =>
+                unawaited(_runBatch(ref, context, approved: false)),
+            child: const TextLocale(LocaleKeys.tool_confirmation_deny_all),
+            variant: .outlined,
+            tint: .error,
+            size: .small,
+          ),
+          identifier: 'tool_approval_deny_all',
+        ),
+      ),
+    ],
+  );
+
+  Future<void> _runBatch(
+    WidgetRef ref,
+    BuildContext context, {
+    required bool approved,
+  }) async {
+    final calls = _uniquePendingToolCalls(pendingCalls, conversationId);
+    final hiddenKeys = onHideCalls(calls);
+    if (hiddenKeys == null) return;
+
+    try {
+      final result = approved
+          ? await ref
+                .read(batchToolApprovalUsecaseProvider)
+                .approveOnce(
+                  rootConversationId: conversationId,
+                  workspaceId: workspaceId,
+                  pendingCalls: calls,
+                )
+          : await ref
+                .read(batchToolApprovalUsecaseProvider)
+                .skip(
+                  rootConversationId: conversationId,
+                  workspaceId: workspaceId,
+                  pendingCalls: calls,
+                );
+      final handledKeys = {
+        for (final item in [...result.claimed, ...result.alreadyHandled])
+          '${item.conversationId}:${item.messageId}:${item.toolCallId}',
+      };
+      final restoreKeys = {
+        for (final call in calls)
+          if (!handledKeys.contains(_pendingToolCallKey(call, conversationId)))
+            _pendingToolCallKey(call, conversationId),
+      };
+      if (restoreKeys.isNotEmpty) onRestoreCalls(restoreKeys);
+    } on Object catch (error, stackTrace) {
+      onRestoreCalls(hiddenKeys);
+      if (context.mounted) {
+        _showApprovalActionError((
+          context: context,
+          errorMessageKey: approved
+              ? LocaleKeys.tool_approval_errors_approve_once
+              : LocaleKeys.tool_approval_errors_skip,
+          error: error,
+          stackTrace: stackTrace,
+        ));
+      }
+    }
+  }
+}
+
 class const _ConfirmationButtons({
   required final String workspaceId,
   required final String conversationId,
@@ -1709,42 +1856,13 @@ extension _ConfirmationActionExecution on _ConfirmationActionHandler {
     } on Object catch (error, stackTrace) {
       request.onFailed(hiddenKeys);
       if (!request.context.mounted) return;
-      _showActionError((
+      _showApprovalActionError((
         context: request.context,
         errorMessageKey: request.errorMessageKey,
         error: error,
         stackTrace: stackTrace,
       ));
     }
-  }
-
-  void _showActionError(_ActionErrorRequest request) {
-    _logActionError(request);
-    _showActionErrorSnack(request);
-  }
-
-  void _logActionError(_ActionErrorRequest request) {
-    final error = request.error;
-    final errorCode = error is CloudAppException ? error.code : null;
-    final errorSuffix = errorCode == null ? '' : ' ($errorCode)';
-    _logger.warning(
-      'Tool approval action failed$errorSuffix',
-      error,
-      request.stackTrace,
-    );
-  }
-
-  void _showActionErrorSnack(_ActionErrorRequest request) {
-    final error = request.error;
-    final _ = AuraSnackBars.show(
-      context: request.context,
-      content: TextLocale(
-        error is CloudAppException
-            ? CloudAppErrors.localizationKey(error)
-            : request.errorMessageKey,
-      ),
-      variant: .error,
-    );
   }
 }
 
