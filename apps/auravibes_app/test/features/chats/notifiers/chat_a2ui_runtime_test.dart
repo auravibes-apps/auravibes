@@ -225,6 +225,37 @@ void main() {
     }
   }
 
+  test('excludes closed modal content from copyable text', () {
+    final runtime = copyRuntime([
+      {
+        'id': 'root',
+        'component': 'Modal',
+        'trigger': 'trigger',
+        'content': 'content',
+      },
+      {'id': 'trigger', 'component': 'Text', 'text': 'View details'},
+      {'id': 'content', 'component': 'Text', 'text': 'Hidden command'},
+    ]);
+
+    expect(runtime.copyableTextFor('assistant-1'), 'View details');
+  });
+
+  test('excludes collapsible accordion content from copyable text', () {
+    final runtime = copyRuntime([
+      {
+        'id': 'root',
+        'component': 'Accordion',
+        'expanded': [0],
+        'items': [
+          {'title': 'Visible heading', 'content': 'content'},
+        ],
+      },
+      {'id': 'content', 'component': 'Text', 'text': 'Collapsible command'},
+    ]);
+
+    expect(runtime.copyableTextFor('assistant-1'), 'Visible heading');
+  });
+
   test('preserves empty table cell positions including row boundaries', () {
     final runtime = copyRuntime([
       {
