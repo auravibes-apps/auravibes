@@ -818,7 +818,8 @@
     },
     "actions": {
       "cancel": "Cancelar",
-      "save": "Guardar"
+      "save": "Guardar",
+      "reset_defaults": "Restaurar valores predeterminados"
     }
   },
   "more_screen": {

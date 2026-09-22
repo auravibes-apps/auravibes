@@ -1037,6 +1037,8 @@ abstract class LocaleKeys {
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
   static const settings_screen_actions_save = 'settings_screen.actions.save';
+  static const settings_screen_actions_reset_defaults =
+      'settings_screen.actions.reset_defaults';
   static const more_screen_title = 'more_screen.title';
   static const more_screen_workspaces_title = 'more_screen.workspaces.title';
   static const more_screen_workspaces_subtitle =
