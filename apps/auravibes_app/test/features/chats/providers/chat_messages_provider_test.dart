@@ -10,6 +10,7 @@ import 'package:auravibes_app/data/repositories/workspace_model_selection_reposi
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
@@ -599,6 +600,21 @@ class _FakeMessageRepository implements MessageRepository {
   @override
   Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ToolCallApprovalBatchClaim>> claimToolCallBatch(
+    Iterable<ToolCallApprovalBatchItem> items, {
+    required bool approve,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<void> persistToolCallBatchResults(
+    Iterable<ToolCallExecutionBatchUpdate> updates,
+  ) async {
+    final _ = updates;
   }
 
   @override

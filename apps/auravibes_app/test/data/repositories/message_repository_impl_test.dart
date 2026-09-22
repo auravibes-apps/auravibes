@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -371,6 +372,307 @@ void main() {
         );
       },
     );
+
+    test(
+      'claimToolCallBatch updates every eligible call in one message',
+      () async {
+        const metadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-a',
+              name: 'tool_a',
+              argumentsRaw: '{}',
+              argumentsDigest: 'digest-a',
+              turnRevision: 4,
+            ),
+            MessageToolCallEntity(
+              id: 'tool-b',
+              name: 'tool_b',
+              argumentsRaw: '{}',
+              argumentsDigest: 'digest-b',
+              turnRevision: 4,
+            ),
+            MessageToolCallEntity(
+              id: 'tool-c',
+              name: 'tool_c',
+              argumentsRaw: '{}',
+              resultStatus: .success,
+            ),
+          ],
+          promptTokens: 7,
+          thinking: 'preserve this',
+        );
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: .text,
+            isUser: false,
+            status: .unfinished,
+            metadata: jsonEncode(metadata.toJson()),
+          ),
+        );
+        final items = [
+          ToolCallApprovalBatchItem(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-a',
+            argumentsDigest: 'digest-a',
+            turnRevision: 4,
+          ),
+          ToolCallApprovalBatchItem(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-b',
+            argumentsDigest: 'digest-b',
+            turnRevision: 4,
+          ),
+        ];
+
+        final claims = await repository.claimToolCallBatch(
+          items,
+          approve: true,
+        );
+
+        expect(claims.map((claim) => claim.status), [
+          ToolCallApprovalBatchClaimStatus.claimed,
+          ToolCallApprovalBatchClaimStatus.claimed,
+        ]);
+        final claimed = await repository.getMessageById(created.id);
+        expect(claimed?.metadata?.thinking, 'preserve this');
+        expect(claimed?.metadata?.promptTokens, 7);
+        expect(
+          claimed?.metadata?.toolCalls.where(
+            (toolCall) => toolCall.id != 'tool-c',
+          ),
+          everyElement(
+            predicate<MessageToolCallEntity>(
+              (toolCall) => toolCall.resultStatus == .running,
+            ),
+          ),
+        );
+        expect(
+          claimed?.metadata?.toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-c')
+              .resultStatus,
+          ToolCallResultStatus.success,
+        );
+
+        await repository.persistToolCallBatchResults([
+          ToolCallExecutionBatchUpdate(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-a',
+            resultStatus: .success,
+            responseRaw: 'a-result',
+          ),
+          ToolCallExecutionBatchUpdate(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-b',
+            resultStatus: .executionError,
+          ),
+        ]);
+
+        final completed = await repository.getMessageById(created.id);
+        expect(completed?.status, MessageStatus.sent);
+        expect(completed?.metadata?.thinking, 'preserve this');
+        expect(
+          completed?.metadata?.toolCalls
+              .singleWhere((toolCall) => toolCall.id == 'tool-a')
+              .responseRaw,
+          'a-result',
+        );
+        expect(
+          completed?.metadata?.toolCalls.map(
+            (toolCall) => toolCall.resultStatus,
+          ),
+          containsAll(<ToolCallResultStatus?>[.success, .executionError]),
+        );
+      },
+    );
+
+    test('claimToolCallBatch is idempotent for repeated submissions', () async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tool-1',
+        name: 'tool',
+        argumentsRaw: '{}',
+        argumentsDigest: 'digest',
+        turnRevision: 2,
+      );
+      final created = await repository.createMessage(
+        .new(
+          conversationId: 'conv-1',
+          content: '',
+          messageType: .text,
+          isUser: false,
+          status: .unfinished,
+          metadata: jsonEncode(
+            const MessageMetadataEntity(toolCalls: [toolCall]).toJson(),
+          ),
+        ),
+      );
+      final item = ToolCallApprovalBatchItem(
+        conversationId: 'conv-1',
+        messageId: created.id,
+        toolCallId: 'tool-1',
+        argumentsDigest: 'digest',
+        turnRevision: 2,
+      );
+
+      final first = await repository.claimToolCallBatch([item], approve: true);
+      final second = await repository.claimToolCallBatch([item], approve: true);
+
+      expect(first.single.status, ToolCallApprovalBatchClaimStatus.claimed);
+      expect(
+        second.single.status,
+        ToolCallApprovalBatchClaimStatus.alreadyHandled,
+      );
+      expect(
+        (await repository.getMessageById(created.id))
+            ?.metadata
+            ?.toolCalls
+            .single
+            .resultStatus,
+        ToolCallResultStatus.running,
+      );
+    });
+
+    test(
+      'claimToolCallBatch returns conflicts for stale digest and revision',
+      () async {
+        const metadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-digest',
+              name: 'tool',
+              argumentsRaw: '{}',
+              argumentsDigest: 'actual-digest',
+              turnRevision: 2,
+            ),
+            MessageToolCallEntity(
+              id: 'tool-revision',
+              name: 'tool',
+              argumentsRaw: '{}',
+              argumentsDigest: 'actual-revision',
+              turnRevision: 2,
+            ),
+          ],
+        );
+        final created = await repository.createMessage(
+          .new(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: .text,
+            isUser: false,
+            status: .unfinished,
+            metadata: jsonEncode(metadata.toJson()),
+          ),
+        );
+
+        final items = [
+          ToolCallApprovalBatchItem(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-digest',
+            argumentsDigest: 'stale-digest',
+            turnRevision: 2,
+          ),
+          ToolCallApprovalBatchItem(
+            conversationId: 'conv-1',
+            messageId: created.id,
+            toolCallId: 'tool-revision',
+            argumentsDigest: 'actual-revision',
+            turnRevision: 3,
+          ),
+        ];
+        final claims = await repository.claimToolCallBatch(
+          items,
+          approve: true,
+        );
+
+        expect(claims.map((claim) => claim.status), [
+          ToolCallApprovalBatchClaimStatus.conflicted,
+          ToolCallApprovalBatchClaimStatus.conflicted,
+        ]);
+        expect(
+          (await repository.getMessageById(created.id))?.metadata?.toolCalls
+              .map((toolCall) => toolCall.resultStatus),
+          everyElement(isNull),
+        );
+      },
+    );
+
+    test('same tool IDs in different conversations remain distinct', () async {
+      const toolCall = MessageToolCallEntity(
+        id: 'same-tool-id',
+        name: 'tool',
+        argumentsRaw: '{}',
+      );
+      final first = await repository.createMessage(
+        .new(
+          conversationId: 'conv-a',
+          content: '',
+          messageType: .text,
+          isUser: false,
+          status: .unfinished,
+          metadata: jsonEncode(
+            const MessageMetadataEntity(toolCalls: [toolCall]).toJson(),
+          ),
+        ),
+      );
+      final second = await repository.createMessage(
+        .new(
+          conversationId: 'conv-b',
+          content: '',
+          messageType: .text,
+          isUser: false,
+          status: .unfinished,
+          metadata: jsonEncode(
+            const MessageMetadataEntity(toolCalls: [toolCall]).toJson(),
+          ),
+        ),
+      );
+
+      final items = [
+        ToolCallApprovalBatchItem(
+          conversationId: 'conv-a',
+          messageId: first.id,
+          toolCallId: 'same-tool-id',
+          argumentsDigest: null,
+          turnRevision: null,
+        ),
+        ToolCallApprovalBatchItem(
+          conversationId: 'conv-b',
+          messageId: second.id,
+          toolCallId: 'same-tool-id',
+          argumentsDigest: null,
+          turnRevision: null,
+        ),
+      ];
+      final claims = await repository.claimToolCallBatch(items, approve: false);
+
+      expect(claims.map((claim) => claim.status), [
+        ToolCallApprovalBatchClaimStatus.claimed,
+        ToolCallApprovalBatchClaimStatus.claimed,
+      ]);
+      expect(
+        (await repository.getMessageById(first.id))
+            ?.metadata
+            ?.toolCalls
+            .single
+            .resultStatus,
+        ToolCallResultStatus.skippedByUser,
+      );
+      expect(
+        (await repository.getMessageById(second.id))
+            ?.metadata
+            ?.toolCalls
+            .single
+            .resultStatus,
+        ToolCallResultStatus.skippedByUser,
+      );
+    });
 
     test('patchMessage throws for non-existent', () {
       expect(

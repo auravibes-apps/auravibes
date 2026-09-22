@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -140,6 +141,46 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
       _submitToolDecisionRequest(_workspaceId, request),
     ),
   );
+
+  Future<SubmitToolDecisionBatchResult> submitToolDecisionBatch({
+    required String requestId,
+    required String decision,
+    required List<CloudToolDecisionItem> calls,
+  }) => _guardConversation(
+    () => _client.conversation.submitToolDecisionBatch(
+      _submitToolDecisionBatchRequest(
+        requestId: requestId,
+        decision: decision,
+        calls: calls,
+      ),
+    ),
+  );
+
+  SubmitToolDecisionBatchRequest _submitToolDecisionBatchRequest({
+    required String requestId,
+    required String decision,
+    required List<CloudToolDecisionItem> calls,
+  }) => .new(
+    workspaceId: _workspaceId,
+    requestId: requestId,
+    decision: decision,
+    calls: _submitToolDecisionBatchCalls(calls),
+    a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+  );
+
+  List<SubmitToolDecisionBatchCall> _submitToolDecisionBatchCalls(
+    List<CloudToolDecisionItem> calls,
+  ) => [
+    for (final call in calls)
+      SubmitToolDecisionBatchCall(
+        conversationId: call.conversationId,
+        turnId: call.turnId,
+        toolCallId: call.toolCallId,
+        argumentsDigest: call.argumentsDigest,
+        expectedTurnRevision: call.expectedTurnRevision,
+        editedArgumentsJson: call.editedArgumentsJson,
+      ),
+  ];
 
   Future<ConversationSummary> getConversation(String conversationId) =>
       CloudAppErrors.guardCall(

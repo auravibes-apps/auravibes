@@ -78,6 +78,10 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iwmr2a61;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/stop_conversation_request.dart'
     as _ijtzjq4c;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _i87lkelk;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_batch_result.dart'
+    as _izw9cjch;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_request.dart'
     as _iqbrsea4;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/turn_snapshot.dart'
@@ -689,6 +693,14 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_iyn6xv3g.ConversationMutationResult>(
     'conversation',
     'submitToolDecision',
+    {'request': request},
+  );
+
+  _ida.Future<_izw9cjch.SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    _i87lkelk.SubmitToolDecisionBatchRequest request,
+  ) => caller.callServerEndpoint<_izw9cjch.SubmitToolDecisionBatchResult>(
+    'conversation',
+    'submitToolDecisionBatch',
     {'request': request},
   );
 

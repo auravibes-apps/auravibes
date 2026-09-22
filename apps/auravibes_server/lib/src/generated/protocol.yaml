@@ -39,6 +39,7 @@ conversation:
   - removePendingConversationMessage:
   - updateConversationSettings:
   - submitToolDecision:
+  - submitToolDecisionBatch:
   - cancelTurn:
   - compact:
 mcpServer:

@@ -708,6 +708,8 @@
   "tool_confirmation": {
     "allow_once": "Allow Once",
     "allow_conversation": "Allow for Conversation",
+    "allow_all": "Allow All",
+    "deny_all": "Deny All",
     "skip": "Skip",
     "stop_all": "Stop All"
   },
@@ -820,7 +822,8 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "reset_defaults": "Reset to Defaults"
     }
   },
   "more_screen": {
@@ -1007,7 +1010,13 @@
     "name_required_error": "Workspace name is required",
     "name_too_short_error": "Workspace name must be at least {min} characters",
     "name_too_long_error": "Workspace name must be at most {max} characters",
+    "unsaved_changes_title": "Discard unsaved changes?",
+    "unsaved_changes_message": "You have unsaved changes. Do you want to discard them?",
+    "discard_changes": "Discard",
+    "keep_editing": "Keep editing",
     "no_workspaces": "No workspaces available",
+    "search_placeholder": "Search workspaces",
+    "no_search_results": "No workspaces match your search.",
     "switch_title": "Switch workspace?",
     "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",
