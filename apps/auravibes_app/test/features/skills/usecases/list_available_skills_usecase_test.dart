@@ -303,6 +303,99 @@ void main() {
       );
     });
 
+    test('cloud user-skill readiness follows enabled tool policy', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      final cloud = _cloudStore([
+        _cloudResource(
+          kind: .skill,
+          id: 'missing-tool-credential',
+          data: {
+            'kind': 'template',
+            'title': 'Missing tool credential',
+            'slug': 'missing_tool_credential',
+            'description': 'Description',
+            'content': 'Content',
+            'isEnabled': true,
+            'isCredentialOptional': true,
+          },
+        ),
+        _cloudResource(
+          kind: .skillTemplateTool,
+          id: 'credential-tool',
+          data: {
+            'skillId': 'missing-tool-credential',
+            'templateType': 'url',
+            'title': 'Credential tool',
+            'description': 'Description',
+            'slug': 'credential_tool',
+            'templateJson': '{"url":"https://example.com"}',
+            'inputsJson': '{}',
+            'isEnabled': true,
+            'requiresCredential': true,
+            'credentialDefinitionId': 'missing-definition',
+          },
+        ),
+        _cloudResource(
+          kind: .skill,
+          id: 'credentialless-tool',
+          data: {
+            'kind': 'template',
+            'title': 'Credentialless tool',
+            'slug': 'credentialless_tool',
+            'description': 'Description',
+            'content': 'Content',
+            'isEnabled': true,
+            'isCredentialOptional': false,
+            'credentialDefinitionId': 'missing-definition',
+          },
+        ),
+        _cloudResource(
+          kind: .skillTemplateTool,
+          id: 'public-tool',
+          data: {
+            'skillId': 'credentialless-tool',
+            'templateType': 'url',
+            'title': 'Public tool',
+            'description': 'Description',
+            'slug': 'public_tool',
+            'templateJson': '{"url":"https://example.com"}',
+            'inputsJson': '{}',
+            'isEnabled': true,
+            'requiresCredential': false,
+          },
+        ),
+      ]);
+      final usecase = ListAvailableSkillsUsecase(
+        null,
+        null,
+        null,
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        cloud,
+      );
+
+      final selectable = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: .selector,
+      );
+
+      expect(
+        selectable
+            .singleWhere((skill) => skill.id == 'missing-tool-credential')
+            .credentialReadiness,
+        SkillCredentialReadiness.missing,
+      );
+      expect(
+        selectable
+            .singleWhere((skill) => skill.id == 'credentialless-tool')
+            .credentialReadiness,
+        SkillCredentialReadiness.ready,
+      );
+    });
+
     test(
       'hides enabled required-credential app skills without credentials',
       () async {
