@@ -52,6 +52,9 @@ typedef _ForkCopies = ({
 });
 
 class _BatchDecisionState {
+  _BatchDecisionState(this.jobs);
+
+  final List<ConversationJob> jobs;
   final conversations = <String, Conversation>{};
   final turns = <String, ConversationTurn>{};
   final accepted = <String>[];
@@ -2081,7 +2084,7 @@ class ConversationUseCases {
       decode: SubmitToolDecisionBatchResult.fromJson,
       run: (transaction, now) async {
         _validateBatchDecisionRequest(request);
-        final state = _BatchDecisionState();
+        final state = _BatchDecisionState(jobs);
         final calls = _deduplicateBatchDecisionCalls(request.calls);
 
         for (final call in calls) {
@@ -2104,9 +2107,7 @@ class ConversationUseCases {
             now: now,
             transaction: transaction,
             state: state,
-            jobs: jobs,
-            turnId: entry.key,
-            toolCalls: entry.value,
+            entry: entry,
           );
         }
 
@@ -2322,12 +2323,10 @@ class ConversationUseCases {
     required DateTime now,
     required Transaction transaction,
     required _BatchDecisionState state,
-    required List<ConversationJob> jobs,
-    required int turnId,
-    required List<ConversationToolCall> toolCalls,
+    required MapEntry<int, List<ConversationToolCall>> entry,
   }) async {
     final turn = state.turns.values.firstWhere(
-      (candidate) => candidate.id == turnId,
+      (candidate) => candidate.id == entry.key,
     );
     final pending = await ConversationToolCall.db.find(
       session,
@@ -2386,7 +2385,7 @@ class ConversationUseCases {
         requestId: request.requestId,
         kind: ConversationEventType.toolDecisionRecorded,
         payloadJson: jsonEncode({
-          'toolCallIds': toolCalls.map((call) => call.stableId).toList(),
+          'toolCallIds': entry.value.map((call) => call.stableId).toList(),
           'decision': request.decision,
         }),
         createdAt: now,
@@ -2404,7 +2403,7 @@ class ConversationUseCases {
       ),
       transaction: transaction,
     );
-    jobs.add(
+    state.jobs.add(
       await _insertJob(
         session,
         workspaceId: turn.workspaceId,
