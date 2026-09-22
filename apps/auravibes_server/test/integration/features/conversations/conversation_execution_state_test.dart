@@ -10,6 +10,7 @@ import 'package:auravibes_server/src/features/conversations/workers/conversation
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
@@ -594,6 +595,27 @@ void main() {
           final staged = await stageAwaitingApproval(fixture, calls: 1);
           final now = DateTime.now().toUtc();
           const memberId = '00000000-0000-4000-8000-000000000002';
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'batch-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
           await WorkspaceMember.db.insertRow(
             fixture.database,
             WorkspaceMember(
@@ -607,10 +629,9 @@ void main() {
           );
 
           await expectLater(
-            decisionUseCases().submitToolDecisionBatch(
-              fixture.database,
-              userId: memberId,
-              request: SubmitToolDecisionBatchRequest(
+            endpoints.conversation.submitToolDecisionBatch(
+              memberSession,
+              SubmitToolDecisionBatchRequest(
                 workspaceId: fixture.workspaceId,
                 requestId: 'member-approve-all',
                 decision: 'approve',
