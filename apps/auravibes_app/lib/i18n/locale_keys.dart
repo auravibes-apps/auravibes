@@ -82,6 +82,14 @@ abstract class LocaleKeys {
       'models_screens.add_provider.open_button';
   static const models_screens_add_provider_title =
       'models_screens.add_provider.title';
+  static const models_screens_add_provider_unsaved_changes_title =
+      'models_screens.add_provider.unsaved_changes_title';
+  static const models_screens_add_provider_unsaved_changes_message =
+      'models_screens.add_provider.unsaved_changes_message';
+  static const models_screens_add_provider_discard_changes =
+      'models_screens.add_provider.discard_changes';
+  static const models_screens_add_provider_keep_editing =
+      'models_screens.add_provider.keep_editing';
   static const models_screens_add_provider_back_to_selection =
       'models_screens.add_provider.back_to_selection';
   static const models_screens_add_provider_create_button =

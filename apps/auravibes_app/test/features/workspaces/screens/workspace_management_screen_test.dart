@@ -328,6 +328,11 @@ void main() {
       await tester.pump();
     }
 
+    Finder _workspaceNameEditor() => find.descendant(
+      of: find.byKey(const ValueKey<String>('workspace_name_editor')),
+      matching: find.byType(TextField),
+    );
+
     testWidgets('renders loading initially', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
 
@@ -638,7 +643,7 @@ void main() {
       final _ = await tester.tap(find.text('Edit'));
       final _ = await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'Workspace B');
+      await tester.enterText(_workspaceNameEditor(), 'Workspace B');
       await tester.pump();
       final _ = await tester.tap(
         find.byKey(const ValueKey<String>('workspace_management_back')),
@@ -650,7 +655,7 @@ void main() {
 
       final _ = await tester.tap(find.text('Keep editing'));
       final _ = await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsOneWidget);
+      expect(_workspaceNameEditor(), findsOneWidget);
 
       final _ = await tester.tap(
         find.byKey(const ValueKey<String>('workspace_cancel')),
@@ -660,7 +665,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsNothing);
-      expect(find.byType(TextField), findsNothing);
+      expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace A');
     });
 
@@ -681,14 +686,14 @@ void main() {
       final _ = await tester.tap(find.text('Edit'));
       final _ = await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextField), 'Workspace B');
+      await tester.enterText(_workspaceNameEditor(), 'Workspace B');
       final _ = await tester.tap(
         find.byKey(const ValueKey<String>('workspace_save')),
       );
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsNothing);
-      expect(find.byType(TextField), findsNothing);
+      expect(_workspaceNameEditor(), findsNothing);
       expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace B');
     });
 
