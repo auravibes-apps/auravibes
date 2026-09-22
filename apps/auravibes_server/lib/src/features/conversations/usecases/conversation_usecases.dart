@@ -2179,8 +2179,9 @@ class ConversationUseCases {
       return;
     }
 
-    final turn = await _findBatchDecisionTurn(
+    final turn = await _requireBatchDecisionTurn(
       session,
+      userId: userId,
       workspaceId: request.workspaceId,
       turnId: call.turnId,
       transaction: transaction,
@@ -2261,8 +2262,9 @@ class ConversationUseCases {
     return conversation;
   }
 
-  Future<ConversationTurn?> _findBatchDecisionTurn(
+  Future<ConversationTurn?> _requireBatchDecisionTurn(
     Session session, {
+    required String userId,
     required int workspaceId,
     required String turnId,
     required Transaction transaction,
@@ -2277,7 +2279,15 @@ class ConversationUseCases {
       transaction: transaction,
       lock: true,
     );
-    if (turn != null) state.turns[turnId] = turn;
+    if (turn == null) return null;
+    await _requireTurnMutationAuthorization(
+      session,
+      userId: userId,
+      workspaceId: workspaceId,
+      turn: turn,
+      transaction: transaction,
+    );
+    state.turns[turnId] = turn;
     return turn;
   }
 
@@ -3015,12 +3025,6 @@ class ConversationUseCases {
     required Transaction transaction,
     bool initiatorOnly = false,
   }) async {
-    final member = await _requireMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
     final turn = await _repository.findTurnByStableId(
       session,
       workspaceId: workspaceId,
@@ -3029,16 +3033,40 @@ class ConversationUseCases {
       lock: true,
     );
     if (turn == null) _fail(ConversationErrorCode.notFound);
+    await _requireTurnMutationAuthorization(
+      session,
+      userId: userId,
+      workspaceId: workspaceId,
+      turn: turn,
+      transaction: transaction,
+      initiatorOnly: initiatorOnly,
+    );
+    if (expectedRevision != null && turn.revision != expectedRevision) {
+      _fail(ConversationErrorCode.staleRevision);
+    }
+    return turn;
+  }
+
+  Future<void> _requireTurnMutationAuthorization(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required ConversationTurn turn,
+    required Transaction transaction,
+    bool initiatorOnly = false,
+  }) async {
+    final member = await _requireMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     final canCancelAny =
         member.role == WorkspaceRoles.owner ||
         member.role == WorkspaceRoles.admin;
     if (turn.initiatorUserId != userId && (initiatorOnly || !canCancelAny)) {
       _fail(ConversationErrorCode.permissionDenied);
     }
-    if (expectedRevision != null && turn.revision != expectedRevision) {
-      _fail(ConversationErrorCode.staleRevision);
-    }
-    return turn;
   }
 
   Future<WorkspaceMember> _requireMember(

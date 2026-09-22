@@ -10,6 +10,7 @@ import 'package:auravibes_server/src/features/conversations/workers/conversation
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
@@ -594,6 +595,12 @@ void main() {
           final staged = await stageAwaitingApproval(fixture, calls: 1);
           final memberId = const Uuid().v4().toString();
           final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
           await AuthUser.db.insertRow(
             fixture.database,
             AuthUser(
@@ -601,12 +608,20 @@ void main() {
               scopeNames: const {},
             ),
           );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'batch-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
           await WorkspaceMember.db.insertRow(
             fixture.database,
             WorkspaceMember(
               workspaceId: fixture.workspaceId,
               userId: memberId,
-              role: 'member',
+              role: WorkspaceRoles.member,
               revision: 1,
               createdAt: now,
               updatedAt: now,
@@ -614,10 +629,9 @@ void main() {
           );
 
           await expectLater(
-            decisionUseCases().submitToolDecisionBatch(
-              fixture.database,
-              userId: memberId,
-              request: SubmitToolDecisionBatchRequest(
+            endpoints.conversation.submitToolDecisionBatch(
+              memberSession,
+              SubmitToolDecisionBatchRequest(
                 workspaceId: fixture.workspaceId,
                 requestId: 'unauthorized-approve-all',
                 decision: 'approve',
@@ -649,6 +663,7 @@ void main() {
           expect(toolCall.status, 'pending');
           expect(toolCall.decision, isNull);
           expect(toolCall.argumentsJson, '{}');
+          expect(toolCall.decisionByUserId, isNull);
         },
       );
 
