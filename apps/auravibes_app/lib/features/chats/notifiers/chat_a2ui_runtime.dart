@@ -368,7 +368,10 @@ class ChatA2uiRuntime extends ChangeNotifier {
         field('label');
     }
 
-    for (final key in const ['child', 'trigger', 'content']) {
+    // Modal and accordion content has widget-local visibility state that is not
+    // represented here. Copy only references that are always visible; tabs
+    // project their selected content explicitly above.
+    for (final key in const ['child', 'trigger']) {
       componentReference(component[key]);
     }
     final children = component['children'];
@@ -378,11 +381,6 @@ class ChatA2uiRuntime extends ChangeNotifier {
       }
     } else if (children is Map) {
       _appendTemplateChildren(children, surface, lines, visited, dataContext);
-    }
-    if (component['component'] == 'Accordion') {
-      for (final item in component['items'] as List? ?? const []) {
-        if (item is Map) componentReference(item['content']);
-      }
     }
   }
 
