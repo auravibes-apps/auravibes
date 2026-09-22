@@ -18,6 +18,59 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ListAvailableSkillsUsecase', () {
+    test('lists A2UI only for top-level catalog requests', () async {
+      final usecase = ListAvailableSkillsUsecase(
+        const _FakeSkillsRepository([]),
+        const _FakeConversationSkillsRepository([]),
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        null,
+        (conversationId) async => conversationId == 'top-level',
+      );
+
+      final topLevel = await usecase.call(
+        conversationId: 'top-level',
+        workspaceId: 'workspace-1',
+        filter: .catalog,
+      );
+      final selector = await usecase.call(
+        conversationId: 'top-level',
+        workspaceId: 'workspace-1',
+        filter: .selector,
+      );
+      final child = await usecase.call(
+        conversationId: 'child',
+        workspaceId: 'workspace-1',
+        filter: .catalog,
+      );
+
+      expect(topLevel.map((skill) => skill.slug), contains('a2ui'));
+      expect(selector.map((skill) => skill.slug), isNot(contains('a2ui')));
+      expect(child.map((skill) => skill.slug), isNot(contains('a2ui')));
+    });
+
+    test(
+      'fails closed when top-level conversation lookup is unavailable',
+      () async {
+        const usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([]),
+          _FakeConversationSkillsRepository([]),
+          _FakeAppSkillWorkspaceSettingsRepository(),
+          .new(),
+        );
+
+        final skills = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .catalog,
+        );
+
+        expect(skills.map((skill) => skill.slug), isNot(contains('a2ui')));
+      },
+    );
+
     test(
       'hides unloaded required-credential skills without credentials',
       () async {

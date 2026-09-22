@@ -2,6 +2,7 @@ export 'src/a2ui/a2ui_action.dart';
 export 'src/a2ui/a2ui_catalog.dart';
 export 'src/a2ui/a2ui_chat_contract.dart';
 export 'src/a2ui/a2ui_form_validation.dart';
+export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
 export 'src/a2ui/a2ui_wire_codec.dart';

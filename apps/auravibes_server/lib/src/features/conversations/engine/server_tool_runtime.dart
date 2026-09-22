@@ -23,6 +23,11 @@ const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
 const _subAgentFailedMessage = 'Sub-agent failed.';
 const _subAgentCancelledMessage = 'Sub-agent cancelled.';
 
+final cloudAppSkillDefinitions = List<AppSkillDefinition>.unmodifiable([
+  ...serviceSkillDefinitions,
+  ...internalAppSkillDefinitions,
+]);
+
 bool serverToolRunningIsStale({
   required DateTime updatedAt,
   required DateTime now,
@@ -121,6 +126,7 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) => _materializeCloudSkillControlToolsBody(
   selectedSkillIds: selectedSkillIds,
   userSkills: userSkills,
@@ -128,6 +134,7 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   appSkillSettings: appSkillSettings,
   serviceConnections: serviceConnections,
   isChildConversation: isChildConversation,
+  a2uiSupportedComponents: a2uiSupportedComponents,
 );
 
 List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
@@ -150,7 +157,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
   final userSkill = userSkills
       .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
       .firstOrNull;
-  final appSkill = serviceSkillDefinitions
+  final appSkill = cloudAppSkillDefinitions
       .where((skill) => skill.slug == slug || skill.identifier == slug)
       .firstOrNull;
   final title = switch ((userSkill?['title'], appSkill)) {
@@ -243,20 +250,16 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) {
-  final selectable = <String>[
-    if (!isChildConversation &&
-        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
-      agentsSkillSlug,
-    for (final skill in userSkills)
-      if (cloudUserSkillReady(skill, templateTools, serviceConnections))
-        if (skill['slug'] case final String slug) slug,
-    for (final skill in serviceSkillDefinitions)
-      if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections))
-        skill.slug,
-  ];
-  final slugs = selectable.toSet().toList()..sort();
+  final slugs = _selectableCloudSkillSlugs(
+    appSkillSettings: appSkillSettings,
+    userSkills: userSkills,
+    templateTools: templateTools,
+    serviceConnections: serviceConnections,
+    isChildConversation: isChildConversation,
+    a2uiSupportedComponents: a2uiSupportedComponents,
+  );
   final descriptor = AgentResolvedToolName.skillControl(
     toolIdentifier: activateSkillToolName,
   );
@@ -279,6 +282,65 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
     ),
   ];
 }
+
+List<String> _selectableCloudSkillSlugs({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
+}) {
+  final selectable = <String>[
+    if (!isChildConversation &&
+        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
+      agentsSkillSlug,
+    ..._selectableCloudUserSkillSlugs(
+      userSkills: userSkills,
+      templateTools: templateTools,
+      serviceConnections: serviceConnections,
+    ),
+    ..._selectableCloudServiceSkillSlugs(
+      appSkillSettings: appSkillSettings,
+      serviceConnections: serviceConnections,
+    ),
+    if (!isChildConversation &&
+        (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
+      ..._selectableContentOnlyCloudSkillSlugs(),
+  ];
+  return selectable.toSet().toList()..sort();
+}
+
+Iterable<String> _selectableCloudUserSkillSlugs({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => userSkills
+    .where(
+      (skill) => cloudUserSkillReady(
+        skill,
+        templateTools,
+        serviceConnections,
+      ),
+    )
+    .map((skill) => skill['slug'])
+    .whereType<String>();
+
+Iterable<String> _selectableCloudServiceSkillSlugs({
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => serviceSkillDefinitions
+    .where(
+      (skill) =>
+          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections),
+    )
+    .map((skill) => skill.slug);
+
+Iterable<String> _selectableContentOnlyCloudSkillSlugs() =>
+    internalAppSkillDefinitions
+        .where((skill) => skill.contentOnly)
+        .map((skill) => skill.slug);
 
 bool cloudUserSkillReady(
   Map<String, dynamic> skill,
@@ -575,19 +637,21 @@ bool cloudAppSkillEnabled(
 bool cloudServiceSkillReady(
   AppSkillDefinition skill,
   Iterable<Map<String, dynamic>> serviceConnections,
-) => skill.tools.any(
-  (tool) =>
-      skill.kind == AppSkillDefinitionKind.template &&
-      tool.urlTemplate != null &&
-      (!tool.requiresCredential ||
-          serviceConnections.any(
-            (connection) =>
-                connection['kind'] == 'appSkillCredential' &&
-                connection['serviceId'] == skill.identifier &&
-                connection['isEnabled'] != false &&
-                connection['hasSecret'] == true,
-          )),
-);
+) =>
+    skill.contentOnly ||
+    skill.tools.any(
+      (tool) =>
+          skill.kind == AppSkillDefinitionKind.template &&
+          tool.urlTemplate != null &&
+          (!tool.requiresCredential ||
+              serviceConnections.any(
+                (connection) =>
+                    connection['kind'] == 'appSkillCredential' &&
+                    connection['serviceId'] == skill.identifier &&
+                    connection['isEnabled'] != false &&
+                    connection['hasSecret'] == true,
+              )),
+    );
 
 AgentToolPermissionResult resolveCloudToolPermission({
   required AgentToolPermissionResult workspacePermission,

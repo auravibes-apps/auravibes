@@ -144,9 +144,6 @@ void main() {
     final expected = engine.supportedA2uiChatComponents;
 
     expect(catalog.catalogId, auraChatCatalogId);
-    final prompt = auraChatCatalogSystemPrompt();
-    expect(prompt, contains(auraChatCatalogId));
-    expect(prompt, contains('CATALOG_SCHEMA_START'));
     expect(names, expected);
     for (final item in catalog.items) {
       final schema = item.dataSchema.value;
@@ -227,7 +224,6 @@ void main() {
       auraChatCatalogId,
       auraChatFormCatalogId,
     ]);
-    expect(auraChatCatalogSystemPrompt(), contains(auraChatFormCatalogId));
   });
 
   testWidgets('renders text across multiple historical surfaces', (

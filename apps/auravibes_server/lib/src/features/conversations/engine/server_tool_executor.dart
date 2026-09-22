@@ -263,6 +263,7 @@ class const ServerToolExecutorService({
   final ServerToolExecutorInterlock? beforeChildLaunch,
   final ServerToolExecutorInterlock? afterChildContinuation,
   final ServerToolExecutorInterlock? beforeSkillSelectionMutation,
+  final Set<String>? a2uiSupportedComponents,
 }) {
   Future<Object?> call(
     Session session,
@@ -409,12 +410,7 @@ class const ServerToolExecutorService({
     if (skillId == null || !state.authorizedSkillIds.contains(skillId)) {
       throw const ServerToolNotConfiguredException();
     }
-    final appSkill = serviceSkillDefinitions
-        .where(
-          (skill) =>
-              skill.slug == target.skill || skill.identifier == target.skill,
-        )
-        .firstOrNull;
+    final appSkill = _appSkillDefinition(target.skill);
     if (appSkill != null) {
       final resource = appSkill.resources
           .where((candidate) => candidate.slug == target.resource)
@@ -451,9 +447,7 @@ class const ServerToolExecutorService({
     String slug,
     String skillId,
   ) async {
-    final appSkill = serviceSkillDefinitions
-        .where((skill) => skill.slug == slug || skill.identifier == slug)
-        .firstOrNull;
+    final appSkill = _appSkillDefinition(slug);
     if (appSkill != null) {
       return appSkill.resources.map((resource) => resource.summary).toList();
     }
@@ -695,15 +689,36 @@ class const ServerToolExecutorService({
         cloudAppSkillEnabled(agentsSkillSlug, state.appSkillSettings)) {
       return agentsSkillSlug;
     }
-    final app = serviceSkillDefinitions
+    final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
-    if (app == null ||
-        !cloudAppSkillEnabled(app.identifier, state.appSkillSettings) ||
+    if (app == null) return null;
+    if (app.contentOnly) {
+      if (app.slug == a2uiSkillSlug &&
+          a2uiSupportedComponents?.isEmpty == true) {
+        return null;
+      }
+      return state.conversation.parentConversationStableId == null
+          ? app.identifier
+          : null;
+    }
+    if (!cloudAppSkillEnabled(app.identifier, state.appSkillSettings) ||
         !cloudServiceSkillReady(app, state.serviceConnections)) {
       return null;
     }
     return app.identifier;
+  }
+
+  AppSkillDefinition? _appSkillDefinition(String slug) {
+    final appSkill = cloudAppSkillDefinitions
+        .where((skill) => skill.slug == slug || skill.identifier == slug)
+        .firstOrNull;
+    if (appSkill == null ||
+        appSkill.slug != a2uiSkillSlug ||
+        a2uiSupportedComponents == null) {
+      return appSkill;
+    }
+    return a2uiSkillDefinitionForComponents(a2uiSupportedComponents!);
   }
 
   bool _isUserSkill(
@@ -729,7 +744,7 @@ class const ServerToolExecutorService({
         .firstOrNull;
     if (user?['content'] case final String content) return content;
     if (slug == agentsSkillSlug) return agentsSkillContent;
-    final app = serviceSkillDefinitions
+    final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
     if (app != null) return app.content;
