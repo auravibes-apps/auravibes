@@ -19,9 +19,7 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
     return _AccentColorCard(
       hue: hue,
       onTap: () => _showAccentDialog(context, ref, hue),
-      onReset: () {
-        ref.read(accentHueProvider.notifier).setHue(AccentHue.defaultValue);
-      },
+      onReset: () => _resetAccentHue(ref),
     );
   }
 
@@ -41,6 +39,10 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
 
     await ref.read(accentHueProvider.notifier).setHue(working);
   }
+}
+
+void _resetAccentHue(WidgetRef ref) {
+  ref.read(accentHueProvider.notifier).setHue(AccentHue.defaultValue);
 }
 
 Future<bool?> _confirmAccentColor({

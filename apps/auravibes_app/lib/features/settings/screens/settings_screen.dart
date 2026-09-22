@@ -62,9 +62,7 @@ class const _SettingsPage({required final String workspaceId})
       workspaceId: workspaceId,
       currentTheme: currentTheme,
       onThemeTap: () => _showThemeDialog(context, ref, currentTheme),
-      onThemeReset: () {
-        ref.read(themeProvider.notifier).setTheme(.system);
-      },
+      onThemeReset: () => _resetTheme(ref),
     );
   }
 
@@ -94,6 +92,10 @@ class const _SettingsPage({required final String workspaceId})
     Navigator.of(context, rootNavigator: true).pop();
     ref.read(themeProvider.notifier).setTheme(selected);
   }
+}
+
+void _resetTheme(WidgetRef ref) {
+  ref.read(themeProvider.notifier).setTheme(.system);
 }
 
 class const _SettingsPageSurface({
