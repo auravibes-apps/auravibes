@@ -156,7 +156,7 @@ void main() {
       expect((await fixture.workspace()).sequence, 2);
     });
 
-    test('duplicates more associations than the generic patch limit', () async {
+    test('rejects duplication beyond the generic patch limit', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       for (var index = 0; index < 50; index++) {
         final toolId = 'tool-$index';
@@ -172,17 +172,29 @@ void main() {
         );
       }
 
-      final response = await fixture.useCases.duplicateAgent(
-        fixture.session,
-        userId: fixture.userId,
-        request: DuplicateWorkspaceAgentRequest(
-          workspaceId: fixture.workspaceId,
-          requestId: 'duplicate-many',
-          sourceAgentId: 'agent-1',
+      await expectLater(
+        fixture.useCases.duplicateAgent(
+          fixture.session,
+          userId: fixture.userId,
+          request: DuplicateWorkspaceAgentRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'duplicate-many',
+            sourceAgentId: 'agent-1',
+          ),
+        ),
+        throwsA(
+          isA<CloudWorkspaceException>().having(
+            (error) => error.code,
+            'code',
+            CloudWorkspaceErrorCode.validationFailed,
+          ),
         ),
       );
 
-      expect(response.resources, hasLength(51));
+      expect(await fixture.resources(.agent), hasLength(1));
+      expect(await fixture.resources(.agentAssociation), hasLength(50));
+      expect(await fixture.events(), isEmpty);
+      expect((await fixture.workspace()).sequence, 0);
     });
 
     test('rejects members without changing workspace state', () async {

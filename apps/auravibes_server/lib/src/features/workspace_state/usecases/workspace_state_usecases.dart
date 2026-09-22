@@ -792,21 +792,27 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       session,
       workspaceId: request.workspaceId,
       kind: WorkspaceResourceKind.agent,
+      limit: _maxOperations + 1,
       transaction: transaction,
     );
     final associations = await _repository.findActiveResources(
       session,
       workspaceId: request.workspaceId,
       kind: WorkspaceResourceKind.agentAssociation,
+      limit: _maxOperations + 1,
       transaction: transaction,
     );
+    if (agents.length > _maxOperations ||
+        associations.length > _maxOperations) {
+      _validationFailed();
+    }
     final sourceData = _decodeResource(source);
     final duplicateId = const Uuid().v7();
     final duplicateData = Map<String, Object?>.from(sourceData)
       ..['id'] = duplicateId
       ..['name'] = _copyAgentName(sourceData['name'] as String, agents);
 
-    return [
+    final operations = [
       _createResourceOperation(
         kind: WorkspaceResourceKind.agent,
         id: duplicateId,
@@ -818,6 +824,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         duplicateAgentId: duplicateId,
       ),
     ];
+    if (operations.length > _maxOperations) _validationFailed();
+    return operations;
   }
 
   Map<String, Object?> _decodeResource(WorkspaceResource resource) {
