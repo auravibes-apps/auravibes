@@ -1011,6 +1011,8 @@
     "discard_changes": "Discard",
     "keep_editing": "Keep editing",
     "no_workspaces": "No workspaces available",
+    "search_placeholder": "Search workspaces",
+    "no_search_results": "No workspaces match your search.",
     "switch_title": "Switch workspace?",
     "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",

@@ -1259,6 +1259,10 @@ abstract class LocaleKeys {
       'workspace_management.keep_editing';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
+  static const workspace_management_search_placeholder =
+      'workspace_management.search_placeholder';
+  static const workspace_management_no_search_results =
+      'workspace_management.no_search_results';
   static const workspace_management_switch_title =
       'workspace_management.switch_title';
   static const workspace_management_switch_confirm =
