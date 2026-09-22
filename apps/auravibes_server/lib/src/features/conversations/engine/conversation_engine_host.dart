@@ -515,26 +515,32 @@ final class const ServerConversationEngineHost({
         )
         .toList(growable: false);
     if (resumedCalls.isNotEmpty) {
-      final awaitingSubAgentToolCallIds = <String>[];
-      var awaitingApproval = false;
-      for (final call in replayableCalls) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: ServerToolRequest(
-            id: call.stableId,
-            name: call.name,
-            arguments: _jsonObject(call.argumentsJson),
-            userFacingDescription: call.userFacingDescription,
+      final dispositions = await Future.wait(
+        replayableCalls.map(
+          (call) async => (
+            call: call,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: ServerToolRequest(
+                id: call.stableId,
+                name: call.name,
+                arguments: _jsonObject(call.argumentsJson),
+                userFacingDescription: call.userFacingDescription,
+              ),
+            ),
           ),
-        );
-        if (disposition == ServerToolDisposition.awaitingApproval) {
-          awaitingApproval = true;
-        } else if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(call.stableId);
-        }
-      }
+        ),
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.call.stableId,
+      ];
+      final awaitingApproval = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         return ConversationEngineResult(
           content: '',
@@ -750,20 +756,27 @@ final class const ServerConversationEngineHost({
         requests: describedRequests,
       );
 
-      var paused = false;
-      final awaitingSubAgentToolCallIds = <String>[];
-      for (final request in describedRequests) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: request,
-        );
-        paused |= disposition == ServerToolDisposition.awaitingApproval;
-        if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(request.id);
-        }
-      }
+      final dispositions = await Future.wait(
+        describedRequests.map(
+          (request) async => (
+            request: request,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: request,
+            ),
+          ),
+        ),
+      );
+      final paused = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.request.id,
+      ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         await response.close();
         return ConversationEngineResult(

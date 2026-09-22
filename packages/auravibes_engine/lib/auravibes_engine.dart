@@ -14,6 +14,7 @@ export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
 export 'src/agent_stop_service.dart' hide AgentStopService;
 export 'src/agent_stream_service.dart' hide AgentStreamService;
+export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
 export 'src/attachment_modality.dart';

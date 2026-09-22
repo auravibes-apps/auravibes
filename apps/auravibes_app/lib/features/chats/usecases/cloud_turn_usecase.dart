@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
@@ -27,6 +28,15 @@ class const CloudTurnUsecase(final CloudChatGateway _gateway) {
 
   Future<ConversationMutationResult> decide(_DecisionRequest request) =>
       _retryStaleDecision(_decisionRetryRequest(request));
+
+  Future<SubmitToolDecisionBatchResult> decideBatch(
+    List<CloudToolDecisionItem> calls, {
+    required bool approved,
+  }) => _gateway.submitToolDecisionBatch(
+    requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+    decision: approved ? 'approve' : 'deny',
+    calls: calls,
+  );
 
   Future<ConversationMutationResult> cancel({
     required String turnId,

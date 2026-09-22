@@ -931,6 +931,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';
+  static const tool_confirmation_allow_all = 'tool_confirmation.allow_all';
+  static const tool_confirmation_deny_all = 'tool_confirmation.deny_all';
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
@@ -1035,6 +1037,8 @@ abstract class LocaleKeys {
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
   static const settings_screen_actions_save = 'settings_screen.actions.save';
+  static const settings_screen_actions_reset_defaults =
+      'settings_screen.actions.reset_defaults';
   static const more_screen_title = 'more_screen.title';
   static const more_screen_workspaces_title = 'more_screen.workspaces.title';
   static const more_screen_workspaces_subtitle =
@@ -1245,8 +1249,20 @@ abstract class LocaleKeys {
       'workspace_management.name_too_short_error';
   static const workspace_management_name_too_long_error =
       'workspace_management.name_too_long_error';
+  static const workspace_management_unsaved_changes_title =
+      'workspace_management.unsaved_changes_title';
+  static const workspace_management_unsaved_changes_message =
+      'workspace_management.unsaved_changes_message';
+  static const workspace_management_discard_changes =
+      'workspace_management.discard_changes';
+  static const workspace_management_keep_editing =
+      'workspace_management.keep_editing';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
+  static const workspace_management_search_placeholder =
+      'workspace_management.search_placeholder';
+  static const workspace_management_no_search_results =
+      'workspace_management.no_search_results';
   static const workspace_management_switch_title =
       'workspace_management.switch_title';
   static const workspace_management_switch_confirm =

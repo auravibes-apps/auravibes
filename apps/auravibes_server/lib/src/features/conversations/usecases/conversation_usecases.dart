@@ -51,6 +51,18 @@ typedef _ForkCopies = ({
   Map<String, String> stableMessageIds,
 });
 
+class _BatchDecisionState {
+  _BatchDecisionState(this.jobs);
+
+  final List<ConversationJob> jobs;
+  final conversations = <String, Conversation>{};
+  final turns = <String, ConversationTurn>{};
+  final accepted = <String>[];
+  final alreadyHandled = <String>[];
+  final conflicted = <String>[];
+  final acceptedByTurn = <int, List<ConversationToolCall>>{};
+}
+
 class ConversationUseCases {
   new(
     this._repository, {
@@ -2054,6 +2066,368 @@ class ConversationUseCases {
       );
     }
     return result;
+  }
+
+  Future<SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+  }) async {
+    final jobs = <ConversationJob>[];
+    final result = await _mutate(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.submitToolDecisionBatch',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: SubmitToolDecisionBatchResult.fromJson,
+      run: (transaction, now) async {
+        _validateBatchDecisionRequest(request);
+        final state = _BatchDecisionState(jobs);
+        final calls = _deduplicateBatchDecisionCalls(request.calls);
+
+        for (final call in calls) {
+          await _processBatchDecisionCall(
+            session,
+            userId: userId,
+            request: request,
+            call: call,
+            now: now,
+            transaction: transaction,
+            state: state,
+          );
+        }
+
+        for (final entry in state.acceptedByTurn.entries) {
+          await _finalizeBatchDecisionTurn(
+            session,
+            userId: userId,
+            request: request,
+            now: now,
+            transaction: transaction,
+            state: state,
+            entry: entry,
+          );
+        }
+
+        return _Mutation(
+          SubmitToolDecisionBatchResult(
+            accepted: state.accepted,
+            alreadyHandled: state.alreadyHandled,
+            conflicted: state.conflicted,
+          ),
+          'toolDecisionBatchRecorded',
+          request.requestId,
+          affectedConversationIds: state.conversations.keys.toList(),
+        );
+      },
+    );
+    for (final job in jobs) {
+      await _publishConversationJob(session, job);
+    }
+
+    return result;
+  }
+
+  void _validateBatchDecisionRequest(SubmitToolDecisionBatchRequest request) {
+    _requireId(request.requestId);
+    if (request.decision != 'approve' && request.decision != 'deny') {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    if (request.calls.isEmpty) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+  }
+
+  List<SubmitToolDecisionBatchCall> _deduplicateBatchDecisionCalls(
+    List<SubmitToolDecisionBatchCall> requestedCalls,
+  ) {
+    final calls = <SubmitToolDecisionBatchCall>[];
+    final seenCallIds = <String>{};
+    for (final call in requestedCalls) {
+      if (seenCallIds.add(_batchCallIdentity(call))) calls.add(call);
+    }
+    calls.sort(
+      (left, right) => _batchCallSortKey(left).compareTo(
+        _batchCallSortKey(right),
+      ),
+    );
+    return calls;
+  }
+
+  Future<void> _processBatchDecisionCall(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required SubmitToolDecisionBatchCall call,
+    required DateTime now,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final identity = _batchCallIdentity(call);
+    final conversation = await _findBatchDecisionConversation(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: call.conversationId,
+      transaction: transaction,
+      state: state,
+    );
+    if (conversation == null) {
+      state.conflicted.add(identity);
+      return;
+    }
+
+    final turn = await _findBatchDecisionTurn(
+      session,
+      workspaceId: request.workspaceId,
+      turnId: call.turnId,
+      transaction: transaction,
+      state: state,
+    );
+    if (turn == null || turn.conversationId != conversation.id) {
+      state.conflicted.add(identity);
+      return;
+    }
+
+    final toolCall = await _repository.findToolCallByStableId(
+      session,
+      workspaceId: request.workspaceId,
+      turnId: turn.id!,
+      toolCallId: call.toolCallId,
+      transaction: transaction,
+    );
+    if (toolCall == null || toolCall.argumentsDigest != call.argumentsDigest) {
+      state.conflicted.add(identity);
+      return;
+    }
+    if (toolCall.decision != null || toolCall.status != 'pending') {
+      _recordBatchHandledCall(
+        request.decision,
+        identity: identity,
+        toolCall: toolCall,
+        state: state,
+      );
+      return;
+    }
+    if (turn.status != ConversationStatuses.awaitingApproval ||
+        turn.revision != call.expectedTurnRevision) {
+      state.conflicted.add(identity);
+      return;
+    }
+
+    final updated = await _updateBatchDecisionToolCall(
+      session,
+      userId: userId,
+      request: request,
+      call: call,
+      toolCall: toolCall,
+      now: now,
+      transaction: transaction,
+    );
+    state.accepted.add(identity);
+    (state.acceptedByTurn[turn.id!] ??= []).add(updated);
+  }
+
+  Future<Conversation?> _findBatchDecisionConversation(
+    Session session, {
+    required int workspaceId,
+    required String conversationId,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final cached = state.conversations[conversationId];
+    if (cached != null) return cached;
+    final conversation = await _repository.findConversationByStableId(
+      session,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (conversation != null) {
+      state.conversations[conversationId] = conversation;
+    }
+    return conversation;
+  }
+
+  Future<ConversationTurn?> _findBatchDecisionTurn(
+    Session session, {
+    required int workspaceId,
+    required String turnId,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final cached = state.turns[turnId];
+    if (cached != null) return cached;
+    final turn = await _repository.findTurnByStableId(
+      session,
+      workspaceId: workspaceId,
+      turnId: turnId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (turn != null) state.turns[turnId] = turn;
+    return turn;
+  }
+
+  void _recordBatchHandledCall(
+    String decision, {
+    required String identity,
+    required ConversationToolCall toolCall,
+    required _BatchDecisionState state,
+  }) {
+    if (toolCall.decision == null || toolCall.decision == decision) {
+      state.alreadyHandled.add(identity);
+      return;
+    }
+    state.conflicted.add(identity);
+  }
+
+  Future<ConversationToolCall> _updateBatchDecisionToolCall(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required SubmitToolDecisionBatchCall call,
+    required ConversationToolCall toolCall,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final arguments = call.editedArgumentsJson ?? toolCall.argumentsJson;
+    _requireJsonObject(arguments);
+    final argumentsDigest = base64UrlEncode(
+      (await Sha256().hash(utf8.encode(arguments))).bytes,
+    );
+    final updated = toolCall.copyWith(
+      argumentsJson: arguments,
+      argumentsDigest: argumentsDigest,
+      decision: request.decision,
+      decisionByUserId: userId,
+      decisionAt: now,
+      status: request.decision == 'approve' ? 'approved' : 'denied',
+      revision: toolCall.revision + 1,
+      updatedAt: now,
+    );
+    await ConversationToolCall.db.updateRow(
+      session,
+      updated,
+      transaction: transaction,
+    );
+    return updated;
+  }
+
+  Future<void> _finalizeBatchDecisionTurn(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required DateTime now,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+    required MapEntry<int, List<ConversationToolCall>> entry,
+  }) async {
+    final turn = state.turns.values.firstWhere(
+      (candidate) => candidate.id == entry.key,
+    );
+    final pending = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.turnId.equals(turn.id) &
+          table.status.equals('pending'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final shouldResume = pending.isEmpty;
+    final updatedTurn = await ConversationTurn.db.updateRow(
+      session,
+      turn.copyWith(
+        status: shouldResume
+            ? ConversationStatuses.queued
+            : ConversationStatuses.awaitingApproval,
+        terminalAt: null,
+        revision: turn.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final conversation = state.conversations.values.firstWhere(
+      (candidate) => candidate.id == updatedTurn.conversationId,
+    );
+    final execution = conversation.activeExecutionId == null
+        ? null
+        : await ConversationExecution.db.findById(
+            session,
+            conversation.activeExecutionId!,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+    final projected = await Conversation.db.updateRow(
+      session,
+      conversation.copyWith(
+        eventSequence: conversation.eventSequence + 1,
+        projectionRevision: conversation.projectionRevision + 1,
+        executionState: shouldResume
+            ? 'running'
+            : ConversationStatuses.awaitingApproval,
+        activeExecutionId: conversation.activeExecutionId,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationEvent.db.insertRow(
+      session,
+      ConversationEvent(
+        workspaceId: request.workspaceId,
+        conversationId: projected.id!,
+        sequence: projected.eventSequence,
+        eventId: const Uuid().v7(),
+        actorUserId: userId,
+        requestId: request.requestId,
+        kind: ConversationEventType.toolDecisionRecorded,
+        payloadJson: jsonEncode({
+          'toolCallIds': entry.value.map((call) => call.stableId).toList(),
+          'decision': request.decision,
+        }),
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    if (!shouldResume || execution == null) return;
+
+    await ConversationExecution.db.updateRow(
+      session,
+      execution.copyWith(
+        status: 'running',
+        terminalAt: null,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    state.jobs.add(
+      await _insertJob(
+        session,
+        workspaceId: turn.workspaceId,
+        conversationId: turn.conversationId,
+        turnId: turn.id,
+        requestId: '${request.requestId}:${turn.requestId}',
+        kind: ConversationJobKinds.turn,
+        payloadJson: conversation_repo.conversationTurnJobPayload(
+          turn.initiatorUserId,
+          executionId: execution.stableId,
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
+          parentTurnId: conversation_repo
+              .conversationParentTurnIdForExecutionSettings(
+                execution.settingsJson,
+              ),
+          parentToolCallId: conversation_repo
+              .conversationParentToolCallIdForExecutionSettings(
+                execution.settingsJson,
+              ),
+        ),
+        now: now,
+        transaction: transaction,
+      ),
+    );
   }
 
   Future<ConversationMutationResult> cancelTurn(
@@ -4429,3 +4803,9 @@ class const _Mutation<T>(
   final String resourceId, {
   final List<String> affectedConversationIds = const [],
 });
+
+String _batchCallSortKey(SubmitToolDecisionBatchCall call) =>
+    '${call.conversationId}:${call.turnId}:${call.toolCallId}';
+
+String _batchCallIdentity(SubmitToolDecisionBatchCall call) =>
+    _batchCallSortKey(call);

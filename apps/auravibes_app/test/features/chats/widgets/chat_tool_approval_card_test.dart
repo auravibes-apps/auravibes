@@ -1,11 +1,14 @@
 // Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -16,6 +19,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+
+class _FakeBatchToolApprovalActions implements BatchToolApprovalActions {
+  final approveCompleter = Completer<BatchToolApprovalResult>();
+  final skipCompleter = Completer<BatchToolApprovalResult>();
+  List<PendingToolCall>? approvedCalls;
+  List<PendingToolCall>? skippedCalls;
+
+  @override
+  Future<BatchToolApprovalResult> approveOnce({
+    required String rootConversationId,
+    required String workspaceId,
+    required List<PendingToolCall> pendingCalls,
+  }) {
+    approvedCalls = pendingCalls;
+
+    return approveCompleter.future;
+  }
+
+  @override
+  Future<BatchToolApprovalResult> skip({
+    required String rootConversationId,
+    required String workspaceId,
+    required List<PendingToolCall> pendingCalls,
+  }) {
+    skippedCalls = pendingCalls;
+
+    return skipCompleter.future;
+  }
+}
 
 void main() {
   Widget buildSubject({required List<Object> overrides}) {
@@ -124,6 +156,126 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
       }
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('shows batch actions only when multiple calls are pending', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(),
+                _createPendingToolCall(toolCallId: 'tc-2'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('allow all closes immediately and submits one batch', (
+      tester,
+    ) async {
+      final actions = _FakeBatchToolApprovalActions();
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsNothing,
+      );
+      final approvedCalls = actions.approvedCalls;
+      expect(approvedCalls, hasLength(2));
+      if (approvedCalls case final calls?) {
+        expect(
+          calls.map((call) => call.toolCall.id),
+          containsAll(<String>['tc-1', 'tc-2']),
+        );
+      }
+
+      actions.approveCompleter.complete(
+        const BatchToolApprovalResult(
+          claimed: [],
+          alreadyHandled: [],
+          conflicted: [],
+        ),
+      );
+      await tester.pump();
+    });
+
+    testWidgets('deny all closes immediately and submits one batch', (
+      tester,
+    ) async {
+      final actions = _FakeBatchToolApprovalActions();
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsNothing,
+      );
+      expect(actions.skippedCalls, hasLength(2));
+
+      actions.skipCompleter.complete(
+        const BatchToolApprovalResult(
+          claimed: [],
+          alreadyHandled: [],
+          conflicted: [],
+        ),
+      );
+      await tester.pump();
     });
 
     testWidgets('approves a child conversation tool call in its source', (

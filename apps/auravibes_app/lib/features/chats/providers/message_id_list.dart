@@ -761,14 +761,72 @@ Future<_PendingToolCallsInput> _pendingToolCallsInput(
   String workspaceId,
   String conversationId,
 ) async {
-  final input = _pendingToolCallsBase((
+  final base = _pendingToolCallsBase((
     ref: ref,
     workspaceId: workspaceId,
     conversationId: conversationId,
   ));
+  final childConversations = await _loadDescendantConversations(
+    ref,
+    base.childConversations,
+  );
+  final input = _pendingToolCallsWithDescendants(base, childConversations);
   final childMessages = await _loadChildMessagesForInput(ref, input);
 
   return _pendingToolCallsWithMessages(input, childMessages);
+}
+
+_PendingToolCallsInput _pendingToolCallsWithDescendants(
+  _PendingToolCallsInput input,
+  List<ConversationEntity> childConversations,
+) => (
+  parentConversationId: input.parentConversationId,
+  workspaceId: input.workspaceId,
+  activeChildIds: input.activeChildIds,
+  childConversations: childConversations,
+  currentMessages: input.currentMessages,
+  childMessagesByConversationId: const {},
+);
+
+Future<List<ConversationEntity>> _loadDescendantConversations(
+  Ref ref,
+  List<ConversationEntity> directChildren,
+) async {
+  final conversationsById = _conversationMap(directChildren);
+  await _visitDescendantConversations(ref, conversationsById);
+
+  return conversationsById.values.toList(growable: false);
+}
+
+Future<void> _visitDescendantConversations(
+  Ref ref,
+  Map<String, ConversationEntity> conversationsById,
+) async {
+  final pendingParents = conversationsById.keys.toList();
+  final visitedParents = <String>{};
+  while (pendingParents.isNotEmpty) {
+    final parentId = pendingParents.removeLast();
+    if (!visitedParents.add(parentId)) continue;
+    final children = await ref
+        .read(conversationRepositoryProvider)
+        .getChildConversations(parentId);
+    _addDescendantChildren(conversationsById, pendingParents, children);
+  }
+}
+
+Map<String, ConversationEntity> _conversationMap(
+  Iterable<ConversationEntity> conversations,
+) => {for (final conversation in conversations) conversation.id: conversation};
+
+void _addDescendantChildren(
+  Map<String, ConversationEntity> conversationsById,
+  List<String> pendingParents,
+  Iterable<ConversationEntity> children,
+) {
+  for (final child in children) {
+    final _ = conversationsById.putIfAbsent(child.id, () => child);
+    pendingParents.add(child.id);
+  }
 }
 
 Future<Map<String, List<MessageEntity>>> _loadChildMessagesForInput(
@@ -817,7 +875,7 @@ _PendingChildData _pendingChildData(_PendingToolCallsBaseRequest request) {
   final workspaceId = request.workspaceId;
 
   return (
-    activeChildIds: _activeChildIds(ref, conversationId),
+    activeChildIds: _activeDescendantIds(ref, conversationId),
     childConversations: _childConversations(ref, workspaceId, conversationId),
     currentMessages: _currentMessages(ref, workspaceId, conversationId),
   );
@@ -846,11 +904,25 @@ _PendingToolCallsData _pendingToolCallsData(_PendingToolCallsInput request) => (
   childMessagesByConversationId: request.childMessagesByConversationId,
 );
 
-Set<String> _activeChildIds(Ref ref, String conversationId) => ref.watch(
-  activeSubAgentRuntimeProvider.select(
-    (state) => state[conversationId] ?? const <String>{},
-  ),
-);
+Set<String> _activeDescendantIds(Ref ref, String conversationId) {
+  final state = ref.watch(activeSubAgentRuntimeProvider);
+  final descendants = <String>{};
+  _collectDescendantIds(state, conversationId, descendants);
+
+  return descendants;
+}
+
+void _collectDescendantIds(
+  Map<String, Set<String>> state,
+  String parentId,
+  Set<String> descendants,
+) {
+  for (final childId in state[parentId] ?? const <String>{}) {
+    if (descendants.add(childId)) {
+      _collectDescendantIds(state, childId, descendants);
+    }
+  }
+}
 
 List<ConversationEntity> _childConversations(
   Ref ref,
@@ -898,7 +970,24 @@ Future<List<PendingToolCall>> _pendingCallsForConversations(
     ),
   );
 
-  return pendingByConversation.expand((pending) => pending).toList();
+  return _dedupePendingToolCalls(
+    pendingByConversation.expand((value) => value),
+  );
+}
+
+List<PendingToolCall> _dedupePendingToolCalls(
+  Iterable<PendingToolCall> pendingCalls,
+) {
+  final seen = <String>{};
+
+  return [
+    for (final pending in pendingCalls)
+      if (seen.add(
+        '${pending.sourceConversationId}:${pending.messageId}:'
+        '${pending.toolCall.id}',
+      ))
+        pending,
+  ];
 }
 
 _PendingSourceRequest _pendingSourceRequest(
@@ -1029,8 +1118,10 @@ Future<_PendingSourceData> _pendingSourceData(
   );
 
   return (
-    conversation: sourceConversation,
-    messages: _sourceMessages(request, sourceConversation),
+    conversation: request.sourceConversationId == request.parentConversationId
+        ? null
+        : sourceConversation,
+    messages: _sourceMessages(request),
     workspaceId: await _sourceWorkspaceId(ref, request, sourceConversation),
   );
 }
@@ -1045,10 +1136,8 @@ _PendingConversationRequest _pendingConversationRequest(
   sourceLabel: sourceData.conversation?.title,
 );
 
-List<MessageEntity>? _sourceMessages(
-  _PendingSourceRequest request,
-  ConversationEntity? sourceConversation,
-) => sourceConversation == null
+List<MessageEntity>? _sourceMessages(_PendingSourceRequest request) =>
+    request.sourceConversationId == request.parentConversationId
     ? request.currentMessages
     : request.childMessagesByConversationId[request.sourceConversationId];
 

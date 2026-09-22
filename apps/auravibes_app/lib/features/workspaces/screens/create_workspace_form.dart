@@ -38,50 +38,94 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
 class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
     with _CreateWorkspaceFormActions {
   static const _localTarget = '';
+  static const _unsavedChangesTitle = TextLocale(
+    LocaleKeys.workspace_management_unsaved_changes_title,
+  );
+  static const _unsavedChangesMessage = TextLocale(
+    LocaleKeys.workspace_management_unsaved_changes_message,
+  );
+  static const _discardChangesActions = AuraConfirmDialogActions(
+    confirmLabel: TextLocale(LocaleKeys.workspace_management_discard_changes),
+    cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
+  );
 
   final _name = TextEditingController();
   String _targetAccountId = _localTarget;
   bool _isCreating = false;
+  bool _isDirty = false;
   String? _errorText;
 
   @override
+  void initState() {
+    super.initState();
+    _name.addListener(_onNameChanged);
+  }
+
+  @override
   void dispose() {
+    _name.removeListener(_onNameChanged);
     _name.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _CreateWorkspaceAccountView(
-      accounts: ref.watch(cloudAccountsProvider),
-      name: _name,
-      targetAccountId: _targetAccountId,
-      errorText: _errorText,
-      isCreating: _isCreating,
-      onTargetAccountChanged: _setTargetAccount,
-      onAddCloudAccount: widget.onAddCloudAccount,
-      onCreate: _create,
+    return _DirtyPopScope(
+      child: _CreateWorkspaceAccountView(
+        accounts: ref.watch(cloudAccountsProvider),
+        name: _name,
+        targetAccountId: _targetAccountId,
+        errorText: _errorText,
+        isCreating: _isCreating,
+        onTargetAccountChanged: _setTargetAccount,
+        onAddCloudAccount: widget.onAddCloudAccount,
+        onCreate: _create,
+      ),
+      canPop: !_isDirty,
+      onPop: _confirmBack,
     );
+  }
+
+  void _onNameChanged() {
+    if (!mounted) return;
+
+    final isDirty = _name.text.isNotEmpty;
+    if (_isDirty == isDirty) return;
+
+    setState(() => _isDirty = isDirty);
+  }
+
+  Future<void> _confirmBack() async {
+    final shouldDiscard = await AuraDialogs.confirm(
+      context: context,
+      title: _unsavedChangesTitle,
+      message: _unsavedChangesMessage,
+      actions: _discardChangesActions,
+      isDestructive: true,
+    );
+    if (shouldDiscard != true || !mounted) return;
+
+    setState(() => _isDirty = false);
+    Navigator.of(context).pop();
   }
 
   void _setTargetAccount(String? accountId) {
     if (accountId == null) return;
-    setState(() => _targetAccountId = accountId);
+    setState(() {
+      _targetAccountId = accountId;
+      _isDirty = _name.text.isNotEmpty || accountId != _localTarget;
+    });
   }
 
   Future<void> _create() async {
     if (_isCreating) return;
 
     final name = _name.text.trim();
-    _startCreating();
-    await _runCreate(name);
-  }
-
-  void _startCreating() {
     setState(() {
       _isCreating = true;
       _errorText = null;
     });
+    await _runCreate(name);
   }
 
   Future<void> _runCreate(String name) async {
@@ -115,6 +159,21 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   }
 }
 
+class const _DirtyPopScope({
+  required final Widget child,
+  required final bool canPop,
+  required final Future<void> Function() onPop,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopScope(
+    child: child,
+    canPop: canPop,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) unawaited(onPop());
+    },
+  );
+}
+
 mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
   _CreateWorkspaceFormState get _state => this as _CreateWorkspaceFormState;
 
@@ -140,7 +199,10 @@ mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
     if (_state._targetAccountId != _CreateWorkspaceFormState._localTarget) {
       ref.invalidate(cloudWorkspaceStateProvider(_state._targetAccountId));
     }
-    if (mounted) widget.onCreated(workspace);
+    if (mounted) {
+      _state._isDirty = false;
+      widget.onCreated(workspace);
+    }
   }
 
   Future<WorkspaceEntity> _validateAndCreateWorkspace(String name) {

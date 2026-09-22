@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -155,6 +156,21 @@ class _StubMessageRepository implements MessageRepository {
   @override
   Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ToolCallApprovalBatchClaim>> claimToolCallBatch(
+    Iterable<ToolCallApprovalBatchItem> items, {
+    required bool approve,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<void> persistToolCallBatchResults(
+    Iterable<ToolCallExecutionBatchUpdate> updates,
+  ) async {
+    final _ = updates;
   }
 }
 
