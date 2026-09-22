@@ -56,7 +56,6 @@ AppSkillUrlTemplate declarativeTemplate({
   required Map<String, Object> inputSchema,
   UrlRequestMethod method = UrlRequestMethod.post,
   Map<String, String> headers = const {},
-  Map<String, String> query = const {},
   String? body,
   SkillUrlTemplateBodyFormat bodyFormat = SkillUrlTemplateBodyFormat.infer,
   Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
@@ -66,7 +65,6 @@ AppSkillUrlTemplate declarativeTemplate({
     url: url,
     method: method,
     headers: headers,
-    query: query,
     body: body,
     bodyFormat: bodyFormat,
   ),

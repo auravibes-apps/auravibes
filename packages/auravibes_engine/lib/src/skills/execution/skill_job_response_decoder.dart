@@ -142,28 +142,10 @@ class const SkillJobResponseDecoder() {
     return null;
   }
 
-  String? _message(Map<String, Object?>? payload) {
-    final message = payload?['message'];
-    if (message is String && message.isNotEmpty) return message;
-
-    final error = payload?['error'];
-    if (error is String && error.isNotEmpty) return error;
-    if (error is Map && error['message'] is String) {
-      return error['message'] as String;
-    }
-
-    final errors = payload?['errors'];
-    if (errors is List) {
-      for (final item in errors) {
-        if (item is String && item.isNotEmpty) return item;
-        if (item is Map && item['message'] is String) {
-          return item['message'] as String;
-        }
-      }
-    }
-
-    return null;
-  }
+  String? _message(Map<String, Object?>? payload) =>
+      _text(payload?['message']) ??
+      _errorMessage(payload?['error']) ??
+      _errorListMessage(payload?['errors']);
 
   String _jobStatus({
     required Map<String, Object?>? payload,
@@ -222,4 +204,23 @@ class const SkillJobResponseDecoder() {
       return null;
     }
   }
+}
+
+String? _text(Object? value) =>
+    value is String && value.isNotEmpty ? value : null;
+
+String? _errorMessage(Object? error) => switch (error) {
+  final String value => _text(value),
+  final Map<Object?, Object?> value => _text(value['message']),
+  _ => null,
+};
+
+String? _errorListMessage(Object? errors) {
+  if (errors is! List) return null;
+  for (final error in errors) {
+    final message = _errorMessage(error);
+    if (message != null) return message;
+  }
+
+  return null;
 }
