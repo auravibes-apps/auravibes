@@ -295,20 +295,52 @@ List<String> _selectableCloudSkillSlugs({
     if (!isChildConversation &&
         cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
       agentsSkillSlug,
-    for (final skill in userSkills)
-      if (cloudUserSkillReady(skill, templateTools, serviceConnections))
-        if (skill['slug'] case final String slug) slug,
-    for (final skill in serviceSkillDefinitions)
-      if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections))
-        skill.slug,
+    ..._selectableCloudUserSkillSlugs(
+      userSkills: userSkills,
+      templateTools: templateTools,
+      serviceConnections: serviceConnections,
+    ),
+    ..._selectableCloudServiceSkillSlugs(
+      appSkillSettings: appSkillSettings,
+      serviceConnections: serviceConnections,
+    ),
     if (!isChildConversation &&
         (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
-      for (final skill in internalAppSkillDefinitions)
-        if (skill.contentOnly) skill.slug,
+      ..._selectableContentOnlyCloudSkillSlugs(),
   ];
   return selectable.toSet().toList()..sort();
 }
+
+Iterable<String> _selectableCloudUserSkillSlugs({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => userSkills
+    .where(
+      (skill) => cloudUserSkillReady(
+        skill,
+        templateTools,
+        serviceConnections,
+      ),
+    )
+    .map((skill) => skill['slug'])
+    .whereType<String>();
+
+Iterable<String> _selectableCloudServiceSkillSlugs({
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => serviceSkillDefinitions
+    .where(
+      (skill) =>
+          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections),
+    )
+    .map((skill) => skill.slug);
+
+Iterable<String> _selectableContentOnlyCloudSkillSlugs() =>
+    internalAppSkillDefinitions
+        .where((skill) => skill.contentOnly)
+        .map((skill) => skill.slug);
 
 bool cloudUserSkillReady(
   Map<String, dynamic> skill,
