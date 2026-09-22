@@ -979,22 +979,14 @@ class const _AvailableCloudWorkspaceList({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final matching = workspaces
-        .where(
-          (workspace) =>
-              searchQuery.isEmpty ||
-              workspace.name.toLowerCase().contains(searchQuery),
-        )
-        .toList();
-    final available = matching.where(_isAvailable).toList();
+    final matching = _matchingWorkspaces();
+    final available = _availableWorkspaces(matching);
     if (available.isEmpty) {
-      if (searchQuery.isNotEmpty && !hasPersistedMatches && matching.isEmpty) {
-        return const TextLocale(
-          LocaleKeys.workspace_management_no_search_results,
-        );
-      }
-
-      return const TextLocale(LocaleKeys.cloud_accounts_no_workspaces);
+      return _AvailableCloudWorkspaceEmptyState(
+        hasMatchingWorkspaces: matching.isNotEmpty,
+        hasPersistedMatches: hasPersistedMatches,
+        searchQuery: searchQuery,
+      );
     }
 
     return _AvailableCloudWorkspaceItems(
@@ -1006,12 +998,43 @@ class const _AvailableCloudWorkspaceList({
     );
   }
 
+  List<CloudWorkspaceSummary> _matchingWorkspaces() => workspaces
+      .where(
+        (workspace) =>
+            searchQuery.isEmpty ||
+            workspace.name.toLowerCase().contains(searchQuery),
+      )
+      .toList();
+
+  List<CloudWorkspaceSummary> _availableWorkspaces(
+    List<CloudWorkspaceSummary> matching,
+  ) => matching.where(_isAvailable).toList();
+
   bool _isAvailable(CloudWorkspaceSummary workspace) {
     return !localWorkspaces.any(
       (local) =>
           local.cloudWorkspaceId == workspace.id.toString() &&
           local.cloudAccountId == account.userId,
     );
+  }
+}
+
+class const _AvailableCloudWorkspaceEmptyState({
+  required final bool hasMatchingWorkspaces,
+  required final bool hasPersistedMatches,
+  required final String searchQuery,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (searchQuery.isNotEmpty &&
+        !hasPersistedMatches &&
+        !hasMatchingWorkspaces) {
+      return const TextLocale(
+        LocaleKeys.workspace_management_no_search_results,
+      );
+    }
+
+    return const TextLocale(LocaleKeys.cloud_accounts_no_workspaces);
   }
 }
 
