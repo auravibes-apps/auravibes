@@ -442,6 +442,7 @@ Future<void> _submitAddModelProviderFormRequest(
   );
   if (!request.context.mounted || created == null) return;
 
+  _resetModelProviderState(request.ref, request.workspaceId)();
   _completeAddModelProviderSubmission(
     request.context,
     request.onCreated,
