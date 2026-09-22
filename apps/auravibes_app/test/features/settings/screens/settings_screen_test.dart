@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
@@ -58,6 +59,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.byKey(const ValueKey<String>('settings_theme_reset')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_accent_color_reset')),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey<String>('settings_compaction_reset')),
         findsOneWidget,
       );
@@ -65,6 +74,49 @@ void main() {
         find.byKey(const ValueKey<String>('settings_compaction_save')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('reset actions restore theme and accent defaults', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        'app_theme': AppTheme.dark.index,
+        'app_accent_hue': 42.0,
+      });
+
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: Theme(
+              data: .new(extensions: [AuraTheme.light]),
+              child: const SettingsScreen(workspaceId: 'test-ws'),
+            ),
+            overrides: [
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+            ],
+          ),
+        );
+      });
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings_theme_reset')),
+      );
+      final accentReset = find.byKey(
+        const ValueKey<String>('settings_accent_color_reset'),
+      );
+      await tester.ensureVisible(accentReset);
+      await tester.tap(accentReset);
+      final _ = await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(.zero);
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('app_theme'), AppTheme.system.index);
+      expect(prefs.getDouble('app_accent_hue'), AccentHue.defaultValue);
     });
 
     testWidgets('tapping theme tile shows radio group dialog', (tester) async {

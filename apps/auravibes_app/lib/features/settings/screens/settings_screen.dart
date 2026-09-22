@@ -62,6 +62,9 @@ class const _SettingsPage({required final String workspaceId})
       workspaceId: workspaceId,
       currentTheme: currentTheme,
       onThemeTap: () => _showThemeDialog(context, ref, currentTheme),
+      onThemeReset: () {
+        ref.read(themeProvider.notifier).setTheme(.system);
+      },
     );
   }
 
@@ -97,6 +100,7 @@ class const _SettingsPageSurface({
   required final String workspaceId,
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
+  required final VoidCallback onThemeReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraScreen(
@@ -104,6 +108,7 @@ class const _SettingsPageSurface({
       workspaceId: workspaceId,
       currentTheme: currentTheme,
       onThemeTap: onThemeTap,
+      onThemeReset: onThemeReset,
     ),
     appBar: _settingsAppBar,
   );
@@ -125,6 +130,7 @@ class const _SettingsBody({
   required final String workspaceId,
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
+  required final VoidCallback onThemeReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -132,7 +138,11 @@ class const _SettingsBody({
       padding: const EdgeInsets.all(_settingsScreenPadding),
       child: AuraColumn(
         children: [
-          _AppSettingsCard(currentTheme: currentTheme, onThemeTap: onThemeTap),
+          _AppSettingsCard(
+            currentTheme: currentTheme,
+            onThemeTap: onThemeTap,
+            onThemeReset: onThemeReset,
+          ),
           CompactionSettingsSection(workspaceId: workspaceId),
           const AccentColorSection(),
         ],
@@ -145,6 +155,7 @@ class const _SettingsBody({
 class const _AppSettingsCard({
   required final AppTheme currentTheme,
   required final VoidCallback onThemeTap,
+  required final VoidCallback onThemeReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -153,12 +164,33 @@ class const _AppSettingsCard({
         children: [
           _appSettingsHeader,
           _ThemeTile(theme: currentTheme, onTap: onThemeTap),
+          _ThemeResetButton(onPressed: onThemeReset),
         ],
         spacing: .none,
         crossAxisAlignment: .start,
       ),
     );
   }
+}
+
+class const _ThemeResetButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Align(
+    alignment: .centerRight,
+    child: Semantics(
+      key: const ValueKey<String>('settings_theme_reset'),
+      child: AuraButton(
+        onPressed: onPressed,
+        child: const TextLocale(
+          LocaleKeys.settings_screen_actions_reset_defaults,
+        ),
+        variant: .ghost,
+        size: .small,
+      ),
+      identifier: 'settings_theme_reset',
+    ),
+  );
 }
 
 class const _ThemeTile({

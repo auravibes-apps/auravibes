@@ -816,7 +816,8 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "reset_defaults": "Reset to Defaults"
     }
   },
   "more_screen": {

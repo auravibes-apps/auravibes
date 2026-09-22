@@ -19,6 +19,9 @@ class const AccentColorSection({super.key}) extends ConsumerWidget {
     return _AccentColorCard(
       hue: hue,
       onTap: () => _showAccentDialog(context, ref, hue),
+      onReset: () {
+        ref.read(accentHueProvider.notifier).setHue(AccentHue.defaultValue);
+      },
     );
   }
 
@@ -57,6 +60,7 @@ Future<bool?> _confirmAccentColor({
 class const _AccentColorCard({
   required final double hue,
   required final VoidCallback onTap,
+  required final VoidCallback onReset,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -65,12 +69,33 @@ class const _AccentColorCard({
         children: [
           const _AccentColorHeader(),
           _AccentColorTile(hue: hue, onTap: onTap),
+          _AccentColorResetButton(onPressed: onReset),
         ],
         spacing: .none,
         crossAxisAlignment: .start,
       ),
     );
   }
+}
+
+class const _AccentColorResetButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Align(
+    alignment: .centerRight,
+    child: Semantics(
+      key: const ValueKey<String>('settings_accent_color_reset'),
+      child: AuraButton(
+        onPressed: onPressed,
+        child: const TextLocale(
+          LocaleKeys.settings_screen_actions_reset_defaults,
+        ),
+        variant: .ghost,
+        size: .small,
+      ),
+      identifier: 'settings_accent_color_reset',
+    ),
+  );
 }
 
 class const _AccentColorHeader() extends StatelessWidget {
