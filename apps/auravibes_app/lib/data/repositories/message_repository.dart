@@ -554,95 +554,9 @@ class const MessageRepositoryBatchOperations(
     final input = items.toList(growable: false);
     if (input.isEmpty) return const [];
 
-    return await _repository._database.transaction(() async {
-      final rowsById = <String, MessagesTable?>{};
-      for (final item in input) {
-        rowsById[item.messageId] ??= await _repository._database.messageDao
-            .getMessageById(item.messageId);
-      }
-
-      final claims = <String, ToolCallApprovalBatchClaim>{};
-      final updatesByMessage = <String, List<MessageToolCallEntity>>{};
-      final seen = <String>{};
-
-      for (final item in input) {
-        final identity = _batchItemIdentity(item);
-        if (!seen.add(identity)) {
-          claims[identity] = ToolCallApprovalBatchClaim(
-            item: item,
-            status: .alreadyHandled,
-          );
-          continue;
-        }
-
-        final row = rowsById[item.messageId];
-        final metadata = row == null
-            ? null
-            : MessageMetadataEntity.fromJsonString(row.metadata);
-        final toolCall = metadata?.toolCalls
-            .where((candidate) => candidate.id == item.toolCallId)
-            .firstOrNull;
-
-        if (!_matchesPendingCall(row, item, toolCall)) {
-          claims[identity] = ToolCallApprovalBatchClaim(
-            item: item,
-            status: _alreadyHandled(row, item, toolCall)
-                ? .alreadyHandled
-                : .conflicted,
-            toolCall: toolCall,
-          );
-          continue;
-        }
-
-        final pendingToolCall = toolCall;
-        final currentMetadata = metadata;
-        if (pendingToolCall == null || currentMetadata == null) {
-          claims[identity] = ToolCallApprovalBatchClaim(
-            item: item,
-            status: .conflicted,
-          );
-          continue;
-        }
-        final updatedToolCall = pendingToolCall.copyWith(
-          resultStatus: approve ? .running : .skippedByUser,
-        );
-        final currentCalls =
-            updatesByMessage[item.messageId] ??
-            List<MessageToolCallEntity>.of(currentMetadata.toolCalls);
-        final nextCalls = [
-          for (final candidate in currentCalls)
-            if (candidate.id == updatedToolCall.id)
-              updatedToolCall
-            else
-              candidate,
-        ];
-        updatesByMessage[item.messageId] = nextCalls;
-        claims[identity] = ToolCallApprovalBatchClaim(
-          item: item,
-          status: .claimed,
-          toolCall: toolCall,
-        );
-      }
-
-      for (final entry in updatesByMessage.entries) {
-        final row = rowsById[entry.key];
-        if (row == null) continue;
-        final metadata = MessageMetadataEntity.fromJsonString(row.metadata);
-        if (metadata == null) continue;
-        final updatedMetadata = metadata.copyWith(toolCalls: entry.value);
-        final _ = await _repository._database.messageDao.patchMessage(
-          entry.key,
-          _repository._mapPatchToMessagesCompanion(
-            .new(
-              metadata: updatedMetadata,
-              status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-            ),
-          ),
-        );
-      }
-
-      return [for (final item in input) ?claims[_batchItemIdentity(item)]];
-    });
+    return await _repository._database.transaction(
+      () => _claimToolCallBatchInTransaction(input, approve: approve),
+    );
   }
 
   Future<void> persistToolCallBatchResults(
@@ -651,53 +565,254 @@ class const MessageRepositoryBatchOperations(
     final input = updates.toList(growable: false);
     if (input.isEmpty) return;
 
-    await _repository._database.transaction(() async {
-      final rowsById = <String, MessagesTable?>{};
-      final updatesByMessage = <String, List<ToolCallExecutionBatchUpdate>>{};
-      for (final update in input) {
-        rowsById[update.messageId] ??= await _repository._database.messageDao
-            .getMessageById(update.messageId);
-        (updatesByMessage[update.messageId] ??= []).add(update);
-      }
-
-      for (final entry in updatesByMessage.entries) {
-        final row = rowsById[entry.key];
-        if (row == null) continue;
-        final metadata = MessageMetadataEntity.fromJsonString(row.metadata);
-        if (metadata == null) continue;
-        final updatesById = {
-          for (final update in entry.value) update.toolCallId: update,
-        };
-        var changed = false;
-        final updatedToolCalls = [
-          for (final toolCall in metadata.toolCalls)
-            if (updatesById[toolCall.id] case final update?
-                when toolCall.resultStatus == .running)
-              (() {
-                changed = true;
-
-                return toolCall.copyWith(
-                  resultStatus: update.resultStatus,
-                  responseRaw: update.responseRaw,
-                );
-              })()
-            else
-              toolCall,
-        ];
-        if (!changed) continue;
-        final updatedMetadata = metadata.copyWith(toolCalls: updatedToolCalls);
-        final _ = await _repository._database.messageDao.patchMessage(
-          entry.key,
-          _repository._mapPatchToMessagesCompanion(
-            .new(
-              metadata: updatedMetadata,
-              status: updatedMetadata.hasPendingToolCalls ? null : .sent,
-            ),
-          ),
-        );
-      }
-    });
+    await _repository._database.transaction(
+      () => _persistToolCallBatchResultsInTransaction(input),
+    );
   }
+
+  Future<List<ToolCallApprovalBatchClaim>> _claimToolCallBatchInTransaction(
+    List<ToolCallApprovalBatchItem> input, {
+    required bool approve,
+  }) async {
+    final state = _BatchClaimState(
+      rowsById: await _loadRows(input.map((item) => item.messageId)),
+      approve: approve,
+    );
+    input.forEach(state.claim);
+    await _persistClaims(state);
+
+    return [for (final item in input) ?state.claims[_batchItemIdentity(item)]];
+  }
+
+  Future<void> _persistToolCallBatchResultsInTransaction(
+    List<ToolCallExecutionBatchUpdate> input,
+  ) async {
+    final updatesByMessage = _groupExecutionUpdates(input);
+    final rowsById = await _loadRows(updatesByMessage.keys);
+    for (final entry in updatesByMessage.entries) {
+      await _persistExecutionUpdates(
+        entry.key,
+        rowsById[entry.key],
+        entry.value,
+      );
+    }
+  }
+
+  Future<Map<String, MessagesTable?>> _loadRows(
+    Iterable<String> messageIds,
+  ) async {
+    final rowsById = <String, MessagesTable?>{};
+    for (final messageId in messageIds) {
+      rowsById[messageId] ??= await _repository._database.messageDao
+          .getMessageById(messageId);
+    }
+
+    return rowsById;
+  }
+
+  Future<void> _persistClaims(_BatchClaimState state) async {
+    for (final entry in state.updatesByMessage.entries) {
+      final row = state.rowsById[entry.key];
+      final metadata = row == null
+          ? null
+          : MessageMetadataEntity.fromJsonString(row.metadata);
+      if (metadata == null) continue;
+      await _patchMetadata(
+        entry.key,
+        metadata.copyWith(toolCalls: entry.value),
+      );
+    }
+  }
+
+  Future<void> _persistExecutionUpdates(
+    String messageId,
+    MessagesTable? row,
+    List<ToolCallExecutionBatchUpdate> updates,
+  ) async {
+    if (row == null) return;
+    final metadata = MessageMetadataEntity.fromJsonString(row.metadata);
+    if (metadata == null) return;
+    final updatesById = {
+      for (final update in updates) update.toolCallId: update,
+    };
+    final toolCalls = _applyExecutionUpdates(metadata.toolCalls, updatesById);
+    if (toolCalls == null) return;
+    await _patchMetadata(messageId, metadata.copyWith(toolCalls: toolCalls));
+  }
+
+  Future<void> _patchMetadata(
+    String messageId,
+    MessageMetadataEntity metadata,
+  ) async {
+    final _ = await _repository._database.messageDao.patchMessage(
+      messageId,
+      _repository._mapPatchToMessagesCompanion(
+        .new(
+          metadata: metadata,
+          status: metadata.hasPendingToolCalls ? null : .sent,
+        ),
+      ),
+    );
+  }
+}
+
+class _BatchClaimState({
+  required final Map<String, MessagesTable?> rowsById,
+  required final bool approve,
+}) {
+  final claims = <String, ToolCallApprovalBatchClaim>{};
+  final updatesByMessage = <String, List<MessageToolCallEntity>>{};
+  final _seen = <String>{};
+
+  void claim(ToolCallApprovalBatchItem item) {
+    if (!_seen.add(_batchItemIdentity(item))) {
+      _recordClaim(item, .alreadyHandled);
+
+      return;
+    }
+
+    final candidate = _findBatchClaimCandidate(rowsById, item);
+    if (!_matchesPendingCall(candidate.row, item, candidate.toolCall)) {
+      _recordUnclaimableClaim(item, candidate);
+
+      return;
+    }
+
+    _recordPendingClaim(item, candidate);
+  }
+
+  void _recordPendingClaim(
+    ToolCallApprovalBatchItem item,
+    _BatchClaimCandidate candidate,
+  ) {
+    final metadata = candidate.metadata;
+    final toolCall = candidate.toolCall;
+    if (metadata == null || toolCall == null) {
+      _recordClaim(item, .conflicted);
+
+      return;
+    }
+
+    _claimPending(item, metadata, toolCall);
+  }
+
+  void _recordUnclaimableClaim(
+    ToolCallApprovalBatchItem item,
+    _BatchClaimCandidate candidate,
+  ) => _recordClaim(
+    item,
+    _alreadyHandled(candidate.row, item, candidate.toolCall)
+        ? .alreadyHandled
+        : .conflicted,
+    toolCall: candidate.toolCall,
+  );
+
+  void _recordClaim(
+    ToolCallApprovalBatchItem item,
+    ToolCallApprovalBatchClaimStatus status, {
+    MessageToolCallEntity? toolCall,
+  }) {
+    claims[_batchItemIdentity(item)] = ToolCallApprovalBatchClaim(
+      item: item,
+      status: status,
+      toolCall: toolCall,
+    );
+  }
+
+  void _claimPending(
+    ToolCallApprovalBatchItem item,
+    MessageMetadataEntity metadata,
+    MessageToolCallEntity toolCall,
+  ) {
+    final updatedToolCall = toolCall.copyWith(
+      resultStatus: approve ? .running : .skippedByUser,
+    );
+    final currentCalls =
+        updatesByMessage[item.messageId] ?? List.of(metadata.toolCalls);
+    updatesByMessage[item.messageId] = _replaceToolCall(
+      currentCalls,
+      updatedToolCall,
+    );
+    _recordClaim(item, .claimed, toolCall: toolCall);
+  }
+}
+
+typedef _BatchClaimCandidate = ({
+  MessagesTable? row,
+  MessageMetadataEntity? metadata,
+  MessageToolCallEntity? toolCall,
+});
+
+_BatchClaimCandidate _findBatchClaimCandidate(
+  Map<String, MessagesTable?> rowsById,
+  ToolCallApprovalBatchItem item,
+) {
+  final row = rowsById[item.messageId];
+  final metadata = _metadataForBatchRow(row);
+  final toolCall = _toolCallForBatchMetadata(metadata, item.toolCallId);
+
+  return (row: row, metadata: metadata, toolCall: toolCall);
+}
+
+MessageMetadataEntity? _metadataForBatchRow(MessagesTable? row) =>
+    row == null ? null : MessageMetadataEntity.fromJsonString(row.metadata);
+
+MessageToolCallEntity? _toolCallForBatchMetadata(
+  MessageMetadataEntity? metadata,
+  String toolCallId,
+) => metadata?.toolCalls.firstWhereOrNull(
+  (candidate) => candidate.id == toolCallId,
+);
+
+List<MessageToolCallEntity> _replaceToolCall(
+  List<MessageToolCallEntity> toolCalls,
+  MessageToolCallEntity updatedToolCall,
+) => [
+  for (final toolCall in toolCalls)
+    if (toolCall.id == updatedToolCall.id) updatedToolCall else toolCall,
+];
+
+Map<String, List<ToolCallExecutionBatchUpdate>> _groupExecutionUpdates(
+  Iterable<ToolCallExecutionBatchUpdate> updates,
+) {
+  final grouped = <String, List<ToolCallExecutionBatchUpdate>>{};
+  for (final update in updates) {
+    (grouped[update.messageId] ??= []).add(update);
+  }
+
+  return grouped;
+}
+
+List<MessageToolCallEntity>? _applyExecutionUpdates(
+  List<MessageToolCallEntity> toolCalls,
+  Map<String, ToolCallExecutionBatchUpdate> updatesById,
+) {
+  if (!toolCalls.any(
+    (toolCall) =>
+        toolCall.resultStatus == .running &&
+        updatesById.containsKey(toolCall.id),
+  )) {
+    return null;
+  }
+
+  return [
+    for (final toolCall in toolCalls)
+      _updatedExecutionToolCall(toolCall, updatesById) ?? toolCall,
+  ];
+}
+
+MessageToolCallEntity? _updatedExecutionToolCall(
+  MessageToolCallEntity toolCall,
+  Map<String, ToolCallExecutionBatchUpdate> updatesById,
+) {
+  if (toolCall.resultStatus != .running) return null;
+  final update = updatesById[toolCall.id];
+  if (update == null) return null;
+
+  return toolCall.copyWith(
+    resultStatus: update.resultStatus,
+    responseRaw: update.responseRaw,
+  );
 }
 
 bool _matchesPendingCall(

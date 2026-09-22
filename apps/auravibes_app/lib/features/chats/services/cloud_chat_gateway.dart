@@ -148,25 +148,39 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
     required List<CloudToolDecisionItem> calls,
   }) => _guardConversation(
     () => _client.conversation.submitToolDecisionBatch(
-      .new(
-        workspaceId: _workspaceId,
+      _submitToolDecisionBatchRequest(
         requestId: requestId,
         decision: decision,
-        calls: [
-          for (final call in calls)
-            SubmitToolDecisionBatchCall(
-              conversationId: call.conversationId,
-              turnId: call.turnId,
-              toolCallId: call.toolCallId,
-              argumentsDigest: call.argumentsDigest,
-              expectedTurnRevision: call.expectedTurnRevision,
-              editedArgumentsJson: call.editedArgumentsJson,
-            ),
-        ],
-        a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+        calls: calls,
       ),
     ),
   );
+
+  SubmitToolDecisionBatchRequest _submitToolDecisionBatchRequest({
+    required String requestId,
+    required String decision,
+    required List<CloudToolDecisionItem> calls,
+  }) => .new(
+    workspaceId: _workspaceId,
+    requestId: requestId,
+    decision: decision,
+    calls: _submitToolDecisionBatchCalls(calls),
+    a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
+  );
+
+  List<SubmitToolDecisionBatchCall> _submitToolDecisionBatchCalls(
+    List<CloudToolDecisionItem> calls,
+  ) => [
+    for (final call in calls)
+      SubmitToolDecisionBatchCall(
+        conversationId: call.conversationId,
+        turnId: call.turnId,
+        toolCallId: call.toolCallId,
+        argumentsDigest: call.argumentsDigest,
+        expectedTurnRevision: call.expectedTurnRevision,
+        editedArgumentsJson: call.editedArgumentsJson,
+      ),
+  ];
 
   Future<ConversationSummary> getConversation(String conversationId) =>
       CloudAppErrors.guardCall(
