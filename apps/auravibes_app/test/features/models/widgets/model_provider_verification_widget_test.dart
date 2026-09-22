@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -151,6 +152,7 @@ Future<void> _pumpAddForm(
   _FakeModelConnectionStore store,
 ) async {
   await tester.runAsync(() async {
+    await rootBundle.loadString('assets/i18n/en.json');
     await tester.pumpWidget(
       TestableApp(
         child: const Scaffold(

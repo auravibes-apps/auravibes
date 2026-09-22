@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -47,40 +48,43 @@ void main() {
         .read(addModelProviderStateProvider(_workspaceId).notifier)
         .setModel('openai');
 
-    final _ = await tester.pumpWidget(
-      EasyLocalization(
-        child: UncontrolledProviderScope(
-          container: container,
-          child: Builder(
-            builder: (context) {
-              return MaterialApp(
-                routes: {
-                  '/': (_) => const SizedBox.shrink(),
-                  '/provider': (_) => Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: const Scaffold(
-                      body: AddModelProviderWidget(workspaceId: _workspaceId),
+    await tester.runAsync(() async {
+      await rootBundle.loadString('assets/i18n/en.json');
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: UncontrolledProviderScope(
+            container: container,
+            child: Builder(
+              builder: (context) {
+                return MaterialApp(
+                  routes: {
+                    '/': (_) => const SizedBox.shrink(),
+                    '/provider': (_) => Theme(
+                      data: .new(extensions: [AuraTheme.light]),
+                      child: const Scaffold(
+                        body: AddModelProviderWidget(workspaceId: _workspaceId),
+                      ),
                     ),
-                  ),
-                },
-                initialRoute: '/provider',
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              );
-            },
+                  },
+                  initialRoute: '/provider',
+                  builder: (context, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                );
+              },
+            ),
           ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     final _ = await tester.pumpAndSettle();
 
     final _ = await tester.tap(find.byIcon(Icons.close));
