@@ -67,3 +67,7 @@ AppSkillDefinition a2uiSkillDefinitionForComponents(
 final AppSkillDefinition a2uiSkillDefinition = a2uiSkillDefinitionForComponents(
   supportedA2uiChatComponents,
 );
+
+final List<AppSkillDefinition> internalAppSkillDefinitions = List.unmodifiable([
+  a2uiSkillDefinition,
+]);

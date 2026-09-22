@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
@@ -344,13 +345,11 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
     final result = <AvailableSkill>[];
     final isTopLevel = await _isTopLevel(request.conversationId);
     for (final skill in _appSkillRegistry.getRuntimeAll()) {
-      if (skill.contentOnly &&
-          (!isTopLevel ||
-              request.filter == .selector ||
-              (request.filter != .catalog && request.filter != .loaded))) {
-        continue;
-      }
-      final availableSkill = await _availableAppSkillForRequest(request, skill);
+      final availableSkill = await _availableAppSkillForRequest(
+        request,
+        skill,
+        isTopLevel: isTopLevel,
+      );
       if (availableSkill == null) continue;
 
       result.add(availableSkill);
@@ -361,14 +360,25 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
 
   Future<AvailableSkill?> _availableAppSkillForRequest(
     _AvailableSkillsRequest request,
-    AppSkillDefinition skill,
-  ) => _toAvailableAppSkill((
-    cloud: request.cloud,
-    skill: skill,
-    loadedAppIds: request.inputs.loadedAppIds,
-    workspaceId: request.workspaceId,
-    filter: request.filter,
-  ));
+    AppSkillDefinition skill, {
+    required bool isTopLevel,
+  }) {
+    if (!_shouldIncludeRuntimeAppSkill(
+      skill: skill,
+      isTopLevel: isTopLevel,
+      filter: request.filter,
+    )) {
+      return Future.value();
+    }
+
+    return _toAvailableAppSkill((
+      cloud: request.cloud,
+      skill: skill,
+      loadedAppIds: request.inputs.loadedAppIds,
+      workspaceId: request.workspaceId,
+      filter: request.filter,
+    ));
+  }
 
   Future<AvailableSkill?> _toAvailableAppSkill(
     _AppSkillAvailabilityRequest request,
@@ -456,6 +466,17 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
 
     return await checker(conversationId);
   }
+}
+
+bool _shouldIncludeRuntimeAppSkill({
+  required AppSkillDefinition skill,
+  required bool isTopLevel,
+  required SkillLoadFilter filter,
+}) {
+  if (!skill.contentOnly) return true;
+  if (!isTopLevel || filter == .selector) return false;
+
+  return filter == .catalog || filter == .loaded;
 }
 
 extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
@@ -582,14 +603,18 @@ _SharedSkillDependencies _sharedSkillDependencies(Ref ref, String workspaceId) {
     credentialCandidates: ref.watch(
       listAppSkillCredentialCandidatesUsecaseProvider,
     ),
-    isTopLevelConversation: (conversationId) async {
-      final conversation = await conversationRepository.getConversationById(
-        conversationId,
-      );
-
-      return conversation != null && conversation.parentConversationId == null;
-    },
+    isTopLevelConversation: (conversationId) =>
+        _checkIsTopLevelConversation(conversationRepository, conversationId),
   );
+}
+
+Future<bool> _checkIsTopLevelConversation(
+  ConversationRepository repository,
+  String conversationId,
+) async {
+  final conversation = await repository.getConversationById(conversationId);
+
+  return conversation != null && conversation.parentConversationId == null;
 }
 
 enum SkillLoadFilter {

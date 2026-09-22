@@ -50,7 +50,6 @@ export 'src/providers/agent_model_provider.dart';
 export 'src/public_url_classifier.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
-export 'src/skills/app_skill_definitions.dart';
 export 'src/skills/execution/app_skill_executor.dart';
 export 'src/skills/execution/resolve_skill_url_template.dart';
 export 'src/skills/execution/run_skill_url_template.dart';
