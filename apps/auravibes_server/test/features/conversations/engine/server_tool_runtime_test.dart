@@ -75,6 +75,11 @@ void main() {
     expect(serverToolExecutionFailureCode(StateError('secret')), 'unexpected');
   });
 
+  test('does not infer an omitted cloud tool credentialId', () {
+    expect(cloudToolCredentialId(null), isNull);
+    expect(cloudToolCredentialId(' credential-1 '), 'credential-1');
+  });
+
   test('builds audited cloud skill selection patches', () {
     final activation = cloudSkillSelectionPatchRequest(
       workspaceId: 7,
