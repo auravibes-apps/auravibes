@@ -76,17 +76,9 @@ bool cloudToolAllowsCredential(
         ?.contains(credentialId) ==
     true;
 
-String? cloudToolCredentialId(ServerResolvedTool tool, Object? value) {
+String? cloudToolCredentialId(Object? value) {
   if (value is String && value.trim().isNotEmpty) return value.trim();
-
-  final ids =
-      (((tool.spec.inputJsonSchema['properties'] as Map?)?['credentialId']
-                  as Map?)?['enum']
-              as List?)
-          ?.whereType<String>()
-          .toList(growable: false) ??
-      const <String>[];
-  return ids.length == 1 ? ids.single : null;
+  return null;
 }
 
 PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
@@ -263,6 +255,7 @@ class const ServerToolExecutorService({
   final ServerToolExecutorInterlock? beforeChildLaunch,
   final ServerToolExecutorInterlock? afterChildContinuation,
   final ServerToolExecutorInterlock? beforeSkillSelectionMutation,
+  final Set<String>? a2uiSupportedComponents,
 }) {
   Future<Object?> call(
     Session session,
@@ -409,12 +402,7 @@ class const ServerToolExecutorService({
     if (skillId == null || !state.authorizedSkillIds.contains(skillId)) {
       throw const ServerToolNotConfiguredException();
     }
-    final appSkill = serviceSkillDefinitions
-        .where(
-          (skill) =>
-              skill.slug == target.skill || skill.identifier == target.skill,
-        )
-        .firstOrNull;
+    final appSkill = _appSkillDefinition(target.skill);
     if (appSkill != null) {
       final resource = appSkill.resources
           .where((candidate) => candidate.slug == target.resource)
@@ -451,9 +439,7 @@ class const ServerToolExecutorService({
     String slug,
     String skillId,
   ) async {
-    final appSkill = serviceSkillDefinitions
-        .where((skill) => skill.slug == slug || skill.identifier == slug)
-        .firstOrNull;
+    final appSkill = _appSkillDefinition(slug);
     if (appSkill != null) {
       return appSkill.resources.map((resource) => resource.summary).toList();
     }
@@ -695,15 +681,36 @@ class const ServerToolExecutorService({
         cloudAppSkillEnabled(agentsSkillSlug, state.appSkillSettings)) {
       return agentsSkillSlug;
     }
-    final app = serviceSkillDefinitions
+    final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
-    if (app == null ||
-        !cloudAppSkillEnabled(app.identifier, state.appSkillSettings) ||
+    if (app == null) return null;
+    if (app.contentOnly) {
+      if (app.slug == a2uiSkillSlug &&
+          a2uiSupportedComponents?.isEmpty == true) {
+        return null;
+      }
+      return state.conversation.parentConversationStableId == null
+          ? app.identifier
+          : null;
+    }
+    if (!cloudAppSkillEnabled(app.identifier, state.appSkillSettings) ||
         !cloudServiceSkillReady(app, state.serviceConnections)) {
       return null;
     }
     return app.identifier;
+  }
+
+  AppSkillDefinition? _appSkillDefinition(String slug) {
+    final appSkill = cloudAppSkillDefinitions
+        .where((skill) => skill.slug == slug || skill.identifier == slug)
+        .firstOrNull;
+    if (appSkill == null ||
+        appSkill.slug != a2uiSkillSlug ||
+        a2uiSupportedComponents == null) {
+      return appSkill;
+    }
+    return a2uiSkillDefinitionForComponents(a2uiSupportedComponents!);
   }
 
   bool _isUserSkill(
@@ -729,7 +736,7 @@ class const ServerToolExecutorService({
         .firstOrNull;
     if (user?['content'] case final String content) return content;
     if (slug == agentsSkillSlug) return agentsSkillContent;
-    final app = serviceSkillDefinitions
+    final app = cloudAppSkillDefinitions
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
     if (app != null) return app.content;
@@ -748,10 +755,7 @@ class const ServerToolExecutorService({
     final templateTool = skill?.tools
         .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
         .firstOrNull;
-    final credentialId = cloudToolCredentialId(
-      tool,
-      arguments['credentialId'],
-    );
+    final credentialId = cloudToolCredentialId(arguments['credentialId']);
     if (skill == null ||
         skill.kind != AppSkillDefinitionKind.template ||
         templateTool == null ||
@@ -1434,12 +1438,9 @@ class const ServerToolExecutorService({
       credentialDefinitionId,
     );
     validateSkillTemplateDefinition(definition);
-    final credentialId = await _resolveSkillTemplateCredentialId(
-      session,
-      turn: turn,
+    final credentialId = _resolveSkillTemplateCredentialId(
       skillData: data,
       value: arguments['credentialId'],
-      definitionId: credentialDefinitionId,
     );
     final secret = credentialId == null
         ? null
@@ -1555,40 +1556,12 @@ class const ServerToolExecutorService({
     return skillDefinitionId.trim();
   }
 
-  Future<String?> _resolveSkillTemplateCredentialId(
-    Session session, {
-    required ConversationTurn turn,
+  String? _resolveSkillTemplateCredentialId({
     required Map<String, dynamic> skillData,
     required Object? value,
-    String? definitionId,
-  }) async {
+  }) {
     if (value is String && value.trim().isNotEmpty) return value.trim();
     if (skillData['requiresCredential'] != true) return null;
-
-    final skillId = skillData['skillId'];
-    final resolvedDefinitionId =
-        definitionId ?? skillData['credentialDefinitionId'];
-    if (skillId is! String || resolvedDefinitionId is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
-    final resources = await WorkspaceResource.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(turn.workspaceId) &
-          table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
-          table.deletedAt.equals(null),
-    );
-    final candidates = resources
-        .where((resource) {
-          final data = _jsonMap(resource.data);
-          return data['kind'] == 'skillCredential' &&
-              data['credentialDefinitionId'] == resolvedDefinitionId &&
-              data['isEnabled'] == true &&
-              data['hasSecret'] == true;
-        })
-        .map((resource) => resource.resourceId)
-        .toList(growable: false);
-    if (candidates.length == 1) return candidates.single;
 
     throw const ServerToolNotConfiguredException();
   }

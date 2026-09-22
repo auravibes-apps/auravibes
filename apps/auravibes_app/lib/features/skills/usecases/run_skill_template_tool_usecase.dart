@@ -265,47 +265,6 @@ extension on RunSkillTemplateToolUsecase {
     }
     if (!request.requiresCredential) return Future<String?>.value();
 
-    return _implicitCredentialId(request);
-  }
-
-  Future<String> _implicitCredentialId(
-    _CredentialResolutionRequest request,
-  ) async {
-    final credentialDefinitionId = request.credentialDefinitionId;
-    if (credentialDefinitionId == null) {
-      throw StateError('Skill tool requires a credential definition.');
-    }
-
-    final candidates = await _credentialsForDefinition(
-      request.workspaceId,
-      credentialDefinitionId,
-    );
-    final available = _enabledCredentials(candidates, request.workspaceId);
-
-    return _singleCredentialId(available);
-  }
-
-  Future<List<SkillCredentialEntity>> _credentialsForDefinition(
-    String workspaceId,
-    String credentialDefinitionId,
-  ) => _skillCredentialsRepository.getCredentialsForDefinition(
-    workspaceId: workspaceId,
-    credentialDefinitionId: credentialDefinitionId,
-  );
-
-  List<SkillCredentialEntity> _enabledCredentials(
-    List<SkillCredentialEntity> candidates,
-    String workspaceId,
-  ) => candidates
-      .where(
-        (candidate) =>
-            candidate.workspaceId == workspaceId && candidate.isEnabled,
-      )
-      .toList(growable: false);
-
-  String _singleCredentialId(List<SkillCredentialEntity> credentials) {
-    if (credentials.length == 1) return credentials.single.id;
-
     return _missingCredentialId();
   }
 

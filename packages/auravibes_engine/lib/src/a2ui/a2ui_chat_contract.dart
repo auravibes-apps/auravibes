@@ -71,65 +71,122 @@ const supportedA2uiChatComponents = <String>{
 
 const a2uiChatInteractionModes = <String>{'passive', 'requiresUserAction'};
 
+final class A2uiChatPromptProfile {
+  // Normalize iterable inputs while keeping the public named constructor.
+  // ignore: unnecessary_type_name_in_constructor
+  A2uiChatPromptProfile({
+    required Iterable<String> supportedComponentIds,
+    required Iterable<String> interactionModes,
+  }) : supportedComponentIds = Set.unmodifiable(supportedComponentIds),
+       interactionModes = Set.unmodifiable(interactionModes);
+
+  final Set<String> supportedComponentIds;
+  final Set<String> interactionModes;
+}
+
 /// Pure-Dart protocol and catalog rules shared by app and server.
 abstract final class A2uiChatContract {
   static String get systemPrompt =>
       systemPromptForComponents(supportedA2uiChatComponents);
 
   /// Advertises only the components supported by the receiving client.
-  static String systemPromptForComponents(Set<String> supportedComponents) {
-    if (!supportedComponents.any(a2uiChatComponentSchemas.containsKey)) {
-      return '';
-    }
-    return '''
-Use A2UI $a2uiChatWireVersion with one of these catalogs:
-- "$a2uiChatCatalogId" for passive response surfaces only.
-- "$a2uiChatFormCatalogId" for requiresUserAction form surfaces only.
-Wrap each message in protocolVersion "$a2uiChatProtocolVersion" and the
+  static String systemPromptForComponents(Set<String> supportedComponents) =>
+      systemPromptForProfile(
+        A2uiChatPromptProfile(
+          supportedComponentIds: supportedComponents,
+          interactionModes: a2uiChatInteractionModes,
+        ),
+      );
+
+  static String systemPromptForProfile(
+    A2uiChatPromptProfile profile, {
+    bool includeCore = true,
+    bool includeCatalogSchemas = true,
+  }) {
+    final supportedComponents = {
+      for (final component in profile.supportedComponentIds)
+        if (a2uiChatComponentSchemas.containsKey(component)) component,
+    };
+    final interactionModes = profile.interactionModes
+        .where(a2uiChatInteractionModes.contains)
+        .toSet();
+    if (supportedComponents.isEmpty || interactionModes.isEmpty) return '';
+
+    final sections = <String>[
+      if (includeCore)
+        _profileCorePrompt(interactionModes, supportedComponents),
+      if (interactionModes.contains('passive')) _profilePassivePrompt(),
+      if (interactionModes.contains('requiresUserAction'))
+        _profileFormsPrompt(),
+      if (includeCatalogSchemas) _profileCatalogPrompt(supportedComponents),
+    ];
+    return sections.join('\n');
+  }
+
+  static String _profileCorePrompt(
+    Set<String> interactionModes,
+    Set<String> supportedComponents,
+  ) =>
+      '''
+A2UI_CORE_INSTRUCTIONS_START
+Use A2UI $a2uiChatWireVersion with the catalogs selected below:
+${interactionModes.contains('passive') ? '- "$a2uiChatCatalogId" for passive response surfaces only.\n' : ''}${interactionModes.contains('requiresUserAction') ? '- "$a2uiChatFormCatalogId" for requiresUserAction form surfaces only.\n' : ''}Wrap each message in protocolVersion "$a2uiChatProtocolVersion" and the
 interactionMode matching its catalog. Create each logical surface once; use
-updateComponents only to complete or change that surface. Every component
-tree needs one root component. Never stop after createSurface: immediately
+updateComponents only to complete or change that surface. Every component tree
+needs one root component. Never stop after createSurface: immediately
 emit updateComponents for that surface. Emit each envelope as a separate JSON
 object. Never put protocol JSON in ordinary text.
 Form submission is owned by the application. Do not emit component actions;
 the application adds the submit control after the form surface.
-Passive response controls may use literal values or data-model path bindings.
-Form controls must use {"path":"/field"} bindings. Template descendants may
-use relative bindings such as {"path":"label"}. Slider precision is the
-number of decimal places (default 2, minimum 0); slider step defaults to 1.
 Text.text and control labels accept literal strings or data-model path bindings.
 Text is plain text; Markdown formatting is unsupported.
-DateTimeInput values use "YYYY-MM-DD" for date, "HH:mm" for time, and RFC3339
-with an explicit offset or Z for dateTime.
-TextField variant "number" requests a numeric keyboard; it does not filter input.
 Dashboard data accepts literals or {"path":"/field"} root-model bindings.
 Initialize bound values with updateDataModel before referencing them.
 Chart series values must match labels in length. Table rows must match columns
 in width and contain only JSON scalars. Progress values range from 0 to 1.
-
-${supportedComponents.contains('Text') ? '''
+${interactionModes.contains('passive') && supportedComponents.contains('Text') ? '''
 COMPLETE_SURFACE_EXAMPLE_START
 {"protocolVersion":"v1","interactionMode":"passive","message":{"version":"v0.9","createSurface":{"surfaceId":"example","catalogId":"urn:auravibes:a2ui:chat:v1","sendDataModel":false}}}
 {"protocolVersion":"v1","interactionMode":"passive","message":{"version":"v0.9","updateComponents":{"surfaceId":"example","components":[{"id":"root","component":"Text","text":"Example"}]}}}
 COMPLETE_SURFACE_EXAMPLE_END
-''' : ''}
-${supportedComponents.contains('Tabs') && supportedComponents.contains('Text') ? '''
+''' : ''}${interactionModes.contains('passive') && supportedComponents.contains('Tabs') && supportedComponents.contains('Text') ? '''
 BOUND_TABS_EXAMPLE_START
 {"protocolVersion":"v1","interactionMode":"passive","message":{"version":"v0.9","createSurface":{"surfaceId":"bound-tabs","catalogId":"urn:auravibes:a2ui:chat:v1","sendDataModel":false}}}
 {"protocolVersion":"v1","interactionMode":"passive","message":{"version":"v0.9","updateDataModel":{"surfaceId":"bound-tabs","path":"/","value":{"activeTab":0}}}}
 {"protocolVersion":"v1","interactionMode":"passive","message":{"version":"v0.9","updateComponents":{"surfaceId":"bound-tabs","components":[{"id":"root","component":"Tabs","tabs":[{"label":"Overview","content":"overview"},{"label":"Details","content":"details"}],"activeTab":{"path":"/activeTab"}},{"id":"overview","component":"Text","text":"Overview"},{"id":"details","component":"Text","text":"Details"}]}}}
 BOUND_TABS_EXAMPLE_END
-''' : ''}
+''' : ''}A2UI_CORE_INSTRUCTIONS_END
+''';
 
+  static String _profilePassivePrompt() =>
+      '''
+For passive responses, use interactionMode "passive" and catalog
+"$a2uiChatCatalogId". Passive response controls may use literal values or
+data-model path bindings. Use only read-only response surfaces.
+''';
+
+  static String _profileFormsPrompt() =>
+      '''
+For forms, use interactionMode "requiresUserAction" and catalog
+"$a2uiChatFormCatalogId". Form controls must use {"path":"/field"}
+bindings. Template descendants may use relative bindings such as
+{"path":"label"}. Slider precision is the number of decimal places (default 2,
+minimum 0); slider step defaults to 1. DateTimeInput values use "YYYY-MM-DD"
+for date, "HH:mm" for time, and RFC3339 with an explicit offset or Z for
+dateTime. TextField variant "number" requests a numeric keyboard; it does not
+filter input.
+''';
+
+  static String _profileCatalogPrompt(Set<String> supportedComponents) =>
+      '''
 CATALOG_SCHEMA_START
 ${jsonEncode({for (final entry in a2uiChatComponentSchemas.entries)
-      if (supportedComponents.contains(entry.key)) entry.key: entry.value})}
+        if (supportedComponents.contains(entry.key)) entry.key: entry.value})}
 CATALOG_EXAMPLES_START
 ${jsonEncode({for (final entry in a2uiChatComponentExamples.entries)
-      if (supportedComponents.contains(entry.key)) entry.key: entry.value})}
+        if (supportedComponents.contains(entry.key)) entry.key: entry.value})}
 CATALOG_END
 ''';
-  }
 
   static String encodeEnvelope(
     Map<String, Object?> message, {

@@ -132,6 +132,34 @@ void main() {
       expect(capturedRequest?.messages[3].text, 'model part');
     });
 
+    test(
+      'does not inject A2UI prompt when runtime only enables rendering',
+      () async {
+        genkit.ModelRequest? capturedRequest;
+        final runtime = ChatA2uiRuntime(
+          conversationId: 'conversation-1',
+          enabled: true,
+        );
+        final service = _createService(
+          providerFactory: _FakeProviderFactory(
+            onRequest: (request) => capturedRequest = request,
+          ),
+        );
+
+        await service
+            .sendMessage(_makeConfig(), [], a2uiRuntime: runtime)
+            .toList();
+
+        final prompt = capturedRequest!.messages
+            .map((message) => message.text)
+            .join('\n');
+        expect(prompt, isNot(contains(a2uiChatCatalogId)));
+        expect(prompt, isNot(contains(a2uiChatFormCatalogId)));
+        expect(prompt, isNot(contains('CATALOG_SCHEMA_START')));
+        runtime.dispose();
+      },
+    );
+
     test('preserves reasoning emitted before a text chunk', () async {
       final service = _createService(
         providerFactory: _FakeProviderFactory(
@@ -418,6 +446,29 @@ void main() {
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
       expect(results.single.finishReason, ChatFinishReason.other);
+    });
+
+    test('surfaces an error from the final response', () async {
+      final responseError = genkit.RuntimeError(message: 'failed');
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: genkit.ModelResponse(
+            finishReason: genkit.FinishReason.failed,
+            error: responseError,
+          ),
+        ),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(
+          isA<genkit.GenkitException>().having(
+            (error) => error.message,
+            'message',
+            responseError.message,
+          ),
+        ),
+      );
     });
   });
 

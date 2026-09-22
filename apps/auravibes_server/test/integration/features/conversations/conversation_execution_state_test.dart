@@ -588,6 +588,71 @@ void main() {
       );
 
       test(
+        'batch decision rejects a member acting on another user turn',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: 'member',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+          await expectLater(
+            decisionUseCases().submitToolDecisionBatch(
+              fixture.database,
+              userId: memberId,
+              request: SubmitToolDecisionBatchRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-approve-all',
+                decision: 'approve',
+                calls: [
+                  SubmitToolDecisionBatchCall(
+                    conversationId: fixture.conversationId,
+                    turnId: staged.turn.requestId,
+                    toolCallId: staged.toolCallIds.single,
+                    argumentsDigest: 'digest-1',
+                    expectedTurnRevision: 2,
+                    editedArgumentsJson: '{"value":"attacker-controlled"}',
+                  ),
+                ],
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final toolCall = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          expect(toolCall.status, 'pending');
+          expect(toolCall.decision, isNull);
+          expect(toolCall.argumentsJson, '{}');
+        },
+      );
+
+      test(
         'reports stale revision for a second pending decision from one snapshot',
         () async {
           final fixture = await prepareExecution();

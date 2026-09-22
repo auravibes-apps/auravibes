@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/models/usecases/cloud_model_connection_usecases.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 const _cloudModelPollInterval = Duration(minutes: 15);
@@ -16,13 +17,21 @@ const _cloudModelPollInterval = Duration(minutes: 15);
 class CloudModelStore
     with _CloudModelStoreConnectionMethods, _CloudModelStoreSelectionMethods
     implements ModelConnectionStore, ModelSelectionStore {
-  new(this._workspaceId, this._usecases);
+  new(
+    this._workspaceId,
+    this._usecases, {
+    ModelProviderServices? modelProviderServices,
+  }) : _modelProviderServices =
+           modelProviderServices ?? ModelProviderServices();
 
   @override
   final String _workspaceId;
 
   @override
   final CloudModelConnectionUsecases _usecases;
+
+  @override
+  final ModelProviderServices _modelProviderServices;
 
   @override
   Stream<List<ModelConnectionEntity>> watchModelConnections(
@@ -36,12 +45,18 @@ class CloudModelStore
 mixin _CloudModelStoreConnectionMethods {
   String get _workspaceId;
   CloudModelConnectionUsecases get _usecases;
+  ModelProviderServices get _modelProviderServices;
 
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate connection,
   ) async {
+    await _testApiKeyConnection(connection);
     final id = const Uuid().v4();
-    final created = await _createConnection(_usecases, id, connection);
+    final created = await _createConnection(
+      _usecases,
+      id,
+      connection.copyWith(key: connection.key.trim()),
+    );
 
     return _connectionEntity(
       .fromView(created),
@@ -63,6 +78,7 @@ mixin _CloudModelStoreConnectionMethods {
     final existing = await _connectionById(id);
     if (existing == null) throw StateError('Model connection not found: $id');
 
+    await _testUpdatedApiKey(existing, update);
     final updated = await _updateConnection(_usecases, existing, update);
 
     return _connectionEntity(
@@ -82,6 +98,42 @@ mixin _CloudModelStoreConnectionMethods {
     final items = await _usecases.watchConnections().first;
 
     return items.where((item) => item.id == id).firstOrNull;
+  }
+
+  Future<void> _testApiKeyConnection(ModelConnectionToCreate connection) async {
+    if (connection.authMode != ModelProviderAuthMode.apiKey) return;
+
+    final key = connection.key.trim();
+    if (key.isEmpty) throw StateError('Model provider API key is required');
+
+    final models = await _modelProviderServices.getWorkspaceModelSelections(
+      .new(
+        type: .fromString(connection.modelId),
+        key: key,
+        url: connection.url,
+      ),
+    );
+    if (models == null) {
+      throw StateError('Model provider connection test failed');
+    }
+  }
+
+  Future<void> _testUpdatedApiKey(
+    CloudModelConnection existing,
+    ModelConnectionToUpdate update,
+  ) async {
+    final key = update.key;
+    if (key == null || key.trim().isEmpty) return;
+
+    await _testApiKeyConnection(
+      .new(
+        name: existing.name,
+        workspaceId: _workspaceId,
+        modelId: existing.providerId,
+        key: key,
+        url: update.url ?? existing.url,
+      ),
+    );
   }
 }
 
@@ -132,9 +184,14 @@ Future<ModelConnectionView> _updateConnection(
 String? _connectionSecret(ModelConnectionToCreate connection) =>
     connection.authMode == ModelProviderAuthMode.apiKey ? connection.key : null;
 
-String? _updatedSecret(String? key) => key?.isNotEmpty == true ? key : null;
+String? _updatedSecret(String? key) {
+  final trimmed = key?.trim();
 
-bool? _updatedKeyOverride(String? key) => key?.isNotEmpty == true ? true : null;
+  return trimmed?.isNotEmpty == true ? trimmed : null;
+}
+
+bool? _updatedKeyOverride(String? key) =>
+    key?.trim().isNotEmpty == true ? true : null;
 
 ModelConnectionForEdit _modelConnectionForEdit(
   CloudModelConnection item,

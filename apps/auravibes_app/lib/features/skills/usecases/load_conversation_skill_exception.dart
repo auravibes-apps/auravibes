@@ -2,6 +2,7 @@ import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_rep
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
@@ -51,6 +52,7 @@ class const LoadConversationSkillUsecase(
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase,
   final CloudSkillStore? cloudStore,
+  final Future<bool> Function(String conversationId)? _isTopLevelConversation,
 ]) {
   Future<void> call({
     required String conversationId,
@@ -89,9 +91,12 @@ extension on LoadConversationSkillUsecase {
 
 extension on LoadConversationSkillUsecase {
   Future<void> _loadAppSkillBySlug(_AppSkillSlugLoadRequest request) async {
-    final appSkill = _appSkillRegistry.getBySlug(request.slug);
+    final appSkill = _appSkillRegistry.getRuntimeBySlug(request.slug);
     if (appSkill == null) {
       throw StateError('Skill not found for slug: ${request.slug}');
+    }
+    if (appSkill.contentOnly && !await _isTopLevel(request.conversationId)) {
+      throw StateError('Skill unavailable: ${request.slug}');
     }
 
     await _loadAppSkill((
@@ -269,6 +274,7 @@ extension on LoadConversationSkillUsecase {
     AppSkillDefinition skill,
     CloudSkillStore? cloud,
   ) async {
+    if (skill.contentOnly) return;
     final repository = _appSkillSettingsRepository;
     final isEnabled = cloud == null
         ? await (repository ??
@@ -286,6 +292,7 @@ extension on LoadConversationSkillUsecase {
     String workspaceId,
     AppSkillDefinition skill,
   ) async {
+    if (skill.contentOnly) return;
     final usecase = _listAppSkillCredentialCandidatesUsecase;
     if (usecase == null) return;
     if (await usecase.hasUsableNativeTool(
@@ -299,12 +306,20 @@ extension on LoadConversationSkillUsecase {
       LocaleKeys.skills_screen_error_requires_credential,
     );
   }
+
+  Future<bool> _isTopLevel(String conversationId) async {
+    final checker = _isTopLevelConversation;
+    if (checker == null) return false;
+
+    return await checker(conversationId);
+  }
 }
 
 final ProviderFamily<LoadConversationSkillUsecase, String>
 loadConversationSkillUsecaseProvider =
     Provider.family<LoadConversationSkillUsecase, String>((ref, workspaceId) {
       final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+      final conversationRepository = ref.watch(conversationRepositoryProvider);
 
       return LoadConversationSkillUsecase(
         cloud == null ? ref.watch(skillsRepositoryProvider) : null,
@@ -316,5 +331,13 @@ loadConversationSkillUsecaseProvider =
         ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
         ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
         cloud,
+        (conversationId) async {
+          final conversation = await conversationRepository.getConversationById(
+            conversationId,
+          );
+
+          return conversation != null &&
+              conversation.parentConversationId == null;
+        },
       );
     });
