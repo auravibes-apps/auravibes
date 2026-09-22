@@ -540,6 +540,54 @@ void main() {
       });
 
       test(
+        'batch decision handles all pending calls and queues one continuation',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+          final request = SubmitToolDecisionBatchRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'approve-all',
+            decision: 'approve',
+            calls: [
+              for (var index = 0; index < staged.toolCallIds.length; index++)
+                SubmitToolDecisionBatchCall(
+                  conversationId: fixture.conversationId,
+                  turnId: staged.turn.requestId,
+                  toolCallId: staged.toolCallIds[index],
+                  argumentsDigest: 'digest-${index + 1}',
+                  expectedTurnRevision: 2,
+                ),
+            ],
+          );
+
+          final result = await decisionUseCases().submitToolDecisionBatch(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          );
+
+          expect(result.accepted, hasLength(2));
+          expect(result.alreadyHandled, isEmpty);
+          expect(result.conflicted, isEmpty);
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          );
+          expect(calls.map((call) => call.status), everyElement('approved'));
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+          final jobs = await ConversationJob.db.find(
+            fixture.database,
+            where: (table) => table.requestId.like('approve-all:%'),
+          );
+          expect(jobs, hasLength(1));
+        },
+      );
+
+      test(
         'reports stale revision for a second pending decision from one snapshot',
         () async {
           final fixture = await prepareExecution();
