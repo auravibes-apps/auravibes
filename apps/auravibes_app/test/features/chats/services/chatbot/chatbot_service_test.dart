@@ -447,6 +447,29 @@ void main() {
 
       expect(results.single.finishReason, ChatFinishReason.other);
     });
+
+    test('surfaces an error from the final response', () async {
+      final responseError = genkit.RuntimeError(message: 'failed');
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: genkit.ModelResponse(
+            finishReason: genkit.FinishReason.failed,
+            error: responseError,
+          ),
+        ),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(
+          isA<genkit.GenkitException>().having(
+            (error) => error.message,
+            'message',
+            responseError.message,
+          ),
+        ),
+      );
+    });
   });
 
   group('ChatbotService.generateFallbackTitle', () {

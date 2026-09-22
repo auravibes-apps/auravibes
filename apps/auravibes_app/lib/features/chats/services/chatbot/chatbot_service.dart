@@ -157,9 +157,18 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
   responseStream,
 ) async* {
+  final finalResponse = await responseStream.onResult;
+  final responseError = finalResponse.error;
+  if (responseError != null) {
+    throw GenkitException(
+      responseError.message,
+      underlyingException: finalResponse.cause,
+    );
+  }
+
   request.a2uiRuntime?.commitCurrentMessage();
   yield request.service._withA2uiState(
-    request.service._finalChatResult(await responseStream.onResult),
+    request.service._finalChatResult(finalResponse),
     request.a2uiRuntime,
   );
 }
