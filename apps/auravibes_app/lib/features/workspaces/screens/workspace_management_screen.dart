@@ -244,13 +244,6 @@ class const _WorkspaceListSections({
       padding: const EdgeInsets.all(16),
       children: [
         _WorkspaceSearchInput(onChanged: onSearchChanged),
-        if (data.isSearchActive && data.local.isEmpty && data.connected.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16),
-            child: TextLocale(
-              LocaleKeys.workspace_management_no_search_results,
-            ),
-          ),
         _LocalWorkspaceSection(data: data, actions: actions),
         _ConnectedWorkspaceSection(data: data, actions: actions),
         _AvailableCloudWorkspaceSection(data: data, actions: actions),
@@ -575,6 +568,10 @@ class _LocalWorkspaceItems extends StatelessWidget {
     required _WorkspaceListData data,
     required _WorkspaceListActions actions,
   }) : _children = [
+         if (data.local.isEmpty &&
+             data.isSearchActive &&
+             data.connected.isEmpty)
+           const TextLocale(LocaleKeys.workspace_management_no_search_results),
          if (data.local.isEmpty && !data.isSearchActive)
            const TextLocale(LocaleKeys.workspace_management_no_workspaces),
          for (final workspace in data.local)
