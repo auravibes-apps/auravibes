@@ -4,6 +4,54 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('legacy component prompt delegates to the shared profile generator', () {
+    expect(
+      A2uiChatContract.systemPromptForComponents({'Image'}),
+      A2uiChatContract.systemPromptForProfile(
+        A2uiChatPromptProfile(
+          supportedComponentIds: {'Image'},
+          interactionModes: a2uiChatInteractionModes,
+        ),
+      ),
+    );
+  });
+
+  test('partitions the prompt by interaction mode and schema inclusion', () {
+    final passive = A2uiChatContract.systemPromptForProfile(
+      A2uiChatPromptProfile(
+        supportedComponentIds: {'Text'},
+        interactionModes: {'passive'},
+      ),
+    );
+    final forms = A2uiChatContract.systemPromptForProfile(
+      A2uiChatPromptProfile(
+        supportedComponentIds: {'Text', 'TextField'},
+        interactionModes: {'requiresUserAction'},
+      ),
+    );
+
+    expect(passive, contains(a2uiChatCatalogId));
+    expect(passive, isNot(contains(a2uiChatFormCatalogId)));
+    expect(passive, contains('"Text"'));
+    expect(passive, isNot(contains('"TextField"')));
+    expect(forms, contains(a2uiChatFormCatalogId));
+    expect(forms, isNot(contains(a2uiChatCatalogId)));
+    expect(forms, contains('"TextField"'));
+    expect(forms, contains('A2UI_CORE_INSTRUCTIONS_START'));
+    expect(forms, isNot(contains('COMPLETE_SURFACE_EXAMPLE_START')));
+    expect(forms, isNot(contains('BOUND_TABS_EXAMPLE_START')));
+
+    final core = A2uiChatContract.systemPromptForProfile(
+      A2uiChatPromptProfile(
+        supportedComponentIds: supportedA2uiChatComponents,
+        interactionModes: a2uiChatInteractionModes,
+      ),
+      includeCatalogSchemas: false,
+    );
+    expect(core, contains('A2UI_CORE_INSTRUCTIONS_START'));
+    expect(core, isNot(contains('CATALOG_SCHEMA_START')));
+  });
+
   test('advertises canonical icons in the shared prompt', () {
     final properties = a2uiChatComponentSchemas['Icon']!['properties']! as Map;
     expect((properties['name'] as Map)['enum'], a2uiChatIconNames);

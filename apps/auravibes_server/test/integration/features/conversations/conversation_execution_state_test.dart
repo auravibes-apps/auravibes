@@ -10,6 +10,7 @@ import 'package:auravibes_server/src/features/conversations/workers/conversation
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
@@ -538,6 +539,133 @@ void main() {
           isNull,
         );
       });
+
+      test(
+        'batch decision handles all pending calls and queues one continuation',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+          final request = SubmitToolDecisionBatchRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'approve-all',
+            decision: 'approve',
+            calls: [
+              for (var index = 0; index < staged.toolCallIds.length; index++)
+                SubmitToolDecisionBatchCall(
+                  conversationId: fixture.conversationId,
+                  turnId: staged.turn.requestId,
+                  toolCallId: staged.toolCallIds[index],
+                  argumentsDigest: 'digest-${index + 1}',
+                  expectedTurnRevision: 2,
+                ),
+            ],
+          );
+
+          final result = await decisionUseCases().submitToolDecisionBatch(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          );
+
+          expect(result.accepted, hasLength(2));
+          expect(result.alreadyHandled, isEmpty);
+          expect(result.conflicted, isEmpty);
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          );
+          expect(calls.map((call) => call.status), everyElement('approved'));
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+          final jobs = await ConversationJob.db.find(
+            fixture.database,
+            where: (table) => table.requestId.like('approve-all:%'),
+          );
+          expect(jobs, hasLength(1));
+        },
+      );
+
+      test(
+        'batch decision rejects a member acting on another user turn',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'batch-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.submitToolDecisionBatch(
+              memberSession,
+              SubmitToolDecisionBatchRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-approve-all',
+                decision: 'approve',
+                calls: [
+                  SubmitToolDecisionBatchCall(
+                    conversationId: fixture.conversationId,
+                    turnId: staged.turn.requestId,
+                    toolCallId: staged.toolCallIds.single,
+                    argumentsDigest: 'digest-1',
+                    expectedTurnRevision: 2,
+                    editedArgumentsJson: '{"value":"attacker-controlled"}',
+                  ),
+                ],
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final toolCall = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          expect(toolCall.status, 'pending');
+          expect(toolCall.decision, isNull);
+          expect(toolCall.argumentsJson, '{}');
+          expect(toolCall.decisionByUserId, isNull);
+        },
+      );
 
       test(
         'reports stale revision for a second pending decision from one snapshot',

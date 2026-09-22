@@ -125,6 +125,12 @@ import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
 import 'features/conversations/models/stop_conversation_request.dart'
     as _i4cgq7zt;
+import 'features/conversations/models/submit_tool_decision_batch_call.dart'
+    as _ir42bm8f;
+import 'features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _itvwh93k;
+import 'features/conversations/models/submit_tool_decision_batch_result.dart'
+    as _iab6jpet;
 import 'features/conversations/models/submit_tool_decision_request.dart'
     as _inla43mu;
 import 'features/conversations/models/turn_snapshot.dart' as _ih4jnnah;
@@ -341,6 +347,9 @@ export 'features/conversations/models/reorder_pending_conversation_message_reque
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
 export 'features/conversations/models/stop_conversation_request.dart';
+export 'features/conversations/models/submit_tool_decision_batch_call.dart';
+export 'features/conversations/models/submit_tool_decision_batch_request.dart';
+export 'features/conversations/models/submit_tool_decision_batch_result.dart';
 export 'features/conversations/models/submit_tool_decision_request.dart';
 export 'features/conversations/models/turn_snapshot.dart';
 export 'features/conversations/models/update_conversation_request.dart';
@@ -4642,6 +4651,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _i4cgq7zt.StopConversationRequest) {
       return _i4cgq7zt.StopConversationRequest.fromJson(data) as T;
     }
+    if (t == _ir42bm8f.SubmitToolDecisionBatchCall) {
+      return _ir42bm8f.SubmitToolDecisionBatchCall.fromJson(data) as T;
+    }
+    if (t == _itvwh93k.SubmitToolDecisionBatchRequest) {
+      return _itvwh93k.SubmitToolDecisionBatchRequest.fromJson(data) as T;
+    }
+    if (t == _iab6jpet.SubmitToolDecisionBatchResult) {
+      return _iab6jpet.SubmitToolDecisionBatchResult.fromJson(data) as T;
+    }
     if (t == _inla43mu.SubmitToolDecisionRequest) {
       return _inla43mu.SubmitToolDecisionRequest.fromJson(data) as T;
     }
@@ -5248,6 +5266,24 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_ir42bm8f.SubmitToolDecisionBatchCall?>()) {
+      return (data != null
+              ? _ir42bm8f.SubmitToolDecisionBatchCall.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_itvwh93k.SubmitToolDecisionBatchRequest?>()) {
+      return (data != null
+              ? _itvwh93k.SubmitToolDecisionBatchRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_iab6jpet.SubmitToolDecisionBatchResult?>()) {
+      return (data != null
+              ? _iab6jpet.SubmitToolDecisionBatchResult.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_inla43mu.SubmitToolDecisionRequest?>()) {
       return (data != null
               ? _inla43mu.SubmitToolDecisionRequest.fromJson(data)
@@ -5827,6 +5863,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_ir42bm8f.SubmitToolDecisionBatchCall>) {
+      return (data as List)
+              .map((e) => deserialize<_ir42bm8f.SubmitToolDecisionBatchCall>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_igzjg3pi.DiscoveredMcpTool>) {
       return (data as List)
               .map((e) => deserialize<_igzjg3pi.DiscoveredMcpTool>(e))
@@ -6022,6 +6064,11 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
       _i4cgq7zt.StopConversationRequest => 'StopConversationRequest',
+      _ir42bm8f.SubmitToolDecisionBatchCall => 'SubmitToolDecisionBatchCall',
+      _itvwh93k.SubmitToolDecisionBatchRequest =>
+        'SubmitToolDecisionBatchRequest',
+      _iab6jpet.SubmitToolDecisionBatchResult =>
+        'SubmitToolDecisionBatchResult',
       _inla43mu.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
       _ih4jnnah.TurnSnapshot => 'TurnSnapshot',
       _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
@@ -6262,6 +6309,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'StartTurnResult';
       case _i4cgq7zt.StopConversationRequest():
         return 'StopConversationRequest';
+      case _ir42bm8f.SubmitToolDecisionBatchCall():
+        return 'SubmitToolDecisionBatchCall';
+      case _itvwh93k.SubmitToolDecisionBatchRequest():
+        return 'SubmitToolDecisionBatchRequest';
+      case _iab6jpet.SubmitToolDecisionBatchResult():
+        return 'SubmitToolDecisionBatchResult';
       case _inla43mu.SubmitToolDecisionRequest():
         return 'SubmitToolDecisionRequest';
       case _ih4jnnah.TurnSnapshot():
@@ -6665,6 +6718,17 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'StopConversationRequest') {
       return deserialize<_i4cgq7zt.StopConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchCall') {
+      return deserialize<_ir42bm8f.SubmitToolDecisionBatchCall>(data['data']);
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchRequest') {
+      return deserialize<_itvwh93k.SubmitToolDecisionBatchRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchResult') {
+      return deserialize<_iab6jpet.SubmitToolDecisionBatchResult>(data['data']);
     }
     if (dataClassName == 'SubmitToolDecisionRequest') {
       return deserialize<_inla43mu.SubmitToolDecisionRequest>(data['data']);

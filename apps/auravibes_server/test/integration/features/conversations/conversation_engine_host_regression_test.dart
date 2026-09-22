@@ -352,6 +352,66 @@ void main() {
     );
 
     test(
+      'does not inject the A2UI catalog prompt before capability activation',
+      () async {
+        final fixture = await prepare();
+        await configureProvider(fixture);
+        final requests = <Map<String, dynamic>>[];
+        final host = ServerConversationEngineHost(
+          admissionGate: const _ImmediateAdmissionGate(),
+          lookup: (_) async => [InternetAddress('8.8.8.8')],
+          providerTransport: (body) async {
+            requests.add(body);
+            return ProviderTransportResponse(
+              statusCode: 200,
+              body: Stream.value(
+                utf8.encode(
+                  'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n'
+                  'data: [DONE]\n\n',
+                ),
+              ),
+            );
+          },
+        );
+
+        await host.executeTurn(
+          fixture.database,
+          job: fixture.job.copyWith(
+            payloadJson: conversation_repo.conversationTurnJobPayload(
+              fixture.userId,
+              a2uiSupportedComponents: const ['Text'],
+            ),
+          ),
+          turn: fixture.turn,
+          messages: fixture.messages,
+          liveTurns: const _NoopProgressPublisher(),
+        );
+
+        final messages = requests.single['messages'] as List;
+        expect(
+          messages.whereType<Map>().any(
+            (message) =>
+                message['content'] is String &&
+                (message['content'] as String).contains(
+                  a2uiChatCatalogId,
+                ),
+          ),
+          isFalse,
+        );
+        expect(
+          messages.whereType<Map>().any(
+            (message) =>
+                message['content'] is String &&
+                (message['content'] as String).contains(
+                  'CATALOG_SCHEMA_START',
+                ),
+          ),
+          isFalse,
+        );
+      },
+    );
+
+    test(
       'skill activation does not change provider tool schemas',
       () async {
         final fixture = await prepare();
@@ -408,7 +468,7 @@ void main() {
           workspaceId: fixture.workspaceId,
           activeSkillIds: const {},
           isChildConversation: false,
-        )).single.revision;
+        )).singleWhere((entry) => entry.slug == 'research').revision;
 
         final beforeSpecs = [for (final tool in controls) tool.spec];
         final result = await const ServerToolExecutorService().call(
@@ -450,6 +510,113 @@ void main() {
           selectedTools.any((tool) => tool.spec.name.startsWith('skill__')),
           isFalse,
         );
+      },
+    );
+
+    test(
+      'activates content-only A2UI and loads static resources after selection',
+      () async {
+        final fixture = await prepare();
+        final runtime = ServerToolRuntime();
+        final catalog = await buildCloudSkillCatalog(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          activeSkillIds: const {},
+          isChildConversation: false,
+        );
+        final a2uiEntry = catalog.singleWhere(
+          (entry) => entry.slug == a2uiSkillSlug,
+        );
+        expect(a2uiEntry.active, isFalse);
+
+        final childCatalog = await buildCloudSkillCatalog(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          activeSkillIds: const {},
+          isChildConversation: true,
+        );
+        expect(
+          childCatalog.any((entry) => entry.slug == a2uiSkillSlug),
+          isFalse,
+        );
+
+        final optedOutCatalog = await buildCloudSkillCatalog(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          activeSkillIds: const {},
+          isChildConversation: false,
+          a2uiSupportedComponents: const {},
+        );
+        expect(
+          optedOutCatalog.any((entry) => entry.slug == a2uiSkillSlug),
+          isFalse,
+        );
+
+        final controls = await runtime.loadTools(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          conversationStableId: 'conversation-1',
+        );
+        final activate = controls.singleWhere(
+          (tool) => tool.spec.name == activateSkillToolName,
+        );
+        final activated = await const ServerToolExecutorService().call(
+          fixture.database,
+          fixture.turn,
+          activate,
+          ServerToolRequest(
+            id: 'activate-a2ui',
+            name: activateSkillToolName,
+            arguments: {
+              'slug': a2uiSkillSlug,
+              'revision': a2uiEntry.revision,
+            },
+          ),
+        );
+
+        expect(activated, isA<SkillActivationResult>());
+        expect(activated.toString(), contains('<skill_content'));
+        expect(activated.toString(), contains(a2uiCoreResourceSlug));
+        expect(activated.toString(), contains(a2uiPassiveResourceSlug));
+
+        final load = controls.singleWhere(
+          (tool) => tool.spec.name == loadSkillResourceToolName,
+        );
+        final core = await const ServerToolExecutorService().call(
+          fixture.database,
+          fixture.turn,
+          load,
+          const ServerToolRequest(
+            id: 'load-a2ui-core',
+            name: loadSkillResourceToolName,
+            arguments: {
+              'skill': a2uiSkillSlug,
+              'resource': a2uiCoreResourceSlug,
+            },
+          ),
+        );
+        expect(core.toString(), contains('A2UI_CORE_INSTRUCTIONS_START'));
+        expect(core.toString(), isNot(contains('CATALOG_SCHEMA_START')));
+
+        final passive =
+            await ServerToolExecutorService(
+              a2uiSupportedComponents: const {'Text'},
+            ).call(
+              fixture.database,
+              fixture.turn,
+              load,
+              const ServerToolRequest(
+                id: 'load-a2ui-passive',
+                name: loadSkillResourceToolName,
+                arguments: {
+                  'skill': a2uiSkillSlug,
+                  'resource': a2uiPassiveResourceSlug,
+                },
+              ),
+            );
+        expect(passive.toString(), contains('CATALOG_SCHEMA_START'));
+        expect(passive.toString(), contains('"Text"'));
+        expect(passive.toString(), isNot(contains('"TextField"')));
       },
     );
 
@@ -1268,7 +1435,7 @@ void main() {
           workspaceId: fixture.workspaceId,
           activeSkillIds: const {},
           isChildConversation: false,
-        )).single.revision;
+        )).singleWhere((entry) => entry.slug == 'research').revision;
         final eventCount = (await WorkspaceEvent.db.find(
           fixture.database,
           where: (table) => table.workspaceId.equals(fixture.workspaceId),

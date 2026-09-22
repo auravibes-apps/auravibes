@@ -84,6 +84,20 @@ void main() {
     expect(await resolver.get('workspace-1', 'brave', 'missing'), isNull);
   });
 
+  test('resolves internal A2UI resources', () async {
+    const resolver = SkillResourceResolver(null, null, .new());
+
+    final summaries = await resolver.list('workspace-1', 'a2ui');
+    final resource = await resolver.get('workspace-1', 'a2ui', 'a2ui-core');
+
+    expect(summaries.map((summary) => summary.slug), [
+      'a2ui-core',
+      'a2ui-forms',
+      'a2ui-passive',
+    ]);
+    expect(resource?.content, contains('A2UI_CORE_INSTRUCTIONS_START'));
+  });
+
   test('resolves local user resources and handles missing skills', () async {
     final skills = _SkillsRepository();
     final resources = _ResourcesRepository();

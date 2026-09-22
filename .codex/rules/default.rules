@@ -16,6 +16,5 @@ prefix_rule(pattern=["fvm", "flutter", "test"], decision="allow")
 prefix_rule(pattern=["fvm", "flutter", "run", "-d", "web-server"], decision="allow")
 
 # AuraVibes local tooling.
-prefix_rule(pattern=["rm", "-rf", ".dart_tool/hooks_runner"], decision="allow")
 prefix_rule(pattern=["mkdir", "-p", ".agents/skills/speckit-driver", ".agents/skills/speckit-constitution", ".agents/skills/speckit-specify", ".agents/skills/speckit-clarify", ".agents/skills/speckit-plan", ".agents/skills/speckit-tasks", ".agents/skills/speckit-checklist", ".agents/skills/speckit-analyze", ".agents/skills/speckit-implement", ".agents/skills/speckit-taskstoissues"], decision="allow")
 prefix_rule(pattern=["sonar", "analyze", "secrets"], decision="allow")

@@ -286,6 +286,64 @@ void main() {
         verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
       });
 
+      test('preserves existing data when model replacement fails', () async {
+        final database = AppDatabase(
+          connection: DatabaseConnection(NativeDatabase.memory()),
+        );
+        addTearDown(database.close);
+        final repository = ApiModelRepository(database);
+
+        final _ = await database.apiModelProvidersDao.upsertProvider(
+          .insert(id: 'existing-provider', name: 'Existing Provider'),
+        );
+        final _ = await database.apiModelsDao.upsertModel(
+          .insert(
+            modelProvider: 'existing-provider',
+            id: 'existing-model',
+            name: 'Existing Model',
+            limitContext: 128000,
+            limitOutput: 4096,
+          ),
+        );
+        await database.customStatement('''
+          CREATE TRIGGER fail_model_sync
+          BEFORE INSERT ON api_models
+          WHEN NEW.id = 'new-model'
+          BEGIN
+            SELECT RAISE(ABORT, 'forced model sync failure');
+          END;
+        ''');
+
+        await expectLater(
+          repository.replaceAllData(
+            providers: const [
+              ApiModelProviderEntity(
+                id: 'new-provider',
+                name: 'New Provider',
+                type: .openai,
+              ),
+            ],
+            models: const [
+              ApiModelEntity(
+                modelProvider: 'new-provider',
+                id: 'new-model',
+                name: 'New Model',
+                limitContext: 128000,
+                limitOutput: 4096,
+                modalitiesInput: [],
+                modalitiesOutput: [],
+              ),
+            ],
+          ),
+          throwsA(isA<SqliteException>()),
+        );
+
+        final providers = await repository.getAllProviders();
+        final models = await repository.getAllModels();
+        expect(providers.map((provider) => provider.id), ['existing-provider']);
+        expect(models.map((model) => model.id), ['existing-model']);
+      });
+
       test('prunes rows missing from replacement data', () async {
         when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
             .thenAnswer((_) async => [providerRow]);

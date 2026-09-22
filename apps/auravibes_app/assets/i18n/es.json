@@ -71,6 +71,10 @@
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
+      "unsaved_changes_title": "¿Descartar cambios sin guardar?",
+      "unsaved_changes_message": "Tienes cambios sin guardar. ¿Quieres descartarlos?",
+      "discard_changes": "Descartar",
+      "keep_editing": "Seguir editando",
       "back_to_selection": "Volver a la selección de modelo",
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",
@@ -201,6 +205,10 @@
     "title": "Agentes",
     "create": "Crear agente",
     "edit_title": "Editar agente",
+    "unsaved_changes_title": "¿Descartar cambios sin guardar?",
+    "unsaved_changes_message": "Tienes cambios sin guardar. ¿Quieres descartarlos?",
+    "discard_changes": "Descartar",
+    "keep_editing": "Seguir editando",
     "duplicate": "Duplicar agente",
     "duplicate_error": "No se pudo duplicar el agente",
     "load_error": "No se pudieron cargar los agentes",
@@ -387,6 +395,10 @@
       "activity_arguments": "Argumentos",
       "activity_result": "Resultado",
       "activity_open_sub_agent": "Abrir subagente",
+      "active_sub_agents_count": {
+        "one": "1 subagente en ejecución",
+        "other": "{} subagentes en ejecución"
+      },
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",
@@ -712,6 +724,8 @@
   "tool_confirmation": {
     "allow_once": "Permitir una vez",
     "allow_conversation": "Permitir en conversación",
+    "allow_all": "Permitir todo",
+    "deny_all": "Denegar todo",
     "skip": "Omitir",
     "stop_all": "Detener todo"
   },
@@ -824,7 +838,8 @@
     },
     "actions": {
       "cancel": "Cancelar",
-      "save": "Guardar"
+      "save": "Guardar",
+      "reset_defaults": "Restaurar valores predeterminados"
     }
   },
   "more_screen": {
@@ -1011,7 +1026,13 @@
     "name_required_error": "El nombre del espacio de trabajo es obligatorio",
     "name_too_short_error": "El nombre debe tener al menos {min} caracteres",
     "name_too_long_error": "El nombre debe tener como máximo {max} caracteres",
+    "unsaved_changes_title": "¿Descartar cambios sin guardar?",
+    "unsaved_changes_message": "Tienes cambios sin guardar. ¿Quieres descartarlos?",
+    "discard_changes": "Descartar",
+    "keep_editing": "Seguir editando",
     "no_workspaces": "No hay espacios de trabajo disponibles",
+    "search_placeholder": "Buscar espacios de trabajo",
+    "no_search_results": "Ningún espacio de trabajo coincide con tu búsqueda.",
     "switch_title": "¿Cambiar de espacio de trabajo?",
     "switch_confirm": "¿Cambiar a \"{name}\"?",
     "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",

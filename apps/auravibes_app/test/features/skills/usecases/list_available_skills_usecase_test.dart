@@ -18,6 +18,59 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ListAvailableSkillsUsecase', () {
+    test('lists A2UI only for top-level catalog requests', () async {
+      final usecase = ListAvailableSkillsUsecase(
+        const _FakeSkillsRepository([]),
+        const _FakeConversationSkillsRepository([]),
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        null,
+        (conversationId) async => conversationId == 'top-level',
+      );
+
+      final topLevel = await usecase.call(
+        conversationId: 'top-level',
+        workspaceId: 'workspace-1',
+        filter: .catalog,
+      );
+      final selector = await usecase.call(
+        conversationId: 'top-level',
+        workspaceId: 'workspace-1',
+        filter: .selector,
+      );
+      final child = await usecase.call(
+        conversationId: 'child',
+        workspaceId: 'workspace-1',
+        filter: .catalog,
+      );
+
+      expect(topLevel.map((skill) => skill.slug), contains('a2ui'));
+      expect(selector.map((skill) => skill.slug), isNot(contains('a2ui')));
+      expect(child.map((skill) => skill.slug), isNot(contains('a2ui')));
+    });
+
+    test(
+      'fails closed when top-level conversation lookup is unavailable',
+      () async {
+        const usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([]),
+          _FakeConversationSkillsRepository([]),
+          _FakeAppSkillWorkspaceSettingsRepository(),
+          .new(),
+        );
+
+        final skills = await usecase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: .catalog,
+        );
+
+        expect(skills.map((skill) => skill.slug), isNot(contains('a2ui')));
+      },
+    );
+
     test(
       'hides unloaded required-credential skills without credentials',
       () async {
@@ -300,6 +353,99 @@ void main() {
       expect(
         skills.map((skill) => skill.slug),
         isNot(contains('skills_manager')),
+      );
+    });
+
+    test('cloud user-skill readiness follows enabled tool policy', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      final cloud = _cloudStore([
+        _cloudResource(
+          kind: .skill,
+          id: 'missing-tool-credential',
+          data: {
+            'kind': 'template',
+            'title': 'Missing tool credential',
+            'slug': 'missing_tool_credential',
+            'description': 'Description',
+            'content': 'Content',
+            'isEnabled': true,
+            'isCredentialOptional': true,
+          },
+        ),
+        _cloudResource(
+          kind: .skillTemplateTool,
+          id: 'credential-tool',
+          data: {
+            'skillId': 'missing-tool-credential',
+            'templateType': 'url',
+            'title': 'Credential tool',
+            'description': 'Description',
+            'slug': 'credential_tool',
+            'templateJson': '{"url":"https://example.com"}',
+            'inputsJson': '{}',
+            'isEnabled': true,
+            'requiresCredential': true,
+            'credentialDefinitionId': 'missing-definition',
+          },
+        ),
+        _cloudResource(
+          kind: .skill,
+          id: 'credentialless-tool',
+          data: {
+            'kind': 'template',
+            'title': 'Credentialless tool',
+            'slug': 'credentialless_tool',
+            'description': 'Description',
+            'content': 'Content',
+            'isEnabled': true,
+            'isCredentialOptional': false,
+            'credentialDefinitionId': 'missing-definition',
+          },
+        ),
+        _cloudResource(
+          kind: .skillTemplateTool,
+          id: 'public-tool',
+          data: {
+            'skillId': 'credentialless-tool',
+            'templateType': 'url',
+            'title': 'Public tool',
+            'description': 'Description',
+            'slug': 'public_tool',
+            'templateJson': '{"url":"https://example.com"}',
+            'inputsJson': '{}',
+            'isEnabled': true,
+            'requiresCredential': false,
+          },
+        ),
+      ]);
+      final usecase = ListAvailableSkillsUsecase(
+        null,
+        null,
+        null,
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        cloud,
+      );
+
+      final selectable = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: .selector,
+      );
+
+      expect(
+        selectable
+            .singleWhere((skill) => skill.id == 'missing-tool-credential')
+            .credentialReadiness,
+        SkillCredentialReadiness.missing,
+      );
+      expect(
+        selectable
+            .singleWhere((skill) => skill.id == 'credentialless-tool')
+            .credentialReadiness,
+        SkillCredentialReadiness.ready,
       );
     });
 

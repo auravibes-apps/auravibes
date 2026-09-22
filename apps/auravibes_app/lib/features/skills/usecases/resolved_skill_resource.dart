@@ -35,7 +35,7 @@ class const SkillResourceResolver(
     String workspaceId,
     String skillSlug,
   ) async {
-    final appSkill = _appSkillRegistry.getBySlug(skillSlug);
+    final appSkill = _appSkillRegistry.getRuntimeBySlug(skillSlug);
     if (appSkill != null) {
       return appSkill.resources
           .map((resource) => resource.summary)
@@ -53,7 +53,7 @@ class const SkillResourceResolver(
     String skillSlug,
     String resourceSlug,
   ) async {
-    final appSkill = _appSkillRegistry.getBySlug(skillSlug);
+    final appSkill = _appSkillRegistry.getRuntimeBySlug(skillSlug);
     if (appSkill != null) return _appResource(appSkill, resourceSlug);
 
     return await _userResource(workspaceId, skillSlug, resourceSlug);

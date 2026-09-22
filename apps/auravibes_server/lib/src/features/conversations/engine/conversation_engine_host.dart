@@ -60,6 +60,13 @@ typedef ConversationHostLookup = Future<List<InternetAddress>> Function(
   String host,
 );
 
+typedef _CloudSkillCatalogCandidate = ({
+  String id,
+  String slug,
+  String title,
+  String description,
+});
+
 String providerCredential(String providerId, String secret) {
   if (providerId != 'openai-codex') return secret;
   final value = jsonDecode(secret);
@@ -90,6 +97,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   required int workspaceId,
   required Iterable<String> activeSkillIds,
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) async {
   final resources = await WorkspaceResource.db.find(
     session,
@@ -140,53 +148,14 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         },
       )
       .toList(growable: false);
-  final candidates =
-      <
-        ({
-          String id,
-          String slug,
-          String title,
-          String description,
-        })
-      >[];
-  for (final skill in userSkills) {
-    final id = skill['id'];
-    final slug = skill['slug'];
-    final title = skill['title'];
-    if (id is! String ||
-        slug is! String ||
-        title is! String ||
-        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: id,
-      slug: slug,
-      title: title,
-      description: skill['description'] as String? ?? '',
-    ));
-  }
-  if (!isChildConversation &&
-      cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
-    candidates.add((
-      id: agentsSkillSlug,
-      slug: agentsSkillSlug,
-      title: agentsSkillTitle,
-      description: '',
-    ));
-  }
-  for (final skill in serviceSkillDefinitions) {
-    if (!cloudAppSkillEnabled(skill.identifier, appSkillSettings) ||
-        !cloudServiceSkillReady(skill, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: skill.identifier,
-      slug: skill.slug,
-      title: skill.title,
-      description: skill.description,
-    ));
-  }
+  final candidates = _cloudSkillCatalogCandidates(
+    userSkills: userSkills,
+    templateTools: templateTools,
+    serviceConnections: serviceConnections,
+    appSkillSettings: appSkillSettings,
+    isChildConversation: isChildConversation,
+    a2uiSupportedComponents: a2uiSupportedComponents,
+  );
   final candidateIds = candidates.map((candidate) => candidate.id).toSet();
   final tools = materializeCloudSkillTools(
     selectedSkillIds: candidateIds,
@@ -218,6 +187,93 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   }
   return entries..sort((left, right) => left.slug.compareTo(right.slug));
 }
+
+List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
+}) {
+  final candidates = <_CloudSkillCatalogCandidate>[
+    ..._cloudUserSkillCatalogCandidates(
+      userSkills: userSkills,
+      templateTools: templateTools,
+      serviceConnections: serviceConnections,
+    ),
+    if (!isChildConversation &&
+        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
+      (
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+      ),
+    ..._cloudServiceSkillCatalogCandidates(
+      appSkillSettings: appSkillSettings,
+      serviceConnections: serviceConnections,
+    ),
+  ];
+  if (!isChildConversation &&
+      (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty)) {
+    candidates.addAll(
+      internalAppSkillDefinitions
+          .where((skill) => skill.contentOnly)
+          .map(
+            (skill) => (
+              id: skill.identifier,
+              slug: skill.slug,
+              title: skill.title,
+              description: skill.description,
+            ),
+          ),
+    );
+  }
+  return candidates;
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) sync* {
+  for (final skill in userSkills) {
+    final id = skill['id'];
+    final slug = skill['slug'];
+    final title = skill['title'];
+    if (id is! String ||
+        slug is! String ||
+        title is! String ||
+        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+      continue;
+    }
+    yield (
+      id: id,
+      slug: slug,
+      title: title,
+      description: skill['description'] as String? ?? '',
+    );
+  }
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => serviceSkillDefinitions
+    .where(
+      (skill) =>
+          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections),
+    )
+    .map(
+      (skill) => (
+        id: skill.identifier,
+        slug: skill.slug,
+        title: skill.title,
+        description: skill.description,
+      ),
+    );
 
 List<Map<String, dynamic>> cloudRequestMessagesWithToolExchanges({
   required Iterable<Map<String, dynamic>> baseMessages,
@@ -435,7 +491,14 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversation.stableId,
       a2uiSupportedComponents: a2uiComponents,
     );
-    requestMessages.insertAll(0, await _agentContextMessages(session, job));
+    requestMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiComponents,
+      ),
+    );
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
@@ -454,7 +517,11 @@ final class const ServerConversationEngineHost({
     final a2uiDecoder = A2uiTextDecoder();
     final runtime =
         toolRuntime ??
-        ServerToolRuntime(executor: const ServerToolExecutorService().call);
+        ServerToolRuntime(
+          executor: ServerToolExecutorService(
+            a2uiSupportedComponents: a2uiComponents,
+          ).call,
+        );
     final assistantStableId = turn.assistantMessageId == null
         ? null
         : (await ConversationMessage.db.findById(
@@ -497,26 +564,32 @@ final class const ServerConversationEngineHost({
         )
         .toList(growable: false);
     if (resumedCalls.isNotEmpty) {
-      final awaitingSubAgentToolCallIds = <String>[];
-      var awaitingApproval = false;
-      for (final call in replayableCalls) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: ServerToolRequest(
-            id: call.stableId,
-            name: call.name,
-            arguments: _jsonObject(call.argumentsJson),
-            userFacingDescription: call.userFacingDescription,
+      final dispositions = await Future.wait(
+        replayableCalls.map(
+          (call) async => (
+            call: call,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: ServerToolRequest(
+                id: call.stableId,
+                name: call.name,
+                arguments: _jsonObject(call.argumentsJson),
+                userFacingDescription: call.userFacingDescription,
+              ),
+            ),
           ),
-        );
-        if (disposition == ServerToolDisposition.awaitingApproval) {
-          awaitingApproval = true;
-        } else if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(call.stableId);
-        }
-      }
+        ),
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.call.stableId,
+      ];
+      final awaitingApproval = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         return ConversationEngineResult(
           content: '',
@@ -732,20 +805,27 @@ final class const ServerConversationEngineHost({
         requests: describedRequests,
       );
 
-      var paused = false;
-      final awaitingSubAgentToolCallIds = <String>[];
-      for (final request in describedRequests) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: request,
-        );
-        paused |= disposition == ServerToolDisposition.awaitingApproval;
-        if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(request.id);
-        }
-      }
+      final dispositions = await Future.wait(
+        describedRequests.map(
+          (request) async => (
+            request: request,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: request,
+            ),
+          ),
+        ),
+      );
+      final paused = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.request.id,
+      ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         await response.close();
         return ConversationEngineResult(
@@ -910,7 +990,14 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversationStableId,
       a2uiSupportedComponents: a2uiSupportedComponents,
     );
-    baseMessages.insertAll(0, await _agentContextMessages(session, job));
+    baseMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiSupportedComponents,
+      ),
+    );
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
       toolExchanges: toolExchanges,
@@ -919,8 +1006,9 @@ final class const ServerConversationEngineHost({
 
   Future<List<Map<String, dynamic>>> _agentContextMessages(
     Session session,
-    ConversationJob job,
-  ) async {
+    ConversationJob job, {
+    Set<String>? a2uiSupportedComponents,
+  }) async {
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,
@@ -951,6 +1039,7 @@ final class const ServerConversationEngineHost({
       workspaceId: job.workspaceId,
       activeSkillIds: {...conversationSkillIds, ...agentContext.skillIds},
       isChildConversation: conversation.parentConversationStableId != null,
+      a2uiSupportedComponents: a2uiSupportedComponents,
     );
     final messages = [
       {'role': 'system', 'content': toolCallNarrationInstruction},
@@ -965,16 +1054,6 @@ final class const ServerConversationEngineHost({
         ),
       ),
     ];
-    final a2uiComponents = cloudA2uiSupportedComponents(
-      job.payloadJson,
-      isChildConversation: conversation.parentConversationStableId != null,
-    );
-    if (a2uiComponents.isNotEmpty) {
-      messages.insert(0, {
-        'role': 'system',
-        'content': A2uiChatContract.systemPromptForComponents(a2uiComponents),
-      });
-    }
     return messages;
   }
 

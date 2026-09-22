@@ -13,6 +13,176 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('activates A2UI without tools or credential lookup', () async {
+    final load = _LoadRecorder();
+    var credentialCalls = 0;
+    var resourceSummaryCalls = 0;
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _LoadedSkills(
+        skills: const [
+          AvailableSkill(
+            source: SkillSource.app,
+            id: 'a2ui',
+            slug: 'a2ui',
+            title: 'A2UI',
+            description: 'UI surfaces.',
+            content: 'Load A2UI resources when needed.',
+            kind: .native,
+          ),
+        ],
+      ),
+      loadConversationSkillUsecase: (_) => load,
+      buildLoadedSkillManifestsUsecase: _A2uiManifests(),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials:
+          ({
+            required conversationId,
+            required workspaceId,
+            required arguments,
+          }) async {
+            credentialCalls++;
+
+            return const {};
+          },
+      listSkillResourceSummaries:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+          }) async {
+            resourceSummaryCalls++;
+
+            return const [
+              SkillResourceSummary(
+                slug: 'a2ui-passive',
+                title: 'Passive',
+                description: 'Passive surfaces.',
+              ),
+              SkillResourceSummary(
+                slug: 'a2ui-core',
+                title: 'Core',
+                description: 'Core protocol.',
+              ),
+              SkillResourceSummary(
+                slug: 'a2ui-forms',
+                title: 'Forms',
+                description: 'Form surfaces.',
+              ),
+            ];
+          },
+    );
+
+    final result = await usecase.call((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      commandName: activateSkillToolName,
+      arguments: const {'slug': 'a2ui', 'revision': 'a2ui-r1'},
+    ));
+
+    expect(result, isA<SkillActivationResult>());
+    final activation = result;
+    if (activation is! SkillActivationResult) {
+      fail('Expected a skill activation result');
+    }
+    expect(
+      activation.value.indexOf('a2ui-core'),
+      lessThan(activation.value.indexOf('a2ui-forms')),
+    );
+    expect(
+      activation.value.indexOf('a2ui-forms'),
+      lessThan(activation.value.indexOf('a2ui-passive')),
+    );
+    expect(load.calls, 1);
+    expect(credentialCalls, 0);
+    expect(resourceSummaryCalls, 1);
+  });
+
+  test('loads A2UI resource through the generic bounded result', () async {
+    var contentCalls = 0;
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
+      loadConversationSkillUsecase: (_) => _UnusedLoad(),
+      buildLoadedSkillManifestsUsecase: _A2uiManifests(),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      loadSkillResourceContent:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+            required resourceSlug,
+          }) async {
+            contentCalls++;
+
+            return (title: 'A2UI core', content: 'before ]]> after');
+          },
+    );
+
+    final result = await usecase.call((
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+      commandName: loadSkillResourceToolName,
+      arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
+    ));
+
+    expect(result, isA<SkillResourceResult>());
+    if (result is! SkillResourceResult) {
+      fail('Expected a skill resource result');
+    }
+    expect(result.value, contains('before ]]]]><![CDATA[> after'));
+    expect(contentCalls, 1);
+  });
+
+  test('requires parent activation before loading an A2UI resource', () async {
+    var contentCalls = 0;
+    final usecase = RunSkillCommandUsecase(
+      listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
+      loadConversationSkillUsecase: (_) => _UnusedLoad(),
+      buildLoadedSkillManifestsUsecase: _EmptyManifests(),
+      buildSkillTemplateToolSpecsUsecase: _UnusedTemplateSpecs(),
+      buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
+      runSkillTemplateToolUsecase: _TemplateRunner(),
+      runAppSkillToolUsecase: _NativeRunner(),
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
+      loadSkillResourceContent:
+          ({
+            required conversationId,
+            required workspaceId,
+            required skillSlug,
+            required resourceSlug,
+          }) async {
+            contentCalls++;
+
+            return (title: 'A2UI core', content: 'not authorized');
+          },
+    );
+
+    await expectLater(
+      usecase.call((
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        commandName: loadSkillResourceToolName,
+        arguments: const {'skill': 'a2ui', 'resource': 'a2ui-core'},
+      )),
+      throwsStateError,
+    );
+    expect(contentCalls, 0);
+  });
+
   test('activates a catalog skill and returns its body envelope', () async {
     final load = _LoadRecorder();
     final credentialCalls = <Map<String, dynamic>>[];
@@ -436,6 +606,32 @@ class _Manifests({final bool credentialRequired = false})
       ],
     ),
   ];
+}
+
+class _A2uiManifests implements BuildLoadedSkillManifestsUsecase {
+  @override
+  Future<List<SkillManifest>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async => [
+    SkillManifest(
+      slug: 'a2ui',
+      title: 'A2UI',
+      description: 'UI surfaces.',
+      revision: 'a2ui-r1',
+      tools: [],
+    ),
+  ];
+}
+
+class _EmptyManifests implements BuildLoadedSkillManifestsUsecase {
+  @override
+  Future<List<SkillManifest>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async => const [];
 }
 
 class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {

@@ -82,6 +82,14 @@ abstract class LocaleKeys {
       'models_screens.add_provider.open_button';
   static const models_screens_add_provider_title =
       'models_screens.add_provider.title';
+  static const models_screens_add_provider_unsaved_changes_title =
+      'models_screens.add_provider.unsaved_changes_title';
+  static const models_screens_add_provider_unsaved_changes_message =
+      'models_screens.add_provider.unsaved_changes_message';
+  static const models_screens_add_provider_discard_changes =
+      'models_screens.add_provider.discard_changes';
+  static const models_screens_add_provider_keep_editing =
+      'models_screens.add_provider.keep_editing';
   static const models_screens_add_provider_back_to_selection =
       'models_screens.add_provider.back_to_selection';
   static const models_screens_add_provider_create_button =
@@ -267,6 +275,11 @@ abstract class LocaleKeys {
   static const agents_title = 'agents.title';
   static const agents_create = 'agents.create';
   static const agents_edit_title = 'agents.edit_title';
+  static const agents_unsaved_changes_title = 'agents.unsaved_changes_title';
+  static const agents_unsaved_changes_message =
+      'agents.unsaved_changes_message';
+  static const agents_discard_changes = 'agents.discard_changes';
+  static const agents_keep_editing = 'agents.keep_editing';
   static const agents_duplicate = 'agents.duplicate';
   static const agents_duplicate_error = 'agents.duplicate_error';
   static const agents_load_error = 'agents.load_error';
@@ -546,6 +559,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_result';
   static const chats_screens_chat_conversation_activity_open_sub_agent =
       'chats_screens.chat_conversation.activity_open_sub_agent';
+  static const chats_screens_chat_conversation_active_sub_agents_count =
+      'chats_screens.chat_conversation.active_sub_agents_count';
   static const chats_screens_chat_conversation_tool_resolution_status =
       'chats_screens.chat_conversation.tool_resolution_status';
   static const chats_screens_chat_conversation_queued_messages_count =
@@ -952,6 +967,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';
+  static const tool_confirmation_allow_all = 'tool_confirmation.allow_all';
+  static const tool_confirmation_deny_all = 'tool_confirmation.deny_all';
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
@@ -1056,6 +1073,8 @@ abstract class LocaleKeys {
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
   static const settings_screen_actions_save = 'settings_screen.actions.save';
+  static const settings_screen_actions_reset_defaults =
+      'settings_screen.actions.reset_defaults';
   static const more_screen_title = 'more_screen.title';
   static const more_screen_workspaces_title = 'more_screen.workspaces.title';
   static const more_screen_workspaces_subtitle =
@@ -1266,8 +1285,20 @@ abstract class LocaleKeys {
       'workspace_management.name_too_short_error';
   static const workspace_management_name_too_long_error =
       'workspace_management.name_too_long_error';
+  static const workspace_management_unsaved_changes_title =
+      'workspace_management.unsaved_changes_title';
+  static const workspace_management_unsaved_changes_message =
+      'workspace_management.unsaved_changes_message';
+  static const workspace_management_discard_changes =
+      'workspace_management.discard_changes';
+  static const workspace_management_keep_editing =
+      'workspace_management.keep_editing';
   static const workspace_management_no_workspaces =
       'workspace_management.no_workspaces';
+  static const workspace_management_search_placeholder =
+      'workspace_management.search_placeholder';
+  static const workspace_management_no_search_results =
+      'workspace_management.no_search_results';
   static const workspace_management_switch_title =
       'workspace_management.switch_title';
   static const workspace_management_switch_confirm =

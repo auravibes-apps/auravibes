@@ -187,6 +187,11 @@ fvm flutter run -d linux --flavor prod
 - **Localization**: [Easy Localization](https://pub.dev/packages/easy_localization)
 - **Code Generation**: [Build Runner](https://pub.dev/packages/build_runner), [Freezed](https://pub.dev/packages/freezed)
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, development, testing, and
+pull request guidelines.
+
 ---
 
 Made with ❤️ using Flutter
