@@ -38,6 +38,16 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
 class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
     with _CreateWorkspaceFormActions {
   static const _localTarget = '';
+  static const _unsavedChangesTitle = TextLocale(
+    LocaleKeys.workspace_management_unsaved_changes_title,
+  );
+  static const _unsavedChangesMessage = TextLocale(
+    LocaleKeys.workspace_management_unsaved_changes_message,
+  );
+  static const _discardChangesActions = AuraConfirmDialogActions(
+    confirmLabel: TextLocale(LocaleKeys.workspace_management_discard_changes),
+    cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
+  );
 
   final _name = TextEditingController();
   String _targetAccountId = _localTarget;
@@ -60,7 +70,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
+    return _DirtyPopScope(
       child: _CreateWorkspaceAccountView(
         accounts: ref.watch(cloudAccountsProvider),
         name: _name,
@@ -72,9 +82,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
         onCreate: _create,
       ),
       canPop: !_isDirty,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_confirmBack());
-      },
+      onPop: _confirmBack,
     );
   }
 
@@ -90,18 +98,9 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   Future<void> _confirmBack() async {
     final shouldDiscard = await AuraDialogs.confirm(
       context: context,
-      title: const TextLocale(
-        LocaleKeys.workspace_management_unsaved_changes_title,
-      ),
-      message: const TextLocale(
-        LocaleKeys.workspace_management_unsaved_changes_message,
-      ),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(
-          LocaleKeys.workspace_management_discard_changes,
-        ),
-        cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
-      ),
+      title: _unsavedChangesTitle,
+      message: _unsavedChangesMessage,
+      actions: _discardChangesActions,
       isDestructive: true,
     );
     if (shouldDiscard != true || !mounted) return;
@@ -122,15 +121,11 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
     if (_isCreating) return;
 
     final name = _name.text.trim();
-    _startCreating();
-    await _runCreate(name);
-  }
-
-  void _startCreating() {
     setState(() {
       _isCreating = true;
       _errorText = null;
     });
+    await _runCreate(name);
   }
 
   Future<void> _runCreate(String name) async {
@@ -162,6 +157,21 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
 
     return await useCases.create(name);
   }
+}
+
+class const _DirtyPopScope({
+  required final Widget child,
+  required final bool canPop,
+  required final Future<void> Function() onPop,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopScope(
+    child: child,
+    canPop: canPop,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) unawaited(onPop());
+    },
+  );
 }
 
 mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
