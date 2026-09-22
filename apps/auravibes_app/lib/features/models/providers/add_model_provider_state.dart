@@ -135,10 +135,6 @@ extension AddModelProviderStateFields on AddModelProviderState {
   }
 }
 
-extension AddModelProviderModelFields on AddModelProviderModel {
-  bool get hasUnsavedChanges => this != const AddModelProviderModel();
-}
-
 extension AddModelProviderStateActions on AddModelProviderState {
   Future<ModelConnectionEntity?> addModelProvider({
     CodexOAuthMethod? codexOAuthMethod,

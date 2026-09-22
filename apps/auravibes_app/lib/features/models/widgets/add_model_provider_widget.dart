@@ -36,6 +36,33 @@ const String _oauthWaitingKey =
 const String _cancelConnectionKey =
     LocaleKeys.models_screens_add_provider_cancel_connection;
 
+typedef _ModelProviderPopRequest = ({
+  bool didPop,
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCancel,
+});
+typedef _ModelProviderPopContext = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCancel,
+});
+
+const _discardModelProviderChangesTitle = TextLocale(
+  LocaleKeys.models_screens_add_provider_unsaved_changes_title,
+);
+const _discardModelProviderChangesMessage = TextLocale(
+  LocaleKeys.models_screens_add_provider_unsaved_changes_message,
+);
+const _discardModelProviderChangesActions = AuraConfirmDialogActions(
+  confirmLabel: TextLocale(
+    LocaleKeys.models_screens_add_provider_discard_changes,
+  ),
+  cancelLabel: TextLocale(LocaleKeys.models_screens_add_provider_keep_editing),
+);
+
 class const AddModelProviderWidget({
   required final String workspaceId,
   super.key,
@@ -49,11 +76,6 @@ class const AddModelProviderWidget({
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDirty = ref.watch(
-      addModelProviderStateProvider(workspaceId)
-          .select((value) => value.hasUnsavedChanges),
-    );
-
     return PopScope(
       child: _AddModelProviderContent(
         workspaceId: workspaceId,
@@ -61,36 +83,52 @@ class const AddModelProviderWidget({
         onCreated: onCreated,
         onCancel: onCancel,
       ),
-      canPop: !isDirty,
-      onPopInvokedWithResult: (didPop, _) => _handleModelProviderPop(
-        didPop: didPop,
+      canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
+      onPopInvokedWithResult: _modelProviderPopCallback((
         context: context,
         ref: ref,
         workspaceId: workspaceId,
         onCancel: onCancel,
-      ),
+      )),
     );
   }
 }
 
-void _handleModelProviderPop({
-  required bool didPop,
-  required BuildContext context,
-  required WidgetRef ref,
-  required String workspaceId,
-  VoidCallback? onCancel,
-}) {
-  if (didPop) return;
+PopInvokedWithResultCallback<Object?> _modelProviderPopCallback(
+  _ModelProviderPopContext request,
+) =>
+    (didPop, _) => _handleModelProviderPop((
+      didPop: didPop,
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCancel: request.onCancel,
+    ));
+
+void _handleModelProviderPop(_ModelProviderPopRequest request) {
+  if (request.didPop) return;
 
   unawaited(
     _closeModelProviderForm(
-      context: context,
-      ref: ref,
-      workspaceId: workspaceId,
-      onCancel: onCancel,
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCancel: request.onCancel,
     ),
   );
 }
+
+bool _watchHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
+    ref.watch(
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.hasUnsavedChanges),
+    );
+
+bool _readHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
+    ref.read(
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.hasUnsavedChanges),
+    );
 
 class const _AddModelProviderContent({
   required final String workspaceId,
@@ -273,11 +311,12 @@ VoidCallback _modelProviderSelectionBackCallback(
         context: request.context,
         ref: request.ref,
         workspaceId: request.workspaceId,
-        onDiscard: () => request.ref
-            .read(addModelProviderStateProvider(request.workspaceId).notifier)
-            .reset(),
+        onDiscard: _resetModelProviderState(request.ref, request.workspaceId),
       ),
     );
+
+VoidCallback _resetModelProviderState(WidgetRef ref, String workspaceId) =>
+    () => ref.read(addModelProviderStateProvider(workspaceId).notifier).reset();
 
 Future<void> _closeModelProviderForm({
   required BuildContext context,
@@ -318,32 +357,16 @@ Future<bool> _confirmModelProviderDiscard(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final isDirty = ref.read(
-    addModelProviderStateProvider(workspaceId)
-        .select((value) => value.hasUnsavedChanges),
-  );
-  if (!isDirty) return true;
+  if (!_readHasUnsavedModelProviderChanges(ref, workspaceId)) return true;
 
-  final confirmed = await AuraDialogs.confirm(
-    context: context,
-    title: const TextLocale(
-      LocaleKeys.models_screens_add_provider_unsaved_changes_title,
-    ),
-    message: const TextLocale(
-      LocaleKeys.models_screens_add_provider_unsaved_changes_message,
-    ),
-    actions: const AuraConfirmDialogActions(
-      confirmLabel: TextLocale(
-        LocaleKeys.models_screens_add_provider_discard_changes,
-      ),
-      cancelLabel: TextLocale(
-        LocaleKeys.models_screens_add_provider_keep_editing,
-      ),
-    ),
-    isDestructive: true,
-  );
-
-  return confirmed == true;
+  return await AuraDialogs.confirm(
+        context: context,
+        title: _discardModelProviderChangesTitle,
+        message: _discardModelProviderChangesMessage,
+        actions: _discardModelProviderChangesActions,
+        isDestructive: true,
+      ) ==
+      true;
 }
 
 VoidCallback _addModelProviderSubmitCallback(
