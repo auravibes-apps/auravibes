@@ -89,6 +89,10 @@ class AddModelProviderState extends _$AddModelProviderState {
 }
 
 extension AddModelProviderStateFields on AddModelProviderState {
+  void reset() {
+    _value = const AddModelProviderModel();
+  }
+
   void setName(String newName) {
     _value = _value.copyWith(name: newName);
   }

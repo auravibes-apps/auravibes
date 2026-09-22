@@ -36,6 +36,33 @@ const String _oauthWaitingKey =
 const String _cancelConnectionKey =
     LocaleKeys.models_screens_add_provider_cancel_connection;
 
+typedef _ModelProviderPopRequest = ({
+  bool didPop,
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCancel,
+});
+typedef _ModelProviderPopContext = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  VoidCallback? onCancel,
+});
+
+const _discardModelProviderChangesTitle = TextLocale(
+  LocaleKeys.models_screens_add_provider_unsaved_changes_title,
+);
+const _discardModelProviderChangesMessage = TextLocale(
+  LocaleKeys.models_screens_add_provider_unsaved_changes_message,
+);
+const _discardModelProviderChangesActions = AuraConfirmDialogActions(
+  confirmLabel: TextLocale(
+    LocaleKeys.models_screens_add_provider_discard_changes,
+  ),
+  cancelLabel: TextLocale(LocaleKeys.models_screens_add_provider_keep_editing),
+);
+
 class const AddModelProviderWidget({
   required final String workspaceId,
   super.key,
@@ -48,13 +75,60 @@ class const AddModelProviderWidget({
       LocaleKeys.models_screens_add_provider_search_no_models_found;
 
   @override
-  Widget build(BuildContext context, WidgetRef _) => _AddModelProviderContent(
-    workspaceId: workspaceId,
-    showHeader: showHeader,
-    onCreated: onCreated,
-    onCancel: onCancel,
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopScope(
+      child: _AddModelProviderContent(
+        workspaceId: workspaceId,
+        showHeader: showHeader,
+        onCreated: onCreated,
+        onCancel: onCancel,
+      ),
+      canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
+      onPopInvokedWithResult: _modelProviderPopCallback((
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        onCancel: onCancel,
+      )),
+    );
+  }
+}
+
+PopInvokedWithResultCallback<Object?> _modelProviderPopCallback(
+  _ModelProviderPopContext request,
+) =>
+    (didPop, _) => _handleModelProviderPop((
+      didPop: didPop,
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCancel: request.onCancel,
+    ));
+
+void _handleModelProviderPop(_ModelProviderPopRequest request) {
+  if (request.didPop) return;
+
+  unawaited(
+    _closeModelProviderForm(
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      onCancel: request.onCancel,
+    ),
   );
 }
+
+bool _watchHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
+    ref.watch(
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.hasUnsavedChanges),
+    );
+
+bool _readHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
+    ref.read(
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.hasUnsavedChanges),
+    );
 
 class const _AddModelProviderContent({
   required final String workspaceId,
@@ -209,15 +283,91 @@ _AddModelProviderFormCallbacks _addModelProviderFormCallbacks(
   _AddModelProviderFormRequest request,
   _CodexOAuthState state,
 ) => _AddModelProviderFormCallbacks(
-  onClose: request.onCancel ?? _closeModelProviderForm(request.context),
+  onClose: _closeModelProviderFormCallback(request),
+  onModelBack: _modelProviderSelectionBackCallback(request),
   onSubmit: _addModelProviderSubmitCallback(request),
   onCancelCodexOAuth: () => _cancelCodexOAuth(state),
   onCodexBrowserSubmit: _addModelProviderBrowserCallback(request, state),
   onCodexDeviceSubmit: _addModelProviderDeviceCallback(request, state),
 );
 
-VoidCallback _closeModelProviderForm(BuildContext context) =>
-    () => Navigator.of(context).pop();
+VoidCallback _closeModelProviderFormCallback(
+  _AddModelProviderFormRequest request,
+) =>
+    () => unawaited(
+      _closeModelProviderForm(
+        context: request.context,
+        ref: request.ref,
+        workspaceId: request.workspaceId,
+        onCancel: request.onCancel,
+      ),
+    );
+
+VoidCallback _modelProviderSelectionBackCallback(
+  _AddModelProviderFormRequest request,
+) =>
+    () => unawaited(
+      _runAfterModelProviderDiscard(
+        context: request.context,
+        ref: request.ref,
+        workspaceId: request.workspaceId,
+        onDiscard: _resetModelProviderState(request.ref, request.workspaceId),
+      ),
+    );
+
+VoidCallback _resetModelProviderState(WidgetRef ref, String workspaceId) =>
+    () => ref.read(addModelProviderStateProvider(workspaceId).notifier).reset();
+
+Future<void> _closeModelProviderForm({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  VoidCallback? onCancel,
+}) => _runAfterModelProviderDiscard(
+  context: context,
+  ref: ref,
+  workspaceId: workspaceId,
+  onDiscard: () {
+    if (onCancel case final callback?) {
+      callback();
+
+      return;
+    }
+
+    Navigator.of(context).pop();
+  },
+);
+
+Future<void> _runAfterModelProviderDiscard({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required VoidCallback onDiscard,
+}) async {
+  if (!await _confirmModelProviderDiscard(context, ref, workspaceId) ||
+      !context.mounted) {
+    return;
+  }
+
+  onDiscard();
+}
+
+Future<bool> _confirmModelProviderDiscard(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+) async {
+  if (!_readHasUnsavedModelProviderChanges(ref, workspaceId)) return true;
+
+  return await AuraDialogs.confirm(
+        context: context,
+        title: _discardModelProviderChangesTitle,
+        message: _discardModelProviderChangesMessage,
+        actions: _discardModelProviderChangesActions,
+        isDestructive: true,
+      ) ==
+      true;
+}
 
 VoidCallback _addModelProviderSubmitCallback(
   _AddModelProviderFormRequest request,
@@ -292,6 +442,7 @@ Future<void> _submitAddModelProviderFormRequest(
   );
   if (!request.context.mounted || created == null) return;
 
+  _resetModelProviderState(request.ref, request.workspaceId)();
   _completeAddModelProviderSubmission(
     request.context,
     request.onCreated,
@@ -515,6 +666,7 @@ class const _AddModelProviderFormValues({
 
 class const _AddModelProviderFormCallbacks({
   required final VoidCallback onClose,
+  required final VoidCallback onModelBack,
   required final VoidCallback onSubmit,
   required final VoidCallback onCancelCodexOAuth,
   required final VoidCallback onCodexBrowserSubmit,
@@ -564,7 +716,10 @@ class const _AddModelProviderForm({
     mainAxisSize: .min,
     children: [
       if (_request.showHeader) _ModalHeader(onClose: _callbacks.onClose),
-      _SelectedModelHeader(workspaceId: _request.workspaceId),
+      _SelectedModelHeader(
+        workspaceId: _request.workspaceId,
+        onBack: _callbacks.onModelBack,
+      ),
       Flexible(child: _AddModelProviderFormScroll(data: data)),
     ],
   );
@@ -1987,22 +2142,24 @@ class const _ModelProviderOAuthBadge({required final bool visible})
 }
 
 /// Header showing the selected model with a back button.
-class const _SelectedModelHeader({required final String workspaceId})
-    extends HookConsumerWidget {
+class const _SelectedModelHeader({
+  required final String workspaceId,
+  required final VoidCallback onBack,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext _, WidgetRef ref) {
     return _SelectedModelHeaderContent(
       details: _selectedModelHeaderDetails(
         _watchSelectedModelHeader(ref, workspaceId),
       ),
-      notifier: ref.watch(addModelProviderStateProvider(workspaceId).notifier),
+      onBack: onBack,
     );
   }
 }
 
 class const _SelectedModelHeaderContent({
   required final _SelectedModelHeaderDetails? details,
-  required final AddModelProviderState notifier,
+  required final VoidCallback onBack,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -2010,7 +2167,7 @@ class const _SelectedModelHeaderContent({
       return _SelectedModelHeaderView(
         modelId: selected.modelId,
         modelName: selected.modelName,
-        onBack: () => notifier.setModel(null),
+        onBack: onBack,
       );
     }
 
