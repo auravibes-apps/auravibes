@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/workspaces/providers/last_workspace_selec
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -243,6 +244,7 @@ void main() {
       String? error,
       WorkspaceRepository? repo,
       List<CloudAccountSession> accounts = const [],
+      CloudWorkspaceViewState? cloudWorkspaceState,
       bool cloudAuthenticationRequired = false,
       WorkspaceSelectionRepository? selectionRepository,
     }) {
@@ -285,6 +287,14 @@ void main() {
                     (ref) async =>
                         const CloudWorkspaceViewState.authenticationRequired(),
                   ),
+                );
+              }
+            }
+            if (cloudWorkspaceState != null) {
+              for (final account in accounts) {
+                overrides.add(
+                  cloudWorkspaceStateProvider(account.userId)
+                      .overrideWith((ref) async => cloudWorkspaceState),
                 );
               }
             }
@@ -409,6 +419,60 @@ void main() {
         find.byKey(const ValueKey<String>('workspace_create')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('filters available cloud workspaces by name', (tester) async {
+      const account = CloudAccountSession(
+        serverUrl: 'http://localhost:8080',
+        userId: 'account-1',
+        email: 'dev@example.com',
+      );
+      final cloudWorkspaceState = CloudWorkspaceViewState(
+        workspaces: [
+          CloudWorkspaceSummary(
+            id: 1,
+            name: 'Cloud Alpha',
+            role: 'owner',
+            revision: 1,
+            sequence: 1,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+          CloudWorkspaceSummary(
+            id: 2,
+            name: 'Cloud Beta',
+            role: 'owner',
+            revision: 1,
+            sequence: 2,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+        ],
+        pendingInvites: const [],
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          accounts: [account],
+          cloudWorkspaceState: cloudWorkspaceState,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField), 'alpha');
+      await tester.pump();
+
+      expect(find.text('Cloud Alpha'), findsOneWidget);
+      expect(find.text('Cloud Beta'), findsNothing);
+      expect(find.text('No workspaces match your search.'), findsNothing);
+
+      await tester.enterText(find.byType(TextFormField), 'missing');
+      await tester.pump();
+
+      expect(find.text('No workspaces match your search.'), findsOneWidget);
+      expect(find.text('Cloud Alpha'), findsNothing);
     });
 
     testWidgets('confirms before switching workspace from a tile', (
