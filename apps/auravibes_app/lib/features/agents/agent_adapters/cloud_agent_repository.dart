@@ -279,6 +279,35 @@ mixin _CloudAgentRepositoryWrite {
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async =>
       _decodeUpdatedAgent(await _updateAgentResponse(agentId, agent));
 
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) async {
+    final resources = await readAgent(agentId);
+    final resource = _agentResource(resources, agentId);
+    if (resource == null) throw StateError('Agent not found: $agentId');
+    final current = _decodeAgent(resource, resources, workspaceId);
+    final agent = AgentToUpdate(
+      name: current.name,
+      description: current.description,
+      content: current.content,
+      isEnabled: current.isEnabled,
+      visibility: visibility,
+      skills: current.skills,
+    );
+    final response = await _patchAgentState(
+      patch,
+      _updateAgentOperations((
+        resources: resources,
+        agentId: agentId,
+        agent: agent,
+        revisions: _revisions,
+      )),
+    );
+
+    return _decodeUpdatedAgent(_updatedAgentData(agentId, response));
+  }
+
   Future<bool> deleteAgent(String agentId) async {
     final resources = await readAgent(agentId);
     final _ = await _patchAgentState(
