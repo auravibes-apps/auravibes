@@ -322,6 +322,24 @@ extension ListAvailableSkillsUsecaseUserSkills on ListAvailableSkillsUsecase {
 
   Future<SkillCredentialReadiness> _userSkillCredentialReadiness(
     _UserSkillAvailabilityRequest request,
+  ) {
+    final cloud = request.cloud;
+    if (cloud != null) {
+      return _cloudUserSkillCredentialReadiness(cloud, request.skill);
+    }
+
+    return _localUserSkillCredentialReadiness(request);
+  }
+
+  Future<SkillCredentialReadiness> _cloudUserSkillCredentialReadiness(
+    CloudSkillStore cloud,
+    SkillEntity skill,
+  ) async => await cloud.userSkillReady(skill) ? .ready : .missing;
+}
+
+extension ListAvailableSkillsUsecaseCredentials on ListAvailableSkillsUsecase {
+  Future<SkillCredentialReadiness> _localUserSkillCredentialReadiness(
+    _UserSkillAvailabilityRequest request,
   ) async {
     final skill = request.skill;
     if (skill.isCredentialOptional ||
