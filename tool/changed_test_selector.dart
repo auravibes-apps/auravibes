@@ -1101,7 +1101,7 @@ _Command _command(
     if (coverage && !group.package.flutter) '--coverage=coverage',
     '--concurrency=${group.package.flutter ? 1 : 2}',
     '--timeout=30s',
-    '--reporter=expanded',
+    '--reporter=compact',
     if (timingFile != null) '--file-reporter=json:$timingFile',
     if (shard.total > 1) '--total-shards=${shard.total}',
     if (shard.total > 1) '--shard-index=${shard.index}',

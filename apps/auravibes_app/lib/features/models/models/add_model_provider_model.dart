@@ -17,6 +17,8 @@ abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
   }) = _AddModelProviderModel;
 
+  bool get hasUnsavedChanges => this != const AddModelProviderModel();
+
   bool isValid() {
     final keyError = authMode == ModelProviderAuthMode.apiKey
         ? validateKey()
