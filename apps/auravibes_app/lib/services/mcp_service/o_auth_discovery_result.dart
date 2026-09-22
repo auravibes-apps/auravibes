@@ -162,6 +162,8 @@ class OAuthDiscoveryService {
     OAuthConnector registrer, {
     http.Client? registrationClient,
     PublicUrlLookup? registrationLookup,
+    http.Client? metadataClient,
+    PublicUrlLookup? metadataLookup,
   }) async {
     try {
       _oauthDiscoveryLogger.info(
@@ -173,6 +175,8 @@ class OAuthDiscoveryService {
         registrationOptions: (
           client: registrationClient,
           lookup: registrationLookup,
+          metadataClient: metadataClient,
+          metadataLookup: metadataLookup,
         ),
       );
     } on Exception catch (error, stackTrace) {
@@ -535,7 +539,10 @@ Future<OAuthDiscoveryResult?> _discoverProtectedResourceAt(
   Uri metadataUrl,
   _ProtectedResourceInput input,
 ) async {
-  final metadata = await _requestJsonObject(metadataUrl);
+  final metadata = await _requestJsonObject(
+    metadataUrl,
+    input.registrationOptions,
+  );
   if (metadata == null) return null;
 
   final protectedResource = _protectedResourceMetadata(metadata);
@@ -660,7 +667,10 @@ Future<OAuthDiscoveryResult?> _authorizationMetadataResult(
   Uri metadataUrl,
   _AuthorizationServerInput input,
 ) async {
-  final metadata = await _requestJsonObject(metadataUrl);
+  final metadata = await _requestJsonObject(
+    metadataUrl,
+    input.registrationOptions,
+  );
   if (metadata == null) return null;
 
   final authorization = _parseAuthorizationMetadata((
@@ -815,11 +825,26 @@ List<Uri> _uniqueUris(List<Uri> values) => [
     if (values.indexOf(values[index]) == index) values[index],
 ];
 
-Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
+Future<Map<String, dynamic>?> _requestJsonObject(
+  Uri uri,
+  _RegistrationOptions options,
+) async {
   try {
-    final response = await http
-        .get(uri, headers: _jsonAcceptHeader)
-        .timeout(const Duration(seconds: 5));
+    final resolved = await PublicUrlGuard.resolveHttpsUri(
+      uri.toString(),
+      lookup: options.metadataLookup ?? InternetAddress.lookup,
+    );
+    final client =
+        options.metadataClient ??
+        _pinnedHttpClient(resolved.addresses ?? [resolved.uri.host]);
+    final request = http.Request('GET', resolved.uri)
+      ..followRedirects = false
+      ..headers.addAll(_jsonAcceptHeader);
+    final response = await _sendMetadataRequest(
+      client,
+      request,
+      close: options.metadataClient == null,
+    );
     if (response.statusCode != HttpStatus.ok ||
         !_hasJsonContentType(response)) {
       return null;
@@ -828,6 +853,20 @@ Future<Map<String, dynamic>?> _requestJsonObject(Uri uri) async {
     return _decodeJsonObjectBody(response.body);
   } on Exception {
     return null;
+  }
+}
+
+Future<http.Response> _sendMetadataRequest(
+  http.Client client,
+  http.Request request, {
+  required bool close,
+}) async {
+  try {
+    return await http.Response.fromStream(
+      await client.send(request).timeout(const Duration(seconds: 5)),
+    );
+  } finally {
+    if (close) client.close();
   }
 }
 
@@ -918,7 +957,12 @@ String _safeOAuthLogUrl(Object value) {
   return '${uri.origin}${uri.path.isEmpty ? '/' : uri.path}';
 }
 
-typedef _RegistrationOptions = ({http.Client? client, PublicUrlLookup? lookup});
+typedef _RegistrationOptions = ({
+  http.Client? client,
+  PublicUrlLookup? lookup,
+  http.Client? metadataClient,
+  PublicUrlLookup? metadataLookup,
+});
 
 typedef _WellKnownEndpoints = ({String authorizationUrl, String tokenUrl});
 
@@ -1207,6 +1251,10 @@ Future<String?> _performDynamicClientRegistration({
 }
 
 http.Client _registrationHttpClient(List<String> resolvedAddresses) {
+  return _pinnedHttpClient(resolvedAddresses);
+}
+
+http.Client _pinnedHttpClient(List<String> resolvedAddresses) {
   if (resolvedAddresses.isEmpty) {
     throw StateError('Missing resolved registration address');
   }

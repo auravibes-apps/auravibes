@@ -736,72 +736,120 @@ void main() {
           redirectUrl: 'https://example.com/callback',
         );
 
-        await runWithClient(
-          () async {
-            final result = await OAuthDiscoveryService.discoverOAuth(registrer);
-            expect(result, isNotNull);
-            expect(result?.resource, 'https://api.githubcopilot.com/mcp/');
-            expect(result?.issuer, 'https://github.com/login/oauth');
-            expect(
-              result?.authorizationUrl,
-              'https://github.com/login/oauth/authorize',
-            );
-            expect(
-              result?.deviceAuthorizationUrl,
-              'https://github.com/login/device/code',
-            );
-            expect(result?.supportsDynamicClientRegistration, isFalse);
-            expect(result?.scope, 'repo read:user');
-          },
-          () => MockClient((request) async {
-            if (request.url.path == '/mcp/') {
-              const resourceMetadata =
-                  'https://api.githubcopilot.com/.well-known/'
-                  'oauth-protected-resource/mcp/';
+        final metadataRedirectSettings = <bool>[];
+        final client = MockClient((request) async {
+          if (request.url.path == '/mcp/') {
+            const resourceMetadata =
+                'https://api.githubcopilot.com/.well-known/'
+                'oauth-protected-resource/mcp/';
 
-              return Response(
-                '',
-                401,
-                headers: {
-                  'www-authenticate':
-                      'Bearer resource_metadata="$resourceMetadata", '
-                      'scope="repo read:user"',
-                },
-              );
-            }
-            if (request.url.path ==
-                '/.well-known/oauth-protected-resource/mcp/') {
-              return Response(
-                json.encode({
-                  'resource': 'https://api.githubcopilot.com/mcp/',
-                  'authorization_servers': ['https://github.com/login/oauth'],
-                  'scopes_supported': ['repo', 'read:org'],
-                }),
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
-            if (request.url.path ==
-                '/.well-known/oauth-authorization-server/login/oauth') {
-              return Response(
-                json.encode({
-                  'issuer': 'https://github.com/login/oauth',
-                  'authorization_endpoint':
-                      'https://github.com/login/oauth/authorize',
-                  'token_endpoint':
-                      'https://github.com/login/oauth/access_token',
-                  'device_authorization_endpoint':
-                      'https://github.com/login/device/code',
-                }),
-                200,
-                headers: {'content-type': 'application/json'},
-              );
-            }
+            return Response(
+              '',
+              401,
+              headers: {
+                'www-authenticate':
+                    'Bearer resource_metadata="$resourceMetadata", '
+                    'scope="repo read:user"',
+              },
+            );
+          }
+          if (request.url.path ==
+              '/.well-known/oauth-protected-resource/mcp/') {
+            metadataRedirectSettings.add(request.followRedirects);
 
-            return Response('{}', 404);
-          }),
-        );
+            return Response(
+              json.encode({
+                'resource': 'https://api.githubcopilot.com/mcp/',
+                'authorization_servers': ['https://github.com/login/oauth'],
+                'scopes_supported': ['repo', 'read:org'],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path ==
+              '/.well-known/oauth-authorization-server/login/oauth') {
+            metadataRedirectSettings.add(request.followRedirects);
+
+            return Response(
+              json.encode({
+                'issuer': 'https://github.com/login/oauth',
+                'authorization_endpoint':
+                    'https://github.com/login/oauth/authorize',
+                'token_endpoint': 'https://github.com/login/oauth/access_token',
+                'device_authorization_endpoint':
+                    'https://github.com/login/device/code',
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+
+          return Response('{}', 404);
+        });
+
+        await runWithClient(() async {
+          final result = await OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            metadataClient: client,
+            metadataLookup: (_) async => [InternetAddress('8.8.8.8')],
+          );
+          expect(result, isNotNull);
+          expect(result?.resource, 'https://api.githubcopilot.com/mcp/');
+          expect(result?.issuer, 'https://github.com/login/oauth');
+          expect(
+            result?.authorizationUrl,
+            'https://github.com/login/oauth/authorize',
+          );
+          expect(
+            result?.deviceAuthorizationUrl,
+            'https://github.com/login/device/code',
+          );
+          expect(result?.supportsDynamicClientRegistration, isFalse);
+          expect(result?.scope, 'repo read:user');
+          expect(metadataRedirectSettings, everyElement(isFalse));
+        }, () => client);
       },
     );
+
+    test('discoverOAuth rejects private protected-resource hosts', () async {
+      const registrer = OAuthConnector(
+        clientName: 'TestApp',
+        serverUrl: 'https://mcp.example.com/sse',
+        redirectUrl: 'https://example.com/callback',
+      );
+      var privateMetadataRequested = false;
+      final client = MockClient((request) async {
+        if (request.url.host == 'internal.example.com') {
+          privateMetadataRequested = true;
+        }
+        if (request.url.path == '/sse') {
+          return Response(
+            '',
+            401,
+            headers: {
+              'www-authenticate': 'Bearer resource_metadata="https://internal.example.com/metadata"',
+            },
+          );
+        }
+
+        return Response('{}', 404);
+      });
+
+      await runWithClient(() async {
+        final result = await OAuthDiscoveryService.discoverOAuth(
+          registrer,
+          metadataClient: client,
+          metadataLookup: (host) async => [
+            InternetAddress(
+              host == 'internal.example.com' ? '127.0.0.1' : '8.8.8.8',
+            ),
+          ],
+        );
+
+        expect(result, isNull);
+        expect(privateMetadataRequested, isFalse);
+      }, () => client);
+    });
   });
 }
