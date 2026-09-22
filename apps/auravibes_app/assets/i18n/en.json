@@ -71,6 +71,10 @@
     "add_provider": {
       "open_button": "Add Provider",
       "title": "Add Model Provider",
+      "unsaved_changes_title": "Discard unsaved changes?",
+      "unsaved_changes_message": "You have unsaved changes. Do you want to discard them?",
+      "discard_changes": "Discard",
+      "keep_editing": "Keep editing",
       "back_to_selection": "Back to model selection",
       "create_button": "Create Provider",
       "connect_browser": "Connect with browser",

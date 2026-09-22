@@ -89,6 +89,10 @@ class AddModelProviderState extends _$AddModelProviderState {
 }
 
 extension AddModelProviderStateFields on AddModelProviderState {
+  void reset() {
+    _value = const AddModelProviderModel();
+  }
+
   void setName(String newName) {
     _value = _value.copyWith(name: newName);
   }
@@ -129,6 +133,10 @@ extension AddModelProviderStateFields on AddModelProviderState {
   void setUrl(String? newUrl) {
     _value = _value.copyWith(url: newUrl);
   }
+}
+
+extension AddModelProviderModelFields on AddModelProviderModel {
+  bool get hasUnsavedChanges => this != const AddModelProviderModel();
 }
 
 extension AddModelProviderStateActions on AddModelProviderState {

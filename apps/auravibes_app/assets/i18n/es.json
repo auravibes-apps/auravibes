@@ -71,6 +71,10 @@
     "add_provider": {
       "open_button": "Agregar Proveedor",
       "title": "Agregar Proveedor de Modelo",
+      "unsaved_changes_title": "¿Descartar cambios sin guardar?",
+      "unsaved_changes_message": "Tienes cambios sin guardar. ¿Quieres descartarlos?",
+      "discard_changes": "Descartar",
+      "keep_editing": "Seguir editando",
       "back_to_selection": "Volver a la selección de modelo",
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",

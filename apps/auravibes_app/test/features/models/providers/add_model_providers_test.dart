@@ -131,6 +131,33 @@ void main() {
       );
     });
 
+    test('tracks and resets unsaved changes', () {
+      final notifier = container.read(
+        addModelProviderStateProvider('ws1').notifier,
+      );
+
+      expect(
+        container.read(addModelProviderStateProvider('ws1')).hasUnsavedChanges,
+        isFalse,
+      );
+
+      notifier
+        ..setName('Draft provider')
+        ..setKey('secret-key');
+
+      expect(
+        container.read(addModelProviderStateProvider('ws1')).hasUnsavedChanges,
+        isTrue,
+      );
+
+      notifier.reset();
+
+      expect(
+        container.read(addModelProviderStateProvider('ws1')).hasUnsavedChanges,
+        isFalse,
+      );
+    });
+
     test('addModelProvider returns null when invalid', () async {
       final result = await container
           .read(addModelProviderStateProvider('ws1').notifier)
