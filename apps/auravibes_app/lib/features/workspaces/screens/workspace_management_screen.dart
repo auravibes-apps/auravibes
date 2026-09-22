@@ -1499,6 +1499,7 @@ class const _WorkspaceNameEditor({
   @override
   Widget build(BuildContext context) {
     return AuraInput(
+      key: const ValueKey<String>('workspace_name_editor'),
       controller: controller,
       placeholder: Text(LocaleKeys.workspace_management_name_placeholder.tr()),
       textInputAction: .done,
