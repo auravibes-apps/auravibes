@@ -60,6 +60,13 @@ typedef ConversationHostLookup = Future<List<InternetAddress>> Function(
   String host,
 );
 
+typedef _CloudSkillCatalogCandidate = ({
+  String id,
+  String slug,
+  String title,
+  String description,
+});
+
 String providerCredential(String providerId, String secret) {
   if (providerId != 'openai-codex') return secret;
   final value = jsonDecode(secret);
@@ -141,65 +148,14 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         },
       )
       .toList(growable: false);
-  final candidates =
-      <
-        ({
-          String id,
-          String slug,
-          String title,
-          String description,
-        })
-      >[];
-  for (final skill in userSkills) {
-    final id = skill['id'];
-    final slug = skill['slug'];
-    final title = skill['title'];
-    if (id is! String ||
-        slug is! String ||
-        title is! String ||
-        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: id,
-      slug: slug,
-      title: title,
-      description: skill['description'] as String? ?? '',
-    ));
-  }
-  if (!isChildConversation &&
-      cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
-    candidates.add((
-      id: agentsSkillSlug,
-      slug: agentsSkillSlug,
-      title: agentsSkillTitle,
-      description: '',
-    ));
-  }
-  for (final skill in serviceSkillDefinitions) {
-    if (!cloudAppSkillEnabled(skill.identifier, appSkillSettings) ||
-        !cloudServiceSkillReady(skill, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: skill.identifier,
-      slug: skill.slug,
-      title: skill.title,
-      description: skill.description,
-    ));
-  }
-  if (!isChildConversation &&
-      (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty)) {
-    for (final skill in internalAppSkillDefinitions) {
-      if (!skill.contentOnly) continue;
-      candidates.add((
-        id: skill.identifier,
-        slug: skill.slug,
-        title: skill.title,
-        description: skill.description,
-      ));
-    }
-  }
+  final candidates = _cloudSkillCatalogCandidates(
+    userSkills: userSkills,
+    templateTools: templateTools,
+    serviceConnections: serviceConnections,
+    appSkillSettings: appSkillSettings,
+    isChildConversation: isChildConversation,
+    a2uiSupportedComponents: a2uiSupportedComponents,
+  );
   final candidateIds = candidates.map((candidate) => candidate.id).toSet();
   final tools = materializeCloudSkillTools(
     selectedSkillIds: candidateIds,
@@ -231,6 +187,93 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   }
   return entries..sort((left, right) => left.slug.compareTo(right.slug));
 }
+
+List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
+}) {
+  final candidates = <_CloudSkillCatalogCandidate>[
+    ..._cloudUserSkillCatalogCandidates(
+      userSkills: userSkills,
+      templateTools: templateTools,
+      serviceConnections: serviceConnections,
+    ),
+    if (!isChildConversation &&
+        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
+      (
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+      ),
+    ..._cloudServiceSkillCatalogCandidates(
+      appSkillSettings: appSkillSettings,
+      serviceConnections: serviceConnections,
+    ),
+  ];
+  if (!isChildConversation &&
+      (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty)) {
+    candidates.addAll(
+      internalAppSkillDefinitions
+          .where((skill) => skill.contentOnly)
+          .map(
+            (skill) => (
+              id: skill.identifier,
+              slug: skill.slug,
+              title: skill.title,
+              description: skill.description,
+            ),
+          ),
+    );
+  }
+  return candidates;
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) sync* {
+  for (final skill in userSkills) {
+    final id = skill['id'];
+    final slug = skill['slug'];
+    final title = skill['title'];
+    if (id is! String ||
+        slug is! String ||
+        title is! String ||
+        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+      continue;
+    }
+    yield (
+      id: id,
+      slug: slug,
+      title: title,
+      description: skill['description'] as String? ?? '',
+    );
+  }
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => serviceSkillDefinitions
+    .where(
+      (skill) =>
+          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections),
+    )
+    .map(
+      (skill) => (
+        id: skill.identifier,
+        slug: skill.slug,
+        title: skill.title,
+        description: skill.description,
+      ),
+    );
 
 List<Map<String, dynamic>> cloudRequestMessagesWithToolExchanges({
   required Iterable<Map<String, dynamic>> baseMessages,

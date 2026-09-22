@@ -252,23 +252,14 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   required bool isChildConversation,
   Set<String>? a2uiSupportedComponents,
 }) {
-  final selectable = <String>[
-    if (!isChildConversation &&
-        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
-      agentsSkillSlug,
-    for (final skill in userSkills)
-      if (cloudUserSkillReady(skill, templateTools, serviceConnections))
-        if (skill['slug'] case final String slug) slug,
-    for (final skill in serviceSkillDefinitions)
-      if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
-          cloudServiceSkillReady(skill, serviceConnections))
-        skill.slug,
-    if (!isChildConversation &&
-        (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
-      for (final skill in internalAppSkillDefinitions)
-        if (skill.contentOnly) skill.slug,
-  ];
-  final slugs = selectable.toSet().toList()..sort();
+  final slugs = _selectableCloudSkillSlugs(
+    appSkillSettings: appSkillSettings,
+    userSkills: userSkills,
+    templateTools: templateTools,
+    serviceConnections: serviceConnections,
+    isChildConversation: isChildConversation,
+    a2uiSupportedComponents: a2uiSupportedComponents,
+  );
   final descriptor = AgentResolvedToolName.skillControl(
     toolIdentifier: activateSkillToolName,
   );
@@ -290,6 +281,33 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
       ),
     ),
   ];
+}
+
+List<String> _selectableCloudSkillSlugs({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
+}) {
+  final selectable = <String>[
+    if (!isChildConversation &&
+        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
+      agentsSkillSlug,
+    for (final skill in userSkills)
+      if (cloudUserSkillReady(skill, templateTools, serviceConnections))
+        if (skill['slug'] case final String slug) slug,
+    for (final skill in serviceSkillDefinitions)
+      if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections))
+        skill.slug,
+    if (!isChildConversation &&
+        (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
+      for (final skill in internalAppSkillDefinitions)
+        if (skill.contentOnly) skill.slug,
+  ];
+  return selectable.toSet().toList()..sort();
 }
 
 bool cloudUserSkillReady(
