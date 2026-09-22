@@ -820,7 +820,7 @@ void main() {
         '--exclude-tags=integration',
         '--concurrency=1',
         '--timeout=30s',
-        '--reporter=expanded',
+        '--reporter=compact',
       ]),
     );
   });
