@@ -161,10 +161,10 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   final finalResponse = await responseStream.onResult;
   final responseError = finalResponse.error;
   if (responseError != null) {
-    final cause = finalResponse.cause;
-    if (cause is Exception) throw cause;
-    if (cause is Error) throw cause;
-    throw GenkitException(responseError.message, underlyingException: cause);
+    throw GenkitException(
+      responseError.message,
+      underlyingException: finalResponse.cause,
+    );
   }
 
   request.a2uiRuntime?.commitCurrentMessage();
