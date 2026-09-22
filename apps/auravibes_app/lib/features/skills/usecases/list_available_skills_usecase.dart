@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/conversation_skills_repository.d
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -25,6 +26,7 @@ class const ListAvailableSkillsUsecase(
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase,
   final CloudSkillStore? cloudStore,
+  final Future<bool> Function(String conversationId)? _isTopLevelConversation,
 ]) {
   Future<List<AvailableSkill>> call({
     required String conversationId,
@@ -37,6 +39,7 @@ class const ListAvailableSkillsUsecase(
     return await _collectAvailableSkills((
       cloud: cloud,
       inputs: inputs,
+      conversationId: conversationId,
       workspaceId: workspaceId,
       filter: filter,
     ));
@@ -76,6 +79,7 @@ typedef _LoadedSkillInputs = ({
 typedef _AvailableSkillsRequest = ({
   CloudSkillStore? cloud,
   _LoadedSkillInputs inputs,
+  String conversationId,
   String workspaceId,
   SkillLoadFilter filter,
 });
@@ -90,6 +94,7 @@ typedef _SharedSkillDependencies = ({
   AppSkillRegistry appSkillRegistry,
   CheckSkillCredentialReadinessUsecase? credentialReadiness,
   ListAppSkillCredentialCandidatesUsecase? credentialCandidates,
+  Future<bool> Function(String conversationId) isTopLevelConversation,
 });
 
 typedef _ListAvailableSkillsProviderRequest = ({
@@ -337,7 +342,14 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
     _AvailableSkillsRequest request,
   ) async {
     final result = <AvailableSkill>[];
-    for (final skill in _appSkillRegistry.getAll()) {
+    final isTopLevel = await _isTopLevel(request.conversationId);
+    for (final skill in _appSkillRegistry.getRuntimeAll()) {
+      if (skill.contentOnly &&
+          (!isTopLevel ||
+              request.filter == .selector ||
+              (request.filter != .catalog && request.filter != .loaded))) {
+        continue;
+      }
       final availableSkill = await _availableAppSkillForRequest(request, skill);
       if (availableSkill == null) continue;
 
@@ -421,6 +433,7 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
     String workspaceId,
     AppSkillDefinition skill,
   ) {
+    if (skill.contentOnly) return Future.value(true);
     if (cloud != null) return cloud.isAppSkillEnabled(skill.identifier);
 
     return _requiredAppSkillSettingsRepository.isAppSkillEnabled(
@@ -436,6 +449,13 @@ extension ListAvailableSkillsUsecaseAppSkills on ListAvailableSkillsUsecase {
   ) => cloud == null
       ? _hasLocallyUsableAppSkillTool(workspaceId, skill)
       : _hasUsableAppSkillTool(workspaceId, skill);
+
+  Future<bool> _isTopLevel(String conversationId) async {
+    final checker = _isTopLevelConversation;
+    if (checker == null) return false;
+
+    return await checker(conversationId);
+  }
 }
 
 extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
@@ -460,6 +480,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     AppSkillDefinition skill,
     bool hasUsableTool,
   ) {
+    if (skill.contentOnly) return .ready;
     final requiresCredential =
         skill.requiresCredential ||
         skill.tools.any((tool) => tool.requiresCredential);
@@ -475,6 +496,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     String workspaceId,
     AppSkillDefinition skill,
   ) async {
+    if (skill.contentOnly) return true;
     final usecase = _listAppSkillCredentialCandidatesUsecase;
     if (usecase == null ||
         skill.tools.any((tool) => !tool.requiresCredential) ||
@@ -492,6 +514,7 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     String workspaceId,
     AppSkillDefinition skill,
   ) {
+    if (skill.contentOnly) return Future.value(true);
     final usecase = _listAppSkillCredentialCandidatesUsecase;
     if (usecase == null) return Future.value(true);
 
@@ -536,6 +559,7 @@ ListAvailableSkillsUsecase _buildListAvailableSkillsUsecase(
     shared.credentialReadiness,
     shared.credentialCandidates,
     request.cloud,
+    shared.isTopLevelConversation,
   );
 }
 
@@ -547,18 +571,26 @@ _LocalSkillDependencies _localSkillDependencies(Ref ref) => (
   ),
 );
 
-_SharedSkillDependencies _sharedSkillDependencies(
-  Ref ref,
-  String workspaceId,
-) => (
-  appSkillRegistry: ref.watch(appSkillRegistryProvider),
-  credentialReadiness: ref.watch(
-    checkSkillCredentialReadinessUsecaseProvider(workspaceId),
-  ),
-  credentialCandidates: ref.watch(
-    listAppSkillCredentialCandidatesUsecaseProvider,
-  ),
-);
+_SharedSkillDependencies _sharedSkillDependencies(Ref ref, String workspaceId) {
+  final conversationRepository = ref.watch(conversationRepositoryProvider);
+
+  return (
+    appSkillRegistry: ref.watch(appSkillRegistryProvider),
+    credentialReadiness: ref.watch(
+      checkSkillCredentialReadinessUsecaseProvider(workspaceId),
+    ),
+    credentialCandidates: ref.watch(
+      listAppSkillCredentialCandidatesUsecaseProvider,
+    ),
+    isTopLevelConversation: (conversationId) async {
+      final conversation = await conversationRepository.getConversationById(
+        conversationId,
+      );
+
+      return conversation != null && conversation.parentConversationId == null;
+    },
+  );
+}
 
 enum SkillLoadFilter {
   loadable,

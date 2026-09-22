@@ -90,6 +90,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   required int workspaceId,
   required Iterable<String> activeSkillIds,
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) async {
   final resources = await WorkspaceResource.db.find(
     session,
@@ -186,6 +187,18 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
       title: skill.title,
       description: skill.description,
     ));
+  }
+  if (!isChildConversation &&
+      (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty)) {
+    for (final skill in internalAppSkillDefinitions) {
+      if (!skill.contentOnly) continue;
+      candidates.add((
+        id: skill.identifier,
+        slug: skill.slug,
+        title: skill.title,
+        description: skill.description,
+      ));
+    }
   }
   final candidateIds = candidates.map((candidate) => candidate.id).toSet();
   final tools = materializeCloudSkillTools(
@@ -435,7 +448,14 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversation.stableId,
       a2uiSupportedComponents: a2uiComponents,
     );
-    requestMessages.insertAll(0, await _agentContextMessages(session, job));
+    requestMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiComponents,
+      ),
+    );
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
@@ -448,7 +468,11 @@ final class const ServerConversationEngineHost({
     final a2uiDecoder = A2uiTextDecoder();
     final runtime =
         toolRuntime ??
-        ServerToolRuntime(executor: const ServerToolExecutorService().call);
+        ServerToolRuntime(
+          executor: ServerToolExecutorService(
+            a2uiSupportedComponents: a2uiComponents,
+          ).call,
+        );
     final assistantStableId = turn.assistantMessageId == null
         ? null
         : (await ConversationMessage.db.findById(
@@ -904,7 +928,14 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversationStableId,
       a2uiSupportedComponents: a2uiSupportedComponents,
     );
-    baseMessages.insertAll(0, await _agentContextMessages(session, job));
+    baseMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiSupportedComponents,
+      ),
+    );
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
       toolExchanges: toolExchanges,
@@ -913,8 +944,9 @@ final class const ServerConversationEngineHost({
 
   Future<List<Map<String, dynamic>>> _agentContextMessages(
     Session session,
-    ConversationJob job,
-  ) async {
+    ConversationJob job, {
+    Set<String>? a2uiSupportedComponents,
+  }) async {
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,
@@ -945,6 +977,7 @@ final class const ServerConversationEngineHost({
       workspaceId: job.workspaceId,
       activeSkillIds: {...conversationSkillIds, ...agentContext.skillIds},
       isChildConversation: conversation.parentConversationStableId != null,
+      a2uiSupportedComponents: a2uiSupportedComponents,
     );
     final messages = [
       {'role': 'system', 'content': toolCallNarrationInstruction},
@@ -959,16 +992,6 @@ final class const ServerConversationEngineHost({
         ),
       ),
     ];
-    final a2uiComponents = cloudA2uiSupportedComponents(
-      job.payloadJson,
-      isChildConversation: conversation.parentConversationStableId != null,
-    );
-    if (a2uiComponents.isNotEmpty) {
-      messages.insert(0, {
-        'role': 'system',
-        'content': A2uiChatContract.systemPromptForComponents(a2uiComponents),
-      });
-    }
     return messages;
   }
 

@@ -3,7 +3,6 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -212,8 +211,6 @@ _generateStreamRequest(_GenerationStreamRequest request) =>
     );
 
 List<Message> _genkitHistory(_SendMessageRequest request) => [
-  if (request.a2uiRuntime?.enabled == true)
-    ChatMessage.system(auraChatCatalogSystemPrompt()),
   ChatMessage.system(toolCallNarrationInstruction),
   ...request.history,
 ].map(request.service._toGenkitMessage).toList();

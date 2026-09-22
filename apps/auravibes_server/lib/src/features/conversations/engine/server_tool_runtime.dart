@@ -23,6 +23,11 @@ const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
 const _subAgentFailedMessage = 'Sub-agent failed.';
 const _subAgentCancelledMessage = 'Sub-agent cancelled.';
 
+final cloudAppSkillDefinitions = List<AppSkillDefinition>.unmodifiable([
+  ...serviceSkillDefinitions,
+  ...internalAppSkillDefinitions,
+]);
+
 bool serverToolRunningIsStale({
   required DateTime updatedAt,
   required DateTime now,
@@ -121,6 +126,7 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) => _materializeCloudSkillControlToolsBody(
   selectedSkillIds: selectedSkillIds,
   userSkills: userSkills,
@@ -128,6 +134,7 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   appSkillSettings: appSkillSettings,
   serviceConnections: serviceConnections,
   isChildConversation: isChildConversation,
+  a2uiSupportedComponents: a2uiSupportedComponents,
 );
 
 List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
@@ -150,7 +157,7 @@ Future<SkillManifest?> buildCloudSkillManifest({
   final userSkill = userSkills
       .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
       .firstOrNull;
-  final appSkill = serviceSkillDefinitions
+  final appSkill = cloudAppSkillDefinitions
       .where((skill) => skill.slug == slug || skill.identifier == slug)
       .firstOrNull;
   final title = switch ((userSkill?['title'], appSkill)) {
@@ -243,6 +250,7 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   required Iterable<Map<String, dynamic>> appSkillSettings,
   Iterable<Map<String, dynamic>> serviceConnections = const [],
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) {
   final selectable = <String>[
     if (!isChildConversation &&
@@ -255,6 +263,10 @@ List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
       if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
           cloudServiceSkillReady(skill, serviceConnections))
         skill.slug,
+    if (!isChildConversation &&
+        (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty))
+      for (final skill in internalAppSkillDefinitions)
+        if (skill.contentOnly) skill.slug,
   ];
   final slugs = selectable.toSet().toList()..sort();
   final descriptor = AgentResolvedToolName.skillControl(
@@ -575,19 +587,21 @@ bool cloudAppSkillEnabled(
 bool cloudServiceSkillReady(
   AppSkillDefinition skill,
   Iterable<Map<String, dynamic>> serviceConnections,
-) => skill.tools.any(
-  (tool) =>
-      skill.kind == AppSkillDefinitionKind.template &&
-      tool.urlTemplate != null &&
-      (!tool.requiresCredential ||
-          serviceConnections.any(
-            (connection) =>
-                connection['kind'] == 'appSkillCredential' &&
-                connection['serviceId'] == skill.identifier &&
-                connection['isEnabled'] != false &&
-                connection['hasSecret'] == true,
-          )),
-);
+) =>
+    skill.contentOnly ||
+    skill.tools.any(
+      (tool) =>
+          skill.kind == AppSkillDefinitionKind.template &&
+          tool.urlTemplate != null &&
+          (!tool.requiresCredential ||
+              serviceConnections.any(
+                (connection) =>
+                    connection['kind'] == 'appSkillCredential' &&
+                    connection['serviceId'] == skill.identifier &&
+                    connection['isEnabled'] != false &&
+                    connection['hasSecret'] == true,
+              )),
+    );
 
 AgentToolPermissionResult resolveCloudToolPermission({
   required AgentToolPermissionResult workspacePermission,
