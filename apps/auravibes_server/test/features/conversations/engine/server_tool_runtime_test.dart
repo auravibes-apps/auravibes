@@ -75,6 +75,18 @@ void main() {
     expect(serverToolExecutionFailureCode(StateError('secret')), 'unexpected');
   });
 
+  test('recognizes every persisted skill kind for replay', () {
+    expect(
+      [
+        AgentResolvedToolKind.skillTemplate,
+        AgentResolvedToolKind.skillNative,
+        AgentResolvedToolKind.skillAppTemplate,
+      ].every(serverToolIsReplayableSkillKind),
+      isTrue,
+    );
+    expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
+  });
+
   test('builds audited cloud skill selection patches', () {
     final activation = cloudSkillSelectionPatchRequest(
       workspaceId: 7,

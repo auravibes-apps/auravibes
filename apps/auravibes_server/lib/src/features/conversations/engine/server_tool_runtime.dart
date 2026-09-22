@@ -35,6 +35,11 @@ String serverToolExecutionFailureCode(Object error) => switch (error) {
   _ => 'unexpected',
 };
 
+bool serverToolIsReplayableSkillKind(AgentResolvedToolKind? kind) =>
+    kind == AgentResolvedToolKind.skillTemplate ||
+    kind == AgentResolvedToolKind.skillNative ||
+    kind == AgentResolvedToolKind.skillAppTemplate;
+
 bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     descriptor.kind == AgentResolvedToolKind.mcp ||
     descriptor.kind == AgentResolvedToolKind.skillTemplate ||
@@ -872,8 +877,7 @@ class ServerToolRuntime({
       final storedArguments = _jsonMap(existing.argumentsJson);
       final storedCommand = _skillCommandOrNull(storedArguments);
       final isNestedSkillCall =
-          (persistedDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
-              persistedDescriptor?.kind == AgentResolvedToolKind.skillNative) &&
+          serverToolIsReplayableSkillKind(persistedDescriptor?.kind) &&
           storedCommand != null;
       if ((!isNestedSkillCall && existing.name != request.name) ||
           (isNestedSkillCall &&
@@ -916,8 +920,7 @@ class ServerToolRuntime({
     final legacyDescriptor = _resolver.resolve(request.name);
     if (tool == null &&
         existing != null &&
-        (legacyDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
-            legacyDescriptor?.kind == AgentResolvedToolKind.skillNative)) {
+        serverToolIsReplayableSkillKind(legacyDescriptor?.kind)) {
       try {
         final state = await _skillTargets(
           session,
