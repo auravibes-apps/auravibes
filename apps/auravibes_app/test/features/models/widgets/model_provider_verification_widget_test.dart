@@ -151,8 +151,8 @@ Future<void> _pumpAddForm(
   WidgetTester tester,
   _FakeModelConnectionStore store,
 ) async {
-  await tester.runAsync(() async {
-    await rootBundle.loadString('assets/i18n/en.json');
+  final didPump = await tester.runAsync(() async {
+    expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
     await tester.pumpWidget(
       TestableApp(
         child: const Scaffold(
@@ -180,7 +180,10 @@ Future<void> _pumpAddForm(
         key: UniqueKey(),
       ),
     );
+
+    return true;
   });
+  expect(didPump, isTrue);
   await tester.pump();
   final _ = await tester.pumpAndSettle();
   for (

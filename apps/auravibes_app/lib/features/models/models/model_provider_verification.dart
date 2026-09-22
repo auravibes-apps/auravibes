@@ -54,8 +54,6 @@ ModelProviderVerification createModelProviderVerification({
 String modelProviderKeyDigest(String? key) =>
     sha256.convert(utf8.encode(key?.trim() ?? '')).toString();
 
-String? modelProviderVerificationUrl(String? url) => _normalizedUrl(url);
-
 String? _normalizedUrl(String? url) {
   final value = url?.trim();
 

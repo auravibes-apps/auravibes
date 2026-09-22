@@ -68,10 +68,10 @@ class _ServiceConnectionEditScreenState
 
     return switch (error) {
       ProviderVerificationExpiredException() =>
-        LocaleKeys.models_screens_add_provider_verification_expired.tr(),
+        LocaleKeys.mcp_modal_verification_expired.tr(),
       ProviderVerificationRequiredException() ||
       ProviderVerificationMismatchException() =>
-        LocaleKeys.models_screens_add_provider_verification_required.tr(),
+        LocaleKeys.mcp_modal_verification_required.tr(),
       _ => LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
     };
   }
@@ -164,13 +164,14 @@ class _ServiceConnectionEditScreenState
       _scheduleModelProviderVerificationExpiry(verification);
       if (!context.mounted) return;
 
+      final connectedLabel = LocaleKeys.service_connections_status_connected
+          .tr();
+      final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
+        verification.modelCount,
+      );
       final _ = AuraSnackBars.show(
         context: context,
-        content: Text(
-          LocaleKeys.models_screens_add_provider_verification_success.tr(
-            args: [verification.modelCount.toString()],
-          ),
-        ),
+        content: Text('$connectedLabel - $modelCountLabel'),
         variant: .success,
       );
     } on Exception catch (error) {
@@ -1071,9 +1072,7 @@ class const _ModelProviderVerifyButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: () => owner._verifyModelProvider(context, state),
-    child: const TextLocale(
-      LocaleKeys.models_screens_add_provider_verify_connection,
-    ),
+    child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
     variant: .outlined,
     isLoading: owner._isTestingModelProvider,
     isFullWidth: true,

@@ -48,8 +48,8 @@ void main() {
         .read(addModelProviderStateProvider(_workspaceId).notifier)
         .setModel('openai');
 
-    await tester.runAsync(() async {
-      await rootBundle.loadString('assets/i18n/en.json');
+    final didPump = await tester.runAsync(() async {
+      expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
       await tester.pumpWidget(
         EasyLocalization(
           child: UncontrolledProviderScope(
@@ -84,7 +84,10 @@ void main() {
           useFallbackTranslations: true,
         ),
       );
+
+      return true;
     });
+    expect(didPump, isTrue);
     final _ = await tester.pumpAndSettle();
 
     final _ = await tester.tap(find.byIcon(Icons.close));

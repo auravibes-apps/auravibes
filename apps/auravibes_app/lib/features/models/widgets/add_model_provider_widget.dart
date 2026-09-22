@@ -396,13 +396,13 @@ Future<void> _verifyAddModelProviderForm(
   final verified = verification;
   if (verified == null || !request.context.mounted) return;
 
+  final connectedLabel = LocaleKeys.service_connections_status_connected.tr();
+  final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
+    verified.modelCount,
+  );
   final _ = AuraSnackBars.show(
     context: request.context,
-    content: Text(
-      LocaleKeys.models_screens_add_provider_verification_success.tr(
-        args: [verified.modelCount.toString()],
-      ),
-    ),
+    content: Text('$connectedLabel - $modelCountLabel'),
     variant: .success,
   );
 }
@@ -1371,9 +1371,7 @@ class const _ApiKeyCreateActions({
     children: [
       AuraButton(
         onPressed: callbacks.onVerify,
-        child: const TextLocale(
-          LocaleKeys.models_screens_add_provider_verify_connection,
-        ),
+        child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
         variant: .outlined,
         size: .large,
         isLoading: state.isTesting,
@@ -1384,7 +1382,7 @@ class const _ApiKeyCreateActions({
       AuraButton(
         onPressed: callbacks.onSubmit,
         child: const TextLocale(
-          LocaleKeys.models_screens_add_provider_add_provider,
+          LocaleKeys.models_screens_add_provider_open_button,
         ),
         size: .large,
         isLoading: state.isSubmitting,
