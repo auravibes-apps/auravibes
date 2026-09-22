@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -23,7 +24,15 @@ void main() {
           builder: (context) {
             return TestProviderScope(
               overrides: [
-                cloudAccountsProvider.overrideWith((ref) async => const []),
+                cloudAccountsProvider.overrideWith(
+                  (ref) async => const [
+                    CloudAccountSession(
+                      serverUrl: 'http://localhost:8080',
+                      userId: 'account-1',
+                      email: 'dev@example.com',
+                    ),
+                  ],
+                ),
               ],
               child: MaterialApp(
                 home: Builder(
@@ -82,5 +91,19 @@ void main() {
 
     expect(find.text('Discard unsaved changes?'), findsNothing);
     expect(find.text('Create New Workspace'), findsNothing);
+
+    final _ = await tester.tap(find.text('Open create'));
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.tap(find.text('Local workspace'));
+    final _ = await tester.pump();
+    final _ = await tester.tap(find.text('dev@example.com'));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Workspace Draft');
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+
+    final _ = await tester.tap(find.byIcon(Icons.arrow_back));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Discard unsaved changes?'), findsOneWidget);
   });
 }
