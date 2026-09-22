@@ -280,9 +280,11 @@ class _AuraPopupMenuData {
            shiftToWithinBound: .new(x: true, y: true),
          ),
          portalFollower: TapRegion(
-           child: FocusScope(
-             node: menuFocusScopeNode,
-             child: _AuraPopupMenuSurface(items: items, close: close),
+           child: Portal(
+             child: FocusScope(
+               node: menuFocusScopeNode,
+               child: _AuraPopupMenuSurface(items: items, close: close),
+             ),
            ),
            behavior: .opaque,
            onTapOutside: (_) => closeOutside(),

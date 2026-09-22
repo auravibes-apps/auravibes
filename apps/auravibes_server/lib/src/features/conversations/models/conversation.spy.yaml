@@ -7,6 +7,7 @@ fields:
   isPinned: bool
   modelId: String?
   agentId: String?
+  reasoningConfigJson: String?
   parentConversationStableId: String?
   revision: int
   projectionRevision: int, default=1

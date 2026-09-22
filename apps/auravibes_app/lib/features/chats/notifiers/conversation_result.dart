@@ -3,6 +3,8 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_provid
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -55,18 +57,67 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    state = AsyncData(
-      ConversationFound(await _updateModel(result.conversation, modelId)),
+    final selectedModel = await ref.read(
+      workspaceModelSelectionByIdProvider(_workspaceId, modelId).future,
     );
+    if (!ref.mounted) return;
+    final reasoningConfiguration = result.conversation.reasoningConfiguration;
+    final clearReasoningConfiguration =
+        reasoningConfiguration != null &&
+        (selectedModel == null ||
+            !reasoningConfiguration.isValidFor(
+              selectedModel.workspaceModelSelection.reasoningOptions,
+            ));
+    final updated = await _updateConversation(
+      result.conversation,
+      .new(
+        modelId: modelId,
+        clearReasoningConfiguration: clearReasoningConfiguration,
+      ),
+    );
+    if (!ref.mounted) return;
+
+    state = AsyncData(ConversationFound(updated));
+  }
+
+  Future<void> setReasoningConfiguration(
+    ReasoningConfiguration? reasoningConfiguration,
+  ) async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    final modelId = result.conversation.modelId;
+    final selectedModel = modelId == null
+        ? null
+        : await ref.read(
+            workspaceModelSelectionByIdProvider(_workspaceId, modelId).future,
+          );
+    if (!ref.mounted) return;
+    final isValid =
+        reasoningConfiguration == null ||
+        (selectedModel != null &&
+            reasoningConfiguration.isValidFor(
+              selectedModel.workspaceModelSelection.reasoningOptions,
+            ));
+    final updated = await _updateConversation(
+      result.conversation,
+      isValid && reasoningConfiguration != null
+          ? ConversationPatch(reasoningConfiguration: reasoningConfiguration)
+          : const ConversationPatch(clearReasoningConfiguration: true),
+    );
+    if (!ref.mounted) return;
+
+    state = AsyncData(ConversationFound(updated));
   }
 
   Future<void> setAgent(String? agentId) async {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    state = AsyncData(
-      ConversationFound(await _updateAgent(result.conversation, agentId)),
-    );
+    final updated = await _updateAgent(result.conversation, agentId);
+    if (!ref.mounted) return;
+
+    state = AsyncData(ConversationFound(updated));
   }
 
   Future<void> rename(ConversationEntity conversation, String title) async {
@@ -99,23 +150,23 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationEntity> _updateModel(
+  Future<ConversationEntity> _updateConversation(
     ConversationEntity conversation,
-    String modelId,
+    ConversationPatch patch,
   ) async {
     final cloud = await ref.read(
       cloudConversationUsecaseProvider(_workspaceId).future,
     );
     if (cloud != null) {
-      return _updatedModelConversation(
+      return _updatedConversation(
         conversation,
-        await cloud.updateModel(conversation, modelId),
+        await cloud.update(conversation, patch),
       );
     }
 
     return await ref
         .read(conversationRepositoryProvider)
-        .patchConversation(conversation.id, .new(modelId: modelId));
+        .patchConversation(conversation.id, patch);
   }
 
   Future<ConversationEntity> _updateAgent(
@@ -147,11 +198,14 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     updatedAt: updated.updatedAt,
   );
 
-  ConversationEntity _updatedModelConversation(
+  ConversationEntity _updatedConversation(
     ConversationEntity conversation,
     ConversationSummary updated,
   ) => conversation.copyWith(
     modelId: updated.modelId,
+    reasoningConfiguration: ReasoningConfiguration.decode(
+      updated.reasoningConfigJson,
+    ),
     revision: updated.revision,
     updatedAt: updated.updatedAt,
   );

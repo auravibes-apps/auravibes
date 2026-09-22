@@ -305,6 +305,22 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
+      "reasoning": {
+        "title": "Razonamiento",
+        "enabled": "Activar razonamiento",
+        "effort": "Esfuerzo de razonamiento",
+        "budget_tokens": "Presupuesto de tokens de razonamiento",
+        "budget_hint": "Ingresa un valor entre {min} y {max}.",
+        "budget_invalid": "Ingresa un número entero entre {min} y {max}.",
+        "default": "Predeterminado del proveedor",
+        "effort_default": "Predeterminado",
+        "options_tooltip": "Opciones de razonamiento",
+        "trigger_label": "Opciones de razonamiento: {status}",
+        "status_default": "Predeterminado del proveedor",
+        "status_off": "Desactivado",
+        "status_custom": "Personalizado",
+        "restore_default": "Restaurar predeterminado del proveedor"
+      },
       "message_placeholder": "Escribe tu mensaje...",
       "attach_file": "Adjuntar archivo",
       "attach_photo": "Adjuntar foto",

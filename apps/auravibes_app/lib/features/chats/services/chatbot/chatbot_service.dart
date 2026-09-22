@@ -37,6 +37,7 @@ class ChatbotService({
     history: history,
     tools: options.tools,
     sessionId: options.sessionId,
+    reasoningConfiguration: options.reasoningConfiguration,
     a2uiRuntime: a2uiRuntime,
   ));
 
@@ -97,6 +98,7 @@ class ChatbotService({
 class const ChatbotMessageOptions({
   final List<ToolSpec>? tools,
   final String? sessionId,
+  final ReasoningConfiguration? reasoningConfiguration,
 });
 
 typedef _SendMessageRequest = ({
@@ -105,6 +107,7 @@ typedef _SendMessageRequest = ({
   List<ChatMessage> history,
   List<ToolSpec>? tools,
   String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
   ChatA2uiRuntime? a2uiRuntime,
 });
 
@@ -137,6 +140,7 @@ _createResponseStream(_SendMessageRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
     sessionId: request.sessionId,
+    reasoningConfiguration: request.reasoningConfiguration,
   );
 
   return _generationStream(request, ai);
@@ -195,7 +199,10 @@ _generateStream(Genkit ai, _SendMessageRequest request) {
   return _generateStreamRequest((
     ai: ai,
     model: factory.getModelReference(provider),
-    config: factory.getGenerationConfig<Object?>(provider),
+    config: factory.getGenerationConfig<Object?>(
+      provider,
+      request.reasoningConfiguration,
+    ),
     messages: _genkitHistory(request),
     tools: request.service._defineGenkitTools(ai, request.tools),
   ));

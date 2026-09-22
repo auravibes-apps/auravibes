@@ -39,11 +39,39 @@ Future<WorkspaceModelSelectionWithConnectionEntity?> _resolveSelectedModel(
   WorkspaceModelSelectionWithConnectionEntity? selectedModel,
   ModelCatalogStore catalog,
 ) {
-  if (selectedModel == null || !_isCodexSelection(selectedModel)) {
+  if (selectedModel == null) {
     return Future.value(selectedModel);
   }
 
-  return WorkspaceModelSelectionProviders.resolve(selectedModel, catalog);
+  return _resolveCatalogCapabilities(
+    _isCodexSelection(selectedModel)
+        ? WorkspaceModelSelectionProviders.resolve(selectedModel, catalog)
+        : Future.value(selectedModel),
+    catalog,
+  );
+}
+
+Future<WorkspaceModelSelectionWithConnectionEntity> _resolveCatalogCapabilities(
+  Future<WorkspaceModelSelectionWithConnectionEntity> selectionFuture,
+  ModelCatalogStore catalog,
+) async {
+  final selection = await selectionFuture;
+  final model = await catalog.getModelByProviderAndModelId(
+    selection.modelsProvider.id,
+    selection.workspaceModelSelection.modelId,
+  );
+  if (model == null) return selection;
+
+  return selection.copyWith(
+    workspaceModelSelection: selection.workspaceModelSelection.copyWith(
+      modelName: model.name,
+      modalitiesInput: model.modalitiesInput,
+      modalitiesOutput: model.modalitiesOutput,
+      supportsReasoning: model.supportsReasoning,
+      reasoningOptions: model.reasoningOptions,
+      supportsToolCalls: model.supportsToolCalls,
+    ),
+  );
 }
 
 class WorkspaceModelSelectionProviders {
@@ -81,6 +109,7 @@ class WorkspaceModelSelectionProviders {
     modalitiesInput: model.modalitiesInput,
     modalitiesOutput: model.modalitiesOutput,
     supportsReasoning: model.supportsReasoning,
+    reasoningOptions: model.reasoningOptions,
     supportsToolCalls: model.supportsToolCalls,
   );
 

@@ -17,7 +17,7 @@ mixin _$NewChatState {
 
  String? get modelId;/// Stores the provider ID (or name equivalent) for displaying and
 /// filtering models.
- String? get providerId; String? get agentId; bool get isLoading;
+ String? get providerId; String? get agentId; ReasoningConfiguration? get reasoningConfiguration; bool get isLoading;
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,20 +29,20 @@ $NewChatStateCopyWith<NewChatState> get copyWith => _$NewChatStateCopyWithImpl<N
 @override
 bool operator ==(Object other) {
   final _this = this as NewChatState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.providerId, _this.providerId) || other.providerId == _this.providerId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.isLoading, _this.isLoading) || other.isLoading == _this.isLoading));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.providerId, _this.providerId) || other.providerId == _this.providerId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.isLoading, _this.isLoading) || other.isLoading == _this.isLoading));
 }
 
 
 @override
 int get hashCode {
   final _this = this as NewChatState;
-  return Object.hash(runtimeType,_this.modelId,_this.providerId,_this.agentId,_this.isLoading);
+  return Object.hash(runtimeType,_this.modelId,_this.providerId,_this.agentId,_this.reasoningConfiguration,_this.isLoading);
 }
 
 @override
 String toString() {
   final _this = this as NewChatState;
-  return 'NewChatState(modelId: ${_this.modelId}, providerId: ${_this.providerId}, agentId: ${_this.agentId}, isLoading: ${_this.isLoading})';
+  return 'NewChatState(modelId: ${_this.modelId}, providerId: ${_this.providerId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, isLoading: ${_this.isLoading})';
 }
 
 
@@ -53,7 +53,7 @@ abstract mixin class $NewChatStateCopyWith<$Res>  {
   factory $NewChatStateCopyWith(NewChatState value, $Res Function(NewChatState) _then) = _$NewChatStateCopyWithImpl;
 @useResult
 $Res call({
- String? modelId, String? providerId, String? agentId, bool isLoading
+ String? modelId, String? providerId, String? agentId, ReasoningConfiguration? reasoningConfiguration, bool isLoading
 });
 
 
@@ -70,12 +70,13 @@ class _$NewChatStateCopyWithImpl<$Res>
 
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? modelId = freezed,Object? providerId = freezed,Object? agentId = freezed,Object? isLoading = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? modelId = freezed,Object? providerId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? isLoading = null,}) {
   return _then(NewChatState(
 modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,providerId: freezed == providerId ? _self.providerId : providerId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
-as String?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
+as String?,reasoningConfiguration: freezed == reasoningConfiguration ? _self.reasoningConfiguration : reasoningConfiguration // ignore: cast_nullable_to_non_nullable
+as ReasoningConfiguration?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? modelId,  String? providerId,  String? agentId,  bool isLoading)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? modelId,  String? providerId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool isLoading)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _NewChatState() when $default != null:
-return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);case _:
+return $default(_that.modelId,_that.providerId,_that.agentId,_that.reasoningConfiguration,_that.isLoading);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);ca
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? modelId,  String? providerId,  String? agentId,  bool isLoading)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? modelId,  String? providerId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool isLoading)  $default,) {final _that = this;
 switch (_that) {
 case _NewChatState():
-return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);case _:
+return $default(_that.modelId,_that.providerId,_that.agentId,_that.reasoningConfiguration,_that.isLoading);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);ca
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? modelId,  String? providerId,  String? agentId,  bool isLoading)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? modelId,  String? providerId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool isLoading)?  $default,) {final _that = this;
 switch (_that) {
 case _NewChatState() when $default != null:
-return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);case _:
+return $default(_that.modelId,_that.providerId,_that.agentId,_that.reasoningConfiguration,_that.isLoading);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.modelId,_that.providerId,_that.agentId,_that.isLoading);ca
 
 
 class _NewChatState implements NewChatState {
-  const _NewChatState({this.modelId, this.providerId, this.agentId, this.isLoading = false});
+  const _NewChatState({this.modelId, this.providerId, this.agentId, this.reasoningConfiguration, this.isLoading = false});
   
 
 @override final  String? modelId;
@@ -225,6 +226,7 @@ class _NewChatState implements NewChatState {
 /// filtering models.
 @override final  String? providerId;
 @override final  String? agentId;
+@override final  ReasoningConfiguration? reasoningConfiguration;
 @override@JsonKey() final  bool isLoading;
 
 /// Create a copy of NewChatState
@@ -237,18 +239,18 @@ _$NewChatStateCopyWith<_NewChatState> get copyWith => __$NewChatStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+    return Object.hash(runtimeType,modelId,providerId,agentId,reasoningConfiguration,isLoading);
 }
 
 @override
 String toString() {
-    return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
+    return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, isLoading: $isLoading)';
 }
 
 
@@ -259,7 +261,7 @@ abstract mixin class _$NewChatStateCopyWith<$Res> implements $NewChatStateCopyWi
   factory _$NewChatStateCopyWith(_NewChatState value, $Res Function(_NewChatState) _then) = __$NewChatStateCopyWithImpl;
 @override @useResult
 $Res call({
- String? modelId, String? providerId, String? agentId, bool isLoading
+ String? modelId, String? providerId, String? agentId, ReasoningConfiguration? reasoningConfiguration, bool isLoading
 });
 
 
@@ -276,12 +278,13 @@ class __$NewChatStateCopyWithImpl<$Res>
 
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? modelId = freezed,Object? providerId = freezed,Object? agentId = freezed,Object? isLoading = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? modelId = freezed,Object? providerId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? isLoading = null,}) {
   return _then(_NewChatState(
 modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,providerId: freezed == providerId ? _self.providerId : providerId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
-as String?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
+as String?,reasoningConfiguration: freezed == reasoningConfiguration ? _self.reasoningConfiguration : reasoningConfiguration // ignore: cast_nullable_to_non_nullable
+as ReasoningConfiguration?,isLoading: null == isLoading ? _self.isLoading : isLoading // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

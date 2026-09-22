@@ -13,6 +13,8 @@ class OpenRouterOptions({
   super.seed,
   super.user,
   final int? reasoningMaxTokens,
+  final String? reasoningEffort,
+  final bool? reasoningEnabled,
 }) extends OpenAICompatChatOptions {
   factory fromJson(Map<String, dynamic>? json) {
     final shared = OpenAICompatChatOptions.fromJson(json);
@@ -27,6 +29,8 @@ class OpenRouterOptions({
       seed: shared.seed,
       user: shared.user,
       reasoningMaxTokens: json?['reasoningMaxTokens'] as int?,
+      reasoningEffort: json?['reasoningEffort'] as String?,
+      reasoningEnabled: json?['reasoningEnabled'] as bool?,
     );
   }
 
@@ -34,5 +38,7 @@ class OpenRouterOptions({
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'reasoningMaxTokens': ?reasoningMaxTokens,
+    'reasoningEffort': ?reasoningEffort,
+    'reasoningEnabled': ?reasoningEnabled,
   };
 }

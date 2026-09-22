@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart' show Ref;
 import 'package:riverpod/src/providers/provider.dart';
 
@@ -22,6 +23,7 @@ typedef _SendNewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  ReasoningConfiguration? reasoningConfiguration,
 });
 
 class const SendNewMessageUsecase({
@@ -83,6 +85,7 @@ class const SendNewMessageUsecase({
         workspaceId: request.workspaceId,
         modelId: request.workspaceModelSelectionId,
         agentId: request.agentId,
+        reasoningConfiguration: request.reasoningConfiguration,
       ),
     );
     _generateTitle(request, conversation, model);

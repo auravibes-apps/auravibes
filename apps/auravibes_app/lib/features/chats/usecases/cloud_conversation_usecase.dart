@@ -17,6 +17,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
         isPinned: value.isPinned ?? false,
         modelId: value.modelId,
         agentId: value.agentId,
+        reasoningConfigJson: value.reasoningConfiguration?.encode(),
         parentConversationId: value.parentConversationId,
       ),
     );
@@ -102,6 +103,8 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     clearModel: false,
     agentId: patch.agentId,
     clearAgent: patch.clearAgent,
+    reasoningConfigJson: patch.reasoningConfiguration?.encode(),
+    clearReasoningConfig: patch.clearReasoningConfiguration,
     clearParent: false,
   );
 

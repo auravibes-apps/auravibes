@@ -263,6 +263,7 @@ ConversationEntity _cloudConversationCore(
     revision: conversation.revision,
     modelId: conversation.modelId,
     agentId: conversation.agentId,
+    reasoningConfiguration: .decode(conversation.reasoningConfigJson),
     parentConversationId: conversation.parentConversationId,
   );
 }

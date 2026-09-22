@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +42,7 @@ void main() {
       String workspaceId = 'ws-1',
       String? modelId,
       String? agentId,
+      String? reasoningConfigJson,
       bool isPinned = false,
     }) {
       return ConversationsTable(
@@ -51,6 +53,7 @@ void main() {
         title: title,
         modelId: modelId,
         agentId: agentId,
+        reasoningConfigJson: reasoningConfigJson,
         isPinned: isPinned,
       );
     }
@@ -202,6 +205,39 @@ void main() {
         verify(() => mockDao.insertConversation(any())).called(1);
       });
 
+      test(
+        'persists reasoning configuration when creating conversation',
+        () async {
+          const configuration = ReasoningConfiguration(effort: 'high');
+          const toCreate = ConversationToCreate(
+            title: 'Reasoning Chat',
+            workspaceId: 'ws-1',
+            reasoningConfiguration: configuration,
+          );
+          final createdRow = ConversationsTable(
+            id: 'new-conv',
+            createdAt: now,
+            updatedAt: now,
+            workspaceId: 'ws-1',
+            title: 'Reasoning Chat',
+            reasoningConfigJson: configuration.encode(),
+            isPinned: false,
+          );
+
+          when(() => mockDao.insertConversation(captureAny()))
+              .thenAnswer((_) async => createdRow);
+
+          final _ = await repository.createConversation(toCreate);
+
+          final companion =
+              verify(() => mockDao.insertConversation(captureAny()))
+                      .captured
+                      .single
+                  as ConversationsCompanion;
+          expect(companion.reasoningConfigJson.value, configuration.encode());
+        },
+      );
+
       test('throws on empty title', () async {
         const toCreate = ConversationToCreate(title: '', workspaceId: 'ws-1');
 
@@ -262,6 +298,36 @@ void main() {
 
         expect(result.title, 'Updated Title');
         expect(result.isPinned, true);
+      });
+
+      test('clears reasoning configuration when resetting defaults', () async {
+        const configuration = ReasoningConfiguration(effort: 'high');
+        final currentRow = createConversationRow(
+          reasoningConfigJson: configuration.encode(),
+        );
+        final updatedRow = currentRow.copyWith(
+          reasoningConfigJson: const Value(null),
+        );
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => currentRow);
+        when(() => mockDao.patchConversation('conv-1', captureAny()))
+            .thenAnswer((_) async => true);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => updatedRow);
+
+        final result = await repository.patchConversation(
+          'conv-1',
+          const ConversationPatch(clearReasoningConfiguration: true),
+        );
+
+        expect(result.reasoningConfiguration, isNull);
+        final companion =
+            verify(() => mockDao.patchConversation('conv-1', captureAny()))
+                    .captured
+                    .single
+                as ConversationsCompanion;
+        expect(companion.reasoningConfigJson.present, isTrue);
+        expect(companion.reasoningConfigJson.value, isNull);
       });
 
       test(

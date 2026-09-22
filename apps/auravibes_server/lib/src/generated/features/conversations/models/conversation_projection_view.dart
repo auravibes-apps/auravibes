@@ -22,6 +22,7 @@ abstract class ConversationProjectionView
     required this.sequence,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.forkSourceConversationId,
     this.forkSourceTitle,
     this.forkThroughMessageId,
@@ -38,6 +39,7 @@ abstract class ConversationProjectionView
     required int sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
@@ -57,6 +59,7 @@ abstract class ConversationProjectionView
       sequence: jsonSerialization['sequence'] as int,
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       forkSourceConversationId:
           jsonSerialization['forkSourceConversationId'] as String?,
       forkSourceTitle: jsonSerialization['forkSourceTitle'] as String?,
@@ -88,6 +91,8 @@ abstract class ConversationProjectionView
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? forkSourceConversationId;
 
   String? forkSourceTitle;
@@ -111,6 +116,7 @@ abstract class ConversationProjectionView
     int? sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
@@ -129,6 +135,8 @@ abstract class ConversationProjectionView
       'sequence': sequence,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (forkSourceConversationId != null)
         'forkSourceConversationId': forkSourceConversationId,
       if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
@@ -152,6 +160,8 @@ abstract class ConversationProjectionView
       'sequence': sequence,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (forkSourceConversationId != null)
         'forkSourceConversationId': forkSourceConversationId,
       if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
@@ -181,6 +191,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     required int sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
@@ -195,6 +206,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
          sequence: sequence,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          forkSourceConversationId: forkSourceConversationId,
          forkSourceTitle: forkSourceTitle,
          forkThroughMessageId: forkThroughMessageId,
@@ -215,6 +227,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     int? sequence,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? forkSourceConversationId = _Undefined,
     Object? forkSourceTitle = _Undefined,
     Object? forkThroughMessageId = _Undefined,
@@ -230,6 +243,9 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       sequence: sequence ?? this.sequence,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       forkSourceConversationId: forkSourceConversationId is String?
           ? forkSourceConversationId
           : this.forkSourceConversationId,

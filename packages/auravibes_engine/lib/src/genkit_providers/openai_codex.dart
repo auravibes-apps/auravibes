@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
+import 'package:auravibes_engine/src/reasoning_configuration.dart';
 import 'package:genkit/plugin.dart';
 
 class const OpenAICodexCodec() {
@@ -56,17 +57,22 @@ class const OpenAICodexCodec() {
     required String modelName,
     required ModelRequest request,
     required bool stream,
+    ReasoningConfiguration? reasoningConfiguration,
   }) {
+    final effort = reasoningConfiguration?.enabled == false
+        ? 'none'
+        : reasoningConfiguration?.effort;
+
     return {
       'model': modelName,
       'input': request.messages.expand(_messageToInput).toList(),
       'instructions': _codexInstructions,
       'stream': stream,
       'store': false,
-      'reasoning': const {'effort': 'medium', 'summary': 'auto'},
       'text': const {'verbosity': 'low'},
       'include': const ['reasoning.encrypted_content'],
       'tools': ?request.tools?.map(_toolToJson).toList(),
+      if (effort != null) 'reasoning': {'effort': effort},
     };
   }
 

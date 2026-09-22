@@ -339,8 +339,12 @@ void main() {
           _makeConfig(
             type: ModelProvidersType.anthropic,
             supportsReasoning: true,
+            reasoningOptions: [ReasoningOption.budgetTokens(1024, 32768)],
           ),
           [ChatMessage.user('hello')],
+          options: const ChatbotMessageOptions(
+            reasoningConfiguration: .new(budgetTokens: 1024),
+          ),
         ).toList();
         expect(chunks, isNotEmpty);
 
@@ -700,6 +704,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeConfig({
   ModelProvidersType type = ModelProvidersType.openai,
   String modelId = 'model',
   bool supportsReasoning = false,
+  List<ReasoningOption> reasoningOptions = const [],
 }) {
   return WorkspaceModelSelectionWithConnectionEntity(
     workspaceModelSelection: WorkspaceModelSelectionEntity(
@@ -709,6 +714,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeConfig({
       updatedAt: DateTime(2025),
       modelConnectionId: 'connection-1',
       supportsReasoning: supportsReasoning,
+      reasoningOptions: reasoningOptions,
     ),
     modelConnection: ModelConnectionEntity(
       id: 'connection-1',
@@ -756,6 +762,7 @@ class _FakeProviderFactory extends ProviderFactory {
   Future<genkit.Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   }) async {
     if (throwsOnCreateGenkit) throw Exception('failed to create Genkit');
     return genkit.Genkit(isDevEnv: false)..defineModel(

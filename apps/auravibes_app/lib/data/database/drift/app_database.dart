@@ -139,7 +139,9 @@ class AppDatabase extends _$AppDatabase {
       _forkSchemaVersion + 1;
   static const int _skillResourceSchemaVersion =
       _skillTemplateDefinitionSchemaVersion + 1;
-  static const int _currentSchemaVersion = _skillResourceSchemaVersion;
+  static const int _reasoningControlsSchemaVersion =
+      _skillResourceSchemaVersion + 1;
+  static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -190,6 +192,7 @@ extension on AppDatabase {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
+    await _upgradeReasoningControlsSchema(m, from);
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
@@ -301,6 +304,19 @@ extension on AppDatabase {
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
     );
+  }
+
+  Future<void> _upgradeReasoningControlsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._reasoningControlsSchemaVersion) return;
+
+    if (await _tableExists('api_models') &&
+        !await _columnExists('api_models', 'reasoning_options_json')) {
+      await m.addColumn(apiModels, apiModels.reasoningOptionsJson);
+    }
+    if (await _tableExists('conversations') &&
+        !await _columnExists('conversations', 'reasoning_config_json')) {
+      await m.addColumn(conversations, conversations.reasoningConfigJson);
+    }
   }
 
   Future<void> _upgradeSkillTemplateDefinitionSchema(

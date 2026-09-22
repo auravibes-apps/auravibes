@@ -439,7 +439,13 @@ final class const ServerConversationEngineHost({
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
-      customize: (modelName, _) => (model: modelName, extraBody: const {}),
+      customize: (modelName, _) => (
+        model: modelName,
+        extraBody: _reasoningRequestBody(
+          config.providerId,
+          config.reasoningConfiguration,
+        ),
+      ),
     );
     final response = ConversationResponseAccumulator(
       publisher: liveTurns,
@@ -1248,9 +1254,10 @@ final class const ServerConversationEngineHost({
     List<ConversationMessage> messages,
   ) async {
     final payload = job.payloadJson;
-    final actorUserId = payload == null
-        ? null
-        : _jsonObject(payload)['actorUserId'];
+    final payloadObject = payload == null
+        ? const <String, dynamic>{}
+        : _jsonObject(payload);
+    final actorUserId = payloadObject['actorUserId'];
     if (actorUserId is! String) {
       throw const ConversationEngineConfigurationException('initiator');
     }
@@ -1264,6 +1271,13 @@ final class const ServerConversationEngineHost({
     if (selectionId is! String || selectionId.isEmpty) {
       throw const ConversationEngineConfigurationException('model_selection');
     }
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
     final selection = await const VirtualWorkspaceModelSelectionResolver()
         .resolve(
           session,
@@ -1273,6 +1287,24 @@ final class const ServerConversationEngineHost({
     if (selection == null) {
       throw const ConversationEngineConfigurationException('model');
     }
+    final reasoningOptions = _reasoningOptions(
+      selection.model.reasoningOptionsJson,
+      selection.model.supportsReasoning,
+    );
+    final persistedReasoning = payloadObject['reasoningConfigJson'];
+    final reasoningJson = payloadObject.containsKey('reasoningConfigJson')
+        ? persistedReasoning is String
+              ? persistedReasoning
+              : null
+        : conversation.reasoningConfigJson;
+    final configuredReasoning = ReasoningConfiguration.decode(
+      reasoningJson,
+    );
+    final reasoningConfiguration =
+        configuredReasoning != null &&
+            configuredReasoning.isValidFor(reasoningOptions)
+        ? configuredReasoning
+        : null;
     final connection = selection.connection;
     final validated = await validatePublicHttpsUri(
       connection.url ?? defaultProviderUrl(connection.providerId),
@@ -1306,6 +1338,7 @@ final class const ServerConversationEngineHost({
           await const WorkspaceSecretCipher().decrypt(session, secret),
         ),
       ),
+      reasoningConfiguration: reasoningConfiguration,
     );
   }
 
@@ -1534,4 +1567,85 @@ class const _ProviderConfig({
   required final Uri uri,
   required final InternetAddress address,
   required final Map<String, String> headers,
+  final ReasoningConfiguration? reasoningConfiguration,
 });
+
+List<ReasoningOption> _reasoningOptions(
+  String? value,
+  bool supportsReasoning,
+) {
+  if (value == null) {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+
+  try {
+    final decoded = jsonDecode(value);
+    if (decoded is! List) {
+      return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+    }
+    final options = [
+      for (final item in decoded) ?ReasoningOption.fromJson(item),
+    ];
+    return options.isEmpty && supportsReasoning
+        ? const [ReasoningOption.toggle()]
+        : options;
+  } on FormatException {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+}
+
+Map<String, dynamic> _reasoningRequestBody(
+  String providerId,
+  ReasoningConfiguration? configuration,
+) {
+  if (configuration == null) return const {};
+
+  if (providerId == 'openrouter') {
+    if (configuration.enabled == false) {
+      return const {
+        'reasoning': {'enabled': false},
+      };
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return const {};
+    }
+
+    return {
+      'reasoning': {
+        'effort': ?configuration.effort,
+        'max_tokens': ?configuration.budgetTokens,
+      },
+    };
+  }
+
+  if (providerId == 'anthropic') {
+    if (configuration.enabled == false) {
+      return const {
+        'thinking': {'type': 'disabled'},
+      };
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return const {};
+    }
+
+    return {
+      'thinking': configuration.budgetTokens == null
+          ? null
+          : {
+              'type': 'enabled',
+              'budget_tokens': configuration.budgetTokens,
+            },
+      'output_config': configuration.effort == null
+          ? null
+          : {'effort': configuration.effort},
+    }..removeWhere((key, value) => value == null);
+  }
+
+  if (providerId == 'openai' || providerId == 'openai-codex') {
+    return OpenAICompatReasoningOptions(
+      reasoningEffort: configuration.effort,
+    ).toReasoningBody(enabled: configuration.enabled != false);
+  }
+
+  return const {};
+}

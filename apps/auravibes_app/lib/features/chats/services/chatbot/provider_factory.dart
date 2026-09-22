@@ -19,6 +19,7 @@ typedef _ProviderRequest = ({
   ProviderRuntimeSelection runtime,
   String modelId,
   String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -34,12 +35,16 @@ class const ProviderFactory({
   final Future<String> Function(String id)? resolveOAuthAccessToken,
 }) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
-  static const _thinkingBudgetTokens = 1024;
   Future<Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   }) async {
-    final request = await _providerRequest(config, sessionId);
+    final request = await _providerRequest(
+      config,
+      sessionId,
+      reasoningConfiguration,
+    );
 
     return _createGenkit(request);
   }
@@ -53,18 +58,47 @@ class const ProviderFactory({
   }
 
   T? getGenerationConfig<T>(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
+    WorkspaceModelSelectionWithConnectionEntity config, [
+    ReasoningConfiguration? reasoningConfiguration,
+  ]) {
     final runtime = _runtimeSelection(config, config.modelConnection.url);
+    final selectedConfiguration = _validConfiguration(
+      config,
+      reasoningConfiguration,
+    );
     if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-      return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
+      final configuration = selectedConfiguration;
+      if (configuration == null ||
+          (configuration.enabled != false && configuration.effort == null)) {
+        return null;
+      }
+
+      return OpenAICompatReasoningOptions(
+        reasoningEffort: configuration.enabled == false
+            ? 'none'
+            : configuration.effort,
+      ) as T;
     }
-    if (runtime.runtime != ProviderRuntime.anthropic ||
-        !config.workspaceModelSelection.supportsReasoning) {
+    if (runtime.runtime == ProviderRuntime.anthropic) {
+      return _anthropicGenerationConfig<T>(selectedConfiguration);
+    }
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterGenerationConfig<T>(selectedConfiguration);
+    }
+
+    return null;
+  }
+
+  ReasoningConfiguration? _validConfiguration(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ReasoningConfiguration? value,
+  ) {
+    if (value == null ||
+        !value.isValidFor(config.workspaceModelSelection.reasoningOptions)) {
       return null;
     }
 
-    return _anthropicGenerationConfig(runtime);
+    return value;
   }
 }
 
@@ -72,6 +106,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
   Future<_ProviderRequest> _providerRequest(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
 
@@ -82,6 +117,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
       runtime: _runtimeSelection(config, connectionUrl),
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,
+      reasoningConfiguration: reasoningConfiguration,
     );
   }
 
@@ -108,7 +144,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     ProviderRuntime runtime,
   ) {
     if (runtime == ProviderRuntime.codexOAuth) return _codexPlugin(request);
-    if (runtime == ProviderRuntime.openAiReasoning && request.baseUrl != null) {
+    if (runtime == ProviderRuntime.openAiReasoning) {
       return _openAIReasoningPlugin(request);
     }
 
@@ -142,12 +178,12 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       accountId: request.config.modelConnection.oauthMetadata?.accountId,
       sessionId: request.sessionId,
       models: [request.modelId],
+      reasoningConfiguration: request.reasoningConfiguration,
     );
   }
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
-    final baseUrl = request.baseUrl;
-    if (baseUrl == null) return _openAIPlugin(request);
+    final baseUrl = request.baseUrl ?? providerProfile('openai').defaultUrl;
 
     return AppChatCompletionsPlugin(
       name: ProviderFactory._openAIReasoningNamespace,
@@ -193,16 +229,36 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return openAI.model(modelId);
   }
 
-  T _anthropicGenerationConfig<T>(ProviderRuntimeSelection runtime) {
-    final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
+  T? _anthropicGenerationConfig<T>(ReasoningConfiguration? configuration) {
+    if (configuration == null) return null;
+    if (configuration.enabled == false) {
+      return AnthropicOptions(thinking: .new(type: 'disabled')) as T;
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return null;
+    }
 
     return AnthropicOptions(
-      thinking: .new(
-        type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking
-            ? null
-            : ProviderFactory._thinkingBudgetTokens,
-      ),
+      thinking: configuration.budgetTokens == null
+          ? null
+          : .new(type: 'enabled', budgetTokens: configuration.budgetTokens),
+      outputConfig: configuration.effort == null
+          ? null
+          : .new(effort: configuration.effort),
+    ) as T;
+  }
+
+  T? _openRouterGenerationConfig<T>(ReasoningConfiguration? configuration) {
+    if (configuration == null) return null;
+
+    return OpenRouterOptions(
+      reasoningMaxTokens: configuration.enabled == false
+          ? null
+          : configuration.budgetTokens,
+      reasoningEffort: configuration.enabled == false
+          ? null
+          : configuration.effort,
+      reasoningEnabled: configuration.enabled == false ? false : null,
     ) as T;
   }
 }
@@ -295,8 +351,14 @@ ChatCompletionsCodec _openRouterCodec() {
         model: modelName,
         extraBody: {
           ...options.toSamplingBody(),
-          if (options.reasoningMaxTokens != null)
-            'reasoning': {'max_tokens': options.reasoningMaxTokens},
+          if (options.reasoningEnabled == false ||
+              options.reasoningEffort != null ||
+              options.reasoningMaxTokens != null)
+            'reasoning': {
+              if (options.reasoningEnabled == false) 'enabled': false,
+              'effort': ?options.reasoningEffort,
+              'max_tokens': ?options.reasoningMaxTokens,
+            },
         },
       );
     },
@@ -318,10 +380,6 @@ _customizeOpenAICompatReasoning(
 
   return (
     model: options.version ?? modelName,
-    extraBody: {
-      ...options.toSamplingBody(),
-      if (options.reasoningType != null)
-        'thinking': {'type': options.reasoningType},
-    },
+    extraBody: {...options.toSamplingBody(), ...options.toReasoningBody()},
   );
 }

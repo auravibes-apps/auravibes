@@ -542,6 +542,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           dartType: 'bool',
         ),
         _isp.ColumnDefinition(
+          name: 'reasoningOptionsJson',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
           name: 'isCanonical',
           columnType: _isp.ColumnType.boolean,
           isNullable: false,
@@ -890,6 +896,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         ),
         _isp.ColumnDefinition(
           name: 'agentId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'reasoningConfigJson',
           columnType: _isp.ColumnType.text,
           isNullable: true,
           dartType: 'String?',

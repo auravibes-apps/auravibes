@@ -46,6 +46,7 @@ export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';
 export 'src/providers/agent_model_provider.dart';
 export 'src/public_url_classifier.dart';
+export 'src/reasoning_configuration.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
 export 'src/skills/execution/app_skill_executor.dart';

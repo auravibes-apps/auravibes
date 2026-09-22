@@ -1,9 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 /// Implementation of the [ApiModelRepository] interface.
 ///
@@ -253,6 +256,10 @@ extension ApiModelRepositoryModelMappings on ApiModelRepository {
     costOutput: modelTable.costOutput,
     openWeights: modelTable.openWeights,
     supportsReasoning: modelTable.supportsReasoning,
+    reasoningOptions: _decodeReasoningOptions(
+      modelTable.reasoningOptionsJson,
+      modelTable.supportsReasoning,
+    ),
     isCanonical: modelTable.isCanonical,
     supportsPriorityMode: modelTable.supportsPriorityMode,
     supportsToolCalls: modelTable.supportsToolCalls,
@@ -298,6 +305,11 @@ ApiModelsCompanion _addModelCapabilityMetadata(
 ) => companion.copyWith(
   openWeights: .new(entity.openWeights),
   supportsReasoning: .new(entity.supportsReasoning),
+  reasoningOptionsJson: .new(
+    jsonEncode(
+      entity.reasoningOptions.map((option) => option.toJson()).toList(),
+    ),
+  ),
   isCanonical: .new(entity.isCanonical),
   supportsPriorityMode: .new(entity.supportsPriorityMode),
   supportsToolCalls: .new(entity.supportsToolCalls),
@@ -313,3 +325,26 @@ ApiModelsCompanion _addModelCostMetadata(
   limitContext: .new(entity.limitContext),
   limitOutput: .new(entity.limitOutput),
 );
+
+List<ReasoningOption> _decodeReasoningOptions(
+  String? value,
+  bool supportsReasoning,
+) {
+  if (value == null) {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+  try {
+    final json = jsonDecode(value);
+    if (json is! List) {
+      return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+    }
+
+    final options = [for (final item in json) ?ReasoningOption.fromJson(item)];
+
+    return options.isEmpty && supportsReasoning
+        ? const [ReasoningOption.toggle()]
+        : options;
+  } on FormatException {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+}
