@@ -1004,6 +1004,8 @@
     "name_too_short_error": "El nombre debe tener al menos {min} caracteres",
     "name_too_long_error": "El nombre debe tener como máximo {max} caracteres",
     "no_workspaces": "No hay espacios de trabajo disponibles",
+    "search_placeholder": "Buscar espacios de trabajo",
+    "no_search_results": "Ningún espacio de trabajo coincide con tu búsqueda.",
     "switch_title": "¿Cambiar de espacio de trabajo?",
     "switch_confirm": "¿Cambiar a \"{name}\"?",
     "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",

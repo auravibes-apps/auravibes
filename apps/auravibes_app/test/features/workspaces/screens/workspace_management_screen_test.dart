@@ -370,6 +370,47 @@ void main() {
       );
     });
 
+    testWidgets('filters workspaces by name and shows no-results state', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace Alpha', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace Beta', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextFormField), 'alpha');
+      await tester.pump();
+
+      expect(find.text('Workspace Alpha'), findsOneWidget);
+      expect(find.text('Workspace Beta'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('workspace_select_ws-1')),
+          matching: find.text('Active'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('workspace_create')),
+        findsOneWidget,
+      );
+
+      await tester.enterText(find.byType(TextFormField), 'missing');
+      await tester.pump();
+
+      expect(find.text('No workspaces match your search.'), findsOneWidget);
+      expect(find.text('Workspace Alpha'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('workspace_create')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('confirms before switching workspace from a tile', (
       tester,
     ) async {
@@ -597,7 +638,7 @@ void main() {
         find.byKey(const ValueKey<String>('workspace_create')),
         findsOneWidget,
       );
-      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
       expect(find.byType(AuraPopupMenuButton), findsOneWidget);
     });
 

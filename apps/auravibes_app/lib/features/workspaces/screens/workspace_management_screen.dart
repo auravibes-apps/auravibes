@@ -154,47 +154,80 @@ class const _WorkspaceListView({
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
   required final List<WorkspaceEntity> workspaces,
-}) extends ConsumerWidget {
+}) extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_WorkspaceListView> createState() => _WorkspaceListViewState();
+}
+
+class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
     return _WorkspaceListSections(
       data: _data(),
-      actions: _actions(context, ref),
+      actions: _actions(context),
+      onSearchChanged: _updateSearchQuery,
     );
   }
 
   _WorkspaceListData _data() {
+    final filteredWorkspaces = _filterWorkspaces(
+      widget.workspaces,
+      _searchQuery,
+    );
+
     return _WorkspaceListData(
-      activeWorkspaceId: activeWorkspaceId,
-      accounts: accounts,
-      editingWorkspace: editingWorkspace,
-      local: _localWorkspaces(),
-      connected: _connectedWorkspaces(),
-      workspaces: workspaces,
+      activeWorkspaceId: widget.activeWorkspaceId,
+      accounts: widget.accounts,
+      editingWorkspace: widget.editingWorkspace,
+      isSearchActive: _searchQuery.trim().isNotEmpty,
+      local: _localWorkspaces(filteredWorkspaces),
+      connected: _connectedWorkspaces(filteredWorkspaces),
+      workspaces: widget.workspaces,
     );
   }
 
-  List<WorkspaceEntity> _localWorkspaces() {
+  void _updateSearchQuery(String query) {
+    setState(() => _searchQuery = query);
+  }
+
+  List<WorkspaceEntity> _localWorkspaces(List<WorkspaceEntity> workspaces) {
     return workspaces.where((item) => item.cloudWorkspaceId == null).toList();
   }
 
-  List<WorkspaceEntity> _connectedWorkspaces() {
+  List<WorkspaceEntity> _connectedWorkspaces(List<WorkspaceEntity> workspaces) {
     return workspaces.where((item) => item.cloudWorkspaceId != null).toList();
   }
 
-  _WorkspaceListActions _actions(BuildContext context, WidgetRef ref) {
+  _WorkspaceListActions _actions(BuildContext context) {
     return _WorkspaceListActions(
       context: context,
       ref: ref,
-      activeWorkspaceId: activeWorkspaceId,
+      activeWorkspaceId: widget.activeWorkspaceId,
     );
   }
+}
+
+List<WorkspaceEntity> _filterWorkspaces(
+  List<WorkspaceEntity> workspaces,
+  String query,
+) {
+  final normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.isEmpty) return workspaces;
+
+  return workspaces
+      .where(
+        (workspace) => workspace.name.toLowerCase().contains(normalizedQuery),
+      )
+      .toList();
 }
 
 class const _WorkspaceListData({
   required final String activeWorkspaceId,
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
+  required final bool isSearchActive,
   required final List<WorkspaceEntity> local,
   required final List<WorkspaceEntity> connected,
   required final List<WorkspaceEntity> workspaces,
@@ -203,18 +236,48 @@ class const _WorkspaceListData({
 class const _WorkspaceListSections({
   required final _WorkspaceListData data,
   required final _WorkspaceListActions actions,
+  required final ValueChanged<String> onSearchChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _WorkspaceSearchInput(onChanged: onSearchChanged),
+        if (data.isSearchActive && data.local.isEmpty && data.connected.isEmpty)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: TextLocale(
+              LocaleKeys.workspace_management_no_search_results,
+            ),
+          ),
         _LocalWorkspaceSection(data: data, actions: actions),
         _ConnectedWorkspaceSection(data: data, actions: actions),
         _AvailableCloudWorkspaceSection(data: data, actions: actions),
       ],
     );
   }
+}
+
+class const _WorkspaceSearchInput({
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Semantics(
+      key: const ValueKey<String>('workspace_search'),
+      child: AuraInput(
+        placeholder: const TextLocale(
+          LocaleKeys.workspace_management_search_placeholder,
+        ),
+        prefixIcon: const AuraIcon(Icons.search),
+        size: .small,
+        onChanged: onChanged,
+      ),
+      identifier: 'workspace_search',
+    ),
+  );
 }
 
 class const _WorkspaceListActions({
@@ -512,7 +575,7 @@ class _LocalWorkspaceItems extends StatelessWidget {
     required _WorkspaceListData data,
     required _WorkspaceListActions actions,
   }) : _children = [
-         if (data.local.isEmpty)
+         if (data.local.isEmpty && !data.isSearchActive)
            const TextLocale(LocaleKeys.workspace_management_no_workspaces),
          for (final workspace in data.local)
            _LocalWorkspaceItem(
