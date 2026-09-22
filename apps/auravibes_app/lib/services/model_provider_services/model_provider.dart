@@ -161,6 +161,9 @@ Future<AntropicResponseModels> _anthopicModels(
   String? afterId,
 ]) async {
   final request = await _anthropicGet(provider, afterId);
+  if (!_isSuccessStatus(request.statusCode)) {
+    throw StateError('Anthropic model request failed');
+  }
 
   final json = jsonDecode(request.body) as Map<String, dynamic>;
 
