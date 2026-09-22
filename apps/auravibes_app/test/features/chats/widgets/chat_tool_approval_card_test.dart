@@ -373,44 +373,41 @@ void main() {
       expect(find.text('Read File'), findsOneWidget);
     });
 
-    testWidgets(
-      'shows the model action description separately from arguments',
-      (tester) async {
-        final pendingCalls = [
-          _createPendingToolCall(
-            userFacingDescription: 'I will search for the requested item.',
-            argumentsRaw: '{"arg1":"search","arg2":"item"}',
-          ),
-        ];
-        await pumpAndInit(
-          tester,
-          buildSubject(
-            overrides: [
-              pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-            ],
-          ),
-        );
+    testWidgets('does not trust the model action description in an approval', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          userFacingDescription: 'I will search for the requested item.',
+          argumentsRaw: '{"arg1":"search","arg2":"item"}',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
 
-        expect(
-          find.text('I will search for the requested item.'),
-          findsOneWidget,
-        );
-        expect(find.textContaining('arg1: search'), findsOneWidget);
-        expect(find.textContaining('arg2: item'), findsOneWidget);
+      expect(find.text('I will search for the requested item.'), findsNothing);
+      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+      expect(find.textContaining('arg1: search'), findsOneWidget);
+      expect(find.textContaining('arg2: item'), findsOneWidget);
 
-        final argumentColumn = tester.widget<Column>(
-          find
-              .ancestor(
-                of: find.textContaining('arg1: search'),
-                matching: find.byType(Column),
-              )
-              .first,
-        );
-        expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
-      },
-    );
+      final argumentColumn = tester.widget<Column>(
+        find
+            .ancestor(
+              of: find.textContaining('arg1: search'),
+              matching: find.byType(Column),
+            )
+            .first,
+      );
+      expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
+    });
 
-    testWidgets('clamps long argument values while collapsed', (tester) async {
+    testWidgets('shows complete argument values', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -427,8 +424,8 @@ void main() {
       );
 
       final argument = tester.widget<Text>(find.textContaining('query:'));
-      expect(argument.maxLines, 1);
-      expect(argument.overflow, TextOverflow.ellipsis);
+      expect(argument.maxLines, isNull);
+      expect(argument.overflow, TextOverflow.clip);
     });
 
     testWidgets('uses deterministic fallback when description is absent', (
@@ -448,7 +445,7 @@ void main() {
       expect(find.text('Review the arguments for Read File'), findsOneWidget);
     });
 
-    testWidgets('shows a batch description once while paging calls', (
+    testWidgets('never shows a model batch description while paging calls', (
       tester,
     ) async {
       const description = 'I will search and then open the result.';
@@ -468,7 +465,7 @@ void main() {
         ),
       );
 
-      expect(find.text(description), findsOneWidget);
+      expect(find.text(description), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('tool_approval_next')),
       );
@@ -622,7 +619,9 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('flattens arguments and expands long input', (tester) async {
+    testWidgets('flattens and exposes all arguments by default', (
+      tester,
+    ) async {
       final pendingCalls = [
         _createPendingToolCall(
           argumentsRaw: jsonEncode({
@@ -648,15 +647,9 @@ void main() {
 
       expect(find.textContaining('arg1: search'), findsOneWidget);
       expect(find.textContaining('arg3.something: my search'), findsOneWidget);
-      expect(find.textContaining('arg4: last'), findsNothing);
-      expect(find.text('Show more'), findsOneWidget);
-
-      await tester.tap(find.text('Show more'));
-      await tester.pump();
-
       expect(find.textContaining('arg4: last'), findsOneWidget);
       expect(find.textContaining('arg3.items[0]: first'), findsOneWidget);
-      expect(find.text('Show less'), findsOneWidget);
+      expect(find.text('Show more'), findsNothing);
     });
 
     testWidgets('flattens nested URL input', (tester) async {
