@@ -23,12 +23,12 @@ const Map<String, Object> fetchInputSchema = {
   'additionalProperties': false,
 };
 
-const Map<String, Object> answerInputSchema = {
+const Map<String, Object> jobIdInputSchema = {
   'type': 'object',
   'properties': {
-    'question': {'type': 'string'},
+    'jobId': {'type': 'string'},
   },
-  'required': ['question'],
+  'required': ['jobId'],
   'additionalProperties': false,
 };
 
@@ -54,8 +54,8 @@ const apiKeyCredentialDefinitions = {
 AppSkillUrlTemplate declarativeTemplate({
   required String url,
   required Map<String, Object> inputSchema,
+  UrlRequestMethod method = UrlRequestMethod.post,
   Map<String, String> headers = const {},
-  Map<String, String> query = const {},
   String? body,
   SkillUrlTemplateBodyFormat bodyFormat = SkillUrlTemplateBodyFormat.infer,
   Map<String, SkillCredentialAttributeDefinition> credentialDefinitions =
@@ -63,9 +63,8 @@ AppSkillUrlTemplate declarativeTemplate({
 }) => AppSkillUrlTemplate(
   template: SkillUrlTemplate(
     url: url,
-    method: UrlRequestMethod.post,
+    method: method,
     headers: headers,
-    query: query,
     body: body,
     bodyFormat: bodyFormat,
   ),
