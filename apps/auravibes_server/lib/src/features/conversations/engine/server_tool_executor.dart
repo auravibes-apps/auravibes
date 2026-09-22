@@ -76,17 +76,9 @@ bool cloudToolAllowsCredential(
         ?.contains(credentialId) ==
     true;
 
-String? cloudToolCredentialId(ServerResolvedTool tool, Object? value) {
+String? cloudToolCredentialId(Object? value) {
   if (value is String && value.trim().isNotEmpty) return value.trim();
-
-  final ids =
-      (((tool.spec.inputJsonSchema['properties'] as Map?)?['credentialId']
-                  as Map?)?['enum']
-              as List?)
-          ?.whereType<String>()
-          .toList(growable: false) ??
-      const <String>[];
-  return ids.length == 1 ? ids.single : null;
+  return null;
 }
 
 PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
@@ -748,10 +740,7 @@ class const ServerToolExecutorService({
     final templateTool = skill?.tools
         .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
         .firstOrNull;
-    final credentialId = cloudToolCredentialId(
-      tool,
-      arguments['credentialId'],
-    );
+    final credentialId = cloudToolCredentialId(arguments['credentialId']);
     if (skill == null ||
         skill.kind != AppSkillDefinitionKind.template ||
         templateTool == null ||
@@ -1434,12 +1423,9 @@ class const ServerToolExecutorService({
       credentialDefinitionId,
     );
     validateSkillTemplateDefinition(definition);
-    final credentialId = await _resolveSkillTemplateCredentialId(
-      session,
-      turn: turn,
+    final credentialId = _resolveSkillTemplateCredentialId(
       skillData: data,
       value: arguments['credentialId'],
-      definitionId: credentialDefinitionId,
     );
     final secret = credentialId == null
         ? null
@@ -1555,40 +1541,12 @@ class const ServerToolExecutorService({
     return skillDefinitionId.trim();
   }
 
-  Future<String?> _resolveSkillTemplateCredentialId(
-    Session session, {
-    required ConversationTurn turn,
+  String? _resolveSkillTemplateCredentialId({
     required Map<String, dynamic> skillData,
     required Object? value,
-    String? definitionId,
-  }) async {
+  }) {
     if (value is String && value.trim().isNotEmpty) return value.trim();
     if (skillData['requiresCredential'] != true) return null;
-
-    final skillId = skillData['skillId'];
-    final resolvedDefinitionId =
-        definitionId ?? skillData['credentialDefinitionId'];
-    if (skillId is! String || resolvedDefinitionId is! String) {
-      throw const ServerToolNotConfiguredException();
-    }
-    final resources = await WorkspaceResource.db.find(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(turn.workspaceId) &
-          table.resourceKind.equals(WorkspaceResourceKind.serviceConnection) &
-          table.deletedAt.equals(null),
-    );
-    final candidates = resources
-        .where((resource) {
-          final data = _jsonMap(resource.data);
-          return data['kind'] == 'skillCredential' &&
-              data['credentialDefinitionId'] == resolvedDefinitionId &&
-              data['isEnabled'] == true &&
-              data['hasSecret'] == true;
-        })
-        .map((resource) => resource.resourceId)
-        .toList(growable: false);
-    if (candidates.length == 1) return candidates.single;
 
     throw const ServerToolNotConfiguredException();
   }
