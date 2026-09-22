@@ -704,6 +704,8 @@
   "tool_confirmation": {
     "allow_once": "Permitir una vez",
     "allow_conversation": "Permitir en conversación",
+    "allow_all": "Permitir todo",
+    "deny_all": "Denegar todo",
     "skip": "Omitir",
     "stop_all": "Detener todo"
   },

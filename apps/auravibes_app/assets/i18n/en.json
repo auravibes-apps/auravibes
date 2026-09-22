@@ -704,6 +704,8 @@
   "tool_confirmation": {
     "allow_once": "Allow Once",
     "allow_conversation": "Allow for Conversation",
+    "allow_all": "Allow All",
+    "deny_all": "Deny All",
     "skip": "Skip",
     "stop_all": "Stop All"
   },

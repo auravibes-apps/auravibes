@@ -81,6 +81,10 @@ import 'package:auravibes_server/src/generated/features/conversations/models/sta
     as _i43ad401;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _i6vuisoi;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_result.dart'
+    as _inw8tf3y;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _ii7vetdc;
 import 'package:auravibes_server/src/generated/features/conversations/models/turn_snapshot.dart'
@@ -1543,6 +1547,35 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_inw8tf3y.SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i6vuisoi.SubmitToolDecisionBatchRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'submitToolDecisionBatch',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'submitToolDecisionBatch',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_inw8tf3y.SubmitToolDecisionBatchResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

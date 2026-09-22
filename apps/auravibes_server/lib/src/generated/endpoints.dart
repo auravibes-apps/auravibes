@@ -54,6 +54,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/sta
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _i6vuisoi;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _ii7vetdc;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
@@ -975,6 +977,26 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .submitToolDecision(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'submitToolDecisionBatch': _is.MethodConnector(
+          name: 'submitToolDecisionBatch',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i6vuisoi.SubmitToolDecisionBatchRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .submitToolDecisionBatch(
                         session,
                         params['request'],
                       ),

@@ -931,6 +931,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';
+  static const tool_confirmation_allow_all = 'tool_confirmation.allow_all';
+  static const tool_confirmation_deny_all = 'tool_confirmation.deny_all';
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
