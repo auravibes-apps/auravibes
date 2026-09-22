@@ -15,6 +15,7 @@ class const AppSkillToolDefinition({
       defaultAppSkillToolInputJsonSchema,
   final AppSkillUrlTemplate? urlTemplate,
   final bool requiresCredential = false,
+  final AppSkillJobOperation? jobOperation,
   final String? titleKey,
   final String? descriptionKey,
 }) {
@@ -30,3 +31,5 @@ class const AppSkillToolDefinition({
           );
   }
 }
+
+enum AppSkillJobOperation { create, status, cancel, output }

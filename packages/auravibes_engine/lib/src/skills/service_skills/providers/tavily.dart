@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final tavilySkill = AppSkillDefinition(
@@ -9,7 +10,9 @@ final tavilySkill = AppSkillDefinition(
   description: 'Search, extract, crawl, map, and research web content.',
   content: '''
 Use Tavily for agent-oriented web search, URL extraction, site mapping,
-crawling, and research workflows.
+crawling, and research workflows. Research is asynchronous: create a research
+job, then poll its status or fetch its output. Tavily does not document remote
+job cancellation.
 ''',
   requiresCredential: true,
   kind: .template,
@@ -71,16 +74,46 @@ explicit range. Use `includeDomains` for authoritative sources and
       'https://api.tavily.com/map',
       _mapBody,
     ),
-    _tool(
-      'research',
-      'Research',
-      'Research a query.',
-      _researchInputSchema,
-      'https://api.tavily.com/research',
-      '{"query":{{ input.query | json }}}',
+    AppSkillToolDefinition(
+      slug: 'research_job_create',
+      title: 'Create research job',
+      description: 'Start asynchronous research and return its job id.',
+      inputJsonSchema: _researchJobCreateInputSchema,
+      requiresCredential: true,
+      jobOperation: .create,
+      urlTemplate: declarativeTemplate(
+        url: 'https://api.tavily.com/research',
+        inputSchema: _researchJobCreateInputSchema,
+        headers: _headers,
+        body: _researchJobCreateBody,
+        bodyFormat: .json,
+      ),
+    ),
+    AppSkillToolDefinition(
+      slug: 'research_job_status',
+      title: 'Get research job status',
+      description: 'Poll Tavily research progress by job id.',
+      inputJsonSchema: jobIdInputSchema,
+      requiresCredential: true,
+      jobOperation: .status,
+      urlTemplate: _researchJobStatusTemplate,
+    ),
+    AppSkillToolDefinition(
+      slug: 'research_job_output',
+      title: 'Get research job output',
+      description: 'Fetch completed Tavily research output by job id.',
+      inputJsonSchema: jobIdInputSchema,
+      requiresCredential: true,
+      jobOperation: .output,
+      urlTemplate: _researchJobStatusTemplate,
     ),
   ],
 );
+
+const _headers = {
+  'authorization': 'Bearer {{ credential.apiKey }}',
+  'content-type': 'application/json',
+};
 
 AppSkillToolDefinition _tool(
   String slug,
@@ -174,10 +207,15 @@ const Map<String, Object> _mapInputSchema = {
   'additionalProperties': false,
 };
 
-const Map<String, Object> _researchInputSchema = {
+const Map<String, Object> _researchJobCreateInputSchema = {
   'type': 'object',
   'properties': {
     'query': {'type': 'string'},
+    'model': {
+      'type': 'string',
+      'enum': ['mini', 'pro', 'auto'],
+    },
+    'outputSchema': {'type': 'object'},
   },
   'required': ['query'],
   'additionalProperties': false,
@@ -219,3 +257,16 @@ const _mapBody = '''
 {% if input.includeDomains != nil %},"include_domains":{{ input.includeDomains | json }}{% endif %}
 {% if input.excludeDomains != nil %},"exclude_domains":{{ input.excludeDomains | json }}{% endif %}}
 ''';
+
+const _researchJobCreateBody = '''
+{"input":{{ input.query | json }}
+{% if input.model != nil %},"model":{{ input.model | json }}{% endif %}
+{% if input.outputSchema != nil %},"output_schema":{{ input.outputSchema | json }}{% endif %}}
+''';
+
+final AppSkillUrlTemplate _researchJobStatusTemplate = declarativeTemplate(
+  url: 'https://api.tavily.com/research/{{ input.jobId | uri_encode }}',
+  inputSchema: jobIdInputSchema,
+  method: .get,
+  headers: _headers,
+);

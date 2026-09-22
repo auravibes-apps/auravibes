@@ -2,6 +2,7 @@ import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/skill_template_input_definition.dart';
+import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/service_skills/providers/shared.dart';
 
 final parallelSkill = AppSkillDefinition(
@@ -11,7 +12,9 @@ final parallelSkill = AppSkillDefinition(
   description: 'Search, extract, and run research tasks.',
   content: '''
 Use Parallel for fast web search, URL extraction, or larger research tasks.
-Prefer tasks when the request needs deeper synthesis.
+Prefer asynchronous task jobs when the request needs deeper synthesis; create
+one, then poll its status or fetch its output. Parallel does not document
+remote job cancellation.
 ''',
   requiresCredential: true,
   kind: .template,
@@ -40,30 +43,76 @@ Prefer tasks when the request needs deeper synthesis.
         _extractInputSchema,
       ),
     ),
-    AppSkillToolDefinition(
-      slug: 'tasks',
-      title: 'Tasks',
-      description: 'Run a deeper research task.',
-      inputJsonSchema: answerInputSchema,
-      requiresCredential: true,
-      urlTemplate: _template(
-        'https://api.parallel.ai/v1/tasks',
-        '{"input":{{ input.question | json }}}',
-        answerInputSchema,
+    _jobTool(
+      'tasks_job_create',
+      'Create task job',
+      'Start an asynchronous Parallel task and return its run id.',
+      _taskJobCreateInputSchema,
+      _template(
+        'https://api.parallel.ai/v1/tasks/runs',
+        _taskJobCreateBody,
+        _taskJobCreateInputSchema,
       ),
+      .create,
+    ),
+    _jobTool(
+      'tasks_job_status',
+      'Get task job status',
+      'Poll Parallel task progress by run id.',
+      jobIdInputSchema,
+      _template(
+        'https://api.parallel.ai/v1/tasks/runs/{{ input.jobId | uri_encode }}',
+        null,
+        jobIdInputSchema,
+        method: .get,
+      ),
+      .status,
+    ),
+    _jobTool(
+      'tasks_job_output',
+      'Get task job output',
+      'Fetch completed Parallel task output by run id.',
+      jobIdInputSchema,
+      _template(
+        'https://api.parallel.ai/v1/tasks/runs/{{ input.jobId | uri_encode }}/result',
+        null,
+        jobIdInputSchema,
+        method: .get,
+      ),
+      .output,
     ),
   ],
 );
 
+AppSkillToolDefinition _jobTool(
+  String slug,
+  String title,
+  String description,
+  Map<String, Object> schema,
+  AppSkillUrlTemplate template,
+  AppSkillJobOperation operation,
+) {
+  return AppSkillToolDefinition(
+    slug: slug,
+    title: title,
+    description: description,
+    inputJsonSchema: schema,
+    requiresCredential: true,
+    jobOperation: operation,
+    urlTemplate: template,
+  );
+}
+
 AppSkillUrlTemplate _template(
   String url,
-  String body,
-  Map<String, Object> inputSchema,
-) {
+  String? body,
+  Map<String, Object> inputSchema, {
+  UrlRequestMethod method = UrlRequestMethod.post,
+}) {
   return AppSkillUrlTemplate(
     template: .new(
       url: url,
-      method: .post,
+      method: method,
       headers: {
         'x-api-key': '{{ credential.apiKey }}',
         'content-type': 'application/json',
@@ -123,6 +172,17 @@ const Map<String, Object> _extractInputSchema = {
   'additionalProperties': false,
 };
 
+const Map<String, Object> _taskJobCreateInputSchema = {
+  'type': 'object',
+  'properties': {
+    'question': {'type': 'string'},
+    'processor': {'type': 'string'},
+    'taskSpec': {'type': 'object'},
+  },
+  'required': ['question'],
+  'additionalProperties': false,
+};
+
 const _searchBody = '''
 {
   "search_queries": {% if input.searchQueries %}{{ input.searchQueries | json }}{% else %}[{{ input.query | json }}]{% endif %},
@@ -148,4 +208,12 @@ const _extractBody = '''
 {% if input.maxChars != nil %},"max_chars":{{ input.maxChars | json }}{% endif %}
 {% if input.maxCharsTotal != nil %},"max_chars_total":{{ input.maxCharsTotal | json }}{% endif %}
 {% if input.timeoutSeconds != nil %},"timeout_seconds":{{ input.timeoutSeconds | json }}{% endif %}}
+''';
+
+const _taskJobCreateBody = '''
+{
+  "input":{{ input.question | json }},
+  "processor":{% if input.processor != nil %}{{ input.processor | json }}{% else %}"core"{% endif %}
+  ,"task_spec":{% if input.taskSpec != nil %}{{ input.taskSpec | json }}{% else %}{"output_schema":{"type":"text"}}{% endif %}
+}
 ''';

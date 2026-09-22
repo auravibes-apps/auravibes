@@ -32,6 +32,15 @@ const Map<String, Object> answerInputSchema = {
   'additionalProperties': false,
 };
 
+const Map<String, Object> jobIdInputSchema = {
+  'type': 'object',
+  'properties': {
+    'jobId': {'type': 'string'},
+  },
+  'required': ['jobId'],
+  'additionalProperties': false,
+};
+
 const queryInputs = {
   'query': SkillTemplateInputDefinition(description: 'Search query.'),
   'maxResults': SkillTemplateInputDefinition(
@@ -54,6 +63,7 @@ const apiKeyCredentialDefinitions = {
 AppSkillUrlTemplate declarativeTemplate({
   required String url,
   required Map<String, Object> inputSchema,
+  UrlRequestMethod method = UrlRequestMethod.post,
   Map<String, String> headers = const {},
   Map<String, String> query = const {},
   String? body,
@@ -63,7 +73,7 @@ AppSkillUrlTemplate declarativeTemplate({
 }) => AppSkillUrlTemplate(
   template: SkillUrlTemplate(
     url: url,
-    method: UrlRequestMethod.post,
+    method: method,
     headers: headers,
     query: query,
     body: body,

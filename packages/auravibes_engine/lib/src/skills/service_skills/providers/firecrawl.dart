@@ -14,7 +14,8 @@ final firecrawlSkill = AppSkillDefinition(
   description: 'Search, scrape, crawl, map, and extract web content.',
   content: '''
 Use Firecrawl when page content matters: scraping pages, crawling sites,
-discovering URLs, or extracting structured data from public pages.
+discovering URLs, or extracting structured data from public pages. Crawls are
+asynchronous: create a crawl job, poll its status, and cancel it when needed.
 ''',
   requiresCredential: true,
   kind: .template,
@@ -99,12 +100,37 @@ use `extract` as a substitute for full-page content.
       _scrapeInputSchema,
       _scrapeTemplate,
     ),
-    _tool(
-      'crawl',
-      'Crawl',
-      'Crawl a website.',
+    _jobTool(
+      'crawl_job_create',
+      'Create crawl job',
+      'Start an asynchronous crawl and return its job id.',
       fetchInputSchema,
-      _crawlTemplate,
+      _crawlJobCreateTemplate,
+      .create,
+    ),
+    _jobTool(
+      'crawl_job_status',
+      'Get crawl job status',
+      'Poll Firecrawl crawl progress by job id.',
+      jobIdInputSchema,
+      _crawlJobStatusTemplate,
+      .status,
+    ),
+    _jobTool(
+      'crawl_job_cancel',
+      'Cancel crawl job',
+      'Cancel a running Firecrawl crawl by job id.',
+      jobIdInputSchema,
+      _crawlJobCancelTemplate,
+      .cancel,
+    ),
+    _jobTool(
+      'crawl_job_output',
+      'Get crawl job output',
+      'Fetch completed Firecrawl crawl output by job id.',
+      jobIdInputSchema,
+      _crawlJobStatusTemplate,
+      .output,
     ),
     _tool(
       'map',
@@ -136,6 +162,25 @@ AppSkillToolDefinition _tool(
     description: description,
     inputJsonSchema: schema,
     requiresCredential: true,
+    urlTemplate: template,
+  );
+}
+
+AppSkillToolDefinition _jobTool(
+  String slug,
+  String title,
+  String description,
+  Map<String, Object> schema,
+  AppSkillUrlTemplate template,
+  AppSkillJobOperation operation,
+) {
+  return AppSkillToolDefinition(
+    slug: slug,
+    title: title,
+    description: description,
+    inputJsonSchema: schema,
+    requiresCredential: true,
+    jobOperation: operation,
     urlTemplate: template,
   );
 }
@@ -261,7 +306,7 @@ final AppSkillUrlTemplate _scrapeTemplate = declarativeTemplate(
   bodyFormat: .json,
 );
 
-final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
+final AppSkillUrlTemplate _crawlJobCreateTemplate = declarativeTemplate(
   url: 'https://api.firecrawl.dev/v2/crawl',
   inputSchema: fetchInputSchema,
   headers: {
@@ -270,6 +315,26 @@ final AppSkillUrlTemplate _crawlTemplate = declarativeTemplate(
   },
   body: '{"url":{{ input.url | json }}}',
   bodyFormat: .json,
+);
+
+final AppSkillUrlTemplate _crawlJobStatusTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/crawl/{{ input.jobId | uri_encode }}',
+  inputSchema: jobIdInputSchema,
+  method: .get,
+  headers: {
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
+  },
+);
+
+final AppSkillUrlTemplate _crawlJobCancelTemplate = declarativeTemplate(
+  url: 'https://api.firecrawl.dev/v2/crawl/{{ input.jobId | uri_encode }}',
+  inputSchema: jobIdInputSchema,
+  method: .delete,
+  headers: {
+    'authorization': _authorizationHeader,
+    _contentTypeHeader: _jsonContentType,
+  },
 );
 
 final AppSkillUrlTemplate _mapTemplate = declarativeTemplate(

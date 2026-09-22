@@ -1,5 +1,6 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/src/skills/execution/run_skill_url_template.dart';
+import 'package:auravibes_engine/src/skills/execution/skill_job_response_decoder.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
 
@@ -25,7 +26,18 @@ class const AppSkillExecutor(final SkillTemplateExecutor _templateExecutor) {
             credentials: credentials,
             schema: resolvedTool.inputJsonSchema,
           )
-          .then<Object?>((response) => response.body);
+          .then<Object?>((response) {
+            final operation = resolvedTool.jobOperation;
+            if (operation == null) return response.body;
+
+            return const SkillJobResponseDecoder().call(
+              provider: skill.slug,
+              operation: operation,
+              statusCode: response.statusCode,
+              body: response.body,
+              requestedJobId: input['jobId'] as String?,
+            );
+          });
     }
 
     throw UnsupportedError('App skill tool has no executor: $toolSlug');
