@@ -163,6 +163,28 @@ void main() {
       expect(result.firstOrNull?.modelId, 'claude-3');
     });
 
+    test('anthropic errors fail the provider test', () async {
+      nock('https://api.anthropic.com').get('/v1/models')
+        ..query({'limit': '1000'})
+        ..reply(401, {
+          'error': {
+            'message': 'Invalid API key',
+            'type': 'authentication_error',
+          },
+          'request_id': 'req-123',
+          'type': 'error',
+        });
+
+      final service = ModelProviderServices();
+
+      await expectLater(
+        service.getWorkspaceModelSelections(
+          const ModelProvider(type: .anthropic, key: 'bad-key'),
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
     test('getWorkspaceModelSelections with openai returns models', () async {
       nock('https://api.openai.com').get('/v1/models').reply(200, {
         'object': 'list',

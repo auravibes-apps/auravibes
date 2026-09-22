@@ -20,7 +20,9 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('prompts before closing a dirty form', (tester) async {
+  testWidgets('prompts before closing and discards a dirty form', (
+    tester,
+  ) async {
     final container = ProviderContainer(
       overrides: [
         apiModelProvidersProvider.overrideWith((_, _) async => const []),
@@ -52,12 +54,16 @@ void main() {
           child: Builder(
             builder: (context) {
               return MaterialApp(
-                home: Theme(
-                  data: .new(extensions: [AuraTheme.light]),
-                  child: const Scaffold(
-                    body: AddModelProviderWidget(workspaceId: _workspaceId),
+                routes: {
+                  '/': (_) => const SizedBox.shrink(),
+                  '/provider': (_) => Theme(
+                    data: .new(extensions: [AuraTheme.light]),
+                    child: const Scaffold(
+                      body: AddModelProviderWidget(workspaceId: _workspaceId),
+                    ),
                   ),
-                ),
+                },
+                initialRoute: '/provider',
                 builder: (context, child) =>
                     AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
@@ -91,5 +97,18 @@ void main() {
 
     expect(find.text('Discard unsaved changes?'), findsNothing);
     expect(find.byIcon(Icons.close), findsOneWidget);
+
+    final _ = await tester.tap(find.byIcon(Icons.close));
+    final _ = await tester.pumpAndSettle();
+    final _ = await tester.tap(find.text('Discard'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.close), findsNothing);
+    expect(
+      container
+          .read(addModelProviderStateProvider(_workspaceId))
+          .hasUnsavedChanges,
+      isFalse,
+    );
   });
 }

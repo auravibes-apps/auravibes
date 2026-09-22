@@ -22,11 +22,7 @@ import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show
-        AgentResolvedToolName,
-        AgentToolGrantLevel,
-        callSkillToolName,
-        normalizeToolCallUserFacingDescription;
+    show AgentResolvedToolName, AgentToolGrantLevel, callSkillToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -573,27 +569,6 @@ _pagerApprovalCardPage(
   );
 }
 
-bool _shouldShowModelDescription(
-  List<PendingToolCall> pendingCalls,
-  int currentIndex,
-  PendingToolCall current,
-) {
-  final currentDescription = _pendingToolCallDescription(current);
-
-  return !pendingCalls
-      .take(currentIndex)
-      .any(
-        (call) =>
-            call.messageId == current.messageId &&
-            _pendingToolCallDescription(call) == currentDescription,
-      );
-}
-
-String? _pendingToolCallDescription(PendingToolCall call) =>
-    agent.normalizeToolCallUserFacingDescription(
-      call.toolCall.userFacingDescription,
-    );
-
 typedef _ApprovalCardActions = ({
   VoidCallback? onPrev,
   VoidCallback? onNext,
@@ -874,12 +849,6 @@ class _ApprovalCardBodyChildren {
         ),
         _ToolCallInfo(
           displayName: displayName,
-          userFacingDescription: request.current.toolCall.userFacingDescription,
-          showModelDescription: _shouldShowModelDescription(
-            request.source.pendingCalls,
-            request.currentIndex,
-            request.current,
-          ),
           argumentsRaw: request.current.toolCall.argumentsRaw,
           sourceLabel: request.current.sourceLabel,
         ),
@@ -1047,8 +1016,6 @@ class const _NavButton({
 
 class const _ToolCallInfo({
   required final String displayName,
-  required final String? userFacingDescription,
-  required final bool showModelDescription,
   required final String argumentsRaw,
   required final String? sourceLabel,
 }) extends StatelessWidget {
@@ -1060,8 +1027,6 @@ class const _ToolCallInfo({
     return _ToolCallInfoFrame(
       child: _ToolCallInfoContent(
         displayName: displayName,
-        userFacingDescription: userFacingDescription,
-        showModelDescription: showModelDescription,
         sourceLabel: sourceLabel,
         argumentLines: argumentLines,
         copyableArgs: copyableArgs,
@@ -1105,8 +1070,6 @@ BoxDecoration _toolCallInfoDecoration(BuildContext context) {
 
 class const _ToolCallInfoContent({
   required final String displayName,
-  required final String? userFacingDescription,
-  required final bool showModelDescription,
   required final String? sourceLabel,
   required final List<_ApprovalArgumentLine>? argumentLines,
   required final String? copyableArgs,
@@ -1116,8 +1079,6 @@ class const _ToolCallInfoContent({
     crossAxisAlignment: .start,
     children: _ToolCallInfoChildren(
       displayName: displayName,
-      userFacingDescription: userFacingDescription,
-      showModelDescription: showModelDescription,
       sourceLabel: sourceLabel,
       argumentLines: argumentLines,
       copyableArgs: copyableArgs,
@@ -1128,17 +1089,12 @@ class const _ToolCallInfoContent({
 class _ToolCallInfoChildren {
   new({
     required String displayName,
-    required String? userFacingDescription,
-    required bool showModelDescription,
     required String? sourceLabel,
     required List<_ApprovalArgumentLine>? argumentLines,
     required String? copyableArgs,
   }) : values = [
          _ToolCallName(displayName: displayName),
-         _ToolCallDescription(
-           text: _toolCallDescriptionText(displayName, userFacingDescription),
-           visible: showModelDescription,
-         ),
+         _ToolCallDescription(displayName: displayName),
          _ToolCallSource(sourceLabel: sourceLabel),
          if (argumentLines case final lines? when lines.isNotEmpty)
            _ToolCallArgumentsPreview(
@@ -1151,33 +1107,24 @@ class _ToolCallInfoChildren {
   final List<Widget> values;
 }
 
-class const _ToolCallDescription({
-  required final String text,
-  required final bool visible,
-}) extends StatelessWidget {
+class const _ToolCallDescription({required final String displayName})
+    extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Visibility(
-    child: Padding(
-      padding: EdgeInsets.only(
-        top: context.auraTheme.fromSpacing(.xs),
-        bottom: context.auraTheme.fromSpacing(.xs),
-      ),
-      child: Text(
-        text,
-        style: .new(
-          color: context.auraColors.onSurface,
-          fontSize: context.auraTheme.typography.fontSizeXs,
-        ),
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(
+      top: context.auraTheme.fromSpacing(.xs),
+      bottom: context.auraTheme.fromSpacing(.xs),
+    ),
+    child: Text(
+      LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
+          .tr(namedArgs: {'tool': displayName}),
+      style: .new(
+        color: context.auraColors.onSurface,
+        fontSize: context.auraTheme.typography.fontSizeXs,
       ),
     ),
-    visible: visible,
   );
 }
-
-String _toolCallDescriptionText(String displayName, String? value) =>
-    agent.normalizeToolCallUserFacingDescription(value) ??
-    LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
-        .tr(namedArgs: {'tool': displayName});
 
 class const _ToolCallName({required final String displayName})
     extends StatelessWidget {
@@ -1218,62 +1165,24 @@ class const _ToolCallSource({required final String? sourceLabel})
   }
 }
 
-class _ToolCallArgumentsPreview extends StatefulWidget {
+class _ToolCallArgumentsPreview extends StatelessWidget {
   const new({required this.lines, required this.copyValue, super.key});
 
   final List<_ApprovalArgumentLine> lines;
   final String copyValue;
 
   @override
-  State<_ToolCallArgumentsPreview> createState() =>
-      _ToolCallArgumentsPreviewState();
-}
-
-const _collapsedToolCallArgumentLineCount = 3;
-
-class _ToolCallArgumentsPreviewState extends State<_ToolCallArgumentsPreview> {
-  var _expanded = false;
-
-  bool get _hasMoreLines =>
-      widget.lines.length > _collapsedToolCallArgumentLineCount;
-
-  @override
   Widget build(BuildContext context) => AuraColumn(
-    children: _ToolCallArgumentsPreviewChildren(
-      lines: widget.lines,
-      expanded: _expanded,
-      copyValue: widget.copyValue,
-      hasMoreLines: _hasMoreLines,
-      onToggle: () => setState(() => _expanded = !_expanded),
-    ).values,
+    children: [
+      const AuraSizedBox(height: .xs),
+      _ToolCallArgumentLines(
+        lines: lines,
+        maxLines: null,
+        copyValue: copyValue,
+      ),
+    ],
     spacing: .xs,
   );
-}
-
-class _ToolCallArgumentsPreviewChildren {
-  new({
-    required List<_ApprovalArgumentLine> lines,
-    required bool expanded,
-    required String copyValue,
-    required bool hasMoreLines,
-    required VoidCallback onToggle,
-  }) : values = [
-         const AuraSizedBox(height: .xs),
-         _ToolCallArgumentLines(
-           lines: expanded
-               ? lines
-               : lines.take(_collapsedToolCallArgumentLineCount).toList(),
-           maxLines: expanded ? null : 1,
-           copyValue: copyValue,
-         ),
-         if (hasMoreLines)
-           _ToolCallArgumentsExpandButton(
-             expanded: expanded,
-             onPressed: onToggle,
-           ),
-       ];
-
-  final List<Widget> values;
 }
 
 class const _ToolCallArgumentLines({
@@ -1297,32 +1206,6 @@ class const _ToolCallArgumentLines({
       ),
       _ToolCallArgumentsCopyButton(content: copyValue),
     ],
-  );
-}
-
-class const _ToolCallArgumentsExpandButton({
-  required final bool expanded,
-  required final VoidCallback onPressed,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraButton(
-    onPressed: onPressed,
-    child: AuraRow(
-      children: [
-        TextLocale(
-          expanded ? LocaleKeys.common_show_less : LocaleKeys.common_show_more,
-        ),
-        AuraIcon(
-          expanded ? Icons.expand_less : Icons.expand_more,
-          size: .small,
-          tint: .primary,
-        ),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
-    ),
-    variant: .ghost,
-    size: .small,
   );
 }
 

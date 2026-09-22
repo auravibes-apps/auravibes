@@ -61,6 +61,7 @@ class _BatchDecisionState {
   final alreadyHandled = <String>[];
   final conflicted = <String>[];
   final acceptedByTurn = <int, List<ConversationToolCall>>{};
+  final authorizedTurnIds = <int>{};
 }
 
 class ConversationUseCases {
@@ -2189,6 +2190,15 @@ class ConversationUseCases {
     if (turn == null || turn.conversationId != conversation.id) {
       state.conflicted.add(identity);
       return;
+    }
+    if (state.authorizedTurnIds.add(turn.id!)) {
+      await _requireTurnForMutation(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        turnId: call.turnId,
+        transaction: transaction,
+      );
     }
 
     final toolCall = await _repository.findToolCallByStableId(

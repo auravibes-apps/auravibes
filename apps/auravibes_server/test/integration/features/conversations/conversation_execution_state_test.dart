@@ -589,12 +589,12 @@ void main() {
       );
 
       test(
-        'batch decision rejects a non-initiating ordinary member',
+        'batch decision rejects a member acting on another user turn',
         () async {
           final fixture = await prepareExecution();
           final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final memberId = const Uuid().v4().toString();
           final now = DateTime.now().toUtc();
-          const memberId = '00000000-0000-4000-8000-000000000002';
           final memberSession = sessionBuilder.copyWith(
             authentication: AuthenticationOverride.authenticationInfo(
               memberId,
@@ -633,7 +633,7 @@ void main() {
               memberSession,
               SubmitToolDecisionBatchRequest(
                 workspaceId: fixture.workspaceId,
-                requestId: 'member-approve-all',
+                requestId: 'unauthorized-approve-all',
                 decision: 'approve',
                 calls: [
                   SubmitToolDecisionBatchCall(
@@ -642,7 +642,7 @@ void main() {
                     toolCallId: staged.toolCallIds.single,
                     argumentsDigest: 'digest-1',
                     expectedTurnRevision: 2,
-                    editedArgumentsJson: '{"command":"attacker-controlled"}',
+                    editedArgumentsJson: '{"value":"attacker-controlled"}',
                   ),
                 ],
               ),

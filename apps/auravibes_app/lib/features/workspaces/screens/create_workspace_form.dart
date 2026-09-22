@@ -89,7 +89,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   void _onNameChanged() {
     if (!mounted) return;
 
-    final isDirty = _name.text.isNotEmpty;
+    final isDirty = _name.text.isNotEmpty || _targetAccountId != _localTarget;
     if (_isDirty == isDirty) return;
 
     setState(() => _isDirty = isDirty);

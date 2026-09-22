@@ -328,6 +328,8 @@ Future<void> _closeModelProviderForm({
   ref: ref,
   workspaceId: workspaceId,
   onDiscard: () {
+    _resetModelProviderState(ref, workspaceId)();
+
     if (onCancel case final callback?) {
       callback();
 
