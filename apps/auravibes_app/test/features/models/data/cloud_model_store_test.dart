@@ -45,6 +45,59 @@ void main() {
     },
   );
 
+  test('saves a cloud connection after its provider test succeeds', () async {
+    var createCalled = false;
+    String? savedKey;
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        putSecret: (input) async {
+          savedKey = input.secret;
+
+          return PutWorkspaceSecretResponse(
+            configured: true,
+            displaySuffix: '4321',
+            revision: 1,
+            sequence: 1,
+          );
+        },
+      ),
+      create: (request) async {
+        createCalled = true;
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: request.providerId,
+          hasSecret: false,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices(result: const []);
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+
+    final result = await store.createModelConnection(
+      const ModelConnectionToCreate(
+        name: 'OpenAI',
+        workspaceId: 'workspace',
+        modelId: 'openai',
+        key: ' valid-key ',
+      ),
+    );
+
+    expect(providerServices.lastProvider?.key, 'valid-key');
+    expect(savedKey, 'valid-key');
+    expect(createCalled, isTrue);
+    expect(result.hasKey, isTrue);
+  });
+
   test(
     'does not update a cloud connection when its provider test fails',
     () async {
@@ -95,29 +148,104 @@ void main() {
       expect(updateCalled, isFalse);
     },
   );
+
+  test('updates a cloud connection after its provider test succeeds', () async {
+    var updateCalled = false;
+    String? savedKey;
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        readState: (_) async => ReadWorkspaceStateResponse(
+          pages: [],
+          currentSequence: 1,
+          events: [],
+          requiresSnapshot: false,
+        ),
+        putSecret: (input) async {
+          savedKey = input.secret;
+
+          return PutWorkspaceSecretResponse(
+            configured: true,
+            displaySuffix: '9876',
+            revision: 2,
+            sequence: 2,
+          );
+        },
+      ),
+      list: (_) async => [
+        ModelConnectionView(
+          id: 'connection',
+          name: 'OpenAI',
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      update: (request) async {
+        updateCalled = true;
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: 'openai',
+          hasSecret: false,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices(result: const []);
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+
+    final result = await store.updateModelConnection(
+      'connection',
+      const ModelConnectionToUpdate(name: 'Renamed', key: ' new-key '),
+    );
+
+    expect(providerServices.lastProvider?.key, 'new-key');
+    expect(savedKey, 'new-key');
+    expect(updateCalled, isTrue);
+    expect(result.name, 'Renamed');
+    expect(result.hasKey, isTrue);
+  });
 }
 
 class _FakeModelProviderServices extends ModelProviderServices {
+  new({this.result});
+
+  final List<WorkspaceModelSelectionToCreate>? result;
   bool wasCalled = false;
+  ModelProvider? lastProvider;
 
   @override
   Future<List<WorkspaceModelSelectionToCreate>?> getWorkspaceModelSelections(
     ModelProvider provider,
   ) async {
     wasCalled = true;
+    lastProvider = provider;
 
-    return null;
+    return result;
   }
 }
 
-CloudWorkspaceStateGateway _stateGateway({WorkspaceStateRead? readState}) =>
-    CloudWorkspaceStateGateway.forTesting(
-      workspace: const CloudWorkspaceRef(
-        localWorkspaceId: 'workspace',
-        serverUrl: 'https://example.com',
-        accountId: 'account',
-        cloudWorkspaceId: 1,
-      ),
-      readState: readState ?? (_) => throw UnimplementedError(),
-      subscribe: (_) => const Stream.empty(),
-    );
+CloudWorkspaceStateGateway _stateGateway({
+  WorkspaceStateRead? readState,
+  WorkspaceSecretPut? putSecret,
+}) => CloudWorkspaceStateGateway.forTesting(
+  workspace: const CloudWorkspaceRef(
+    localWorkspaceId: 'workspace',
+    serverUrl: 'https://example.com',
+    accountId: 'account',
+    cloudWorkspaceId: 1,
+  ),
+  readState: readState ?? (_) => throw UnimplementedError(),
+  subscribe: (_) => const Stream.empty(),
+  putSecret: putSecret,
+);
