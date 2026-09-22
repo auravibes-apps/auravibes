@@ -75,6 +75,18 @@ void main() {
     expect(serverToolExecutionFailureCode(StateError('secret')), 'unexpected');
   });
 
+  test('recognizes every persisted skill kind for replay', () {
+    expect(
+      [
+        AgentResolvedToolKind.skillTemplate,
+        AgentResolvedToolKind.skillNative,
+        AgentResolvedToolKind.skillAppTemplate,
+      ].every(serverToolIsReplayableSkillKind),
+      isTrue,
+    );
+    expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
+  });
+
   test('does not infer an omitted cloud tool credentialId', () {
     expect(cloudToolCredentialId(null), isNull);
     expect(cloudToolCredentialId(' credential-1 '), 'credential-1');
