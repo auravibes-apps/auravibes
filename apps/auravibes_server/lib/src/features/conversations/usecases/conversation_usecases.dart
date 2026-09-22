@@ -181,6 +181,11 @@ class ConversationUseCases {
         lock: true,
       );
       if (source == null) _fail(ConversationErrorCode.notFound);
+      await _ensureForkCapacity(
+        session,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
       final existing = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -214,6 +219,12 @@ class ConversationUseCases {
           !sourceMessages.any(
             (message) => message.stableId == request.throughMessageId,
           )) {
+        _fail(ConversationErrorCode.validationFailed);
+      }
+      final boundaryIndex = sourceMessages.indexWhere(
+        (message) => message.stableId == boundary,
+      );
+      if (boundaryIndex >= ConversationLimits.maxForkHistoryMessages) {
         _fail(ConversationErrorCode.validationFailed);
       }
       final title = await _copyConversationTitle(
@@ -3629,6 +3640,17 @@ class ConversationUseCases {
     List<ConversationTurn> sourceTurns,
     _ForkCopies copies,
   ) async {
+    final sourceMessagesByTurnId = <int, List<ConversationMessage>>{};
+    for (final message in copies.sourceMessages) {
+      final turnId = message.turnId;
+      if (turnId != null) {
+        (sourceMessagesByTurnId[turnId] ??= []).add(message);
+      }
+    }
+    final targetIndexesById = <int, int>{
+      for (var index = 0; index < copies.targetMessages.length; index++)
+        copies.targetMessages[index].id!: index,
+    };
     for (final turn in sourceTurns.where(
       (turn) => ConversationStatuses.isTerminal(turn.status),
     )) {
@@ -3661,19 +3683,13 @@ class ConversationUseCases {
         ),
         transaction: context.transaction,
       );
-      for (final message in copies.targetMessages.where(
-        (message) => copies.messageIds.entries.any(
-          (entry) =>
-              entry.value == message.id &&
-              copies.sourceMessages
-                      .firstWhere((source) => source.id == entry.key)
-                      .turnId ==
-                  turn.id,
-        ),
-      )) {
-        final targetIndex = copies.targetMessages.indexWhere(
-          (target) => target.id == message.id,
-        );
+      for (final sourceMessage in sourceMessagesByTurnId[turn.id] ?? const []) {
+        final targetId = copies.messageIds[sourceMessage.id];
+        final targetIndex = targetId == null
+            ? null
+            : targetIndexesById[targetId];
+        if (targetIndex == null) continue;
+        final message = copies.targetMessages[targetIndex];
         final updatedMessage = message.copyWith(turnId: copy.id);
         await ConversationMessage.db.updateRow(
           session,
@@ -3682,6 +3698,26 @@ class ConversationUseCases {
         );
         copies.targetMessages[targetIndex] = updatedMessage;
       }
+    }
+  }
+
+  Future<void> _ensureForkCapacity(
+    Session session, {
+    required int workspaceId,
+    required Transaction transaction,
+  }) async {
+    final pendingForks = await Conversation.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.forkSourceConversationId.notEquals(null) &
+          table.forkMaterializedAt.equals(null) &
+          table.deletedAt.equals(null),
+      limit: ConversationLimits.maxPendingForksPerWorkspace,
+      transaction: transaction,
+    );
+    if (pendingForks.length >= ConversationLimits.maxPendingForksPerWorkspace) {
+      _fail(ConversationErrorCode.validationFailed);
     }
   }
 
