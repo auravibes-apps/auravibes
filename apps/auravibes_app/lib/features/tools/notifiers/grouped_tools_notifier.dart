@@ -123,6 +123,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     final failedMcpServerIds = <String>[];
 
     for (final mcpServerId in mcpServerIds) {
+      if (!_isEnabledMcpServer(state.value ?? const [], mcpServerId)) continue;
       final didReconnectFail = await _didMcpReconnectFail(mcpServerId);
       if (didReconnectFail == null) return failedMcpServerIds;
       if (didReconnectFail) {
@@ -306,7 +307,8 @@ List<String> _failedMcpServerIds(List<ToolsGroupWithTools> groups) {
   final mcpServerIds = <String>{};
   for (final group in groups) {
     final mcpServerId = group.mcpServerId;
-    if (group.isMcpGroup &&
+    if (group.isEnabled &&
+        group.isMcpGroup &&
         group.needsAttention &&
         mcpServerId != null &&
         mcpServerId.isNotEmpty) {
@@ -316,6 +318,11 @@ List<String> _failedMcpServerIds(List<ToolsGroupWithTools> groups) {
 
   return mcpServerIds.toList();
 }
+
+bool _isEnabledMcpServer(
+  List<ToolsGroupWithTools> groups,
+  String mcpServerId,
+) => groups.any((group) => group.isEnabled && group.mcpServerId == mcpServerId);
 
 bool _mcpReconnectFailed(
   List<McpConnectionState> connections,
