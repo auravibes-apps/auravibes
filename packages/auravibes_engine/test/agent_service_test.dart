@@ -135,15 +135,9 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueResults: List.filled(
         4,
-        const ContinueAgentResult(
-          messageId: 'assistant-1',
-          hasToolCalls: true,
-        ),
+        const ContinueAgentResult(messageId: 'assistant-1', hasToolCalls: true),
       ),
-      toolDecisions: List.filled(
-        4,
-        AgentIterationDecision.continueIteration,
-      ),
+      toolDecisions: List.filled(4, AgentIterationDecision.continueIteration),
     );
     final usecase = _buildAgentService(dataProvider, iterationLimit: 3);
 
