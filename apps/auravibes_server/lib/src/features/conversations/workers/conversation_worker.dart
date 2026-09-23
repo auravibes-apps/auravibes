@@ -223,6 +223,14 @@ class const ConversationWorker({
     if (turn == null) {
       throw const ConversationEngineConfigurationException('turn');
     }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: turn.workspaceId,
+      userId: turn.initiatorUserId,
+    )) {
+      await _cancel(session, job, leaseToken);
+      return;
+    }
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,
