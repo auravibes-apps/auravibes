@@ -106,6 +106,14 @@ jobs:
         run: flutter build linux --debug --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
+      - name: 🧪 Test Drift web asset verifier
+        if: ${{ matrix.platform == 'web' }}
+        run: bash tool/test_compile_drift_web.sh
+
+      - name: 🔐 Compile Drift web worker and verify SQLite WASM
+        if: ${{ matrix.platform == 'web' }}
+        run: ./tool/compile_drift_web.sh --release
+
       - name: 🏗️ Build Web
         if: ${{ matrix.platform == 'web' }}
         run: flutter build web --release --no-pub
