@@ -27,6 +27,43 @@ void main() {
       expect(find.byType(GestureDetector), findsOneWidget);
     });
 
+    testWidgets('exposes its semantic label', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraCheckbox(
+              value: false,
+              onChanged: (_) {
+                return;
+              },
+              semanticLabel: 'Accept terms',
+            ),
+          ),
+          theme: .new(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Accept terms'), findsOneWidget);
+    });
+
+    testWidgets('exposes its default semantic label', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraCheckbox(
+              value: false,
+              onChanged: (_) {
+                return;
+              },
+            ),
+          ),
+          theme: .new(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Checkbox'), findsOneWidget);
+    });
+
     testWidgets('calls onChanged with toggled value when tapped', (
       tester,
     ) async {

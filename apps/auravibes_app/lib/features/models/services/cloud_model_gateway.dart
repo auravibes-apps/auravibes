@@ -16,6 +16,14 @@ typedef _UpdateModelConnection = Future<ModelConnectionView> Function({
   required int expectedRevision,
   required String name,
   required String? url,
+  required bool hasSecretOverride,
+  String? verificationReceipt,
+});
+
+typedef _VerifyModelConnection = Future<VerifyModelConnectionResult> Function({
+  required String connectionId,
+  required int expectedRevision,
+  String? url,
 });
 
 typedef CloudRecentModelSelectionsLoader = Future<List<String>> Function(
@@ -29,6 +37,7 @@ typedef CloudRecentModelSelectionRecorder = Future<void> Function(
 class CloudModelGateway {
   new(this._stateGateway)
     : _testAndSync = null,
+      _verifyDraft = null,
       _create = null,
       _list = null,
       _update = null,
@@ -44,6 +53,7 @@ class CloudModelGateway {
   new forTesting({
     required this._stateGateway,
     this._testAndSync,
+    this._verifyDraft,
     this._create,
     this._list,
     this._update,
@@ -59,6 +69,7 @@ class CloudModelGateway {
 
   final CloudWorkspaceStateGateway _stateGateway;
   final Future<ModelSyncResult> Function(String connectionId)? _testAndSync;
+  final _VerifyModelConnection? _verifyDraft;
   final Future<ModelConnectionView> Function(
     CreateModelConnectionRequest request,
   )?
@@ -112,6 +123,54 @@ class CloudModelGateway {
           .new(workspaceId: _workspaceId, connectionId: connectionId),
         ),
   );
+
+  Future<VerifyModelConnectionResult> verifyDraftModelConnection({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) => CloudAppErrors.guardCall(
+    .model,
+    () => _callDraftModelVerification(
+      connectionId: connectionId,
+      expectedRevision: expectedRevision,
+      url: url,
+    ),
+  );
+
+  Future<VerifyModelConnectionResult> _callDraftModelVerification({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) {
+    final testOverride = _verifyDraft;
+    if (testOverride != null) {
+      return testOverride(
+        connectionId: connectionId,
+        expectedRevision: expectedRevision,
+        url: url,
+      );
+    }
+
+    return _client.modelConnection.verifyDraft(
+      _draftModelVerificationRequest(
+        connectionId: connectionId,
+        expectedRevision: expectedRevision,
+        url: url,
+      ),
+    );
+  }
+
+  VerifyModelConnectionRequest _draftModelVerificationRequest({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) => VerifyModelConnectionRequest(
+    workspaceId: _workspaceId,
+    requestId: const Uuid().v4(),
+    connectionId: connectionId,
+    expectedRevision: expectedRevision,
+    url: url,
+  );
 }
 
 extension CloudModelGatewayConnections on CloudModelGateway {
@@ -150,15 +209,26 @@ extension CloudModelGatewayConnections on CloudModelGateway {
         required expectedRevision,
         required name,
         required url,
+        required hasSecretOverride,
+        verificationReceipt,
       }) => _updateModelConnection((
         connectionId: connectionId,
         expectedRevision: expectedRevision,
         name: name,
         url: url,
+        verificationReceipt: verificationReceipt,
+        hasSecretOverride: hasSecretOverride,
       ));
 
   Future<ModelConnectionView> _updateModelConnection(
-    ({String connectionId, int expectedRevision, String name, String? url})
+    ({
+      String connectionId,
+      int expectedRevision,
+      String name,
+      String? url,
+      String? verificationReceipt,
+      bool hasSecretOverride,
+    })
     value,
   ) {
     final request = _updateRequest(_workspaceId, value);
@@ -314,7 +384,15 @@ CreateModelConnectionRequest _createRequest(
 
 UpdateModelConnectionRequest _updateRequest(
   int workspaceId,
-  ({String connectionId, int expectedRevision, String name, String? url}) value,
+  ({
+    String connectionId,
+    int expectedRevision,
+    String name,
+    String? url,
+    String? verificationReceipt,
+    bool hasSecretOverride,
+  })
+  value,
 ) => .new(
   workspaceId: workspaceId,
   requestId: const Uuid().v4(),
@@ -322,6 +400,8 @@ UpdateModelConnectionRequest _updateRequest(
   expectedRevision: value.expectedRevision,
   name: value.name,
   url: value.url,
+  verificationReceipt: value.verificationReceipt,
+  hasSecretOverride: value.hasSecretOverride,
 );
 
 DeleteModelConnectionRequest _deleteRequest(

@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/data/cloud_model_store.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -96,6 +97,65 @@ void main() {
     expect(savedKey, 'valid-key');
     expect(createCalled, isTrue);
     expect(result.hasKey, isTrue);
+  });
+
+  test('verified cloud create skips the duplicate provider request', () async {
+    var createCalled = false;
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        putSecret: (_) async => PutWorkspaceSecretResponse(
+          configured: true,
+          displaySuffix: '4321',
+          revision: 1,
+          sequence: 1,
+        ),
+      ),
+      create: (request) async {
+        createCalled = true;
+        final now = DateTime.utc(2026);
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: request.providerId,
+          hasSecret: false,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices();
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+    const connection = ModelConnectionToCreate(
+      name: 'OpenAI',
+      workspaceId: 'workspace',
+      modelId: 'openai',
+      key: 'valid-key',
+    );
+    final verification = ModelProviderVerification.fromRequest(
+      request: const ModelProviderVerificationRequest(
+        workspaceId: 'workspace',
+        providerId: 'openai',
+        connectionId: null,
+        expectedRevision: null,
+        url: null,
+        key: 'valid-key',
+      ),
+      modelIds: const ['gpt-4o'],
+    );
+
+    final _ = await store.createModelConnection(
+      connection,
+      verification: verification,
+    );
+
+    expect(createCalled, isTrue);
+    expect(providerServices.wasCalled, isFalse);
   });
 
   test(
@@ -214,6 +274,143 @@ void main() {
     expect(updateCalled, isTrue);
     expect(result.name, 'Renamed');
     expect(result.hasKey, isTrue);
+  });
+
+  test('name-only cloud edit skips provider verification', () async {
+    var updateCalled = false;
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        readState: (_) async => ReadWorkspaceStateResponse(
+          pages: [],
+          currentSequence: 1,
+          events: [],
+          requiresSnapshot: false,
+        ),
+      ),
+      list: (_) async => [
+        ModelConnectionView(
+          id: 'connection',
+          name: 'OpenAI',
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      update: (request) async {
+        updateCalled = true;
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices();
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+
+    final result = await store.updateModelConnection(
+      'connection',
+      const ModelConnectionToUpdate(name: 'Renamed'),
+    );
+
+    expect(updateCalled, isTrue);
+    expect(providerServices.wasCalled, isFalse);
+    expect(result.name, 'Renamed');
+  });
+
+  test('verified cloud URL update sends its draft receipt', () async {
+    UpdateModelConnectionRequest? updateRequest;
+    var draftVerificationCalled = false;
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        readState: (_) async => ReadWorkspaceStateResponse(
+          pages: [],
+          currentSequence: 1,
+          events: [],
+          requiresSnapshot: false,
+        ),
+      ),
+      verifyDraft:
+          ({required connectionId, required expectedRevision, url}) async {
+            draftVerificationCalled = true;
+            expect(connectionId, 'connection');
+            expect(expectedRevision, 7);
+            expect(url, 'https://new.example.com');
+
+            return VerifyModelConnectionResult(
+              providerId: 'openai',
+              modelIds: const ['gpt-4o'],
+              verificationReceipt: 'receipt',
+              expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 1)),
+            );
+          },
+      list: (_) async => [
+        ModelConnectionView(
+          id: 'connection',
+          name: 'OpenAI',
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 7,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      update: (request) async {
+        updateRequest = request;
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 8,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices();
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+    final verification = await store.verifyModelConnection(
+      const ModelProviderVerificationRequest(
+        workspaceId: 'workspace',
+        providerId: 'openai',
+        connectionId: 'connection',
+        expectedRevision: 7,
+        url: 'https://new.example.com',
+        key: null,
+      ),
+    );
+
+    final _ = await store.updateModelConnection(
+      'connection',
+      const ModelConnectionToUpdate(
+        name: 'Renamed',
+        url: 'https://new.example.com',
+      ),
+      verification: verification,
+    );
+
+    expect(draftVerificationCalled, isTrue);
+    expect(updateRequest?.verificationReceipt, 'receipt');
+    expect(providerServices.wasCalled, isFalse);
   });
 }
 

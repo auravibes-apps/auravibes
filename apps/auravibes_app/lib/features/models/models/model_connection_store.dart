@@ -2,17 +2,28 @@ import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 
 abstract interface class ModelConnectionStore {
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate connection,
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
   );
+
+  Future<ModelConnectionEntity> createModelConnection(
+    ModelConnectionToCreate connection, {
+    ModelProviderVerification? verification,
+  });
+
   Future<ModelConnectionForEdit?> getModelConnectionForEdit(String id);
+
   Future<ModelConnectionEntity> updateModelConnection(
     String id,
-    ModelConnectionToUpdate connection,
-  );
+    ModelConnectionToUpdate connection, {
+    ModelProviderVerification? verification,
+  });
+
   Future<void> deleteModelConnection(String id);
+
   Stream<List<ModelConnectionEntity>> watchModelConnections(
     ModelConnectionFilter filter,
   );
