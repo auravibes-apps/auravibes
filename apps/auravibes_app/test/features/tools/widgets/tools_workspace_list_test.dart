@@ -47,13 +47,14 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
 ToolsGroupWithTools _groupWithTools({
   required List<WorkspaceToolEntity> tools,
   String name = 'Test Group',
+  bool isEnabled = true,
 }) {
   return ToolsGroupWithTools(
     group: .new(
       id: 'group-1',
       workspaceId: _workspaceId,
       name: name,
-      isEnabled: true,
+      isEnabled: isEnabled,
       permissions: .ask,
       createdAt: .new(2026),
       updatedAt: .new(2026),
@@ -128,6 +129,61 @@ void main() {
     ]);
 
     expect(find.byType(ToolsGroupCard), findsNWidgets(2));
+  });
+
+  testWidgets('sorts tool groups by name or enabled status', (tester) async {
+    final groups = [
+      _groupWithTools(name: 'A Disabled', isEnabled: false, tools: []),
+      _groupWithTools(name: 'Z Enabled', tools: []),
+    ];
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+    final cards = find.byType(ToolsGroupCard);
+    expect(
+      tester.widget<ToolsGroupCard>(cards.first).groupWithTools.group?.name,
+      'A Disabled',
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tools-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled').last);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<ToolsGroupCard>(cards.first).groupWithTools.group?.name,
+      'Z Enabled',
+    );
+  });
+
+  testWidgets('sorts tools within a group by enabled status', (tester) async {
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId).overrideWith(
+        () => _DataNotifier([
+          _groupWithTools(
+            name: 'Tools',
+            tools: [
+              _tool(id: 'a', toolId: 'alpha', isEnabled: false),
+              _tool(id: 'z', toolId: 'zeta'),
+            ],
+          ),
+        ]),
+      ),
+    ]);
+    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<ToolItemRow>(find.byType(ToolItemRow).first).tool.toolId,
+      'alpha',
+    );
+    await tester.tap(find.byKey(const ValueKey('tools-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled').last);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<ToolItemRow>(find.byType(ToolItemRow).first).tool.toolId,
+      'zeta',
+    );
   });
 
   testWidgets('filters tools by name or description', (tester) async {
