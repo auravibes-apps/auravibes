@@ -341,8 +341,7 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
     final models = await _workspaceModelSelectionsForCreate(
       modelType,
       key,
-      modelConnection.url ??
-          _providerUrlForValidation(modelType, provider.url),
+      modelConnection.url ?? _providerUrlForValidation(modelType, provider.url),
     );
 
     return _requiredCreateModels(models, modelConnection.modelId);
@@ -737,7 +736,8 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
       .new(
         type: .fromString(validation.provider.type),
         key: validation.keyForValidation,
-        url: validation.nextUrl ??
+        url:
+            validation.nextUrl ??
             _providerUrlForValidation(
               validation.provider.provider.type,
               validation.provider.provider.url,
