@@ -69,6 +69,7 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
     final snackbarWidget = _AuraSnackBarOverlayEntry(
       request: request,
       dismissCallback: () => _dismissSnackBar(snackBarId),
+      key: ValueKey(snackBarId),
     );
 
     setState(() {
@@ -259,6 +260,7 @@ Duration _validatedSnackBarDuration(Duration duration) {
 class const _AuraSnackBarOverlayEntry({
   required final _AuraSnackBarRequest request,
   required final VoidCallback dismissCallback,
+  super.key,
 }) extends StatefulWidget {
   @override
   State<_AuraSnackBarOverlayEntry> createState() =>

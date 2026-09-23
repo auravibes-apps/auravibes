@@ -12,6 +12,7 @@ import 'package:openai_dart/openai_dart.dart' as sdk;
 class const ProviderTransportResponse({
   required final int statusCode,
   required final Stream<List<int>> body,
+  final int? contentLength,
 });
 
 typedef ProviderTransport = Future<ProviderTransportResponse> Function(
@@ -61,7 +62,9 @@ class const ChatCompletionsCodec({
     Map<String, dynamic> body,
   ) async {
     final response = await transport(body);
-    final responseBody = await response.body.transform(utf8.decoder).join();
+    final responseBody = await _boundedBody(response)
+        .transform(utf8.decoder)
+        .join();
     _throwIfRawError(response.statusCode, responseBody);
 
     final json = jsonDecode(responseBody) as Map<String, dynamic>;
@@ -86,19 +89,25 @@ class const ChatCompletionsCodec({
   ) async {
     final response = await transport(body);
     final accumulator = sdk.ChatStreamAccumulator();
+    var eventCount = 0;
+    var partCount = 0;
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final responseBody = await response.body.transform(utf8.decoder).join();
+      final responseBody = await _boundedBody(response)
+          .transform(utf8.decoder)
+          .join();
       _throwIfRawError(response.statusCode, responseBody);
     }
 
-    await for (final line
-        in response.body
-            .transform(utf8.decoder)
-            .transform(const LineSplitter())) {
+    await for (final line in _boundedBody(
+      response,
+    ).transform(utf8.decoder).transform(const LineSplitter())) {
       if (!line.startsWith(_dataUrlPrefix)) continue;
       final data = line.replaceFirst(_dataUrlPrefix, '').trim();
-      if (data.isEmpty || data == '[DONE]') continue;
+      if (data == '[DONE]') break;
+      if (data.isEmpty) continue;
+      eventCount += 1;
+      if (eventCount > _maxProviderEvents) _throwResponseLimit();
 
       final event = sdk.ChatStreamEvent.fromJson(
         jsonDecode(data) as Map<String, dynamic>,
@@ -106,6 +115,8 @@ class const ChatCompletionsCodec({
       accumulator.add(event);
 
       final parts = _partsFromEvent(event);
+      partCount += parts.length;
+      if (partCount > _maxProviderParts) _throwResponseLimit();
       if (parts.isNotEmpty) {
         sendChunk(.new(index: 0, content: parts));
       }
@@ -152,6 +163,29 @@ class const ChatCompletionsCodec({
     );
   }
 }
+
+const int _maxProviderResponseBytes = 4 * 1024 * 1024;
+const int _maxProviderEvents = 10000;
+const int _maxProviderParts = 10000;
+
+Stream<List<int>> _boundedBody(ProviderTransportResponse response) async* {
+  final contentLength = response.contentLength;
+  if (contentLength != null && contentLength > _maxProviderResponseBytes) {
+    _throwResponseLimit();
+  }
+
+  var receivedBytes = 0;
+  await for (final bytes in response.body) {
+    receivedBytes += bytes.length;
+    if (receivedBytes > _maxProviderResponseBytes) _throwResponseLimit();
+    yield bytes;
+  }
+}
+
+Never _throwResponseLimit() => throw GenkitException(
+  'Provider response exceeded the safe processing limit.',
+  status: .RESOURCE_EXHAUSTED,
+);
 
 const _maxProviderErrorLength = 500;
 const _providerErrorTruncationSuffix = '... [truncated]';
