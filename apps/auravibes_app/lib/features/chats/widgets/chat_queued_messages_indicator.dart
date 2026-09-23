@@ -35,12 +35,14 @@ class const _QueuedMessagesContent({
     final notifier = ref.read(conversationSendQueueProvider.notifier);
     void remove(String draftId) =>
         notifier.remove(conversationId: conversationId, draftId: draftId);
+    void take(String draftId) =>
+        notifier.take(conversationId: conversationId, draftId: draftId);
 
     return _QueuedMessagesLayout(
       queuedDrafts: queuedDrafts,
       onClear: () => notifier.clear(conversationId),
       onRemove: remove,
-      onEditDraft: _createEditDraftCallback(onEditDraft, remove),
+      onEditDraft: _createEditDraftCallback(onEditDraft, take),
     );
   }
 }
