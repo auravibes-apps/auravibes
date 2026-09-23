@@ -2127,6 +2127,113 @@ void main() {
       expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
     });
 
+    testWidgets('keeps an A2UI response visible before later activity', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      const firstTool = MessageToolCallEntity(
+        id: 'tc-form',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const secondTool = MessageToolCallEntity(
+        id: 'tc-follow-up',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final messagesById = {
+        'form': _createMessage(
+          id: 'form',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: MessageMetadataEntity(
+            thinking: 'Preparing the form',
+            toolCalls: const [firstTool],
+            a2uiMessages: [
+              for (final operation in [
+                {
+                  'createSurface': {
+                    'surfaceId': 'main',
+                    'catalogId': 'urn:auravibes:a2ui:chat:form:v1',
+                  },
+                },
+                {
+                  'updateComponents': {
+                    'surfaceId': 'main',
+                    'components': [
+                      {
+                        'id': 'root',
+                        'component': 'Text',
+                        'text': 'Action required',
+                      },
+                    ],
+                  },
+                },
+              ])
+                jsonEncode({
+                  'protocolVersion': 'v1',
+                  'interactionMode': 'requiresUserAction',
+                  'message': {'version': 'v0.9', ...operation},
+                }),
+            ],
+          ),
+        ),
+        'follow-up': _createMessage(
+          id: 'follow-up',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [secondTool]),
+        ),
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['form', 'follow-up'],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('a2ui_form')), findsOneWidget);
+      expect(find.text('Action required'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_form')),
+        findsOneWidget,
+      );
+      await revealActivityToolCalls(tester, runId: 'form');
+      expect(
+        find.byKey(const ValueKey('activity_tool_tc-form')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('keeps final response visible after the activity session', (
       tester,
     ) async {
