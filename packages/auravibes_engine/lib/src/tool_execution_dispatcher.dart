@@ -77,9 +77,8 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
     required TTool tool,
     required String argumentsRaw,
   }) async {
-    final arguments = safeJsonDecodeToolArguments(argumentsRaw);
-
     try {
+      final arguments = safeJsonDecodeToolArguments(argumentsRaw);
       final result = await runResolvedTool(
         conversationId: conversationId,
         tool: tool,
@@ -154,10 +153,8 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
 }
 
 Map<String, dynamic> safeJsonDecodeToolArguments(String source) {
-  try {
-    final decoded = jsonDecode(source);
-    if (decoded is Map<String, dynamic>) return decoded;
-  } on Object catch (_) {}
+  final decoded = jsonDecode(source);
+  if (decoded is Map<String, dynamic>) return decoded;
 
-  return const <String, dynamic>{};
+  throw const FormatException('Tool arguments must be a JSON object.');
 }

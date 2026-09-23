@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -22,9 +25,17 @@ String _contentForDraft(ChatDraft draft) {
 @riverpod
 class ConversationSendQueue extends _$ConversationSendQueue {
   int _nextDraftId = 0;
+  Map<String, List<ConversationQueuedDraft>> _queuedDrafts = const {};
 
   @override
   Map<String, List<ConversationQueuedDraft>> build() {
+    final attachmentUsecase = ref.watch(localChatAttachmentUsecaseProvider);
+    final _ = ref.onDispose(() {
+      for (final drafts in _queuedDrafts.values) {
+        _deleteAttachments(drafts, attachmentUsecase);
+      }
+    });
+
     return {};
   }
 
@@ -37,10 +48,10 @@ class ConversationSendQueue extends _$ConversationSendQueue {
       draft: draft,
     );
 
-    state = {
+    _setState({
       ...state,
       conversationId: [...state[conversationId] ?? const [], queuedDraft],
-    };
+    });
 
     return queuedDraft;
   }
@@ -58,11 +69,11 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     }
     final [nextDraft, ...remainingDrafts] = drafts;
 
-    state = {
+    _setState({
       for (final entry in state.entries)
         if (entry.key != conversationId) entry.key: entry.value,
       if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
-    };
+    });
 
     return nextDraft;
   }
@@ -73,7 +84,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
       return const [];
     }
 
-    state = _withoutConversation(conversationId);
+    _setState(_withoutConversation(state, conversationId));
 
     return drafts;
   }
@@ -85,35 +96,72 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final remainingDrafts = _withoutDraft(drafts, draftId);
     if (remainingDrafts.length == drafts.length) return;
 
-    state = _withRemainingDrafts(conversationId, remainingDrafts);
+    _setState(_withRemainingDrafts(conversationId, remainingDrafts));
+    _deleteAttachments(
+      drafts.where((draft) => draft.id == draftId),
+      ref.read(localChatAttachmentUsecaseProvider),
+    );
+  }
+
+  ConversationQueuedDraft? take({
+    required String conversationId,
+    required String draftId,
+  }) {
+    final drafts = state[conversationId];
+    if (drafts == null) return null;
+
+    final draft = drafts.where((draft) => draft.id == draftId).firstOrNull;
+    if (draft == null) return null;
+
+    _setState(
+      _withRemainingDrafts(conversationId, _withoutDraft(drafts, draftId)),
+    );
+
+    return draft;
   }
 
   void clear(String conversationId) {
     final drafts = state[conversationId];
     if (drafts == null || drafts.isEmpty) return;
 
-    state = _withoutConversation(conversationId);
+    _setState(_withoutConversation(state, conversationId));
+    _deleteAttachments(drafts, ref.read(localChatAttachmentUsecaseProvider));
   }
-
-  List<ConversationQueuedDraft> _withoutDraft(
-    List<ConversationQueuedDraft> drafts,
-    String draftId,
-  ) => drafts.where((draft) => draft.id != draftId).toList();
 
   Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
     String conversationId,
     List<ConversationQueuedDraft> remainingDrafts,
   ) => {
-    ..._withoutConversation(conversationId),
+    ..._withoutConversation(state, conversationId),
     if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
   };
 
-  Map<String, List<ConversationQueuedDraft>> _withoutConversation(
-    String conversationId,
-  ) {
-    return {
-      for (final entry in state.entries)
-        if (entry.key != conversationId) entry.key: entry.value,
-    };
+  void _setState(Map<String, List<ConversationQueuedDraft>> nextState) {
+    _queuedDrafts = nextState;
+    state = nextState;
+  }
+}
+
+List<ConversationQueuedDraft> _withoutDraft(
+  List<ConversationQueuedDraft> drafts,
+  String draftId,
+) => drafts.where((draft) => draft.id != draftId).toList();
+
+Map<String, List<ConversationQueuedDraft>> _withoutConversation(
+  Map<String, List<ConversationQueuedDraft>> state,
+  String conversationId,
+) => {
+  for (final entry in state.entries)
+    if (entry.key != conversationId) entry.key: entry.value,
+};
+
+void _deleteAttachments(
+  Iterable<ConversationQueuedDraft> drafts,
+  LocalChatAttachmentUsecase attachmentUsecase,
+) {
+  for (final draft in drafts) {
+    for (final attachment in draft.draft.attachments) {
+      unawaited(attachmentUsecase.deleteAttachment(attachment.localPath));
+    }
   }
 }

@@ -704,6 +704,40 @@ void main() {
   });
 
   group('AuraPopupMenuController', () {
+    testWidgets('detaches when the popup controller changes', (tester) async {
+      final oldController = AuraPopupMenuController();
+      final newController = AuraPopupMenuController();
+
+      Future<void> pumpMenu(AuraPopupMenuController controller) =>
+          tester.pumpWidget(
+            MaterialApp(
+              home: Portal(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: const [AuraPopupMenuItem(title: Text('Item'))],
+                  controller: controller,
+                ),
+              ),
+            ),
+          );
+
+      await pumpMenu(oldController);
+      await pumpMenu(newController);
+
+      oldController.open();
+      await tester.pump();
+      expect(oldController.isShowing, isFalse);
+      expect(newController.isShowing, isFalse);
+
+      newController.open();
+      await tester.pump();
+      expect(newController.isShowing, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      oldController.open();
+      expect(tester.takeException(), isNull);
+    });
+
     test('isShowing returns false when not attached', () {
       final controller = AuraPopupMenuController();
       expect(controller.isShowing, isFalse);
