@@ -1,13 +1,7 @@
 reusables:
-  - &release_tag
+  - &release_build
     instance_type: mac_mini_m2
     max_build_duration: 60
-    triggering:
-      events:
-        - tag
-      tag_patterns:
-        - pattern: "^auravibes_app-v([0-9]+)\\.([0-9]+)\\.([0-9]+)(-beta\\.[0-9]+)?$"
-          include: true
 scripts:
   - &script_setup_environment
     name: Setup Environment
@@ -80,7 +74,7 @@ workflows:
   # iOS Release Workflow
   release-ios:
     name: Release iOS
-    <<: *release_tag
+    <<: *release_build
     environment:
       flutter: fvm
       groups:
@@ -150,7 +144,7 @@ workflows:
   # Android Release Workflow
   release-android:
     name: Release Android
-    <<: *release_tag
+    <<: *release_build
     environment:
       flutter: fvm
       android_signing:
