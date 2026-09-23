@@ -78,6 +78,19 @@ class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   }
 
   @override
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) async {
+    final updated = await _database.agentsDao.updateAgentVisibility(
+      agentId,
+      visibility.name,
+    );
+
+    return await _mapToAgent(updated);
+  }
+
+  @override
   Future<bool> deleteAgent(String agentId) =>
       _database.agentsDao.deleteAgent(agentId);
 }

@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
@@ -284,6 +285,7 @@ _AddModelProviderFormCallbacks _addModelProviderFormCallbacks(
   _CodexOAuthState state,
 ) => _AddModelProviderFormCallbacks(
   onClose: _closeModelProviderFormCallback(request),
+  onVerify: _addModelProviderVerifyCallback(request),
   onModelBack: _modelProviderSelectionBackCallback(request),
   onSubmit: _addModelProviderSubmitCallback(request),
   onCancelCodexOAuth: () => _cancelCodexOAuth(state),
@@ -369,6 +371,54 @@ Future<bool> _confirmModelProviderDiscard(
         isDestructive: true,
       ) ==
       true;
+}
+
+VoidCallback _addModelProviderVerifyCallback(
+  _AddModelProviderFormRequest request,
+) =>
+    () => unawaited(_verifyAddModelProviderForm(request));
+
+Future<void> _verifyAddModelProviderForm(
+  _AddModelProviderFormRequest request,
+) async {
+  final verification = await _runAddModelProviderVerification(request);
+  if (verification == null || !request.context.mounted) return;
+
+  _showModelProviderVerificationSuccess(request.context, verification);
+}
+
+Future<ModelProviderVerification?> _runAddModelProviderVerification(
+  _AddModelProviderFormRequest request,
+) async {
+  ModelProviderVerification? verification;
+  try {
+    await verifyModelProviderMutationProvider.run(request.ref, (
+      transaction,
+    ) async {
+      verification = await transaction
+          .get(addModelProviderStateProvider(request.workspaceId).notifier)
+          .verifyModelProvider();
+    });
+  } on Object {
+    return null;
+  }
+
+  return verification;
+}
+
+void _showModelProviderVerificationSuccess(
+  BuildContext context,
+  ModelProviderVerification verification,
+) {
+  final connectedLabel = LocaleKeys.service_connections_status_connected.tr();
+  final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
+    verification.modelCount,
+  );
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: Text('$connectedLabel - $modelCountLabel'),
+    variant: .success,
+  );
 }
 
 VoidCallback _addModelProviderSubmitCallback(
@@ -668,6 +718,7 @@ class const _AddModelProviderFormValues({
 
 class const _AddModelProviderFormCallbacks({
   required final VoidCallback onClose,
+  required final VoidCallback onVerify,
   required final VoidCallback onModelBack,
   required final VoidCallback onSubmit,
   required final VoidCallback onCancelCodexOAuth,
@@ -1135,6 +1186,11 @@ class const _ErrorBanner() extends ConsumerWidget {
   }
 
   String? _errorBannerMessage(WidgetRef ref) {
+    final verification = ref.watch(verifyModelProviderMutationProvider);
+    if (verification case MutationError<void>(:final error)) {
+      return _mapErrorMessage(error);
+    }
+
     final mutation = ref.watch(addCredentialsModelMutationProvider);
 
     return switch (mutation) {
@@ -1218,31 +1274,41 @@ class const _CreateButton({
       values: values,
       callbacks: callbacks,
       isSubmitting: state.isSubmitting,
+      isTesting: state.isTesting,
+      isVerified: state.isVerified,
       disabled: state.isSubmitting || !state.isValid,
     );
   }
 }
 
-typedef _CreateButtonState = ({bool isSubmitting, bool isValid});
+typedef _CreateButtonState = ({
+  bool isSubmitting,
+  bool isTesting,
+  bool isValid,
+  bool isVerified,
+});
 
-_CreateButtonState _watchCreateButtonState(WidgetRef ref, String workspaceId) =>
-    (
-      isSubmitting: _watchCreateButtonSubmitting(ref),
-      isValid: _watchCreateButtonValidity(ref, workspaceId),
-    );
+_CreateButtonState _watchCreateButtonState(WidgetRef ref, String workspaceId) {
+  final state = ref.watch(addModelProviderStateProvider(workspaceId));
+
+  return (
+    isSubmitting: _watchCreateButtonSubmitting(ref),
+    isTesting: state.isTestingConnection,
+    isValid: state.isValid(),
+    isVerified: state.isConnectionVerified,
+  );
+}
 
 bool _watchCreateButtonSubmitting(WidgetRef ref) => ref.watch(
   addCredentialsModelMutationProvider.select((value) => value.isPending),
-);
-
-bool _watchCreateButtonValidity(WidgetRef ref, String workspaceId) => ref.watch(
-  addModelProviderStateProvider(workspaceId).select((value) => value.isValid()),
 );
 
 class const _CreateButtonView({
   required final _AddModelProviderFormValues values,
   required final _AddModelProviderFormCallbacks callbacks,
   required final bool isSubmitting,
+  required final bool isTesting,
+  required final bool isVerified,
   required final bool disabled,
 }) extends StatelessWidget {
   @override
@@ -1254,6 +1320,8 @@ class const _CreateButtonView({
           values: values,
           callbacks: callbacks,
           isSubmitting: isSubmitting,
+          isTesting: isTesting,
+          isVerified: isVerified,
           disabled: disabled,
         ),
       ],
@@ -1265,18 +1333,117 @@ class const _CreateButtonActions({
   required final _AddModelProviderFormValues values,
   required final _AddModelProviderFormCallbacks callbacks,
   required final bool isSubmitting,
+  required final bool isTesting,
+  required final bool isVerified,
   required final bool disabled,
 }) extends StatelessWidget {
-  ({bool isSubmitting, bool disabled}) get _state =>
+  ({bool isSubmitting, bool isTesting, bool isVerified, bool disabled})
+  get _state => (
+    isSubmitting: isSubmitting,
+    isTesting: isTesting,
+    isVerified: isVerified,
+    disabled: disabled,
+  );
+  ({bool isSubmitting, bool disabled}) get _oauthState =>
       (isSubmitting: isSubmitting, disabled: disabled);
 
   @override
+  Widget build(BuildContext _) {
+    if (!values.request.runtime.selection.isOAuth) {
+      return _ApiKeyCreateActions(callbacks: callbacks, state: _state);
+    }
+
+    return Column(
+      children: [
+        _CodexBrowserAction(
+          values: values,
+          state: _oauthState,
+          callbacks: callbacks,
+        ),
+        _CodexDeviceAction(
+          values: values,
+          state: _oauthState,
+          callbacks: callbacks,
+        ),
+      ],
+    );
+  }
+}
+
+class const _ApiKeyCreateActions({
+  required final _AddModelProviderFormCallbacks callbacks,
+  required final ({
+    bool isSubmitting,
+    bool isTesting,
+    bool isVerified,
+    bool disabled,
+  })
+  state,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext _) => Column(
     children: [
-      _CodexBrowserAction(values: values, state: _state, callbacks: callbacks),
-      _CodexDeviceAction(values: values, state: _state, callbacks: callbacks),
+      _VerifyProviderButton(
+        onPressed: callbacks.onVerify,
+        isTesting: state.isTesting,
+        disabled: state.disabled,
+      ),
+      const AuraSizedBox(height: .md),
+      _AddProviderButton(
+        onPressed: callbacks.onSubmit,
+        isSubmitting: state.isSubmitting,
+        isTesting: state.isTesting,
+        isVerified: state.isVerified,
+        disabled: state.disabled,
+      ),
     ],
   );
+}
+
+class const _VerifyProviderButton({
+  required final VoidCallback onPressed,
+  required final bool isTesting,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final isTesting = this.isTesting;
+
+    return AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
+      variant: .outlined,
+      size: .large,
+      isLoading: isTesting,
+      isFullWidth: true,
+      disabled: disabled || isTesting,
+    );
+  }
+}
+
+class const _AddProviderButton({
+  required final VoidCallback onPressed,
+  required final bool isSubmitting,
+  required final bool isTesting,
+  required final bool isVerified,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final isTesting = this.isTesting;
+    final isVerified = this.isVerified;
+
+    return AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.models_screens_add_provider_open_button,
+      ),
+      size: .large,
+      isLoading: isSubmitting,
+      isFullWidth: true,
+      disabled: disabled || isTesting || !isVerified,
+    );
+  }
 }
 
 class const _CodexBrowserAction({

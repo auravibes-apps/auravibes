@@ -279,6 +279,19 @@ mixin _CloudAgentRepositoryWrite {
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async =>
       _decodeUpdatedAgent(await _updateAgentResponse(agentId, agent));
 
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) async {
+    final request = await _visibilityUpdateRequest(agentId, visibility);
+    final response = await _patchAgentState(
+      patch,
+      _updateAgentOperations(request),
+    );
+
+    return _decodeUpdatedAgent(_updatedAgentData(agentId, response));
+  }
+
   Future<bool> deleteAgent(String agentId) async {
     final resources = await readAgent(agentId);
     final _ = await _patchAgentState(
@@ -290,7 +303,36 @@ mixin _CloudAgentRepositoryWrite {
   }
 }
 
+AgentToUpdate _agentUpdateForVisibility(
+  AgentEntity current,
+  AgentVisibility visibility,
+) => AgentToUpdate(
+  name: current.name,
+  description: current.description,
+  content: current.content,
+  isEnabled: current.isEnabled,
+  visibility: visibility,
+  skills: current.skills,
+);
+
 extension on _CloudAgentRepositoryWrite {
+  Future<_AgentUpdateData> _visibilityUpdateRequest(
+    String agentId,
+    AgentVisibility visibility,
+  ) async {
+    final resources = await readAgent(agentId);
+    final resource = _agentResource(resources, agentId);
+    if (resource == null) throw StateError('Agent not found: $agentId');
+    final current = _decodeAgent(resource, resources, workspaceId);
+
+    return (
+      resources: resources,
+      agentId: agentId,
+      agent: _agentUpdateForVisibility(current, visibility),
+      revisions: _revisions,
+    );
+  }
+
   Future<_AgentUpdateResponse> _updateAgentResponse(
     String agentId,
     AgentToUpdate agent,

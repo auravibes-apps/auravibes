@@ -128,6 +128,10 @@ import 'package:auravibes_server_client/src/protocol/features/model_connections/
     as _i5neyvt3;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
     as _ip0z8mdx;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_request.dart'
+    as _il6rxhco;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_result.dart'
+    as _ixnfam5m;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/workspace_model_selection_view.dart'
     as _i9qkc4pk;
 import 'package:auravibes_server_client/src/protocol/features/objects/models/begin_upload_request.dart'
@@ -842,6 +846,14 @@ class EndpointModelConnection extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_idbs8oqc.ModelSyncResult>(
     'modelConnection',
     'testAndSync',
+    {'request': request},
+  );
+
+  _ida.Future<_ixnfam5m.VerifyModelConnectionResult> verifyDraft(
+    _il6rxhco.VerifyModelConnectionRequest request,
+  ) => caller.callServerEndpoint<_ixnfam5m.VerifyModelConnectionResult>(
+    'modelConnection',
+    'verifyDraft',
     {'request': request},
   );
 }
