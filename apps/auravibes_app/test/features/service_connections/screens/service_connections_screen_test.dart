@@ -88,6 +88,53 @@ void main() {
     );
   });
 
+  testWidgets('opens redacted details for a failed MCP connection', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Failed MCP',
+          displayStatus: .failed,
+          lastAuthError: 'Authorization: Bearer replace-me',
+          canReconnect: true,
+        ),
+        _mcpConnection(name: 'Healthy MCP', displayStatus: .connected),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final failedMenu = find.byKey(
+      const ValueKey<String>('service_connection_menu_Failed MCP'),
+    );
+    await tester.tap(find.descendant(
+      of: failedMenu,
+      matching: find.byIcon(Icons.more_vert),
+    ));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('View details'), findsOneWidget);
+    expect(find.text('Reconnect'), findsOneWidget);
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('Bearer [REDACTED]'), findsOneWidget);
+    expect(find.textContaining('replace-me'), findsNothing);
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
+
+    final healthyMenu = find.byKey(
+      const ValueKey<String>('service_connection_menu_Healthy MCP'),
+    );
+    await tester.tap(find.descendant(
+      of: healthyMenu,
+      matching: find.byIcon(Icons.more_vert),
+    ));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('View details'), findsNothing);
+  });
+
   testWidgets('searches connection metadata and applies status filters', (
     tester,
   ) async {
@@ -514,6 +561,7 @@ ServiceConnectionListItem _mcpConnection({
   List<ServiceConnectionMetadataValue> metadataValues = const [],
   bool canRefresh = false,
   bool canReconnect = false,
+  String? lastAuthError,
 }) => ServiceConnectionListItem(
   id: name,
   workspaceId: _syncWorkspaceId,
@@ -527,7 +575,7 @@ ServiceConnectionListItem _mcpConnection({
   displayStatus: displayStatus,
   expiresAt: null,
   lastRefreshedAt: null,
-  lastAuthError: null,
+  lastAuthError: lastAuthError,
   metadataValues: metadataValues,
   canRefresh: canRefresh,
   canReconnect: canReconnect,
