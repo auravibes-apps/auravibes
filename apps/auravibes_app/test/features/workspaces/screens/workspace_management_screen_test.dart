@@ -18,6 +18,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -624,6 +625,44 @@ void main() {
         ),
         contains('Workspace A Copy'),
       );
+    });
+
+    testWidgets('copies the exact local workspace ID from its menu', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('workspace_menu_ws-1')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy ID'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(copied, 'ws-1');
+      expect(find.text('Workspace ID copied'), findsOneWidget);
+      expect((await repository.getWorkspaceById('ws-1'))?.name, 'Workspace A');
     });
 
     testWidgets('confirms before discarding dirty workspace edits', (
