@@ -287,21 +287,11 @@ class const AppResolvedToolProvider({
       throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
-    final request = _SkillNativeToolRequest(
-      conversationId: input.conversationId,
-      workspaceId: input.workspaceId,
-      skillSlug: input.skillSlug,
-      toolSlug: input.toolSlug,
-      arguments: input.arguments,
-      provider: this,
+    return _runCurrentAppSkillTool(
+      _appSkillTemplateToolRequest(this, input),
+      usecase,
+      _appSkillTemplateToolName(input),
     );
-    final toolName = agent.AgentResolvedToolName.skillAppTemplate(
-      tableId: input.toolSlug,
-      skillSlug: input.skillSlug,
-      toolIdentifier: input.toolSlug,
-    ).fullName;
-
-    return _runCurrentAppSkillTool(request, usecase, toolName);
   }
 }
 
@@ -941,23 +931,11 @@ class _ConfiguredSkillCommandRunner {
     final target = request.target;
     if (target.skillSlug == agent.agentsSkillSlug) {
       return await _runSubAgentNativeTool(
-        .new(
-          conversationId: request.conversationId,
-          workspaceId: request.workspaceId,
-          skillSlug: target.skillSlug ?? '',
-          toolSlug: target.toolIdentifier,
-          arguments: request.arguments,
-          provider: _provider,
-        ),
+        _subAgentSkillNativeToolRequest(_provider, request),
       );
     }
 
-    await _requireCurrentAppSkillTool(
-      provider: _provider,
-      conversationId: request.conversationId,
-      workspaceId: request.workspaceId,
-      toolName: target.fullName,
-    );
+    await _requireCurrentAppSkillToolForNativeRequest(_provider, request);
 
     return await _runConfiguredAppSkillTool(request);
   }
@@ -1040,6 +1018,60 @@ Future<Object?> _runCurrentAppSkillTool(
 
   return await _registerNativeOperation(request, operation);
 }
+
+_SkillNativeToolRequest _appSkillTemplateToolRequest(
+  AppResolvedToolProvider provider,
+  agent.SkillAppTemplateToolRequest input,
+) {
+  final skillSlug = input.skillSlug;
+  final toolSlug = input.toolSlug;
+
+  return _SkillNativeToolRequest(
+    conversationId: input.conversationId,
+    workspaceId: input.workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: input.arguments,
+    provider: provider,
+  );
+}
+
+String _appSkillTemplateToolName(agent.SkillAppTemplateToolRequest input) {
+  final skillSlug = input.skillSlug;
+  final toolSlug = input.toolSlug;
+
+  return agent.AgentResolvedToolName.skillAppTemplate(
+    tableId: toolSlug,
+    skillSlug: skillSlug,
+    toolIdentifier: toolSlug,
+  ).fullName;
+}
+
+_SkillNativeToolRequest _subAgentSkillNativeToolRequest(
+  AppResolvedToolProvider provider,
+  RunSkillNativeToolRequest request,
+) {
+  final target = request.target;
+
+  return _SkillNativeToolRequest(
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    skillSlug: target.skillSlug ?? '',
+    toolSlug: target.toolIdentifier,
+    arguments: request.arguments,
+    provider: provider,
+  );
+}
+
+Future<void> _requireCurrentAppSkillToolForNativeRequest(
+  AppResolvedToolProvider provider,
+  RunSkillNativeToolRequest request,
+) => _requireCurrentAppSkillTool(
+  provider: provider,
+  conversationId: request.conversationId,
+  workspaceId: request.workspaceId,
+  toolName: request.target.fullName,
+);
 
 _SkillControlToolRequest _skillCredentialsCommandRequest(
   String conversationId,
