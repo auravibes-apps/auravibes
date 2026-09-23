@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -1052,6 +1053,8 @@ List<AuraPopupMenuItem> _connectionMenuItems(
   ServiceConnectionListItem connection,
 ) {
   return [
+    if (_hasConnectionErrorDetails(connection))
+      _viewErrorMenuItem(context, connection),
     if (connection.canReconnect) _reconnectMenuItem(context, ref, connection),
     if (connection.canRefresh) _refreshMenuItem(context, ref, connection),
     if (_canEditConnection(connection)) _editMenuItem(context, connection),
@@ -1059,6 +1062,24 @@ List<AuraPopupMenuItem> _connectionMenuItems(
       _deleteMenuItem(context, ref, connection),
   ];
 }
+
+bool _hasConnectionErrorDetails(ServiceConnectionListItem connection) =>
+    connection.kind == .mcpServer &&
+    (connection.displayStatus == .failed ||
+        connection.displayStatus == .needsReauth);
+
+AuraPopupMenuItem _viewErrorMenuItem(
+  BuildContext context,
+  ServiceConnectionListItem connection,
+) => AuraPopupMenuItem(
+  title: const TextLocale(LocaleKeys.tools_screen_mcp_view_error),
+  onTap: () => McpErrorDetails.show(
+    context,
+    groupName: connection.name,
+    errorMessage: connection.lastAuthError,
+  ),
+  leading: const AuraIcon(Icons.visibility_outlined),
+);
 
 bool _canEditConnection(ServiceConnectionListItem connection) {
   return connection.kind == ServiceConnectionListItemKind.modelProvider ||
