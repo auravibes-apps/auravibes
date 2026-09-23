@@ -6,11 +6,11 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_p
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 
 typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderRequest = ({
