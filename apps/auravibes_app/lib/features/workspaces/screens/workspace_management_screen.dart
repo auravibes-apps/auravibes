@@ -22,6 +22,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -1148,7 +1149,12 @@ class const _LocalWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_editItem(), _duplicateItem(), _deleteItem()],
+        items: [
+          _editItem(),
+          _duplicateItem(),
+          _copyItem(context),
+          _deleteItem(),
+        ],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1176,6 +1182,11 @@ class const _LocalWorkspaceMenu({
       onTap: () => actions.duplicate(workspace),
     );
   }
+
+  AuraPopupMenuItem _copyItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale('workspace_management.copy_id'),
+    onTap: () => unawaited(_copyWorkspaceId(context, workspace.id)),
+  );
 }
 
 class const _ConnectedWorkspaceTile({
@@ -1239,7 +1250,7 @@ class const _ConnectedWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_detailsItem(), _removeItem()],
+        items: [_detailsItem(), _copyItem(context), _removeItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1263,6 +1274,11 @@ class const _ConnectedWorkspaceMenu({
       variant: .error,
     );
   }
+
+  AuraPopupMenuItem _copyItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale('workspace_management.copy_id'),
+    onTap: () => unawaited(_copyWorkspaceId(context, workspace.id)),
+  );
 }
 
 class const _AvailableWorkspaceTile({
@@ -1326,7 +1342,7 @@ class const _AvailableWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_detailsItem(), _connectItem()],
+        items: [_detailsItem(), _copyItem(context), _connectItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1347,6 +1363,36 @@ class const _AvailableWorkspaceMenu({
     return AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_management_cloud_attach),
       onTap: canConnect ? () => actions.connect(workspace, accountId) : null,
+    );
+  }
+
+  AuraPopupMenuItem _copyItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale('workspace_management.copy_id'),
+    onTap: () => unawaited(_copyWorkspaceId(context, workspace.id.toString())),
+  );
+}
+
+Future<void> _copyWorkspaceId(BuildContext context, String id) async {
+  try {
+    await Clipboard.setData(ClipboardData(text: id));
+  } on Object catch (error, stackTrace) {
+    _logger.warning('Copy workspace ID failed', error, stackTrace);
+    if (context.mounted) {
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: const TextLocale('workspace_management.copy_id_error'),
+        variant: .error,
+      );
+    }
+
+    return;
+  }
+
+  if (context.mounted) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale('workspace_management.id_copied'),
+      variant: .success,
     );
   }
 }
