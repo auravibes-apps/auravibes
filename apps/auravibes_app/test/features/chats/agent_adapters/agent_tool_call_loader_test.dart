@@ -247,21 +247,25 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'resolved-tool',
-                      name: catalog.specs[0].name,
+                      name:
+                          catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                     ),
-                    MessageToolCallEntity(
+                    const MessageToolCallEntity(
                       id: 'missing-tool',
                       name: 'unknown_tool',
                       argumentsRaw: '{}',
                     ),
                     MessageToolCallEntity(
                       id: 'already-resolved',
-                      name: catalog.specs[0].name,
+                      name:
+                          catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),
@@ -374,7 +378,7 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'native-tool-1',
@@ -403,7 +407,7 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'old-call-1',
@@ -417,7 +421,7 @@ void main() {
               _message(id: 'user-2', isUser: true),
               _message(
                 id: 'assistant-2',
-                metadata: MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'new-call-1',

@@ -23,11 +23,13 @@ class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
 }) {
-  final AudioRecorder _recorder = recorder ?? AudioRecorder();
+  // Defer platform-channel setup until voice recording is requested.
+  AudioRecorder? _recorder = recorder;
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
   StreamSubscription<Uint8List>? _recordingStreamSubscription;
+  AudioRecorder get _recorderOrCreate => _recorder ??= .new();
 
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
     String sourcePath, {
@@ -123,10 +125,10 @@ Future<_AttachmentSource> _readAttachmentSource(String sourcePath) async {
 }
 
 Future<void> _startVoiceRecording(LocalChatAttachmentServiceIo service) async {
-  if (await service._recorder.isRecording()) return;
+  if (await service._recorderOrCreate.isRecording()) return;
 
-  await _ensureRecordingPermission(service._recorder);
-  final device = await _recordingInputDevice(service._recorder);
+  await _ensureRecordingPermission(service._recorderOrCreate);
+  final device = await _recordingInputDevice(service._recorderOrCreate);
   final path = await _newRecordingPath(service);
   service._recordingPath = path;
   if (Platform.isMacOS) {
@@ -135,7 +137,7 @@ Future<void> _startVoiceRecording(LocalChatAttachmentServiceIo service) async {
     return;
   }
 
-  await _startStandardVoiceRecording(service._recorder, device, path);
+  await _startStandardVoiceRecording(service._recorderOrCreate, device, path);
 }
 
 Future<InputDevice?> _recordingInputDevice(AudioRecorder recorder) async {
@@ -185,7 +187,7 @@ Future<MessageAttachmentToCreate?> _stopVoiceRecording(
   LocalChatAttachmentServiceIo service,
 ) async {
   final path = service._recordingStreamSubscription == null
-      ? await service._recorder.stop() ?? service._recordingPath
+      ? await service._recorderOrCreate.stop() ?? service._recordingPath
       : await service._stopMacVoiceRecording();
   service._recordingPath = null;
   if (path == null) {
@@ -220,7 +222,7 @@ Future<MessageAttachmentToCreate?> _createStoppedVoiceAttachment(
 
 Future<void> _cancelVoiceRecording(LocalChatAttachmentServiceIo service) async {
   final path = service._recordingStreamSubscription == null
-      ? await service._recorder.stop() ?? service._recordingPath
+      ? await service._recorderOrCreate.stop() ?? service._recordingPath
       : await service._cancelMacVoiceRecording();
   service._recordingPath = null;
   if (path == null) return;
@@ -244,7 +246,7 @@ extension on LocalChatAttachmentServiceIo {
   }
 
   Future<void> _startMacVoiceRecording(InputDevice? device) async {
-    final stream = await _recorder.startStream(
+    final stream = await _recorderOrCreate.startStream(
       .new(
         encoder: AudioEncoder.pcm16bits,
         numChannels: _macRecordingChannels,
@@ -312,7 +314,7 @@ extension on LocalChatAttachmentServiceIo {
   }
 
   Future<Uint8List?> _stopMacVoiceStream() async {
-    final _ = await _recorder.stop();
+    final _ = await _recorderOrCreate.stop();
     await _recordingStreamDone?.future.timeout(
       const Duration(milliseconds: 500),
       onTimeout: () => _logger.warning('Voice stream stop timed out'),
