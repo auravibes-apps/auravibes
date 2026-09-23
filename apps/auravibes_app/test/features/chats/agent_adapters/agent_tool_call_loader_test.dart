@@ -73,7 +73,22 @@ void main() {
       messageRepository = MockMessageRepository();
       conversationRepository = MockConversationRepository();
       loadToolSpecs = MockLoadConversationToolSpecsUsecase();
-      catalog = agent.buildToolCatalog<ResolvedTool>([]);
+      catalog = agent.buildToolCatalog<ResolvedTool>([
+        _candidate(
+          'calculator',
+          'calculator',
+          ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+        ),
+        _candidate(
+          'url',
+          'url',
+          ResolvedTool.native(tableId: 'ws-tool-123', nativeToolType: .url),
+        ),
+      ]);
       when(() => conversationRepository.getConversationById(any()))
           .thenAnswer((_) async => _conversation);
       when(
@@ -90,15 +105,13 @@ void main() {
       );
     });
 
-    test('resolves bare agent tool names to app skill tools', () {
+    test('rejects unadvertised legacy agent tool names', () {
       final tool = const ToolResolverService().resolveTool(
         agent.listAgentsToolName,
         agent.buildToolCatalog<ResolvedTool>([]),
       );
 
-      expect(tool?.type, ResolvedToolType.skillNative);
-      expect(tool?.skillSlug, agent.agentsSkillSlug);
-      expect(tool?.fullName, 'skill__app_native__agents__list_agents');
+      expect(tool, isNull);
     });
 
     test('uses an empty catalog when conversation is missing', () async {
@@ -221,9 +234,10 @@ void main() {
         'linear-server',
       );
       expect(
-        resolver.resolveTool('built_in_legacy_calculator', catalog)?.tableId,
-        'legacy',
+        resolver.resolveTool('built_in_legacy_calculator', catalog),
+        isNull,
       );
+      expect(resolver.resolveTool('native_calculator_url', catalog), isNull);
     });
 
     Future<void> returnsPendingResolvedTools() async {
@@ -233,21 +247,25 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'resolved-tool',
-                      name: 'built_in_calc_calculator',
+                      name:
+                          catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                     ),
-                    MessageToolCallEntity(
+                    const MessageToolCallEntity(
                       id: 'missing-tool',
                       name: 'unknown_tool',
                       argumentsRaw: '{}',
                     ),
                     MessageToolCallEntity(
                       id: 'already-resolved',
-                      name: 'built_in_calc_calculator',
+                      name:
+                          catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),
@@ -353,18 +371,18 @@ void main() {
       expect(result.previouslyFailedToolCallIds, isEmpty);
     });
 
-    test('T005: resolves native composite tool ID', () async {
+    test('resolves advertised native tool name', () async {
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
           .thenAnswer(
             (_) async => [
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'native-tool-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                     ),
                   ],
@@ -389,11 +407,11 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'old-call-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                       resultStatus: .notConfigured,
                     ),
@@ -403,16 +421,16 @@ void main() {
               _message(id: 'user-2', isUser: true),
               _message(
                 id: 'assistant-2',
-                metadata: const MessageMetadataEntity(
+                metadata: .new(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'new-call-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://other.com"}',
                     ),
                     MessageToolCallEntity(
                       id: 'new-call-2',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                     ),
                   ],
