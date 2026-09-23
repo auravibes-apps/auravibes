@@ -621,8 +621,20 @@ List<ServiceConnectionListItem> _filterConnections(
             _matchesConnectionFilter(connection, filter) &&
             _matchesConnectionSearch(connection, normalizedQuery),
       )
-      .toList();
+      .toList()
+    ..sort((a, b) {
+      final priority = _connectionProblemRank(a).compareTo(
+        _connectionProblemRank(b),
+      );
+      return priority != 0 ? priority : a.name.compareTo(b.name);
+    });
 }
+
+int _connectionProblemRank(ServiceConnectionListItem connection) =>
+    switch (connection.displayStatus) {
+      .failed || .needsReauth || .expired || .expiringSoon => 0,
+      .connected || .unknown => 1,
+    };
 
 String _normalizeSearchQuery(String searchQuery) =>
     searchQuery.trim().toLowerCase();
