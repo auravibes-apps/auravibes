@@ -93,6 +93,7 @@ extension _SyncSkillToolPermissionsUsecaseSync
     List<ToolSpec> specs,
   ) {
     final currentToolNames = {for (final spec in specs) spec.name};
+
     return tools
         .where((tool) => currentToolNames.contains(tool.toolId))
         .toList();
