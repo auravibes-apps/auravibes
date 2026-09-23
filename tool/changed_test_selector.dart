@@ -337,7 +337,13 @@ SelectionResult selectChangedTests({
     for (final entry in packageRoots.entries) {
       roots[entry.key] = _normalizePath(entry.value);
     }
-    if (paths.every((path) => !_isSupportedDartPath(path, roots.values))) {
+    final unsupportedPaths = paths.where(
+      (path) => !_isSupportedDartPath(path, roots.values),
+    );
+    if (unsupportedPaths.any((path) => !_isNonExecutablePath(path))) {
+      return _full('Unsupported test input.');
+    }
+    if (unsupportedPaths.length == paths.length) {
       return SelectionResult(
         mode: .none,
         packages: const {},
@@ -1690,6 +1696,11 @@ bool _isDocumentation(String path) {
       file == 'license' ||
       file == 'license.md';
 }
+
+bool _isNonExecutablePath(String path) =>
+    _isDocumentation(path) ||
+    path.startsWith('.pi/') ||
+    path == 'sonar-project.properties';
 
 bool _isGlobal(String path) {
   final normalized = path.replaceAll(r'\', '/');

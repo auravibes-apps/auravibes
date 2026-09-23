@@ -174,6 +174,10 @@ import 'features/model_connections/models/test_and_sync_model_connection_request
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
     as _iw5yf4pd;
+import 'features/model_connections/models/verify_model_connection_request.dart'
+    as _ic2lxbsg;
+import 'features/model_connections/models/verify_model_connection_result.dart'
+    as _ibj3h7po;
 import 'features/model_connections/models/workspace_model_connection.dart'
     as _ihf3aqrg;
 import 'features/model_connections/models/workspace_model_selection_view.dart'
@@ -375,6 +379,8 @@ export 'features/model_connections/models/recent_model_selection.dart';
 export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
+export 'features/model_connections/models/verify_model_connection_request.dart';
+export 'features/model_connections/models/verify_model_connection_result.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
 export 'features/model_connections/models/workspace_model_selection_view.dart';
 export 'features/objects/models/begin_upload_request.dart';
@@ -742,6 +748,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _iw5yf4pd.UpdateModelConnectionRequest) {
       return _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _ic2lxbsg.VerifyModelConnectionRequest) {
+      return _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _ibj3h7po.VerifyModelConnectionResult) {
+      return _ibj3h7po.VerifyModelConnectionResult.fromJson(data) as T;
     }
     if (t == _ihf3aqrg.WorkspaceModelConnection) {
       return _ihf3aqrg.WorkspaceModelConnection.fromJson(data) as T;
@@ -1431,6 +1443,18 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_ic2lxbsg.VerifyModelConnectionRequest?>()) {
+      return (data != null
+              ? _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ibj3h7po.VerifyModelConnectionResult?>()) {
+      return (data != null
+              ? _ibj3h7po.VerifyModelConnectionResult.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ihf3aqrg.WorkspaceModelConnection?>()) {
       return (data != null
               ? _ihf3aqrg.WorkspaceModelConnection.fromJson(data)
@@ -2103,6 +2127,8 @@ class Protocol extends _isc.SerializationManager {
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
+      _ic2lxbsg.VerifyModelConnectionRequest => 'VerifyModelConnectionRequest',
+      _ibj3h7po.VerifyModelConnectionResult => 'VerifyModelConnectionResult',
       _ihf3aqrg.WorkspaceModelConnection => 'WorkspaceModelConnection',
       _i2zocl9o.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
       _ii7xucwd.BeginUploadRequest => 'BeginUploadRequest',
@@ -2370,6 +2396,10 @@ class Protocol extends _isc.SerializationManager {
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
         return 'UpdateModelConnectionRequest';
+      case _ic2lxbsg.VerifyModelConnectionRequest():
+        return 'VerifyModelConnectionRequest';
+      case _ibj3h7po.VerifyModelConnectionResult():
+        return 'VerifyModelConnectionResult';
       case _ihf3aqrg.WorkspaceModelConnection():
         return 'WorkspaceModelConnection';
       case _i2zocl9o.WorkspaceModelSelectionView():
@@ -2816,6 +2846,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'UpdateModelConnectionRequest') {
       return deserialize<_iw5yf4pd.UpdateModelConnectionRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyModelConnectionRequest') {
+      return deserialize<_ic2lxbsg.VerifyModelConnectionRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyModelConnectionResult') {
+      return deserialize<_ibj3h7po.VerifyModelConnectionResult>(data['data']);
     }
     if (dataClassName == 'WorkspaceModelConnection') {
       return deserialize<_ihf3aqrg.WorkspaceModelConnection>(data['data']);

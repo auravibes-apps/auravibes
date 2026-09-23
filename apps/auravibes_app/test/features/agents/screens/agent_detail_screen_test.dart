@@ -331,6 +331,12 @@ class _BlockingAgentRepository({
   }
 
   @override
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) => delegate.updateAgentVisibility(agentId, visibility);
+
+  @override
   Future<bool> deleteAgent(String agentId) {
     return delegate.deleteAgent(agentId);
   }

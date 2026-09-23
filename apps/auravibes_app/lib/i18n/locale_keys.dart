@@ -94,6 +94,8 @@ abstract class LocaleKeys {
       'models_screens.add_provider.back_to_selection';
   static const models_screens_add_provider_create_button =
       'models_screens.add_provider.create_button';
+  static const models_screens_add_provider_save_changes =
+      'models_screens.add_provider.save_changes';
   static const models_screens_add_provider_connect_browser =
       'models_screens.add_provider.connect_browser';
   static const models_screens_add_provider_use_device_code =

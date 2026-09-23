@@ -179,6 +179,47 @@ void main() {
       },
     );
 
+    test(
+      'reconnectFailedMcps skips disabled groups and rechecks before reconnect',
+      () async {
+        final container = fixture.container;
+        final mcpNotifier = fixture.mcpNotifier;
+        final notifier = container.read(
+          groupedToolsProvider(_workspace.id).notifier,
+        );
+        mcpNotifier.state = [
+          _mcpConnection('server-first', .error),
+          _mcpConnection('server-disabled', .disconnected),
+          _mcpConnection('server-disabled-during-reconnect', .error),
+        ];
+        notifier.state = AsyncData([
+          _mcpGroupWithStatus('server-first', .error),
+          _mcpGroupWithStatus(
+            'server-disabled',
+            .disconnected,
+            isEnabled: false,
+          ),
+          _mcpGroupWithStatus('server-disabled-during-reconnect', .error),
+        ]);
+        mcpNotifier._beforeReconnect = (serverId) async {
+          if (serverId != 'server-first') return;
+          notifier.state = AsyncData([
+            _mcpGroupWithStatus('server-first', .error),
+            _mcpGroupWithStatus(
+              'server-disabled-during-reconnect',
+              .error,
+              isEnabled: false,
+            ),
+          ]);
+        };
+
+        final failedMcpServerIds = await notifier.reconnectFailedMcps();
+
+        expect(mcpNotifier.reconnectedServerIds, ['server-first']);
+        expect(failedMcpServerIds, isEmpty);
+      },
+    );
+
     test('deleteMcpGroup skips group with null mcpServerId', () async {
       final toolsGroupsRepository = fixture.toolsGroupsRepository;
       final container = fixture.container;
@@ -291,9 +332,14 @@ McpConnectionState _mcpConnection(
 
 ToolsGroupWithTools _mcpGroupWithStatus(
   String serverId,
-  McpConnectionStatus status,
-) => ToolsGroupWithTools(
-  group: _mcpGroup.copyWith(id: 'group-$serverId', mcpServerId: serverId),
+  McpConnectionStatus status, {
+  bool isEnabled = true,
+}) => ToolsGroupWithTools(
+  group: _mcpGroup.copyWith(
+    id: 'group-$serverId',
+    isEnabled: isEnabled,
+    mcpServerId: serverId,
+  ),
   tools: const [],
   mcpConnectionState: _mcpConnection(serverId, status),
 );
@@ -309,6 +355,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> reconnectedServerIds = [];
   final List<String> deletedServerIds = [];
   final Set<String> failingServerIds = {};
+  Future<void> Function(String serverId)? _beforeReconnect;
 
   @override
   List<McpConnectionState> build() => const [];
@@ -320,6 +367,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
 
   @override
   Future<void> reconnectMcpServer(String serverId) async {
+    await _beforeReconnect?.call(serverId);
     reconnectedServerIds.add(serverId);
     state = [
       for (final connection in state)

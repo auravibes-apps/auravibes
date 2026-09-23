@@ -58,6 +58,7 @@ modelConnection:
   - listRecentSelections:
   - recordRecentSelection:
   - testAndSync:
+  - verifyDraft:
 object:
   - beginUpload:
   - completeUpload:

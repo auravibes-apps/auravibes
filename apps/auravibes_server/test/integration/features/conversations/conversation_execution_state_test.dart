@@ -1012,6 +1012,44 @@ void main() {
       });
 
       test(
+        'worker cancels a queued turn after membership is revoked',
+        () async {
+          final fixture = await prepareExecution();
+          final member = (await WorkspaceMember.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.userId.equals(fixture.userId),
+          ))!;
+          await WorkspaceMember.db.updateRow(
+            fixture.database,
+            member.copyWith(removedAt: DateTime.now().toUtc()),
+          );
+          final host = _CountingCompletingHost();
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: ConversationWorker(host: host),
+          );
+
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          ))!;
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(turn.id),
+          ))!;
+          expect(host.calls, 0);
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(job.status, ConversationJobStatuses.completed);
+        },
+      );
+
+      test(
         'queued Continue retains claims while running and approval states reject',
         () async {
           final fixture = await prepareExecution(continueConversation: false);
@@ -1378,6 +1416,85 @@ void main() {
           await _waitForIdle(fixture, endpoints);
 
           expect(host.calls, 1);
+        },
+      );
+
+      test(
+        'stop rejects a member acting on another user execution',
+        () async {
+          final fixture = await prepareExecution();
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'stop-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            memberSession,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.stopConversation(
+              memberSession,
+              StopConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-stop',
+                conversationId: fixture.conversationId,
+                expectedProjectionRevision:
+                    snapshot.conversation.projectionRevision,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findById(
+            fixture.database,
+            conversation.activeExecutionId!,
+          ))!;
+          expect(conversation.executionState, ConversationStatuses.running);
+          expect(execution.status, ConversationStatuses.running);
         },
       );
 

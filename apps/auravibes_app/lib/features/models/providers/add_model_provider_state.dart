@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -8,6 +10,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
@@ -44,6 +47,7 @@ typedef _ModelConnectionRequest = ({
   String name,
   String modelId,
   ModelProviderAuthMode authMode,
+  ModelProviderVerification? verification,
   CodexOAuthMethod? codexOAuthMethod,
   void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
   bool Function()? isCodexOAuthCancelled,
@@ -51,6 +55,7 @@ typedef _ModelConnectionRequest = ({
 
 typedef _LoadAndAddRequest = ({
   ({String name, String modelId}) input,
+  ModelProviderVerification? verification,
   CodexOAuthMethod? codexOAuthMethod,
   void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
   bool Function()? isCodexOAuthCancelled,
@@ -74,6 +79,9 @@ final openCodexAuthorizationProvider = Provider<Future<void> Function(Uri)>(
 @riverpod
 class AddModelProviderState extends _$AddModelProviderState {
   String _workspaceId = '';
+  ModelProviderVerification? _verification;
+  Timer? _verificationExpiryTimer;
+  var _connectionVersion = 0;
 
   AddModelProviderModel get _value => state;
   Ref get _providerRef => ref;
@@ -83,6 +91,10 @@ class AddModelProviderState extends _$AddModelProviderState {
   @override
   AddModelProviderModel build(String workspaceId) {
     _workspaceId = workspaceId;
+    _verification = null;
+    _verificationExpiryTimer?.cancel();
+    final _ = ref.onDispose(() => _verificationExpiryTimer?.cancel());
+    _connectionVersion = 0;
 
     return const AddModelProviderModel();
   }
@@ -98,11 +110,15 @@ extension AddModelProviderStateFields on AddModelProviderState {
   }
 
   void setKey(String newKey) {
+    if (_value.key == newKey) return;
     _value = _value.copyWith(key: newKey);
+    _invalidateConnectionVerification();
   }
 
   void setModel(String? newValue) {
+    if (_value.modelId == newValue) return;
     _value = _stateForModel(newValue);
+    _invalidateConnectionVerification();
   }
 
   AddModelProviderModel _stateForModel(String? modelId) {
@@ -131,7 +147,116 @@ extension AddModelProviderStateFields on AddModelProviderState {
       ?.firstWhereOrNull((model) => model.id == modelId);
 
   void setUrl(String? newUrl) {
+    if (_value.url == newUrl) return;
     _value = _value.copyWith(url: newUrl);
+    _invalidateConnectionVerification();
+  }
+
+  void _invalidateConnectionVerification() {
+    _connectionVersion++;
+    verifyModelProviderMutationProvider.reset(_providerRef);
+    _verificationExpiryTimer?.cancel();
+    _verificationExpiryTimer = null;
+    _verification = null;
+    _value = _value.copyWith(
+      isTestingConnection: false,
+      isConnectionVerified: false,
+      verifiedModelCount: 0,
+    );
+  }
+}
+
+extension AddModelProviderVerificationActions on AddModelProviderState {
+  Future<ModelProviderVerification?> verifyModelProvider() async {
+    final modelId = _verificationModelId;
+    if (modelId == null) return null;
+
+    final version = _beginModelProviderVerification();
+    try {
+      final verification = await _requestModelProviderVerification(modelId);
+      if (!_isCurrentModelProviderVerification(version)) return null;
+      _acceptModelProviderVerification(verification);
+
+      return verification;
+    } finally {
+      _finishModelProviderVerification(version);
+    }
+  }
+
+  String? get _verificationModelId =>
+      _value.authMode == ModelProviderAuthMode.oauth2 || !_value.isValid()
+      ? null
+      : _value.modelId;
+
+  int _beginModelProviderVerification() {
+    final version = ++_connectionVersion;
+    _verificationExpiryTimer?.cancel();
+    _verificationExpiryTimer = null;
+    _verification = null;
+    _value = _value.copyWith(
+      isTestingConnection: true,
+      isConnectionVerified: false,
+      verifiedModelCount: 0,
+    );
+
+    return version;
+  }
+
+  Future<ModelProviderVerification> _requestModelProviderVerification(
+    String modelId,
+  ) async {
+    final store = await _modelConnectionStore();
+
+    return await store.verifyModelConnection(
+      .new(
+        workspaceId: _workspace,
+        providerId: modelId,
+        connectionId: null,
+        expectedRevision: null,
+        url: _value.url,
+        key: _value.key,
+      ),
+    );
+  }
+
+  bool _isCurrentModelProviderVerification(int version) =>
+      _providerRef.mounted && version == _connectionVersion;
+
+  void _acceptModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    _verification = verification;
+    _value = _value.copyWith(
+      isConnectionVerified: true,
+      verifiedModelCount: verification.modelCount,
+    );
+    _scheduleVerificationExpiry(verification);
+  }
+
+  void _finishModelProviderVerification(int version) {
+    if (!_isCurrentModelProviderVerification(version)) return;
+
+    _value = _value.copyWith(isTestingConnection: false);
+  }
+
+  void _scheduleVerificationExpiry(ModelProviderVerification verification) {
+    final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
+    _verificationExpiryTimer = .new(
+      remaining.isNegative ? Duration.zero : remaining,
+      () => _expireVerification(verification),
+    );
+  }
+
+  void _expireVerification(ModelProviderVerification verification) {
+    if (!identical(_verification, verification)) return;
+
+    _verification = null;
+    _verificationExpiryTimer = null;
+    if (!_providerRef.mounted) return;
+    _value = _value.copyWith(
+      isConnectionVerified: false,
+      verifiedModelCount: 0,
+    );
   }
 }
 
@@ -143,8 +268,11 @@ extension AddModelProviderStateActions on AddModelProviderState {
   }) async {
     final input = _validatedInput();
     if (input == null) return null;
+    final verification = _value.authMode == ModelProviderAuthMode.apiKey
+        ? _requiredVerification()
+        : null;
 
-    return await _addValidatedModelProvider(input, (
+    return await _addValidatedModelProvider(input, verification, (
       codexOAuthMethod: codexOAuthMethod,
       onCodexDeviceCode: onCodexDeviceCode,
       isCodexOAuthCancelled: isCodexOAuthCancelled,
@@ -153,6 +281,7 @@ extension AddModelProviderStateActions on AddModelProviderState {
 
   Future<ModelConnectionEntity?> _addValidatedModelProvider(
     ({String name, String modelId}) input,
+    ModelProviderVerification? verification,
     ({
       CodexOAuthMethod? codexOAuthMethod,
       void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
@@ -161,7 +290,9 @@ extension AddModelProviderStateActions on AddModelProviderState {
     oauth,
   ) async {
     try {
-      return await _loadAndAddModelConnection(_loadRequest(input, oauth));
+      return await _loadAndAddModelConnection(
+        _loadRequest(input, verification, oauth),
+      );
     } on CodexOAuthCanceledException {
       return null;
     } on Exception catch (e, s) {
@@ -196,10 +327,32 @@ extension AddModelProviderStateActions on AddModelProviderState {
 
     return (name: name, modelId: modelId);
   }
+
+  ModelProviderVerification _requiredVerification() {
+    final verification = _verification;
+    final modelId = _value.modelId;
+    if (verification == null || modelId == null) {
+      throw const ProviderVerificationRequiredException();
+    }
+
+    verification.requireMatch(
+      .new(
+        workspaceId: _workspace,
+        providerId: modelId,
+        connectionId: null,
+        expectedRevision: null,
+        url: _value.url,
+        key: _value.key,
+      ),
+    );
+
+    return verification;
+  }
 }
 
 _LoadAndAddRequest _loadRequest(
   ({String name, String modelId}) input,
+  ModelProviderVerification? verification,
   ({
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
@@ -208,6 +361,7 @@ _LoadAndAddRequest _loadRequest(
   oauth,
 ) => (
   input: input,
+  verification: verification,
   codexOAuthMethod: oauth.codexOAuthMethod,
   onCodexDeviceCode: oauth.onCodexDeviceCode,
   isCodexOAuthCancelled: oauth.isCodexOAuthCancelled,
@@ -226,6 +380,7 @@ extension _AddModelProviderStateDependencies on AddModelProviderState {
       name: input.name,
       modelId: input.modelId,
       authMode: _value.authMode,
+      verification: request.verification,
       codexOAuthMethod: request.codexOAuthMethod,
       onCodexDeviceCode: request.onCodexDeviceCode,
       isCodexOAuthCancelled: request.isCodexOAuthCancelled,
@@ -269,7 +424,12 @@ extension on AddModelProviderState {
       );
     }
 
-    return _addApiKeyModelProvider(request.repo, request.name, request.modelId);
+    return _addApiKeyModelProvider(
+      request.repo,
+      request.name,
+      request.modelId,
+      request.verification,
+    );
   }
 
   _OAuthModelProviderRequest _oauthRequest(_ModelConnectionRequest request) => (
@@ -331,6 +491,7 @@ extension on AddModelProviderState {
     ModelConnectionStore repo,
     String name,
     String modelId,
+    ModelProviderVerification? verification,
   ) async {
     final key = _value.key;
     if (key == null || key.trim().isEmpty) return null;
@@ -343,6 +504,7 @@ extension on AddModelProviderState {
         key: key,
         url: _value.url,
       ),
+      verification: verification,
     );
   }
 
@@ -463,3 +625,4 @@ extension on AddModelProviderState {
 }
 
 final addCredentialsModelMutationProvider = Mutation<void>();
+final verifyModelProviderMutationProvider = Mutation<void>();

@@ -2,8 +2,11 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  List<McpDiscoveredTool> parse(Map<String, Object?> result) =>
+      parseMcpToolsList(result, maxTools: 100, validateInputSchema: (_) {});
+
   test('validates tools/list payloads without transport concerns', () {
-    final tools = parseMcpToolsList({
+    final tools = parse({
       'tools': [
         {
           'name': 'search',
@@ -14,7 +17,7 @@ void main() {
     });
     expect(tools.single.name, 'search');
     expect(
-      () => parseMcpToolsList({
+      () => parse({
         'tools': [
           {'name': 1},
         ],
@@ -22,7 +25,7 @@ void main() {
       throwsFormatException,
     );
     expect(
-      () => parseMcpToolsList(<String, Object?>{
+      () => parse(<String, Object?>{
         'tools': <Object?>[
           <String, Object?>{
             'name': 'search',
@@ -30,6 +33,50 @@ void main() {
           },
         ],
       }),
+      throwsFormatException,
+    );
+  });
+
+  test('validates tool count before materializing tools', () {
+    var validatedSchemas = 0;
+
+    expect(
+      () => parseMcpToolsList(
+        {
+          'tools': [
+            {'name': 'first'},
+            {'name': 'second'},
+          ],
+        },
+        maxTools: 1,
+        validateInputSchema: (_) => validatedSchemas++,
+      ),
+      throwsFormatException,
+    );
+    expect(validatedSchemas, isZero);
+  });
+
+  test('validates schemas before recursively freezing them', () {
+    Object? schema = 'value';
+    for (var index = 0; index < 2000; index++) {
+      schema = <Object?>[schema];
+    }
+
+    expect(
+      () => parseMcpToolsList(
+        {
+          'tools': [
+            {
+              'name': 'deep',
+              'inputSchema': {'schema': schema},
+            },
+          ],
+        },
+        maxTools: 1,
+        validateInputSchema: (_) {
+          throw const FormatException('Schema is too deep.');
+        },
+      ),
       throwsFormatException,
     );
   });

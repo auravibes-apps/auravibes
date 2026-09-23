@@ -9,5 +9,9 @@ abstract interface class AgentRepository {
   Future<AgentEntity> createAgent(String workspaceId, AgentToCreate agent);
   Future<AgentEntity> duplicateAgent(String agentId);
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent);
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  );
   Future<bool> deleteAgent(String agentId);
 }

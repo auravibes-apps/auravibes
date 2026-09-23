@@ -51,6 +51,7 @@ class AuraCheckbox extends StatelessWidget {
       isDisabled: isDisabled,
       onChanged: isDisabled ? null : onChanged,
       autofocus: autofocus,
+      semanticLabel: semanticLabel,
     );
   }
 }
@@ -62,6 +63,7 @@ class _CheckboxBuild extends StatelessWidget {
     required bool isDisabled,
     required ValueChanged<bool>? onChanged,
     required bool autofocus,
+    required String? semanticLabel,
   }) : _child = Semantics(
          child: _CheckboxInteraction(
            value: value,
@@ -76,6 +78,7 @@ class _CheckboxBuild extends StatelessWidget {
          ),
          enabled: !isDisabled,
          checked: value,
+         label: semanticLabel,
        );
 
   final Widget _child;

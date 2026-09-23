@@ -2127,6 +2127,103 @@ void main() {
       expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
     });
 
+    testWidgets('preserves rich responses before later assistant activity', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final richResponse = _createMessage(
+        id: 'rich-response',
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          a2uiMessages: [
+            jsonEncode({
+              'protocolVersion': 'v1',
+              'interactionMode': 'passive',
+              'message': {
+                'version': 'v0.9',
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:v1',
+                },
+              },
+            }),
+            jsonEncode({
+              'protocolVersion': 'v1',
+              'interactionMode': 'passive',
+              'message': {
+                'version': 'v0.9',
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {'id': 'root', 'component': 'Text', 'text': 'Rich answer'},
+                  ],
+                },
+              },
+            }),
+          ],
+        ),
+      );
+      final activity = _createMessage(
+        id: 'later-activity',
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-later',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{"path": "later"}',
+              resultStatus: ToolCallResultStatus.success,
+            ),
+          ],
+        ),
+      );
+      final messagesById = {
+        richResponse.id: richResponse,
+        activity.id: activity,
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [richResponse.id, activity.id],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('a2ui_rich-response')), findsOneWidget);
+      expect(find.text('Rich answer'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_later-activity')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('keeps an A2UI response visible before later activity', (
       tester,
     ) async {

@@ -37,6 +37,7 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
       '$instanceId.json',
     ),
   );
+  _prepareManifestDirectory(manifestFile.parent);
   if (manifestFile.existsSync()) {
     throw StateError(
       'Instance manifest already exists: ${manifestFile.path}. '
@@ -62,10 +63,9 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     workingDirectory: p.join(rootPath, 'apps', 'auravibes_app'),
   );
 
-  manifestFile.parent.createSync(recursive: true);
   final startedAt = DateTime.now().toUtc().toIso8601String();
   String? vmServiceUri;
-  _writeManifest(
+  writeMarionetteManifest(
     manifestFile: manifestFile,
     instanceId: instanceId,
     pid: process.pid,
@@ -94,7 +94,7 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
     if (uri == null || uri == vmServiceUri) return;
 
     vmServiceUri = uri;
-    _writeManifest(
+    writeMarionetteManifest(
       manifestFile: manifestFile,
       instanceId: instanceId,
       pid: process.pid,
@@ -125,7 +125,8 @@ Future<void> _runMarionetteApp(_RunOptions options) async {
   }
 }
 
-void _writeManifest({
+/// Atomically writes a Marionette manifest with owner-only permissions.
+void writeMarionetteManifest({
   required File manifestFile,
   required String instanceId,
   required int pid,
@@ -140,7 +141,36 @@ void _writeManifest({
     'vmServiceUri': vmServiceUri,
     'startedAt': startedAt,
   };
-  manifestFile.writeAsStringSync('${jsonEncode(manifest)}\n');
+  _prepareManifestDirectory(manifestFile.parent);
+  final temporaryFile = File(
+    '${manifestFile.path}.$pid.'
+    '${Random.secure().nextInt(1 << 32).toRadixString(36)}.tmp',
+  );
+
+  try {
+    temporaryFile.writeAsStringSync('${jsonEncode(manifest)}\n', flush: true);
+    _restrictPermissions(temporaryFile.path, '600');
+    final _ = temporaryFile.renameSync(manifestFile.path);
+  } finally {
+    if (temporaryFile.existsSync()) temporaryFile.deleteSync();
+  }
+}
+
+void _prepareManifestDirectory(Directory directory) {
+  directory.createSync(recursive: true);
+  _restrictPermissions(directory.path, '700');
+}
+
+void _restrictPermissions(String path, String mode) {
+  if (Platform.isWindows) return;
+
+  final result = Process.runSync('chmod', [mode, path]);
+  if (result.exitCode != 0) {
+    throw FileSystemException(
+      'Failed to set owner-only permissions ($mode): ${result.stderr}',
+      path,
+    );
+  }
 }
 
 String _newInstanceId() {
