@@ -445,28 +445,33 @@ class const _ReasoningBudgetInput({
   required final bool enabled,
   required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final errorMessage = error;
+  static const _label = TextLocale(
+    LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
+  );
 
-    return AuraInput(
+  @override
+  Widget build(BuildContext context) => AuraInput(
       controller: controller,
-      label: const TextLocale(
-        LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
-      ),
-      hint: Text(
-        LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
-          namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
-        ),
-      ),
-      error: errorMessage == null ? null : Text(errorMessage),
+      label: _label,
+      hint: _hint,
+      error: _error,
       keyboardType: .number,
       enabled: enabled,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       onChanged: onChanged,
       semanticLabel: _semanticLabel(),
     );
-  }
+
+  Widget get _hint => Text(
+    LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
+      namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
+    ),
+  );
+
+  Widget? get _error => switch (error) {
+    final message? => Text(message),
+    null => null,
+  };
 
   String _semanticLabel() =>
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();

@@ -150,15 +150,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     if (cloud != null) {
       final updated = await cloud.update(conversation, patch);
 
-      return conversation.copyWith(
-        modelId: updated.modelId,
-        agentId: updated.agentId,
-        reasoningConfiguration: ReasoningConfiguration.decode(
-          updated.reasoningConfigJson,
-        ),
-        revision: updated.revision,
-        updatedAt: updated.updatedAt,
-      );
+      return _updatedConversation(conversation, updated);
     }
 
     return await ref
@@ -202,6 +194,19 @@ ConversationPatch _reasoningConfigurationPatch(
 ) => configuration == null
     ? const ConversationPatch(clearReasoningConfiguration: true)
     : ConversationPatch(reasoningConfiguration: configuration);
+
+ConversationEntity _updatedConversation(
+  ConversationEntity conversation,
+  ConversationSummary updated,
+) => conversation.copyWith(
+  modelId: updated.modelId,
+  agentId: updated.agentId,
+  reasoningConfiguration: ReasoningConfiguration.decode(
+    updated.reasoningConfigJson,
+  ),
+  revision: updated.revision,
+  updatedAt: updated.updatedAt,
+);
 
 ConversationEntity _updatedTitleConversation(
   ConversationEntity conversation,

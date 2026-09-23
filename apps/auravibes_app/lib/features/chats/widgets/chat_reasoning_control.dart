@@ -24,28 +24,35 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
       return const SizedBox.shrink();
     }
 
-    final trigger = _ReasoningTrigger(
-      summary: _ReasoningTrigger._reasoningSummary(
-        widget.options,
-        widget.value,
-      ),
-      onPressed: _isNarrowLayout(context)
-          ? () => _showReasoningSheet(context)
-          : _popupController.toggle,
-    );
-
-    if (_isNarrowLayout(context)) return trigger;
-
-    return _ReasoningPopup(
-      trigger: trigger,
-      child: ChatReasoningControls(
-        options: widget.options,
-        value: widget.value,
-        onChanged: widget.onChanged,
-      ),
-      controller: _popupController,
-    );
+    return _isNarrowLayout(context)
+        ? _buildSheetTrigger(context)
+        : _buildPopupTrigger();
   }
+
+  Widget _buildSheetTrigger(BuildContext context) => _buildTrigger(
+    onPressed: () => _showReasoningSheet(context),
+  );
+
+  Widget _buildPopupTrigger() => _ReasoningPopup(
+    trigger: _buildTrigger(onPressed: _popupController.toggle),
+    child: _buildControls(),
+    controller: _popupController,
+  );
+
+  _ReasoningTrigger _buildTrigger({required VoidCallback onPressed}) =>
+      _ReasoningTrigger(
+        summary: _ReasoningTrigger._reasoningSummary(
+          widget.options,
+          widget.value,
+        ),
+        onPressed: onPressed,
+      );
+
+  ChatReasoningControls _buildControls() => ChatReasoningControls(
+    options: widget.options,
+    value: widget.value,
+    onChanged: widget.onChanged,
+  );
 
   bool _isNarrowLayout(BuildContext context) =>
       MediaQuery.sizeOf(context).width < DesignBreakpoints.sm;
@@ -54,11 +61,7 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
       showModalBottomSheet<void>(
         context: context,
         builder: (context) => _ReasoningSheet(
-          child: ChatReasoningControls(
-            options: widget.options,
-            value: widget.value,
-            onChanged: widget.onChanged,
-          ),
+          child: _buildControls(),
         ),
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
