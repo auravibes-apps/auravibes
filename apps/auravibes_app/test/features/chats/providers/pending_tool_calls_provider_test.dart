@@ -82,42 +82,50 @@ class const _FakeLoadConversationToolSpecsUsecase({
   Future<ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
-  }) async {
-    return buildToolCatalog([
-      if (includeSkillCommand)
-        ToolCatalogCandidate.reserved(
-          spec: .new(
-            name: callSkillToolName,
-            description: 'Call a loaded skill tool.',
-            inputJsonSchema: const {'type': 'object'},
-          ),
-          target: ResolvedTool.skillCommand(commandName: callSkillToolName),
-        ),
-      ToolCatalogCandidate.external(
-        spec: .new(
-          name: 'built_in_calc_calculator',
-          description: 'Calculator',
-          inputJsonSchema: {},
-        ),
-        target: ResolvedTool.builtIn(
-          tableId: 'calc',
-          toolIdentifier: 'calculator',
-          tooltype: .calculator,
-        ),
-        sourceId: 'calc',
-      ),
-      ToolCatalogCandidate.external(
-        spec: .new(
-          name: 'native_ws-tool-url_url',
-          description: 'URL',
-          inputJsonSchema: {},
-        ),
-        target: ResolvedTool.native(tableId: 'url', nativeToolType: .url),
-        sourceId: 'url',
-      ),
-    ]);
-  }
+  }) async => includeSkillCommand
+      ? _buildPendingToolCatalog(includeSkillCommand: true)
+      : _pendingToolCatalog;
 }
+
+final _pendingToolCatalog = _buildPendingToolCatalog();
+final _calculatorToolName = _pendingToolCatalog.specs[0].name;
+final _urlToolName = _pendingToolCatalog.specs[1].name;
+
+ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
+  bool includeSkillCommand = false,
+}) => buildToolCatalog<ResolvedTool>([
+  if (includeSkillCommand)
+    ToolCatalogCandidate.reserved(
+      spec: .new(
+        name: callSkillToolName,
+        description: 'Call a loaded skill tool.',
+        inputJsonSchema: const {'type': 'object'},
+      ),
+      target: ResolvedTool.skillCommand(commandName: callSkillToolName),
+    ),
+  ToolCatalogCandidate.external(
+    spec: .new(
+      name: 'built_in_calc_calculator',
+      description: 'Calculator',
+      inputJsonSchema: {},
+    ),
+    target: ResolvedTool.builtIn(
+      tableId: 'calc',
+      toolIdentifier: 'calculator',
+      tooltype: .calculator,
+    ),
+    sourceId: 'calc',
+  ),
+  ToolCatalogCandidate.external(
+    spec: .new(
+      name: 'native_ws-tool-url_url',
+      description: 'URL',
+      inputJsonSchema: {},
+    ),
+    target: ResolvedTool.native(tableId: 'url', nativeToolType: .url),
+    sourceId: 'url',
+  ),
+]);
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -468,11 +476,11 @@ void main() {
           toolCalls: [
             _pendingToolCall(
               id: 'tc-granted',
-              name: 'built_in_calc_calculator',
+              name: _calculatorToolName,
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
           ],
         ),
@@ -542,11 +550,11 @@ void main() {
           toolCalls: [
             _pendingToolCall(
               id: 'tc-needs-confirm-1',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm-2',
-              name: 'built_in_calc_calculator',
+              name: _calculatorToolName,
             ),
           ],
         ),
@@ -707,7 +715,7 @@ void main() {
           toolCalls: [
             _pendingToolCall(
               id: 'child-tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
           ],
         ),
@@ -783,7 +791,7 @@ void main() {
           toolCalls: [
             _pendingToolCall(
               id: 'nested-tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
           ],
         ),
@@ -878,7 +886,7 @@ void main() {
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
           ],
         ),
@@ -936,8 +944,8 @@ void main() {
           id: 'msg-2',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(id: 'tc-1', name: 'built_in_calc_calculator'),
-            _pendingToolCall(id: 'tc-2', name: 'native_ws-tool-url_url'),
+            _pendingToolCall(id: 'tc-1', name: _calculatorToolName),
+            _pendingToolCall(id: 'tc-2', name: _urlToolName),
           ],
         ),
       ];
@@ -998,7 +1006,7 @@ void main() {
           id: 'msg-1',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(id: 'tc-1', name: 'native_ws-tool-url_url'),
+            _pendingToolCall(id: 'tc-1', name: _urlToolName),
           ],
         ),
       ];
@@ -1098,7 +1106,7 @@ void main() {
     test('T026: handles 20 approved-tool updates', () async {
       final toolCalls = List.generate(
         20,
-        (i) => _pendingToolCall(id: 'tc-$i', name: 'built_in_calc_calculator'),
+        (i) => _pendingToolCall(id: 'tc-$i', name: _calculatorToolName),
       );
 
       final messages = [
@@ -1187,7 +1195,7 @@ void main() {
             ),
             _pendingToolCall(
               id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
             ),
           ],
         ),
@@ -1262,9 +1270,9 @@ void main() {
           id: 'msg-1',
           conversationId: 'conv-1',
           toolCalls: [
-            const MessageToolCallEntity(
+            MessageToolCallEntity(
               id: 'tc-secret',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
               argumentsRaw: rawArguments,
             ),
           ],
