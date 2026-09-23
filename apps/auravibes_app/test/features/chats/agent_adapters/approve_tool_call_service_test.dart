@@ -128,6 +128,36 @@ void main() {
       expect(result?.argumentsRaw, '{"input":"1+1"}');
     });
 
+    test('rejects ambiguous duplicate tool-call IDs', () async {
+      final duplicateMessage = message.copyWith(
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"1000*1000"}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"2+2"}',
+            ),
+          ],
+        ),
+      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => duplicateMessage);
+
+      expect(
+        await provider.loadToolCall(
+          messageId: messageId,
+          toolCallId: 'tool-1',
+          conversationId: conversationId,
+        ),
+        isNull,
+      );
+    });
+
     test(
       'rejects tool call when message belongs to another conversation',
       () async {

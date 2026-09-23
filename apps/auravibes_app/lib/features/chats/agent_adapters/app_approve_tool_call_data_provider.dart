@@ -243,7 +243,12 @@ void _logToolApprovalOwnershipMismatch(
 MessageToolCallEntity? _findToolCall(
   MessageMetadataEntity? metadata,
   String toolCallId,
-) => metadata?.toolCalls.where((tool) => tool.id == toolCallId).firstOrNull;
+) {
+  final matches = metadata?.toolCalls.where((tool) => tool.id == toolCallId);
+  if (matches == null || matches.length != 1) return null;
+
+  return matches.single;
+}
 
 agent.AgentApprovableToolCall _toApprovableToolCall(
   String conversationId,
