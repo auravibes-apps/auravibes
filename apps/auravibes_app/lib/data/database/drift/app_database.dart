@@ -141,7 +141,9 @@ class AppDatabase extends _$AppDatabase {
       _skillTemplateDefinitionSchemaVersion + 1;
   static const int _apiModelModalitiesSchemaVersion =
       _skillResourceSchemaVersion + 1;
-  static const int _currentSchemaVersion = _apiModelModalitiesSchemaVersion;
+  static const int _legacyStreamingStatusSchemaVersion =
+      _apiModelModalitiesSchemaVersion + 1;
+  static const int _currentSchemaVersion = _legacyStreamingStatusSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -180,12 +182,13 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
+    await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {
-    await _upgradeApiModelModalitiesSchema(from);
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
@@ -319,6 +322,17 @@ extension on AppDatabase {
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
     );
+  }
+
+  Future<void> _upgradeLegacyStreamingStatuses(int from) async {
+    if (from >= AppDatabase._legacyStreamingStatusSchemaVersion ||
+        !await _tableExists('messages')) {
+      return;
+    }
+    await customStatement('''
+      UPDATE messages SET status = 'unfinished'
+      WHERE status = 'streaming'
+      ''');
   }
 
   Future<void> _upgradeSkillTemplateDefinitionSchema(

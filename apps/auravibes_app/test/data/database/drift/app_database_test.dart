@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 14);
+      expect(fixture.database.schemaVersion, 15);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -221,6 +221,49 @@ void main() {
       );
       expect(model.read<String>('modalities_output'), '["text"]');
     });
+
+    test(
+      'migration converts legacy streaming messages to unfinished',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 14
+          ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL
+          );
+        ''')
+          ..execute('''
+          CREATE TABLE messages (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            conversation_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            message_type TEXT NOT NULL,
+            is_user INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            metadata TEXT
+          );
+        ''')
+          ..execute('''
+          INSERT INTO messages (
+            id, created_at, updated_at, conversation_id, content,
+            message_type, is_user, status
+          ) VALUES ('message-1', 0, 0, 'conversation-1', 'Partial response',
+            'text', 0, 'streaming');
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final message = await fixture.database.messageDao.getMessageById(
+          'message-1',
+        );
+
+        expect(message?.status, MessageTableStatus.unfinished);
+      },
+    );
 
     test(
       'migration from schema 6 preserves agents and adds catalog index',
