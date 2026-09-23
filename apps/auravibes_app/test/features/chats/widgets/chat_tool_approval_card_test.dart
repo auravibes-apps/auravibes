@@ -293,6 +293,7 @@ void main() {
       when(() => agentService.tools).thenReturn(
         agent.ToolsNamespace<ResolvedTool>(
           approvals: approvalProvider,
+          cancellationEffects: _MockAgentCancellationEffects(),
           skips: _MockSkipToolCallProvider(),
           stopPending: _MockStopPendingToolCallsProvider(),
           resume: _MockAgentToolResumeProvider(),
@@ -875,3 +876,6 @@ class _MockStopPendingToolCallsProvider extends Mock
 
 class _MockAgentToolResumeProvider extends Mock
     implements agent.AgentToolResumeProvider;
+
+class _MockAgentCancellationEffects extends Mock
+    implements agent.AgentCancellationEffects;
