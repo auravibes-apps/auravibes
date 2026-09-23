@@ -311,9 +311,10 @@ extension on AppDatabase {
         !await _tableExists('messages')) {
       return;
     }
-    await customStatement(
-      "UPDATE messages SET status = 'unfinished' WHERE status = 'streaming'",
-    );
+    await customStatement('''
+      UPDATE messages SET status = 'unfinished'
+      WHERE status = 'streaming'
+      ''');
   }
 
   Future<void> _upgradeSkillTemplateDefinitionSchema(
