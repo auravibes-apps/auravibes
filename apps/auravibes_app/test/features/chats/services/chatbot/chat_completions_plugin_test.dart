@@ -81,7 +81,68 @@ void main() {
       expect(capturedUri, Uri.parse(testCase.expected));
     });
   }
+
+  test('rejects a response with an oversized content length', () async {
+    final client = _FakeClient(
+      (_) async => http.StreamedResponse(
+        const Stream.empty(),
+        200,
+        contentLength: 4 * 1024 * 1024 + 1,
+      ),
+    );
+    final ai = _genkitWithClient(client);
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(response.finishMessage, contains('safe processing limit'));
+  });
+
+  test('applies an overall response deadline', () async {
+    final client = _FakeClient(
+      (_) async => http.StreamedResponse(
+        .periodic(const Duration(milliseconds: 1), (_) => const [32]),
+        200,
+      ),
+    );
+    final ai = _genkitWithClient(
+      client,
+      requestTimeout: const Duration(milliseconds: 30),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(response.finishMessage, contains('Provider request timed out'));
+  });
 }
+
+Genkit _genkitWithClient(
+  http.Client client, {
+  Duration requestTimeout = const Duration(seconds: 30),
+}) => Genkit(
+  plugins: [
+    AppChatCompletionsPlugin(
+      name: 'transport-test',
+      baseUrl: 'https://example.test',
+      apiKey: 'key',
+      codec: .new(
+        errorLabel: 'TransportTest',
+        customize: (modelName, config) =>
+            (model: modelName, extraBody: const <String, dynamic>{}),
+      ),
+      models: const [ChatCompletionsModelDefinition(name: 'm')],
+      httpClient: client,
+      requestTimeout: requestTimeout,
+    ),
+  ],
+);
 
 http.StreamedResponse _jsonResponse(Map<String, Object?> body) {
   return http.StreamedResponse(

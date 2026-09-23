@@ -37,6 +37,11 @@ void main() {
       toolCallId: 'tool-1',
       conversationId: 'conversation-1',
       level: .conversation,
+      approvalDigest: toolCallApprovalDigest(
+        messageId: 'message-1',
+        toolName: 'calculator',
+        argumentsRaw: '{}',
+      ),
     );
     await service.tools.skip(
       messageId: 'message-1',
@@ -89,6 +94,11 @@ void main() {
       toolCallId: 'tool-1',
       conversationId: 'conversation-1',
       level: .once,
+      approvalDigest: toolCallApprovalDigest(
+        messageId: 'message-1',
+        toolName: 'calculator',
+        argumentsRaw: '{}',
+      ),
     );
     await executionStarted.future;
     cancellationEffects.requestStop('conversation-1');

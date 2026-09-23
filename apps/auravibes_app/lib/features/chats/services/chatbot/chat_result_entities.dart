@@ -6,6 +6,7 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   List<MessageToolCallEntity> get entityTools {
     final allToolCalls = output.toolCalls;
     if (allToolCalls.isEmpty) return [];
+    _validateUniqueToolCallIds(allToolCalls);
     final userFacingDescription = normalizeToolCallUserFacingDescription(
       output.text,
     );
@@ -34,6 +35,15 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
 
   int entityTotalTokens() =>
       usage?.totalTokens ?? (entityPromptTokens() + entityCompletionTokens());
+}
+
+void _validateUniqueToolCallIds(List<ChatMessageToolCall> toolCalls) {
+  final ids = <String>{};
+  for (final toolCall in toolCalls) {
+    if (!ids.add(toolCall.callId)) {
+      throw FormatException('Duplicate tool-call ID: ${toolCall.callId}');
+    }
+  }
 }
 
 MessageToolCallEntity _entityToolCall(

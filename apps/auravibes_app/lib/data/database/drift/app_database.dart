@@ -139,8 +139,10 @@ class AppDatabase extends _$AppDatabase {
       _forkSchemaVersion + 1;
   static const int _skillResourceSchemaVersion =
       _skillTemplateDefinitionSchemaVersion + 1;
-  static const int _legacyStreamingStatusSchemaVersion =
+  static const int _apiModelModalitiesSchemaVersion =
       _skillResourceSchemaVersion + 1;
+  static const int _legacyStreamingStatusSchemaVersion =
+      _apiModelModalitiesSchemaVersion + 1;
   static const int _currentSchemaVersion = _legacyStreamingStatusSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -182,6 +184,7 @@ extension on AppDatabase {
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {
+    await _upgradeApiModelModalitiesSchema(from);
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
@@ -193,6 +196,18 @@ extension on AppDatabase {
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
     await _upgradeLegacyStreamingStatuses(from);
+  }
+
+  Future<void> _upgradeApiModelModalitiesSchema(int from) async {
+    if (from >= AppDatabase._apiModelModalitiesSchemaVersion ||
+        !await _columnExists('api_models', 'modalities_ouput') ||
+        await _columnExists('api_models', 'modalities_output')) {
+      return;
+    }
+    await customStatement(
+      'ALTER TABLE api_models '
+      'RENAME COLUMN modalities_ouput TO modalities_output',
+    );
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {

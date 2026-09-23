@@ -22,7 +22,11 @@ import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show AgentResolvedToolName, AgentToolGrantLevel, callSkillToolName;
+    show
+        AgentResolvedToolName,
+        AgentToolGrantLevel,
+        callSkillToolName,
+        toolCallApprovalDigest;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -1693,6 +1697,11 @@ extension _ConfirmationToolActions on _ConfirmationActionHandler {
           messageId: messageId,
           conversationId: conversationId,
           level: level,
+          approvalDigest: agent.toolCallApprovalDigest(
+            messageId: messageId,
+            toolName: toolCall.name,
+            argumentsRaw: toolCall.argumentsRaw,
+          ),
         );
   }
 
