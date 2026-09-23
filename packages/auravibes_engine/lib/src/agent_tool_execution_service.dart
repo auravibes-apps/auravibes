@@ -116,6 +116,16 @@ class const AgentToolExecutionService<TTool extends Object>({
         argumentsRaw: toolToCall.argumentsRaw,
       ));
 
+      if (provider.isCancellationRequested(conversationId)) {
+        updates.add(
+          AgentToolResultUpdate(
+            toolCallId: toolToCall.id,
+            resultStatus: .stoppedByUser,
+          ),
+        );
+        continue;
+      }
+
       switch (decision.permissionResult) {
         case .granted:
           grantedTools.add(toolToCall);
