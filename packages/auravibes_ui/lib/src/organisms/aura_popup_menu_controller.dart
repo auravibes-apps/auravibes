@@ -116,6 +116,9 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
     _updatePopupMenuFocusNode(this, oldWidget.focusNode, widget.focusNode);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller._state = null;
+    }
     widget.controller._state = this;
   }
 
