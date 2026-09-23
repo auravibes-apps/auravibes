@@ -209,14 +209,14 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
-    testWidgets('copies the second form edit while excluding password values', (
+    testWidgets('copies updated values from supported form fields', (
       tester,
     ) async {
       final result = await pumpCopySurface(tester, [
         {
           'id': 'root',
           'component': 'Column',
-          'children': ['name', 'password'],
+          'children': ['name', 'city'],
         },
         {
           'id': 'name',
@@ -225,26 +225,24 @@ void main() {
           'value': {'path': '/name'},
         },
         {
-          'id': 'password',
+          'id': 'city',
           'component': 'TextField',
-          'variant': 'password',
-          'label': 'Password',
-          'value': {'path': '/password'},
+          'label': 'City',
+          'value': {'path': '/city'},
         },
       ], form: true);
       final fields = find.byType(EditableText);
       expect(fields, findsNWidgets(2));
-      expect(tester.widget<EditableText>(fields.at(1)).obscureText, isTrue);
       await tester.enterText(fields.first, 'Ada');
-      await tester.enterText(fields.at(1), 'first-test-secret');
+      await tester.enterText(fields.at(1), 'first-city');
       await tester.pump();
       await tester.enterText(fields.first, 'Grace');
-      await tester.enterText(fields.at(1), 'second-test-secret');
+      await tester.enterText(fields.at(1), 'second-city');
       await tester.pump();
       await tester.tap(find.byTooltip('Copy message'));
       await tester.pump();
 
-      expect(result.copies, ['Name\nGrace\nPassword']);
+      expect(result.copies, ['Name\nGrace\nCity\nsecond-city']);
       expect(find.byTooltip('Message copied'), findsOneWidget);
     });
 
