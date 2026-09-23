@@ -335,6 +335,7 @@ class const _SkillsScreenLoadedContent({
     final searchQuery = useState('');
     final sourceFilter = useState<SkillSource?>(null);
     final enabledFilter = useState<bool?>(null);
+    final sort = useState('name');
 
     return _SkillsScreenLoadedContentData(
       context,
@@ -342,6 +343,7 @@ class const _SkillsScreenLoadedContent({
       searchQuery,
       sourceFilter,
       enabledFilter,
+      sort,
     ).child;
   }
 }
@@ -350,6 +352,7 @@ typedef _SkillsScreenSearchActions = ({
   ValueChanged<String> onSearchChanged,
   ValueChanged<SkillSource?> onSourceChanged,
   ValueChanged<bool?> onEnabledChanged,
+  ValueChanged<String> onSortChanged,
 });
 
 typedef _SkillsScreenSkillActions = ({
@@ -367,12 +370,14 @@ class _SkillsScreenLoadedContentData {
     ValueNotifier<String> searchQuery,
     ValueNotifier<SkillSource?> sourceFilter,
     ValueNotifier<bool?> enabledFilter,
+    ValueNotifier<String> sort,
   ) : child = _SkillsScreenLoadedContentViewData(
         context,
         screen,
         _loadedSkillFilters(searchQuery, sourceFilter, enabledFilter),
-        _loadedSearchActions(searchQuery, sourceFilter, enabledFilter),
+        _loadedSearchActions(searchQuery, sourceFilter, enabledFilter, sort),
         _loadedSkillActions(screen),
+        sort.value,
       ).child;
 
   final Widget child;
@@ -385,15 +390,21 @@ class _SkillsScreenLoadedContentViewData {
     _SkillsFilterState filters,
     _SkillsScreenSearchActions searchActions,
     _SkillsScreenSkillActions skillActions,
+    String sort,
   ) : child = screen.skills.isEmpty
           ? _SkillsScreenEmpty(onCreateSkill: skillActions.onCreateSkill)
           : _SkillsScreenLoadedView(
               source: filters.source,
-              skills: _filterSkills(context, screen.skills, filters),
+              skills: _sortSkills(
+                _filterSkills(context, screen.skills, filters),
+                sort,
+              ),
               enabled: filters.enabled,
+              sort: sort,
               onSearchChanged: searchActions.onSearchChanged,
               onSourceChanged: searchActions.onSourceChanged,
               onEnabledChanged: searchActions.onEnabledChanged,
+              onSortChanged: searchActions.onSortChanged,
               onOpenSkill: skillActions.onOpenSkill,
               onDeleteSkill: skillActions.onDeleteSkill,
               onSkillEnabledChanged: skillActions.onSkillEnabledChanged,
@@ -416,11 +427,21 @@ _SkillsScreenSearchActions _loadedSearchActions(
   ValueNotifier<String> searchQuery,
   ValueNotifier<SkillSource?> sourceFilter,
   ValueNotifier<bool?> enabledFilter,
+  ValueNotifier<String> sort,
 ) => (
   onSearchChanged: (value) => searchQuery.value = value,
   onSourceChanged: (value) => sourceFilter.value = value,
   onEnabledChanged: (value) => enabledFilter.value = value,
+  onSortChanged: (value) => sort.value = value,
 );
+
+List<WorkspaceSkill> _sortSkills(List<WorkspaceSkill> skills, String sort) =>
+    skills..sort((a, b) {
+      if (sort == 'enabled' && a.isEnabled != b.isEnabled) {
+        return a.isEnabled ? -1 : 1;
+      }
+      return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    });
 
 _SkillsScreenSkillActions _loadedSkillActions(
   _SkillsScreenLoadedContent screen,
@@ -435,9 +456,11 @@ class const _SkillsScreenLoadedView({
   required final List<WorkspaceSkill> skills,
   required final SkillSource? source,
   required final bool? enabled,
+  required final String sort,
   required final ValueChanged<String> onSearchChanged,
   required final ValueChanged<SkillSource?> onSourceChanged,
   required final ValueChanged<bool?> onEnabledChanged,
+  required final ValueChanged<String> onSortChanged,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
   required final ValueChanged<WorkspaceSkill> onDeleteSkill,
   required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
@@ -449,9 +472,11 @@ class const _SkillsScreenLoadedView({
       _SkillsScreenFilters(
         source: source,
         enabled: enabled,
+        sort: sort,
         onSearchChanged: onSearchChanged,
         onSourceChanged: onSourceChanged,
         onEnabledChanged: onEnabledChanged,
+        onSortChanged: onSortChanged,
       ),
       Expanded(
         child: _SkillsScreenFilteredList(
@@ -486,9 +511,11 @@ class const _SkillsScreenFilteredList({
 class const _SkillsScreenFilters({
   required final SkillSource? source,
   required final bool? enabled,
+  required final String sort,
   required final ValueChanged<String> onSearchChanged,
   required final ValueChanged<SkillSource?> onSourceChanged,
   required final ValueChanged<bool?> onEnabledChanged,
+  required final ValueChanged<String> onSortChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -499,9 +526,11 @@ class const _SkillsScreenFilters({
       child: _SkillsScreenFilterFields(
         source: source,
         enabled: enabled,
+        sort: sort,
         onSearchChanged: onSearchChanged,
         onSourceChanged: onSourceChanged,
         onEnabledChanged: onEnabledChanged,
+        onSortChanged: onSortChanged,
       ),
     );
   }
@@ -510,9 +539,11 @@ class const _SkillsScreenFilters({
 class const _SkillsScreenFilterFields({
   required final SkillSource? source,
   required final bool? enabled,
+  required final String sort,
   required final ValueChanged<String> onSearchChanged,
   required final ValueChanged<SkillSource?> onSourceChanged,
   required final ValueChanged<bool?> onEnabledChanged,
+  required final ValueChanged<String> onSortChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraColumn(
@@ -521,8 +552,10 @@ class const _SkillsScreenFilterFields({
       _SkillsScreenFilterRow(
         source: source,
         enabled: enabled,
+        sort: sort,
         onSourceChanged: onSourceChanged,
         onEnabledChanged: onEnabledChanged,
+        onSortChanged: onSortChanged,
       ),
     ],
     spacing: .sm,
@@ -544,15 +577,19 @@ class const _SkillsScreenSearchInput({
 class const _SkillsScreenFilterRow({
   required final SkillSource? source,
   required final bool? enabled,
+  required final String sort,
   required final ValueChanged<SkillSource?> onSourceChanged,
   required final ValueChanged<bool?> onEnabledChanged,
+  required final ValueChanged<String> onSortChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => _SkillsScreenFilterRowData(
     source: source,
     enabled: enabled,
+    sort: sort,
     onSourceChanged: onSourceChanged,
     onEnabledChanged: onEnabledChanged,
+    onSortChanged: onSortChanged,
   ).child;
 }
 
@@ -560,8 +597,10 @@ class _SkillsScreenFilterRowData {
   new({
     required SkillSource? source,
     required bool? enabled,
+    required String sort,
     required ValueChanged<SkillSource?> onSourceChanged,
     required ValueChanged<bool?> onEnabledChanged,
+    required ValueChanged<String> onSortChanged,
   }) : child = Row(
          children: [
            Expanded(
@@ -585,11 +624,34 @@ class _SkillsScreenFilterRowData {
                key: const ValueKey('skills-status-filter'),
              ),
            ),
+           const SizedBox(width: _skillScreenSpacing),
+           Expanded(
+             child: AuraDropdownSelector<String>(
+               key: const ValueKey('skills-sort'),
+               label: const AuraIcon(Icons.sort),
+               options: _skillSortOptions,
+               value: sort,
+               onChanged: (value) {
+                 if (value != null) onSortChanged(value);
+               },
+             ),
+           ),
          ],
        );
 
   final Widget child;
 }
+
+const _skillSortOptions = <AuraDropdownOption<String>>[
+  AuraDropdownOption(
+    value: 'name',
+    child: TextLocale(LocaleKeys.skills_screen_title_label),
+  ),
+  AuraDropdownOption(
+    value: 'enabled',
+    child: TextLocale(LocaleKeys.skills_screen_enabled_label),
+  ),
+];
 
 class const _SkillsFilter({
   required final String labelKey,
