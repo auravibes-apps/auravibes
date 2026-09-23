@@ -24,6 +24,8 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
 
@@ -109,6 +111,7 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
       final id = await _insertConnection(
@@ -171,6 +174,7 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       const reference = '123e4567-e89b-42d3-a456-426614174000';
       final legacyStorage = _FakeLegacyApiKeyStorage({
@@ -213,6 +217,8 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
       final id = await _insertConnection(
@@ -258,6 +264,18 @@ Future<String> _insertLegacyConnection(
       );
 
   return row.id;
+}
+
+Future<void> _insertWorkspace(AppDatabase database, String workspaceId) async {
+  final _ = await database
+      .into(database.workspaces)
+      .insert(
+        WorkspacesCompanion.insert(
+          id: .new(workspaceId),
+          name: workspaceId,
+          type: .local,
+        ),
+      );
 }
 
 Future<String> _insertConnection(

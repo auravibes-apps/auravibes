@@ -15,6 +15,7 @@ import 'package:html/parser.dart' as parser;
 class const UrlContentTransformer() {
   static const int maxOutputLength = 1024 * 1024;
   static const int _maxHtmlElements = 10000;
+  static const int _maxHeadingSearchElements = 100000;
   static const _truncationSuffix = '\n... [truncated]';
 
   static const Set<String> _blockTags = {
@@ -171,10 +172,10 @@ class const UrlContentTransformer() {
     }
 
     final buffer = StringBuffer();
-    final firstRenderedH1 = _firstRenderedH1(bodyElement);
+    final hasTitle = title != null && title.isNotEmpty;
     final titleMatchesH1 =
-        firstRenderedH1 != null && firstRenderedH1.text.trim() == title?.trim();
-    if (title != null && title.isNotEmpty && !titleMatchesH1) {
+        hasTitle && _firstRenderedH1(bodyElement)?.text.trim() == title;
+    if (hasTitle && !titleMatchesH1) {
       buffer
         ..writeln('# $title')
         ..writeln();
@@ -468,20 +469,21 @@ class const UrlContentTransformer() {
     return _blockTags.contains(tag);
   }
 
-  /// Returns the first `<h1>` in [parent] whose ancestor chain does not
-  /// include any element in [_skipContentTags], or `null` if none exists.
+  /// Returns the first rendered `<h1>` in [parent] within the search limit.
   dom.Element? _firstRenderedH1(dom.Element parent) {
-    for (final h1 in parent.querySelectorAll('h1')) {
-      var ancestor = h1.parent;
-      var skipped = false;
-      while (ancestor != null && ancestor != parent) {
-        if (_skipContentTags.contains(ancestor.localName?.toLowerCase())) {
-          skipped = true;
-          break;
-        }
-        ancestor = ancestor.parent;
-      }
-      if (!skipped) return h1;
+    final pending = parent.children.reversed.toList();
+    var processedElements = 0;
+
+    while (pending.isNotEmpty &&
+        processedElements < _maxHeadingSearchElements) {
+      final element = pending.removeLast();
+      processedElements++;
+
+      final tag = element.localName?.toLowerCase();
+      if (_skipContentTags.contains(tag)) continue;
+      if (tag == 'h1') return element;
+
+      pending.addAll(element.children.reversed);
     }
 
     return null;
