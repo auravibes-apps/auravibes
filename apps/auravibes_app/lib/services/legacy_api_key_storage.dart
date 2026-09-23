@@ -8,7 +8,7 @@ class LegacyApiKeyStorage {
     r'[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
   );
 
-  LegacyApiKeyStorage({FlutterSecureStorage? secureStorage})
+  new({FlutterSecureStorage? secureStorage})
     : _secureStorage = secureStorage ?? const .new();
 
   final FlutterSecureStorage _secureStorage;
