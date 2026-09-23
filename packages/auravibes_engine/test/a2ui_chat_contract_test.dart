@@ -352,6 +352,54 @@ void main() {
     );
   });
 
+  test('rejects password and credential-like text fields', () {
+    Map<String, Object?> message(Map<String, Object?> field) => {
+      'version': a2uiChatWireVersion,
+      'updateComponents': {
+        'surfaceId': 'form',
+        'components': [field],
+      },
+    };
+
+    expect(
+      A2uiChatContract.validateMessage(
+        message({
+          'id': 'password',
+          'component': 'TextField',
+          'label': 'Password',
+          'value': {'path': '/password'},
+          'variant': 'password',
+        }),
+        interactionMode: 'requiresUserAction',
+      ),
+      A2uiIssueCode.malformedPayload,
+    );
+    expect(
+      A2uiChatContract.validateMessage(
+        message({
+          'id': 'key',
+          'component': 'TextField',
+          'label': 'API key',
+          'value': {'path': '/key'},
+        }),
+        interactionMode: 'requiresUserAction',
+      ),
+      A2uiIssueCode.malformedPayload,
+    );
+    expect(
+      A2uiChatContract.validateMessage(
+        message({
+          'id': 'name',
+          'component': 'TextField',
+          'label': 'Display name',
+          'value': {'path': '/display_name'},
+        }),
+        interactionMode: 'requiresUserAction',
+      ),
+      isNull,
+    );
+  });
+
   test('does not treat data-model fields named action as agent actions', () {
     expect(
       A2uiChatContract.containsAgentAction({
