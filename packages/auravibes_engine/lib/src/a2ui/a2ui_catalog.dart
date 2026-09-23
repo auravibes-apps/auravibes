@@ -840,7 +840,7 @@ const a2uiChatComponentSchemas = <String, Map<String, Object?>>{
       'value': _a2uiStringValueSchema,
       'variant': {
         'type': 'string',
-        'enum': ['text', 'number', 'email', 'password', 'multiline'],
+        'enum': ['text', 'number', 'email', 'multiline'],
       },
       'minLength': {'type': 'integer', 'minimum': 0},
       'maxLength': {'type': 'integer', 'minimum': 1},
