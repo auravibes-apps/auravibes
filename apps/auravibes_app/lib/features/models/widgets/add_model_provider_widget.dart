@@ -2293,21 +2293,23 @@ class const _ModelProviderListItemContent({
     children: [
       ModelLogo(modelId: model.id),
       AuraText(child: Text(model.name)),
-      _ModelProviderOAuthBadge(visible: isOAuthProvider),
+      _ModelProviderAuthBadge(isOAuthProvider: isOAuthProvider),
     ],
   );
 }
 
-class const _ModelProviderOAuthBadge({required final bool visible})
+class const _ModelProviderAuthBadge({required final bool isOAuthProvider})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => visible
-      ? const AuraText(
-          child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
-          style: .bodySmall,
-          tint: .primary,
-        )
-      : const SizedBox.shrink();
+  Widget build(BuildContext _) => AuraText(
+    child: TextLocale(
+      isOAuthProvider
+          ? LocaleKeys.mcp_modal_auth_oauth
+          : LocaleKeys.service_connections_create_api_key_label,
+    ),
+    style: .bodySmall,
+    tint: .primary,
+  );
 }
 
 /// Header showing the selected model with a back button.
