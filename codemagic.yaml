@@ -40,20 +40,20 @@ scripts:
     script: |
       RELEASE_TAG=${CM_TAG:-}
 
-      if [ -z "$RELEASE_TAG" ]; then
-        git fetch --tags --force
-        RELEASE_TAG=$(git tag --points-at HEAD --list 'auravibes_app-v*' | tail -n 1)
+      if [[ ! $RELEASE_TAG =~ ^auravibes_app-v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+        echo "Invalid or missing release tag: $RELEASE_TAG" >&2
+        exit 1
       fi
 
-      if [ -z "$RELEASE_TAG" ]; then
-        RELEASE_TAG=$(git describe --tags --match 'auravibes_app-v*' --abbrev=0 2>/dev/null || true)
+      git fetch --tags --force
+      TAG_COMMIT=$(git rev-parse "${RELEASE_TAG}^{commit}")
+      HEAD_COMMIT=$(git rev-parse HEAD^{commit})
+      if [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+        echo "Release tag $RELEASE_TAG does not identify HEAD" >&2
+        exit 1
       fi
 
-      if [ -n "$RELEASE_TAG" ]; then
-        TAG_VERSION=${RELEASE_TAG##*-v}
-      else
-        TAG_VERSION=$(grep '^version:' apps/auravibes_app/pubspec.yaml | awk '{print $2}')
-      fi
+      TAG_VERSION=${RELEASE_TAG##*-v}
 
       echo "Release tag: $RELEASE_TAG"
 
