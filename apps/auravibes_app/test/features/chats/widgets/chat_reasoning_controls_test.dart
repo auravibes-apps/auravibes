@@ -442,10 +442,7 @@ class const _LocalizedApp({required final Widget child})
 
 Future<void> _pumpLocalized(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(_LocalizedApp(child: child));
-  final _ = await tester.runAsync(
-    () => rootBundle.loadString('assets/i18n/en.json'),
-  );
-  final _ = await tester.pumpAndSettle();
+  await tester.pump();
 }
 
 void _noop(ReasoningConfiguration? value) {
