@@ -84,16 +84,18 @@ class ModelConnectionRepository({
   ) async {
     final provider = await _modelProviderForUpdate(request.providerId);
     final key = await _verificationKey(request);
-    final models = await _modelProviderServices.getWorkspaceModelSelections(
-      .new(type: .fromString(provider.type), key: key, url: request.url),
+    final models = await _modelSelectionsForVerification(
+      provider,
+      key,
+      request.url,
     );
     if (models == null) {
       throw ModelConnectionNoModelsException(request.providerId);
     }
 
-    return createModelProviderVerification(
+    return ModelProviderVerification.fromRequest(
       request: request,
-      modelIds: models.map((model) => model.modelId).toList(),
+      modelIds: _verificationModelIds(models),
     );
   }
 
@@ -272,6 +274,19 @@ extension ModelConnectionRepositoryHelpers on ModelConnectionRepository {
 
     return await _existingApiKey(existing.encryptedAuthValue);
   }
+
+  Future<List<WorkspaceModelSelectionToCreate>?>
+  _modelSelectionsForVerification(
+    ({ApiModelProvidersTable provider, String type}) provider,
+    String key,
+    String? url,
+  ) => _modelProviderServices.getWorkspaceModelSelections(
+    .new(type: .fromString(provider.type), key: key, url: url),
+  );
+
+  List<String> _verificationModelIds(
+    List<WorkspaceModelSelectionToCreate> models,
+  ) => models.map((model) => model.modelId).toList();
 }
 
 extension ModelConnectionCreateValidation on ModelConnectionRepository {
@@ -280,23 +295,40 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
     ApiModelProvidersTable provider,
     String key,
     ModelProviderVerification? verification,
+  ) => verification == null
+      ? _discoveredModelsForCreate(modelConnection, provider, key)
+      : _verifiedModelsForCreate(modelConnection, key, verification);
+
+  Future<List<WorkspaceModelSelectionToCreate>> _verifiedModelsForCreate(
+    ModelConnectionToCreate modelConnection,
+    String key,
+    ModelProviderVerification verification,
   ) async {
-    if (verification != null) {
-      _requireVerification(
-        verification,
-        .new(
-          workspaceId: modelConnection.workspaceId,
-          providerId: modelConnection.modelId,
-          connectionId: null,
-          expectedRevision: null,
-          url: modelConnection.url,
-          key: key,
-        ),
-      );
+    _requireVerification(
+      verification,
+      _createVerificationRequest(modelConnection, key),
+    );
 
-      return _workspaceSelectionsFromIds(verification.modelIds);
-    }
+    return _workspaceSelectionsFromIds(verification.modelIds);
+  }
 
+  ModelProviderVerificationRequest _createVerificationRequest(
+    ModelConnectionToCreate modelConnection,
+    String key,
+  ) => ModelProviderVerificationRequest(
+    workspaceId: modelConnection.workspaceId,
+    providerId: modelConnection.modelId,
+    connectionId: null,
+    expectedRevision: null,
+    url: modelConnection.url,
+    key: key,
+  );
+
+  Future<List<WorkspaceModelSelectionToCreate>> _discoveredModelsForCreate(
+    ModelConnectionToCreate modelConnection,
+    ApiModelProvidersTable provider,
+    String key,
+  ) async {
     final modelType = _requiredCreateModelType(
       provider,
       modelConnection.modelId,
@@ -665,21 +697,36 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
     }
 
     if (verification != null) {
-      _requireVerification(
-        verification,
-        .new(
-          workspaceId: existing.workspaceId,
-          providerId: existing.serviceId,
-          connectionId: existing.id,
-          expectedRevision: null,
-          url: validation.nextUrl,
-          key: validation.key,
-        ),
-      );
-
-      return _workspaceSelectionsFromIds(verification.modelIds);
+      return await _verifiedModelsForUpdate(existing, validation, verification);
     }
 
+    return await _discoveredModelsForUpdate(existing, validation);
+  }
+
+  Future<List<WorkspaceModelSelectionToCreate>> _verifiedModelsForUpdate(
+    ServiceConnectionTable existing,
+    _UpdateValidationData validation,
+    ModelProviderVerification verification,
+  ) async {
+    _requireVerification(
+      verification,
+      .new(
+        workspaceId: existing.workspaceId,
+        providerId: existing.serviceId,
+        connectionId: existing.id,
+        expectedRevision: null,
+        url: validation.nextUrl,
+        key: validation.key,
+      ),
+    );
+
+    return _workspaceSelectionsFromIds(verification.modelIds);
+  }
+
+  Future<List<WorkspaceModelSelectionToCreate>> _discoveredModelsForUpdate(
+    ServiceConnectionTable existing,
+    _UpdateValidationData validation,
+  ) async {
     final models = await _modelProviderServices.getWorkspaceModelSelections(
       .new(
         type: .fromString(validation.provider.type),

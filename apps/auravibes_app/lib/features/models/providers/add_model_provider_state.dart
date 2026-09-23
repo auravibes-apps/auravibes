@@ -166,14 +166,29 @@ extension AddModelProviderStateFields on AddModelProviderState {
   }
 }
 
-extension AddModelProviderStateActions on AddModelProviderState {
+extension AddModelProviderVerificationActions on AddModelProviderState {
   Future<ModelProviderVerification?> verifyModelProvider() async {
-    if (_value.authMode == ModelProviderAuthMode.oauth2 || !_value.isValid()) {
-      return null;
-    }
-    final modelId = _value.modelId;
+    final modelId = _verificationModelId;
     if (modelId == null) return null;
 
+    final version = _beginModelProviderVerification();
+    try {
+      final verification = await _requestModelProviderVerification(modelId);
+      if (!_isCurrentModelProviderVerification(version)) return null;
+      _acceptModelProviderVerification(verification);
+
+      return verification;
+    } finally {
+      _finishModelProviderVerification(version);
+    }
+  }
+
+  String? get _verificationModelId =>
+      _value.authMode == ModelProviderAuthMode.oauth2 || !_value.isValid()
+      ? null
+      : _value.modelId;
+
+  int _beginModelProviderVerification() {
     final version = ++_connectionVersion;
     _verificationExpiryTimer?.cancel();
     _verificationExpiryTimer = null;
@@ -183,53 +198,69 @@ extension AddModelProviderStateActions on AddModelProviderState {
       isConnectionVerified: false,
       verifiedModelCount: 0,
     );
-    try {
-      final verification = await (await _modelConnectionStore())
-          .verifyModelConnection(
-            .new(
-              workspaceId: _workspace,
-              providerId: modelId,
-              connectionId: null,
-              expectedRevision: null,
-              url: _value.url,
-              key: _value.key,
-            ),
-          );
-      if (!_providerRef.mounted || version != _connectionVersion) return null;
 
-      _verification = verification;
-      _value = _value.copyWith(
-        isConnectionVerified: true,
-        verifiedModelCount: verification.modelCount,
-      );
-      _scheduleVerificationExpiry(verification);
+    return version;
+  }
 
-      return verification;
-    } finally {
-      if (_providerRef.mounted && version == _connectionVersion) {
-        _value = _value.copyWith(isTestingConnection: false);
-      }
-    }
+  Future<ModelProviderVerification> _requestModelProviderVerification(
+    String modelId,
+  ) async {
+    final store = await _modelConnectionStore();
+
+    return await store.verifyModelConnection(
+      .new(
+        workspaceId: _workspace,
+        providerId: modelId,
+        connectionId: null,
+        expectedRevision: null,
+        url: _value.url,
+        key: _value.key,
+      ),
+    );
+  }
+
+  bool _isCurrentModelProviderVerification(int version) =>
+      _providerRef.mounted && version == _connectionVersion;
+
+  void _acceptModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    _verification = verification;
+    _value = _value.copyWith(
+      isConnectionVerified: true,
+      verifiedModelCount: verification.modelCount,
+    );
+    _scheduleVerificationExpiry(verification);
+  }
+
+  void _finishModelProviderVerification(int version) {
+    if (!_isCurrentModelProviderVerification(version)) return;
+
+    _value = _value.copyWith(isTestingConnection: false);
   }
 
   void _scheduleVerificationExpiry(ModelProviderVerification verification) {
     final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
     _verificationExpiryTimer = .new(
       remaining.isNegative ? Duration.zero : remaining,
-      () {
-        if (!identical(_verification, verification)) return;
-
-        _verification = null;
-        _verificationExpiryTimer = null;
-        if (!_providerRef.mounted) return;
-        _value = _value.copyWith(
-          isConnectionVerified: false,
-          verifiedModelCount: 0,
-        );
-      },
+      () => _expireVerification(verification),
     );
   }
 
+  void _expireVerification(ModelProviderVerification verification) {
+    if (!identical(_verification, verification)) return;
+
+    _verification = null;
+    _verificationExpiryTimer = null;
+    if (!_providerRef.mounted) return;
+    _value = _value.copyWith(
+      isConnectionVerified: false,
+      verifiedModelCount: 0,
+    );
+  }
+}
+
+extension AddModelProviderStateActions on AddModelProviderState {
   Future<ModelConnectionEntity?> addModelProvider({
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
@@ -303,20 +334,17 @@ extension AddModelProviderStateActions on AddModelProviderState {
     if (verification == null || modelId == null) {
       throw const ProviderVerificationRequiredException();
     }
-    if (verification.isExpired) {
-      throw const ProviderVerificationExpiredException();
-    }
-    final request = ModelProviderVerificationRequest(
-      workspaceId: _workspace,
-      providerId: modelId,
-      connectionId: null,
-      expectedRevision: null,
-      url: _value.url,
-      key: _value.key,
+
+    verification.requireMatch(
+      .new(
+        workspaceId: _workspace,
+        providerId: modelId,
+        connectionId: null,
+        expectedRevision: null,
+        url: _value.url,
+        key: _value.key,
+      ),
     );
-    if (!verification.matches(request)) {
-      throw const ProviderVerificationMismatchException();
-    }
 
     return verification;
   }

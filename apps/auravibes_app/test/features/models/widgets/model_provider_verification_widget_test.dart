@@ -195,17 +195,18 @@ Future<void> _pumpAddForm(
   }
 }
 
-ModelProviderVerification _verification() => createModelProviderVerification(
-  request: const ModelProviderVerificationRequest(
-    workspaceId: _workspaceId,
-    providerId: 'test-provider',
-    connectionId: null,
-    expectedRevision: null,
-    url: null,
-    key: 'valid-key',
-  ),
-  modelIds: const ['gpt-4o', 'gpt-4.1'],
-);
+ModelProviderVerification _verification() =>
+    ModelProviderVerification.fromRequest(
+      request: const ModelProviderVerificationRequest(
+        workspaceId: _workspaceId,
+        providerId: 'test-provider',
+        connectionId: null,
+        expectedRevision: null,
+        url: null,
+        key: 'valid-key',
+      ),
+      modelIds: const ['gpt-4o', 'gpt-4.1'],
+    );
 
 ModelConnectionForEdit _editConnection() => const ModelConnectionForEdit(
   id: 'connection-1',
@@ -236,7 +237,7 @@ class _FakeModelConnectionStore implements ModelConnectionStore {
     final completer = verificationCompleter;
     if (completer != null) return await completer.future;
 
-    return createModelProviderVerification(
+    return ModelProviderVerification.fromRequest(
       request: request,
       modelIds: const ['gpt-4o'],
     );

@@ -137,7 +137,7 @@ void main() {
       modelId: 'openai',
       key: 'valid-key',
     );
-    final verification = createModelProviderVerification(
+    final verification = ModelProviderVerification.fromRequest(
       request: const ModelProviderVerificationRequest(
         workspaceId: 'workspace',
         providerId: 'openai',
@@ -274,6 +274,60 @@ void main() {
     expect(updateCalled, isTrue);
     expect(result.name, 'Renamed');
     expect(result.hasKey, isTrue);
+  });
+
+  test('name-only cloud edit skips provider verification', () async {
+    var updateCalled = false;
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        readState: (_) async => ReadWorkspaceStateResponse(
+          pages: [],
+          currentSequence: 1,
+          events: [],
+          requiresSnapshot: false,
+        ),
+      ),
+      list: (_) async => [
+        ModelConnectionView(
+          id: 'connection',
+          name: 'OpenAI',
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      update: (request) async {
+        updateCalled = true;
+
+        return ModelConnectionView(
+          id: request.connectionId,
+          name: request.name,
+          providerId: 'openai',
+          hasSecret: true,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        );
+      },
+    );
+    final providerServices = _FakeModelProviderServices();
+    final store = CloudModelStore(
+      'workspace',
+      .new(gateway),
+      modelProviderServices: providerServices,
+    );
+
+    final result = await store.updateModelConnection(
+      'connection',
+      const ModelConnectionToUpdate(name: 'Renamed'),
+    );
+
+    expect(updateCalled, isTrue);
+    expect(providerServices.wasCalled, isFalse);
+    expect(result.name, 'Renamed');
   });
 
   test('verified cloud URL update sends its draft receipt', () async {

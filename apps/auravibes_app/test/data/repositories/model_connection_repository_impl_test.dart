@@ -223,7 +223,7 @@ void main() {
             .thenAnswer((_) async {
               return;
             });
-        final verification = createModelProviderVerification(
+        final verification = ModelProviderVerification.fromRequest(
           request: const ModelProviderVerificationRequest(
             workspaceId: 'ws-1',
             providerId: 'openai',
@@ -267,7 +267,7 @@ void main() {
         when(() => mockEncryptionService.encrypt(testKeyPayload))
             .thenAnswer((_) async => 'encrypted-key');
 
-        final verification = createModelProviderVerification(
+        final verification = ModelProviderVerification.fromRequest(
           request: const ModelProviderVerificationRequest(
             workspaceId: 'ws-1',
             providerId: 'openai',

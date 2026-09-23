@@ -381,6 +381,15 @@ VoidCallback _addModelProviderVerifyCallback(
 Future<void> _verifyAddModelProviderForm(
   _AddModelProviderFormRequest request,
 ) async {
+  final verification = await _runAddModelProviderVerification(request);
+  if (verification == null || !request.context.mounted) return;
+
+  _showModelProviderVerificationSuccess(request.context, verification);
+}
+
+Future<ModelProviderVerification?> _runAddModelProviderVerification(
+  _AddModelProviderFormRequest request,
+) async {
   ModelProviderVerification? verification;
   try {
     await verifyModelProviderMutationProvider.run(request.ref, (
@@ -391,17 +400,22 @@ Future<void> _verifyAddModelProviderForm(
           .verifyModelProvider();
     });
   } on Object {
-    return;
+    return null;
   }
-  final verified = verification;
-  if (verified == null || !request.context.mounted) return;
 
+  return verification;
+}
+
+void _showModelProviderVerificationSuccess(
+  BuildContext context,
+  ModelProviderVerification verification,
+) {
   final connectedLabel = LocaleKeys.service_connections_status_connected.tr();
   final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
-    verified.modelCount,
+    verification.modelCount,
   );
   final _ = AuraSnackBars.show(
-    context: request.context,
+    context: context,
     content: Text('$connectedLabel - $modelCountLabel'),
     variant: .success,
   );
@@ -1369,28 +1383,67 @@ class const _ApiKeyCreateActions({
   @override
   Widget build(BuildContext _) => Column(
     children: [
-      AuraButton(
+      _VerifyProviderButton(
         onPressed: callbacks.onVerify,
-        child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
-        variant: .outlined,
-        size: .large,
-        isLoading: state.isTesting,
-        isFullWidth: true,
-        disabled: state.disabled || state.isTesting,
+        isTesting: state.isTesting,
+        disabled: state.disabled,
       ),
       const AuraSizedBox(height: .md),
-      AuraButton(
+      _AddProviderButton(
         onPressed: callbacks.onSubmit,
-        child: const TextLocale(
-          LocaleKeys.models_screens_add_provider_open_button,
-        ),
-        size: .large,
-        isLoading: state.isSubmitting,
-        isFullWidth: true,
-        disabled: state.disabled || state.isTesting || !state.isVerified,
+        isSubmitting: state.isSubmitting,
+        isTesting: state.isTesting,
+        isVerified: state.isVerified,
+        disabled: state.disabled,
       ),
     ],
   );
+}
+
+class const _VerifyProviderButton({
+  required final VoidCallback onPressed,
+  required final bool isTesting,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final isTesting = this.isTesting;
+
+    return AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
+      variant: .outlined,
+      size: .large,
+      isLoading: isTesting,
+      isFullWidth: true,
+      disabled: disabled || isTesting,
+    );
+  }
+}
+
+class const _AddProviderButton({
+  required final VoidCallback onPressed,
+  required final bool isSubmitting,
+  required final bool isTesting,
+  required final bool isVerified,
+  required final bool disabled,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final isTesting = this.isTesting;
+    final isVerified = this.isVerified;
+
+    return AuraButton(
+      onPressed: onPressed,
+      child: const TextLocale(
+        LocaleKeys.models_screens_add_provider_open_button,
+      ),
+      size: .large,
+      isLoading: isSubmitting,
+      isFullWidth: true,
+      disabled: disabled || isTesting || !isVerified,
+    );
+  }
 }
 
 class const _CodexBrowserAction({

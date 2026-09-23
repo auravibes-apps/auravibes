@@ -130,21 +130,46 @@ class CloudModelGateway {
     String? url,
   }) => CloudAppErrors.guardCall(
     .model,
-    () =>
-        _verifyDraft?.call(
-          connectionId: connectionId,
-          expectedRevision: expectedRevision,
-          url: url,
-        ) ??
-        _client.modelConnection.verifyDraft(
-          .new(
-            workspaceId: _workspaceId,
-            requestId: const Uuid().v4(),
-            connectionId: connectionId,
-            expectedRevision: expectedRevision,
-            url: url,
-          ),
-        ),
+    () => _callDraftModelVerification(
+      connectionId: connectionId,
+      expectedRevision: expectedRevision,
+      url: url,
+    ),
+  );
+
+  Future<VerifyModelConnectionResult> _callDraftModelVerification({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) {
+    final testOverride = _verifyDraft;
+    if (testOverride != null) {
+      return testOverride(
+        connectionId: connectionId,
+        expectedRevision: expectedRevision,
+        url: url,
+      );
+    }
+
+    return _client.modelConnection.verifyDraft(
+      _draftModelVerificationRequest(
+        connectionId: connectionId,
+        expectedRevision: expectedRevision,
+        url: url,
+      ),
+    );
+  }
+
+  VerifyModelConnectionRequest _draftModelVerificationRequest({
+    required String connectionId,
+    required int expectedRevision,
+    String? url,
+  }) => VerifyModelConnectionRequest(
+    workspaceId: _workspaceId,
+    requestId: const Uuid().v4(),
+    connectionId: connectionId,
+    expectedRevision: expectedRevision,
+    url: url,
   );
 }
 

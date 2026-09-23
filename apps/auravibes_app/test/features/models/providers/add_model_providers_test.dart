@@ -33,7 +33,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     if (pending != null) return await pending;
 
     return verificationResult ??
-        createModelProviderVerification(
+        ModelProviderVerification.fromRequest(
           request: request,
           modelIds: const ['gpt-4o'],
         );
@@ -420,7 +420,7 @@ void main() {
         await Future<void>.delayed(.zero);
         notifier.setKey('new-key');
         completer.complete(
-          createModelProviderVerification(
+          ModelProviderVerification.fromRequest(
             request: const ModelProviderVerificationRequest(
               workspaceId: 'ws1',
               providerId: 'openai',
@@ -524,12 +524,14 @@ void main() {
       final repo = _FakeModelConnectionRepository()
         ..verificationResult = .new(
           id: 'verification',
-          workspaceId: 'ws1',
-          providerId: 'openai',
-          connectionId: null,
-          expectedRevision: null,
-          url: null,
-          keyDigest: modelProviderKeyDigest('valid-key'),
+          identity: .new(
+            workspaceId: 'ws1',
+            providerId: 'openai',
+            connectionId: null,
+            expectedRevision: null,
+            url: null,
+            keyDigest: ModelProviderVerification.digestKey('valid-key'),
+          ),
           modelIds: const ['gpt-4o'],
           expiresAt: DateTime.now().toUtc().add(
             const Duration(milliseconds: 10),
@@ -682,7 +684,7 @@ class _ThrowingModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelProviderVerification> verifyModelConnection(
     ModelProviderVerificationRequest request,
-  ) async => createModelProviderVerification(
+  ) async => ModelProviderVerification.fromRequest(
     request: request,
     modelIds: const ['gpt-4o'],
   );

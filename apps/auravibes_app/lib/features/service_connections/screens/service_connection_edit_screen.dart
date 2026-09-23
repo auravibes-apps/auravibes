@@ -120,8 +120,44 @@ class _ServiceConnectionEditScreenState
     _initialized = true;
   }
 
-  void _refreshForm() => setState(() => _initialized = true);
+  void _refreshForm([VoidCallback? update]) => setState(() {
+    update?.call();
+    _initialized = true;
+  });
 
+  Future<void> _saveSkillCredential(BuildContext context) async {
+    setState(() => _isSaving = true);
+    await _runEditSave(
+      context,
+      () => _updateSkillCredential(
+        ref,
+        widget.workspaceId,
+        _skillCredentialUpdateData(this, widget.connectionId),
+      ),
+      LocaleKeys.skill_credentials_save_error,
+    );
+    if (mounted) setState(() => _isSaving = false);
+  }
+
+  Future<void> _saveGenericConnection(
+    BuildContext context,
+    _GenericServiceConnectionEditState state,
+  ) async {
+    setState(() => _isSaving = true);
+    await _runEditSave(
+      context,
+      () => _updateGenericConnection(
+        ref,
+        widget.workspaceId,
+        _genericConnectionUpdateData(state, this),
+      ),
+      LocaleKeys.service_connections_save_error,
+    );
+    if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
   void _invalidateModelProviderVerification() {
     _modelProviderVerificationVersion++;
     _modelProviderVerificationExpiryTimer?.cancel();
@@ -135,54 +171,7 @@ class _ServiceConnectionEditScreenState
   Future<void> _verifyModelProvider(
     BuildContext context,
     _ModelProviderEditState state,
-  ) async {
-    if (_isSaving || _isTestingModelProvider) return;
-
-    final version = ++_modelProviderVerificationVersion;
-    _modelProviderVerificationExpiryTimer?.cancel();
-    _modelProviderVerificationExpiryTimer = null;
-    _modelProviderVerification = null;
-    _modelProviderVerificationError = null;
-    setState(() {
-      _isTestingModelProvider = true;
-      _initialized = true;
-    });
-
-    try {
-      final store = await ref.read(
-        modelConnectionStoreProvider(widget.workspaceId).future,
-      );
-      final verification = await store.verifyModelConnection(
-        _modelProviderVerificationRequest(state.connection),
-      );
-      if (!mounted || version != _modelProviderVerificationVersion) return;
-
-      setState(() {
-        _modelProviderVerification = verification;
-        _isTestingModelProvider = false;
-      });
-      _scheduleModelProviderVerificationExpiry(verification);
-      if (!context.mounted) return;
-
-      final connectedLabel = LocaleKeys.service_connections_status_connected
-          .tr();
-      final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
-        verification.modelCount,
-      );
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: Text('$connectedLabel - $modelCountLabel'),
-        variant: .success,
-      );
-    } on Exception catch (error) {
-      if (!mounted || version != _modelProviderVerificationVersion) return;
-
-      setState(() {
-        _isTestingModelProvider = false;
-        _modelProviderVerificationError = error;
-      });
-    }
-  }
+  ) => _runModelProviderVerification(context, state);
 
   ModelProviderVerificationRequest _modelProviderVerificationRequest(
     ModelConnectionForEdit connection,
@@ -226,43 +215,10 @@ class _ServiceConnectionEditScreenState
         _modelProviderVerificationIsCurrent(state);
   }
 
-  void _scheduleModelProviderVerificationExpiry(
-    ModelProviderVerification verification,
-  ) {
-    final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
-    _modelProviderVerificationExpiryTimer = .new(
-      remaining.isNegative ? Duration.zero : remaining,
-      () {
-        if (!identical(_modelProviderVerification, verification) || !mounted) {
-          return;
-        }
-
-        setState(() {
-          _modelProviderVerification = null;
-          _modelProviderVerificationExpiryTimer = null;
-          _modelProviderVerificationError =
-              const ProviderVerificationExpiredException();
-        });
-      },
-    );
-  }
-
-  Future<void> _saveSkillCredential(BuildContext context) async {
-    setState(() => _isSaving = true);
-    await _runEditSave(
-      context,
-      () => _updateSkillCredential(
-        ref,
-        widget.workspaceId,
-        _skillCredentialUpdateData(this, widget.connectionId),
-      ),
-      LocaleKeys.skill_credentials_save_error,
-    );
-    if (mounted) setState(() => _isSaving = false);
-  }
-
   Future<void> _saveModelProvider(BuildContext context) async {
-    setState(() => _isSaving = true);
+    _refreshForm(() {
+      _isSaving = true;
+    });
     await _runEditSave(
       context,
       () => _updateModelProvider(
@@ -272,24 +228,121 @@ class _ServiceConnectionEditScreenState
       ),
       LocaleKeys.service_connections_save_error,
     );
-    if (mounted) setState(() => _isSaving = false);
+    if (mounted) {
+      _refreshForm(() {
+        _isSaving = false;
+      });
+    }
+  }
+}
+
+extension _ModelProviderVerificationActions
+    on _ServiceConnectionEditScreenState {
+  void _scheduleModelProviderVerificationExpiry(
+    ModelProviderVerification verification,
+  ) {
+    final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
+    _modelProviderVerificationExpiryTimer = .new(
+      remaining.isNegative ? Duration.zero : remaining,
+      () => _expireModelProviderVerification(verification),
+    );
   }
 
-  Future<void> _saveGenericConnection(
+  void _expireModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    if (!identical(_modelProviderVerification, verification) || !mounted) {
+      return;
+    }
+
+    _refreshForm(() {
+      _modelProviderVerification = null;
+      _modelProviderVerificationExpiryTimer = null;
+      _modelProviderVerificationError =
+          const ProviderVerificationExpiredException();
+    });
+  }
+
+  Future<void> _runModelProviderVerification(
     BuildContext context,
-    _GenericServiceConnectionEditState state,
+    _ModelProviderEditState state,
   ) async {
-    setState(() => _isSaving = true);
-    await _runEditSave(
-      context,
-      () => _updateGenericConnection(
-        ref,
-        widget.workspaceId,
-        _genericConnectionUpdateData(state, this),
-      ),
-      LocaleKeys.service_connections_save_error,
+    if (_isSaving || _isTestingModelProvider) return;
+
+    final version = _startModelProviderVerification();
+    try {
+      final verification = await _requestModelProviderVerification(state);
+      if (!_isCurrentModelProviderVerification(version)) return;
+
+      _acceptModelProviderVerification(verification);
+      if (context.mounted) {
+        _showModelProviderVerificationSuccess(context, verification);
+      }
+    } on Exception catch (error) {
+      if (!_isCurrentModelProviderVerification(version)) return;
+
+      _setModelProviderVerificationError(error);
+    }
+  }
+
+  int _startModelProviderVerification() {
+    final version = ++_modelProviderVerificationVersion;
+    _modelProviderVerificationExpiryTimer?.cancel();
+    _modelProviderVerificationExpiryTimer = null;
+    _modelProviderVerification = null;
+    _modelProviderVerificationError = null;
+    _refreshForm(() {
+      _isTestingModelProvider = true;
+    });
+
+    return version;
+  }
+
+  Future<ModelProviderVerification> _requestModelProviderVerification(
+    _ModelProviderEditState state,
+  ) async {
+    final store = await ref.read(
+      modelConnectionStoreProvider(widget.workspaceId).future,
     );
-    if (mounted) setState(() => _isSaving = false);
+
+    return await store.verifyModelConnection(
+      _modelProviderVerificationRequest(state.connection),
+    );
+  }
+
+  bool _isCurrentModelProviderVerification(int version) =>
+      mounted && version == _modelProviderVerificationVersion;
+
+  void _acceptModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    _refreshForm(() {
+      _modelProviderVerification = verification;
+      _isTestingModelProvider = false;
+    });
+    _scheduleModelProviderVerificationExpiry(verification);
+  }
+
+  void _setModelProviderVerificationError(Exception error) {
+    _refreshForm(() {
+      _isTestingModelProvider = false;
+      _modelProviderVerificationError = error;
+    });
+  }
+
+  void _showModelProviderVerificationSuccess(
+    BuildContext context,
+    ModelProviderVerification verification,
+  ) {
+    final connectedLabel = LocaleKeys.service_connections_status_connected.tr();
+    final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
+      verification.modelCount,
+    );
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text('$connectedLabel - $modelCountLabel'),
+      variant: .success,
+    );
   }
 }
 

@@ -13,7 +13,7 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelProviderVerification> verifyModelConnection(
     ModelProviderVerificationRequest request,
-  ) async => createModelProviderVerification(
+  ) async => ModelProviderVerification.fromRequest(
     request: request,
     modelIds: const ['gpt-4o'],
   );
