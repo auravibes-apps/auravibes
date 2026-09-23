@@ -29,6 +29,7 @@ void main() {
   });
 
   test('preserves results when cancellation arrives after execution', () async {
+    var cancellationChecks = 0;
     final result =
         await AgentToolExecutionDispatcher<String>(
           runResolvedTool: ({
@@ -36,7 +37,7 @@ void main() {
             required tool,
             required arguments,
           }) async => '{"conversationId":"child-1","status":"stopped"}',
-          isCancellationRequested: (_) => true,
+          isCancellationRequested: (_) => cancellationChecks++ > 0,
           logToolExecutionError: (_) {},
         ).call(
           conversationId: 'conversation-1',
@@ -47,6 +48,32 @@ void main() {
 
     expect(result.resultStatus, AgentToolResultStatus.stoppedByUser);
     expect(result.responseRaw, contains('child-1'));
+  });
+
+  test('does not dispatch when cancellation is already requested', () async {
+    var dispatched = false;
+    final result =
+        await AgentToolExecutionDispatcher<String>(
+          runResolvedTool:
+              ({
+                required conversationId,
+                required tool,
+                required arguments,
+              }) async {
+                dispatched = true;
+                return 'unexpected';
+              },
+          isCancellationRequested: (_) => true,
+          logToolExecutionError: (_) {},
+        ).call(
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          tool: 'tool',
+          argumentsRaw: '{}',
+        );
+
+    expect(dispatched, isFalse);
+    expect(result.resultStatus, AgentToolResultStatus.stoppedByUser);
   });
 
   test(
