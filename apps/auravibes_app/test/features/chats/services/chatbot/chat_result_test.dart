@@ -103,6 +103,32 @@ void main() {
       expect(res.entityTools.firstOrNull?.argumentsRaw, '{"city":"Boston"}');
     });
 
+    test('rejects duplicate model-provided tool-call IDs', () {
+      final res = ChatResult<ChatMessage>(
+        output: ChatMessage(
+          role: .model,
+          parts: [
+            ToolRequestPart(
+              toolRequest: .new(
+                ref: 'duplicate-call',
+                name: 'calculator',
+                input: const {'input': '1000*1000'},
+              ),
+            ),
+            ToolRequestPart(
+              toolRequest: .new(
+                ref: 'duplicate-call',
+                name: 'calculator',
+                input: const {'input': '2+2'},
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(() => res.entityTools, throwsFormatException);
+    });
+
     test('attaches the model preamble to every tool call in a batch', () {
       final res = ChatResult<ChatMessage>(
         output: ChatMessage(

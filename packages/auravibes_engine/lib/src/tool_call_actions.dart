@@ -1,7 +1,43 @@
+import 'dart:convert';
+
 import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
+import 'package:crypto/crypto.dart';
 
 enum AgentToolGrantLevel { once, conversation }
+
+String toolCallApprovalDigest({
+  required String messageId,
+  required String toolName,
+  required String argumentsRaw,
+}) {
+  final canonicalArguments = _canonicalArguments(argumentsRaw);
+  return sha256
+      .convert(
+        utf8.encode('$messageId\u0000$toolName\u0000$canonicalArguments'),
+      )
+      .toString();
+}
+
+String _canonicalArguments(String argumentsRaw) {
+  try {
+    return jsonEncode(_canonicalJsonValue(jsonDecode(argumentsRaw)));
+  } on FormatException {
+    return argumentsRaw;
+  }
+}
+
+Object? _canonicalJsonValue(Object? value) => switch (value) {
+  final Map<String, dynamic> map => _canonicalJsonMap(map),
+  final List<dynamic> list => list.map(_canonicalJsonValue).toList(),
+  _ => value,
+};
+
+Map<String, Object?> _canonicalJsonMap(Map<String, dynamic> map) {
+  final keys = map.keys.toList()..sort();
+
+  return {for (final key in keys) key: _canonicalJsonValue(map[key])};
+}
 
 typedef AgentToolCallResultUpdateRequest = ({
   String messageId,
@@ -87,6 +123,7 @@ class const ApproveToolCallService<TTool extends Object>({
     required String messageId,
     required String conversationId,
     required AgentToolGrantLevel level,
+    required String approvalDigest,
   }) async {
     final toolCall = await provider.loadToolCall(
       messageId: messageId,
@@ -96,6 +133,14 @@ class const ApproveToolCallService<TTool extends Object>({
     if (toolCall == null) return;
     if (toolCall.conversationId != conversationId) {
       throw StateError('Tool call does not belong to conversation.');
+    }
+    if (toolCallApprovalDigest(
+          messageId: messageId,
+          toolName: toolCall.name,
+          argumentsRaw: toolCall.argumentsRaw,
+        ) !=
+        approvalDigest) {
+      throw StateError('Tool call no longer matches the approved request.');
     }
 
     final tool = await provider.resolveTool(
