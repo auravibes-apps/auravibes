@@ -25,7 +25,7 @@ void main() {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(
         .insert(name: 'Test Workspace', type: .local),
       );
-      await fixture.database.conversationDao.insertConversation(
+      final _ = await fixture.database.conversationDao.insertConversation(
         .insert(
           id: const Value(testConversationId),
           workspaceId: workspace.id,
@@ -1358,21 +1358,24 @@ final class _ConversationToolsRepositoryFixture {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
-    await database.conversationDao.insertConversation(
-      .insert(
-        id: const Value('conv-1'),
-        workspaceId: workspace.id,
-        title: 'Test Conversation',
-      ),
-    );
+    for (final conversationId in ['conv-1', 'conv-2']) {
+      final _ = await database.conversationDao.insertConversation(
+        .insert(
+          id: Value(conversationId),
+          workspaceId: workspace.id,
+          title: 'Test Conversation',
+        ),
+      );
+    }
     for (final toolId in ['tool-1', 'tool-2']) {
       final _ = await database.into(database.tools).insert(
         ToolsCompanion.insert(
-          id: Value(toolId),
+          id: .new(toolId),
           workspaceId: workspace.id,
           toolId: toolId,
         ),
       );
+    }
     }
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 

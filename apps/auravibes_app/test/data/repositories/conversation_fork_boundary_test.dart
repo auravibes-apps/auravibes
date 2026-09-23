@@ -29,10 +29,10 @@ void main() {
       .insert(name: 'Test Workspace', type: .local),
     );
     final _ = await database.conversationDao.insertConversation(
-      ConversationsCompanion(
-        id: .new('source'),
+      .new(
+        id: const .new('source'),
         workspaceId: .new(workspace.id),
-        title: .new('Source'),
+        title: const .new('Source'),
       ),
     );
   }

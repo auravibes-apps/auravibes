@@ -30,7 +30,7 @@ void main() {
           type: .local,
         ),
       );
-      await database.into(database.conversations).insert(
+      final _ = await database.into(database.conversations).insert(
         ConversationsCompanion.insert(
           id: const Value('conv-1'),
           workspaceId: workspace.id,

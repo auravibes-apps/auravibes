@@ -29,7 +29,7 @@ void main() {
         .insert(name: 'Test Workspace', type: .local),
       );
       for (final conversationId in ['conv-1', 'conv-a', 'conv-b']) {
-        await database.conversationDao.insertConversation(
+        final _ = await database.conversationDao.insertConversation(
           .insert(
             id: Value(conversationId),
             workspaceId: workspace.id,
