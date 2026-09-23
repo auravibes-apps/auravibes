@@ -261,10 +261,8 @@ extension on WorkspaceModelSelectionRepository {
 List<ReasoningOption> _decodeReasoningOptions(
   String? value,
   bool supportsReasoning,
-) => ReasoningOption.decodeJsonList(
-  value,
-  supportsReasoning: supportsReasoning,
-);
+) =>
+    ReasoningOption.decodeJsonList(value, supportsReasoning: supportsReasoning);
 
 extension on WorkspaceModelSelectionRepository {
   ApiModelProviderEntity _modelProviderEntity(_ModelProviderInput data) =>

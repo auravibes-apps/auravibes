@@ -38,12 +38,12 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 
     return _ReasoningPopup(
       trigger: trigger,
-      controller: _popupController,
       child: ChatReasoningControls(
         options: widget.options,
         value: widget.value,
         onChanged: widget.onChanged,
       ),
+      controller: _popupController,
     );
   }
 
@@ -70,41 +70,6 @@ class const _ReasoningTrigger({
   required final _ReasoningSummary summary,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
-  static _ReasoningSummary _reasoningSummary(
-    List<ReasoningOption> options,
-    ReasoningConfiguration? value,
-  ) {
-    final label = _reasoningSummaryLabel(
-      _validatedTriggerConfiguration(options, value),
-    );
-    final status = label ?? _defaultReasoningLabel();
-
-    return (
-      label: label,
-      semanticLabel: _reasoningAccessibilityLabel(status),
-    );
-  }
-
-  static String? _reasoningSummaryLabel(
-    ReasoningConfiguration? configuration,
-  ) => switch (configuration) {
-    ReasoningConfiguration(enabled: false) =>
-      LocaleKeys.chats_screens_chat_conversation_reasoning_status_off.tr(),
-    ReasoningConfiguration(effort: String(), budgetTokens: int()) =>
-      LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom.tr(),
-    ReasoningConfiguration(effort: final effort?) => effort,
-    ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
-    _ => null,
-  };
-
-  static String _defaultReasoningLabel() => LocaleKeys
-      .chats_screens_chat_conversation_reasoning_status_default
-      .tr();
-
-  static String _reasoningAccessibilityLabel(String status) => LocaleKeys
-      .chats_screens_chat_conversation_reasoning_trigger_label
-      .tr(namedArgs: {'status': status});
-
   @override
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('chat_reasoning_selector'),
@@ -119,6 +84,37 @@ class const _ReasoningTrigger({
     identifier: 'chat_reasoning_selector',
     label: summary.semanticLabel,
   );
+
+  static _ReasoningSummary _reasoningSummary(
+    List<ReasoningOption> options,
+    ReasoningConfiguration? value,
+  ) {
+    final label = _reasoningSummaryLabel(
+      _validatedTriggerConfiguration(options, value),
+    );
+    final status = label ?? _defaultReasoningLabel();
+
+    return (label: label, semanticLabel: _reasoningAccessibilityLabel(status));
+  }
+
+  static String? _reasoningSummaryLabel(
+    ReasoningConfiguration? configuration,
+  ) => switch (configuration) {
+    ReasoningConfiguration(enabled: false) =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_status_off.tr(),
+    ReasoningConfiguration(effort: String(), budgetTokens: int()) =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom.tr(),
+    ReasoningConfiguration(effort: final effort?) => effort,
+    ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
+    _ => null,
+  };
+
+  static String _defaultReasoningLabel() =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_status_default.tr();
+
+  static String _reasoningAccessibilityLabel(String status) => LocaleKeys
+      .chats_screens_chat_conversation_reasoning_trigger_label
+      .tr(namedArgs: {'status': status});
 }
 
 class const _ReasoningTriggerButton({

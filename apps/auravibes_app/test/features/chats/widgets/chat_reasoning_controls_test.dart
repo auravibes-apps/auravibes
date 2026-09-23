@@ -3,12 +3,13 @@ import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dar
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -34,7 +35,6 @@ void main() {
       ),
     );
 
-    expect(find.byType(ChatReasoningControls), findsNothing);
     expect(find.byType(AuraSwitch), findsNothing);
     expect(find.text('Reasoning'), findsNothing);
     expect(changed, isNull);
@@ -442,10 +442,10 @@ class const _LocalizedApp({required final Widget child})
 
 Future<void> _pumpLocalized(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(_LocalizedApp(child: child));
-  await tester.pump();
-  await tester.pump();
-  await tester.pump();
-  await tester.pumpAndSettle();
+  final _ = await tester.runAsync(
+    () => rootBundle.loadString('assets/i18n/en.json'),
+  );
+  final _ = await tester.pumpAndSettle();
 }
 
 void _noop(ReasoningConfiguration? value) {

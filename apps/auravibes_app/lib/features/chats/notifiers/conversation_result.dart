@@ -64,10 +64,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       result.conversation.reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    final updated = await _updateConversation(
-      result.conversation,
-      patch,
-    );
+    final updated = await _updateConversation(result.conversation, patch);
     if (!ref.mounted) return;
 
     state = AsyncData(ConversationFound(updated));
@@ -100,16 +97,6 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       result.conversation,
       const ConversationPatch(clearReasoningConfiguration: true),
     );
-  }
-
-  Future<void> _saveReasoningConfiguration(
-    ConversationEntity conversation,
-    ConversationPatch patch,
-  ) async {
-    final updated = await _updateConversation(conversation, patch);
-    if (!ref.mounted) return;
-
-    state = AsyncData(ConversationFound(updated));
   }
 
   Future<void> setAgent(String? agentId) async {
@@ -206,6 +193,16 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     revision: updated.revision,
     updatedAt: updated.updatedAt,
   );
+
+  Future<void> _saveReasoningConfiguration(
+    ConversationEntity conversation,
+    ConversationPatch patch,
+  ) async {
+    final updated = await _updateConversation(conversation, patch);
+    if (!ref.mounted) return;
+
+    state = AsyncData(ConversationFound(updated));
+  }
 }
 
 Future<ReasoningConfiguration?> _validatedReasoningConfiguration(

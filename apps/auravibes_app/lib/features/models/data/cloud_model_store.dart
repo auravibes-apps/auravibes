@@ -381,7 +381,5 @@ ApiModelEntity _modelCapabilities(ApiModelEntity base, ApiModel model) =>
 List<ReasoningOption> _decodeReasoningOptions(
   String? value,
   bool supportsReasoning,
-) => ReasoningOption.decodeJsonList(
-  value,
-  supportsReasoning: supportsReasoning,
-);
+) =>
+    ReasoningOption.decodeJsonList(value, supportsReasoning: supportsReasoning);

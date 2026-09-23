@@ -446,7 +446,11 @@ class const _ReasoningBudgetInput({
     label: const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
     ),
-    hint: _budgetHint(),
+    hint: Text(
+      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
+        namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
+      ),
+    ),
     error: _errorWidget(error),
     keyboardType: .number,
     enabled: enabled,
@@ -455,12 +459,6 @@ class const _ReasoningBudgetInput({
     semanticLabel: LocaleKeys
         .chats_screens_chat_conversation_reasoning_budget_tokens
         .tr(),
-  );
-
-  Widget _budgetHint() => Text(
-    LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
-      namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
-    ),
   );
 
   Widget? _errorWidget(String? value) => value == null ? null : Text(value);

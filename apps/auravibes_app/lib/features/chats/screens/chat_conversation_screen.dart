@@ -1302,9 +1302,8 @@ class const _ChatComposer({
     return ChatReasoningControl(
       options: options,
       value: data.conversation.reasoningConfiguration,
-      onChanged: (value) => unawaited(
-        _updateReasoningConfiguration(ref, value),
-      ),
+      onChanged: (value) =>
+          unawaited(_updateReasoningConfiguration(ref, value)),
     );
   }
 
@@ -1313,10 +1312,7 @@ class const _ChatComposer({
     ReasoningConfiguration? value,
   ) {
     final notifier = ref.read(
-      conversationChatProvider(
-        data.workspaceId,
-        data.conversation.id,
-      ).notifier,
+      conversationChatProvider(data.workspaceId, data.conversation.id).notifier,
     );
     if (value == null) return notifier.resetReasoningConfiguration();
 

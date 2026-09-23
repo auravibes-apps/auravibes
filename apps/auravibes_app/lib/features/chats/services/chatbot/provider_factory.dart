@@ -66,11 +66,12 @@ class const ProviderFactory({
       config,
       reasoningConfiguration,
     );
+
     return switch (runtime.runtime) {
-      ProviderRuntime.openAiReasoning =>
-        _openAIReasoningGenerationConfig<T>(selectedConfiguration),
-      ProviderRuntime.anthropic =>
-        _anthropicGenerationConfig<T>(selectedConfiguration),
+      .openAiReasoning => _openAIReasoningGenerationConfig<T>(
+        selectedConfiguration,
+      ),
+      .anthropic => _anthropicGenerationConfig<T>(selectedConfiguration),
       _ when config.modelsProvider.type == ModelProvidersType.openrouter =>
         _openRouterGenerationConfig<T>(selectedConfiguration),
       _ => null,
@@ -229,16 +230,11 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return _anthropicOptions(configuration) as T;
   }
 
-  AnthropicOptions _anthropicOptions(
-    ReasoningConfiguration configuration,
-  ) =>
+  AnthropicOptions _anthropicOptions(ReasoningConfiguration configuration) =>
       AnthropicOptions(
         thinking: configuration.budgetTokens == null
             ? null
-            : .new(
-                type: 'enabled',
-                budgetTokens: configuration.budgetTokens,
-              ),
+            : .new(type: 'enabled', budgetTokens: configuration.budgetTokens),
         outputConfig: configuration.effort == null
             ? null
             : .new(effort: configuration.effort),
@@ -351,7 +347,7 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   }
 }
 
-ChatCompletionsCodec _openRouterCodec() => ChatCompletionsCodec(
+ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
   errorLabel: 'OpenRouter',
   customize: _customizeOpenRouter,
 );
@@ -368,10 +364,7 @@ ChatCompletionsCodec _openRouterCodec() => ChatCompletionsCodec(
 Map<String, dynamic> _openRouterBody(OpenRouterOptions options) {
   final reasoning = _openRouterReasoningBody(options);
 
-  return {
-    ...options.toSamplingBody(),
-    if (reasoning != null) 'reasoning': reasoning,
-  };
+  return {...options.toSamplingBody(), 'reasoning': ?reasoning};
 }
 
 Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {

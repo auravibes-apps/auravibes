@@ -55,12 +55,17 @@ void main() {
         supportsReasoning: false,
       ).map((option) => option.toJson()),
       [
-        {'type': 'effort', 'values': ['low', 'high']},
+        {
+          'type': 'effort',
+          'values': ['low', 'high'],
+        },
       ],
     );
     expect(
-      ReasoningOption.decodeJsonList('[]', supportsReasoning: true).single
-          .isToggle,
+      ReasoningOption.decodeJsonList(
+        '[]',
+        supportsReasoning: true,
+      ).single.isToggle,
       isTrue,
     );
     expect(
@@ -68,8 +73,10 @@ void main() {
       isEmpty,
     );
     expect(
-      ReasoningOption.decodeJsonList('{}', supportsReasoning: true).single
-          .isToggle,
+      ReasoningOption.decodeJsonList(
+        '{}',
+        supportsReasoning: true,
+      ).single.isToggle,
       isTrue,
     );
   });

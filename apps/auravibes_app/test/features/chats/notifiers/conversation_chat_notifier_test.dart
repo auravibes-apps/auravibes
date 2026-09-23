@@ -330,8 +330,7 @@ void main() {
       final sub = container.listen<AsyncValue<ConversationResult>>(
         conversationChatProvider('ws-1', 'conv-1'),
         (_, next) {
-          if (next is AsyncData<ConversationResult> &&
-              !completer.isCompleted) {
+          if (next is AsyncData<ConversationResult> && !completer.isCompleted) {
             completer.complete(next);
           }
         },
