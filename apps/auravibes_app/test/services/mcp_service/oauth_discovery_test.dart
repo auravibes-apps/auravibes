@@ -788,27 +788,32 @@ void main() {
           return Response('{}', 404);
         });
 
-        await runWithClient(() async {
-          final result = await OAuthDiscoveryService.discoverOAuth(
-            registrer,
-            metadataClient: client,
-            metadataLookup: (_) async => [InternetAddress('8.8.8.8')],
-          );
-          expect(result, isNotNull);
-          expect(result?.resource, 'https://api.githubcopilot.com/mcp/');
-          expect(result?.issuer, 'https://github.com/login/oauth');
-          expect(
-            result?.authorizationUrl,
-            'https://github.com/login/oauth/authorize',
-          );
-          expect(
-            result?.deviceAuthorizationUrl,
-            'https://github.com/login/device/code',
-          );
-          expect(result?.supportsDynamicClientRegistration, isFalse);
-          expect(result?.scope, 'repo read:user');
-          expect(metadataRedirectSettings, everyElement(isFalse));
-        }, () => client);
+        await runWithClient(
+          () async {
+            final result = await OAuthDiscoveryService.discoverOAuth(
+              registrer,
+              metadataClient: client,
+              metadataLookup: (_) async => [InternetAddress('8.8.8.8')],
+            );
+            expect(result, isNotNull);
+            expect(result?.resource, 'https://api.githubcopilot.com/mcp/');
+            expect(result?.issuer, 'https://github.com/login/oauth');
+            expect(
+              result?.authorizationUrl,
+              'https://github.com/login/oauth/authorize',
+            );
+            expect(
+              result?.deviceAuthorizationUrl,
+              'https://github.com/login/device/code',
+            );
+            expect(result?.supportsDynamicClientRegistration, isFalse);
+            expect(result?.scope, 'repo read:user');
+            expect(metadataRedirectSettings, everyElement(isFalse));
+          },
+          () {
+            return client;
+          },
+        );
       },
     );
 
@@ -836,20 +841,25 @@ void main() {
         return Response('{}', 404);
       });
 
-      await runWithClient(() async {
-        final result = await OAuthDiscoveryService.discoverOAuth(
-          registrer,
-          metadataClient: client,
-          metadataLookup: (host) async => [
-            InternetAddress(
-              host == 'internal.example.com' ? '127.0.0.1' : '8.8.8.8',
-            ),
-          ],
-        );
+      await runWithClient(
+        () async {
+          final result = await OAuthDiscoveryService.discoverOAuth(
+            registrer,
+            metadataClient: client,
+            metadataLookup: (host) async => [
+              InternetAddress(
+                host == 'internal.example.com' ? '127.0.0.1' : '8.8.8.8',
+              ),
+            ],
+          );
 
-        expect(result, isNull);
-        expect(privateMetadataRequested, isFalse);
-      }, () => client);
+          expect(result, isNull);
+          expect(privateMetadataRequested, isFalse);
+        },
+        () {
+          return client;
+        },
+      );
     });
   });
 }
