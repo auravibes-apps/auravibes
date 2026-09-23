@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -219,9 +220,17 @@ class _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
   Future<void> dispose() => _subject.close();
 
   @override
-  Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate modelConnection,
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
   ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<ModelConnectionEntity> createModelConnection(
+    ModelConnectionToCreate modelConnection, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 
@@ -247,8 +256,9 @@ class _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
-    ModelConnectionToUpdate modelConnection,
-  ) {
+    ModelConnectionToUpdate modelConnection, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 

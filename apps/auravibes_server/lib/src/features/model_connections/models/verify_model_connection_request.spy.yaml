@@ -1,10 +1,7 @@
-class: UpdateModelConnectionRequest
+class: VerifyModelConnectionRequest
 fields:
   workspaceId: int
   requestId: String
   connectionId: String
   expectedRevision: int
-  name: String
   url: String?
-  verificationReceipt: String?
-  hasSecretOverride: bool?

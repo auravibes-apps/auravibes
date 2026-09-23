@@ -10,48 +10,35 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:serverpod_client/serverpod_client.dart' as _isc;
+import 'package:serverpod/serverpod.dart' as _is;
 
-abstract class UpdateModelConnectionRequest
-    implements _isc.SerializableModel, _isc.ProtocolSerialization {
-  UpdateModelConnectionRequest._({
+abstract class VerifyModelConnectionRequest
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  VerifyModelConnectionRequest._({
     required this.workspaceId,
     required this.requestId,
     required this.connectionId,
     required this.expectedRevision,
-    required this.name,
     this.url,
-    this.verificationReceipt,
-    this.hasSecretOverride,
   });
 
-  factory UpdateModelConnectionRequest({
+  factory VerifyModelConnectionRequest({
     required int workspaceId,
     required String requestId,
     required String connectionId,
     required int expectedRevision,
-    required String name,
     String? url,
-    String? verificationReceipt,
-    bool? hasSecretOverride,
-  }) = _UpdateModelConnectionRequestImpl;
+  }) = _VerifyModelConnectionRequestImpl;
 
-  factory UpdateModelConnectionRequest.fromJson(
+  factory VerifyModelConnectionRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
-    return UpdateModelConnectionRequest(
+    return VerifyModelConnectionRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
       connectionId: jsonSerialization['connectionId'] as String,
       expectedRevision: jsonSerialization['expectedRevision'] as int,
-      name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String?,
-      verificationReceipt: jsonSerialization['verificationReceipt'] as String?,
-      hasSecretOverride: jsonSerialization['hasSecretOverride'] == null
-          ? null
-          : _isc.BoolJsonExtension.fromJson(
-              jsonSerialization['hasSecretOverride'],
-            ),
     );
   }
 
@@ -63,115 +50,82 @@ abstract class UpdateModelConnectionRequest
 
   int expectedRevision;
 
-  String name;
-
   String? url;
 
-  String? verificationReceipt;
-
-  bool? hasSecretOverride;
-
-  /// Returns a shallow copy of this [UpdateModelConnectionRequest]
+  /// Returns a shallow copy of this [VerifyModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_isc.useResult
-  UpdateModelConnectionRequest copyWith({
+  @_is.useResult
+  VerifyModelConnectionRequest copyWith({
     int? workspaceId,
     String? requestId,
     String? connectionId,
     int? expectedRevision,
-    String? name,
     String? url,
-    String? verificationReceipt,
-    bool? hasSecretOverride,
   });
   @override
   Map<String, dynamic> toJson() {
     return {
-      '__className__': 'UpdateModelConnectionRequest',
+      '__className__': 'VerifyModelConnectionRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
       'connectionId': connectionId,
       'expectedRevision': expectedRevision,
-      'name': name,
       if (url != null) 'url': url,
-      if (verificationReceipt != null)
-        'verificationReceipt': verificationReceipt,
-      if (hasSecretOverride != null) 'hasSecretOverride': hasSecretOverride,
     };
   }
 
   @override
   Map<String, dynamic> toJsonForProtocol() {
     return {
-      '__className__': 'UpdateModelConnectionRequest',
+      '__className__': 'VerifyModelConnectionRequest',
       'workspaceId': workspaceId,
       'requestId': requestId,
       'connectionId': connectionId,
       'expectedRevision': expectedRevision,
-      'name': name,
       if (url != null) 'url': url,
-      if (verificationReceipt != null)
-        'verificationReceipt': verificationReceipt,
-      if (hasSecretOverride != null) 'hasSecretOverride': hasSecretOverride,
     };
   }
 
   @override
   String toString() {
-    return _isc.SerializationManager.encode(this);
+    return _is.SerializationManager.encode(this);
   }
 }
 
 class _Undefined {}
 
-class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
-  _UpdateModelConnectionRequestImpl({
+class _VerifyModelConnectionRequestImpl extends VerifyModelConnectionRequest {
+  _VerifyModelConnectionRequestImpl({
     required int workspaceId,
     required String requestId,
     required String connectionId,
     required int expectedRevision,
-    required String name,
     String? url,
-    String? verificationReceipt,
-    bool? hasSecretOverride,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
          connectionId: connectionId,
          expectedRevision: expectedRevision,
-         name: name,
          url: url,
-         verificationReceipt: verificationReceipt,
-         hasSecretOverride: hasSecretOverride,
        );
 
-  /// Returns a shallow copy of this [UpdateModelConnectionRequest]
+  /// Returns a shallow copy of this [VerifyModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
-  @_isc.useResult
+  @_is.useResult
   @override
-  UpdateModelConnectionRequest copyWith({
+  VerifyModelConnectionRequest copyWith({
     int? workspaceId,
     String? requestId,
     String? connectionId,
     int? expectedRevision,
-    String? name,
     Object? url = _Undefined,
-    Object? verificationReceipt = _Undefined,
-    Object? hasSecretOverride = _Undefined,
   }) {
-    return UpdateModelConnectionRequest(
+    return VerifyModelConnectionRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       requestId: requestId ?? this.requestId,
       connectionId: connectionId ?? this.connectionId,
       expectedRevision: expectedRevision ?? this.expectedRevision,
-      name: name ?? this.name,
       url: url is String? ? url : this.url,
-      verificationReceipt: verificationReceipt is String?
-          ? verificationReceipt
-          : this.verificationReceipt,
-      hasSecretOverride: hasSecretOverride is bool?
-          ? hasSecretOverride
-          : this.hasSecretOverride,
     );
   }
 }

@@ -131,6 +131,10 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
+    as _ij84b3fp;
+import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_result.dart'
+    as _i8327bru;
 import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
     as _ipmnqqs6;
 import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
@@ -2061,6 +2065,35 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_is6egp24.ModelSyncResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i8327bru.VerifyModelConnectionResult> verifyDraft(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ij84b3fp.VerifyModelConnectionRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'verifyDraft',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'verifyDraft',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i8327bru.VerifyModelConnectionResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
