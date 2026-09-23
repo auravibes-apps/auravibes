@@ -6,6 +6,7 @@ import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 
 const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
 const defaultAgentRateLimitRetryCount = 1;
+const defaultAgentIterationLimit = 16;
 
 abstract interface class AgentLoopToolProvider {
   Future<AgentIterationDecision> runAllowedTools({
@@ -27,6 +28,7 @@ class const AgentService({
   required final AgentRateLimitRetryRuntime rateLimitRetryRuntime,
   final Duration rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
   final int rateLimitRetryCount = defaultAgentRateLimitRetryCount,
+  final int iterationLimit = defaultAgentIterationLimit,
   final DateTime Function() now = DateTime.now,
   final Future<void> Function(Duration duration) sleep = _defaultAgentSleep,
 }) {
@@ -61,6 +63,7 @@ class const AgentService({
   }) async {
     AgentIterationContext? currentContext = context;
     var rateLimitRetries = 0;
+    var iterations = 0;
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(
@@ -69,6 +72,10 @@ class const AgentService({
         currentContext,
       );
       if (cancelDecision != null) return cancelDecision;
+      if (iterations >= iterationLimit) {
+        return AgentIterationDecision.iterationLimitReached;
+      }
+      iterations++;
 
       final _AgentIterationStep result;
       try {
