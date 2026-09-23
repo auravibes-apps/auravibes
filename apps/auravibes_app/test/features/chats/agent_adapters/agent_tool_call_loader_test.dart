@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -73,7 +72,22 @@ void main() {
       messageRepository = MockMessageRepository();
       conversationRepository = MockConversationRepository();
       loadToolSpecs = MockLoadConversationToolSpecsUsecase();
-      catalog = agent.buildToolCatalog<ResolvedTool>([]);
+      catalog = agent.buildToolCatalog<ResolvedTool>([
+        _candidate(
+          'calculator',
+          'calculator',
+          ResolvedTool.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+            tooltype: .calculator,
+          ),
+        ),
+        _candidate(
+          'url',
+          'url',
+          ResolvedTool.native(tableId: 'ws-tool-123', nativeToolType: .url),
+        ),
+      ]);
       when(() => conversationRepository.getConversationById(any()))
           .thenAnswer((_) async => _conversation);
       when(
@@ -90,15 +104,13 @@ void main() {
       );
     });
 
-    test('resolves bare agent tool names to app skill tools', () {
+    test('rejects unadvertised legacy agent tool names', () {
       final tool = const ToolResolverService().resolveTool(
         agent.listAgentsToolName,
         agent.buildToolCatalog<ResolvedTool>([]),
       );
 
-      expect(tool?.type, ResolvedToolType.skillNative);
-      expect(tool?.skillSlug, agent.agentsSkillSlug);
-      expect(tool?.fullName, 'skill__app_native__agents__list_agents');
+      expect(tool, isNull);
     });
 
     test('uses an empty catalog when conversation is missing', () async {
@@ -221,9 +233,10 @@ void main() {
         'linear-server',
       );
       expect(
-        resolver.resolveTool('built_in_legacy_calculator', catalog)?.tableId,
-        'legacy',
+        resolver.resolveTool('built_in_legacy_calculator', catalog),
+        isNull,
       );
+      expect(resolver.resolveTool('native_calculator_url', catalog), isNull);
     });
 
     Future<void> returnsPendingResolvedTools() async {
