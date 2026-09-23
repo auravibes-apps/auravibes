@@ -34,6 +34,37 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
+  test('non-Dart runtime input returns full', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          'apps/server/migrations/20260713134310558-final/migration.sql',
+        ),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {'server': 'apps/server'},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('non-Dart runtime input returns full beside package Dart', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          'apps/server/migrations/20260713134310558-final/migration.sql',
+        ),
+        const ChangedFile.modified('packages/core/lib/leaf.dart'),
+      ],
+      headSources: _sources,
+      baseSources: _sources,
+      packageRoots: {..._roots, 'server': 'apps/server'},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
   test('non-scoped changes do not force full beside package Dart', () {
     final result = selectChangedTests(
       changes: [
