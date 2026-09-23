@@ -66,10 +66,13 @@ class McpServerProbe {
         const <String, Object?>{},
         sessionId: initialized.sessionId,
       );
-      final discovered = parseMcpToolsList(toolsResult.result);
-      if (discovered.length > McpServerPolicy.maxTools) {
-        throw const FormatException('Invalid MCP tools response.');
-      }
+      final discovered = parseMcpToolsList(
+        toolsResult.result,
+        maxTools: McpServerPolicy.maxTools,
+        validateInputSchema: (schema) {
+          McpServerPolicy.boundedSchema(schema);
+        },
+      );
       final tools = discovered
           .map((tool) {
             if (tool.name.length > 200 ||
