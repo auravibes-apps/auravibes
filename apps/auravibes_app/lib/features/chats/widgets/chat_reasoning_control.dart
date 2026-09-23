@@ -127,7 +127,9 @@ class const _ReasoningTrigger({
     };
     final status =
         label ??
-        LocaleKeys.chats_screens_chat_conversation_reasoning_status_default.tr();
+        LocaleKeys
+            .chats_screens_chat_conversation_reasoning_status_default
+            .tr();
 
     return (
       label: label,

@@ -26,7 +26,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(ChatReasoningControls), findsOneWidget);
+    expect(find.byType(ChatReasoningControls), findsNothing);
     expect(find.byType(AuraSwitch), findsNothing);
     expect(find.text('Reasoning'), findsNothing);
     expect(changed, isNull);

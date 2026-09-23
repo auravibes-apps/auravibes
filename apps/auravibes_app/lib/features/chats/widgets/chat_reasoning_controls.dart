@@ -278,20 +278,45 @@ class const _ReasoningEffortSelector({
   required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [_buildDisclosure(), if (expanded) _buildChoices()],
-    spacing: .xs,
-    crossAxisAlignment: .stretch,
-  );
-
-  Widget _buildDisclosure() {
-    final effortLabel = LocaleKeys
-        .chats_screens_chat_conversation_reasoning_effort
-        .tr();
+  Widget build(BuildContext context) {
     final selectedLabel =
         value ??
         LocaleKeys.chats_screens_chat_conversation_reasoning_effort_default
             .tr();
+
+    return AuraColumn(
+      children: [
+        _ReasoningEffortDisclosure(
+          enabled: enabled,
+          expanded: expanded,
+          selectedLabel: selectedLabel,
+          onToggle: onToggle,
+        ),
+        if (expanded)
+          _ReasoningEffortChoices(
+            values: option.values,
+            value: value,
+            enabled: enabled,
+            onChanged: onChanged,
+          ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .stretch,
+    );
+  }
+}
+
+class const _ReasoningEffortDisclosure({
+  required final bool enabled,
+  required final bool expanded,
+  required final String selectedLabel,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final effortLabel = LocaleKeys
+        .chats_screens_chat_conversation_reasoning_effort
+        .tr();
 
     return Semantics(
       key: const ValueKey<String>('chat_reasoning_effort_disclosure'),
@@ -324,8 +349,16 @@ class const _ReasoningEffortSelector({
       value: selectedLabel,
     );
   }
+}
 
-  Widget _buildChoices() => Semantics(
+class const _ReasoningEffortChoices({
+  required final List<String> values,
+  required final String? value,
+  required final bool enabled,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('chat_reasoning_effort_choices'),
     child: AuraRadioGroup<String>(
       value: value,
@@ -335,7 +368,7 @@ class const _ReasoningEffortSelector({
             }
           : null,
       options: [
-        for (final effort in option.values)
+        for (final effort in values)
           AuraRadioOption(
             value: effort,
             label: Text(

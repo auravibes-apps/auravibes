@@ -164,9 +164,3 @@ class const ReasoningConfiguration({
     return true;
   }
 }
-
-ReasoningConfiguration? decodeReasoningConfiguration(String? value) =>
-    ReasoningConfiguration.decode(value);
-
-String? encodeReasoningConfiguration(ReasoningConfiguration? value) =>
-    value?.encode();

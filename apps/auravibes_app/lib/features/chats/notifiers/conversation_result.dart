@@ -217,11 +217,11 @@ Future<ReasoningConfiguration?> _validatedReasoningConfiguration({
   );
   if (selectedModel == null) return null;
 
-  return configuration.isValidFor(
-    selectedModel.workspaceModelSelection.reasoningOptions,
-  )
-      ? configuration
-      : null;
+  final reasoningOptions =
+      selectedModel.workspaceModelSelection.reasoningOptions;
+  if (!configuration.isValidFor(reasoningOptions)) return null;
+
+  return configuration;
 }
 
 ConversationPatch _reasoningConfigurationPatch(
