@@ -792,8 +792,10 @@ void main() {
           () async {
             final result = await OAuthDiscoveryService.discoverOAuth(
               registrer,
-              metadataClient: client,
-              metadataLookup: (_) async => [InternetAddress('8.8.8.8')],
+              metadataOptions: (
+                client: client,
+                lookup: (_) async => [InternetAddress('8.8.8.8')],
+              ),
             );
             expect(result, isNotNull);
             expect(result?.resource, 'https://api.githubcopilot.com/mcp/');
@@ -845,12 +847,14 @@ void main() {
         () async {
           final result = await OAuthDiscoveryService.discoverOAuth(
             registrer,
-            metadataClient: client,
-            metadataLookup: (host) async => [
-              InternetAddress(
-                host == 'internal.example.com' ? '127.0.0.1' : '8.8.8.8',
-              ),
-            ],
+            metadataOptions: (
+              client: client,
+              lookup: (host) async => [
+                InternetAddress(
+                  host == 'internal.example.com' ? '127.0.0.1' : '8.8.8.8',
+                ),
+              ],
+            ),
           );
 
           expect(result, isNull);

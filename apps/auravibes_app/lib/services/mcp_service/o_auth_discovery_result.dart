@@ -162,8 +162,7 @@ class OAuthDiscoveryService {
     OAuthConnector registrer, {
     http.Client? registrationClient,
     PublicUrlLookup? registrationLookup,
-    http.Client? metadataClient,
-    PublicUrlLookup? metadataLookup,
+    ({http.Client? client, PublicUrlLookup? lookup})? metadataOptions,
   }) async {
     try {
       _oauthDiscoveryLogger.info(
@@ -175,8 +174,8 @@ class OAuthDiscoveryService {
         registrationOptions: (
           client: registrationClient,
           lookup: registrationLookup,
-          metadataClient: metadataClient,
-          metadataLookup: metadataLookup,
+          metadataClient: metadataOptions?.client,
+          metadataLookup: metadataOptions?.lookup,
         ),
       );
     } on Exception catch (error, stackTrace) {
@@ -830,31 +829,46 @@ Future<Map<String, dynamic>?> _requestJsonObject(
   _RegistrationOptions options,
 ) async {
   try {
-    final resolved = await PublicUrlGuard.resolveHttpsUri(
-      uri.toString(),
-      lookup: options.metadataLookup ?? InternetAddress.lookup,
-    );
-    final client =
-        options.metadataClient ??
-        _pinnedHttpClient(resolved.addresses ?? [resolved.uri.host]);
-    final request = http.Request('GET', resolved.uri)
-      ..followRedirects = false
-      ..headers.addAll(_jsonAcceptHeader);
-    final response = await _sendMetadataRequest(
-      client,
-      request,
-      close: options.metadataClient == null,
-    );
-    if (response.statusCode != HttpStatus.ok ||
-        !_hasJsonContentType(response)) {
-      return null;
-    }
+    final response = await _requestMetadataJson(uri, options);
+    if (response.statusCode != HttpStatus.ok) return null;
 
-    return _decodeJsonObjectBody(response.body);
+    return _decodeJsonObject(response);
   } on Exception {
     return null;
   }
 }
+
+Future<http.Response> _requestMetadataJson(
+  Uri uri,
+  _RegistrationOptions options,
+) async {
+  final resolved = await _resolveMetadataUrl(uri, options.metadataLookup);
+
+  return await _sendMetadataRequest(
+    _metadataClientFor(options, resolved),
+    _metadataRequest(resolved.uri),
+    close: options.metadataClient == null,
+  );
+}
+
+Future<PublicUrlResolution> _resolveMetadataUrl(
+  Uri uri,
+  PublicUrlLookup? lookup,
+) => PublicUrlGuard.resolveHttpsUri(
+  uri.toString(),
+  lookup: lookup ?? InternetAddress.lookup,
+);
+
+http.Client _metadataClientFor(
+  _RegistrationOptions options,
+  PublicUrlResolution resolved,
+) =>
+    options.metadataClient ??
+    _pinnedHttpClient(resolved.addresses ?? [resolved.uri.host]);
+
+http.Request _metadataRequest(Uri uri) => http.Request('GET', uri)
+  ..followRedirects = false
+  ..headers.addAll(_jsonAcceptHeader);
 
 Future<http.Response> _sendMetadataRequest(
   http.Client client,
