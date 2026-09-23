@@ -15,6 +15,7 @@ void main() {
     List<Map<String, Object?>> components, {
     Map<String, Object?> data = const {},
     bool form = false,
+    bool expectReadySurface = true,
   }) {
     final runtime = ChatA2uiRuntime(
       conversationId: 'conversation-1',
@@ -44,13 +45,16 @@ void main() {
       );
     }
     runtime.commitCurrentMessage();
-    expect(runtime.isReadySurface('assistant-1', 'assistant-1:main'), isTrue);
-    expect(runtime.hasSurfaceIssue('assistant-1'), isFalse);
+    expect(
+      runtime.isReadySurface('assistant-1', 'assistant-1:main'),
+      expectReadySurface,
+    );
+    expect(runtime.hasSurfaceIssue('assistant-1'), !expectReadySurface);
     return runtime;
   }
 
   for (final form in [false, true]) {
-    test('excludes ${form ? 'bound' : 'literal'} password values', () {
+    test('rejects ${form ? 'bound' : 'literal'} password fields', () {
       final runtime = copyRuntime(
         [
           {
@@ -64,14 +68,10 @@ void main() {
         ],
         data: {'password': 'test-secret'},
         form: form,
+        expectReadySurface: false,
       );
 
-      expect(runtime.copyableTextFor('assistant-1'), 'Password\nKeep private');
-      runtime.controller
-          .contextFor('assistant-1:main')
-          .dataModel
-          .update(DataPath('/password'), 'changed-test-secret');
-      expect(runtime.copyableTextFor('assistant-1'), 'Password\nKeep private');
+      expect(runtime.copyableTextFor('assistant-1'), isNull);
     });
   }
 

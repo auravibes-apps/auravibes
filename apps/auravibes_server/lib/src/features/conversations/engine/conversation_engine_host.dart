@@ -1333,6 +1333,13 @@ final class const ServerConversationEngineHost({
     if (actorUserId is! String) {
       throw const ConversationEngineConfigurationException('initiator');
     }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
+    )) {
+      throw const ConversationCancelledException();
+    }
     final metadata = messages.reversed
         .where((message) => message.role == 'user')
         .map((message) => message.metadataJson)
@@ -1367,6 +1374,13 @@ final class const ServerConversationEngineHost({
     );
     if (secret == null) {
       throw const ConversationEngineConfigurationException('provider_secret');
+    }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
+    )) {
+      throw const ConversationCancelledException();
     }
     final uri = providerRequestUri(connection.providerId, validated.uri);
     session.log(

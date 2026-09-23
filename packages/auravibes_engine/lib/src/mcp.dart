@@ -13,9 +13,13 @@ final class McpDiscoveredTool {
   final Map<String, Object?> inputSchema;
 }
 
-List<McpDiscoveredTool> parseMcpToolsList(Map<String, Object?> result) {
+List<McpDiscoveredTool> parseMcpToolsList(
+  Map<String, Object?> result, {
+  required int maxTools,
+  required void Function(Object? schema) validateInputSchema,
+}) {
   final rawTools = result['tools'];
-  if (rawTools is! List) {
+  if (rawTools is! List || rawTools.length > maxTools) {
     throw const FormatException('Invalid MCP tools response.');
   }
   return rawTools
@@ -31,6 +35,7 @@ List<McpDiscoveredTool> parseMcpToolsList(Map<String, Object?> result) {
             !schema.keys.every((key) => key is String)) {
           throw const FormatException('Invalid MCP tool.');
         }
+        validateInputSchema(schema);
         return McpDiscoveredTool(
           name: name,
           description: description as String?,
