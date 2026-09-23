@@ -304,6 +304,49 @@ void main() {
       sub.close();
     });
 
+    test('resetReasoningConfiguration persists a clear patch', () async {
+      final patches = <ConversationPatch>[];
+      final container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
+          conversationByIdStreamProvider.overrideWith(
+            (ref, conversationId) => Stream.value(conversation),
+          ),
+          conversationRepositoryProvider.overrideWithValue(
+            _FakeConversationRepository(
+              onPatch: (id, patch) {
+                patches.add(patch);
+
+                return conversation;
+              },
+            ),
+          ),
+          cloudConversationUsecaseProvider.overrideWithValue(null),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final completer = Completer<AsyncValue<ConversationResult>>();
+      final sub = container.listen<AsyncValue<ConversationResult>>(
+        conversationChatProvider('ws-1', 'conv-1'),
+        (_, next) {
+          if (next is AsyncData<ConversationResult> &&
+              !completer.isCompleted) {
+            completer.complete(next);
+          }
+        },
+        fireImmediately: true,
+      );
+      final _ = await completer.future;
+
+      await container
+          .read(conversationChatProvider('ws-1', 'conv-1').notifier)
+          .resetReasoningConfiguration();
+
+      expect(patches.single.clearReasoningConfiguration, isTrue);
+      sub.close();
+    });
+
     test(
       'setAgent explicitly overrides and persists the chat default',
       () async {

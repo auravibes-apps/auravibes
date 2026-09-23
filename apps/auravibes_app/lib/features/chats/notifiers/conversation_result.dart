@@ -74,7 +74,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   }
 
   Future<void> setReasoningConfiguration(
-    ReasoningConfiguration? reasoningConfiguration,
+    ReasoningConfiguration reasoningConfiguration,
   ) async {
     final result = state.value;
     if (result is! ConversationFound) return;
@@ -86,10 +86,27 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    final updated = await _updateConversation(
+    await _saveReasoningConfiguration(
       result.conversation,
       _reasoningConfigurationPatch(validatedConfiguration),
     );
+  }
+
+  Future<void> resetReasoningConfiguration() async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    await _saveReasoningConfiguration(
+      result.conversation,
+      const ConversationPatch(clearReasoningConfiguration: true),
+    );
+  }
+
+  Future<void> _saveReasoningConfiguration(
+    ConversationEntity conversation,
+    ConversationPatch patch,
+  ) async {
+    final updated = await _updateConversation(conversation, patch);
     if (!ref.mounted) return;
 
     state = AsyncData(ConversationFound(updated));
@@ -196,7 +213,7 @@ Future<ReasoningConfiguration?> _validatedReasoningConfiguration(
   String workspaceId,
   String? modelId,
   ReasoningConfiguration? configuration,
-}) async {
+) async {
   if (configuration == null || modelId == null) return null;
 
   final selectedModel = await ref.read(

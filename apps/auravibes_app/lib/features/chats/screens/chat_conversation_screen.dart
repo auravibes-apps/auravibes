@@ -32,6 +32,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -44,7 +45,11 @@ import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, ReasoningOption, SelectedModelNotFoundException;
+    show
+        AgentIterationContext,
+        ReasoningConfiguration,
+        ReasoningOption,
+        SelectedModelNotFoundException;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -1306,14 +1311,17 @@ class const _ChatComposer({
   Future<void> _updateReasoningConfiguration(
     WidgetRef ref,
     ReasoningConfiguration? value,
-  ) => ref
-      .read(
-        conversationChatProvider(
-          data.workspaceId,
-          data.conversation.id,
-        ).notifier,
-      )
-      .setReasoningConfiguration(value);
+  ) {
+    final notifier = ref.read(
+      conversationChatProvider(
+        data.workspaceId,
+        data.conversation.id,
+      ).notifier,
+    );
+    if (value == null) return notifier.resetReasoningConfiguration();
+
+    return notifier.setReasoningConfiguration(value);
+  }
 
   _ChatComposerModelStatus _modelStatus(WidgetRef ref) {
     final modelId = data.conversation.modelId;
