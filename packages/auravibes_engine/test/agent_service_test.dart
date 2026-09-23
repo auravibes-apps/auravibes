@@ -12,6 +12,7 @@ AgentService _buildAgentService(
   AgentCancellationEffects? cancellationEffects,
   AgentRateLimitRetryRuntime? rateLimitRetryRuntime,
   Duration? rateLimitRetryDelay,
+  int? iterationLimit,
   DateTime Function()? now,
   Future<void> Function(Duration)? sleep,
 }) {
@@ -25,6 +26,7 @@ AgentService _buildAgentService(
         rateLimitRetryRuntime ??
         AgentRateLimitRetryRuntime(start: (_, _) {}, clear: (_) {}),
     rateLimitRetryDelay: rateLimitRetryDelay ?? defaultAgentRateLimitRetryDelay,
+    iterationLimit: iterationLimit ?? defaultAgentIterationLimit,
     now: now ?? DateTime.now,
     sleep: sleep ?? Future<void>.delayed,
   );
@@ -127,6 +129,32 @@ void main() {
 
     expect(await result, AgentIterationDecision.done);
     expect(dataProvider.continuationContexts, hasLength(2));
+  });
+
+  test('stops a continuing tool loop at the iteration limit', () async {
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueResults: List.filled(
+        4,
+        const ContinueAgentResult(
+          messageId: 'assistant-1',
+          hasToolCalls: true,
+        ),
+      ),
+      toolDecisions: List.filled(
+        4,
+        AgentIterationDecision.continueIteration,
+      ),
+    );
+    final usecase = _buildAgentService(dataProvider, iterationLimit: 3);
+
+    final result = await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(result, AgentIterationDecision.iterationLimitReached);
+    expect(dataProvider.continuationContexts, hasLength(3));
+    expect(dataProvider.allowedToolRuns, hasLength(3));
   });
 
   test('retries rate limits using known delay', () async {
