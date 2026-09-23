@@ -9,7 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show ToolSpec, activateSkillToolName, listSkillCredentialsToolName;
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -296,6 +296,38 @@ void main() {
       );
 
       expect(permissionId, isNull);
+    });
+
+    test('permissionTableIdFor returns null for an unloaded tool', () async {
+      final staleSpec = ToolSpec(
+        name: 'skill__user__example__search',
+        description: 'Search records',
+        inputJsonSchema: {'type': 'object'},
+      );
+      stubSpecs(template: [staleSpec]);
+      final loadedPermissionId = await fixture.usecase.permissionTableIdFor(
+        conversationId: 'conversation-id',
+        workspaceId: fixture.workspaceId,
+        toolName: staleSpec.name,
+      );
+      stubSpecs();
+
+      final unloadedPermissionId = await fixture.usecase.permissionTableIdFor(
+        conversationId: 'conversation-id',
+        workspaceId: fixture.workspaceId,
+        toolName: staleSpec.name,
+      );
+
+      final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
+        workspaceId: fixture.workspaceId,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
+      );
+      final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
+        group?.id ?? fail('Expected skills group'),
+      );
+      expect(loadedPermissionId, isNotNull);
+      expect(unloadedPermissionId, isNull);
+      expect(tools.any((tool) => tool.toolId == staleSpec.name), isTrue);
     });
 
     test('isSkillPermissionToolName identifies skill permission subjects', () {
