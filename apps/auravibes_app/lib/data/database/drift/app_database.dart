@@ -139,7 +139,9 @@ class AppDatabase extends _$AppDatabase {
       _forkSchemaVersion + 1;
   static const int _skillResourceSchemaVersion =
       _skillTemplateDefinitionSchemaVersion + 1;
-  static const int _currentSchemaVersion = _skillResourceSchemaVersion;
+  static const int _legacyStreamingStatusSchemaVersion =
+      _skillResourceSchemaVersion + 1;
+  static const int _currentSchemaVersion = _legacyStreamingStatusSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -190,6 +192,7 @@ extension on AppDatabase {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
+    await _upgradeLegacyStreamingStatuses(from);
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
@@ -300,6 +303,16 @@ extension on AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
+    );
+  }
+
+  Future<void> _upgradeLegacyStreamingStatuses(int from) async {
+    if (from >= AppDatabase._legacyStreamingStatusSchemaVersion ||
+        !await _tableExists('messages')) {
+      return;
+    }
+    await customStatement(
+      "UPDATE messages SET status = 'unfinished' WHERE status = 'streaming'",
     );
   }
 
