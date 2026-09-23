@@ -2,7 +2,10 @@ import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 import 'package:test/test.dart';
 
 void main() {
-  Future<AgentToolExecutionResult> run(Object result) {
+  Future<AgentToolExecutionResult> run(
+    Object result, {
+    String argumentsRaw = '{}',
+  }) {
     return AgentToolExecutionDispatcher<String>(
       runResolvedTool: ({
         required conversationId,
@@ -15,7 +18,7 @@ void main() {
       conversationId: 'conversation-1',
       toolCallId: 'call-1',
       tool: 'tool',
-      argumentsRaw: '{}',
+      argumentsRaw: argumentsRaw,
     );
   }
 
@@ -27,6 +30,37 @@ void main() {
   test('preserves string results', () async {
     expect((await run('plain')).responseRaw, 'plain');
   });
+
+  for (final argumentsRaw in ['[]', 'null', '"harmless operation"', '{']) {
+    test('rejects non-object tool arguments: $argumentsRaw', () async {
+      var executed = false;
+      Object? loggedError;
+      final result =
+          await AgentToolExecutionDispatcher<String>(
+            runResolvedTool:
+                ({
+                  required conversationId,
+                  required tool,
+                  required arguments,
+                }) async {
+                  executed = true;
+                  return 'unexpected';
+                },
+            isCancellationRequested: (_) => false,
+            logToolExecutionError: (request) => loggedError = request.error,
+          ).call(
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: 'tool',
+            argumentsRaw: argumentsRaw,
+          );
+
+      expect(executed, isFalse);
+      expect(loggedError, isA<FormatException>());
+      expect(result.resultStatus, AgentToolResultStatus.executionError);
+      expect(result.responseRaw, 'Tool execution failed.');
+    });
+  }
 
   test('preserves results when cancellation arrives after execution', () async {
     var cancellationChecks = 0;
