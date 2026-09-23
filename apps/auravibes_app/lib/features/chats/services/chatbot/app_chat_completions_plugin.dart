@@ -111,59 +111,92 @@ extension on AppChatCompletionsPlugin {
     http.Client client,
     http.Request request,
   ) async {
-    final deadline = DateTime.now().add(requestTimeout);
-    try {
-      final response = await client.send(request).timeout(requestTimeout);
-      final responseBody = response.stream.timeout(requestTimeout);
+    final stopwatch = Stopwatch()..start();
+    final response = await _sendWithTimeout(client, request);
+    return _transportResponse(response, client, stopwatch);
+  }
 
-      return ProviderTransportResponse(
-        statusCode: response.statusCode,
-        body: httpClient == null
-            ? _closeAfter(_untilDeadline(responseBody, deadline), client)
-            : _untilDeadline(responseBody, deadline),
-        contentLength: response.contentLength,
-      );
+  Future<http.StreamedResponse> _sendWithTimeout(
+    http.Client client,
+    http.Request request,
+  ) async {
+    try {
+      return await client.send(request).timeout(requestTimeout);
     } on Object {
-      if (httpClient == null) client.close();
+      _closeOwnedClient(client);
       rethrow;
     }
   }
-}
 
-Stream<List<int>> _untilDeadline(Stream<List<int>> source, DateTime deadline) {
-  StreamSubscription<List<int>>? subscription;
-  Timer? timer;
-  final controller = StreamController<List<int>>(sync: true);
-  controller.onListen = () {
-    final remaining = deadline.difference(.now());
-    if (remaining <= .zero) {
-      controller.addError(TimeoutException('Provider request timed out.'));
-      unawaited(controller.close());
+  void _closeOwnedClient(http.Client client) {
+    if (httpClient == null) client.close();
+  }
 
-      return;
-    }
-    timer = Timer(remaining, () {
-      unawaited(subscription?.cancel());
-      controller.addError(TimeoutException('Provider request timed out.'));
-      unawaited(controller.close());
-    });
-    subscription = source.listen(
-      controller.add,
-      onError: controller.addError,
-      onDone: () {
-        timer?.cancel();
-        unawaited(controller.close());
-      },
+  ProviderTransportResponse _transportResponse(
+    http.StreamedResponse response,
+    http.Client client,
+    Stopwatch stopwatch,
+  ) => ProviderTransportResponse(
+    statusCode: response.statusCode,
+    body: _responseBody(response.stream, client, stopwatch),
+    contentLength: response.contentLength,
+  );
+
+  Stream<List<int>> _responseBody(
+    Stream<List<int>> source,
+    http.Client client,
+    Stopwatch stopwatch,
+  ) {
+    final body = _untilDeadline(
+      source.timeout(requestTimeout),
+      stopwatch,
+      requestTimeout,
     );
-  };
-  controller.onCancel = () {
-    timer?.cancel();
-
-    return subscription?.cancel();
-  };
-
-  return controller.stream;
+    return httpClient == null ? _closeAfter(body, client) : body;
+  }
 }
+
+Stream<List<int>> _untilDeadline(
+  Stream<List<int>> source,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) async* {
+  if (stopwatch.elapsed >= requestTimeout) _throwProviderRequestTimeout();
+
+  final iterator = StreamIterator<List<int>>(source);
+  try {
+    yield* _readUntilDeadline(iterator, stopwatch, requestTimeout);
+  } finally {
+    await iterator.cancel();
+  }
+}
+
+Stream<List<int>> _readUntilDeadline(
+  StreamIterator<List<int>> iterator,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) async* {
+  while (await _moveNextBeforeDeadline(iterator, stopwatch, requestTimeout)) {
+    yield iterator.current;
+  }
+}
+
+Future<bool> _moveNextBeforeDeadline(
+  StreamIterator<List<int>> iterator,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) {
+  final remaining = requestTimeout - stopwatch.elapsed;
+  if (remaining <= Duration.zero) _throwProviderRequestTimeout();
+
+  return iterator.moveNext().timeout(
+    remaining,
+    onTimeout: _throwProviderRequestTimeout,
+  );
+}
+
+Never _throwProviderRequestTimeout() =>
+    throw TimeoutException('Provider request timed out.');
 
 Stream<List<int>> _closeAfter(
   Stream<List<int>> stream,
