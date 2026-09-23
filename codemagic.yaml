@@ -3,6 +3,16 @@ reusables:
     instance_type: mac_mini_m2
     max_build_duration: 60
 scripts:
+  - &script_verify_release_commit
+    name: Verify Release Commit
+    script: |
+      echo "Verifying that the release commit belongs to main..."
+      git fetch --no-tags origin main
+      if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+        echo "Refusing to release a commit that is not in main history."
+        exit 1
+      fi
+
   - &script_setup_environment
     name: Setup Environment
     script: |
@@ -91,6 +101,7 @@ workflows:
         - ~/.pub-cache/hosted
 
     scripts:
+      - *script_verify_release_commit
       - *script_setup_environment
       - *script_install_melos
       - *script_melos_bootstrap
@@ -161,6 +172,7 @@ workflows:
         - $FLUTTER_ROOT/.pub-cache
         - ~/.gradle/cache
     scripts:
+      - *script_verify_release_commit
       - *script_setup_environment
       - *script_install_melos
       - *script_melos_bootstrap
