@@ -253,7 +253,7 @@ void main() {
                       id: 'resolved-tool',
                       name:
                           catalog.specs.firstOrNull?.name ??
-                          fail('Expected calculator tool spec'),
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                     ),
                     const MessageToolCallEntity(
@@ -265,7 +265,7 @@ void main() {
                       id: 'already-resolved',
                       name:
                           catalog.specs.firstOrNull?.name ??
-                          fail('Expected calculator tool spec'),
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),
