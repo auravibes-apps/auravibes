@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -110,20 +111,58 @@ extension on AppChatCompletionsPlugin {
     http.Client client,
     http.Request request,
   ) async {
+    final deadline = DateTime.now().add(requestTimeout);
     try {
       final response = await client.send(request).timeout(requestTimeout);
+      final responseBody = response.stream.timeout(requestTimeout);
 
       return ProviderTransportResponse(
         statusCode: response.statusCode,
         body: httpClient == null
-            ? _closeAfter(response.stream.timeout(requestTimeout), client)
-            : response.stream.timeout(requestTimeout),
+            ? _closeAfter(_untilDeadline(responseBody, deadline), client)
+            : _untilDeadline(responseBody, deadline),
+        contentLength: response.contentLength,
       );
     } on Object {
       if (httpClient == null) client.close();
       rethrow;
     }
   }
+}
+
+Stream<List<int>> _untilDeadline(Stream<List<int>> source, DateTime deadline) {
+  StreamSubscription<List<int>>? subscription;
+  Timer? timer;
+  final controller = StreamController<List<int>>(sync: true);
+  controller.onListen = () {
+    final remaining = deadline.difference(.now());
+    if (remaining <= .zero) {
+      controller.addError(TimeoutException('Provider request timed out.'));
+      unawaited(controller.close());
+
+      return;
+    }
+    timer = Timer(remaining, () {
+      unawaited(subscription?.cancel());
+      controller.addError(TimeoutException('Provider request timed out.'));
+      unawaited(controller.close());
+    });
+    subscription = source.listen(
+      controller.add,
+      onError: controller.addError,
+      onDone: () {
+        timer?.cancel();
+        unawaited(controller.close());
+      },
+    );
+  };
+  controller.onCancel = () {
+    timer?.cancel();
+
+    return subscription?.cancel();
+  };
+
+  return controller.stream;
 }
 
 Stream<List<int>> _closeAfter(
