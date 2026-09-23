@@ -122,6 +122,15 @@ void main() {
         expect(result.body, contains('2. Second'));
       });
 
+      test('bounds work for oversized HTML element trees', () {
+        final items = List.filled(10001, '<li>Item</li>').join();
+        final result = transformer.transform(_htmlResponse('<ol>$items</ol>'));
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.truncated, isTrue);
+        expect(result.body, '... [truncated]');
+      });
+
       test('converts blockquotes', () {
         final response = _htmlResponse(
           '<blockquote><p>Quoted text</p></blockquote>',
