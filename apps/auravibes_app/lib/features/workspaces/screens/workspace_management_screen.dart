@@ -163,6 +163,7 @@ class const _WorkspaceListView({
 
 class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
   String _searchQuery = '';
+  String _sort = 'default';
 
   @override
   Widget build(BuildContext context) {
@@ -170,6 +171,8 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
       data: _data(),
       actions: _actions(context),
       onSearchChanged: _updateSearchQuery,
+      sort: _sort,
+      onSortChanged: (value) => setState(() => _sort = value),
     );
   }
 
@@ -179,6 +182,11 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
       widget.workspaces,
       searchQuery,
     );
+    if (_sort == 'name') {
+      filteredWorkspaces.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
 
     return _WorkspaceListData(
       activeWorkspaceId: widget.activeWorkspaceId,
@@ -209,6 +217,7 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
       context: context,
       ref: ref,
       activeWorkspaceId: widget.activeWorkspaceId,
+      sort: _sort,
     );
   }
 }
@@ -217,7 +226,7 @@ List<WorkspaceEntity> _filterWorkspaces(
   List<WorkspaceEntity> workspaces,
   String query,
 ) {
-  if (query.isEmpty) return workspaces;
+  if (query.isEmpty) return List<WorkspaceEntity>.of(workspaces);
 
   return workspaces
       .where((workspace) => workspace.name.toLowerCase().contains(query))
@@ -245,6 +254,8 @@ class const _WorkspaceListSections({
   required final _WorkspaceListData data,
   required final _WorkspaceListActions actions,
   required final ValueChanged<String> onSearchChanged,
+  required final String sort,
+  required final ValueChanged<String> onSortChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -252,6 +263,24 @@ class const _WorkspaceListSections({
       padding: const EdgeInsets.all(16),
       children: [
         _WorkspaceSearchInput(onChanged: onSearchChanged),
+        AuraDropdownSelector<String>(
+          key: const ValueKey('workspace-sort'),
+          label: const AuraIcon(Icons.sort),
+          options: const [
+            AuraDropdownOption(
+              value: 'default',
+              child: TextLocale(LocaleKeys.service_connections_filter_all),
+            ),
+            AuraDropdownOption(
+              value: 'name',
+              child: TextLocale(LocaleKeys.workspace_management_name_label),
+            ),
+          ],
+          value: sort,
+          onChanged: (value) {
+            if (value != null) onSortChanged(value);
+          },
+        ),
         _LocalWorkspaceSection(data: data, actions: actions),
         _ConnectedWorkspaceSection(data: data, actions: actions),
         _AvailableCloudWorkspaceSection(data: data, actions: actions),
@@ -285,6 +314,7 @@ class const _WorkspaceListActions({
   required final BuildContext context,
   required final WidgetRef ref,
   required final String activeWorkspaceId,
+  required final String sort,
 });
 
 extension on _WorkspaceListActions {
@@ -1010,7 +1040,15 @@ class const _AvailableCloudWorkspaceList({
 
   List<CloudWorkspaceSummary> _availableWorkspaces(
     List<CloudWorkspaceSummary> matching,
-  ) => matching.where(_isAvailable).toList();
+  ) {
+    final available = matching.where(_isAvailable).toList();
+    if (actions.sort == 'name') {
+      available.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
+    }
+    return available;
+  }
 
   bool _isAvailable(CloudWorkspaceSummary workspace) {
     return !localWorkspaces.any(
