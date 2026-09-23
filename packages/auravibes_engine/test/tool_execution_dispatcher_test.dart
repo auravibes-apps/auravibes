@@ -35,23 +35,25 @@ void main() {
     test('rejects non-object tool arguments: $argumentsRaw', () async {
       var executed = false;
       Object? loggedError;
-      final result = await AgentToolExecutionDispatcher<String>(
-        runResolvedTool: ({
-          required conversationId,
-          required tool,
-          required arguments,
-        }) async {
-          executed = true;
-          return 'unexpected';
-        },
-        isCancellationRequested: (_) => false,
-        logToolExecutionError: (request) => loggedError = request.error,
-      ).call(
-        conversationId: 'conversation-1',
-        toolCallId: 'call-1',
-        tool: 'tool',
-        argumentsRaw: argumentsRaw,
-      );
+      final result =
+          await AgentToolExecutionDispatcher<String>(
+            runResolvedTool:
+                ({
+                  required conversationId,
+                  required tool,
+                  required arguments,
+                }) async {
+                  executed = true;
+                  return 'unexpected';
+                },
+            isCancellationRequested: (_) => false,
+            logToolExecutionError: (request) => loggedError = request.error,
+          ).call(
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            tool: 'tool',
+            argumentsRaw: argumentsRaw,
+          );
 
       expect(executed, isFalse);
       expect(loggedError, isA<FormatException>());
