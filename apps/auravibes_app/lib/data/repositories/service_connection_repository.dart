@@ -382,29 +382,87 @@ Future<String> _readEncryptedOrLegacySecret(
     return await repository._encryptionService.decrypt(storedValue);
   }
 
-  final apiKey = await legacyStorage.read(storedValue);
+  return await _migrateLegacyApiKey(
+    repository,
+    row.id,
+    legacyStorage,
+    storedValue,
+  );
+}
+
+Future<String> _migrateLegacyApiKey(
+  ServiceConnectionRepository repository,
+  String rowId,
+  LegacyApiKeyStorage legacyStorage,
+  String storedValue,
+) async {
+  final apiKey = await _readLegacyApiKey(legacyStorage, storedValue);
+  final encoded = _encodeLegacyApiKey(apiKey);
+  final updatedRows = await _persistLegacyApiKey(
+    repository,
+    rowId,
+    apiKey,
+    encoded,
+  );
+  if (updatedRows == 1) await legacyStorage.delete(storedValue);
+
+  return encoded;
+}
+
+Future<String> _readLegacyApiKey(
+  LegacyApiKeyStorage storage,
+  String reference,
+) async {
+  final apiKey = await storage.read(reference);
   if (apiKey == null) {
     throw const FormatException('Legacy API key is unavailable.');
   }
-  final encoded = ServiceConnectionAuthCodec.encodeSecret(
-    ServiceConnectionSecretApiKey(apiKey: apiKey),
-  );
-  final encrypted = await repository._encryptionService.encrypt(encoded);
-  final update = repository._database.update(
-    repository._database.serviceConnections,
-  );
-  final _ = update.where((table) => table.id.equals(row.id));
-  final updatedRows = await update.write(
-    ServiceConnectionsCompanion(
-      encryptedAuthValue: .new(encrypted),
-      keySuffix: .new(_suffix(apiKey)),
-    ),
-  );
-  if (updatedRows == 1) {
-    await legacyStorage.delete(storedValue);
-  }
 
-  return encoded;
+  return apiKey;
+}
+
+String _encodeLegacyApiKey(String apiKey) =>
+    ServiceConnectionAuthCodec.encodeSecret(
+      ServiceConnectionSecretApiKey(apiKey: apiKey),
+    );
+
+Future<int> _persistLegacyApiKey(
+  ServiceConnectionRepository repository,
+  String rowId,
+  String apiKey,
+  String encoded,
+) async {
+  final companion = await _encryptedApiKeyCompanion(
+    repository,
+    apiKey,
+    encoded,
+  );
+
+  return _updateServiceConnection(repository._database, rowId, companion);
+}
+
+Future<ServiceConnectionsCompanion> _encryptedApiKeyCompanion(
+  ServiceConnectionRepository repository,
+  String apiKey,
+  String encoded,
+) async {
+  final encrypted = await repository._encryptionService.encrypt(encoded);
+
+  return ServiceConnectionsCompanion(
+    encryptedAuthValue: .new(encrypted),
+    keySuffix: .new(_suffix(apiKey)),
+  );
+}
+
+Future<int> _updateServiceConnection(
+  AppDatabase database,
+  String rowId,
+  ServiceConnectionsCompanion companion,
+) {
+  final update = database.update(database.serviceConnections)
+    ..where((table) => table.id.equals(rowId));
+
+  return update.write(companion);
 }
 
 Future<String?> _createMcpServiceConnection(
