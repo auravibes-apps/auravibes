@@ -181,6 +181,53 @@ void main() {
         recoveryInterval: const Duration(milliseconds: 1),
       );
 
+      test('cancel hides turn existence from non-members', () async {
+        final fixture = await prepareExecution();
+        final attackerId = const Uuid().v4().toString();
+        final attackerSession = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            attackerId,
+            const {},
+          ),
+        );
+        await AuthUser.db.insertRow(
+          fixture.database,
+          AuthUser(
+            id: UuidValue.fromString(attackerId),
+            scopeNames: const {},
+          ),
+        );
+        await EmailAccount.db.insertRow(
+          fixture.database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(attackerId),
+            email: 'cancel-attacker@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+
+        for (final turnId in ['continue-1', 'missing-turn']) {
+          await expectLater(
+            endpoints.conversation.cancelTurn(
+              attackerSession,
+              CancelTurnRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-cancel-$turnId',
+                turnId: turnId,
+                expectedTurnRevision: 1,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+        }
+      });
+
       Future<({ConversationTurn turn, List<String> toolCallIds})>
       stageAwaitingApproval(
         _ExecutionFixture fixture, {
