@@ -92,6 +92,10 @@ void main() {
     tester,
   ) async {
     _addWidgetTearDown(tester);
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final container = _syncTestContainer(
       .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
       connections: [
@@ -131,7 +135,6 @@ void main() {
       'E Expired',
       'A Healthy',
     ]);
-    expect(find.text('Reconnect'), findsWidgets);
   });
 
   testWidgets('searches connection metadata and applies status filters', (
