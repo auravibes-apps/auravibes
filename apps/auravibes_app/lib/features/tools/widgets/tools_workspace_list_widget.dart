@@ -7,8 +7,10 @@ import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -28,12 +30,15 @@ class const ToolsWorkspaceListWidget({
   Widget build(BuildContext context, WidgetRef ref) {
     final groupedToolsAsync = ref.watch(groupedToolsProvider(workspaceId));
     final searchQuery = useState('');
+    final sort = useState('name');
 
     return _ToolsWorkspaceListState(
       groupedToolsAsync: groupedToolsAsync,
       workspaceId: workspaceId,
       searchQuery: searchQuery.value,
       onSearchChanged: (value) => searchQuery.value = value,
+      sort: sort.value,
+      onSortChanged: (value) => sort.value = value,
     );
   }
 }
@@ -43,12 +48,37 @@ class const _ToolsWorkspaceListState({
   required final String workspaceId,
   required final String searchQuery,
   required final ValueChanged<String> onSearchChanged,
+  required final String sort,
+  required final ValueChanged<String> onSortChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         ToolsSearchInput(onChanged: onSearchChanged),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.auraTheme.fromSpacing(.md),
+          ),
+          child: AuraDropdownSelector<String>(
+            key: const ValueKey('tools-sort'),
+            label: const AuraIcon(Icons.sort),
+            options: const [
+              AuraDropdownOption(
+                value: 'name',
+                child: TextLocale(LocaleKeys.skills_screen_title_label),
+              ),
+              AuraDropdownOption(
+                value: 'enabled',
+                child: TextLocale(LocaleKeys.tools_screen_enabled_label),
+              ),
+            ],
+            value: sort,
+            onChanged: (value) {
+              if (value != null) onSortChanged(value);
+            },
+          ),
+        ),
         Expanded(
           child: switch (groupedToolsAsync) {
             AsyncLoading() => const _ToolsLoading(),
@@ -56,6 +86,7 @@ class const _ToolsWorkspaceListState({
               groups: groups,
               workspaceId: workspaceId,
               searchQuery: searchQuery,
+              sort: sort,
             ),
             AsyncError(:final error, :final stackTrace) => _ToolsError(
               error: error,
@@ -77,6 +108,7 @@ class const _ToolsGroupListOrEmpty({
   required final List<ToolsGroupWithTools> groups,
   required final String workspaceId,
   required final String searchQuery,
+  required final String sort,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -86,11 +118,35 @@ class const _ToolsGroupListOrEmpty({
       );
     }
 
-    final filteredGroups = _filterWorkspaceGroups(groups, searchQuery);
+    final filteredGroups = _filterWorkspaceGroups(groups, searchQuery)
+      ..sort((a, b) => _compareToolGroups(a.group, b.group, sort));
     if (filteredGroups.isEmpty) return const ToolsSearchEmptyState();
 
-    return _ToolsGroupList(groups: filteredGroups, workspaceId: workspaceId);
+    return _ToolsGroupList(
+      groups: filteredGroups,
+      workspaceId: workspaceId,
+      sort: sort,
+    );
   }
+}
+
+int _compareToolGroups(
+  ToolsGroupWithTools a,
+  ToolsGroupWithTools b,
+  String sort,
+) {
+  if (a.isDefaultGroup != b.isDefaultGroup) return a.isDefaultGroup ? -1 : 1;
+  if (a.isDefaultGroup) {
+    return a.computeDefaultSortPriority().compareTo(
+      b.computeDefaultSortPriority(),
+    );
+  }
+  if (sort == 'enabled' && a.isEnabled != b.isEnabled) {
+    return a.isEnabled ? -1 : 1;
+  }
+  final aName = a.group?.name ?? a.localizedDisplayNameKey?.tr() ?? '';
+  final bName = b.group?.name ?? b.localizedDisplayNameKey?.tr() ?? '';
+  return aName.toLowerCase().compareTo(bName.toLowerCase());
 }
 
 class const _ToolsError({
@@ -105,6 +161,7 @@ class const _ToolsError({
 class const _ToolsGroupList({
   required final List<_WorkspaceToolsGroupResult> groups,
   required final String workspaceId,
+  required final String sort,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -123,10 +180,20 @@ class const _ToolsGroupList({
     return ToolsGroupCard(
       groupWithTools: result.group,
       workspaceId: workspaceId,
-      visibleTools: result.tools,
+      visibleTools: _sortedWorkspaceTools(result.tools, sort),
     );
   }
 }
+
+List<WorkspaceToolEntity> _sortedWorkspaceTools(
+  List<WorkspaceToolEntity> tools,
+  String sort,
+) => List<WorkspaceToolEntity>.of(tools)..sort((a, b) {
+    if (sort == 'enabled' && a.isEnabled != b.isEnabled) {
+      return a.isEnabled ? -1 : 1;
+    }
+    return a.toolId.toLowerCase().compareTo(b.toolId.toLowerCase());
+  });
 
 typedef _WorkspaceToolsGroupResult = ({
   ToolsGroupWithTools group,
