@@ -34,5 +34,6 @@ class AuraAgentService<TTool extends Object>({
     skips: skips,
     stopPending: stopPending,
     resume: resume,
+    cancellationEffects: cancellationEffects,
   );
 }

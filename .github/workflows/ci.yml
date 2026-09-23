@@ -108,11 +108,12 @@ jobs:
 
       - name: Check dependency artifact drift
         run: |
-          if ! git diff --quiet; then
+          if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
             echo "::error::Dependency artifacts are out of date. Run 'fvm dart run melos bootstrap', then commit the resulting changes."
+            git status --short --untracked-files=all
             git diff --name-only
             git diff --stat
-            git diff --exit-code
+            exit 1
           fi
 
       - name: Validate dependencies
@@ -131,11 +132,12 @@ jobs:
 
       - name: Check generated artifact drift
         run: |
-          if ! git diff --quiet; then
+          if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
             echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate' and 'fvm dart run melos run generate:serverpod', then commit the resulting changes."
+            git status --short --untracked-files=all
             git diff --name-only
             git diff --stat
-            git diff --exit-code
+            exit 1
           fi
 
   change:
