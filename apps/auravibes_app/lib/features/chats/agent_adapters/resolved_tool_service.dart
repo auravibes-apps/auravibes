@@ -792,6 +792,7 @@ Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
     skillSlug: request.skillSlug,
     toolIdentifier: request.toolSlug,
   ).fullName;
+
   return _runCurrentAppSkillTool(request, usecase, toolName);
 }
 
@@ -939,7 +940,7 @@ class _ConfiguredSkillCommandRunner {
   Future<Object?> _runSkillNativeTool(RunSkillNativeToolRequest request) async {
     final target = request.target;
     if (target.skillSlug == agent.agentsSkillSlug) {
-      return _runSubAgentNativeTool(
+      return await _runSubAgentNativeTool(
         .new(
           conversationId: request.conversationId,
           workspaceId: request.workspaceId,
@@ -957,7 +958,8 @@ class _ConfiguredSkillCommandRunner {
       workspaceId: request.workspaceId,
       toolName: target.fullName,
     );
-    return _runConfiguredAppSkillTool(request);
+
+    return await _runConfiguredAppSkillTool(request);
   }
 
   Future<Object?> _runConfiguredAppSkillTool(
@@ -1009,6 +1011,7 @@ Future<bool> _canRunCurrentAppSkillTool(
     workspaceId: workspaceId,
     toolName: toolName,
   );
+
   return !provider.agentCancellationRuntime.isCancellationRequested(
     conversationId,
   );
@@ -1034,6 +1037,7 @@ Future<Object?> _runCurrentAppSkillTool(
     toolSlug: request.toolSlug,
     arguments: request.arguments,
   );
+
   return await _registerNativeOperation(request, operation);
 }
 
