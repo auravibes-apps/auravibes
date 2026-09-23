@@ -122,6 +122,15 @@ void main() {
         expect(result.body, contains('2. Second'));
       });
 
+      test('bounds work for oversized HTML element trees', () {
+        final items = List.filled(10001, '<li>Item</li>').join();
+        final result = transformer.transform(_htmlResponse('<ol>$items</ol>'));
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.truncated, isTrue);
+        expect(result.body, '... [truncated]');
+      });
+
       test('converts blockquotes', () {
         final response = _htmlResponse(
           '<blockquote><p>Quoted text</p></blockquote>',
@@ -164,14 +173,17 @@ void main() {
         expect(result.body, contains('# Page Title'));
       });
 
-      test('handles images with alt text', () {
+      test('renders image alt text without activating the source URL', () {
         final response = _htmlResponse(
-          '<p>Here is an image: <img src="photo.jpg" alt="A photo"></p>',
+          '<p>Here is an image: '
+          '<img src="http://127.0.0.1:8080/action" alt="A [photo]"></p>',
         );
         final result = transformer.transform(response);
 
         expect(result.format, UrlContentFormat.markdown);
-        expect(result.body, contains('![A photo](photo.jpg)'));
+        expect(result.body, contains(r'A \[photo\]'));
+        expect(result.body, isNot(contains('127.0.0.1')));
+        expect(result.body, isNot(contains('![')));
       });
 
       test('handles horizontal rules', () {

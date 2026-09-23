@@ -50,14 +50,24 @@ void main() {
         openBrowser: (uri) async {
           final redirectUri = Uri.parse(uri.queryParameters['redirect_uri']!);
           expect(redirectUri.host, 'localhost');
+          final client = HttpClient();
+          addTearDown(client.close);
+          for (final callbackUri in [
+            redirectUri.replace(queryParameters: {'error': 'access_denied'}),
+            redirectUri.replace(
+              queryParameters: {'state': 'forged-state', 'code': 'forged-code'},
+            ),
+          ]) {
+            final request = await client.getUrl(callbackUri);
+            final response = await request.close();
+            final _ = await response.drain<void>();
+          }
           final callbackUri = redirectUri.replace(
             queryParameters: {
               'state': uri.queryParameters['state'],
               'code': 'browser-code',
             },
           );
-          final client = HttpClient();
-          addTearDown(client.close);
           final request = await client.getUrl(callbackUri);
           final response = await request.close();
           final _ = await response.drain<void>();
