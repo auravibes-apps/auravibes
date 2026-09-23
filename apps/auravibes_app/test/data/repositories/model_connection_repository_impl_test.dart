@@ -376,7 +376,7 @@ void main() {
       });
 
       test(
-        'creates openrouter connection with openrouter validation',
+        'ignores catalog URL when validating an openrouter connection',
         () async {
           const openRouterProvider = ApiModelProvidersTable(
             id: 'openrouter',
@@ -444,7 +444,7 @@ void main() {
 
           expect(result.modelId, 'openrouter');
           expect(capturedProvider.type, CredentialsModelType.openrouter);
-          expect(capturedProvider.url, 'https://openrouter.ai/api/v1');
+          expect(capturedProvider.url, isNull);
         },
       );
     });

@@ -336,7 +336,10 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
     final models = await _workspaceModelSelectionsForCreate(
       modelType,
       key,
-      modelConnection.url ?? provider.url,
+      modelConnection.url ??
+          (modelType == ModelProvidersTableType.openrouter
+              ? null
+              : provider.url),
     );
 
     return _requiredCreateModels(models, modelConnection.modelId);
@@ -731,7 +734,12 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
       .new(
         type: .fromString(validation.provider.type),
         key: validation.keyForValidation,
-        url: validation.nextUrl ?? validation.provider.provider.url,
+        url:
+            validation.nextUrl ??
+            (validation.provider.provider.type ==
+                    ModelProvidersTableType.openrouter
+                ? null
+                : validation.provider.provider.url),
       ),
     );
     if (models == null) {
