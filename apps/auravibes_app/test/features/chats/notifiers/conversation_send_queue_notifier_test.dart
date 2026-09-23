@@ -25,18 +25,14 @@ void main() {
       final textOnlyContainer = ProviderContainer();
       addTearDown(textOnlyContainer.dispose);
 
-      final notifier = textOnlyContainer.read(
-        conversationSendQueueProvider.notifier,
-      );
-      notifier.enqueue(
-        conversationId: 'conv-1',
-        draft: const ChatDraft(text: 'Text only'),
-      );
+      final queuedDraft = textOnlyContainer
+          .read(conversationSendQueueProvider.notifier)
+          .enqueue(
+            conversationId: 'conv-1',
+            draft: const ChatDraft(text: 'Text only'),
+          );
 
-      final queuedDrafts = textOnlyContainer.read(
-        conversationSendQueueProvider,
-      );
-      expect(queuedDrafts['conv-1']?.single.draft.text, 'Text only');
+      expect(queuedDraft.draft.text, 'Text only');
     });
 
     tearDown(() {
