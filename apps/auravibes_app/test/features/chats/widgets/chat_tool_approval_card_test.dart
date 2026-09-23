@@ -283,6 +283,9 @@ void main() {
     ) async {
       final approvalProvider = _MockApproveToolCallProvider();
       final agentService = _MockAuraAgentService();
+      final cancellationEffects = _MockAgentCancellationEffects();
+      when(() => cancellationEffects.start('child-1'))
+          .thenReturn(agent.AgentCancellationScope());
       when(
         () => approvalProvider.loadToolCall(
           messageId: 'child-message-1',
@@ -293,10 +296,10 @@ void main() {
       when(() => agentService.tools).thenReturn(
         agent.ToolsNamespace<ResolvedTool>(
           approvals: approvalProvider,
-          cancellationEffects: _MockAgentCancellationEffects(),
           skips: _MockSkipToolCallProvider(),
           stopPending: _MockStopPendingToolCallsProvider(),
           resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: cancellationEffects,
         ),
       );
 
