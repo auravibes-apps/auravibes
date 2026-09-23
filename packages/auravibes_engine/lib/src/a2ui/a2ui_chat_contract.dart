@@ -174,7 +174,8 @@ bindings. Template descendants may use relative bindings such as
 minimum 0); slider step defaults to 1. DateTimeInput values use "YYYY-MM-DD"
 for date, "HH:mm" for time, and RFC3339 with an explicit offset or Z for
 dateTime. TextField variant "number" requests a numeric keyboard; it does not
-filter input.
+filter input. Never request passwords, passcodes, authentication tokens, API
+keys, private keys, recovery phrases, or other secrets in a form.
 ''';
 
   static String _profileCatalogPrompt(Set<String> supportedComponents) =>
@@ -1097,8 +1098,38 @@ CATALOG_END
       'ChoicePicker' => _validateChoicePicker(value),
       'Tabs' => _validateTabs(value),
       'Image' => _validateImage(value),
+      'TextField' => _validateTextField(value),
       _ => null,
     };
+  }
+
+  static A2uiIssueCode? _validateTextField(Map<Object?, Object?> value) {
+    const sensitiveTerms = <String>{
+      'password',
+      'passcode',
+      'credential',
+      'secret',
+      'token',
+      'api key',
+      'private key',
+      'recovery phrase',
+      'seed phrase',
+    };
+    final description =
+        [
+              value['label'],
+              value['placeholder'],
+              value['helperText'],
+              if (value['value'] case {'path': final Object? path}) path,
+            ]
+            .whereType<String>()
+            .join(' ')
+            .toLowerCase()
+            .replaceAll(RegExp(r'[_\-/]+'), ' ');
+    if (sensitiveTerms.any(description.contains)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
   }
 
   static A2uiIssueCode? _validateInteractionModeRule(
