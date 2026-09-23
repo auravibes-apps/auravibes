@@ -424,6 +424,47 @@ void main() {
         expect(decision.permissionTableId, isNull);
       });
 
+      test('returns notConfigured when MCP tool group is disabled', () async {
+        final toolsGroupsRepository = fixture.toolsGroupsRepository;
+        final usecase = fixture.usecase;
+        final resolvedTool = ResolvedTool.mcp(
+          tableId: 'server-1',
+          toolIdentifier: 'sum',
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+        );
+
+        when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))
+            .thenAnswer(
+              (_) async => ToolsGroupEntity(
+                id: 'group-1',
+                workspaceId: 'ws-1',
+                name: 'Group',
+                isEnabled: false,
+                permissions: .ask,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
+                mcpServerId: 'server-1',
+              ),
+            );
+
+        final decision = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-1',
+          resolvedTool: resolvedTool,
+        );
+
+        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
+        expect(decision.permissionTableId, isNull);
+        verifyNever(
+          () => fixture.workspaceToolsRepository.getWorkspaceToolByToolName(
+            toolGroupId: any(named: 'toolGroupId'),
+            toolName: any(named: 'toolName'),
+          ),
+        );
+      });
+
       test('returns notConfigured when MCP workspace tool not found', () async {
         final toolsGroupsRepository = fixture.toolsGroupsRepository;
         final workspaceToolsRepository = fixture.workspaceToolsRepository;

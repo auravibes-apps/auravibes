@@ -145,10 +145,19 @@ class McpServersRepository implements McpServersRepositoryContract {
 extension McpServersRepositoryOperations on McpServersRepository {
   Future<List<McpServerEntity>> _getEnabledMcpServers(
     String workspaceId,
-  ) async =>
-      (await _mcpServersDao.getEnabledMcpServersForWorkspace(workspaceId))
-          .map(_tableToEntity)
-          .toList();
+  ) async {
+    final servers = await _mcpServersDao.getEnabledMcpServersForWorkspace(
+      workspaceId,
+    );
+    final enabledServers = <McpServersTable>[];
+
+    for (final server in servers) {
+      final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(server.id);
+      if (group?.isEnabled ?? false) enabledServers.add(server);
+    }
+
+    return enabledServers.map(_tableToEntity).toList();
+  }
 
   Future<McpServersTable> _insertMcpServer(
     String workspaceId,

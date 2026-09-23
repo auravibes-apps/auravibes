@@ -83,7 +83,9 @@ class const BuildCombinedToolSpecsUseCase({
 
     final toolGroup = await _getToolsGroupById(workspaceToolsGroupId);
     final mcpServerId = toolGroup?.mcpServerId;
-    if (mcpServerId == null) return null;
+    if (toolGroup == null || !toolGroup.isEnabled || mcpServerId == null) {
+      return null;
+    }
 
     return await _buildMcpServerCandidate(workspaceTool, mcpServerId);
   }
