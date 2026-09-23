@@ -209,6 +209,32 @@ void main() {
     expect(result, isEmpty);
   });
 
+  test('skips tool when its MCP group is disabled', () async {
+    final usecase = BuildCombinedToolSpecsUseCase(
+      getToolsGroupById: (groupId) async => ToolsGroupEntity(
+        id: groupId,
+        workspaceId: 'w1',
+        name: 'group',
+        isEnabled: false,
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
+        mcpServerId: 'mcp-1',
+      ),
+      getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
+        name: toolName,
+        description: 'disabled tool',
+        inputJsonSchema: const {},
+      ),
+    );
+
+    final result = await usecase.call([
+      _tool(id: 't1', toolId: 'some_tool', groupId: 'g1'),
+    ]);
+
+    expect(result, isEmpty);
+  });
+
   test('skips tool when getMcpToolSpec returns null', () async {
     final usecase = BuildCombinedToolSpecsUseCase(
       getToolsGroupById: (groupId) async => ToolsGroupEntity(
