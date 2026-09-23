@@ -995,6 +995,9 @@
   },
   "workspace_management": {
     "title": "Manage Workspaces",
+    "copy_id": "Copy ID",
+    "id_copied": "Workspace ID copied",
+    "copy_id_error": "Could not copy workspace ID",
     "create_button": "Create Workspace",
     "duplicate": "Duplicate Workspace",
     "create_title": "Create New Workspace",
