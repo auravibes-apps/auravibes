@@ -121,14 +121,49 @@ class const _SelectorContent({
   required final ConversationSkillSelectorState state,
   required final ValueChanged<AvailableSkill> onLoad,
   required final ValueChanged<AvailableSkill> onUnload,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
+  @override
+  State<_SelectorContent> createState() => _SelectorContentState();
+}
+
+class _SelectorContentState extends State<_SelectorContent> {
+  String _query = '';
+
+  List<AvailableSkill> _filter(List<AvailableSkill> skills) {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return skills;
+
+    return skills
+        .where(
+          (skill) =>
+              skill.title.toLowerCase().contains(query) ||
+              skill.description.toLowerCase().contains(query),
+        )
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: _SelectorSections(
-        state: state,
-        onLoad: onLoad,
-        onUnload: onUnload,
+      child: AuraColumn(
+        children: [
+          AuraInput(
+            placeholder: const TextLocale(
+              LocaleKeys.skills_screen_search_placeholder,
+            ),
+            onChanged: (value) => setState(() => _query = value),
+          ),
+          _SelectorSections(
+            state: ConversationSkillSelectorState(
+              loaded: _filter(widget.state.loaded),
+              loadable: _filter(widget.state.loadable),
+            ),
+            onLoad: widget.onLoad,
+            onUnload: widget.onUnload,
+          ),
+        ],
+        spacing: .md,
+        crossAxisAlignment: .start,
       ),
     );
   }
