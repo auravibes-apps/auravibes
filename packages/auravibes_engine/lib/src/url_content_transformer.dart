@@ -365,10 +365,9 @@ class const UrlContentTransformer() {
 
   void _processImage(dom.Element element, StringBuffer buffer) {
     final alt = element.attributes['alt'] ?? '';
-    final src = element.attributes['src'] ?? '';
-    if (alt.isNotEmpty || src.isNotEmpty) {
+    if (alt.isNotEmpty) {
       _ensureNewline(buffer);
-      buffer.writeln('![$alt]($src)');
+      buffer.writeln(_escapeMarkdownText(alt));
     }
   }
 
