@@ -78,6 +78,10 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
     required String argumentsRaw,
   }) async {
     try {
+      if (isCancellationRequested(conversationId)) {
+        return const AgentToolExecutionResult(resultStatus: .stoppedByUser);
+      }
+
       final arguments = safeJsonDecodeToolArguments(argumentsRaw);
       final result = await runResolvedTool(
         conversationId: conversationId,
