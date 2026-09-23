@@ -10,7 +10,7 @@ import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderRequest = ({
@@ -72,8 +72,9 @@ class const ProviderFactory({
   String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
     final connectionUrl = _blankToNull(config.modelConnection.url);
     if (connectionUrl != null) return connectionUrl;
-    if (config.modelsProvider.type == ModelProvidersType.openrouter)
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
       return null;
+    }
 
     return _blankToNull(config.modelsProvider.url);
   }
