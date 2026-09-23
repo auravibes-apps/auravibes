@@ -314,6 +314,57 @@ void main() {
       expect(find.text('Second message'), findsNothing);
     });
 
+    testWidgets('replacement receives a fresh dismissal timer', (tester) async {
+      await tester.pumpWidget(
+        _SnackBarTestApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('First timed message'),
+                        duration: const Duration(seconds: 1),
+                      );
+                    },
+                    child: const Text('Show first timed message'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Replacement timed message'),
+                        duration: const Duration(seconds: 2),
+                      );
+                    },
+                    child: const Text('Show replacement timed message'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          theme: .new(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      await tester.tap(find.text('Show first timed message'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 900));
+
+      await tester.tap(find.text('Show replacement timed message'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('First timed message'), findsNothing);
+      expect(find.text('Replacement timed message'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 2));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Replacement timed message'), findsNothing);
+    });
+
     testWidgets('keeps separate hosts independent', (tester) async {
       tester.view.physicalSize = const Size(800, 600);
       tester.view.devicePixelRatio = 1.0;

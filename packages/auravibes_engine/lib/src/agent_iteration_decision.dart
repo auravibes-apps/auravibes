@@ -1,1 +1,6 @@
-enum AgentIterationDecision { done, continueIteration, waitForToolApproval }
+enum AgentIterationDecision {
+  done,
+  continueIteration,
+  waitForToolApproval,
+  iterationLimitReached,
+}
