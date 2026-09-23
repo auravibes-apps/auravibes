@@ -1382,6 +1382,85 @@ void main() {
       );
 
       test(
+        'stop rejects a member acting on another user execution',
+        () async {
+          final fixture = await prepareExecution();
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'stop-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            memberSession,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.stopConversation(
+              memberSession,
+              StopConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-stop',
+                conversationId: fixture.conversationId,
+                expectedProjectionRevision:
+                    snapshot.conversation.projectionRevision,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findById(
+            fixture.database,
+            conversation.activeExecutionId!,
+          ))!;
+          expect(conversation.executionState, ConversationStatuses.running);
+          expect(execution.status, ConversationStatuses.running);
+        },
+      );
+
+      test(
         'stop wins when it races approval pausing after the host returns',
         () async {
           final fixture = await prepareExecution();
