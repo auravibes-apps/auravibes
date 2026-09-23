@@ -40,7 +40,7 @@
     },
     "pubdev": {
       "type": "local",
-      "command": ["npx", "-y", "@devqxi/pubdev-mcp-server"],
+      "command": ["npx", "-y", "@devqxi/pubdev-mcp-server@1.0.1"],
       "enabled": true
     },
     "serverpod": {
