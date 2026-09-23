@@ -189,6 +189,10 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
+    await _runConversationUpgrades(m, from);
+  }
+
+  Future<void> _runConversationUpgrades(Migrator m, int from) async {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);

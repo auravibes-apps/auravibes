@@ -80,19 +80,22 @@ class const SendNewMessageUsecase({
     if (model == null) throw Exception('Selected model not found');
 
     final conversation = await _createConversation(
-      .new(
-        title: 'New Conversation',
-        workspaceId: request.workspaceId,
-        modelId: request.workspaceModelSelectionId,
-        agentId: request.agentId,
-        reasoningConfiguration: request.reasoningConfiguration,
-      ),
+      _conversationToCreate(request),
     );
     _generateTitle(request, conversation, model);
     await _sendFirstMessage(conversation.id, request.draft);
 
     return conversation;
   }
+
+  ConversationToCreate _conversationToCreate(_SendNewMessageRequest request) =>
+      .new(
+        title: 'New Conversation',
+        workspaceId: request.workspaceId,
+        modelId: request.workspaceModelSelectionId,
+        agentId: request.agentId,
+        reasoningConfiguration: request.reasoningConfiguration,
+      );
 
   Future<WorkspaceModelSelectionWithConnectionEntity?> _selectedModel(
     _SendNewMessageRequest request,

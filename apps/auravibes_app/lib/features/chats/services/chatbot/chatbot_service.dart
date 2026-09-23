@@ -207,7 +207,7 @@ _generateStream(Genkit ai, _SendMessageRequest request) {
   return _generateStreamRequest((
     ai: ai,
     model: factory.getModelReference(provider),
-    config: factory.getGenerationConfig<Object?>(
+    config: factory.getGenerationConfig(
       provider,
       request.reasoningConfiguration,
     ),

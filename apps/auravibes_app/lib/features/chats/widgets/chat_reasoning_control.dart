@@ -25,8 +25,10 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
     }
 
     final trigger = _ReasoningTrigger(
-      options: widget.options,
-      value: widget.value,
+      summary: _ReasoningTrigger._reasoningSummary(
+        widget.options,
+        widget.value,
+      ),
       onPressed: _isNarrowLayout(context)
           ? () => _showReasoningSheet(context)
           : _popupController.toggle,
@@ -34,18 +36,14 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 
     if (_isNarrowLayout(context)) return trigger;
 
-    return AuraPopupMenu(
-      child: trigger,
-      items: [
-        _ReasoningPopupEntry(
-          child: ChatReasoningControls(
-            options: widget.options,
-            value: widget.value,
-            onChanged: widget.onChanged,
-          ),
-        ),
-      ],
+    return _ReasoningPopup(
+      trigger: trigger,
       controller: _popupController,
+      child: ChatReasoningControls(
+        options: widget.options,
+        value: widget.value,
+        onChanged: widget.onChanged,
+      ),
     );
   }
 
@@ -69,69 +67,91 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 }
 
 class const _ReasoningTrigger({
-  required final List<ReasoningOption> options,
-  required final ReasoningConfiguration? value,
+  required final _ReasoningSummary summary,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final summary = _ReasoningTrigger._reasoningSummary(options, value);
-
-    return Semantics(
-      key: const ValueKey<String>('chat_reasoning_selector'),
-      child: AuraTooltip(
-        message: LocaleKeys
-            .chats_screens_chat_conversation_reasoning_options_tooltip
-            .tr(),
-        child: AuraButton(
-          onPressed: onPressed,
-          child: Row(
-            mainAxisSize: .min,
-            children: [
-              const AuraIcon(Icons.psychology_outlined, size: .small),
-              if (summary.label case final label?) ...[
-                const AuraSizedBox(width: .xs),
-                Text(label, overflow: .ellipsis, maxLines: 1),
-              ],
-            ],
-          ),
-          variant: .ghost,
-          size: .small,
-          semanticLabel: summary.semanticLabel,
-        ),
-      ),
-      button: true,
-      identifier: 'chat_reasoning_selector',
-      label: summary.semanticLabel,
-    );
-  }
-
   static _ReasoningSummary _reasoningSummary(
     List<ReasoningOption> options,
     ReasoningConfiguration? value,
   ) {
-    final configuration = _validatedTriggerConfiguration(options, value);
-    final label = switch (configuration) {
-      ReasoningConfiguration(enabled: false) =>
-        LocaleKeys.chats_screens_chat_conversation_reasoning_status_off.tr(),
-      ReasoningConfiguration(effort: String(), budgetTokens: int()) =>
-        LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom.tr(),
-      ReasoningConfiguration(effort: final effort?) => effort,
-      ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
-      _ => null,
-    };
-    final status =
-        label ??
-        LocaleKeys.chats_screens_chat_conversation_reasoning_status_default
-            .tr();
+    final label = _reasoningSummaryLabel(
+      _validatedTriggerConfiguration(options, value),
+    );
+    final status = label ?? _defaultReasoningLabel();
 
     return (
       label: label,
-      semanticLabel: LocaleKeys
-          .chats_screens_chat_conversation_reasoning_trigger_label
-          .tr(namedArgs: {'status': status}),
+      semanticLabel: _reasoningAccessibilityLabel(status),
     );
   }
+
+  static String? _reasoningSummaryLabel(
+    ReasoningConfiguration? configuration,
+  ) => switch (configuration) {
+    ReasoningConfiguration(enabled: false) =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_status_off.tr(),
+    ReasoningConfiguration(effort: String(), budgetTokens: int()) =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom.tr(),
+    ReasoningConfiguration(effort: final effort?) => effort,
+    ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
+    _ => null,
+  };
+
+  static String _defaultReasoningLabel() => LocaleKeys
+      .chats_screens_chat_conversation_reasoning_status_default
+      .tr();
+
+  static String _reasoningAccessibilityLabel(String status) => LocaleKeys
+      .chats_screens_chat_conversation_reasoning_trigger_label
+      .tr(namedArgs: {'status': status});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('chat_reasoning_selector'),
+    child: _ReasoningTriggerButton(
+      summary: summary,
+      onPressed: onPressed,
+      tooltip: LocaleKeys
+          .chats_screens_chat_conversation_reasoning_options_tooltip
+          .tr(),
+    ),
+    button: true,
+    identifier: 'chat_reasoning_selector',
+    label: summary.semanticLabel,
+  );
+}
+
+class const _ReasoningTriggerButton({
+  required final _ReasoningSummary summary,
+  required final VoidCallback onPressed,
+  required final String tooltip,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTooltip(
+    message: tooltip,
+    child: AuraButton(
+      onPressed: onPressed,
+      child: _ReasoningTriggerContent(label: summary.label),
+      variant: .ghost,
+      size: .small,
+      semanticLabel: summary.semanticLabel,
+    ),
+  );
+}
+
+class const _ReasoningTriggerContent({required final String? label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      const AuraIcon(Icons.psychology_outlined, size: .small),
+      if (label case final value?) ...[
+        const AuraSizedBox(width: .xs),
+        Text(value, overflow: .ellipsis, maxLines: 1),
+      ],
+    ],
+  );
 }
 
 class const _ReasoningPopupEntry({required final Widget child})
@@ -146,6 +166,19 @@ class const _ReasoningPopupEntry({required final Widget child})
         child: child,
       ),
     ),
+  );
+}
+
+class const _ReasoningPopup({
+  required final Widget trigger,
+  required final Widget child,
+  required final AuraPopupMenuController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraPopupMenu(
+    child: trigger,
+    items: [_ReasoningPopupEntry(child: child)],
+    controller: controller,
   );
 }
 
@@ -173,8 +206,3 @@ ReasoningConfiguration? _validatedTriggerConfiguration(
   List<ReasoningOption> options,
   ReasoningConfiguration? value,
 ) => value?.isValidFor(options) == true ? value : null;
-
-bool hasSupportedReasoningOptions(Iterable<ReasoningOption> options) =>
-    options.any(
-      (option) => option.isToggle || option.isEffort || option.isBudgetTokens,
-    );

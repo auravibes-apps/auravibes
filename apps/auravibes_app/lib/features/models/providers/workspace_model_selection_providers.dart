@@ -63,13 +63,9 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _resolveCatalogCapabilities(
   if (model == null) return selection;
 
   return selection.copyWith(
-    workspaceModelSelection: selection.workspaceModelSelection.copyWith(
-      modelName: model.name,
-      modalitiesInput: model.modalitiesInput,
-      modalitiesOutput: model.modalitiesOutput,
-      supportsReasoning: model.supportsReasoning,
-      reasoningOptions: model.reasoningOptions,
-      supportsToolCalls: model.supportsToolCalls,
+    workspaceModelSelection: WorkspaceModelSelectionProviders._withRuntimeModel(
+      selection.workspaceModelSelection,
+      model,
     ),
   );
 }

@@ -57,22 +57,16 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final reasoningConfiguration = result.conversation.reasoningConfiguration;
-    final validatedConfiguration = await _validatedReasoningConfiguration(
-      ref: ref,
-      workspaceId: _workspaceId,
-      modelId: modelId,
-      configuration: reasoningConfiguration,
+    final patch = await _modelUpdatePatch(
+      ref,
+      _workspaceId,
+      modelId,
+      result.conversation.reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    final clearReasoningConfiguration =
-        reasoningConfiguration != null && validatedConfiguration == null;
     final updated = await _updateConversation(
       result.conversation,
-      .new(
-        modelId: modelId,
-        clearReasoningConfiguration: clearReasoningConfiguration,
-      ),
+      patch,
     );
     if (!ref.mounted) return;
 
@@ -85,16 +79,15 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final conversation = result.conversation;
     final validatedConfiguration = await _validatedReasoningConfiguration(
-      ref: ref,
-      workspaceId: _workspaceId,
-      modelId: conversation.modelId,
-      configuration: reasoningConfiguration,
+      ref,
+      _workspaceId,
+      result.conversation.modelId,
+      reasoningConfiguration,
     );
     if (!ref.mounted) return;
     final updated = await _updateConversation(
-      conversation,
+      result.conversation,
       _reasoningConfigurationPatch(validatedConfiguration),
     );
     if (!ref.mounted) return;
@@ -106,7 +99,10 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final updated = await _updateAgent(result.conversation, agentId);
+    final updated = await _updateConversation(
+      result.conversation,
+      _agentPatch(agentId),
+    );
     if (!ref.mounted) return;
 
     state = AsyncData(ConversationFound(updated));
@@ -142,6 +138,26 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
+  static Future<ConversationPatch> _modelUpdatePatch(
+    Ref ref,
+    String workspaceId,
+    String modelId,
+    ReasoningConfiguration? reasoningConfiguration,
+  ) async {
+    final validatedConfiguration = await _validatedReasoningConfiguration(
+      ref,
+      workspaceId,
+      modelId,
+      reasoningConfiguration,
+    );
+
+    return ConversationPatch(
+      modelId: modelId,
+      clearReasoningConfiguration:
+          reasoningConfiguration != null && validatedConfiguration == null,
+    );
+  }
+
   Future<ConversationEntity> _updateConversation(
     ConversationEntity conversation,
     ConversationPatch patch,
@@ -161,40 +177,12 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
         .patchConversation(conversation.id, patch);
   }
 
-  Future<ConversationEntity> _updateAgent(
-    ConversationEntity conversation,
-    String? agentId,
-  ) async {
-    final patch = _agentPatch(agentId);
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(_workspaceId).future,
-    );
-    if (cloud != null) {
-      return _updatedAgentConversation(
-        conversation,
-        await cloud.update(conversation, patch),
-      );
-    }
-
-    return await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(conversation.id, patch);
-  }
-
-  ConversationEntity _updatedAgentConversation(
-    ConversationEntity conversation,
-    ConversationSummary updated,
-  ) => conversation.copyWith(
-    agentId: updated.agentId,
-    revision: updated.revision,
-    updatedAt: updated.updatedAt,
-  );
-
   ConversationEntity _updatedConversation(
     ConversationEntity conversation,
     ConversationSummary updated,
   ) => conversation.copyWith(
     modelId: updated.modelId,
+    agentId: updated.agentId,
     reasoningConfiguration: ReasoningConfiguration.decode(
       updated.reasoningConfigJson,
     ),
@@ -203,11 +191,11 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   );
 }
 
-Future<ReasoningConfiguration?> _validatedReasoningConfiguration({
-  required Ref ref,
-  required String workspaceId,
-  required String? modelId,
-  required ReasoningConfiguration? configuration,
+Future<ReasoningConfiguration?> _validatedReasoningConfiguration(
+  Ref ref,
+  String workspaceId,
+  String? modelId,
+  ReasoningConfiguration? configuration,
 }) async {
   if (configuration == null || modelId == null) return null;
 

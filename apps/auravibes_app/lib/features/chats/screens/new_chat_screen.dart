@@ -141,21 +141,36 @@ class const _NewChatActions({
       final selectedModel = await ref.read(
         workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
       );
-      final state = ref.read(newChatProvider(workspaceId));
-      final configuration = state.reasoningConfiguration;
-      if (state.modelId != modelId || configuration == null) return;
-      if (selectedModel == null ||
-          !configuration.isValidFor(
-            selectedModel.workspaceModelSelection.reasoningOptions,
-          )) {
-        ref
-            .read(newChatProvider(workspaceId).notifier)
-            .setReasoningConfiguration(null);
-      }
+      _clearInvalidReasoningConfigurationFor(modelId, selectedModel);
     } on Object {
       // Keep explicit configuration when catalog is temporarily unavailable.
     }
   }
+
+  void _clearInvalidReasoningConfigurationFor(
+    String modelId,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) {
+    final state = ref.read(newChatProvider(workspaceId));
+    final configuration = state.reasoningConfiguration;
+    if (state.modelId != modelId || configuration == null) return;
+    if (_isInvalidReasoningConfiguration(configuration, selectedModel)) {
+      _resetReasoningConfiguration();
+    }
+  }
+
+  bool _isInvalidReasoningConfiguration(
+    ReasoningConfiguration configuration,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) =>
+      selectedModel == null ||
+      !configuration.isValidFor(
+        selectedModel.workspaceModelSelection.reasoningOptions,
+      );
+
+  void _resetReasoningConfiguration() => ref
+      .read(newChatProvider(workspaceId).notifier)
+      .setReasoningConfiguration(null);
 
   Future<void> _openNewConversation(ChatDraft draft) async {
     final conversation = await _startNewConversation(ref, workspaceId, draft);

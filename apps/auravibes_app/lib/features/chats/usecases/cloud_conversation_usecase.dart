@@ -103,7 +103,7 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
     clearModel: false,
     agentId: patch.agentId,
     clearAgent: patch.clearAgent,
-    reasoningConfigJson: patch.reasoningConfiguration?.encode(),
+    reasoningConfigJson: patch._reasoningConfigJson,
     clearReasoningConfig: patch.clearReasoningConfiguration,
     clearParent: false,
   );
@@ -122,4 +122,8 @@ class const CloudConversationUsecase(final CloudChatGateway _gateway) {
       ),
     );
   }
+}
+
+extension _ConversationPatchReasoningJson on ConversationPatch {
+  String? get _reasoningConfigJson => reasoningConfiguration?.encode();
 }

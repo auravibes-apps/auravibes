@@ -1281,32 +1281,39 @@ class const _ChatComposer({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modelStatus = _modelStatus(ref);
-    final reasoningControl =
-        hasSupportedReasoningOptions(modelStatus.reasoningOptions)
-        ? ChatReasoningControl(
-            options: modelStatus.reasoningOptions,
-            value: data.conversation.reasoningConfiguration,
-            onChanged: (value) => unawaited(
-              ref
-                  .read(
-                    conversationChatProvider(
-                      data.workspaceId,
-                      data.conversation.id,
-                    ).notifier,
-                  )
-                  .setReasoningConfiguration(value),
-            ),
-          )
-        : null;
 
     return _ChatComposerView(
       data: data,
       modelStatus: modelStatus,
-      reasoningControl: reasoningControl,
+      reasoningControl: _reasoningControl(ref, modelStatus.reasoningOptions),
       canCompact: _canCompact(ref, modelStatus.available),
       draftToLoad: draftToLoad,
     );
   }
+
+  Widget? _reasoningControl(WidgetRef ref, List<ReasoningOption> options) {
+    if (!hasSupportedReasoningOptions(options)) return null;
+
+    return ChatReasoningControl(
+      options: options,
+      value: data.conversation.reasoningConfiguration,
+      onChanged: (value) => unawaited(
+        _updateReasoningConfiguration(ref, value),
+      ),
+    );
+  }
+
+  Future<void> _updateReasoningConfiguration(
+    WidgetRef ref,
+    ReasoningConfiguration? value,
+  ) => ref
+      .read(
+        conversationChatProvider(
+          data.workspaceId,
+          data.conversation.id,
+        ).notifier,
+      )
+      .setReasoningConfiguration(value);
 
   _ChatComposerModelStatus _modelStatus(WidgetRef ref) {
     final modelId = data.conversation.modelId;
@@ -1373,43 +1380,47 @@ _ChatComposerModelStatus _chatComposerModelStatus(
   String? modelId,
   AsyncValue<WorkspaceModelSelectionWithConnectionEntity?>? state,
 ) {
-  if (modelId == null) {
-    return (
-      available: false,
-      missing: false,
-      hint: LocaleKeys.chats_screens_chat_conversation_model_required,
-      reasoningOptions: const [],
-    );
-  }
+  if (modelId == null) return _requiredModelStatus();
 
   final selection = state?.value;
-  if (selection != null) {
-    return (
-      available: true,
-      missing: false,
-      hint: null,
-      reasoningOptions: selection.workspaceModelSelection.reasoningOptions,
-    );
-  }
+  if (selection != null) return _availableModelStatus(selection);
 
-  if (state?.hasValue == true) {
-    return (
-      available: false,
-      missing: true,
-      hint: LocaleKeys.chats_screens_chat_conversation_model_missing,
-      reasoningOptions: const [],
-    );
-  }
+  if (state?.hasValue == true) return _missingModelStatus();
 
-  return (
-    available: false,
-    missing: false,
-    hint: state?.isLoading == true
-        ? LocaleKeys.chats_screens_chat_conversation_model_loading
-        : LocaleKeys.chats_screens_chat_conversation_model_unavailable,
-    reasoningOptions: const [],
-  );
+  return _unavailableModelStatus(state?.isLoading == true);
 }
+
+_ChatComposerModelStatus _requiredModelStatus() => (
+  available: false,
+  missing: false,
+  hint: LocaleKeys.chats_screens_chat_conversation_model_required,
+  reasoningOptions: const [],
+);
+
+_ChatComposerModelStatus _availableModelStatus(
+  WorkspaceModelSelectionWithConnectionEntity selection,
+) => (
+  available: true,
+  missing: false,
+  hint: null,
+  reasoningOptions: selection.workspaceModelSelection.reasoningOptions,
+);
+
+_ChatComposerModelStatus _missingModelStatus() => (
+  available: false,
+  missing: true,
+  hint: LocaleKeys.chats_screens_chat_conversation_model_missing,
+  reasoningOptions: const [],
+);
+
+_ChatComposerModelStatus _unavailableModelStatus(bool isLoading) => (
+  available: false,
+  missing: false,
+  hint: isLoading
+      ? LocaleKeys.chats_screens_chat_conversation_model_loading
+      : LocaleKeys.chats_screens_chat_conversation_model_unavailable,
+  reasoningOptions: const [],
+);
 
 class _ChatComposerInput extends StatelessWidget {
   new({

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -382,21 +381,7 @@ ApiModelEntity _modelCapabilities(ApiModelEntity base, ApiModel model) =>
 List<ReasoningOption> _decodeReasoningOptions(
   String? value,
   bool supportsReasoning,
-) {
-  if (value == null) {
-    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
-  }
-  try {
-    final json = jsonDecode(value);
-    if (json is! List) {
-      return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
-    }
-    final options = [for (final item in json) ?ReasoningOption.fromJson(item)];
-
-    return options.isEmpty && supportsReasoning
-        ? const [ReasoningOption.toggle()]
-        : options;
-  } on FormatException {
-    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
-  }
-}
+) => ReasoningOption.decodeJsonList(
+  value,
+  supportsReasoning: supportsReasoning,
+);

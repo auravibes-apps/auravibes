@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
@@ -262,23 +261,10 @@ extension on WorkspaceModelSelectionRepository {
 List<ReasoningOption> _decodeReasoningOptions(
   String? value,
   bool supportsReasoning,
-) {
-  if (value == null) {
-    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
-  }
-  try {
-    final options = (jsonDecode(value) as List)
-        .map(ReasoningOption.fromJson)
-        .whereType<ReasoningOption>()
-        .toList(growable: false);
-
-    return options.isEmpty && supportsReasoning
-        ? const [ReasoningOption.toggle()]
-        : options;
-  } on Object {
-    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
-  }
-}
+) => ReasoningOption.decodeJsonList(
+  value,
+  supportsReasoning: supportsReasoning,
+);
 
 extension on WorkspaceModelSelectionRepository {
   ApiModelProviderEntity _modelProviderEntity(_ModelProviderInput data) =>

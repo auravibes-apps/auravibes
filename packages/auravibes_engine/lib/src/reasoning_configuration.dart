@@ -64,6 +64,30 @@ class const ReasoningOption._({
         return ReasoningOption.unknown(type, raw);
     }
   }
+
+  static List<ReasoningOption> decodeJsonList(
+    String? value, {
+    required bool supportsReasoning,
+  }) {
+    if (value == null) return _legacyDefaults(supportsReasoning);
+
+    final options = _decodeJsonList(value);
+    return options.isNotEmpty ? options : _legacyDefaults(supportsReasoning);
+  }
+
+  static List<ReasoningOption> _decodeJsonList(String value) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is! List) return const [];
+
+      return [for (final item in decoded) ?fromJson(item)];
+    } on FormatException {
+      return const [];
+    }
+  }
+
+  static List<ReasoningOption> _legacyDefaults(bool supportsReasoning) =>
+      supportsReasoning ? const [ReasoningOption.toggle()] : const [];
 }
 
 class const ReasoningConfiguration({
@@ -71,7 +95,7 @@ class const ReasoningConfiguration({
   final String? effort,
   final int? budgetTokens,
 }) {
-  factory fromJson(Object? value) {
+  factory fromJson(Object value) {
     if (value is! Map) {
       throw const FormatException('Reasoning configuration must be an object.');
     }

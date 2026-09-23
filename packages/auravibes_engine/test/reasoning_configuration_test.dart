@@ -48,6 +48,32 @@ void main() {
     );
   });
 
+  test('decodes reasoning options and retains legacy toggle support', () {
+    expect(
+      ReasoningOption.decodeJsonList(
+        '[{"type":"effort","values":["low","high"]}]',
+        supportsReasoning: false,
+      ).map((option) => option.toJson()),
+      [
+        {'type': 'effort', 'values': ['low', 'high']},
+      ],
+    );
+    expect(
+      ReasoningOption.decodeJsonList('[]', supportsReasoning: true).single
+          .isToggle,
+      isTrue,
+    );
+    expect(
+      ReasoningOption.decodeJsonList('invalid', supportsReasoning: false),
+      isEmpty,
+    );
+    expect(
+      ReasoningOption.decodeJsonList('{}', supportsReasoning: true).single
+          .isToggle,
+      isTrue,
+    );
+  });
+
   test('malformed JSON returns null through tolerant decoder', () {
     expect(ReasoningConfiguration.decode('{"budget_tokens":"bad"}'), isNull);
     expect(ReasoningConfiguration.decode(null), isNull);

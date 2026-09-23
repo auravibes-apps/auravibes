@@ -60,19 +60,11 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
 
   @override
   Widget build(BuildContext context) {
-    final toggle = _toggleOption(widget.options);
-    final effort = _effortOption(widget.options);
-    final budget = _budgetOption(widget.options);
-    if (toggle == null && effort == null && budget == null) {
+    if (!hasSupportedReasoningOptions(widget.options)) {
       return const SizedBox.shrink();
     }
 
-    final configuration = _validatedConfiguration(
-      widget.options,
-      _configuration,
-    );
-
-    return _buildReasoningEditor(toggle, effort, budget, configuration);
+    return _buildReasoningEditor();
   }
 
   KeyEventResult _handleEditorKeyEvent(FocusNode node, KeyEvent event) {
@@ -117,19 +109,16 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
     ReasoningOption option,
     String value,
   ) {
-    final parsed = int.tryParse(value);
-    final isValid =
-        parsed != null &&
-        parsed >= (option.min ?? 0) &&
-        parsed <= (option.max ?? parsed);
-    setState(() {
-      _budgetError = isValid ? null : _budgetValidationMessage(option);
-    });
-    if (isValid) {
-      _changeConfiguration(
-        _copyConfiguration(configuration, budgetTokens: parsed),
-      );
+    final parsed = _parseBudget(option, value);
+    if (parsed == null) {
+      setState(() => _budgetError = _budgetValidationMessage(option));
+
+      return;
     }
+
+    _changeConfiguration(
+      _copyConfiguration(configuration, budgetTokens: parsed),
+    );
   }
 
   void _changeConfiguration(ReasoningConfiguration? configuration) {
@@ -139,52 +128,73 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
     });
     widget.onChanged(configuration);
   }
+}
+
+extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
+  Widget _buildReasoningEditor() {
+    final configuration = _validatedConfiguration(
+      widget.options,
+      _configuration,
+    );
+
+    return Focus(
+      child: Semantics(
+        child: AuraColumn(
+          children: _reasoningSections(configuration),
+          spacing: .sm,
+          crossAxisAlignment: .stretch,
+        ),
+        container: true,
+        explicitChildNodes: true,
+        label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
+      ),
+      focusNode: _editorFocusNode,
+      onKeyEvent: _handleEditorKeyEvent,
+    );
+  }
+
+  List<Widget> _reasoningSections(ReasoningConfiguration? configuration) => [
+    _ReasoningHeader(
+      canReset: _configuration != null,
+      onReset: () => _changeConfiguration(null),
+    ),
+    ..._toggleSection(configuration),
+    ..._effortSection(configuration),
+    ..._budgetSection(configuration),
+  ];
+
+  List<Widget> _toggleSection(ReasoningConfiguration? configuration) {
+    if (_toggleOption(widget.options) == null) return const [];
+
+    return [
+      _ReasoningToggle(
+        enabled: configuration?.enabled != false,
+        onChanged: (enabled) => _changeConfiguration(
+          _copyConfiguration(configuration, enabled: enabled),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _effortSection(ReasoningConfiguration? configuration) {
+    final effort = _effortOption(widget.options);
+    if (effort == null) return const [];
+
+    return [_buildEffortSelector(effort, configuration)];
+  }
+
+  List<Widget> _budgetSection(ReasoningConfiguration? configuration) {
+    final budget = _budgetOption(widget.options);
+    if (budget == null) return const [];
+
+    return [_buildBudgetInput(budget, configuration)];
+  }
 
   void _syncBudgetController(ReasoningConfiguration? configuration) {
     final value = configuration?.budgetTokens;
     _budgetController.text = value?.toString() ?? '';
     _budgetError = null;
   }
-
-  String _budgetValidationMessage(ReasoningOption option) => LocaleKeys
-      .chats_screens_chat_conversation_reasoning_budget_invalid
-      .tr(namedArgs: {'min': '${option.min}', 'max': '${option.max}'});
-}
-
-extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
-  Widget _buildReasoningEditor(
-    ReasoningOption? toggle,
-    ReasoningOption? effort,
-    ReasoningOption? budget,
-    ReasoningConfiguration? configuration,
-  ) => Focus(
-    child: Semantics(
-      child: AuraColumn(
-        children: [
-          _ReasoningHeader(
-            canReset: _configuration != null,
-            onReset: () => _changeConfiguration(null),
-          ),
-          if (toggle != null)
-            _ReasoningToggle(
-              enabled: configuration?.enabled != false,
-              onChanged: (enabled) => _changeConfiguration(
-                _copyConfiguration(configuration, enabled: enabled),
-              ),
-            ),
-          if (effort != null) _buildEffortSelector(effort, configuration),
-          if (budget != null) _buildBudgetInput(budget, configuration),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: .stretch,
-      ),
-      container: true,
-      explicitChildNodes: true,
-      label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
-    ),
-    focusNode: _editorFocusNode,
-    onKeyEvent: _handleEditorKeyEvent,
-  );
 
   Widget _buildEffortSelector(
     ReasoningOption effort,
@@ -209,6 +219,19 @@ extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
     onChanged: (value) => _setBudget(configuration, budget, value),
   );
 }
+
+int? _parseBudget(ReasoningOption option, String value) {
+  final parsed = int.tryParse(value);
+  if (parsed == null || parsed < (option.min ?? 0)) return null;
+  final max = option.max;
+  if (max != null && parsed > max) return null;
+
+  return parsed;
+}
+
+String _budgetValidationMessage(ReasoningOption option) => LocaleKeys
+    .chats_screens_chat_conversation_reasoning_budget_invalid
+    .tr(namedArgs: {'min': '${option.min}', 'max': '${option.max}'});
 
 class const _ReasoningHeader({
   required final bool canReset,
@@ -320,27 +343,12 @@ class const _ReasoningEffortDisclosure({
 
     return Semantics(
       key: const ValueKey<String>('chat_reasoning_effort_disclosure'),
-      child: AuraButton(
-        onPressed: onToggle,
-        child: Row(
-          children: [
-            const Expanded(
-              child: TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_reasoning_effort,
-              ),
-            ),
-            Text(selectedLabel),
-            AuraIcon(
-              expanded ? Icons.expand_less : Icons.expand_more,
-              size: .small,
-            ),
-          ],
-        ),
-        variant: .ghost,
-        size: .small,
-        isFullWidth: true,
-        disabled: !enabled,
-        semanticLabel: '$effortLabel: $selectedLabel',
+      child: _ReasoningEffortDisclosureButton(
+        enabled: enabled,
+        expanded: expanded,
+        selectedLabel: selectedLabel,
+        effortLabel: effortLabel,
+        onToggle: onToggle,
       ),
       button: true,
       expanded: expanded,
@@ -349,6 +357,46 @@ class const _ReasoningEffortDisclosure({
       value: selectedLabel,
     );
   }
+}
+
+class const _ReasoningEffortDisclosureButton({
+  required final bool enabled,
+  required final bool expanded,
+  required final String selectedLabel,
+  required final String effortLabel,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onToggle,
+    child: _ReasoningEffortDisclosureContent(
+      expanded: expanded,
+      selectedLabel: selectedLabel,
+    ),
+    variant: .ghost,
+    size: .small,
+    isFullWidth: true,
+    disabled: !enabled,
+    semanticLabel: '$effortLabel: $selectedLabel',
+  );
+}
+
+class const _ReasoningEffortDisclosureContent({
+  required final bool expanded,
+  required final String selectedLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      const Expanded(
+        child: TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_reasoning_effort,
+        ),
+      ),
+      Text(selectedLabel),
+      AuraIcon(expanded ? Icons.expand_less : Icons.expand_more, size: .small),
+    ],
+  );
 }
 
 class const _ReasoningEffortChoices({
@@ -362,25 +410,27 @@ class const _ReasoningEffortChoices({
     key: const ValueKey<String>('chat_reasoning_effort_choices'),
     child: AuraRadioGroup<String>(
       value: value,
-      onChanged: enabled
-          ? (selected) {
-              if (selected != null) onChanged(selected);
-            }
-          : null,
-      options: [
-        for (final effort in values)
-          AuraRadioOption(
-            value: effort,
-            label: Text(
-              effort,
-              key: ValueKey<String>('chat_reasoning_effort_choice_$effort'),
-            ),
-            semanticLabel: effort,
-          ),
-      ],
+      onChanged: enabled ? _handleSelection : null,
+      options: _effortOptions(),
     ),
     identifier: 'chat_reasoning_effort_choices',
   );
+
+  void _handleSelection(String? selected) {
+    if (selected != null) onChanged(selected);
+  }
+
+  List<AuraRadioOption<String>> _effortOptions() => [
+    for (final effort in values)
+      AuraRadioOption(
+        value: effort,
+        label: Text(
+          effort,
+          key: ValueKey<String>('chat_reasoning_effort_choice_$effort'),
+        ),
+        semanticLabel: effort,
+      ),
+  ];
 }
 
 class const _ReasoningBudgetInput({
@@ -396,11 +446,7 @@ class const _ReasoningBudgetInput({
     label: const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
     ),
-    hint: Text(
-      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
-        namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
-      ),
-    ),
+    hint: _budgetHint(),
     error: _errorWidget(error),
     keyboardType: .number,
     enabled: enabled,
@@ -409,6 +455,12 @@ class const _ReasoningBudgetInput({
     semanticLabel: LocaleKeys
         .chats_screens_chat_conversation_reasoning_budget_tokens
         .tr(),
+  );
+
+  Widget _budgetHint() => Text(
+    LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
+      namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
+    ),
   );
 
   Widget? _errorWidget(String? value) => value == null ? null : Text(value);
@@ -438,3 +490,8 @@ ReasoningOption? _effortOption(Iterable<ReasoningOption> options) =>
 
 ReasoningOption? _budgetOption(Iterable<ReasoningOption> options) =>
     options.where((option) => option.isBudgetTokens).firstOrNull;
+
+bool hasSupportedReasoningOptions(Iterable<ReasoningOption> options) =>
+    options.any(
+      (option) => option.isToggle || option.isEffort || option.isBudgetTokens,
+    );

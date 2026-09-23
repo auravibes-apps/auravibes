@@ -66,17 +66,15 @@ class const ProviderFactory({
       config,
       reasoningConfiguration,
     );
-    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-      return _openAIReasoningGenerationConfig<T>(selectedConfiguration);
-    }
-    if (runtime.runtime == ProviderRuntime.anthropic) {
-      return _anthropicGenerationConfig<T>(selectedConfiguration);
-    }
-    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
-      return _openRouterGenerationConfig<T>(selectedConfiguration);
-    }
-
-    return null;
+    return switch (runtime.runtime) {
+      ProviderRuntime.openAiReasoning =>
+        _openAIReasoningGenerationConfig<T>(selectedConfiguration),
+      ProviderRuntime.anthropic =>
+        _anthropicGenerationConfig<T>(selectedConfiguration),
+      _ when config.modelsProvider.type == ModelProvidersType.openrouter =>
+        _openRouterGenerationConfig<T>(selectedConfiguration),
+      _ => null,
+    };
   }
 
   ReasoningConfiguration? _validConfiguration(
@@ -228,15 +226,23 @@ extension _ProviderFactoryResolution on ProviderFactory {
       return null;
     }
 
-    return AnthropicOptions(
-      thinking: configuration.budgetTokens == null
-          ? null
-          : .new(type: 'enabled', budgetTokens: configuration.budgetTokens),
-      outputConfig: configuration.effort == null
-          ? null
-          : .new(effort: configuration.effort),
-    ) as T;
+    return _anthropicOptions(configuration) as T;
   }
+
+  AnthropicOptions _anthropicOptions(
+    ReasoningConfiguration configuration,
+  ) =>
+      AnthropicOptions(
+        thinking: configuration.budgetTokens == null
+            ? null
+            : .new(
+                type: 'enabled',
+                budgetTokens: configuration.budgetTokens,
+              ),
+        outputConfig: configuration.effort == null
+            ? null
+            : .new(effort: configuration.effort),
+      );
 
   T? _openAIReasoningGenerationConfig<T>(
     ReasoningConfiguration? configuration,
@@ -345,28 +351,41 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   }
 }
 
-ChatCompletionsCodec _openRouterCodec() {
-  return ChatCompletionsCodec(
-    errorLabel: 'OpenRouter',
-    customize: (modelName, config) {
-      final options = OpenRouterOptions.fromJson(config);
+ChatCompletionsCodec _openRouterCodec() => ChatCompletionsCodec(
+  errorLabel: 'OpenRouter',
+  customize: _customizeOpenRouter,
+);
 
-      return (
-        model: modelName,
-        extraBody: {
-          ...options.toSamplingBody(),
-          if (options.reasoningEnabled == false ||
-              options.reasoningEffort != null ||
-              options.reasoningMaxTokens != null)
-            'reasoning': {
-              if (options.reasoningEnabled == false) 'enabled': false,
-              'effort': ?options.reasoningEffort,
-              'max_tokens': ?options.reasoningMaxTokens,
-            },
-        },
-      );
-    },
-  );
+({String model, Map<String, dynamic> extraBody}) _customizeOpenRouter(
+  String modelName,
+  Map<String, dynamic>? config,
+) {
+  final options = OpenRouterOptions.fromJson(config);
+
+  return (model: modelName, extraBody: _openRouterBody(options));
+}
+
+Map<String, dynamic> _openRouterBody(OpenRouterOptions options) {
+  final reasoning = _openRouterReasoningBody(options);
+
+  return {
+    ...options.toSamplingBody(),
+    if (reasoning != null) 'reasoning': reasoning,
+  };
+}
+
+Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {
+  if (options.reasoningEnabled != false &&
+      options.reasoningEffort == null &&
+      options.reasoningMaxTokens == null) {
+    return null;
+  }
+
+  return {
+    if (options.reasoningEnabled == false) 'enabled': false,
+    'effort': ?options.reasoningEffort,
+    'max_tokens': ?options.reasoningMaxTokens,
+  };
 }
 
 ChatCompletionsCodec _openAICompatReasoningCodec() =>

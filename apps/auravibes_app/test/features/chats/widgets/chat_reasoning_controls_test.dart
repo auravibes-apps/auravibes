@@ -5,8 +5,16 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
   final options = [
     const ReasoningOption.toggle(),
     ReasoningOption.effort(['low', 'high']),
@@ -311,6 +319,7 @@ void main() {
     await tester.ensureVisible(lastEffort);
     final _ = await tester.pumpAndSettle();
     final semantics = tester.ensureSemantics();
+    await tester.pump();
     final disclosure = tester.getSemantics(
       find.byKey(const ValueKey<String>('chat_reasoning_effort_disclosure')),
     );
@@ -350,6 +359,7 @@ void main() {
     );
     expect(find.byType(AuraInput), findsOneWidget);
     final semantics = tester.ensureSemantics();
+    await tester.pump();
     expect(
       tester.getSemantics(find.byType(AuraSwitch)).label,
       startsWith('Enable reasoning'),
@@ -384,6 +394,7 @@ void main() {
     );
 
     final semantics = tester.ensureSemantics();
+    await tester.pump();
     expect(
       tester
           .getSemantics(
@@ -409,7 +420,6 @@ class const _LocalizedApp({required final Widget child})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => EasyLocalization(
-    key: UniqueKey(),
     child: Builder(
       builder: (context) => MaterialApp(
         home: Theme(
@@ -431,12 +441,11 @@ class const _LocalizedApp({required final Widget child})
 }
 
 Future<void> _pumpLocalized(WidgetTester tester, Widget child) async {
-  await tester.runAsync(() async {
-    await tester.pumpWidget(_LocalizedApp(child: child));
-    await tester.pump();
-    await tester.pump();
-    await tester.pump();
-  });
+  await tester.pumpWidget(_LocalizedApp(child: child));
+  await tester.pump();
+  await tester.pump();
+  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 void _noop(ReasoningConfiguration? value) {
