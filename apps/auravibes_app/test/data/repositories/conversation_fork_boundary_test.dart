@@ -25,10 +25,13 @@ void main() {
   tearDown(() => database.close());
 
   Future<void> insertSource() async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Test Workspace', type: .local),
+    );
     final _ = await database.conversationDao.insertConversation(
-      const ConversationsCompanion(
+      ConversationsCompanion(
         id: .new('source'),
-        workspaceId: .new('workspace'),
+        workspaceId: .new(workspace.id),
         title: .new('Source'),
       ),
     );

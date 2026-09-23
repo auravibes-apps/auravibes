@@ -103,6 +103,13 @@ void main() {
     tearDown(fixture.close);
 
     test('inserts and reads a row', () async {
+      final _ = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(
+          id: const Value('ws-1'),
+          name: 'Test Workspace',
+          type: .local,
+        ),
+      );
       final inserted = await fixture.database
           .into(fixture.database.mcpServers)
           .insertReturning(

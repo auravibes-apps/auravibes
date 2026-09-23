@@ -19,11 +19,24 @@ void main() {
     var database = initialDatabase;
     var repository = MessageRepository(database);
 
-    setUp(() {
+    setUp(() async {
       database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       repository = MessageRepository(database);
+
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Test Workspace', type: .local),
+      );
+      for (final conversationId in ['conv-1', 'conv-a', 'conv-b']) {
+        await database.conversationDao.insertConversation(
+          .insert(
+            id: Value(conversationId),
+            workspaceId: workspace.id,
+            title: 'Test Conversation',
+          ),
+        );
+      }
     });
 
     tearDown(() async {

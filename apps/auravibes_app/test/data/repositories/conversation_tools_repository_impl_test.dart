@@ -21,6 +21,26 @@ void main() {
     const testWorkspaceId = 'test-workspace-id';
     const testToolId = 'read_file';
 
+    Future<void> insertConversationToolParents() async {
+      final workspace = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'Test Workspace', type: .local),
+      );
+      await fixture.database.conversationDao.insertConversation(
+        .insert(
+          id: const Value(testConversationId),
+          workspaceId: workspace.id,
+          title: 'Test Conversation',
+        ),
+      );
+      final _ = await fixture.database.into(fixture.database.tools).insert(
+        ToolsCompanion.insert(
+          id: const Value('workspace-tool-id'),
+          workspaceId: workspace.id,
+          toolId: testToolId,
+        ),
+      );
+    }
+
     setUp(fixture.setUp);
 
     tearDown(fixture.tearDown);
@@ -427,6 +447,7 @@ void main() {
       );
 
       // Create a conversation tool that disables this tool.
+      await insertConversationToolParents();
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             testConversationId,
@@ -468,6 +489,7 @@ void main() {
         );
 
         // Create a conversation tool that requires confirmation.
+        await insertConversationToolParents();
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
               testConversationId,
@@ -510,6 +532,7 @@ void main() {
         );
 
         // Create a conversation tool that grants permission.
+        await insertConversationToolParents();
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
               testConversationId,
@@ -1269,13 +1292,6 @@ void main() {
         final workspace = await fixture.database.workspaceDao.insertWorkspace(
           .insert(name: 'WS', type: WorkspaceType.local),
         );
-        final _ = await fixture.database.conversationDao.insertConversation(
-          .insert(
-            id: const Value('conv-1'),
-            workspaceId: workspace.id,
-            title: 'Conv',
-          ),
-        );
 
         when(
           () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
@@ -1335,10 +1351,29 @@ final class _ConversationToolsRepositoryFixture {
       _mockWorkspaceToolsRepository ??
       fail('Expected workspace tools repository fixture to be initialized.');
 
-  void setUp() {
+  Future<void> setUp() async {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Test Workspace', type: .local),
+    );
+    await database.conversationDao.insertConversation(
+      .insert(
+        id: const Value('conv-1'),
+        workspaceId: workspace.id,
+        title: 'Test Conversation',
+      ),
+    );
+    for (final toolId in ['tool-1', 'tool-2']) {
+      final _ = await database.into(database.tools).insert(
+        ToolsCompanion.insert(
+          id: Value(toolId),
+          workspaceId: workspace.id,
+          toolId: toolId,
+        ),
+      );
+    }
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 
     _database = database;
