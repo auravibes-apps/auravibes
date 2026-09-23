@@ -7,8 +7,8 @@
 #   apps/auravibes_app/web/sqlite3.wasm
 #
 # Prerequisites:
-#   - fvm installed and configured
-#   - dependencies resolved (fvm dart run melos bs)
+#   - FVM configured or configured Dart SDK on PATH
+#   - dependencies resolved
 
 set -euo pipefail
 
@@ -37,12 +37,17 @@ if [ "$MODE" = "--debug" ]; then
   OPT_FLAG="--no-minify"
 fi
 
+DART_COMMAND=(dart)
+if command -v fvm >/dev/null 2>&1; then
+  DART_COMMAND=(fvm dart)
+fi
+
 echo "Compiling drift worker ($MODE)..."
-fvm dart compile js $OPT_FLAG "$WORKER_SRC" -o "$WORKER_OUT"
+"${DART_COMMAND[@]}" compile js "$OPT_FLAG" "$WORKER_SRC" -o "$WORKER_OUT"
 echo "  -> $WORKER_OUT ($(wc -l < "$WORKER_OUT") lines)"
 
 if [ -z "${SQLITE3_VER:-}" ]; then
-  SQLITE3_VER=$(fvm dart pub --directory "$APP_DIR" deps --json 2>/dev/null \
+  SQLITE3_VER=$("${DART_COMMAND[@]}" pub --directory "$APP_DIR" deps --json 2>/dev/null \
     | python3 -c "import sys,json; pkgs=json.load(sys.stdin)['packages']; print(next(p['version'] for p in pkgs if p['name']=='sqlite3'))" \
     2>/dev/null || true)
 fi

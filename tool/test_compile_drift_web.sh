@@ -10,9 +10,9 @@ FAKE_BIN="$TMP_DIR/bin"
 mkdir -p "$WORKSPACE/apps/auravibes_app/web" "$FAKE_BIN"
 : > "$WORKSPACE/apps/auravibes_app/web/drift_worker.dart"
 
-cat > "$FAKE_BIN/fvm" <<'STUB'
+cat > "$FAKE_BIN/dart" <<'STUB'
 #!/usr/bin/env bash
-if [[ "${1:-}" == dart && "${2:-}" == compile && "${3:-}" == js ]]; then
+if [[ "${1:-}" == compile && "${2:-}" == js ]]; then
   while (($#)); do
     if [[ "$1" == -o ]]; then
       printf 'stub worker\n' > "$2"
@@ -21,7 +21,7 @@ if [[ "${1:-}" == dart && "${2:-}" == compile && "${3:-}" == js ]]; then
     shift
   done
 fi
-printf 'unexpected fvm invocation\n' >&2
+printf 'unexpected dart invocation\n' >&2
 exit 64
 STUB
 
@@ -40,11 +40,11 @@ done
 printf 'untrusted wasm bytes' > "$output"
 printf '200'
 STUB
-chmod +x "$FAKE_BIN/fvm" "$FAKE_BIN/curl"
+chmod +x "$FAKE_BIN/dart" "$FAKE_BIN/curl"
 
 run_script() {
   local version="$1"
-  (cd "$WORKSPACE" && PATH="$FAKE_BIN:$PATH" TEST_TMP="$TMP_DIR" \
+  (cd "$WORKSPACE" && PATH="$FAKE_BIN:/usr/bin:/bin" TEST_TMP="$TMP_DIR" \
     SQLITE3_VER="$version" "$SCRIPT_UNDER_TEST" --release)
 }
 
