@@ -9,6 +9,9 @@ on:
         type: string
         default: '["android","ios","macos","linux","windows","web"]'
 
+permissions:
+  contents: read
+
 env:
   FLUTTER_WORKING_DIRECTORY: apps/auravibes_app
 

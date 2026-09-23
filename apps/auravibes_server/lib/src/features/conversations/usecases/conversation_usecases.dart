@@ -1610,7 +1610,15 @@ class ConversationUseCases {
           transaction: transaction,
           lockMode: LockMode.forUpdate,
         );
-        if (turn != null && !ConversationStatuses.isTerminal(turn.status)) {
+        if (turn == null) _fail(ConversationErrorCode.notFound);
+        await _requireTurnMutationAuthorization(
+          session,
+          userId: userId,
+          workspaceId: request.workspaceId,
+          turn: turn,
+          transaction: transaction,
+        );
+        if (!ConversationStatuses.isTerminal(turn.status)) {
           await ConversationTurn.db.updateRow(
             session,
             turn.copyWith(

@@ -5,6 +5,27 @@ import '../domain/workspace_roles.dart';
 
 class CloudWorkspaceRepository {
   static const maxReadRows = 200;
+  static const maxOwnedWorkspaces = 20;
+
+  Future<void> lockWorkspaceCreation(
+    Session session, {
+    required String ownerUserId,
+    required Transaction transaction,
+  }) => session.db.unsafeQuery(
+    'SELECT pg_advisory_xact_lock(hashtextextended(@ownerUserId, 0))',
+    parameters: QueryParameters.named({'ownerUserId': ownerUserId}),
+    transaction: transaction,
+  );
+
+  Future<int> countOwnedWorkspaces(
+    Session session, {
+    required String ownerUserId,
+    required Transaction transaction,
+  }) => CloudWorkspace.db.count(
+    session,
+    where: (table) => table.ownerUserId.equals(ownerUserId),
+    transaction: transaction,
+  );
 
   Future<CloudWorkspace> createWorkspace(
     Session session, {
