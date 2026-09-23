@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -80,6 +81,45 @@ void main() {
       final strategy = fixture.database.migration;
       final _ = await fixture.database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
+    });
+
+    test('workspace deletion cascades to sensitive child records', () async {
+      final workspace = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'Private workspace', type: WorkspaceType.local),
+      );
+      final conversation = await fixture.database.conversationDao
+          .insertConversation(
+            .insert(workspaceId: workspace.id, title: 'Private conversation'),
+          );
+      final _ = await fixture.database.messageDao.insertMessage(
+        .insert(
+          conversationId: conversation.id,
+          content: 'Sensitive message',
+          messageType: MessagesTableType.text,
+          isUser: true,
+          status: MessageTableStatus.sent,
+        ),
+      );
+
+      expect(
+        await fixture.database.workspaceDao.deleteWorkspace(workspace.id),
+        isTrue,
+      );
+
+      final conversations = await fixture.database
+          .customSelect(
+            'SELECT id FROM conversations WHERE workspace_id = ?',
+            variables: [Variable<String>(workspace.id)],
+          )
+          .get();
+      final messages = await fixture.database
+          .customSelect(
+            'SELECT id FROM messages WHERE conversation_id = ?',
+            variables: [Variable<String>(conversation.id)],
+          )
+          .get();
+      expect(conversations, isEmpty);
+      expect(messages, isEmpty);
     });
 
     const migrationDefinitionTestName =

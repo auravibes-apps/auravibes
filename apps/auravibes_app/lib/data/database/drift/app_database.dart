@@ -173,6 +173,9 @@ extension on AppDatabase {
         await m.createAll();
       },
       onUpgrade: _runUpgrades,
+      beforeOpen: (_) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
     );
   }
 

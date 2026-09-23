@@ -38,7 +38,7 @@ void main() {
     );
   });
 
-  test('does not overlap reads after a timeout', () async {
+  test('releases the read queue after an underlying read times out', () async {
     final firstResponse = Completer<ReadWorkspaceStateResponse>();
     var reads = 0;
     final gateway = CloudWorkspaceStateGateway.forTesting(
@@ -51,7 +51,7 @@ void main() {
             : Future.value(_response(sequence: 1));
       },
       subscribe: (_) => const Stream.empty(),
-      readTimeout: .zero,
+      readTimeout: const Duration(milliseconds: 10),
     );
 
     final pages = [
@@ -62,16 +62,9 @@ void main() {
       gateway.read(pages: pages),
       throwsA(isA<CloudAppException>()),
     );
-    await expectLater(
-      gateway.read(pages: pages),
-      throwsA(isA<CloudAppException>()),
-    );
-    await Future<void>.delayed(.zero);
-    expect(reads, 1);
-
-    firstResponse.complete(_response(sequence: 1));
-    await Future<void>.delayed(.zero);
+    await expectLater(gateway.read(pages: pages), completes);
     expect(reads, 2);
+    expect(firstResponse.isCompleted, isFalse);
   });
 
   test('paginates to exhaustion and never requests over 100', () async {

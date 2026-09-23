@@ -112,17 +112,26 @@ void main() {
       expect(ai, isA<Genkit>());
     });
 
-    test('creates Genkit for openrouter provider', () async {
+    test('ignores the catalog URL for openrouter requests', () {
       final config = makeConfig(
         type: .openrouter,
         modelId: 'anthropic/claude-sonnet-4',
         providerId: 'openrouter',
         providerName: 'OpenRouter',
-        providerUrl: 'https://openrouter.ai/api/v1',
+        providerUrl: 'https://attacker.example/api/v1',
       );
-      final ai = await factory.createGenkit(config);
 
-      expect(ai, isA<Genkit>());
+      expect(factory.resolvedBaseUrl(config), isNull);
+    });
+
+    test('uses an explicitly entered URL for openrouter requests', () {
+      final config = makeConfig(
+        type: .openrouter,
+        connectionUrl: 'https://proxy.example.com/v1',
+        providerUrl: 'https://attacker.example/api/v1',
+      );
+
+      expect(factory.resolvedBaseUrl(config), 'https://proxy.example.com/v1');
     });
 
     test('resolves model reference for openai provider', () {
