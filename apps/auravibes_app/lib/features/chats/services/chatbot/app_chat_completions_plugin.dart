@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -110,21 +111,94 @@ extension on AppChatCompletionsPlugin {
     http.Client client,
     http.Request request,
   ) async {
-    try {
-      final response = await client.send(request).timeout(requestTimeout);
+    final stopwatch = Stopwatch()..start();
+    final response = await _sendWithTimeout(client, request);
 
-      return ProviderTransportResponse(
-        statusCode: response.statusCode,
-        body: httpClient == null
-            ? _closeAfter(response.stream.timeout(requestTimeout), client)
-            : response.stream.timeout(requestTimeout),
-      );
+    return _transportResponse(response, client, stopwatch);
+  }
+
+  Future<http.StreamedResponse> _sendWithTimeout(
+    http.Client client,
+    http.Request request,
+  ) async {
+    try {
+      return await client.send(request).timeout(requestTimeout);
     } on Object {
-      if (httpClient == null) client.close();
+      _closeOwnedClient(client);
       rethrow;
     }
   }
+
+  void _closeOwnedClient(http.Client client) {
+    if (httpClient == null) client.close();
+  }
+
+  ProviderTransportResponse _transportResponse(
+    http.StreamedResponse response,
+    http.Client client,
+    Stopwatch stopwatch,
+  ) => ProviderTransportResponse(
+    statusCode: response.statusCode,
+    body: _responseBody(response.stream, client, stopwatch),
+    contentLength: response.contentLength,
+  );
+
+  Stream<List<int>> _responseBody(
+    Stream<List<int>> source,
+    http.Client client,
+    Stopwatch stopwatch,
+  ) {
+    final body = _untilDeadline(
+      source.timeout(requestTimeout),
+      stopwatch,
+      requestTimeout,
+    );
+
+    return httpClient == null ? _closeAfter(body, client) : body;
+  }
 }
+
+Stream<List<int>> _untilDeadline(
+  Stream<List<int>> source,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) async* {
+  if (stopwatch.elapsed >= requestTimeout) _throwProviderRequestTimeout();
+
+  final iterator = StreamIterator<List<int>>(source);
+  try {
+    yield* _readUntilDeadline(iterator, stopwatch, requestTimeout);
+  } finally {
+    final _ = await iterator.cancel();
+  }
+}
+
+Stream<List<int>> _readUntilDeadline(
+  StreamIterator<List<int>> iterator,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) async* {
+  while (await _moveNextBeforeDeadline(iterator, stopwatch, requestTimeout)) {
+    yield iterator.current;
+  }
+}
+
+Future<bool> _moveNextBeforeDeadline(
+  StreamIterator<List<int>> iterator,
+  Stopwatch stopwatch,
+  Duration requestTimeout,
+) {
+  final remaining = requestTimeout - stopwatch.elapsed;
+  if (remaining <= .zero) _throwProviderRequestTimeout();
+
+  return iterator.moveNext().timeout(
+    remaining,
+    onTimeout: _throwProviderRequestTimeout,
+  );
+}
+
+Never _throwProviderRequestTimeout() =>
+    throw TimeoutException('Provider request timed out.');
 
 Stream<List<int>> _closeAfter(
   Stream<List<int>> stream,

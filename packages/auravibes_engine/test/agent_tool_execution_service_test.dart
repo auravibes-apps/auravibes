@@ -216,6 +216,49 @@ void main() {
 
     expect(provider.approvalArgumentsRaw['tool-1'], argumentsRaw);
   });
+
+  test('does not execute a tool stopped during permission lookup', () async {
+    final decision = Completer<AgentToolApprovalDecision>();
+    var cancellationRequested = false;
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(tool: 'tool-a', id: 'tool-1', argumentsRaw: '{}'),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      cancellationRequestedOverride: () => cancellationRequested,
+      decisionFutures: {'tool-1': decision.future},
+      results: const {'tool-a': 'unexpected'},
+    );
+
+    final resultFuture = AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+    await _flushMicrotasks();
+    cancellationRequested = true;
+    decision.complete(
+      const AgentToolApprovalDecision(permissionResult: .granted),
+    );
+
+    final result = await resultFuture;
+
+    expect(result, AgentIterationDecision.done);
+    expect(provider.executedTools, isEmpty);
+    expect(provider.updates, [
+      isA<AgentToolResultUpdate>()
+          .having((update) => update.toolCallId, 'toolCallId', 'tool-1')
+          .having(
+            (update) => update.resultStatus,
+            'resultStatus',
+            AgentToolResultStatus.stoppedByUser,
+          ),
+    ]);
+  });
 }
 
 Future<void> _flushMicrotasks() async {
@@ -239,7 +282,10 @@ LoadLatestMessageToolCallsResult<String> _latestToolCalls() {
 class _FakeExecutionProvider({
   required final LoadLatestMessageToolCallsResult<String> latestToolCalls,
   final bool cancellationRequested = false,
+  final bool Function()? cancellationRequestedOverride,
   final Map<String, AgentToolPermissionResult> decisions = const {},
+  final Map<String, Future<AgentToolApprovalDecision>> decisionFutures =
+      const {},
   final Map<String, Object?> results = const {},
   final Map<String, Future<Object?>> resultFutures = const {},
 }) implements AgentToolExecutionProvider<String> {
@@ -248,6 +294,7 @@ class _FakeExecutionProvider({
   final updates = <AgentToolResultUpdate>[];
   final loggedErrors = <String>[];
   final approvalArgumentsRaw = <String, String>{};
+  final executedTools = <String>[];
 
   @override
   Future<LoadLatestMessageToolCallsResult<String>> loadLatestToolCalls({
@@ -261,6 +308,9 @@ class _FakeExecutionProvider({
     AgentToolApprovalRequest<String> request,
   ) async {
     approvalArgumentsRaw[request.toolCallId] = request.argumentsRaw ?? '{}';
+    final decisionFuture = decisionFutures[request.toolCallId];
+    if (decisionFuture != null) return await decisionFuture;
+
     return AgentToolApprovalDecision(
       permissionResult:
           decisions[request.toolCallId] ??
@@ -274,6 +324,7 @@ class _FakeExecutionProvider({
     required String tool,
     required Map<String, dynamic> arguments,
   }) async {
+    executedTools.add(tool);
     final future = resultFutures[tool];
     if (future != null) return await future;
 
@@ -296,7 +347,7 @@ class _FakeExecutionProvider({
 
   @override
   bool isCancellationRequested(String conversationId) {
-    return cancellationRequested;
+    return cancellationRequestedOverride?.call() ?? cancellationRequested;
   }
 
   @override
