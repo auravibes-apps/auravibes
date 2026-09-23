@@ -457,7 +457,7 @@ void main() {
 
         expect(decision.permissionResult, ToolPermissionResult.notConfigured);
         expect(decision.permissionTableId, isNull);
-        verifyNever(
+        final _ = verifyNever(
           () => fixture.workspaceToolsRepository.getWorkspaceToolByToolName(
             toolGroupId: any(named: 'toolGroupId'),
             toolName: any(named: 'toolName'),
