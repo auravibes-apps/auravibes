@@ -995,6 +995,9 @@
   },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
+    "copy_id": "Copiar ID",
+    "id_copied": "ID del espacio de trabajo copiado",
+    "copy_id_error": "No se pudo copiar el ID del espacio de trabajo",
     "create_button": "Crear Espacio de Trabajo",
     "duplicate": "Duplicar Espacio de Trabajo",
     "create_title": "Crear Nuevo Espacio de Trabajo",
