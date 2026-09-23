@@ -281,12 +281,27 @@ class const AppResolvedToolProvider({
   @override
   Future<Object?> runSkillAppTemplateTool(
     agent.SkillAppTemplateToolRequest input,
-  ) {
+  ) async {
     final usecase = runAppSkillToolUsecase;
     if (usecase == null) {
       throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
+    await _requireCurrentAppSkillTool(
+      provider: this,
+      conversationId: input.conversationId,
+      workspaceId: input.workspaceId,
+      toolName: agent.AgentResolvedToolName.skillAppTemplate(
+        tableId: input.toolSlug,
+        skillSlug: input.skillSlug,
+        toolIdentifier: input.toolSlug,
+      ).fullName,
+    );
+    if (agentCancellationRuntime.isCancellationRequested(
+      input.conversationId,
+    )) {
+      return null;
+    }
     final operation = usecase.callCancelable(
       workspaceId: input.workspaceId,
       skillSlug: input.skillSlug,
@@ -298,7 +313,7 @@ class const AppResolvedToolProvider({
       operation,
     );
 
-    return operation.valueOrCancellation();
+    return await operation.valueOrCancellation();
   }
 }
 
@@ -778,12 +793,27 @@ Future<Object?> _runSubAgentNativeTool(_SkillNativeToolRequest request) {
   return _runSubAgentTool(request: request);
 }
 
-Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
+Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) async {
   final usecase = request.provider.runAppSkillToolUsecase;
   if (usecase == null) {
     throw StateError(_runAppSkillToolUsecaseNotConfigured);
   }
 
+  await _requireCurrentAppSkillTool(
+    provider: request.provider,
+    conversationId: request.conversationId,
+    workspaceId: request.workspaceId,
+    toolName: agent.AgentResolvedToolName.skillNative(
+      tableId: request.toolSlug,
+      skillSlug: request.skillSlug,
+      toolIdentifier: request.toolSlug,
+    ).fullName,
+  );
+  if (request.provider.agentCancellationRuntime.isCancellationRequested(
+    request.conversationId,
+  )) {
+    return null;
+  }
   final operation = usecase.callCancelable(
     workspaceId: request.workspaceId,
     skillSlug: request.skillSlug,
@@ -791,7 +821,7 @@ Future<Object?> _runAppNativeTool(_SkillNativeToolRequest request) {
     arguments: request.arguments,
   );
 
-  return _registerNativeOperation(request, operation);
+  return await _registerNativeOperation(request, operation);
 }
 
 Future<Object?> _registerNativeOperation(
@@ -955,19 +985,45 @@ class _ConfiguredSkillCommandRunner {
 
   Future<Object?> _runConfiguredAppSkillTool(
     RunSkillNativeToolRequest request,
-  ) {
+  ) async {
     final target = request.target;
     final usecase = _provider.runAppSkillToolUsecase;
     if (usecase == null) {
       throw StateError(_runAppSkillToolUsecaseNotConfigured);
     }
 
-    return usecase.call(
+    await _requireCurrentAppSkillTool(
+      provider: _provider,
+      conversationId: request.conversationId,
+      workspaceId: request.workspaceId,
+      toolName: target.fullName,
+    );
+
+    return await usecase.call(
       workspaceId: request.workspaceId,
       skillSlug: target.skillSlug ?? '',
       toolSlug: target.toolIdentifier,
       arguments: request.arguments,
     );
+  }
+}
+
+Future<void> _requireCurrentAppSkillTool({
+  required AppResolvedToolProvider provider,
+  required String conversationId,
+  required String workspaceId,
+  required String toolName,
+}) async {
+  final buildSpecs = provider.buildAppSkillNativeToolSpecsUsecase;
+  if (buildSpecs == null) {
+    throw StateError('App skill tool specifications are not configured.');
+  }
+  final specs = await buildSpecs.call(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+  );
+  if (!specs.any((spec) => spec.name == toolName)) {
+    throw StateError('App skill tool is not currently available: $toolName');
   }
 }
 

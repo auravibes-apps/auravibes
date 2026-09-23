@@ -62,6 +62,29 @@ class _MockSkillCredentialsRepository extends Mock
 class _MockBuildAppSkillNativeToolSpecsUsecase extends Mock
     implements BuildAppSkillNativeToolSpecsUsecase;
 
+_MockBuildAppSkillNativeToolSpecsUsecase _currentAppSkillSpecs(
+  String? toolName,
+) {
+  final specs = _MockBuildAppSkillNativeToolSpecsUsecase();
+  when(
+    () => specs.call(
+      conversationId: any(named: 'conversationId'),
+      workspaceId: any(named: 'workspaceId'),
+    ),
+  ).thenAnswer(
+    (_) async => [
+      if (toolName != null)
+        ToolSpec(
+          name: toolName,
+          description: 'Current app skill tool',
+          inputJsonSchema: const {'type': 'object'},
+        ),
+    ],
+  );
+
+  return specs;
+}
+
 class _MockBuildLoadedSkillManifestsUsecase extends Mock
     implements BuildLoadedSkillManifestsUsecase;
 
@@ -293,6 +316,9 @@ void main() {
 
   test('unwraps approved skill command arguments before dispatch', () async {
     final appSkillTool = _MockRunAppSkillToolUsecase();
+    final specs = _currentAppSkillSpecs(
+      'skill__app_template__codex__web_search',
+    );
     final conversationRepository = MockConversationRepository();
     when(() => conversationRepository.getConversationById('conversation-1'))
         .thenAnswer(
@@ -322,6 +348,7 @@ void main() {
       }) async => 'mcp result',
       conversationRepository: conversationRepository,
       runAppSkillToolUsecase: appSkillTool,
+      buildAppSkillNativeToolSpecsUsecase: specs,
     );
 
     final result = await service.call(
@@ -844,6 +871,9 @@ void main() {
     'unwraps approved skill command arguments before native execution',
     () async {
       final appSkillTool = _MockRunAppSkillToolUsecase();
+      final specs = _currentAppSkillSpecs(
+        'skill__app_native__codex__web_search',
+      );
       final conversationRepository = MockConversationRepository();
       when(() => conversationRepository.getConversationById('conversation-1'))
           .thenAnswer(
@@ -877,6 +907,7 @@ void main() {
         }) async => 'mcp result',
         conversationRepository: conversationRepository,
         runAppSkillToolUsecase: appSkillTool,
+        buildAppSkillNativeToolSpecsUsecase: specs,
       );
 
       final result = await service(
@@ -962,6 +993,9 @@ void main() {
     final templateTool = _MockRunSkillTemplateToolUsecase();
     final appSkillTool = _MockRunAppSkillToolUsecase();
     final nativeTool = _MockRunSkillsManagerToolUsecase();
+    final specs = _currentAppSkillSpecs(
+      'skill__app_native__duckduckgo__search',
+    );
     final nativeSuccesses = <({String workspaceId, String toolSlug})>[];
     when(
       () => templateTool.call(
@@ -995,6 +1029,7 @@ void main() {
       }) async => 'mcp result',
       runSkillTemplateToolUsecase: templateTool,
       runAppSkillToolUsecase: appSkillTool,
+      buildAppSkillNativeToolSpecsUsecase: specs,
       runSkillsManagerToolUsecase: (_) => nativeTool,
       onSkillsManagerToolSuccess:
           ({required workspaceId, required toolSlug, required result}) {
@@ -1037,9 +1072,12 @@ void main() {
     ]);
   });
 
-  test('registers app native skill calls for cancellation', () async {
+  test('stops app native calls during specification validation', () async {
     final _ = cancellationRuntime.start('conversation-1');
     final appSkillTool = _MockRunAppSkillToolUsecase();
+    final specs = _currentAppSkillSpecs(
+      'skill__app_native__duckduckgo__search',
+    );
     final operation = CancelableCompleter<Object?>();
     when(
       () => appSkillTool.callCancelable(
@@ -1057,6 +1095,7 @@ void main() {
         required arguments,
       }) async => 'mcp result',
       runAppSkillToolUsecase: appSkillTool,
+      buildAppSkillNativeToolSpecsUsecase: specs,
     );
 
     final result = provider.runSkillNativeTool((
@@ -1066,11 +1105,51 @@ void main() {
       toolSlug: 'search',
       arguments: {'query': 'dart'},
     ));
-
     cancellationRuntime.requestStop('conversation-1');
 
-    expect(operation.isCanceled, isTrue);
     expect(await result, isNull);
+    final _ = verifyNever(
+      () => appSkillTool.callCancelable(
+        workspaceId: any(named: 'workspaceId'),
+        skillSlug: any(named: 'skillSlug'),
+        toolSlug: any(named: 'toolSlug'),
+        arguments: any(named: 'arguments'),
+      ),
+    );
+  });
+
+  test('rejects app native tools absent from current specifications', () async {
+    final appSkillTool = _MockRunAppSkillToolUsecase();
+    final specs = _currentAppSkillSpecs(null);
+    final provider = AppResolvedToolProvider(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
+      runAppSkillToolUsecase: appSkillTool,
+      buildAppSkillNativeToolSpecsUsecase: specs,
+    );
+
+    await expectLater(
+      provider.runSkillNativeTool((
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        skillSlug: 'duckduckgo',
+        toolSlug: 'search',
+        arguments: const {'query': 'dart'},
+      )),
+      throwsA(isA<StateError>()),
+    );
+    final _ = verifyNever(
+      () => appSkillTool.callCancelable(
+        workspaceId: any(named: 'workspaceId'),
+        skillSlug: any(named: 'skillSlug'),
+        toolSlug: any(named: 'toolSlug'),
+        arguments: any(named: 'arguments'),
+      ),
+    );
   });
 
   test('throws when skill runners are not configured', () {

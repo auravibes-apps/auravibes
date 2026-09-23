@@ -36,6 +36,8 @@ typedef _InsertToolRequest = ({
   String inputSchema,
 });
 
+typedef _SyncedTools = ({List<ToolSpec> specs, List<ToolsTable> tools});
+
 class const SyncSkillToolPermissionsUsecase({
   required final AppDatabase database,
   required final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs,
@@ -59,11 +61,12 @@ class const SyncSkillToolPermissionsUsecase({
     required String workspaceId,
     required String toolName,
   }) async {
-    final tools = await _syncTools(
+    final synced = await _syncTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final toolsByName = {for (final tool in tools) tool.toolId: tool};
+    if (!synced.specs.any((spec) => spec.name == toolName)) return null;
+    final toolsByName = {for (final tool in synced.tools) tool.toolId: tool};
 
     return toolsByName[toolName]?.id;
   }
@@ -71,7 +74,7 @@ class const SyncSkillToolPermissionsUsecase({
 
 extension _SyncSkillToolPermissionsUsecaseSync
     on SyncSkillToolPermissionsUsecase {
-  Future<List<ToolsTable>> _syncTools({
+  Future<_SyncedTools> _syncTools({
     required String conversationId,
     required String workspaceId,
   }) async {
@@ -80,9 +83,11 @@ extension _SyncSkillToolPermissionsUsecaseSync
       workspaceId: workspaceId,
     );
 
-    return await database.transaction(
+    final tools = await database.transaction(
       () => _syncToolsInDatabase(workspaceId: workspaceId, specs: specs),
     );
+
+    return (specs: specs, tools: tools);
   }
 
   Future<List<ToolSpec>> _loadToolSpecs({
