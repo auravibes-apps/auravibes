@@ -192,11 +192,19 @@ void main() {
       )..where((table) => table.id.equals(id))).getSingle();
       expect(migrated.encryptedAuthValue, isNot(reference));
       expect(migrated.keySuffix, 'secret');
+      final encryptedAuthValue = migrated.encryptedAuthValue;
+      if (encryptedAuthValue == null) {
+        throw StateError('Expected encrypted auth value after migration.');
+      }
       expect(
         ServiceConnectionAuthCodec.decodeSecret(
-          await encryption.decrypt(migrated.encryptedAuthValue!),
+          await encryption.decrypt(encryptedAuthValue),
         ),
-        const ServiceConnectionSecretApiKey(apiKey: 'legacy-secret'),
+        isA<ServiceConnectionSecretApiKey>().having(
+          (secret) => secret.apiKey,
+          'apiKey',
+          'legacy-secret',
+        ),
       );
     });
 
@@ -296,16 +304,13 @@ class _FakeSecretKeyManager extends SecretKeyManager {
   }
 }
 
-class _FakeLegacyApiKeyStorage extends LegacyApiKeyStorage {
-  _FakeLegacyApiKeyStorage(this.values);
-
-  final Map<String, String> values;
-
+class _FakeLegacyApiKeyStorage(final Map<String, String> values)
+    extends LegacyApiKeyStorage {
   @override
   Future<String?> read(String reference) async => values[reference];
 
   @override
   Future<void> delete(String reference) async {
-    values.remove(reference);
+    final _ = values.remove(reference);
   }
 }

@@ -793,13 +793,13 @@ void main() {
         when(() => mockLegacyApiKeyStorage.isLegacyReference(reference))
             .thenReturn(true);
         when(() => mockLegacyApiKeyStorage.delete(reference))
-            .thenAnswer((_) async {});
+            .thenAnswer((_) => Future<void>.value());
         when(() => mockConnectionsDao.deleteModelConnection('conn-1'))
-            .thenAnswer((_) async {});
+            .thenAnswer((_) => Future<void>.value());
 
         await repository.deleteModelConnection('conn-1');
 
-        verifyInOrder([
+        final _ = verifyInOrder([
           () => mockLegacyApiKeyStorage.delete(reference),
           () => mockConnectionsDao.deleteModelConnection('conn-1'),
         ]);

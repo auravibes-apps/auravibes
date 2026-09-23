@@ -80,12 +80,10 @@ typedef _ConnectionInsertRequest = ({
 });
 
 class ServiceConnectionRepository(
-  this._database,
-  this._encryptionService, [
+  final AppDatabase _database,
+  final EncryptionService _encryptionService, [
   LegacyApiKeyStorage? legacyApiKeyStorage,
 ]) with _ServiceConnectionRepositoryQueries {
-  final AppDatabase _database;
-  final EncryptionService _encryptionService;
   final LegacyApiKeyStorage _legacyApiKeyStorage =
       legacyApiKeyStorage ?? LegacyApiKeyStorage();
 
@@ -381,7 +379,7 @@ Future<String> _readEncryptedOrLegacySecret(
 ) async {
   final legacyStorage = repository._legacyApiKeyStorage;
   if (!legacyStorage.isLegacyReference(storedValue)) {
-    return repository._encryptionService.decrypt(storedValue);
+    return await repository._encryptionService.decrypt(storedValue);
   }
 
   final apiKey = await legacyStorage.read(storedValue);
@@ -396,13 +394,15 @@ Future<String> _readEncryptedOrLegacySecret(
     repository._database.serviceConnections,
   );
   final _ = update.where((table) => table.id.equals(row.id));
-  await update.write(
+  final updatedRows = await update.write(
     ServiceConnectionsCompanion(
       encryptedAuthValue: .new(encrypted),
       keySuffix: .new(_suffix(apiKey)),
     ),
   );
-  await legacyStorage.delete(storedValue);
+  if (updatedRows == 1) {
+    await legacyStorage.delete(storedValue);
+  }
 
   return encoded;
 }
