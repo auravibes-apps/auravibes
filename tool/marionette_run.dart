@@ -150,7 +150,7 @@ void writeMarionetteManifest({
   try {
     temporaryFile.writeAsStringSync('${jsonEncode(manifest)}\n', flush: true);
     _restrictPermissions(temporaryFile.path, '600');
-    temporaryFile.renameSync(manifestFile.path);
+    final _ = temporaryFile.renameSync(manifestFile.path);
   } finally {
     if (temporaryFile.existsSync()) temporaryFile.deleteSync();
   }

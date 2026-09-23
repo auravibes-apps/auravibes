@@ -42,11 +42,9 @@ void main() {
       startedAt: '2026-09-22T00:00:00.000Z',
     );
 
-    final manifest = jsonDecode(manifestFile.readAsStringSync());
-    expect(
-      manifest['vmServiceUri'],
-      'ws://127.0.0.1:4321/replacement=/ws',
-    );
+    final manifest =
+        jsonDecode(manifestFile.readAsStringSync()) as Map<String, Object?>;
+    expect(manifest['vmServiceUri'], 'ws://127.0.0.1:4321/replacement=/ws');
     expect(manifestFile.parent.listSync().map((entry) => entry.path), [
       manifestFile.path,
     ]);
@@ -58,9 +56,7 @@ void main() {
 }
 
 String _modeOf(String path) {
-  final arguments = Platform.isMacOS
-      ? ['-f', '%Lp', path]
-      : ['-c', '%a', path];
+  final arguments = Platform.isMacOS ? ['-f', '%Lp', path] : ['-c', '%a', path];
   final result = Process.runSync('stat', arguments);
   if (result.exitCode != 0) {
     throw ProcessException('stat', arguments, '${result.stderr}');
