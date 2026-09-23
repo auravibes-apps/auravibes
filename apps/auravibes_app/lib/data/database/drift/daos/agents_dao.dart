@@ -127,6 +127,15 @@ extension AgentsDaoWriteOperations on AgentsDao {
     return transaction(() => _updateAgent(agentId, agent, skills));
   }
 
+  Future<AgentsTable> updateAgentVisibility(
+    String agentId,
+    String visibility,
+  ) async {
+    final _ = await _writeAgent(agentId, .new(visibility: .new(visibility)));
+
+    return await _requireAgent(agentId);
+  }
+
   Future<AgentsTable> _updateAgent(
     String agentId,
     AgentsCompanion agent,

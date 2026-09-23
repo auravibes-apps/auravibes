@@ -140,19 +140,14 @@ void main() {
     final repository = _FakeAgentRepository(
       (_) async => .new(agents: [agent]),
       onGet: (_) async => _entity(agent),
-      onUpdate: (_, update) async {
+      onUpdateVisibility: (_, visibility) async {
         updateCalls++;
-        expect(update.name, agent.name);
-        expect(update.description, agent.description);
-        expect(update.content, 'Prompt');
-        expect(update.isEnabled, agent.isEnabled);
-        expect(update.skills, isEmpty);
         agent = AgentListItem(
           id: agent.id,
           name: agent.name,
           description: agent.description,
           isEnabled: agent.isEnabled,
-          visibility: update.visibility,
+          visibility: visibility,
           skillCount: agent.skillCount,
         );
 
@@ -194,14 +189,14 @@ void main() {
     final repository = _FakeAgentRepository(
       (_) async => .new(agents: [agent]),
       onGet: (_) async => _entity(agent),
-      onUpdate: (_, update) async {
+      onUpdateVisibility: (_, visibility) async {
         updateCalls++;
         agent = AgentListItem(
           id: agent.id,
           name: agent.name,
           description: agent.description,
           isEnabled: agent.isEnabled,
-          visibility: update.visibility,
+          visibility: visibility,
           skillCount: agent.skillCount,
         );
 
@@ -289,14 +284,17 @@ AgentEntity _entity(AgentListItem agent) => AgentEntity(
 );
 
 class _FakeAgentRepository implements AgentRepository {
-  new(this._onList, {this._onDuplicate, this._onGet, this._onUpdate});
+  new(this._onList, {this._onDuplicate, this._onGet, this._onUpdateVisibility});
 
   final queries = <AgentListQuery>[];
   final Future<AgentListPage> Function(AgentListQuery query) _onList;
   final Future<AgentEntity> Function(String agentId)? _onDuplicate;
   final Future<AgentEntity?> Function(String agentId)? _onGet;
-  final Future<AgentEntity> Function(String agentId, AgentToUpdate agent)?
-  _onUpdate;
+  final Future<AgentEntity> Function(
+    String agentId,
+    AgentVisibility visibility,
+  )?
+  _onUpdateVisibility;
 
   @override
   Future<AgentListPage> listAgents(AgentListQuery query) {
@@ -326,7 +324,15 @@ class _FakeAgentRepository implements AgentRepository {
 
   @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) =>
-      _onUpdate?.call(agentId, agent) ?? (throw UnimplementedError());
+      throw UnimplementedError();
+
+  @override
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) =>
+      _onUpdateVisibility?.call(agentId, visibility) ??
+      (throw UnimplementedError());
 
   @override
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) =>
