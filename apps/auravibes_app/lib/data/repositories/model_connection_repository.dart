@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
@@ -77,11 +78,14 @@ String? _providerUrlForValidation(
 class ModelConnectionRepository({
   required final AppDatabase _database,
   required final EncryptionService _encryptionService,
+  LegacyApiKeyStorage? legacyApiKeyStorage,
   ModelProviderServices? modelProviderServices,
 }) implements ModelConnectionStore {
   static const _missingApiKeyMessage = 'Model connection has no API key';
   final ModelProviderServices _modelProviderServices =
       modelProviderServices ?? ModelProviderServices();
+  final LegacyApiKeyStorage _legacyApiKeyStorage =
+      legacyApiKeyStorage ?? LegacyApiKeyStorage();
 
   @override
   Future<ModelProviderVerification> verifyModelConnection(
@@ -185,6 +189,12 @@ class ModelConnectionRepository({
       throw ModelConnectionException(
         'Model connection with ID "$modelConnectionId" not found',
       );
+    }
+
+    final storedValue = modelConnection.encryptedAuthValue;
+    if (storedValue != null &&
+        _legacyApiKeyStorage.isLegacyReference(storedValue)) {
+      await _legacyApiKeyStorage.delete(storedValue);
     }
 
     // Delete from database.

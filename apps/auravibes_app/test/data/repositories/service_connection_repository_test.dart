@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
@@ -168,6 +169,49 @@ void main() {
       );
     });
 
+    test('migrates a legacy secure-storage API key when read', () async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      final encryption = EncryptionService(_FakeSecretKeyManager());
+      const reference = '123e4567-e89b-42d3-a456-426614174000';
+      final legacyStorage = _FakeLegacyApiKeyStorage({
+        reference: 'legacy-secret',
+      });
+      final repository = ServiceConnectionRepository(
+        database,
+        encryption,
+        legacyStorage,
+      );
+      final id = await _insertLegacyConnection(database, reference);
+
+      final secret = await repository.readSecret(id);
+
+      expect((secret as ServiceConnectionSecretApiKey).apiKey, 'legacy-secret');
+      expect(legacyStorage.values, isEmpty);
+      final migrated = await (database.select(
+        database.serviceConnections,
+      )..where((table) => table.id.equals(id))).getSingle();
+      expect(migrated.encryptedAuthValue, isNot(reference));
+      expect(migrated.keySuffix, 'secret');
+      final encryptedAuthValue = migrated.encryptedAuthValue;
+      if (encryptedAuthValue == null) {
+        throw StateError('Expected encrypted auth value after migration.');
+      }
+      expect(
+        ServiceConnectionAuthCodec.decodeSecret(
+          await encryption.decrypt(encryptedAuthValue),
+        ),
+        isA<ServiceConnectionSecretApiKey>().having(
+          (secret) => secret.apiKey,
+          'apiKey',
+          'legacy-secret',
+        ),
+      );
+    });
+
     test('deletes only the app skill credential in its workspace', () async {
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
@@ -200,6 +244,26 @@ void main() {
       expect(await repository.getById(otherWorkspaceId), isNot(equals(null)));
     });
   });
+}
+
+Future<String> _insertLegacyConnection(
+  AppDatabase database,
+  String reference,
+) async {
+  final row = await database
+      .into(database.serviceConnections)
+      .insertReturning(
+        ServiceConnectionsCompanion.insert(
+          name: 'Legacy OpenAI key',
+          serviceId: 'openai',
+          kind: .modelProvider,
+          authenticationType: .apiKey,
+          encryptedAuthValue: .new(reference),
+          workspaceId: 'workspace-1',
+        ),
+      );
+
+  return row.id;
 }
 
 Future<void> _insertWorkspace(AppDatabase database, String workspaceId) async {
@@ -255,5 +319,16 @@ class _FakeSecretKeyManager extends SecretKeyManager {
   @override
   Future<SecretKey> getOrCreateSecretKey() async {
     return SecretKey(List<int>.generate(32, (index) => index));
+  }
+}
+
+class _FakeLegacyApiKeyStorage(final Map<String, String> values)
+    extends LegacyApiKeyStorage {
+  @override
+  Future<String?> read(String reference) async => values[reference];
+
+  @override
+  Future<void> delete(String reference) async {
+    final _ = values.remove(reference);
   }
 }
