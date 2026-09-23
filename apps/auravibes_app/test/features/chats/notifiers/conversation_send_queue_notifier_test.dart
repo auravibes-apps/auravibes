@@ -21,6 +21,24 @@ void main() {
       );
     });
 
+    test('text-only queue creation does not initialize the audio recorder', () {
+      final textOnlyContainer = ProviderContainer();
+      addTearDown(textOnlyContainer.dispose);
+
+      final notifier = textOnlyContainer.read(
+        conversationSendQueueProvider.notifier,
+      );
+      notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Text only'),
+      );
+
+      final queuedDrafts = textOnlyContainer.read(
+        conversationSendQueueProvider,
+      );
+      expect(queuedDrafts['conv-1']?.single.draft.text, 'Text only');
+    });
+
     tearDown(() {
       container.dispose();
     });

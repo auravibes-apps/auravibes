@@ -23,7 +23,9 @@ class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
 }) {
-  final AudioRecorder _recorder = recorder ?? AudioRecorder();
+  // Defer platform-channel setup until voice recording is requested.
+  final AudioRecorder? _providedRecorder = recorder;
+  late final AudioRecorder _recorder = _providedRecorder ?? AudioRecorder();
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
