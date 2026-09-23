@@ -304,7 +304,7 @@ void main() {
       sub.close();
     });
 
-    test('resetReasoningConfiguration persists a clear patch', () async {
+    test('null reasoning configuration persists a clear patch', () async {
       final patches = <ConversationPatch>[];
       final container = ProviderContainer(
         overrides: [
@@ -340,7 +340,7 @@ void main() {
 
       await container
           .read(conversationChatProvider('ws-1', 'conv-1').notifier)
-          .resetReasoningConfiguration();
+          .setReasoningConfiguration(null);
 
       expect(patches.single.clearReasoningConfiguration, isTrue);
       sub.close();

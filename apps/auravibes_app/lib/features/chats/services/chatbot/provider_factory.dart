@@ -66,16 +66,9 @@ class const ProviderFactory({
       config,
       reasoningConfiguration,
     );
+    if (selectedConfiguration == null) return null;
 
-    return switch (runtime.runtime) {
-      .openAiReasoning => _openAIReasoningGenerationConfig<T>(
-        selectedConfiguration,
-      ),
-      .anthropic => _anthropicGenerationConfig<T>(selectedConfiguration),
-      _ when config.modelsProvider.type == ModelProvidersType.openrouter =>
-        _openRouterGenerationConfig<T>(selectedConfiguration),
-      _ => null,
-    };
+    return _generationConfigFor<T>(config, runtime, selectedConfiguration);
   }
 
   ReasoningConfiguration? _validConfiguration(
@@ -88,6 +81,26 @@ class const ProviderFactory({
     }
 
     return value;
+  }
+}
+
+extension _ProviderFactoryGenerationConfig on ProviderFactory {
+  T? _generationConfigFor<T>(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ProviderRuntimeSelection runtime,
+    ReasoningConfiguration configuration,
+  ) {
+    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
+      return _openAIReasoningGenerationConfig<T>(configuration);
+    }
+    if (runtime.runtime == ProviderRuntime.anthropic) {
+      return _anthropicGenerationConfig<T>(configuration);
+    }
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterGenerationConfig<T>(configuration);
+    }
+
+    return null;
   }
 }
 

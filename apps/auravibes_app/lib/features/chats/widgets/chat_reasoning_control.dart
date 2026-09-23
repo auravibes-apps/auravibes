@@ -20,32 +20,33 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 
   @override
   Widget build(BuildContext context) {
-    if (!hasSupportedReasoningOptions(widget.options)) {
+    if (!ChatReasoningControls.hasSupportedReasoningOptions(widget.options)) {
       return const SizedBox.shrink();
     }
 
-    final trigger = _ReasoningTrigger(
-      summary: _ReasoningTrigger._reasoningSummary(
-        widget.options,
-        widget.value,
-      ),
-      onPressed: _isNarrowLayout(context)
-          ? () => _showReasoningSheet(context)
-          : _popupController.toggle,
-    );
+    final trigger = _buildTrigger(context);
 
     if (_isNarrowLayout(context)) return trigger;
 
     return _ReasoningPopup(
       trigger: trigger,
-      child: ChatReasoningControls(
-        options: widget.options,
-        value: widget.value,
-        onChanged: widget.onChanged,
-      ),
+      child: _buildControls(),
       controller: _popupController,
     );
   }
+
+  Widget _buildTrigger(BuildContext context) => _ReasoningTrigger(
+    summary: _ReasoningTrigger._reasoningSummary(widget.options, widget.value),
+    onPressed: _isNarrowLayout(context)
+        ? () => _showReasoningSheet(context)
+        : _popupController.toggle,
+  );
+
+  ChatReasoningControls _buildControls() => ChatReasoningControls(
+    options: widget.options,
+    value: widget.value,
+    onChanged: widget.onChanged,
+  );
 
   bool _isNarrowLayout(BuildContext context) =>
       MediaQuery.sizeOf(context).width < DesignBreakpoints.sm;
@@ -53,13 +54,7 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
   Future<void> _showReasoningSheet(BuildContext context) =>
       showModalBottomSheet<void>(
         context: context,
-        builder: (context) => _ReasoningSheet(
-          child: ChatReasoningControls(
-            options: widget.options,
-            value: widget.value,
-            onChanged: widget.onChanged,
-          ),
-        ),
+        builder: (context) => _ReasoningSheet(child: _buildControls()),
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         useSafeArea: true,

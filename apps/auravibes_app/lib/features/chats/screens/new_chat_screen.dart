@@ -329,7 +329,10 @@ class const _NewChatInput({required final Widget child})
           agentSheetControl: _NewChatAgentSheetControl(data: data),
           modelCompactControl: _NewChatModelCompactControl(data: data),
           agentCompactControl: _NewChatAgentCompactControl(data: data),
-          reasoningControl: hasSupportedReasoningOptions(reasoningOptions)
+          reasoningControl:
+              ChatReasoningControls.hasSupportedReasoningOptions(
+                reasoningOptions,
+              )
               ? ChatReasoningControl(
                   options: reasoningOptions,
                   value: data.state.reasoningConfiguration,

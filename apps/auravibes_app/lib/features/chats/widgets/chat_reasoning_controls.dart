@@ -12,6 +12,11 @@ class const ChatReasoningControls({
   required final ValueChanged<ReasoningConfiguration?> onChanged,
   super.key,
 }) extends StatefulWidget {
+  static bool hasSupportedReasoningOptions(Iterable<ReasoningOption> options) =>
+      options.any(
+        (option) => option.isToggle || option.isEffort || option.isBudgetTokens,
+      );
+
   @override
   State<ChatReasoningControls> createState() => _ChatReasoningControlsState();
 }
@@ -60,7 +65,7 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
 
   @override
   Widget build(BuildContext context) {
-    if (!hasSupportedReasoningOptions(widget.options)) {
+    if (!ChatReasoningControls.hasSupportedReasoningOptions(widget.options)) {
       return const SizedBox.shrink();
     }
 
@@ -446,20 +451,23 @@ class const _ReasoningBudgetInput({
     label: const TextLocale(
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
     ),
-    hint: Text(
-      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
-        namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
-      ),
-    ),
+    hint: _hint(),
     error: _errorWidget(error),
     keyboardType: .number,
     enabled: enabled,
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     onChanged: onChanged,
-    semanticLabel: LocaleKeys
-        .chats_screens_chat_conversation_reasoning_budget_tokens
-        .tr(),
+    semanticLabel: _semanticLabel(),
   );
+
+  Text _hint() => Text(
+    LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
+      namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
+    ),
+  );
+
+  String _semanticLabel() =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();
 
   Widget? _errorWidget(String? value) => value == null ? null : Text(value);
 }
@@ -488,8 +496,3 @@ ReasoningOption? _effortOption(Iterable<ReasoningOption> options) =>
 
 ReasoningOption? _budgetOption(Iterable<ReasoningOption> options) =>
     options.where((option) => option.isBudgetTokens).firstOrNull;
-
-bool hasSupportedReasoningOptions(Iterable<ReasoningOption> options) =>
-    options.any(
-      (option) => option.isToggle || option.isEffort || option.isBudgetTokens,
-    );

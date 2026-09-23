@@ -52,26 +52,21 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   }
 
   Future<void> setModel(String? modelId) async {
-    if (modelId == null) return;
-
     final result = state.value;
-    if (result is! ConversationFound) return;
+    if (modelId == null || result is! ConversationFound) return;
+    final conversation = result.conversation;
 
     final patch = await _modelUpdatePatch(
-      ref,
       _workspaceId,
       modelId,
-      result.conversation.reasoningConfiguration,
+      conversation.reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    final updated = await _updateConversation(result.conversation, patch);
-    if (!ref.mounted) return;
-
-    state = AsyncData(ConversationFound(updated));
+    await _saveConversationPatch(conversation, patch);
   }
 
   Future<void> setReasoningConfiguration(
-    ReasoningConfiguration reasoningConfiguration,
+    ReasoningConfiguration? reasoningConfiguration,
   ) async {
     final result = state.value;
     if (result is! ConversationFound) return;
@@ -83,19 +78,9 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    await _saveReasoningConfiguration(
+    await _saveConversationPatch(
       result.conversation,
       _reasoningConfigurationPatch(validatedConfiguration),
-    );
-  }
-
-  Future<void> resetReasoningConfiguration() async {
-    final result = state.value;
-    if (result is! ConversationFound) return;
-
-    await _saveReasoningConfiguration(
-      result.conversation,
-      const ConversationPatch(clearReasoningConfiguration: true),
     );
   }
 
@@ -103,13 +88,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final updated = await _updateConversation(
-      result.conversation,
-      _agentPatch(agentId),
-    );
-    if (!ref.mounted) return;
-
-    state = AsyncData(ConversationFound(updated));
+    await _saveConversationPatch(result.conversation, _agentPatch(agentId));
   }
 
   Future<void> rename(ConversationEntity conversation, String title) async {
@@ -142,8 +121,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  static Future<ConversationPatch> _modelUpdatePatch(
-    Ref ref,
+  Future<ConversationPatch> _modelUpdatePatch(
     String workspaceId,
     String modelId,
     ReasoningConfiguration? reasoningConfiguration,
@@ -170,9 +148,15 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       cloudConversationUsecaseProvider(_workspaceId).future,
     );
     if (cloud != null) {
-      return _updatedConversation(
-        conversation,
-        await cloud.update(conversation, patch),
+      final updated = await cloud.update(conversation, patch);
+      return conversation.copyWith(
+        modelId: updated.modelId,
+        agentId: updated.agentId,
+        reasoningConfiguration: ReasoningConfiguration.decode(
+          updated.reasoningConfigJson,
+        ),
+        revision: updated.revision,
+        updatedAt: updated.updatedAt,
       );
     }
 
@@ -181,20 +165,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
         .patchConversation(conversation.id, patch);
   }
 
-  ConversationEntity _updatedConversation(
-    ConversationEntity conversation,
-    ConversationSummary updated,
-  ) => conversation.copyWith(
-    modelId: updated.modelId,
-    agentId: updated.agentId,
-    reasoningConfiguration: ReasoningConfiguration.decode(
-      updated.reasoningConfigJson,
-    ),
-    revision: updated.revision,
-    updatedAt: updated.updatedAt,
-  );
-
-  Future<void> _saveReasoningConfiguration(
+  Future<void> _saveConversationPatch(
     ConversationEntity conversation,
     ConversationPatch patch,
   ) async {

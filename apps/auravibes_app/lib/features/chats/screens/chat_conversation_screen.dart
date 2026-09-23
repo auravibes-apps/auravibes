@@ -1297,7 +1297,9 @@ class const _ChatComposer({
   }
 
   Widget? _reasoningControl(WidgetRef ref, List<ReasoningOption> options) {
-    if (!hasSupportedReasoningOptions(options)) return null;
+    if (!ChatReasoningControls.hasSupportedReasoningOptions(options)) {
+      return null;
+    }
 
     return ChatReasoningControl(
       options: options,
@@ -1314,8 +1316,6 @@ class const _ChatComposer({
     final notifier = ref.read(
       conversationChatProvider(data.workspaceId, data.conversation.id).notifier,
     );
-    if (value == null) return notifier.resetReasoningConfiguration();
-
     return notifier.setReasoningConfiguration(value);
   }
 
