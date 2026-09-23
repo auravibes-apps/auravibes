@@ -286,6 +286,7 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
       afterSequence: afterSequence,
       eventLimit: eventLimit,
     );
+
     return CloudAppErrors.guardCall(.state, () => _enqueueRead(request));
   }
 
