@@ -504,7 +504,7 @@ final class const ServerConversationEngineHost({
       errorLabel: config.providerId,
       customize: (modelName, _) => (
         model: modelName,
-        extraBody: _reasoningRequestBody(
+        extraBody: reasoningRequestBody(
           config.providerId,
           config.reasoningConfiguration,
         ),
@@ -1673,7 +1673,7 @@ List<ReasoningOption> _reasoningOptions(
   }
 }
 
-Map<String, dynamic> _reasoningRequestBody(
+Map<String, dynamic> reasoningRequestBody(
   String providerId,
   ReasoningConfiguration? configuration,
 ) {

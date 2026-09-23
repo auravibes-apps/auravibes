@@ -10,8 +10,8 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/models/usecases/cloud_model_connection_usecases.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 const _cloudModelPollInterval = Duration(minutes: 15);

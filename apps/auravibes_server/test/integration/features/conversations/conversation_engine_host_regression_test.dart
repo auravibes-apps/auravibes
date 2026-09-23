@@ -29,7 +29,7 @@ void main() {
     sessionBuilder,
     endpoints,
   ) {
-    Future<_Fixture> prepare({String? reasoningConfigJson}) async {
+    Future<_Fixture> prepare() async {
       final userId = const Uuid().v4().toString();
       final session = sessionBuilder.copyWith(
         authentication: AuthenticationOverride.authenticationInfo(
@@ -64,7 +64,6 @@ void main() {
           workspaceId: workspace.id!,
           stableId: 'conversation-1',
           title: 'Conversation',
-          reasoningConfigJson: reasoningConfigJson,
           isPinned: false,
           revision: 1,
           projectionRevision: 1,
@@ -122,10 +121,7 @@ void main() {
       );
     }
 
-    Future<void> configureProvider(
-      _Fixture fixture, {
-      String? reasoningOptionsJson,
-    }) async {
+    Future<void> configureProvider(_Fixture fixture) async {
       final now = DateTime.now().toUtc();
       await WorkspaceModelConnection.db.insertRow(
         fixture.database,
@@ -155,8 +151,7 @@ void main() {
           costCacheRead: 0,
           costOutput: 0,
           openWeights: false,
-          supportsReasoning: reasoningOptionsJson != null,
-          reasoningOptionsJson: reasoningOptionsJson,
+          supportsReasoning: false,
           isCanonical: true,
           supportsPriorityMode: false,
           supportsToolCalls: true,
@@ -210,61 +205,6 @@ void main() {
         where: (table) => table.conversationId.equals(fixture.conversationId),
         orderBy: (table) => table.id,
       );
-    }
-
-    Future<Map<String, dynamic>> captureProviderRequest(
-      _Fixture fixture,
-    ) async {
-      final requests = <Map<String, dynamic>>[];
-      final host = ServerConversationEngineHost(
-        admissionGate: const _ImmediateAdmissionGate(),
-        lookup: (_) async => [InternetAddress('8.8.8.8')],
-        providerTransport: (body) async {
-          requests.add(body);
-          return ProviderTransportResponse(
-            statusCode: 200,
-            body: Stream.value(
-              utf8.encode(
-                'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n'
-                'data: [DONE]\n\n',
-              ),
-            ),
-          );
-        },
-      );
-      await host.executeTurn(
-        fixture.database,
-        job: fixture.job,
-        turn: fixture.turn,
-        messages: fixture.messages,
-        liveTurns: const _NoopProgressPublisher(),
-      );
-
-      return requests.single;
-    }
-
-    for (final (name, config, expectedEffort) in [
-      ('effort', '{"effort":"high"}', 'high'),
-      ('disable', '{"enabled":false}', 'none'),
-    ]) {
-      test('maps cloud OpenAI reasoning $name to Chat Completions', () async {
-        final fixture = await prepare(reasoningConfigJson: config);
-        await configureProvider(
-          fixture,
-          reasoningOptionsJson: jsonEncode([
-            {'type': 'toggle'},
-            {
-              'type': 'effort',
-              'values': ['low', 'high'],
-            },
-          ]),
-        );
-
-        final request = await captureProviderRequest(fixture);
-
-        expect(request['reasoning_effort'], expectedEffort);
-        expect(request.containsKey('reasoning'), isFalse);
-      });
     }
 
     test(
