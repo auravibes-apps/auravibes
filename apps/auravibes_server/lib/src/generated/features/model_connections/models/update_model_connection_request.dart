@@ -21,6 +21,8 @@ abstract class UpdateModelConnectionRequest
     required this.expectedRevision,
     required this.name,
     this.url,
+    this.verificationReceipt,
+    this.hasSecretOverride,
   });
 
   factory UpdateModelConnectionRequest({
@@ -30,6 +32,8 @@ abstract class UpdateModelConnectionRequest
     required int expectedRevision,
     required String name,
     String? url,
+    String? verificationReceipt,
+    bool? hasSecretOverride,
   }) = _UpdateModelConnectionRequestImpl;
 
   factory UpdateModelConnectionRequest.fromJson(
@@ -42,6 +46,12 @@ abstract class UpdateModelConnectionRequest
       expectedRevision: jsonSerialization['expectedRevision'] as int,
       name: jsonSerialization['name'] as String,
       url: jsonSerialization['url'] as String?,
+      verificationReceipt: jsonSerialization['verificationReceipt'] as String?,
+      hasSecretOverride: jsonSerialization['hasSecretOverride'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['hasSecretOverride'],
+            ),
     );
   }
 
@@ -57,6 +67,10 @@ abstract class UpdateModelConnectionRequest
 
   String? url;
 
+  String? verificationReceipt;
+
+  bool? hasSecretOverride;
+
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -67,6 +81,8 @@ abstract class UpdateModelConnectionRequest
     int? expectedRevision,
     String? name,
     String? url,
+    String? verificationReceipt,
+    bool? hasSecretOverride,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -78,6 +94,9 @@ abstract class UpdateModelConnectionRequest
       'expectedRevision': expectedRevision,
       'name': name,
       if (url != null) 'url': url,
+      if (verificationReceipt != null)
+        'verificationReceipt': verificationReceipt,
+      if (hasSecretOverride != null) 'hasSecretOverride': hasSecretOverride,
     };
   }
 
@@ -91,6 +110,9 @@ abstract class UpdateModelConnectionRequest
       'expectedRevision': expectedRevision,
       'name': name,
       if (url != null) 'url': url,
+      if (verificationReceipt != null)
+        'verificationReceipt': verificationReceipt,
+      if (hasSecretOverride != null) 'hasSecretOverride': hasSecretOverride,
     };
   }
 
@@ -110,6 +132,8 @@ class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
     required int expectedRevision,
     required String name,
     String? url,
+    String? verificationReceipt,
+    bool? hasSecretOverride,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -117,6 +141,8 @@ class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
          expectedRevision: expectedRevision,
          name: name,
          url: url,
+         verificationReceipt: verificationReceipt,
+         hasSecretOverride: hasSecretOverride,
        );
 
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
@@ -130,6 +156,8 @@ class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
     int? expectedRevision,
     String? name,
     Object? url = _Undefined,
+    Object? verificationReceipt = _Undefined,
+    Object? hasSecretOverride = _Undefined,
   }) {
     return UpdateModelConnectionRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -138,6 +166,12 @@ class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
       expectedRevision: expectedRevision ?? this.expectedRevision,
       name: name ?? this.name,
       url: url is String? ? url : this.url,
+      verificationReceipt: verificationReceipt is String?
+          ? verificationReceipt
+          : this.verificationReceipt,
+      hasSecretOverride: hasSecretOverride is bool?
+          ? hasSecretOverride
+          : this.hasSecretOverride,
     );
   }
 }

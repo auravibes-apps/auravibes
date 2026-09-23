@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
@@ -27,6 +28,7 @@ class ModelConnectionUseCases {
 
   static const maxModels = 500;
   static const maxRecentSelections = 5;
+  static const _draftVerificationLifetime = Duration(minutes: 5);
   final ModelConnectionRepository _repository;
   final ModelCatalogFetcher _fetch;
   final Future<List<InternetAddress>> Function(String host) _lookup;
@@ -127,6 +129,17 @@ class ModelConnectionUseCases {
     );
     if (connection == null || connection.revision != request.expectedRevision) {
       _invalid();
+    }
+    final nextUrl = request.url?.trim();
+    final urlChanged = nextUrl != null && nextUrl != connection.url;
+    if (urlChanged && request.hasSecretOverride != true) {
+      await _requireDraftVerificationReceipt(
+        session,
+        userId: userId,
+        request: request,
+        providerId: connection.providerId,
+        url: nextUrl,
+      );
     }
     final updated = await _repository.updateConnection(
       session,
@@ -400,6 +413,71 @@ class ModelConnectionUseCases {
     return ModelSyncResult(providerId: providerId, modelIds: modelIds);
   }
 
+  Future<VerifyModelConnectionResult> verifyDraft(
+    Session session, {
+    required String userId,
+    required VerifyModelConnectionRequest request,
+  }) async {
+    if (request.requestId.trim().isEmpty ||
+        request.connectionId.trim().isEmpty) {
+      _invalid();
+    }
+    final member = await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    _requireManager(member);
+    final connection = await _repository.findConnection(
+      session,
+      workspaceId: request.workspaceId,
+      connectionId: request.connectionId,
+    );
+    if (connection == null || connection.revision != request.expectedRevision) {
+      _invalid();
+    }
+    final secret = await _repository.findSecret(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+      connectionId: request.connectionId,
+    );
+    if (secret == null) _invalid();
+
+    final providerId = connection.providerId;
+    final url =
+        request.url?.trim() ??
+        connection.url ??
+        defaultProviderUrl(
+          providerId,
+        );
+    final validated = await validatePublicHttpsUri(url, lookup: _lookup);
+    final apiKey = await const WorkspaceSecretCipher().decrypt(session, secret);
+    final response = await _fetch(
+      modelCatalogUri(providerId, validated.uri),
+      providerHeaders(providerId, apiKey),
+      validated.address,
+    );
+    final modelIds = parseModelIds(response, maxModels: maxModels);
+    if (modelIds.isEmpty) _invalid();
+
+    final expiresAt = DateTime.now().toUtc().add(_draftVerificationLifetime);
+    return VerifyModelConnectionResult(
+      providerId: providerId,
+      modelIds: modelIds,
+      verificationReceipt: await _createDraftVerificationReceipt(
+        session,
+        userId: userId,
+        request: request,
+        providerId: providerId,
+        url: url,
+        modelIds: modelIds,
+        expiresAt: expiresAt,
+      ),
+      expiresAt: expiresAt,
+    );
+  }
+
   Future<WorkspaceMember> _requireMember(
     Session session, {
     required int workspaceId,
@@ -413,6 +491,90 @@ class ModelConnectionUseCases {
     if (member == null) _permissionDenied();
     return member;
   }
+
+  Future<String> _createDraftVerificationReceipt(
+    Session session, {
+    required String userId,
+    required VerifyModelConnectionRequest request,
+    required String providerId,
+    required String url,
+    required List<String> modelIds,
+    required DateTime expiresAt,
+  }) async {
+    final encrypted = await const WorkspaceSecretCipher().encrypt(
+      session,
+      jsonEncode({
+        'workspaceId': request.workspaceId,
+        'userId': userId,
+        'requestId': request.requestId,
+        'connectionId': request.connectionId,
+        'expectedRevision': request.expectedRevision,
+        'providerId': providerId,
+        'url': url,
+        'modelIds': modelIds,
+        'expiresAt': expiresAt.toIso8601String(),
+      }),
+      workspaceId: request.workspaceId,
+      resourceId: request.requestId,
+    );
+
+    return jsonEncode({
+      'requestId': request.requestId,
+      'ciphertext': _base64(encrypted.ciphertext),
+      'nonce': _base64(encrypted.nonce),
+      'authenticationTag': _base64(encrypted.authenticationTag),
+    });
+  }
+
+  Future<void> _requireDraftVerificationReceipt(
+    Session session, {
+    required String userId,
+    required UpdateModelConnectionRequest request,
+    required String providerId,
+    required String url,
+  }) async {
+    final receipt = request.verificationReceipt;
+    if (receipt == null) _invalid();
+
+    try {
+      final envelope = jsonDecode(receipt) as Map<String, dynamic>;
+      final verificationRequestId = envelope['requestId'] as String;
+      final payload = jsonDecode(
+        await const WorkspaceSecretCipher().decryptEncrypted(
+          session,
+          ciphertext: _bytes(envelope['ciphertext'] as String),
+          nonce: _bytes(envelope['nonce'] as String),
+          authenticationTag: _bytes(envelope['authenticationTag'] as String),
+          workspaceId: request.workspaceId,
+          resourceId: verificationRequestId,
+        ),
+      ) as Map<String, dynamic>;
+      final expiresAt = DateTime.tryParse(
+        payload['expiresAt'] as String? ?? '',
+      );
+      if (payload['workspaceId'] != request.workspaceId ||
+          payload['userId'] != userId ||
+          payload['requestId'] != verificationRequestId ||
+          payload['connectionId'] != request.connectionId ||
+          payload['expectedRevision'] != request.expectedRevision ||
+          payload['providerId'] != providerId ||
+          payload['url'] != url ||
+          expiresAt == null ||
+          !DateTime.now().toUtc().isBefore(expiresAt)) {
+        _invalid();
+      }
+    } on CloudWorkspaceException {
+      rethrow;
+    } on Object {
+      _invalid();
+    }
+  }
+
+  String _base64(ByteData value) => base64Encode(
+    value.buffer.asUint8List(value.offsetInBytes, value.lengthInBytes),
+  );
+
+  ByteData _bytes(String value) => ByteData.sublistView(base64Decode(value));
 
   void _requireManager(WorkspaceMember member) {
     if (member.role != WorkspaceRoles.owner &&

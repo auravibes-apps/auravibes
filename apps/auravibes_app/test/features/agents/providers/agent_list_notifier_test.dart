@@ -177,6 +177,12 @@ class _FakeAgentRepository(Iterable<FutureOr<AgentListPage>> responses)
       throw UnimplementedError();
 
   @override
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) => throw UnimplementedError();
+
+  @override
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) =>
       throw UnimplementedError();
 }

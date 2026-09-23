@@ -674,10 +674,7 @@ bool _hasVisibleAssistantResponse(
   Map<String, List<String>> replayPayloadsByMessageId,
 ) =>
     message.content.trim().isNotEmpty ||
-    message.attachments.isNotEmpty ||
-    _hasA2uiMessageState(message) ||
-    replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
-    message.metadata?.modelMetadata['a2uiDiagnosticPayloads'] is List;
+    _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
 
 bool _requiresMessageTimelineItem(
   MessageEntity message,

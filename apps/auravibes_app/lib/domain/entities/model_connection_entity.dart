@@ -59,6 +59,7 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
     required String workspaceId,
     required bool hasKey,
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
+    int? revision,
     String? url,
     String? keySuffix,
   }) = _ModelConnectionForEdit;
