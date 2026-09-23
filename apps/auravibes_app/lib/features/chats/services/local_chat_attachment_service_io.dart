@@ -25,11 +25,11 @@ class LocalChatAttachmentServiceIo({
 }) {
   // Defer platform-channel setup until voice recording is requested.
   AudioRecorder? _recorder = recorder;
-  AudioRecorder get _recorderOrCreate => _recorder ??= AudioRecorder();
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
   StreamSubscription<Uint8List>? _recordingStreamSubscription;
+  AudioRecorder get _recorderOrCreate => _recorder ??= .new();
 
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
     String sourcePath, {

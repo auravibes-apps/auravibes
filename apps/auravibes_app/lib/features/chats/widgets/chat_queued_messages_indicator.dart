@@ -58,10 +58,7 @@ ValueChanged<ConversationQueuedDraft>? _createEditDraftCallback(
 
   return (draft) {
     onEditDraft(draft.draft);
-    final _ = notifier.take(
-      conversationId: conversationId,
-      draftId: draft.id,
-    );
+    final _ = notifier.take(conversationId: conversationId, draftId: draft.id);
   };
 }
 
