@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,43 @@ import '../../../helpers/test_app.dart';
 const _workspaceId = 'test-workspace';
 
 void main() {
+  testWidgets('provider options show their actual authentication method', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: const Scaffold(
+            body: AddModelProviderWidget(workspaceId: _workspaceId),
+          ),
+          overrides: [
+            apiModelProvidersProvider.overrideWith(
+              (_, _) async => const [
+                ApiModelProviderEntity(
+                  id: ModelProviderOAuthProfiles.providerId,
+                  name: 'Codex',
+                  type: .openai,
+                ),
+                ApiModelProviderEntity(
+                  id: 'openai',
+                  name: 'OpenAI',
+                  type: .openai,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('OAuth'), findsOneWidget);
+    expect(find.text('API key'), findsOneWidget);
+    await tester.tap(find.text('OpenAI'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('API key'), findsWidgets);
+  });
+
   testWidgets('add form requires verification and shows model count', (
     tester,
   ) async {
