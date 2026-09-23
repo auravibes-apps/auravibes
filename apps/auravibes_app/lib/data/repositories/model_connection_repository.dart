@@ -63,6 +63,11 @@ typedef _UpdatePayloadBuildData = ({
   String? existingKeySuffix,
 });
 
+String? _providerUrlForValidation(
+  ModelProvidersTableType? providerType,
+  String? providerUrl,
+) => providerType == ModelProvidersTableType.openrouter ? null : providerUrl;
+
 /// Implementation of the [ModelConnectionRepository] interface.
 ///
 /// This class provides a concrete implementation of model connection data
@@ -337,9 +342,7 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
       modelType,
       key,
       modelConnection.url ??
-          (modelType == ModelProvidersTableType.openrouter
-              ? null
-              : provider.url),
+          _providerUrlForValidation(modelType, provider.url),
     );
 
     return _requiredCreateModels(models, modelConnection.modelId);
@@ -734,12 +737,11 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
       .new(
         type: .fromString(validation.provider.type),
         key: validation.keyForValidation,
-        url:
-            validation.nextUrl ??
-            (validation.provider.provider.type ==
-                    ModelProvidersTableType.openrouter
-                ? null
-                : validation.provider.provider.url),
+        url: validation.nextUrl ??
+            _providerUrlForValidation(
+              validation.provider.provider.type,
+              validation.provider.provider.url,
+            ),
       ),
     );
     if (models == null) {
