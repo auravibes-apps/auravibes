@@ -1012,6 +1012,44 @@ void main() {
       });
 
       test(
+        'worker cancels a queued turn after membership is revoked',
+        () async {
+          final fixture = await prepareExecution();
+          final member = (await WorkspaceMember.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.userId.equals(fixture.userId),
+          ))!;
+          await WorkspaceMember.db.updateRow(
+            fixture.database,
+            member.copyWith(removedAt: DateTime.now().toUtc()),
+          );
+          final host = _CountingCompletingHost();
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: ConversationWorker(host: host),
+          );
+
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          ))!;
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(turn.id),
+          ))!;
+          expect(host.calls, 0);
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(job.status, ConversationJobStatuses.completed);
+        },
+      );
+
+      test(
         'queued Continue retains claims while running and approval states reject',
         () async {
           final fixture = await prepareExecution(continueConversation: false);
