@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_decision_
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -246,11 +247,11 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: MessageMetadataEntity(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'resolved-tool',
-                      name: 'built_in_calc_calculator',
+                      name: catalog.specs[0].name,
                       argumentsRaw: '{}',
                     ),
                     MessageToolCallEntity(
@@ -260,7 +261,7 @@ void main() {
                     ),
                     MessageToolCallEntity(
                       id: 'already-resolved',
-                      name: 'built_in_calc_calculator',
+                      name: catalog.specs[0].name,
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),
@@ -366,18 +367,18 @@ void main() {
       expect(result.previouslyFailedToolCallIds, isEmpty);
     });
 
-    test('T005: resolves native composite tool ID', () async {
+    test('resolves advertised native tool name', () async {
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
           .thenAnswer(
             (_) async => [
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: MessageMetadataEntity(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'native-tool-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                     ),
                   ],
@@ -402,11 +403,11 @@ void main() {
               _message(id: 'user-1', isUser: true),
               _message(
                 id: 'assistant-1',
-                metadata: const MessageMetadataEntity(
+                metadata: MessageMetadataEntity(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'old-call-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                       resultStatus: .notConfigured,
                     ),
@@ -416,16 +417,16 @@ void main() {
               _message(id: 'user-2', isUser: true),
               _message(
                 id: 'assistant-2',
-                metadata: const MessageMetadataEntity(
+                metadata: MessageMetadataEntity(
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'new-call-1',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://other.com"}',
                     ),
                     MessageToolCallEntity(
                       id: 'new-call-2',
-                      name: 'native_ws-tool-123_url',
+                      name: catalog.specs[1].name,
                       argumentsRaw: '{"input": "https://example.com"}',
                     ),
                   ],
