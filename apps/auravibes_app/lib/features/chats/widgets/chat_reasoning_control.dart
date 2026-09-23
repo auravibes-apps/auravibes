@@ -75,7 +75,7 @@ class const _ReasoningTrigger({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final summary = _reasoningSummary(options, value);
+    final summary = _ReasoningTrigger._reasoningSummary(options, value);
 
     return Semantics(
       key: const ValueKey<String>('chat_reasoning_selector'),
@@ -103,6 +103,37 @@ class const _ReasoningTrigger({
       button: true,
       identifier: 'chat_reasoning_selector',
       label: summary.semanticLabel,
+    );
+  }
+
+  static _ReasoningSummary _reasoningSummary(
+    List<ReasoningOption> options,
+    ReasoningConfiguration? value,
+  ) {
+    final configuration = _validatedTriggerConfiguration(options, value);
+    final label = switch (configuration) {
+      ReasoningConfiguration(enabled: false) => LocaleKeys
+          .chats_screens_chat_conversation_reasoning_status_off
+          .tr(),
+      ReasoningConfiguration(
+        effort: String(),
+        budgetTokens: int(),
+      ) => LocaleKeys
+          .chats_screens_chat_conversation_reasoning_status_custom
+          .tr(),
+      ReasoningConfiguration(effort: final effort?) => effort,
+      ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
+      _ => null,
+    };
+    final status =
+        label ??
+        LocaleKeys.chats_screens_chat_conversation_reasoning_status_default.tr();
+
+    return (
+      label: label,
+      semanticLabel: LocaleKeys
+          .chats_screens_chat_conversation_reasoning_trigger_label
+          .tr(namedArgs: {'status': status}),
     );
   }
 }
@@ -151,36 +182,3 @@ bool hasSupportedReasoningOptions(Iterable<ReasoningOption> options) =>
     options.any(
       (option) => option.isToggle || option.isEffort || option.isBudgetTokens,
     );
-
-_ReasoningSummary _reasoningSummary(
-  List<ReasoningOption> options,
-  ReasoningConfiguration? value,
-) {
-  final configuration = _validatedTriggerConfiguration(options, value);
-  final String? label;
-  if (configuration?.enabled == false) {
-    label = LocaleKeys.chats_screens_chat_conversation_reasoning_status_off
-        .tr();
-  } else if (configuration?.effort != null &&
-      configuration?.budgetTokens != null) {
-    label = LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom
-        .tr();
-  } else if (configuration?.effort case final effort?) {
-    label = effort;
-  } else if (configuration?.budgetTokens case final budget?) {
-    label = '$budget';
-  } else {
-    label = null;
-  }
-
-  final status =
-      label ??
-      LocaleKeys.chats_screens_chat_conversation_reasoning_status_default.tr();
-
-  return (
-    label: label,
-    semanticLabel: LocaleKeys
-        .chats_screens_chat_conversation_reasoning_trigger_label
-        .tr(namedArgs: {'status': status}),
-  );
-}

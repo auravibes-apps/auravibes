@@ -71,51 +71,8 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
       widget.options,
       _configuration,
     );
-    final isDisabled = configuration?.enabled == false;
 
-    return Focus(
-      child: Semantics(
-        child: AuraColumn(
-          children: [
-            _ReasoningHeader(
-              canReset: _configuration != null,
-              onReset: () => _changeConfiguration(null),
-            ),
-            if (toggle != null)
-              _ReasoningToggle(
-                enabled: configuration?.enabled != false,
-                onChanged: (enabled) => _changeConfiguration(
-                  _copyConfiguration(configuration, enabled: enabled),
-                ),
-              ),
-            if (effort != null)
-              _ReasoningEffortSelector(
-                option: effort,
-                value: configuration?.effort,
-                enabled: !isDisabled,
-                expanded: _isEffortExpanded,
-                onToggle: _toggleEffortChoices,
-                onChanged: (value) => _selectEffort(configuration, value),
-              ),
-            if (budget != null)
-              _ReasoningBudgetInput(
-                option: budget,
-                controller: _budgetController,
-                error: _budgetError,
-                enabled: !isDisabled,
-                onChanged: (value) => _setBudget(configuration, budget, value),
-              ),
-          ],
-          spacing: .sm,
-          crossAxisAlignment: .stretch,
-        ),
-        container: true,
-        explicitChildNodes: true,
-        label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
-      ),
-      focusNode: _editorFocusNode,
-      onKeyEvent: _handleEditorKeyEvent,
-    );
+    return _buildReasoningEditor(toggle, effort, budget, configuration);
   }
 
   KeyEventResult _handleEditorKeyEvent(FocusNode node, KeyEvent event) {
@@ -194,6 +151,65 @@ class _ChatReasoningControlsState extends State<ChatReasoningControls> {
       .tr(namedArgs: {'min': '${option.min}', 'max': '${option.max}'});
 }
 
+extension _ChatReasoningControlsEditor on _ChatReasoningControlsState {
+  Widget _buildReasoningEditor(
+    ReasoningOption? toggle,
+    ReasoningOption? effort,
+    ReasoningOption? budget,
+    ReasoningConfiguration? configuration,
+  ) => Focus(
+    child: Semantics(
+      child: AuraColumn(
+        children: [
+          _ReasoningHeader(
+            canReset: _configuration != null,
+            onReset: () => _changeConfiguration(null),
+          ),
+          if (toggle != null)
+            _ReasoningToggle(
+              enabled: configuration?.enabled != false,
+              onChanged: (enabled) => _changeConfiguration(
+                _copyConfiguration(configuration, enabled: enabled),
+              ),
+            ),
+          if (effort != null) _buildEffortSelector(effort, configuration),
+          if (budget != null) _buildBudgetInput(budget, configuration),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: .stretch,
+      ),
+      container: true,
+      explicitChildNodes: true,
+      label: LocaleKeys.chats_screens_chat_conversation_reasoning_title.tr(),
+    ),
+    focusNode: _editorFocusNode,
+    onKeyEvent: _handleEditorKeyEvent,
+  );
+
+  Widget _buildEffortSelector(
+    ReasoningOption effort,
+    ReasoningConfiguration? configuration,
+  ) => _ReasoningEffortSelector(
+    option: effort,
+    value: configuration?.effort,
+    enabled: configuration?.enabled != false,
+    expanded: _isEffortExpanded,
+    onToggle: _toggleEffortChoices,
+    onChanged: (value) => _selectEffort(configuration, value),
+  );
+
+  Widget _buildBudgetInput(
+    ReasoningOption budget,
+    ReasoningConfiguration? configuration,
+  ) => _ReasoningBudgetInput(
+    option: budget,
+    controller: _budgetController,
+    error: _budgetError,
+    enabled: configuration?.enabled != false,
+    onChanged: (value) => _setBudget(configuration, budget, value),
+  );
+}
+
 class const _ReasoningHeader({
   required final bool canReset,
   required final VoidCallback onReset,
@@ -262,7 +278,13 @@ class const _ReasoningEffortSelector({
   required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => AuraColumn(
+    children: [_buildDisclosure(), if (expanded) _buildChoices()],
+    spacing: .xs,
+    crossAxisAlignment: .stretch,
+  );
+
+  Widget _buildDisclosure() {
     final effortLabel = LocaleKeys
         .chats_screens_chat_conversation_reasoning_effort
         .tr();
@@ -271,69 +293,61 @@ class const _ReasoningEffortSelector({
         LocaleKeys.chats_screens_chat_conversation_reasoning_effort_default
             .tr();
 
-    return AuraColumn(
-      children: [
-        Semantics(
-          key: const ValueKey<String>('chat_reasoning_effort_disclosure'),
-          child: AuraButton(
-            onPressed: onToggle,
-            child: Row(
-              children: [
-                const Expanded(
-                  child: TextLocale(
-                    LocaleKeys.chats_screens_chat_conversation_reasoning_effort,
-                  ),
-                ),
-                Text(selectedLabel),
-                AuraIcon(
-                  expanded ? Icons.expand_less : Icons.expand_more,
-                  size: .small,
-                ),
-              ],
+    return Semantics(
+      key: const ValueKey<String>('chat_reasoning_effort_disclosure'),
+      child: AuraButton(
+        onPressed: onToggle,
+        child: Row(
+          children: [
+            const Expanded(
+              child: TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_reasoning_effort,
+              ),
             ),
-            variant: .ghost,
-            size: .small,
-            isFullWidth: true,
-            disabled: !enabled,
-            semanticLabel: '$effortLabel: $selectedLabel',
-          ),
-          button: true,
-          expanded: expanded,
-          identifier: 'chat_reasoning_effort_disclosure',
-          label: effortLabel,
-          value: selectedLabel,
+            Text(selectedLabel),
+            AuraIcon(
+              expanded ? Icons.expand_less : Icons.expand_more,
+              size: .small,
+            ),
+          ],
         ),
-        if (expanded)
-          Semantics(
-            key: const ValueKey<String>('chat_reasoning_effort_choices'),
-            child: AuraRadioGroup<String>(
-              value: value,
-              onChanged: enabled
-                  ? (selected) {
-                      if (selected != null) onChanged(selected);
-                    }
-                  : null,
-              options: [
-                for (final effort in option.values)
-                  AuraRadioOption(
-                    value: effort,
-                    label: Text(
-                      effort,
-                      key: ValueKey<String>(
-                        'chat_reasoning_effort_choice_$effort',
-                      ),
-                    ),
-                    semanticLabel: effort,
-                  ),
-              ],
-            ),
-            identifier: 'chat_reasoning_effort_choices',
-          ),
-      ],
-      spacing: .xs,
-      crossAxisAlignment: .stretch,
+        variant: .ghost,
+        size: .small,
+        isFullWidth: true,
+        disabled: !enabled,
+        semanticLabel: '$effortLabel: $selectedLabel',
+      ),
+      button: true,
+      expanded: expanded,
+      identifier: 'chat_reasoning_effort_disclosure',
+      label: effortLabel,
+      value: selectedLabel,
     );
   }
+
+  Widget _buildChoices() => Semantics(
+    key: const ValueKey<String>('chat_reasoning_effort_choices'),
+    child: AuraRadioGroup<String>(
+      value: value,
+      onChanged: enabled
+          ? (selected) {
+              if (selected != null) onChanged(selected);
+            }
+          : null,
+      options: [
+        for (final effort in option.values)
+          AuraRadioOption(
+            value: effort,
+            label: Text(
+              effort,
+              key: ValueKey<String>('chat_reasoning_effort_choice_$effort'),
+            ),
+            semanticLabel: effort,
+          ),
+      ],
+    ),
+    identifier: 'chat_reasoning_effort_choices',
+  );
 }
 
 class const _ReasoningBudgetInput({

@@ -67,17 +67,7 @@ class const ProviderFactory({
       reasoningConfiguration,
     );
     if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-      final configuration = selectedConfiguration;
-      if (configuration == null ||
-          (configuration.enabled != false && configuration.effort == null)) {
-        return null;
-      }
-
-      return OpenAICompatReasoningOptions(
-        reasoningEffort: configuration.enabled == false
-            ? 'none'
-            : configuration.effort,
-      ) as T;
+      return _openAIReasoningGenerationConfig<T>(selectedConfiguration);
     }
     if (runtime.runtime == ProviderRuntime.anthropic) {
       return _anthropicGenerationConfig<T>(selectedConfiguration);
@@ -246,6 +236,20 @@ extension _ProviderFactoryResolution on ProviderFactory {
           ? null
           : .new(effort: configuration.effort),
     ) as T;
+  }
+
+  T? _openAIReasoningGenerationConfig<T>(
+    ReasoningConfiguration? configuration,
+  ) {
+    if (configuration == null) return null;
+    if (configuration.enabled == false) {
+      return OpenAICompatReasoningOptions(reasoningEffort: 'none') as T;
+    }
+
+    final effort = configuration.effort;
+    if (effort == null) return null;
+
+    return OpenAICompatReasoningOptions(reasoningEffort: effort) as T;
   }
 
   T? _openRouterGenerationConfig<T>(ReasoningConfiguration? configuration) {

@@ -57,17 +57,17 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final selectedModel = await ref.read(
-      workspaceModelSelectionByIdProvider(_workspaceId, modelId).future,
+    final reasoningConfiguration = result.conversation.reasoningConfiguration;
+    final validatedConfiguration = await _validatedReasoningConfiguration(
+      ref: ref,
+      workspaceId: _workspaceId,
+      modelId: modelId,
+      configuration: reasoningConfiguration,
     );
     if (!ref.mounted) return;
-    final reasoningConfiguration = result.conversation.reasoningConfiguration;
     final clearReasoningConfiguration =
         reasoningConfiguration != null &&
-        (selectedModel == null ||
-            !reasoningConfiguration.isValidFor(
-              selectedModel.workspaceModelSelection.reasoningOptions,
-            ));
+        validatedConfiguration == null;
     final updated = await _updateConversation(
       result.conversation,
       .new(
@@ -86,24 +86,17 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final modelId = result.conversation.modelId;
-    final selectedModel = modelId == null
-        ? null
-        : await ref.read(
-            workspaceModelSelectionByIdProvider(_workspaceId, modelId).future,
-          );
+    final conversation = result.conversation;
+    final validatedConfiguration = await _validatedReasoningConfiguration(
+      ref: ref,
+      workspaceId: _workspaceId,
+      modelId: conversation.modelId,
+      configuration: reasoningConfiguration,
+    );
     if (!ref.mounted) return;
-    final isValid =
-        reasoningConfiguration == null ||
-        (selectedModel != null &&
-            reasoningConfiguration.isValidFor(
-              selectedModel.workspaceModelSelection.reasoningOptions,
-            ));
     final updated = await _updateConversation(
-      result.conversation,
-      isValid && reasoningConfiguration != null
-          ? ConversationPatch(reasoningConfiguration: reasoningConfiguration)
-          : const ConversationPatch(clearReasoningConfiguration: true),
+      conversation,
+      _reasoningConfigurationPatch(validatedConfiguration),
     );
     if (!ref.mounted) return;
 
@@ -210,6 +203,32 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     updatedAt: updated.updatedAt,
   );
 }
+
+Future<ReasoningConfiguration?> _validatedReasoningConfiguration({
+  required Ref ref,
+  required String workspaceId,
+  required String? modelId,
+  required ReasoningConfiguration? configuration,
+}) async {
+  if (configuration == null || modelId == null) return null;
+
+  final selectedModel = await ref.read(
+    workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
+  );
+  if (selectedModel == null) return null;
+
+  return configuration.isValidFor(
+    selectedModel.workspaceModelSelection.reasoningOptions,
+  )
+      ? configuration
+      : null;
+}
+
+ConversationPatch _reasoningConfigurationPatch(
+  ReasoningConfiguration? configuration,
+) => configuration == null
+    ? const ConversationPatch(clearReasoningConfiguration: true)
+    : ConversationPatch(reasoningConfiguration: configuration);
 
 ConversationEntity _updatedTitleConversation(
   ConversationEntity conversation,
