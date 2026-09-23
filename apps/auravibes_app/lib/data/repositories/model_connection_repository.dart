@@ -46,7 +46,7 @@ typedef _UpdateValidationData = ({
 typedef _ApiKeyConnectionInsertData = ({
   ModelConnectionToCreate modelConnection,
   String encryptedApiKey,
-  String keySuffix,
+  String? keySuffix,
   List<WorkspaceModelSelectionToCreate> models,
 });
 
@@ -980,7 +980,7 @@ extension ModelConnectionMapping on ModelConnectionRepository {
   ServiceConnectionsCompanion _modelProviderToCreateToCompanion(
     ModelConnectionToCreate modelConnection,
     String encryptedApiKey,
-    String keySuffix,
+    String? keySuffix,
   ) => _modelProviderBaseCompanion(modelConnection).copyWith(
     url: .absentIfNull(modelConnection.url),
     encryptedAuthValue: .new(encryptedApiKey),
@@ -997,8 +997,9 @@ extension ModelConnectionMapping on ModelConnectionRepository {
     workspaceId: .new(modelConnection.workspaceId),
   );
 
-  String _keySuffix(String key) {
+  String? _keySuffix(String key) {
     const keySuffixLength = 6;
+    if (key.length <= keySuffixLength) return null;
 
     return key.lastCharacters(keySuffixLength);
   }

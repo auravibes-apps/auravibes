@@ -217,6 +217,38 @@ void main() {
             .called(1);
       });
 
+      test('does not persist the complete value of a short API key', () async {
+        final shortKeyConnectionRow = connectionRow.copyWith(
+          keySuffix: const Value(null),
+        );
+        when(() => mockProvidersDao.getProviderById('openai'))
+            .thenAnswer((_) async => providerRow);
+        when(() => mockEncryptionService.encrypt(any()))
+            .thenAnswer((_) async => 'encrypted-key');
+        when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
+            .thenAnswer((_) async => const []);
+        when(() => mockConnectionsDao.insertModelConnection(any()))
+            .thenAnswer((_) async => shortKeyConnectionRow);
+        when(() => mockSelectionsDao.insertWorkspaceModelSelections(any()))
+            .thenAnswer((_) => Future.value());
+
+        final _ = await repository.createModelConnection(
+          const ModelConnectionToCreate(
+            name: 'Test',
+            workspaceId: 'ws-1',
+            modelId: 'openai',
+            key: '123456',
+          ),
+        );
+
+        final connection =
+            verify(() => mockConnectionsDao.insertModelConnection(captureAny()))
+                    .captured
+                    .single
+                as ServiceConnectionsCompanion;
+        expect(connection.keySuffix.value, isNull);
+      });
+
       test('verified create reuses discovered model ids', () async {
         when(() => mockProvidersDao.getProviderById('openai'))
             .thenAnswer((_) async => providerRow);
