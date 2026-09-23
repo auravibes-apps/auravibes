@@ -14,6 +14,7 @@ import 'package:html/parser.dart' as parser;
 
 class const UrlContentTransformer() {
   static const int maxOutputLength = 1024 * 1024;
+  static const int _maxHtmlElements = 10000;
   static const int _maxHeadingSearchElements = 100000;
   static const _truncationSuffix = '\n... [truncated]';
 
@@ -159,6 +160,17 @@ class const UrlContentTransformer() {
       );
     }
 
+    if (bodyElement.querySelectorAll('*').length > _maxHtmlElements) {
+      return TransformedUrlContent(
+        body: _truncationSuffix.trim(),
+        format: .markdown,
+        originalLength: originalLength,
+        truncated: true,
+        elapsed: elapsed,
+        contentType: contentType,
+      );
+    }
+
     final buffer = StringBuffer();
     final hasTitle = title != null && title.isNotEmpty;
     final titleMatchesH1 =
@@ -226,11 +238,22 @@ class const UrlContentTransformer() {
   }
 
   void _processChildren(dom.Element parent, StringBuffer buffer, int depth) {
+    final isOrderedList = parent.localName?.toLowerCase() == 'ol';
+    var orderedListIndex = 0;
     for (final node in parent.nodes) {
       if (node is dom.Text) {
         _processTextNode(node, buffer);
       } else if (node is dom.Element) {
-        _processElementNode(node, buffer, depth);
+        final isListItem = node.localName?.toLowerCase() == 'li';
+        if (isOrderedList && isListItem) orderedListIndex++;
+        _processElementNode(
+          node,
+          buffer,
+          depth,
+          orderedListIndex: isOrderedList && isListItem
+              ? orderedListIndex
+              : null,
+        );
       }
     }
   }
@@ -285,8 +308,9 @@ class const UrlContentTransformer() {
   void _processElementNode(
     dom.Element element,
     StringBuffer buffer,
-    int depth,
-  ) {
+    int depth, {
+    int? orderedListIndex,
+  }) {
     final tag = element.localName?.toLowerCase() ?? '';
 
     if (_stripTags.contains(tag)) {
@@ -308,7 +332,13 @@ class const UrlContentTransformer() {
       case 'h6':
       case 'p':
       case 'li':
-        _processTextBlockElement(element, buffer, depth, tag);
+        _processTextBlockElement(
+          element,
+          buffer,
+          depth,
+          tag,
+          orderedListIndex: orderedListIndex,
+        );
         return;
       case 'a':
         _processAnchor(element, buffer);
@@ -366,10 +396,9 @@ class const UrlContentTransformer() {
 
   void _processImage(dom.Element element, StringBuffer buffer) {
     final alt = element.attributes['alt'] ?? '';
-    final src = element.attributes['src'] ?? '';
-    if (alt.isNotEmpty || src.isNotEmpty) {
+    if (alt.isNotEmpty) {
       _ensureNewline(buffer);
-      buffer.writeln('![$alt]($src)');
+      buffer.writeln(_escapeMarkdownText(alt));
     }
   }
 
@@ -460,17 +489,6 @@ class const UrlContentTransformer() {
     return null;
   }
 
-  bool _isInsideOrderedList(dom.Element element) {
-    var parent = element.parent;
-    while (parent != null) {
-      if (parent.localName?.toLowerCase() == 'ol') return true;
-      if (parent.localName?.toLowerCase() == 'ul') return false;
-      parent = parent.parent;
-    }
-
-    return false;
-  }
-
   bool _isPreChild(dom.Element element) {
     var parent = element.parent;
     while (parent != null) {
@@ -531,8 +549,9 @@ class const UrlContentTransformer() {
     dom.Element element,
     StringBuffer buffer,
     int depth,
-    String tag,
-  ) {
+    String tag, {
+    int? orderedListIndex,
+  }) {
     switch (tag) {
       case 'br':
         buffer.writeln();
@@ -554,7 +573,12 @@ class const UrlContentTransformer() {
         _processParagraph(element, buffer);
         return;
       case 'li':
-        _processListItem(element, buffer, depth);
+        _processListItem(
+          element,
+          buffer,
+          depth,
+          orderedListIndex: orderedListIndex,
+        );
         return;
     }
   }
@@ -581,24 +605,21 @@ class const UrlContentTransformer() {
     buffer.writeln(text);
   }
 
-  void _processListItem(dom.Element element, StringBuffer buffer, int depth) {
+  void _processListItem(
+    dom.Element element,
+    StringBuffer buffer,
+    int depth, {
+    int? orderedListIndex,
+  }) {
     _ensureNewline(buffer);
     final indent = '  ' * (depth > 0 ? depth - 1 : 0);
-    buffer.write('$indent${_listMarker(element)}');
+    buffer.write('$indent${_listMarker(orderedListIndex)}');
     _processChildren(element, buffer, depth);
   }
 
-  String _listMarker(dom.Element element) {
-    if (!_isInsideOrderedList(element)) return '- ';
-
-    var index = 1;
-    final siblings = element.parent?.children ?? const <dom.Element>[];
-    for (final sibling in siblings) {
-      if (identical(sibling, element)) break;
-      if (sibling.localName?.toLowerCase() == 'li') index++;
-    }
-
-    return '$index. ';
+  String _listMarker(int? orderedListIndex) {
+    if (orderedListIndex == null) return '- ';
+    return '$orderedListIndex. ';
   }
 
   void _writeTableRow(List<String> cells, int colCount, StringBuffer buffer) {
