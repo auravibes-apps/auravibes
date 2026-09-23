@@ -385,6 +385,34 @@ void main() {
       );
     });
 
+    testWidgets('sorts workspaces by name without hiding the active one', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Z Workspace', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'A Workspace', type: .local),
+      );
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      final sort = find.byKey(const ValueKey('workspace-sort'));
+      expect(sort, findsOneWidget);
+      await tester.tap(sort);
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Workspace Name').last);
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text('A Workspace')).dy,
+        lessThan(tester.getTopLeft(find.text('Z Workspace')).dy),
+      );
+      expect(
+        find.byKey(const ValueKey('workspace_select_ws-1')),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('filters workspaces by name and shows no-results state', (
       tester,
     ) async {
