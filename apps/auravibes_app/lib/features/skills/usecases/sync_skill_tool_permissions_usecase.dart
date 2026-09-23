@@ -80,11 +80,19 @@ extension _SyncSkillToolPermissionsUsecaseSync
       workspaceId: workspaceId,
     );
 
-    final tools = await database.transaction(
-      () => _syncToolsInDatabase(workspaceId: workspaceId, specs: specs),
+    return _filterCurrentTools(
+      await database.transaction(
+        () => _syncToolsInDatabase(workspaceId: workspaceId, specs: specs),
+      ),
+      specs,
     );
-    final currentToolNames = {for (final spec in specs) spec.name};
+  }
 
+  List<ToolsTable> _filterCurrentTools(
+    List<ToolsTable> tools,
+    List<ToolSpec> specs,
+  ) {
+    final currentToolNames = {for (final spec in specs) spec.name};
     return tools
         .where((tool) => currentToolNames.contains(tool.toolId))
         .toList();
