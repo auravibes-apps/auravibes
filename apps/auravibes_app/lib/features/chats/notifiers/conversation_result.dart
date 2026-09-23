@@ -66,8 +66,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
     if (!ref.mounted) return;
     final clearReasoningConfiguration =
-        reasoningConfiguration != null &&
-        validatedConfiguration == null;
+        reasoningConfiguration != null && validatedConfiguration == null;
     final updated = await _updateConversation(
       result.conversation,
       .new(

@@ -112,23 +112,17 @@ class const _ReasoningTrigger({
   ) {
     final configuration = _validatedTriggerConfiguration(options, value);
     final label = switch (configuration) {
-      ReasoningConfiguration(enabled: false) => LocaleKeys
-          .chats_screens_chat_conversation_reasoning_status_off
-          .tr(),
-      ReasoningConfiguration(
-        effort: String(),
-        budgetTokens: int(),
-      ) => LocaleKeys
-          .chats_screens_chat_conversation_reasoning_status_custom
-          .tr(),
+      ReasoningConfiguration(enabled: false) =>
+        LocaleKeys.chats_screens_chat_conversation_reasoning_status_off.tr(),
+      ReasoningConfiguration(effort: String(), budgetTokens: int()) =>
+        LocaleKeys.chats_screens_chat_conversation_reasoning_status_custom.tr(),
       ReasoningConfiguration(effort: final effort?) => effort,
       ReasoningConfiguration(budgetTokens: final budget?) => '$budget',
       _ => null,
     };
     final status =
         label ??
-        LocaleKeys
-            .chats_screens_chat_conversation_reasoning_status_default
+        LocaleKeys.chats_screens_chat_conversation_reasoning_status_default
             .tr();
 
     return (
