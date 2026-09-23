@@ -24,35 +24,32 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
       return const SizedBox.shrink();
     }
 
-    return _isNarrowLayout(context)
-        ? _buildSheetTrigger(context)
-        : _buildPopupTrigger();
-  }
-
-  Widget _buildSheetTrigger(BuildContext context) => _buildTrigger(
-    onPressed: () => _showReasoningSheet(context),
-  );
-
-  Widget _buildPopupTrigger() => _ReasoningPopup(
-    trigger: _buildTrigger(onPressed: _popupController.toggle),
-    child: _buildControls(),
-    controller: _popupController,
-  );
-
-  _ReasoningTrigger _buildTrigger({required VoidCallback onPressed}) =>
-      _ReasoningTrigger(
+    if (_isNarrowLayout(context)) {
+      return _ReasoningTrigger(
         summary: _ReasoningTrigger._reasoningSummary(
           widget.options,
           widget.value,
         ),
-        onPressed: onPressed,
+        onPressed: () => _showReasoningSheet(context),
       );
+    }
 
-  ChatReasoningControls _buildControls() => ChatReasoningControls(
-    options: widget.options,
-    value: widget.value,
-    onChanged: widget.onChanged,
-  );
+    return _ReasoningPopup(
+      trigger: _ReasoningTrigger(
+        summary: _ReasoningTrigger._reasoningSummary(
+          widget.options,
+          widget.value,
+        ),
+        onPressed: _popupController.toggle,
+      ),
+      child: ChatReasoningControls(
+        options: widget.options,
+        value: widget.value,
+        onChanged: widget.onChanged,
+      ),
+      controller: _popupController,
+    );
+  }
 
   bool _isNarrowLayout(BuildContext context) =>
       MediaQuery.sizeOf(context).width < DesignBreakpoints.sm;
@@ -61,7 +58,11 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
       showModalBottomSheet<void>(
         context: context,
         builder: (context) => _ReasoningSheet(
-          child: _buildControls(),
+          child: ChatReasoningControls(
+            options: widget.options,
+            value: widget.value,
+            onChanged: widget.onChanged,
+          ),
         ),
         backgroundColor: Colors.transparent,
         isScrollControlled: true,

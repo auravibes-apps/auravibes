@@ -451,30 +451,38 @@ class const _ReasoningBudgetInput({
 
   @override
   Widget build(BuildContext context) => AuraInput(
-      controller: controller,
-      label: _label,
-      hint: _hint,
-      error: _error,
-      keyboardType: .number,
-      enabled: enabled,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      onChanged: onChanged,
-      semanticLabel: _semanticLabel(),
-    );
+    controller: controller,
+    label: _label,
+    hint: _ReasoningBudgetHint(option: option),
+    error: switch (error) {
+      final message? => _ReasoningBudgetError(message: message),
+      null => null,
+    },
+    keyboardType: .number,
+    enabled: enabled,
+    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    onChanged: onChanged,
+    semanticLabel: _semanticLabel(),
+  );
 
-  Widget get _hint => Text(
+  String _semanticLabel() =>
+      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();
+}
+
+class const _ReasoningBudgetHint({required final ReasoningOption option})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
     LocaleKeys.chats_screens_chat_conversation_reasoning_budget_hint.tr(
       namedArgs: {'min': '${option.min}', 'max': '${option.max}'},
     ),
   );
+}
 
-  Widget? get _error => switch (error) {
-    final message? => Text(message),
-    null => null,
-  };
-
-  String _semanticLabel() =>
-      LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();
+class const _ReasoningBudgetError({required final String message})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(message);
 }
 
 ReasoningConfiguration? _validatedConfiguration(
