@@ -113,6 +113,7 @@ extension on AppChatCompletionsPlugin {
   ) async {
     final stopwatch = Stopwatch()..start();
     final response = await _sendWithTimeout(client, request);
+
     return _transportResponse(response, client, stopwatch);
   }
 
@@ -152,6 +153,7 @@ extension on AppChatCompletionsPlugin {
       stopwatch,
       requestTimeout,
     );
+
     return httpClient == null ? _closeAfter(body, client) : body;
   }
 }
@@ -167,7 +169,7 @@ Stream<List<int>> _untilDeadline(
   try {
     yield* _readUntilDeadline(iterator, stopwatch, requestTimeout);
   } finally {
-    await iterator.cancel();
+    final _ = await iterator.cancel();
   }
 }
 
@@ -187,7 +189,7 @@ Future<bool> _moveNextBeforeDeadline(
   Duration requestTimeout,
 ) {
   final remaining = requestTimeout - stopwatch.elapsed;
-  if (remaining <= Duration.zero) _throwProviderRequestTimeout();
+  if (remaining <= .zero) _throwProviderRequestTimeout();
 
   return iterator.moveNext().timeout(
     remaining,
