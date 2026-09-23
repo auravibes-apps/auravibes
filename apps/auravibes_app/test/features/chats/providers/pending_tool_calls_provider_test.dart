@@ -87,9 +87,10 @@ class const _FakeLoadConversationToolSpecsUsecase({
       : _pendingToolCatalog;
 }
 
-final _pendingToolCatalog = _buildPendingToolCatalog();
-final _calculatorToolName = _pendingToolCatalog.specs[0].name;
-final _urlToolName = _pendingToolCatalog.specs[1].name;
+final ToolCatalog<ResolvedTool> _pendingToolCatalog =
+    _buildPendingToolCatalog();
+final String _calculatorToolName = _pendingToolCatalog.specs.firstOrNull!.name;
+final String _urlToolName = _pendingToolCatalog.specs[1].name;
 
 ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
   bool includeSkillCommand = false,
