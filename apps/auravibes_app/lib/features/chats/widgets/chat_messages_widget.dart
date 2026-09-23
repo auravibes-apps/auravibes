@@ -610,7 +610,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
       index,
     );
     final hasToolCalls = message.metadata?.toolCalls.isNotEmpty == true;
-    final requiresFullMessageRendering = _requiresFullMessageRendering(
+    final requiresMessageItem = _requiresMessageTimelineItem(
       message,
       replayPayloadsByMessageId,
     );
@@ -620,10 +620,16 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
             (hasVisibleResponse && hasFollowingAssistantActivity));
 
     if (hasActivity) {
+      if (requiresMessageItem) {
+        activitySources.add(source);
+        addActivityRun();
+        items.add(
+          _MessageTimelineItem(source, activityRenderedInSession: true),
+        );
+        continue;
+      }
       final isFinalResponse =
-          hasVisibleResponse &&
-          (requiresFullMessageRendering ||
-              (!hasFollowingAssistantActivity && !hasToolCalls));
+          hasVisibleResponse && !hasFollowingAssistantActivity && !hasToolCalls;
       activitySources.add(source);
       if (hasVisibleResponse && !isFinalResponse) {
         activityContentMessageIds.add(message.id);
@@ -668,9 +674,9 @@ bool _hasVisibleAssistantResponse(
   Map<String, List<String>> replayPayloadsByMessageId,
 ) =>
     message.content.trim().isNotEmpty ||
-    _requiresFullMessageRendering(message, replayPayloadsByMessageId);
+    _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
 
-bool _requiresFullMessageRendering(
+bool _requiresMessageTimelineItem(
   MessageEntity message,
   Map<String, List<String>> replayPayloadsByMessageId,
 ) =>
