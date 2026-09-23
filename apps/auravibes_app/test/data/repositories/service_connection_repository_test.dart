@@ -23,6 +23,8 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
 
@@ -108,6 +110,7 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
       final id = await _insertConnection(
@@ -170,6 +173,8 @@ void main() {
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
       addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
       final id = await _insertConnection(
@@ -195,6 +200,18 @@ void main() {
       expect(await repository.getById(otherWorkspaceId), isNot(equals(null)));
     });
   });
+}
+
+Future<void> _insertWorkspace(AppDatabase database, String workspaceId) async {
+  final _ = await database
+      .into(database.workspaces)
+      .insert(
+        WorkspacesCompanion.insert(
+          id: .new(workspaceId),
+          name: workspaceId,
+          type: .local,
+        ),
+      );
 }
 
 Future<String> _insertConnection(

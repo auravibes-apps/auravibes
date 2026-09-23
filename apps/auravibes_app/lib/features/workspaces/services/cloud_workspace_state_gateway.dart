@@ -286,9 +286,8 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
       afterSequence: afterSequence,
       eventLimit: eventLimit,
     );
-    final read = _enqueueRead(request);
 
-    return CloudAppErrors.guardCall(.state, () => read.timeout(readTimeout));
+    return CloudAppErrors.guardCall(.state, () => _enqueueRead(request));
   }
 
   Future<PatchWorkspaceStateResponse> patch({
@@ -644,7 +643,7 @@ extension on _CloudWorkspaceStateGatewayBase {
     _readTail = completion.future;
     await previousRead;
     try {
-      return await _readState(request);
+      return await _readState(request).timeout(readTimeout);
     } finally {
       completion.complete();
     }

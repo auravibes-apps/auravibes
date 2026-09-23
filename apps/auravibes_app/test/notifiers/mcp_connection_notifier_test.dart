@@ -194,7 +194,7 @@ void main() {
       return testContainer;
     }
 
-    setUp(() {
+    setUp(() async {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
       final testDatabase = AppDatabase(
@@ -202,6 +202,13 @@ void main() {
       );
       database = testDatabase;
       addTearDown(testDatabase.close);
+      final _ = await testDatabase.workspaceDao.insertWorkspace(
+        .insert(
+          id: const Value('workspace-1'),
+          name: 'Test Workspace',
+          type: .local,
+        ),
+      );
       container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(getDatabase()),

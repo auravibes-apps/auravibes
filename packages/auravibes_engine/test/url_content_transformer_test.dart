@@ -67,6 +67,18 @@ void main() {
         expect(result.body, isNot(contains('Title\n# Title')));
       });
 
+      test('prunes large skipped subtrees when finding rendered h1', () {
+        final skippedHeadings = List.filled(2000, '<h1>Title</h1>').join();
+        final response = _htmlResponse(
+          '<html><head><title>Title</title></head>'
+          '<body><nav>$skippedHeadings</nav><main><h1>Title</h1></main></body>'
+          '</html>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.body, '# Title');
+      });
+
       test('strips script and style tags', () {
         final response = _htmlResponse(
           '<html><head><script>alert("xss")</script><style>body { color: red; }</style></head><body><p>Safe content</p></body></html>',
