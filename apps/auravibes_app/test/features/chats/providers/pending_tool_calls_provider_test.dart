@@ -89,7 +89,9 @@ class const _FakeLoadConversationToolSpecsUsecase({
 
 final ToolCatalog<ResolvedTool> _pendingToolCatalog =
     _buildPendingToolCatalog();
-final String _calculatorToolName = _pendingToolCatalog.specs.firstOrNull!.name;
+final String _calculatorToolName =
+    _pendingToolCatalog.specs.firstOrNull?.name ??
+    (throw RangeError.index(0, _pendingToolCatalog.specs));
 final String _urlToolName = _pendingToolCatalog.specs[1].name;
 
 ToolCatalog<ResolvedTool> _buildPendingToolCatalog({

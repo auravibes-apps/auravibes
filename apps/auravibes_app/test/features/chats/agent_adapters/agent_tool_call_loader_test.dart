@@ -251,7 +251,8 @@ void main() {
                   toolCalls: [
                     MessageToolCallEntity(
                       id: 'resolved-tool',
-                      name: catalog.specs.firstOrNull!.name,
+                      name: catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                     ),
                     const MessageToolCallEntity(
@@ -261,7 +262,8 @@ void main() {
                     ),
                     MessageToolCallEntity(
                       id: 'already-resolved',
-                      name: catalog.specs.firstOrNull!.name,
+                      name: catalog.specs.firstOrNull?.name ??
+                          (throw RangeError.index(0, catalog.specs)),
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),
