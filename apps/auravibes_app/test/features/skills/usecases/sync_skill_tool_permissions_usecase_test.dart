@@ -260,6 +260,14 @@ void main() {
         ),
         isTrue,
       );
+      expect(
+        await fixture.usecase.permissionTableIdFor(
+          conversationId: 'conversation-id',
+          workspaceId: fixture.workspaceId,
+          toolName: staleSpec.name,
+        ),
+        isNull,
+      );
     });
 
     test('permissionTableIdFor returns matching row id', () async {
