@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/service_connection_auth_status.dar
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -78,10 +79,16 @@ typedef _ConnectionInsertRequest = ({
   String workspaceId,
 });
 
-class const ServiceConnectionRepository(
-  final AppDatabase _database,
-  final EncryptionService _encryptionService,
-) with _ServiceConnectionRepositoryQueries {
+class ServiceConnectionRepository(
+  this._database,
+  this._encryptionService, [
+  LegacyApiKeyStorage? legacyApiKeyStorage,
+]) with _ServiceConnectionRepositoryQueries {
+  final AppDatabase _database;
+  final EncryptionService _encryptionService;
+  final LegacyApiKeyStorage _legacyApiKeyStorage =
+      legacyApiKeyStorage ?? LegacyApiKeyStorage();
+
   Future<GenericServiceConnectionRecord?> getAppSkillCredentialForEdit(
     String id, {
     required String workspaceId,
@@ -362,9 +369,42 @@ Future<ServiceConnectionSecret> _readSecret(
     throw const FormatException('Service connection has no secret payload.');
   }
 
-  final value = await repository._encryptionService.decrypt(encrypted);
+  final value = await _readEncryptedOrLegacySecret(repository, row, encrypted);
 
   return ServiceConnectionAuthCodec.decodeSecret(value);
+}
+
+Future<String> _readEncryptedOrLegacySecret(
+  ServiceConnectionRepository repository,
+  ServiceConnectionTable row,
+  String storedValue,
+) async {
+  final legacyStorage = repository._legacyApiKeyStorage;
+  if (!legacyStorage.isLegacyReference(storedValue)) {
+    return repository._encryptionService.decrypt(storedValue);
+  }
+
+  final apiKey = await legacyStorage.read(storedValue);
+  if (apiKey == null) {
+    throw const FormatException('Legacy API key is unavailable.');
+  }
+  final encoded = ServiceConnectionAuthCodec.encodeSecret(
+    ServiceConnectionSecretApiKey(apiKey: apiKey),
+  );
+  final encrypted = await repository._encryptionService.encrypt(encoded);
+  final update = repository._database.update(
+    repository._database.serviceConnections,
+  );
+  final _ = update.where((table) => table.id.equals(row.id));
+  await update.write(
+    ServiceConnectionsCompanion(
+      encryptedAuthValue: .new(encrypted),
+      keySuffix: .new(_suffix(apiKey)),
+    ),
+  );
+  await legacyStorage.delete(storedValue);
+
+  return encoded;
 }
 
 Future<String?> _createMcpServiceConnection(

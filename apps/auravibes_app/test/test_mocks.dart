@@ -33,6 +33,7 @@ import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissio
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
@@ -146,6 +147,8 @@ class MockConversationToolsRepository extends Mock
 class MockEncryptionService extends Mock implements EncryptionService;
 
 class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage;
+
+class MockLegacyApiKeyStorage extends Mock implements LegacyApiKeyStorage;
 
 class MockGenerateTitleUsecase extends Mock implements GenerateTitleUsecase;
 

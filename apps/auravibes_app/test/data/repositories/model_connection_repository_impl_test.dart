@@ -25,6 +25,7 @@ void main() {
     var mockConnectionsDao = MockModelConnectionsDao();
     var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
     var mockEncryptionService = MockEncryptionService();
+    var mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
     var mockModelProviderServices = MockModelProviderServices();
     var database = _TestAppDatabase(
       MockApiModelProvidersDao(),
@@ -46,6 +47,7 @@ void main() {
       mockConnectionsDao = MockModelConnectionsDao();
       mockSelectionsDao = MockWorkspaceModelSelectionsDao();
       mockEncryptionService = MockEncryptionService();
+      mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
       mockModelProviderServices = MockModelProviderServices();
       database = _TestAppDatabase(
         mockProvidersDao,
@@ -55,6 +57,7 @@ void main() {
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
+        legacyApiKeyStorage: mockLegacyApiKeyStorage,
         modelProviderServices: mockModelProviderServices,
       );
       when(() => mockSelectionsDao.getByModelConnectionId(any()))
@@ -65,6 +68,8 @@ void main() {
           .thenAnswer((_) async {
             return;
           });
+      when(() => mockLegacyApiKeyStorage.isLegacyReference(any()))
+          .thenReturn(false);
     });
 
     tearDown(() async {
@@ -744,6 +749,28 @@ void main() {
                   .called(1),
           returnsNormally,
         );
+      });
+
+      test('deletes a referenced legacy API key before its row', () async {
+        const reference = '123e4567-e89b-42d3-a456-426614174000';
+        final legacyRow = connectionRow.copyWith(
+          encryptedAuthValue: const Value(reference),
+        );
+        when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
+            .thenAnswer((_) async => legacyRow);
+        when(() => mockLegacyApiKeyStorage.isLegacyReference(reference))
+            .thenReturn(true);
+        when(() => mockLegacyApiKeyStorage.delete(reference))
+            .thenAnswer((_) async {});
+        when(() => mockConnectionsDao.deleteModelConnection('conn-1'))
+            .thenAnswer((_) async {});
+
+        await repository.deleteModelConnection('conn-1');
+
+        verifyInOrder([
+          () => mockLegacyApiKeyStorage.delete(reference),
+          () => mockConnectionsDao.deleteModelConnection('conn-1'),
+        ]);
       });
 
       test('throws when connection not found', () async {
