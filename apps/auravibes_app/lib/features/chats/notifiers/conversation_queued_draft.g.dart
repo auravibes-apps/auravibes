@@ -47,7 +47,7 @@ final class ConversationSendQueueProvider
 }
 
 String _$conversationSendQueueHash() =>
-    r'bda34857912d26faeadbb74d808b3204fa8d3cec';
+    r'e63dcabb5670de30b4f5236856a789936e2d62ac';
 
 abstract class _$ConversationSendQueue
     extends $Notifier<Map<String, List<ConversationQueuedDraft>>> {

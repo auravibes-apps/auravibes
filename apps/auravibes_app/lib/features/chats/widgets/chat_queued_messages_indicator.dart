@@ -33,13 +33,12 @@ class const _QueuedMessagesContent({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(conversationSendQueueProvider.notifier);
-    void remove(String draftId) =>
-        notifier.remove(conversationId: conversationId, draftId: draftId);
 
     return _QueuedMessagesLayout(
       queuedDrafts: queuedDrafts,
       onClear: () => notifier.clear(conversationId),
-      onRemove: remove,
+      onRemove: (draftId) =>
+          notifier.remove(conversationId: conversationId, draftId: draftId),
       onEditDraft: _createEditDraftCallback(
         onEditDraft,
         notifier,

@@ -84,7 +84,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
       return const [];
     }
 
-    _setState(_withoutConversation(conversationId));
+    _setState(_withoutConversation(state, conversationId));
 
     return drafts;
   }
@@ -124,37 +124,36 @@ class ConversationSendQueue extends _$ConversationSendQueue {
     final drafts = state[conversationId];
     if (drafts == null || drafts.isEmpty) return;
 
-    _setState(_withoutConversation(conversationId));
+    _setState(_withoutConversation(state, conversationId));
     _deleteAttachments(drafts, ref.read(localChatAttachmentUsecaseProvider));
   }
-
-  List<ConversationQueuedDraft> _withoutDraft(
-    List<ConversationQueuedDraft> drafts,
-    String draftId,
-  ) => drafts.where((draft) => draft.id != draftId).toList();
 
   Map<String, List<ConversationQueuedDraft>> _withRemainingDrafts(
     String conversationId,
     List<ConversationQueuedDraft> remainingDrafts,
   ) => {
-    ..._withoutConversation(conversationId),
+    ..._withoutConversation(state, conversationId),
     if (remainingDrafts.isNotEmpty) conversationId: remainingDrafts,
   };
-
-  Map<String, List<ConversationQueuedDraft>> _withoutConversation(
-    String conversationId,
-  ) {
-    return {
-      for (final entry in state.entries)
-        if (entry.key != conversationId) entry.key: entry.value,
-    };
-  }
 
   void _setState(Map<String, List<ConversationQueuedDraft>> nextState) {
     _queuedDrafts = nextState;
     state = nextState;
   }
 }
+
+List<ConversationQueuedDraft> _withoutDraft(
+  List<ConversationQueuedDraft> drafts,
+  String draftId,
+) => drafts.where((draft) => draft.id != draftId).toList();
+
+Map<String, List<ConversationQueuedDraft>> _withoutConversation(
+  Map<String, List<ConversationQueuedDraft>> state,
+  String conversationId,
+) => {
+  for (final entry in state.entries)
+    if (entry.key != conversationId) entry.key: entry.value,
+};
 
 void _deleteAttachments(
   Iterable<ConversationQueuedDraft> drafts,
