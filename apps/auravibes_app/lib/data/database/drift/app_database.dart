@@ -312,7 +312,7 @@ extension on AppDatabase {
       return;
     }
     await customStatement(
-      "UPDATE messages SET status = 'unfinished' WHERE status = 'streaming'",
+      'UPDATE messages SET status = \'unfinished\' WHERE status = \'streaming\'',
     );
   }
 
