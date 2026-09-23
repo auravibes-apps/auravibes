@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 13);
+      expect(fixture.database.schemaVersion, 14);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -180,6 +180,46 @@ void main() {
     test('migration strategy has onCreate callback', () {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
+    });
+
+    test('migration repairs the legacy api model modalities column', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 13
+        ..execute('''
+          CREATE TABLE api_models (
+            id TEXT NOT NULL PRIMARY KEY,
+            modalities_ouput TEXT NULL
+          );
+        ''')
+        ..execute('''
+          INSERT INTO api_models (id, modalities_ouput)
+          VALUES ('model-1', '["text"]');
+        ''')
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(api_models)')
+          .get();
+      final model = await fixture.database
+          .customSelect(
+            'SELECT modalities_output FROM api_models WHERE id = ?',
+            variables: [const Variable<String>('model-1')],
+          )
+          .getSingle();
+
+      expect(
+        columns.map((column) => column.read<String>('name')),
+        contains('modalities_output'),
+      );
+      expect(model.read<String>('modalities_output'), '["text"]');
     });
 
     test(
