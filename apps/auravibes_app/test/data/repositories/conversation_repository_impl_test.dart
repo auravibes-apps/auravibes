@@ -24,19 +24,17 @@ void main() {
 
     setUp(() async {
       final workspace = await database.workspaceDao.insertWorkspace(
-        .insert(
-          id: const Value('ws-1'),
-          name: 'Test Workspace',
-          type: .local,
-        ),
+        .insert(id: const Value('ws-1'), name: 'Test Workspace', type: .local),
       );
-      final _ = await database.into(database.conversations).insert(
-        ConversationsCompanion.insert(
-          id: const Value('conv-1'),
-          workspaceId: workspace.id,
-          title: 'Test Conversation',
-        ),
-      );
+      final _ = await database
+          .into(database.conversations)
+          .insert(
+            ConversationsCompanion.insert(
+              id: const Value('conv-1'),
+              workspaceId: workspace.id,
+              title: 'Test Conversation',
+            ),
+          );
     });
 
     tearDown(() async {

@@ -203,13 +203,15 @@ void main() {
 }
 
 Future<void> _insertWorkspace(AppDatabase database, String workspaceId) async {
-  final _ = await database.into(database.workspaces).insert(
-    WorkspacesCompanion.insert(
-      id: .new(workspaceId),
-      name: workspaceId,
-      type: .local,
-    ),
-  );
+  final _ = await database
+      .into(database.workspaces)
+      .insert(
+        WorkspacesCompanion.insert(
+          id: .new(workspaceId),
+          name: workspaceId,
+          type: .local,
+        ),
+      );
 }
 
 Future<String> _insertConnection(

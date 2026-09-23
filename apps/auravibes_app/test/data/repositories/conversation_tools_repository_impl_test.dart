@@ -32,13 +32,15 @@ void main() {
           title: 'Test Conversation',
         ),
       );
-      final _ = await fixture.database.into(fixture.database.tools).insert(
-        ToolsCompanion.insert(
-          id: const Value('workspace-tool-id'),
-          workspaceId: workspace.id,
-          toolId: testToolId,
-        ),
-      );
+      final _ = await fixture.database
+          .into(fixture.database.tools)
+          .insert(
+            ToolsCompanion.insert(
+              id: const Value('workspace-tool-id'),
+              workspaceId: workspace.id,
+              toolId: testToolId,
+            ),
+          );
     }
 
     setUp(fixture.setUp);
@@ -1368,14 +1370,15 @@ final class _ConversationToolsRepositoryFixture {
       );
     }
     for (final toolId in ['tool-1', 'tool-2']) {
-      final _ = await database.into(database.tools).insert(
-        ToolsCompanion.insert(
-          id: .new(toolId),
-          workspaceId: workspace.id,
-          toolId: toolId,
-        ),
-      );
-    }
+      final _ = await database
+          .into(database.tools)
+          .insert(
+            ToolsCompanion.insert(
+              id: .new(toolId),
+              workspaceId: workspace.id,
+              toolId: toolId,
+            ),
+          );
     }
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 
