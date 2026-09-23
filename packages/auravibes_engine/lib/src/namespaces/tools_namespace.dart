@@ -19,6 +19,7 @@ class ToolsNamespace<TTool extends Object>({
     required String messageId,
     required String conversationId,
     required AgentToolGrantLevel level,
+    required String approvalDigest,
   }) async {
     final cancellationScope = _cancellationEffects.start(conversationId);
     try {
@@ -27,6 +28,7 @@ class ToolsNamespace<TTool extends Object>({
         messageId: messageId,
         conversationId: conversationId,
         level: level,
+        approvalDigest: approvalDigest,
       );
     } finally {
       _cancellationEffects.clear(conversationId, cancellationScope);
