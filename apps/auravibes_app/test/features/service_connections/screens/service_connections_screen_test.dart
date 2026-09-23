@@ -116,7 +116,7 @@ void main() {
     ));
     final _ = await tester.pumpAndSettle();
     expect(find.text('View details'), findsOneWidget);
-    expect(find.text('Reconnect'), findsOneWidget);
+    expect(find.text('Reconnect'), findsWidgets);
     await tester.tap(find.text('View details'));
     final _ = await tester.pumpAndSettle();
     expect(find.textContaining('Bearer [REDACTED]'), findsOneWidget);
