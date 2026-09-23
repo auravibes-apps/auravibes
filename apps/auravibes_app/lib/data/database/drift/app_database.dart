@@ -179,12 +179,13 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
+    await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {
-    await _upgradeApiModelModalitiesSchema(from);
     await _upgradeAgentsSchema(m, from);
     await _upgradeAgentToolsSchema(m, from);
     await _upgradeAttachmentSchema(m, from);
@@ -195,7 +196,6 @@ extension on AppDatabase {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
-    await _upgradeLegacyStreamingStatuses(from);
   }
 
   Future<void> _upgradeApiModelModalitiesSchema(int from) async {
