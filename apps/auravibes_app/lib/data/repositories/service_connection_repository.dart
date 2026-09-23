@@ -438,7 +438,7 @@ Future<int> _persistLegacyApiKey(
     encoded,
   );
 
-  return _updateServiceConnection(repository._database, rowId, companion);
+  return await _updateServiceConnection(repository._database, rowId, companion);
 }
 
 Future<ServiceConnectionsCompanion> _encryptedApiKeyCompanion(
