@@ -88,6 +88,52 @@ void main() {
     );
   });
 
+  testWidgets('surfaces connection problems before healthy connections', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(name: 'A Healthy', displayStatus: .connected),
+        _mcpConnection(
+          name: 'B Expiring', displayStatus: .expiringSoon, canRefresh: true,
+        ),
+        _mcpConnection(
+          name: 'C Failed', displayStatus: .failed, canReconnect: true,
+        ),
+        _mcpConnection(
+          name: 'D Auth', displayStatus: .needsReauth, canReconnect: true,
+        ),
+        _mcpConnection(
+          name: 'E Expired', displayStatus: .expired, canRefresh: true,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final names = tester
+        .widgetList<Text>(find.byType(Text))
+        .map((widget) => widget.data)
+        .where((name) => const {
+          'A Healthy',
+          'B Expiring',
+          'C Failed',
+          'D Auth',
+          'E Expired',
+        }.contains(name))
+        .toList();
+    expect(names, [
+      'B Expiring',
+      'C Failed',
+      'D Auth',
+      'E Expired',
+      'A Healthy',
+    ]);
+    expect(find.text('Reconnect'), findsWidgets);
+  });
+
   testWidgets('searches connection metadata and applies status filters', (
     tester,
   ) async {
