@@ -452,7 +452,7 @@ class const _ReasoningBudgetInput({
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
     ),
     hint: _hint(),
-    error: _errorWidget(error),
+    error: error == null ? null : Text(error),
     keyboardType: .number,
     enabled: enabled,
     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -468,8 +468,6 @@ class const _ReasoningBudgetInput({
 
   String _semanticLabel() =>
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();
-
-  Widget? _errorWidget(String? value) => value == null ? null : Text(value);
 }
 
 ReasoningConfiguration? _validatedConfiguration(

@@ -231,8 +231,7 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return openAI.model(modelId);
   }
 
-  T? _anthropicGenerationConfig<T>(ReasoningConfiguration? configuration) {
-    if (configuration == null) return null;
+  T? _anthropicGenerationConfig<T>(ReasoningConfiguration configuration) {
     if (configuration.enabled == false) {
       return AnthropicOptions(thinking: .new(type: 'disabled')) as T;
     }
@@ -253,10 +252,7 @@ extension _ProviderFactoryResolution on ProviderFactory {
             : .new(effort: configuration.effort),
       );
 
-  T? _openAIReasoningGenerationConfig<T>(
-    ReasoningConfiguration? configuration,
-  ) {
-    if (configuration == null) return null;
+  T? _openAIReasoningGenerationConfig<T>(ReasoningConfiguration configuration) {
     if (configuration.enabled == false) {
       return OpenAICompatReasoningOptions(reasoningEffort: 'none') as T;
     }
@@ -267,9 +263,7 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return OpenAICompatReasoningOptions(reasoningEffort: effort) as T;
   }
 
-  T? _openRouterGenerationConfig<T>(ReasoningConfiguration? configuration) {
-    if (configuration == null) return null;
-
+  T? _openRouterGenerationConfig<T>(ReasoningConfiguration configuration) {
     return OpenRouterOptions(
       reasoningMaxTokens: configuration.enabled == false
           ? null

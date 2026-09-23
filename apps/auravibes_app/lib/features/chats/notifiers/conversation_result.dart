@@ -149,6 +149,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     );
     if (cloud != null) {
       final updated = await cloud.update(conversation, patch);
+
       return conversation.copyWith(
         modelId: updated.modelId,
         agentId: updated.agentId,

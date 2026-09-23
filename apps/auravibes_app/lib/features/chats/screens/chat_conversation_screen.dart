@@ -1316,6 +1316,7 @@ class const _ChatComposer({
     final notifier = ref.read(
       conversationChatProvider(data.workspaceId, data.conversation.id).notifier,
     );
+
     return notifier.setReasoningConfiguration(value);
   }
 

@@ -24,29 +24,28 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
       return const SizedBox.shrink();
     }
 
-    final trigger = _buildTrigger(context);
+    final trigger = _ReasoningTrigger(
+      summary: _ReasoningTrigger._reasoningSummary(
+        widget.options,
+        widget.value,
+      ),
+      onPressed: _isNarrowLayout(context)
+          ? () => _showReasoningSheet(context)
+          : _popupController.toggle,
+    );
 
     if (_isNarrowLayout(context)) return trigger;
 
     return _ReasoningPopup(
       trigger: trigger,
-      child: _buildControls(),
+      child: ChatReasoningControls(
+        options: widget.options,
+        value: widget.value,
+        onChanged: widget.onChanged,
+      ),
       controller: _popupController,
     );
   }
-
-  Widget _buildTrigger(BuildContext context) => _ReasoningTrigger(
-    summary: _ReasoningTrigger._reasoningSummary(widget.options, widget.value),
-    onPressed: _isNarrowLayout(context)
-        ? () => _showReasoningSheet(context)
-        : _popupController.toggle,
-  );
-
-  ChatReasoningControls _buildControls() => ChatReasoningControls(
-    options: widget.options,
-    value: widget.value,
-    onChanged: widget.onChanged,
-  );
 
   bool _isNarrowLayout(BuildContext context) =>
       MediaQuery.sizeOf(context).width < DesignBreakpoints.sm;
@@ -54,7 +53,13 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
   Future<void> _showReasoningSheet(BuildContext context) =>
       showModalBottomSheet<void>(
         context: context,
-        builder: (context) => _ReasoningSheet(child: _buildControls()),
+        builder: (context) => _ReasoningSheet(
+          child: ChatReasoningControls(
+            options: widget.options,
+            value: widget.value,
+            onChanged: widget.onChanged,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         useSafeArea: true,
