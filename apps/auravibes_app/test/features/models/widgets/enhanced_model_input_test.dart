@@ -82,13 +82,15 @@ void main() {
     });
 
     testWidgets('renders validation error and hint', (tester) async {
-      await tester.pumpWidget(
-        const TestableApp(
-          child: Scaffold(
-            body: EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name),
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          const TestableApp(
+            child: Scaffold(
+              body: EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name),
+            ),
           ),
-        ),
-      );
+        );
+      });
       final pumpCount = await tester.pumpAndSettle();
       expect(pumpCount, isNonNegative);
 

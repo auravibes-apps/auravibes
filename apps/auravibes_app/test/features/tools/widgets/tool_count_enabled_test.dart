@@ -55,30 +55,32 @@ void main() {
   const workspaceId = 'ws1';
 
   testWidgets('shows loading spinner while loading', (tester) async {
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: TestProviderScope(
-          overrides: [
-            workspaceToolsProvider(workspaceId)
-                .overrideWith(_LoadingToolsNotifier.new),
-          ],
-          child: MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const Scaffold(
-                body: ToolCountEnabledWidget(workspaceId: workspaceId),
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: TestProviderScope(
+            overrides: [
+              workspaceToolsProvider(workspaceId)
+                  .overrideWith(_LoadingToolsNotifier.new),
+            ],
+            child: MaterialApp(
+              home: Theme(
+                data: .new(extensions: [AuraTheme.light]),
+                child: const Scaffold(
+                  body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                ),
               ),
             ),
           ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     await tester.pump();
 
     expect(find.byType(AuraSpinner), findsOneWidget);
@@ -93,37 +95,39 @@ void main() {
       _tool(id: 't3', isEnabled: false),
     ];
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return TestProviderScope(
-              overrides: [
-                workspaceToolsProvider(workspaceId)
-                    .overrideWith(() => _DataToolsNotifier(tools)),
-              ],
-              child: MaterialApp(
-                home: Theme(
-                  data: .new(extensions: [AuraTheme.light]),
-                  child: const Scaffold(
-                    body: ToolCountEnabledWidget(workspaceId: workspaceId),
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  workspaceToolsProvider(workspaceId)
+                      .overrideWith(() => _DataToolsNotifier(tools)),
+                ],
+                child: MaterialApp(
+                  home: Theme(
+                    data: .new(extensions: [AuraTheme.light]),
+                    child: const Scaffold(
+                      body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                    ),
                   ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     await tester.pump();
     await tester.pump();
 

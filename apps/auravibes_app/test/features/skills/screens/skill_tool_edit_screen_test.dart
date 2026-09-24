@@ -113,29 +113,31 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return UncontrolledProviderScope(
-              container: container,
-              child: MaterialApp.router(
-                routerConfig: router,
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp.router(
+                  routerConfig: router,
+                  builder: (context, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
       ),
     );
     final _ = await tester.pumpAndSettle();

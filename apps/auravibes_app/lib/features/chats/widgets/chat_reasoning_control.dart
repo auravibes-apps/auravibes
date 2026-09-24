@@ -26,23 +26,14 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 
     if (_isNarrowLayout(context)) {
       return _ReasoningTrigger(
-        summary: _ReasoningTrigger._reasoningSummary(
-          widget.options,
-          widget.value,
-        ),
+        options: widget.options,
+        value: widget.value,
         onPressed: () => _showReasoningSheet(context),
       );
     }
 
     return _ReasoningPopup(
-      trigger: _ReasoningTrigger(
-        summary: _ReasoningTrigger._reasoningSummary(
-          widget.options,
-          widget.value,
-        ),
-        onPressed: _popupController.toggle,
-      ),
-      child: ChatReasoningControls(
+      controls: .new(
         options: widget.options,
         value: widget.value,
         onChanged: widget.onChanged,
@@ -71,23 +62,28 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
 }
 
 class const _ReasoningTrigger({
-  required final _ReasoningSummary summary,
+  required final List<ReasoningOption> options,
+  required final ReasoningConfiguration? value,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('chat_reasoning_selector'),
-    child: _ReasoningTriggerButton(
-      summary: summary,
-      onPressed: onPressed,
-      tooltip: LocaleKeys
-          .chats_screens_chat_conversation_reasoning_options_tooltip
-          .tr(),
-    ),
-    button: true,
-    identifier: 'chat_reasoning_selector',
-    label: summary.semanticLabel,
-  );
+  Widget build(BuildContext context) {
+    final summary = _reasoningSummary(options, value);
+
+    return Semantics(
+      key: const ValueKey<String>('chat_reasoning_selector'),
+      child: _ReasoningTriggerButton(
+        summary: summary,
+        onPressed: onPressed,
+        tooltip: LocaleKeys
+            .chats_screens_chat_conversation_reasoning_options_tooltip
+            .tr(),
+      ),
+      button: true,
+      identifier: 'chat_reasoning_selector',
+      label: summary.semanticLabel,
+    );
+  }
 
   static _ReasoningSummary _reasoningSummary(
     List<ReasoningOption> options,
@@ -170,14 +166,17 @@ class const _ReasoningPopupEntry({required final Widget child})
 }
 
 class const _ReasoningPopup({
-  required final Widget trigger,
-  required final Widget child,
+  required final ChatReasoningControls controls,
   required final AuraPopupMenuController controller,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraPopupMenu(
-    child: trigger,
-    items: [_ReasoningPopupEntry(child: child)],
+    child: _ReasoningTrigger(
+      options: controls.options,
+      value: controls.value,
+      onPressed: controller.toggle,
+    ),
+    items: [_ReasoningPopupEntry(child: controls)],
     controller: controller,
   );
 }

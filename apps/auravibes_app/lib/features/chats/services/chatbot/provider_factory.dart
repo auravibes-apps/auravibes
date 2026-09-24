@@ -72,6 +72,17 @@ class const ProviderFactory({
     return _generationConfigFor<T>(config, runtime, selectedConfiguration);
   }
 
+  @visibleForTesting
+  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+    if (connectionUrl != null) return connectionUrl;
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return null;
+    }
+
+    return _blankToNull(config.modelsProvider.url);
+  }
+
   ReasoningConfiguration? _validConfiguration(
     WorkspaceModelSelectionWithConnectionEntity config,
     ReasoningConfiguration? value,
@@ -82,17 +93,6 @@ class const ProviderFactory({
     }
 
     return value;
-  }
-
-  @visibleForTesting
-  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
-    final connectionUrl = _blankToNull(config.modelConnection.url);
-    if (connectionUrl != null) return connectionUrl;
-    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
-      return null;
-    }
-
-    return _blankToNull(config.modelsProvider.url);
   }
 }
 

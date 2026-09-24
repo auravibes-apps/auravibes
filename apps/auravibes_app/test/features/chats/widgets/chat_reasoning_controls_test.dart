@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dar
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -74,11 +75,12 @@ void main() {
   testWidgets('renders the default state as an icon-only trigger', (
     tester,
   ) async {
+    expect(ChatReasoningControls.hasSupportedReasoningOptions(options), isTrue);
     await _pumpLocalized(
       tester,
       ChatReasoningControl(options: options, value: null, onChanged: _noop),
     );
-
+    expect(find.byType(ChatReasoningControl), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('chat_reasoning_selector')),
       findsOneWidget,
@@ -440,8 +442,11 @@ class const _LocalizedApp({required final Widget child})
 }
 
 Future<void> _pumpLocalized(WidgetTester tester, Widget child) async {
-  await tester.pumpWidget(_LocalizedApp(child: child));
-  await tester.pump();
+  final _ = await tester.runAsync(() async {
+    expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
+    await tester.pumpWidget(_LocalizedApp(child: child));
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 void _noop(ReasoningConfiguration? value) {

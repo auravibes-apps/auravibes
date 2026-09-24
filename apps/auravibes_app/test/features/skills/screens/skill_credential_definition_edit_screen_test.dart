@@ -78,8 +78,10 @@ void main() {
     addTearDown(container.dispose);
     final repository = SkillCredentialDefinitionsRepository(database);
 
-    await tester.pumpWidget(
-      buildScreen(container: container, workspaceId: workspace.id),
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        buildScreen(container: container, workspaceId: workspace.id),
+      ),
     );
     final _ = await tester.pumpAndSettle();
 

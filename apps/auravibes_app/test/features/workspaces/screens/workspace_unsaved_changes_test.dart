@@ -18,49 +18,51 @@ void main() {
   });
 
   testWidgets('confirms before discarding dirty create form', (tester) async {
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return TestProviderScope(
-              overrides: [
-                cloudAccountsProvider.overrideWith(
-                  (ref) async => const [
-                    CloudAccountSession(
-                      serverUrl: 'http://localhost:8080',
-                      userId: 'account-1',
-                      email: 'dev@example.com',
-                    ),
-                  ],
-                ),
-              ],
-              child: MaterialApp(
-                home: Builder(
-                  builder: (context) => AuraButton(
-                    onPressed: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            const CreateWorkspaceScreen(workspaceId: 'ws-1'),
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  cloudAccountsProvider.overrideWith(
+                    (ref) async => const [
+                      CloudAccountSession(
+                        serverUrl: 'http://localhost:8080',
+                        userId: 'account-1',
+                        email: 'dev@example.com',
                       ),
-                    ),
-                    child: const Text('Open create'),
+                    ],
                   ),
+                ],
+                child: MaterialApp(
+                  home: Builder(
+                    builder: (context) => AuraButton(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const CreateWorkspaceScreen(workspaceId: 'ws-1'),
+                        ),
+                      ),
+                      child: const Text('Open create'),
+                    ),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     final _ = await tester.pumpAndSettle();
 
     final _ = await tester.tap(find.text('Open create'));
