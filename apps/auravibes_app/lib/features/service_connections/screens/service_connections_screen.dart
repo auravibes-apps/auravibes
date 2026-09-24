@@ -2,8 +2,8 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -14,14 +14,13 @@ import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart' show MaterialLocalizations, TimeOfDay;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('service_connections_screen');
-final _modelCatalogSyncMutation = Mutation<void>();
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 const _deleteConfirmationActions = AuraConfirmDialogActions(
@@ -166,53 +165,36 @@ Future<void> _syncModelCatalog(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final wasSuccessful = await _performModelCatalogSync(ref, workspaceId);
-  if (!context.mounted || wasSuccessful == null) return;
+  final wasSuccessful = await _performModelCatalogSync(context, ref, workspaceId);
+  if (!context.mounted || wasSuccessful != true) return;
 
-  _showModelCatalogSyncResult(context, wasSuccessful);
+  _showModelCatalogSyncResult(context);
 }
 
 Future<bool?> _performModelCatalogSync(
+  BuildContext context,
   WidgetRef ref,
   String workspaceId,
 ) async {
-  if (ref.read(_modelCatalogSyncMutation).isPending) return null;
+  if (ref.read(modelCatalogSyncNotifierProvider).isSyncing) return null;
 
   try {
-    await _runModelCatalogSync(ref, workspaceId);
-
+    await ref.read(modelCatalogSyncNotifierProvider.notifier).retryManually();
+    if (context.mounted) {
+      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
+    }
     return true;
   } on Object catch (error, stackTrace) {
     _logger.warning('Model catalog sync failed', error, stackTrace);
-
     return false;
   }
 }
 
-Future<void> _runModelCatalogSync(WidgetRef ref, String workspaceId) =>
-    _modelCatalogSyncMutation.run(ref, (_) async {
-      await ref.read(modelSyncServiceProvider).performManualSync();
-      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
-    });
-
-void _showModelCatalogSyncResult(BuildContext context, bool wasSuccessful) =>
-    _showModelCatalogSyncSnackBar(
-      context,
-      wasSuccessful
-          ? LocaleKeys.models_screens_catalog_sync_success
-          : LocaleKeys.models_screens_catalog_sync_error,
-      wasSuccessful ? .success : .error,
-    );
-
-void _showModelCatalogSyncSnackBar(
-  BuildContext context,
-  String localeKey,
-  AuraSnackBarVariant variant,
-) {
+void _showModelCatalogSyncResult(BuildContext context) {
   final _ = AuraSnackBars.show(
     context: context,
-    content: TextLocale(localeKey),
-    variant: variant,
+    content: const TextLocale(LocaleKeys.models_screens_catalog_sync_success),
+    variant: .success,
   );
 }
 
@@ -269,16 +251,68 @@ class const _ServiceConnectionsBody({
   @override
   Widget build(BuildContext context) {
     final connections = _connectionsValue(connectionsAsync);
+    final Widget content;
     if (connections != null) {
-      return _ConnectionsList(
+      content = _ConnectionsList(
         connections: connections,
         onAddConnection: onAddConnection,
       );
+    } else {
+      content = connectionsAsync.isLoading
+          ? const Center(child: AuraSpinner())
+          : const Center(child: _ConnectionsLoadError());
     }
 
-    return connectionsAsync.isLoading
-        ? const Center(child: AuraSpinner())
-        : const Center(child: _ConnectionsLoadError());
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _ModelCatalogSyncStatus(),
+        Expanded(child: content),
+      ],
+    );
+  }
+}
+
+class const _ModelCatalogSyncStatus() extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(modelCatalogSyncNotifierProvider);
+    final lastAttemptAt = state.lastAttemptAt;
+    if (lastAttemptAt == null) return const SizedBox.shrink();
+
+    final localizations = MaterialLocalizations.of(context);
+    String formatTimestamp(DateTime timestamp) =>
+        '${localizations.formatMediumDate(timestamp)} '
+        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(timestamp))}';
+    Widget statusRow(String labelKey, DateTime timestamp) => Row(
+      children: [
+        Expanded(child: TextLocale(labelKey)),
+        const SizedBox(width: 8),
+        Text(formatTimestamp(timestamp)),
+      ],
+    );
+    final lastSuccessfulSyncAt = state.lastSuccessfulSyncAt;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: [
+          if (state.isSyncing)
+            statusRow(
+              LocaleKeys.models_screens_catalog_sync_tooltip,
+              lastAttemptAt,
+            ),
+          if (state.failure != null)
+            statusRow(LocaleKeys.models_screens_catalog_sync_error, lastAttemptAt),
+          if (lastSuccessfulSyncAt != null)
+            statusRow(
+              LocaleKeys.service_connections_metadata_last_refreshed_at,
+              lastSuccessfulSyncAt,
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -334,7 +368,7 @@ class const _SyncModelCatalogControl({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSyncing = ref.watch(_modelCatalogSyncMutation).isPending;
+    final isSyncing = ref.watch(modelCatalogSyncNotifierProvider).isSyncing;
 
     return _ModelCatalogSyncIconButton(
       onPressed: () => unawaited(_syncModelCatalog(context, ref, workspaceId)),

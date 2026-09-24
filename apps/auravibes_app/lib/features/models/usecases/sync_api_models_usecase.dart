@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
-import 'package:collection/collection.dart';
 
 class const SyncApiModelsUseCase({
   required final ApiModelRepository repository,
@@ -8,11 +7,17 @@ class const SyncApiModelsUseCase({
 }) {
   Future<void> call() async {
     final apiResponse = await apiService.fetchAllModels();
+    final providers = apiResponse.providers;
+    final models = providers.expand((provider) => provider.models).toList();
+    if (providers.isEmpty || models.isEmpty) {
+      throw const FormatException(
+        'Model catalog response contained no providers or models.',
+      );
+    }
+
     await repository.replaceAllData(
-      providers: apiResponse.providers
-          .map((item) => item.modelProvider)
-          .toList(),
-      models: apiResponse.providers.map((item) => item.models).flattenedToList,
+      providers: providers.map((provider) => provider.modelProvider).toList(),
+      models: models,
     );
   }
 }

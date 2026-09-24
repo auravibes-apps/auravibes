@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,9 +27,9 @@ void main() {
       );
     });
 
-    test('syncs fetched models to repository', () async {
+    test('syncs usable models while allowing an empty individual provider', () async {
       when(() => apiService.fetchAllModels())
-          .thenAnswer((_) async => ModelApiResponse(providers: []));
+          .thenAnswer((_) async => _validCatalogResponse());
       when(
         () => repository.replaceAllData(
           providers: any(named: 'providers'),
@@ -37,12 +39,48 @@ void main() {
 
       await expectLater(useCase(), completes);
 
-      verify(
+      final captured = verify(
+        () => repository.replaceAllData(
+          providers: captureAny(named: 'providers'),
+          models: captureAny(named: 'models'),
+        ),
+      ).captured;
+      expect(captured[0], [_emptyProvider, _openAiProvider]);
+      expect(captured[1], [_model]);
+    });
+
+    test('rejects response with no providers before repository write', () async {
+      when(() => apiService.fetchAllModels()).thenAnswer(
+        (_) async => ModelApiResponse(providers: []),
+      );
+
+      await expectLater(useCase(), throwsA(isA<FormatException>()));
+
+      final _ = verifyNever(
         () => repository.replaceAllData(
           providers: any(named: 'providers'),
           models: any(named: 'models'),
         ),
-      ).called(1);
+      );
+    });
+
+    test('rejects provider-only response with no models before write', () async {
+      when(() => apiService.fetchAllModels()).thenAnswer(
+        (_) async => ModelApiResponse(
+          providers: [
+            ApiProviderDto(modelProvider: _openAiProvider, models: const []),
+          ],
+        ),
+      );
+
+      await expectLater(useCase(), throwsA(isA<FormatException>()));
+
+      final _ = verifyNever(
+        () => repository.replaceAllData(
+          providers: any(named: 'providers'),
+          models: any(named: 'models'),
+        ),
+      );
     });
 
     test('stops before repository writes when fetch fails', () async {
@@ -61,7 +99,7 @@ void main() {
 
     test('forwards atomic write failures', () async {
       when(() => apiService.fetchAllModels())
-          .thenAnswer((_) async => ModelApiResponse(providers: []));
+          .thenAnswer((_) async => _validCatalogResponse());
       when(
         () => repository.replaceAllData(
           providers: any(named: 'providers'),
@@ -80,3 +118,33 @@ void main() {
     });
   });
 }
+
+
+const _openAiProvider = ApiModelProviderEntity(
+  id: 'openai',
+  name: 'OpenAI',
+  type: .openai,
+);
+
+const _emptyProvider = ApiModelProviderEntity(
+  id: 'anthropic',
+  name: 'Anthropic',
+  type: .anthropic,
+);
+
+const _model = ApiModelEntity(
+  modelProvider: 'openai',
+  id: 'gpt-4',
+  name: 'GPT-4',
+  limitContext: 128000,
+  limitOutput: 4096,
+  modalitiesInput: [],
+  modalitiesOutput: [],
+);
+
+ModelApiResponse _validCatalogResponse() => ModelApiResponse(
+  providers: [
+    ApiProviderDto(modelProvider: _emptyProvider, models: const []),
+    ApiProviderDto(modelProvider: _openAiProvider, models: const [_model]),
+  ],
+);
