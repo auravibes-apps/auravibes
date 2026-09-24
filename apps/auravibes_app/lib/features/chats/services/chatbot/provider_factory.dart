@@ -83,6 +83,17 @@ class const ProviderFactory({
 
     return value;
   }
+
+  @visibleForTesting
+  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+    if (connectionUrl != null) return connectionUrl;
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return null;
+    }
+
+    return _blankToNull(config.modelsProvider.url);
+  }
 }
 
 extension _ProviderFactoryGenerationConfig on ProviderFactory {
@@ -102,17 +113,6 @@ extension _ProviderFactoryGenerationConfig on ProviderFactory {
     }
 
     return null;
-  }
-
-  @visibleForTesting
-  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
-    final connectionUrl = _blankToNull(config.modelConnection.url);
-    if (connectionUrl != null) return connectionUrl;
-    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
-      return null;
-    }
-
-    return _blankToNull(config.modelsProvider.url);
   }
 }
 
