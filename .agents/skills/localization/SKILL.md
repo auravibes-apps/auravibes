@@ -507,7 +507,6 @@ TextLocale(
 ```dart
 AuraText(
   style: AuraTextStyle.bodySmall,
-  color: AuraColorVariant.onSurfaceVariant,
   child: TextLocale(LocaleKeys.settings_screen_app_settings_subtitle),
 )
 ```

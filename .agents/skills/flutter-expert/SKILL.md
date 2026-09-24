@@ -53,31 +53,22 @@ Load detailed guidance based on context:
 | Structure | `references/project-structure.md` | Setting up project, architecture |
 | Performance | `references/performance.md` | Optimization, profiling, jank fixes |
 
-## Constraints
+## Guidance
 
-### MUST DO
-- Use const constructors wherever possible
-- Implement proper keys for lists
-- Use Consumer/ConsumerWidget for state (not StatefulWidget)
-- Follow Material/Cupertino design guidelines
-- Profile with DevTools, fix jank
-- Test widgets with flutter_test
-
-### MUST NOT DO
-- Build widgets inside build() method
-- Mutate state directly (always create new instances)
-- Use setState for app-wide state
-- Skip const on static widgets
-- Ignore platform-specific behavior
-- Block UI thread with heavy computation (use compute())
+- Prefer const constructors and stable keys where they apply.
+- Use hooks for widget-local state and Riverpod for state shared across widgets,
+  routes, or features. Use consumer widgets where provider access is needed.
+- Follow the AuraVibes design system and relevant platform conventions.
+- Profile with DevTools when investigating or optimizing performance.
+- Add focused widget tests when widget behavior changes.
+- Keep `build()` focused; extract complex subtrees when it improves readability.
+- Avoid in-place mutation, `setState` for shared app state, and blocking UI
+  work. Use `compute()` where appropriate for expensive computation.
 
 ## Output Templates
 
-When implementing Flutter features, provide:
-1. Widget code with proper const usage
-2. Provider/Bloc definitions
-3. Route configuration if needed
-4. Test file structure
+When implementing Flutter features, include only the relevant changed layers:
+widgets, state/providers, routes, and focused tests.
 
 ## Knowledge Reference
 

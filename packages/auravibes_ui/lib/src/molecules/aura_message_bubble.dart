@@ -229,10 +229,16 @@ class const _AuraTextMessage({
   required final Color textColor,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GptMarkdown(
-    content,
-    key: ValueKey(content),
-    style: _messageBodyStyle(context, textColor),
+  Widget build(BuildContext context) => MouseRegion(
+    cursor: SystemMouseCursors.text,
+    child: DefaultSelectionStyle(
+      mouseCursor: .defer,
+      child: GptMarkdown(
+        content,
+        key: ValueKey(content),
+        style: _messageBodyStyle(context, textColor),
+      ),
+    ),
   );
 }
 
