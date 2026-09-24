@@ -62,6 +62,14 @@ Widget buildSubject({
   );
 }
 
+Widget _scaffoldedAppBuilder(BuildContext context, Widget child) =>
+    MaterialApp(
+      home: Scaffold(body: child),
+      locale: context.locale,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+    );
+
 void main() {
   MessageEntity _createMessage({
     String id = 'msg-1',
@@ -849,6 +857,7 @@ void main() {
               isUser: false,
             ),
           }),
+          appBuilder: _scaffoldedAppBuilder,
         ),
       );
 
@@ -875,6 +884,7 @@ void main() {
               isUser: false,
             ),
           }),
+          appBuilder: _scaffoldedAppBuilder,
         ),
       );
 
@@ -890,10 +900,15 @@ void main() {
       await pumpAndInit(
         tester,
         buildSubject(
-          messages: ['msg-1'],
+          messages: ['msg-link', 'msg-text'],
           overrides: _messageOverrides({
-            'msg-1': _createMessage(
-              content: '[Open docs](https://example.com)\n\nPlain text',
+            'msg-link': _createMessage(
+              id: 'msg-link',
+              content: '[Open docs](https://example.com)',
+            ),
+            'msg-text': _createMessage(
+              id: 'msg-text',
+              content: 'Plain text',
             ),
           }),
         ),
@@ -3959,7 +3974,7 @@ class const _ChatMessagesTestSubject({
 
             return appBuilder?.call(context, child) ??
                 MaterialApp(
-                  home: Scaffold(body: child),
+                  home: child,
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,

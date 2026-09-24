@@ -1,5 +1,3 @@
-import 'dart:ui' show PointerDeviceKind;
-
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/rendering.dart';
@@ -35,11 +33,18 @@ void main() {
               onSelectionChanged: (content) {
                 selectedText = content?.plainText;
               },
-              child: const AuraMessageBubble(
-                content: '[Open docs](https://example.com)\n\nselectable',
-                isUser: true,
+              child: const Column(
+                children: [
+                  AuraMessageBubble(
+                    content: '[Open docs](https://example.com)',
+                    isUser: true,
+                  ),
+                  AuraMessageBubble(
+                    content: 'selectable',
+                    isUser: true,
+                  ),
+                ],
               ),
-            ),
           ),
         ),
       );
