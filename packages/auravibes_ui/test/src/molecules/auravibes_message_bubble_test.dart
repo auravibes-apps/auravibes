@@ -39,10 +39,7 @@ void main() {
                     content: '[Open docs](https://example.com)',
                     isUser: true,
                   ),
-                  AuraMessageBubble(
-                    content: 'selectable',
-                    isUser: true,
-                  ),
+                  AuraMessageBubble(content: 'selectable', isUser: true),
                 ],
               ),
             ),
