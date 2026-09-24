@@ -8,6 +8,24 @@ import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('maps OpenAI reasoning config for Chat Completions', () {
+    expect(
+      reasoningRequestBody(
+        'openai',
+        const ReasoningConfiguration(effort: 'high'),
+      ),
+      {'reasoning_effort': 'high'},
+    );
+    expect(
+      reasoningRequestBody(
+        'openai',
+        const ReasoningConfiguration(enabled: false),
+      ),
+      {'reasoning_effort': 'none'},
+    );
+    expect(reasoningRequestBody('openai', null), isEmpty);
+  });
+
   test('resumed jobs retain their originating execution ID', () {
     final payload = conversation_repo.conversationTurnJobPayload(
       'user-1',

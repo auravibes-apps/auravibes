@@ -71,6 +71,7 @@ class ModelCatalogRepository {
             costOutput: model.costOutput,
             openWeights: model.openWeights,
             supportsReasoning: model.supportsReasoning,
+            reasoningOptionsJson: model.reasoningOptionsJson,
             isCanonical: true,
             supportsPriorityMode: model.supportsPriorityMode,
             supportsToolCalls: model.supportsToolCalls,

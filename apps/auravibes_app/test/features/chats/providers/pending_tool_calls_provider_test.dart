@@ -91,8 +91,10 @@ final ToolCatalog<ResolvedTool> _pendingToolCatalog =
     _buildPendingToolCatalog();
 final String _calculatorToolName =
     _pendingToolCatalog.specs.firstOrNull?.name ??
-    (throw RangeError.index(0, _pendingToolCatalog.specs));
-final String _urlToolName = _pendingToolCatalog.specs[1].name;
+    (throw StateError('Expected a calculator tool spec.'));
+final String _urlToolName =
+    _pendingToolCatalog.specs.skip(1).firstOrNull?.name ??
+    (throw StateError('Expected a URL tool spec.'));
 
 ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
   bool includeSkillCommand = false,

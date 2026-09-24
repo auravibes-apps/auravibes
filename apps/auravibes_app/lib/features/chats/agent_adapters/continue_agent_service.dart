@@ -824,6 +824,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       options: .new(
         tools: preparedInput.enabledTools,
         sessionId: request.conversationId,
+        reasoningConfiguration: preparedInput.reasoningConfiguration,
       ),
       a2uiRuntime: request.a2uiRuntime,
     );

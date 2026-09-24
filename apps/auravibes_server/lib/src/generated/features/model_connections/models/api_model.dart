@@ -30,6 +30,7 @@ abstract class ApiModel
     required this.costOutput,
     required this.openWeights,
     required this.supportsReasoning,
+    this.reasoningOptionsJson,
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
@@ -52,6 +53,7 @@ abstract class ApiModel
     required double costOutput,
     required bool openWeights,
     required bool supportsReasoning,
+    String? reasoningOptionsJson,
     required bool isCanonical,
     required bool supportsPriorityMode,
     required bool supportsToolCalls,
@@ -83,6 +85,8 @@ abstract class ApiModel
       supportsReasoning: _is.BoolJsonExtension.fromJson(
         jsonSerialization['supportsReasoning'],
       ),
+      reasoningOptionsJson:
+          jsonSerialization['reasoningOptionsJson'] as String?,
       isCanonical: _is.BoolJsonExtension.fromJson(
         jsonSerialization['isCanonical'],
       ),
@@ -134,6 +138,8 @@ abstract class ApiModel
 
   bool supportsReasoning;
 
+  String? reasoningOptionsJson;
+
   bool isCanonical;
 
   bool supportsPriorityMode;
@@ -165,6 +171,7 @@ abstract class ApiModel
     double? costOutput,
     bool? openWeights,
     bool? supportsReasoning,
+    String? reasoningOptionsJson,
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -189,6 +196,8 @@ abstract class ApiModel
       'costOutput': costOutput,
       'openWeights': openWeights,
       'supportsReasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoningOptionsJson': reasoningOptionsJson,
       'isCanonical': isCanonical,
       'supportsPriorityMode': supportsPriorityMode,
       'supportsToolCalls': supportsToolCalls,
@@ -215,6 +224,8 @@ abstract class ApiModel
       'costOutput': costOutput,
       'openWeights': openWeights,
       'supportsReasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoningOptionsJson': reasoningOptionsJson,
       'isCanonical': isCanonical,
       'supportsPriorityMode': supportsPriorityMode,
       'supportsToolCalls': supportsToolCalls,
@@ -269,6 +280,7 @@ class _ApiModelImpl extends ApiModel {
     required double costOutput,
     required bool openWeights,
     required bool supportsReasoning,
+    String? reasoningOptionsJson,
     required bool isCanonical,
     required bool supportsPriorityMode,
     required bool supportsToolCalls,
@@ -289,6 +301,7 @@ class _ApiModelImpl extends ApiModel {
          costOutput: costOutput,
          openWeights: openWeights,
          supportsReasoning: supportsReasoning,
+         reasoningOptionsJson: reasoningOptionsJson,
          isCanonical: isCanonical,
          supportsPriorityMode: supportsPriorityMode,
          supportsToolCalls: supportsToolCalls,
@@ -315,6 +328,7 @@ class _ApiModelImpl extends ApiModel {
     double? costOutput,
     bool? openWeights,
     bool? supportsReasoning,
+    Object? reasoningOptionsJson = _Undefined,
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -338,6 +352,9 @@ class _ApiModelImpl extends ApiModel {
       costOutput: costOutput ?? this.costOutput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+      reasoningOptionsJson: reasoningOptionsJson is String?
+          ? reasoningOptionsJson
+          : this.reasoningOptionsJson,
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
@@ -419,6 +436,12 @@ class ApiModelUpdateTable extends _is.UpdateTable<ApiModelTable> {
     table.supportsReasoning,
     value,
   );
+
+  _is.ColumnValue<String, String> reasoningOptionsJson(String? value) =>
+      _is.ColumnValue(
+        table.reasoningOptionsJson,
+        value,
+      );
 
   _is.ColumnValue<bool, bool> isCanonical(bool value) => _is.ColumnValue(
     table.isCanonical,
@@ -504,6 +527,10 @@ class ApiModelTable extends _is.Table<int?> {
       'supportsReasoning',
       this,
     );
+    reasoningOptionsJson = _is.ColumnString(
+      'reasoningOptionsJson',
+      this,
+    );
     isCanonical = _is.ColumnBool(
       'isCanonical',
       this,
@@ -554,6 +581,8 @@ class ApiModelTable extends _is.Table<int?> {
 
   late final _is.ColumnBool supportsReasoning;
 
+  late final _is.ColumnString reasoningOptionsJson;
+
   late final _is.ColumnBool isCanonical;
 
   late final _is.ColumnBool supportsPriorityMode;
@@ -580,6 +609,7 @@ class ApiModelTable extends _is.Table<int?> {
     costOutput,
     openWeights,
     supportsReasoning,
+    reasoningOptionsJson,
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,

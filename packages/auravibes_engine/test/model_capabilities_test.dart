@@ -42,6 +42,72 @@ void main() {
     expect(() => model.inputModalities.add('audio'), throwsUnsupportedError);
   });
 
+  test('parses reasoning options and derives legacy toggle', () {
+    final model = ModelCapabilities.fromJson('openai', {
+      'id': 'gpt-5',
+      'name': 'GPT-5',
+      'reasoning_options': [
+        {'type': 'toggle'},
+        {
+          'type': 'effort',
+          'values': ['low', 'medium', 'high'],
+        },
+        {'type': 'budget_tokens', 'min': 1024, 'max': 32768},
+        {'type': 'future_mode', 'value': 'preserve'},
+      ],
+      'limit': {'context': 1000, 'output': 100},
+      'modalities': {
+        'input': ['text'],
+        'output': ['text'],
+      },
+    });
+
+    expect(model.supportsReasoning, isTrue);
+    expect(model.reasoningOptions.map((option) => option.type), [
+      'toggle',
+      'effort',
+      'budget_tokens',
+      'future_mode',
+    ]);
+    expect(model.reasoningOptions[1].values, ['low', 'medium', 'high']);
+    expect(model.reasoningOptions[2].min, 1024);
+    expect(model.reasoningOptions[2].max, 32768);
+
+    final legacy = ModelCapabilities.fromJson('openai', {
+      'id': 'legacy',
+      'name': 'Legacy',
+      'reasoning': true,
+      'limit': {'context': 1000, 'output': 100},
+      'modalities': {
+        'input': ['text'],
+        'output': ['text'],
+      },
+    });
+    expect(legacy.reasoningOptions.single.isToggle, isTrue);
+  });
+
+  test(
+    'ignores malformed reasoning options while preserving unknown types',
+    () {
+      final model = ModelCapabilities.fromJson('openai', {
+        'id': 'gpt',
+        'name': 'GPT',
+        'reasoning_options': [
+          {'type': 'effort'},
+          {'type': 'budget_tokens', 'min': 4, 'max': 2},
+          {'type': 'future_mode'},
+        ],
+        'limit': {'context': 1000, 'output': 100},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      });
+
+      expect(model.reasoningOptions.single.type, 'future_mode');
+    },
+  );
+
   test('rejects malformed required catalog fields clearly', () {
     expect(
       () => ModelCapabilities.fromJson('openai', {

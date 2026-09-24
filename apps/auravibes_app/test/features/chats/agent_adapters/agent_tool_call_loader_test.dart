@@ -253,10 +253,10 @@ void main() {
                       id: 'resolved-tool',
                       name:
                           catalog.specs.firstOrNull?.name ??
-                          (throw RangeError.index(0, catalog.specs)),
+                          (throw StateError('Expected a tool catalog spec.')),
                       argumentsRaw: '{}',
                     ),
-                    const MessageToolCallEntity(
+                    const .new(
                       id: 'missing-tool',
                       name: 'unknown_tool',
                       argumentsRaw: '{}',
@@ -265,7 +265,7 @@ void main() {
                       id: 'already-resolved',
                       name:
                           catalog.specs.firstOrNull?.name ??
-                          (throw RangeError.index(0, catalog.specs)),
+                          (throw StateError('Expected a tool catalog spec.')),
                       argumentsRaw: '{}',
                       resultStatus: .success,
                     ),

@@ -407,6 +407,34 @@ abstract class LocaleKeys {
       'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
       'chats_screens.chat_conversation.select_model_selctor';
+  static const chats_screens_chat_conversation_reasoning_title =
+      'chats_screens.chat_conversation.reasoning.title';
+  static const chats_screens_chat_conversation_reasoning_enabled =
+      'chats_screens.chat_conversation.reasoning.enabled';
+  static const chats_screens_chat_conversation_reasoning_effort =
+      'chats_screens.chat_conversation.reasoning.effort';
+  static const chats_screens_chat_conversation_reasoning_budget_tokens =
+      'chats_screens.chat_conversation.reasoning.budget_tokens';
+  static const chats_screens_chat_conversation_reasoning_budget_hint =
+      'chats_screens.chat_conversation.reasoning.budget_hint';
+  static const chats_screens_chat_conversation_reasoning_budget_invalid =
+      'chats_screens.chat_conversation.reasoning.budget_invalid';
+  static const chats_screens_chat_conversation_reasoning_default =
+      'chats_screens.chat_conversation.reasoning.default';
+  static const chats_screens_chat_conversation_reasoning_effort_default =
+      'chats_screens.chat_conversation.reasoning.effort_default';
+  static const chats_screens_chat_conversation_reasoning_options_tooltip =
+      'chats_screens.chat_conversation.reasoning.options_tooltip';
+  static const chats_screens_chat_conversation_reasoning_trigger_label =
+      'chats_screens.chat_conversation.reasoning.trigger_label';
+  static const chats_screens_chat_conversation_reasoning_status_default =
+      'chats_screens.chat_conversation.reasoning.status_default';
+  static const chats_screens_chat_conversation_reasoning_status_off =
+      'chats_screens.chat_conversation.reasoning.status_off';
+  static const chats_screens_chat_conversation_reasoning_status_custom =
+      'chats_screens.chat_conversation.reasoning.status_custom';
+  static const chats_screens_chat_conversation_reasoning_restore_default =
+      'chats_screens.chat_conversation.reasoning.restore_default';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
   static const chats_screens_chat_conversation_attach_file =

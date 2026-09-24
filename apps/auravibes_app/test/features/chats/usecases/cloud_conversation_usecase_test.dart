@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,9 @@ class _Gateway extends Mock implements CloudChatGateway;
 
 class _UpdateConversationRequestFake extends Fake
     implements UpdateConversationRequest;
+
+class _CreateConversationRequestFake extends Fake
+    implements CreateConversationRequest;
 
 class _ForkConversationRequestFake extends Fake
     implements ForkConversationRequest;
@@ -41,6 +45,7 @@ const _workspace = CloudWorkspaceRef(
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(_CreateConversationRequestFake());
     registerFallbackValue(_UpdateConversationRequestFake());
     registerFallbackValue(_ForkConversationRequestFake());
     registerFallbackValue(_DeleteConversationRequestFake());
@@ -92,6 +97,76 @@ void main() {
     expect(requests.single.forkConversationId, isNot(conversation.id));
     expect(requests.single.requestId, requests.single.forkConversationId);
   });
+
+  test(
+    'persists and resets cloud reasoning configuration through update path',
+    () async {
+      final stateGateway = _WorkspaceGateway();
+      final client = _Client();
+      final endpoint = _ConversationEndpoint();
+      when(() => stateGateway.workspace).thenReturn(_workspace);
+      when(() => stateGateway.client).thenReturn(client);
+      when(() => client.conversation).thenReturn(endpoint);
+      final gateway = CloudChatGateway(stateGateway);
+      const configuration = ReasoningConfiguration(effort: 'high');
+      const toCreate = ConversationToCreate(
+        title: 'Reasoning Chat',
+        workspaceId: 'workspace-1',
+        reasoningConfiguration: configuration,
+      );
+      final now = DateTime.utc(2026);
+      final summary = ConversationSummary(
+        id: 'conversation-1',
+        title: 'Reasoning Chat',
+        isPinned: false,
+        reasoningConfigJson: configuration.encode(),
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      );
+      when(() => endpoint.create(captureAny()))
+          .thenAnswer((_) async => summary);
+
+      final _ = await CloudConversationUsecase(gateway).create(toCreate);
+
+      final createRequest =
+          verify(() => endpoint.create(captureAny())).captured.single
+              as CreateConversationRequest;
+      expect(createRequest.reasoningConfigJson, configuration.encode());
+
+      final conversation = ConversationEntity(
+        id: summary.id,
+        title: summary.title,
+        workspaceId: 'workspace-1',
+        isPinned: summary.isPinned,
+        createdAt: summary.createdAt,
+        updatedAt: summary.updatedAt,
+        revision: summary.revision,
+        reasoningConfiguration: configuration,
+      );
+      final resetSummary = ConversationSummary(
+        id: conversation.id,
+        title: conversation.title,
+        isPinned: conversation.isPinned,
+        revision: 2,
+        createdAt: now,
+        updatedAt: now,
+      );
+      when(() => endpoint.update(captureAny()))
+          .thenAnswer((_) async => resetSummary);
+
+      final _ = await CloudConversationUsecase(gateway).update(
+        conversation,
+        const ConversationPatch(clearReasoningConfiguration: true),
+      );
+
+      final updateRequest =
+          verify(() => endpoint.update(captureAny())).captured.single
+              as UpdateConversationRequest;
+      expect(updateRequest.reasoningConfigJson, isNull);
+      expect(updateRequest.clearReasoningConfig, isTrue);
+    },
+  );
 
   test(
     'deletes an active cloud conversation with one server request',

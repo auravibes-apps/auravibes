@@ -1,4 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
@@ -9,6 +10,7 @@ import 'package:auravibes_app/domain/entities/service_connection_auth_status.dar
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 typedef _ModelProviderInput = ({
   ApiModelProvidersTable? modelProvider,
@@ -29,6 +31,7 @@ typedef _ModelCapabilities = ({
   List<String> modalitiesInput,
   List<String> modalitiesOutput,
   bool supportsReasoning,
+  List<ReasoningOption> reasoningOptions,
   bool supportsToolCalls,
 });
 
@@ -42,6 +45,7 @@ _ModelCapabilities _emptyModelCapabilities() => (
   modalitiesInput: const [],
   modalitiesOutput: const [],
   supportsReasoning: false,
+  reasoningOptions: const [],
   supportsToolCalls: false,
 );
 
@@ -49,6 +53,10 @@ _ModelCapabilities _modelCapabilitiesFor(ApiModelsTable apiModel) => (
   modalitiesInput: _modelList(apiModel.modalitiesInput),
   modalitiesOutput: _modelList(apiModel.modalitiesOutput),
   supportsReasoning: _modelFlag(apiModel.supportsReasoning),
+  reasoningOptions: _decodeReasoningOptions(
+    apiModel.reasoningOptionsJson,
+    apiModel.supportsReasoning,
+  ),
   supportsToolCalls: _modelFlag(apiModel.supportsToolCalls),
 );
 
@@ -207,6 +215,7 @@ extension on WorkspaceModelSelectionRepository {
       modalitiesInput: capabilities.modalitiesInput,
       modalitiesOutput: capabilities.modalitiesOutput,
       supportsReasoning: capabilities.supportsReasoning,
+      reasoningOptions: capabilities.reasoningOptions,
       supportsToolCalls: capabilities.supportsToolCalls,
     );
   }
@@ -248,6 +257,12 @@ extension on WorkspaceModelSelectionRepository {
     ),
   );
 }
+
+List<ReasoningOption> _decodeReasoningOptions(
+  String? value,
+  bool supportsReasoning,
+) =>
+    ReasoningOption.decodeJsonList(value, supportsReasoning: supportsReasoning);
 
 extension on WorkspaceModelSelectionRepository {
   ApiModelProviderEntity _modelProviderEntity(_ModelProviderInput data) =>

@@ -35,6 +35,9 @@ class Conversations extends Table with TableMixin {
   )();
   TextColumn get agentId =>
       text().nullable().references(Agents, #id, onDelete: .setNull)();
+
+  /// JSON-encoded conversation-scoped reasoning override.
+  TextColumn get reasoningConfigJson => text().nullable()();
   TextColumn get parentConversationId =>
       text().nullable().references(Conversations, #id, onDelete: .cascade)();
 

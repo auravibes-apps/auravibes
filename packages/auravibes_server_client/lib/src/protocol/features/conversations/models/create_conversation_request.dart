@@ -22,6 +22,7 @@ abstract class CreateConversationRequest
     required this.isPinned,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationId,
   });
 
@@ -33,6 +34,7 @@ abstract class CreateConversationRequest
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
   }) = _CreateConversationRequestImpl;
 
@@ -47,6 +49,7 @@ abstract class CreateConversationRequest
       isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
     );
@@ -66,6 +69,8 @@ abstract class CreateConversationRequest
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? parentConversationId;
 
   /// Returns a shallow copy of this [CreateConversationRequest]
@@ -79,6 +84,7 @@ abstract class CreateConversationRequest
     bool? isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
   });
   @override
@@ -92,6 +98,8 @@ abstract class CreateConversationRequest
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
     };
@@ -108,6 +116,8 @@ abstract class CreateConversationRequest
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
     };
@@ -130,6 +140,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
   }) : super._(
          workspaceId: workspaceId,
@@ -139,6 +150,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
          isPinned: isPinned,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          parentConversationId: parentConversationId,
        );
 
@@ -154,6 +166,7 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
     bool? isPinned,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? parentConversationId = _Undefined,
   }) {
     return CreateConversationRequest(
@@ -164,6 +177,9 @@ class _CreateConversationRequestImpl extends CreateConversationRequest {
       isPinned: isPinned ?? this.isPinned,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,

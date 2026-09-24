@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +25,7 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<void> insertSource() async {
+  Future<void> insertSource({String? reasoningConfigJson}) async {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
@@ -33,6 +34,7 @@ void main() {
         id: const .new('source'),
         workspaceId: .new(workspace.id),
         title: const .new('Source'),
+        reasoningConfigJson: .new(reasoningConfigJson),
       ),
     );
   }
@@ -56,6 +58,28 @@ void main() {
       metadata: .new(metadata),
     ),
   );
+
+  test('fork copies conversation reasoning configuration', () async {
+    const configuration = ReasoningConfiguration(effort: 'high');
+    await insertSource(reasoningConfigJson: configuration.encode());
+    final now = DateTime.utc(2026);
+    final _ = await insertMessage(
+      id: 'user-1',
+      createdAt: now,
+      isUser: true,
+      status: .sent,
+    );
+    final _ = await insertMessage(
+      id: 'assistant-1',
+      createdAt: now.add(const Duration(seconds: 1)),
+      isUser: false,
+      status: .sent,
+    );
+
+    final fork = await repository.forkConversation('source');
+
+    expect(fork.reasoningConfiguration?.encode(), configuration.encode());
+  });
 
   test('sidebar fork stops before an active approval turn', () async {
     final _ = await insertSource();

@@ -22,6 +22,7 @@ abstract class Conversation
     required this.isPinned,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationStableId,
     required this.revision,
     int? projectionRevision,
@@ -47,6 +48,7 @@ abstract class Conversation
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
@@ -71,6 +73,7 @@ abstract class Conversation
       isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       parentConversationStableId:
           jsonSerialization['parentConversationStableId'] as String?,
       revision: jsonSerialization['revision'] as int,
@@ -117,6 +120,8 @@ abstract class Conversation
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? parentConversationStableId;
 
   int revision;
@@ -154,6 +159,7 @@ abstract class Conversation
     bool? isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     int? revision,
     int? projectionRevision,
@@ -179,6 +185,8 @@ abstract class Conversation
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -210,6 +218,8 @@ abstract class Conversation
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -247,6 +257,7 @@ class _ConversationImpl extends Conversation {
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
@@ -268,6 +279,7 @@ class _ConversationImpl extends Conversation {
          isPinned: isPinned,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          parentConversationStableId: parentConversationStableId,
          revision: revision,
          projectionRevision: projectionRevision,
@@ -295,6 +307,7 @@ class _ConversationImpl extends Conversation {
     bool? isPinned,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? parentConversationStableId = _Undefined,
     int? revision,
     int? projectionRevision,
@@ -317,6 +330,9 @@ class _ConversationImpl extends Conversation {
       isPinned: isPinned ?? this.isPinned,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       parentConversationStableId: parentConversationStableId is String?
           ? parentConversationStableId
           : this.parentConversationStableId,

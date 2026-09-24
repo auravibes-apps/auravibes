@@ -31,6 +31,8 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -43,7 +45,11 @@ import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, SelectedModelNotFoundException;
+    show
+        AgentIterationContext,
+        ReasoningConfiguration,
+        ReasoningOption,
+        SelectedModelNotFoundException;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -1284,9 +1290,34 @@ class const _ChatComposer({
     return _ChatComposerView(
       data: data,
       modelStatus: modelStatus,
+      reasoningControl: _reasoningControl(ref, modelStatus.reasoningOptions),
       canCompact: _canCompact(ref, modelStatus.available),
       draftToLoad: draftToLoad,
     );
+  }
+
+  Widget? _reasoningControl(WidgetRef ref, List<ReasoningOption> options) {
+    if (!ChatReasoningControls.hasSupportedReasoningOptions(options)) {
+      return null;
+    }
+
+    return ChatReasoningControl(
+      options: options,
+      value: data.conversation.reasoningConfiguration,
+      onChanged: (value) =>
+          unawaited(_updateReasoningConfiguration(ref, value)),
+    );
+  }
+
+  Future<void> _updateReasoningConfiguration(
+    WidgetRef ref,
+    ReasoningConfiguration? value,
+  ) {
+    final notifier = ref.read(
+      conversationChatProvider(data.workspaceId, data.conversation.id).notifier,
+    );
+
+    return notifier.setReasoningConfiguration(value);
   }
 
   _ChatComposerModelStatus _modelStatus(WidgetRef ref) {
@@ -1311,6 +1342,7 @@ class _ChatComposerView extends StatelessWidget {
   new({
     required _LoadedChatConversationData data,
     required _ChatComposerModelStatus modelStatus,
+    required Widget? reasoningControl,
     required bool canCompact,
     required ChatDraft? draftToLoad,
   }) : offstage = data.state.hasPendingApprovals,
@@ -1318,6 +1350,7 @@ class _ChatComposerView extends StatelessWidget {
          data: data,
          draftToLoad: draftToLoad,
          canCompact: canCompact,
+         reasoningControl: reasoningControl,
          modelUnavailable: modelStatus.missing,
          compactDisabledHint: modelStatus.hint,
          continueDisabledHint: modelStatus.hint,
@@ -1345,46 +1378,61 @@ typedef _ChatComposerModelStatus = ({
   bool available,
   bool missing,
   String? hint,
+  List<ReasoningOption> reasoningOptions,
 });
 
 _ChatComposerModelStatus _chatComposerModelStatus(
   String? modelId,
   AsyncValue<WorkspaceModelSelectionWithConnectionEntity?>? state,
 ) {
-  if (modelId == null) {
-    return (
-      available: false,
-      missing: false,
-      hint: LocaleKeys.chats_screens_chat_conversation_model_required,
-    );
-  }
+  if (modelId == null) return _requiredModelStatus();
 
-  if (state?.value != null) {
-    return (available: true, missing: false, hint: null);
-  }
+  final selection = state?.value;
+  if (selection != null) return _availableModelStatus(selection);
 
-  if (state?.hasValue == true) {
-    return (
-      available: false,
-      missing: true,
-      hint: LocaleKeys.chats_screens_chat_conversation_model_missing,
-    );
-  }
+  if (state?.hasValue == true) return _missingModelStatus();
 
-  return (
-    available: false,
-    missing: false,
-    hint: state?.isLoading == true
-        ? LocaleKeys.chats_screens_chat_conversation_model_loading
-        : LocaleKeys.chats_screens_chat_conversation_model_unavailable,
-  );
+  return _unavailableModelStatus(state?.isLoading == true);
 }
+
+_ChatComposerModelStatus _requiredModelStatus() => (
+  available: false,
+  missing: false,
+  hint: LocaleKeys.chats_screens_chat_conversation_model_required,
+  reasoningOptions: const [],
+);
+
+_ChatComposerModelStatus _availableModelStatus(
+  WorkspaceModelSelectionWithConnectionEntity selection,
+) => (
+  available: true,
+  missing: false,
+  hint: null,
+  reasoningOptions: selection.workspaceModelSelection.reasoningOptions,
+);
+
+_ChatComposerModelStatus _missingModelStatus() => (
+  available: false,
+  missing: true,
+  hint: LocaleKeys.chats_screens_chat_conversation_model_missing,
+  reasoningOptions: const [],
+);
+
+_ChatComposerModelStatus _unavailableModelStatus(bool isLoading) => (
+  available: false,
+  missing: false,
+  hint: isLoading
+      ? LocaleKeys.chats_screens_chat_conversation_model_loading
+      : LocaleKeys.chats_screens_chat_conversation_model_unavailable,
+  reasoningOptions: const [],
+);
 
 class _ChatComposerInput extends StatelessWidget {
   new({
     required this.data,
     required this.draftToLoad,
     required this.canCompact,
+    required this.reasoningControl,
     required this.modelUnavailable,
     required this.compactDisabledHint,
     required this.continueDisabledHint,
@@ -1416,6 +1464,7 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
+         reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
@@ -1435,6 +1484,7 @@ class _ChatComposerInput extends StatelessWidget {
   final _LoadedChatConversationData data;
   final ChatDraft? draftToLoad;
   final bool canCompact;
+  final Widget? reasoningControl;
   final bool modelUnavailable;
   final String? compactDisabledHint;
   final String? continueDisabledHint;

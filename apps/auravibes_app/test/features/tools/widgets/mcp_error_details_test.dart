@@ -34,39 +34,42 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
-      TestableApp(
-        child: Builder(
-          builder: (context) => Column(
-            children: [
-              TextButton(
-                key: const ValueKey('redacted-error'),
-                onPressed: () => unawaited(
-                  McpErrorDetails.show(
-                    context,
-                    groupName: 'MCP Server',
-                    errorMessage:
-                        'Authorization: Bearer replace-me; api_key=replace-me',
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: Builder(
+            builder: (context) => Column(
+              children: [
+                TextButton(
+                  key: const ValueKey('redacted-error'),
+                  onPressed: () => unawaited(
+                    McpErrorDetails.show(
+                      context,
+                      groupName: 'MCP Server',
+                      errorMessage:
+                          'Authorization: Bearer replace-me; '
+                          'api_key=replace-me',
+                    ),
                   ),
+                  child: const Text('Redacted error'),
                 ),
-                child: const Text('Redacted error'),
-              ),
-              TextButton(
-                key: const ValueKey('empty-error'),
-                onPressed: () => unawaited(
-                  McpErrorDetails.show(
-                    context,
-                    groupName: 'MCP Server',
-                    errorMessage: ' ',
+                TextButton(
+                  key: const ValueKey('empty-error'),
+                  onPressed: () => unawaited(
+                    McpErrorDetails.show(
+                      context,
+                      groupName: 'MCP Server',
+                      errorMessage: ' ',
+                    ),
                   ),
+                  child: const Text('Empty error'),
                 ),
-                child: const Text('Empty error'),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
     final _ = await tester.pumpAndSettle();
 
     final _ = await tester.tap(find.byKey(const ValueKey('redacted-error')));

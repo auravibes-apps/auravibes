@@ -26,7 +26,9 @@ void main() {
     final fixture = await _createUserSkillFixture();
     addTearDown(fixture.dispose);
 
-    await tester.pumpWidget(_SkillUnsavedChangesApp(fixture: fixture));
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(_SkillUnsavedChangesApp(fixture: fixture)),
+    );
     final _ = await tester.pumpAndSettle();
 
     final title = _titleField();

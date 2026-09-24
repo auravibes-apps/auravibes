@@ -72,7 +72,9 @@ void main() {
       metadata: metadata,
     );
 
-    await tester.pumpWidget(_Subject(message: message));
+    await tester.runAsync(() async {
+      await tester.pumpWidget(_Subject(message: message));
+    });
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Compaction summary content'), findsOneWidget);

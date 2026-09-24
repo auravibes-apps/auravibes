@@ -23,6 +23,7 @@ Future<ConversationEntity> _send(
   draft: draft,
   workspaceModelSelectionId: workspaceModelSelectionId,
   agentId: agentId,
+  reasoningConfiguration: null,
 ));
 
 class _CloudConversationUsecase extends Mock
@@ -308,6 +309,7 @@ void main() {
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
         agentId: null,
+        reasoningConfiguration: null,
       ));
 
       expect(result.id, 'cloud-conversation');

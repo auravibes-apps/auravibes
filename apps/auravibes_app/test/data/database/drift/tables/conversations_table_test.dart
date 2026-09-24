@@ -57,14 +57,15 @@ void main() {
           'title',
           'model_id',
           'agent_id',
+          'reasoning_config_json',
           'parent_conversation_id',
           'is_pinned',
         ]),
       );
     });
 
-    test('has 13 columns', () {
-      expect(columns.length, 13);
+    test('has 14 columns', () {
+      expect(columns.length, 14);
     });
 
     test('workspace_id is not null', () {
@@ -89,6 +90,13 @@ void main() {
     test('agent_id is nullable', () {
       final col = columns.firstWhere(
         (r) => r.read<String>('name') == 'agent_id',
+      );
+      expect(col.read<int>('notnull'), 0);
+    });
+
+    test('reasoning_config_json is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'reasoning_config_json',
       );
       expect(col.read<int>('notnull'), 0);
     });

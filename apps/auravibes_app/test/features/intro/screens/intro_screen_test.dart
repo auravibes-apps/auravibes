@@ -25,7 +25,7 @@ void main() {
     final fixture = _IntroFixture();
     addTearDown(fixture.dispose);
 
-    await tester.pumpWidget(fixture.buildApp());
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
     await _pumpUntilFound(tester, find.byKey(_continueKey));
 
     expect(find.text('Welcome to AuraVibes'), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
     final connectFixture = _IntroFixture();
     addTearDown(connectFixture.dispose);
 
-    await tester.pumpWidget(connectFixture.buildApp());
+    await tester.runAsync(() => tester.pumpWidget(connectFixture.buildApp()));
     await _createWorkspace(tester, 'Connect');
     await _tapVisible(tester, find.byKey(_connectAiKey));
     await _pumpUntilFound(
