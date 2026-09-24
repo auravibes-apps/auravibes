@@ -778,7 +778,12 @@ DateTime? _expiresAt(OAuthTokenEntity token) {
   return token.issuedAt.add(.new(seconds: expiresIn));
 }
 
-String _suffix(String value) => value.lastCharacters(6);
+String? _suffix(String value) {
+  const suffixLength = 6;
+  if (value.length <= suffixLength) return null;
+
+  return value.lastCharacters(suffixLength);
+}
 
 Future<ServiceConnectionTable?> _getRowById(
   ServiceConnectionRepository repository,
