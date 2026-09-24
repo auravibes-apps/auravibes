@@ -27,7 +27,7 @@ void main() {
       );
     });
 
-    test('syncs usable models while allowing an empty individual provider', () async {
+    test('syncs usable models with an empty provider', () async {
       when(() => apiService.fetchAllModels())
           .thenAnswer((_) async => _validCatalogResponse());
       when(
@@ -39,17 +39,17 @@ void main() {
 
       await expectLater(useCase(), completes);
 
-      final captured = verify(
+      final [providers, models] = verify(
         () => repository.replaceAllData(
           providers: captureAny(named: 'providers'),
           models: captureAny(named: 'models'),
         ),
       ).captured;
-      expect(captured[0], [_emptyProvider, _openAiProvider]);
-      expect(captured[1], [_model]);
+      expect(providers, [_emptyProvider, _openAiProvider]);
+      expect(models, [_model]);
     });
 
-    test('rejects response with no providers before repository write', () async {
+    test('rejects catalogs without providers before writing', () async {
       when(() => apiService.fetchAllModels()).thenAnswer(
         (_) async => ModelApiResponse(providers: []),
       );
@@ -64,7 +64,7 @@ void main() {
       );
     });
 
-    test('rejects provider-only response with no models before write', () async {
+    test('rejects provider-only catalogs before writing', () async {
       when(() => apiService.fetchAllModels()).thenAnswer(
         (_) async => ModelApiResponse(
           providers: [

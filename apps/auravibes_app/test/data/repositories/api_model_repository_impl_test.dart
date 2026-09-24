@@ -345,7 +345,7 @@ void main() {
       });
 
 
-      test('rolls back stale model pruning when provider deletion fails', () async {
+      test('rolls back stale models when provider deletion fails', () async {
         final database = AppDatabase(
           connection: DatabaseConnection(NativeDatabase.memory()),
         );

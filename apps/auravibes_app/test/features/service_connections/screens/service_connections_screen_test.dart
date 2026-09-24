@@ -203,7 +203,7 @@ void main() {
     await _unmountScreen(tester);
   });
 
-  testWidgets('shows model catalog sync failure and allows retry', (tester) async {
+  testWidgets('shows sync failure and allows retry', (tester) async {
     _addWidgetTearDown(tester);
     final usecase = _MockSyncApiModelsUseCase();
     when(usecase.call).thenThrow(Exception('Network error'));

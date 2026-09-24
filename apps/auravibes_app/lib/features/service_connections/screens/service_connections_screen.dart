@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -14,7 +15,6 @@ import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart' show MaterialLocalizations, TimeOfDay;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -165,7 +165,11 @@ Future<void> _syncModelCatalog(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final wasSuccessful = await _performModelCatalogSync(context, ref, workspaceId);
+  final wasSuccessful = await _performModelCatalogSync(
+    context,
+    ref,
+    workspaceId,
+  );
   if (!context.mounted || wasSuccessful != true) return;
 
   _showModelCatalogSyncResult(context);
@@ -179,13 +183,17 @@ Future<bool?> _performModelCatalogSync(
   if (ref.read(modelCatalogSyncNotifierProvider).isSyncing) return null;
 
   try {
-    await ref.read(modelCatalogSyncNotifierProvider.notifier).retryManually();
+    await ref
+        .read(modelCatalogSyncNotifierProvider.notifier)
+        .retryManually();
     if (context.mounted) {
       ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
     }
+
     return true;
   } on Object catch (error, stackTrace) {
     _logger.warning('Model catalog sync failed', error, stackTrace);
+
     return false;
   }
 }
@@ -251,17 +259,12 @@ class const _ServiceConnectionsBody({
   @override
   Widget build(BuildContext context) {
     final connections = _connectionsValue(connectionsAsync);
-    final Widget content;
-    if (connections != null) {
-      content = _ConnectionsList(
-        connections: connections,
-        onAddConnection: onAddConnection,
-      );
-    } else {
-      content = connectionsAsync.isLoading
-          ? const Center(child: AuraSpinner())
-          : const Center(child: _ConnectionsLoadError());
-    }
+    final Widget content = connections == null
+        ? _ConnectionsLoadState(isLoading: connectionsAsync.isLoading)
+        : _ConnectionsList(
+            connections: connections,
+            onAddConnection: onAddConnection,
+          );
 
     return Column(
       crossAxisAlignment: .stretch,
@@ -273,6 +276,16 @@ class const _ServiceConnectionsBody({
   }
 }
 
+class const _ConnectionsLoadState({required final bool isLoading})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Center(
+    child: isLoading
+        ? const AuraSpinner()
+        : const _ConnectionsLoadError(),
+  );
+}
+
 class const _ModelCatalogSyncStatus() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -280,38 +293,50 @@ class const _ModelCatalogSyncStatus() extends ConsumerWidget {
     final lastAttemptAt = state.lastAttemptAt;
     if (lastAttemptAt == null) return const SizedBox.shrink();
 
-    final localizations = MaterialLocalizations.of(context);
-    String formatTimestamp(DateTime timestamp) =>
-        '${localizations.formatMediumDate(timestamp)} '
-        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(timestamp))}';
-    Widget statusRow(String labelKey, DateTime timestamp) => Row(
-      children: [
-        Expanded(child: TextLocale(labelKey)),
-        const SizedBox(width: 8),
-        Text(formatTimestamp(timestamp)),
-      ],
-    );
     final lastSuccessfulSyncAt = state.lastSuccessfulSyncAt;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: .start,
         children: [
           if (state.isSyncing)
-            statusRow(
-              LocaleKeys.models_screens_catalog_sync_tooltip,
-              lastAttemptAt,
+            _ModelCatalogSyncStatusRow(
+              labelKey: LocaleKeys.models_screens_catalog_sync_tooltip,
+              timestamp: lastAttemptAt,
             ),
           if (state.failure != null)
-            statusRow(LocaleKeys.models_screens_catalog_sync_error, lastAttemptAt),
+            _ModelCatalogSyncStatusRow(
+              labelKey: LocaleKeys.models_screens_catalog_sync_error,
+              timestamp: lastAttemptAt,
+            ),
           if (lastSuccessfulSyncAt != null)
-            statusRow(
-              LocaleKeys.service_connections_metadata_last_refreshed_at,
-              lastSuccessfulSyncAt,
+            _ModelCatalogSyncStatusRow(
+              labelKey:
+                  LocaleKeys.service_connections_metadata_last_refreshed_at,
+              timestamp: lastSuccessfulSyncAt,
             ),
         ],
       ),
+    );
+  }
+}
+
+class const _ModelCatalogSyncStatusRow({
+  required final String labelKey,
+  required final DateTime timestamp,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final formattedTimestamp = '${localizations.formatMediumDate(timestamp)} '
+        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(timestamp))}';
+
+    return Row(
+      children: [
+        Expanded(child: TextLocale(labelKey)),
+        const SizedBox(width: 8),
+        Text(formattedTimestamp),
+      ],
     );
   }
 }

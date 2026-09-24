@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_failure.dart';
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
@@ -14,36 +16,6 @@ final modelCatalogSyncNotifierProvider =
   ModelCatalogSyncNotifier.new,
 );
 
-enum ModelCatalogSyncFailure { invalidCatalog, unavailable, unexpected }
-
-class ModelCatalogSyncState {
-  const ModelCatalogSyncState({
-    this.isSyncing = false,
-    this.lastAttemptAt,
-    this.lastSuccessfulSyncAt,
-    this.failure,
-  });
-
-  final bool isSyncing;
-  final DateTime? lastAttemptAt;
-  final DateTime? lastSuccessfulSyncAt;
-  final ModelCatalogSyncFailure? failure;
-
-  ModelCatalogSyncState copyWith({
-    bool? isSyncing,
-    DateTime? lastAttemptAt,
-    DateTime? lastSuccessfulSyncAt,
-    ModelCatalogSyncFailure? failure,
-    bool clearFailure = false,
-  }) => ModelCatalogSyncState(
-    isSyncing: isSyncing ?? this.isSyncing,
-    lastAttemptAt: lastAttemptAt ?? this.lastAttemptAt,
-    lastSuccessfulSyncAt:
-        lastSuccessfulSyncAt ?? this.lastSuccessfulSyncAt,
-    failure: clearFailure ? null : failure ?? this.failure,
-  );
-}
-
 class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
   Future<void>? _syncInFlight;
 
@@ -55,7 +27,11 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     try {
       await _startSync(retryTransientErrors: true);
     } on Object catch (error, stackTrace) {
-      _logger.warning('Automatic model catalog sync failed', error, stackTrace);
+      _logger.warning(
+        'Automatic model catalog sync failed',
+        error,
+        stackTrace,
+      );
     }
   }
 
@@ -73,6 +49,7 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
       _syncInFlight = null;
     });
     _syncInFlight = trackedSync;
+
     return trackedSync;
   }
 
@@ -85,16 +62,17 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     var retries = 0;
     while (true) {
       if (!ref.mounted) return;
-      state = state.copyWith(lastAttemptAt: DateTime.now());
+      state = state.copyWith(lastAttemptAt: .now());
       try {
         await ref.read(modelSyncServiceProvider).sync();
         if (!ref.mounted) return;
 
         state = state.copyWith(
           isSyncing: false,
-          lastSuccessfulSyncAt: DateTime.now(),
+          lastSuccessfulSyncAt: .now(),
           clearFailure: true,
         );
+
         return;
       } on Object catch (error, stackTrace) {
         if (retryTransientErrors &&
