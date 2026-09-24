@@ -30,6 +30,7 @@ import 'package:auravibes_app/features/chats/widgets/compacted_message_details.d
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
@@ -1372,14 +1373,45 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   }
 }
 
-Widget _chatMarkdown({required String content, required TextStyle style}) =>
-    MouseRegion(
-      cursor: SystemMouseCursors.text,
-      child: DefaultSelectionStyle(
-        mouseCursor: MouseCursor.defer,
-        child: GptMarkdown(content, style: style),
+Widget _chatMarkdown({
+  required BuildContext context,
+  required String content,
+  required TextStyle style,
+}) => MouseRegion(
+  cursor: SystemMouseCursors.text,
+  child: DefaultSelectionStyle(
+    mouseCursor: MouseCursor.defer,
+    child: GptMarkdown(
+      content,
+      style: style,
+      onLinkTap: (url, _) => unawaited(_openChatMarkdownLink(context, url)),
+    ),
+  ),
+);
+
+Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null ||
+      !uri.isAbsolute ||
+      !uri.hasAuthority ||
+      (uri.scheme != 'http' && uri.scheme != 'https') ||
+      uri.host.isEmpty) {
+    return;
+  }
+
+  try {
+    await OpenSystemBrowser.call(uri);
+  } on Object {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: TextLocale(
+          LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+        ),
       ),
     );
+  }
+}
 
 class const _AiMessageContent({
   required final String content,
@@ -1397,6 +1429,7 @@ class const _AiMessageContent({
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _chatMarkdown(
+          context: context,
           content: content,
           style: TextStyle(
             color: auraColors.onSurface,
@@ -1729,6 +1762,7 @@ class const _ActivityNarrative({required final String content, super.key})
 
     return SelectionArea(
       child: _chatMarkdown(
+        context: context,
         content: content,
         style: TextStyle(
           color: colors.onSurfaceVariant,
@@ -1778,6 +1812,7 @@ class const _ActivityThinkingCard({required final String content, super.key})
           const AuraSizedBox(height: .xs),
           SelectionArea(
             child: _chatMarkdown(
+              context: context,
               content: content,
               style: TextStyle(
                 color: colors.onSurfaceVariant,
