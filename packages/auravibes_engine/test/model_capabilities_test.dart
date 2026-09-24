@@ -161,4 +161,116 @@ void main() {
 
     expect(model.isCodexRuntimeModel, isFalse);
   });
+
+  test('Codex eligibility is capability-based', () {
+    const cases = <({
+      String name,
+      String id,
+      bool canonical,
+      bool priority,
+      List<String> input,
+      List<String> output,
+      int outputLimit,
+      bool supportsTools,
+      bool expected,
+    })>[
+      (
+        name: 'priority text model',
+        id: 'gpt-5.5',
+        canonical: true,
+        priority: true,
+        input: ['text'],
+        output: ['text'],
+        outputLimit: 128000,
+        supportsTools: false,
+        expected: true,
+      ),
+      (
+        name: 'different eligible runtime model',
+        id: 'gpt-5.5-spark',
+        canonical: false,
+        priority: true,
+        input: ['text'],
+        output: ['text'],
+        outputLimit: 128000,
+        supportsTools: true,
+        expected: true,
+      ),
+      (
+        name: 'priority noncanonical alias',
+        id: 'gpt-5.4-alias',
+        canonical: false,
+        priority: true,
+        input: ['text'],
+        output: ['text'],
+        outputLimit: 128000,
+        supportsTools: false,
+        expected: true,
+      ),
+      (
+        name: 'non-priority alias',
+        id: 'gpt-5.1-codex',
+        canonical: false,
+        priority: false,
+        input: ['text'],
+        output: ['text'],
+        outputLimit: 128000,
+        supportsTools: true,
+        expected: false,
+      ),
+      (
+        name: 'missing text input',
+        id: 'gpt-5.6-image',
+        canonical: false,
+        priority: true,
+        input: ['image'],
+        output: ['text'],
+        outputLimit: 128000,
+        supportsTools: true,
+        expected: false,
+      ),
+      (
+        name: 'no text output',
+        id: 'gpt-5.7-embedding',
+        canonical: false,
+        priority: true,
+        input: ['text'],
+        output: ['embedding'],
+        outputLimit: 128000,
+        supportsTools: true,
+        expected: false,
+      ),
+      (
+        name: 'zero output limit',
+        id: 'gpt-5.8-disabled',
+        canonical: false,
+        priority: true,
+        input: ['text'],
+        output: ['text'],
+        outputLimit: 0,
+        supportsTools: true,
+        expected: false,
+      ),
+    ];
+
+    for (final testCase in cases) {
+      final model = ModelCapabilities(
+        id: testCase.id,
+        name: testCase.id,
+        limitContext: 1000,
+        limitOutput: testCase.outputLimit,
+        inputModalities: testCase.input,
+        outputModalities: testCase.output,
+        isCanonical: testCase.canonical,
+        supportsPriorityMode: testCase.priority,
+        supportsToolCalls: testCase.supportsTools,
+      );
+
+      expect(
+        model.isCodexRuntimeModel,
+        testCase.expected,
+        reason: testCase.name,
+      );
+    }
+  });
 }

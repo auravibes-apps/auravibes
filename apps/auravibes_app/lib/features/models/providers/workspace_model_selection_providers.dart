@@ -38,15 +38,16 @@ bool _isCodexSelection(WorkspaceModelSelectionWithConnectionEntity selection) =>
 Future<WorkspaceModelSelectionWithConnectionEntity?> _resolveSelectedModel(
   WorkspaceModelSelectionWithConnectionEntity? selectedModel,
   ModelCatalogStore catalog,
-) {
-  if (selectedModel == null) {
-    return Future.value(selectedModel);
-  }
+) async {
+  if (selectedModel == null) return null;
+
+  final resolvedSelection = _isCodexSelection(selectedModel)
+      ? await WorkspaceModelSelectionProviders.resolve(selectedModel, catalog)
+      : selectedModel;
+  if (resolvedSelection == null) return null;
 
   return _resolveCatalogCapabilities(
-    _isCodexSelection(selectedModel)
-        ? WorkspaceModelSelectionProviders.resolve(selectedModel, catalog)
-        : Future.value(selectedModel),
+    Future.value(resolvedSelection),
     catalog,
   );
 }
@@ -71,7 +72,7 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _resolveCatalogCapabilities(
 }
 
 class WorkspaceModelSelectionProviders {
-  static Future<WorkspaceModelSelectionWithConnectionEntity> resolve(
+  static Future<WorkspaceModelSelectionWithConnectionEntity?> resolve(
     WorkspaceModelSelectionWithConnectionEntity selectedModel,
     ModelCatalogStore modelCatalogStore,
   ) async {
@@ -81,12 +82,12 @@ class WorkspaceModelSelectionProviders {
     return _resolveRuntimeModel(selectedModel, openAIModel);
   }
 
-  static WorkspaceModelSelectionWithConnectionEntity _resolveRuntimeModel(
+  static WorkspaceModelSelectionWithConnectionEntity? _resolveRuntimeModel(
     WorkspaceModelSelectionWithConnectionEntity selectedModel,
     ApiModelEntity? openAIModel,
   ) {
     if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
-      return selectedModel;
+      return null;
     }
 
     return selectedModel.copyWith(

@@ -3,8 +3,11 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
@@ -12,12 +15,15 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/codex_oauth_service.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeModelConnectionRepository implements ModelConnectionRepository {
   ModelConnectionEntity? created;
+  List<String>? createdModelIds;
   ModelProviderVerification? verificationResult;
   ModelProviderVerification? lastCreateVerification;
   Exception? verificationError;
@@ -45,6 +51,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     ModelProviderVerification? verification,
   }) async {
     lastCreateVerification = verification;
+    createdModelIds = toCreate.modelIds;
     created = .new(
       id: 'new-id',
       name: toCreate.name,
@@ -96,6 +103,74 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     throw UnimplementedError();
   }
 }
+
+
+class _FakeModelCatalogStore implements ModelCatalogStore {
+  _FakeModelCatalogStore(this.models);
+
+  final List<ApiModelEntity> models;
+
+  @override
+  Future<List<ApiModelProviderEntity>> getAllProviders() async => const [];
+
+  @override
+  Future<List<ApiModelEntity>> getAllModels() async => models;
+
+  @override
+  Future<List<ApiModelEntity>> getModelsByProvider(
+    String providerId,
+  ) async =>
+      models.where((model) => model.modelProvider == providerId).toList();
+
+  @override
+  Future<ApiModelEntity?> getModelByProviderAndModelId(
+    String providerId,
+    String modelId,
+  ) async => models
+      .where(
+        (model) =>
+            model.modelProvider == providerId && model.id == modelId,
+      )
+      .firstOrNull;
+
+  @override
+  Stream<List<ApiModelProviderEntity>> watchAllProviders() =>
+      Stream.value(const []);
+
+  @override
+  Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) =>
+      Stream.value(
+        models.where((model) => model.modelProvider == providerId).toList(),
+      );
+}
+
+class _FakeCodexOAuthService extends CodexOAuthService {
+  @override
+  Future<OAuthTokenEntity> authenticateWithDeviceCode({
+    void Function(CodexDeviceCode deviceCode)? onDeviceCode,
+    bool Function()? isCancelled,
+  }) async => OAuthTokenEntity(
+    accessToken: 'access-token',
+    issuedAt: DateTime(2026),
+  );
+}
+
+ApiModelEntity _makeCatalogModel({
+  required String id,
+  bool priority = false,
+  List<String> input = const ['text'],
+  List<String> output = const ['text'],
+  int outputLimit = 128000,
+}) => ApiModelEntity(
+  modelProvider: 'openai',
+  id: id,
+  name: id,
+  limitContext: 400000,
+  limitOutput: outputLimit,
+  modalitiesInput: input,
+  modalitiesOutput: output,
+  supportsPriorityMode: priority,
+);
 
 void main() {
   group('AddModelProviderState', () {
@@ -676,6 +751,61 @@ void main() {
 
       expect(state1.name, isNull);
       expect(state2.name, isNull);
+    });
+
+    test('Codex OAuth stores only eligible model IDs', () async {
+      final repo = _FakeModelConnectionRepository();
+      final catalog = _FakeModelCatalogStore([
+        _makeCatalogModel(id: 'gpt-5.5', priority: true),
+        _makeCatalogModel(id: 'gpt-3.5-turbo'),
+        _makeCatalogModel(id: 'gpt-5.5-spark', priority: true),
+        _makeCatalogModel(
+          id: 'gpt-5.6-image',
+          priority: true,
+          input: ['image'],
+        ),
+        _makeCatalogModel(
+          id: 'gpt-5.7-disabled',
+          priority: true,
+          outputLimit: 0,
+        ),
+      ]);
+      final container2 = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
+          modelConnectionRepositoryProvider.overrideWithValue(repo),
+          modelConnectionStoreProvider('ws1').overrideWith((_) async => repo),
+          modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
+          apiModelProvidersProvider.overrideWith(
+            (_, _) async => const [
+              ApiModelProviderEntity(
+                id: ModelProviderOAuthProfiles.providerId,
+                name: ModelProviderOAuthProfiles.displayName,
+                type: .openai,
+              ),
+            ],
+          ),
+          codexOAuthServiceProvider.overrideWithValue(
+            _FakeCodexOAuthService(),
+          ),
+        ],
+      );
+      addTearDown(container2.dispose);
+
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
+      final notifier = container2.read(
+        addModelProviderStateProvider('ws1').notifier,
+      )..setModel(ModelProviderOAuthProfiles.providerId);
+
+      await notifier.addModelProvider(codexOAuthMethod: .deviceCode);
+
+      expect(repo.createdModelIds, ['gpt-5.5', 'gpt-5.5-spark']);
     });
   });
 }

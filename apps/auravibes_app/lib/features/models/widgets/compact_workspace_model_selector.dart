@@ -697,7 +697,14 @@ class const _ModelCompactChip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (modelUnavailable) {
+    final selectedModel = _selectedModel(
+      groupedModels,
+      workspaceModelSelectionId,
+    );
+    final isUnavailable =
+        modelUnavailable ||
+        (workspaceModelSelectionId != null && selectedModel == null);
+    if (isUnavailable) {
       return const _ModelChip(
         label: TextLocale(
           LocaleKeys.models_screens_model_unavailable,
@@ -720,9 +727,7 @@ class const _ModelCompactChip({
       );
     }
 
-    return _SelectedModelChip(
-      selectedModel: _selectedModel(groupedModels, workspaceModelSelectionId),
-    );
+    return _SelectedModelChip(selectedModel: selectedModel);
   }
 }
 

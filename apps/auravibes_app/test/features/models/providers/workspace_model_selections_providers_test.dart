@@ -102,9 +102,9 @@ class _FakeWorkspaceModelSelectionRepository([
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(String id) {
-    throw UnimplementedError();
-  }
+  getWorkspaceModelSelectionById(String id) async => selections
+      .where((selection) => selection.workspaceModelSelection.id == id)
+      .firstOrNull;
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
@@ -481,6 +481,87 @@ void main() {
         ]);
       },
     );
+  });
+
+  group('workspaceModelSelectionByIdProvider', () {
+    test('returns null for an ineligible saved Codex model', () async {
+      final selection = _makeSelection(
+        selectionId: 'sel-codex-old',
+        modelConnectionId: 'codex-connection',
+        modelConnectionName: 'OpenAI Codex',
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        connectionProviderId: 'openai-codex',
+        modelId: 'gpt-3.5-turbo',
+      );
+      const catalog = _FakeApiModelRepository(
+        providers: [
+          ApiModelProviderEntity(id: 'openai', name: 'OpenAI', type: null),
+        ],
+        models: [
+          ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-3.5-turbo',
+            name: 'GPT-3.5 Turbo',
+            limitContext: 16000,
+            limitOutput: 4096,
+            modalitiesInput: ['text'],
+            modalitiesOutput: ['text'],
+          ),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => _FakeWorkspaceModelSelectionRepository(
+              [selection],
+            ),
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        workspaceModelSelectionByIdProvider(
+          'ws-1',
+          'sel-codex-old',
+        ).future,
+      );
+
+      expect(result, isNull);
+    });
+
+    test('returns null for a missing Codex catalog model', () async {
+      final selection = _makeSelection(
+        selectionId: 'sel-codex-missing',
+        modelConnectionId: 'codex-connection',
+        modelConnectionName: 'OpenAI Codex',
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        connectionProviderId: 'openai-codex',
+        modelId: 'gpt-5.5-removed',
+      );
+      const catalog = _FakeApiModelRepository();
+      final container = ProviderContainer(
+        overrides: [
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => _FakeWorkspaceModelSelectionRepository([selection]),
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        workspaceModelSelectionByIdProvider(
+          'ws-1',
+          'sel-codex-missing',
+        ).future,
+      );
+
+      expect(result, isNull);
+    });
   });
 
   group('listModelsGroupedByProviderProvider', () {
