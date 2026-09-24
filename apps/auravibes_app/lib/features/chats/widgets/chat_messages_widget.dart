@@ -1384,8 +1384,7 @@ Widget _chatMarkdown({
     child: GptMarkdown(
       content,
       style: style,
-      onLinkTap: (url, _) =>
-          unawaited(_openChatMarkdownLink(context, url)),
+      onLinkTap: (url, _) => unawaited(_openChatMarkdownLink(context, url)),
     ),
   ),
 );

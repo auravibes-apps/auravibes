@@ -36,7 +36,7 @@ void main() {
                 selectedText = content?.plainText;
               },
               child: const AuraMessageBubble(
-                content: '[Open docs](https://example.com) selectable',
+                content: '[Open docs](https://example.com)\n\nselectable',
                 isUser: true,
               ),
             ),
@@ -46,7 +46,7 @@ void main() {
 
       final linkGesture = await tester.startGesture(
         tester.getCenter(find.text('Open docs')),
-        kind: PointerDeviceKind.mouse,
+        kind: .mouse,
       );
       await tester.pump();
       expect(
@@ -57,7 +57,7 @@ void main() {
 
       final textGesture = await tester.startGesture(
         tester.getCenter(find.text('selectable')),
-        kind: PointerDeviceKind.mouse,
+        kind: .mouse,
       );
       await tester.pump();
       expect(

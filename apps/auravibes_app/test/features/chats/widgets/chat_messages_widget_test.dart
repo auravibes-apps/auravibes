@@ -893,7 +893,7 @@ void main() {
           messages: ['msg-1'],
           overrides: _messageOverrides({
             'msg-1': _createMessage(
-              content: '[Open docs](https://example.com)\nPlain text',
+              content: '[Open docs](https://example.com)\n\nPlain text',
             ),
           }),
         ),
@@ -3959,7 +3959,7 @@ class const _ChatMessagesTestSubject({
 
             return appBuilder?.call(context, child) ??
                 MaterialApp(
-                  home: child,
+                  home: Scaffold(body: child),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
