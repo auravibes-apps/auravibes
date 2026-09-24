@@ -84,6 +84,29 @@ void main() {
     );
   }
 
+  List<Object> _messageOverrides(Map<String, MessageEntity> messages) => [
+    messageConversationByIdProvider.overrideWith(
+      (ref, id) => messages[id.messageId]!,
+    ),
+    isMessageStreamingProvider.overrideWith((ref, id) => false),
+    conversationBusyStateProvider.overrideWith(
+      (ref, _) async => const ConversationBusyState(
+        isStreaming: false,
+        hasPendingTools: false,
+      ),
+    ),
+  ];
+
+  void _mockUrlLauncher(
+    WidgetTester tester,
+    Future<Object?> Function(MethodCall call) handler,
+  ) {
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, handler);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  }
+
   Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(widget);
@@ -742,6 +765,163 @@ void main() {
       );
 
       await gesture.up();
+    });
+
+    testWidgets('opens Markdown links and autolinks externally once', (
+      tester,
+    ) async {
+      final launchedUrls = <String>[];
+      _mockUrlLauncher(tester, (call) async {
+        launchedUrls.add((call.arguments as Map)['url'] as String);
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['markdown-link', 'autolink'],
+          overrides: _messageOverrides({
+            'markdown-link': _createMessage(
+              id: 'markdown-link',
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+            'autolink': _createMessage(
+              id: 'autolink',
+              content: 'https://example.org',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pump();
+      await tester.tap(find.text('https://example.org'));
+      await tester.pump();
+
+      expect(launchedUrls, ['https://example.com', 'https://example.org']);
+    });
+
+    testWidgets('does not launch unsupported or malformed links', (
+      tester,
+    ) async {
+      var launchCount = 0;
+      _mockUrlLauncher(tester, (_) async {
+        launchCount++;
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['unsafe-links'],
+          overrides: _messageOverrides({
+            'unsafe-links': _createMessage(
+              id: 'unsafe-links',
+              content: '[Unsafe](javascript:alert(1)) '
+                  '[Missing host](https:///missing-host)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Unsafe'));
+      await tester.pump();
+      await tester.tap(find.text('Missing host'));
+      await tester.pump();
+
+      expect(launchCount, 0);
+    });
+
+    testWidgets('shows localized feedback when browser rejects a link', (
+      tester,
+    ) async {
+      _mockUrlLauncher(tester, (_) async => false);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open link'), findsOneWidget);
+    });
+
+    testWidgets('shows localized feedback when browser launch throws', (
+      tester,
+    ) async {
+      _mockUrlLauncher(
+        tester,
+        (_) async => throw PlatformException(code: 'launch-failed'),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open link'), findsOneWidget);
+    });
+
+    testWidgets('uses a click cursor for links in user message content', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: '[Open docs](https://example.com)\nPlain text',
+            ),
+          }),
+        ),
+      );
+
+      final linkGesture = await tester.startGesture(
+        tester.getCenter(find.text('Open docs')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.click,
+      );
+      await linkGesture.up();
+
+      final textGesture = await tester.startGesture(
+        tester.getCenter(find.text('Plain text')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.text,
+      );
+      await textGesture.up();
+      expect(find.byType(SelectionArea), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
     });
 
     testWidgets('keeps text-only assistant metadata inline', (tester) async {

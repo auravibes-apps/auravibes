@@ -1,5 +1,8 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:material_ui/material_ui.dart';
@@ -19,6 +22,53 @@ void main() {
 
       expect(find.text(messageContent), findsOneWidget);
       expect(find.byType(GptMarkdown), findsOneWidget);
+    });
+
+    testWidgets('keeps Markdown links clickable and text selectable', (
+      tester,
+    ) async {
+      String? selectedText;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SelectionArea(
+              onSelectionChanged: (content) {
+                selectedText = content?.plainText;
+              },
+              child: const AuraMessageBubble(
+                content: '[Open docs](https://example.com) selectable',
+                isUser: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final linkGesture = await tester.startGesture(
+        tester.getCenter(find.text('Open docs')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.click,
+      );
+      await linkGesture.up();
+
+      final textGesture = await tester.startGesture(
+        tester.getCenter(find.text('selectable')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.text,
+      );
+      await textGesture.up();
+
+      await tester.longPress(find.text('selectable'));
+      await tester.pump();
+      expect(selectedText, 'selectable');
     });
 
     testWidgets('applies user message styling correctly', (tester) async {
