@@ -34,9 +34,12 @@ instructions.
 
 Before editing, committing, or pushing:
 
-1. Read root `AGENTS.md` and every closer `AGENTS.md` for changed files. These
-   own commands, validation gates, safety rules, generated files, and commit
-   conventions. Follow them if anything here conflicts.
+1. Follow root `AGENTS.md` and every closer `AGENTS.md` that applies to changed
+   files. These own commands, validation gates, safety rules, generated files,
+   and commit conventions; they take precedence over this skill. Use copies
+   already provided in the current agent context. Read a file only when its
+   applicable instructions are missing from context or its current contents
+   need verification.
 2. Use `.agents/skills/review-pr/SKILL.md` and its `github.md` for PR lookup,
    creation syntax, and review comments.
 3. Confirm repository root, worktree status, branch, latest commit, remotes,
@@ -73,14 +76,13 @@ Inspect the trusted workflow and changed paths, then use this loop:
    platform setup directly and report a check as blocked if it remains
    unavailable.
 3. **Final gates:** before opening or updating a code PR, follow the applicable
-   PR gates in `AGENTS.md` (currently `fvm dart run melos run validate`,
-   `fvm dart run dependency_validator`, and
-   `fvm dart run import_sorter:main --exit-if-changed`). Also follow any
-   narrower or additional gate required by the changed scope and trusted CI.
-   Do not downgrade or omit repository gates to make delivery easier. Avoid
-   rerunning a suite already included in a completed gate. For documentation,
-   skill, workflow, or other configuration-only changes, skip Dart tests,
-   analyzers, generators, and app builds; run relevant syntax and diff checks.
+   PR gates in `AGENTS.md`, plus any narrower or additional gate required by
+   the changed scope and trusted CI. Do not duplicate gate command lists here;
+   `AGENTS.md` is the source of truth. Do not downgrade or omit repository
+   gates to make delivery easier. Avoid rerunning a suite already included in
+   a completed gate. For documentation, skill, workflow, or other
+   configuration-only changes, skip Dart tests, analyzers, generators, and
+   app builds; run relevant syntax and diff checks.
 
 Use the repository's pinned toolchain and documented dependency setup. For
 AuraVibes, check `.fvmrc` and use the configured FVM Flutter/Dart versions and
