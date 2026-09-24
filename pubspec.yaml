@@ -148,7 +148,7 @@ melos:
 
     # Code Generation Scripts
     generate:
-      exec: dart run build_runner build
+      exec: dart "$MELOS_ROOT_PATH/tool/run_quiet.dart" -- dart run build_runner build
       description: Run code generation for all packages
       packageFilters:
         dependsOn: build_runner
@@ -156,14 +156,14 @@ melos:
     generate:serverpod:
       run: |
         cd apps/auravibes_server
-        serverpod generate --force
+        dart ../../tool/run_quiet.dart -- serverpod generate --force || exit $?
         cd ../..
         # ponytail: Serverpod beta output differs by platform; remove when upstream generation is deterministic.
         find apps/auravibes_server/lib/src/generated \
           apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart \
           packages/auravibes_server_client/lib/src/protocol \
           -name '*.dart' -exec perl -0pi -e 's!(// ignore_for_file: no_leading_underscores_for_library_prefixes)\n(// ignore_for_file: no_leading_underscores_for_local_identifiers)\n\n(import )!$2\n\n$1\n$3!g; s!(// ignore_for_file: no_leading_underscores_for_library_prefixes)\n\n(import )!$1\n$2!g' {} +
-        dart format --line-length 80 \
+        dart tool/run_quiet.dart -- dart format --line-length 80 \
           apps/auravibes_server/lib/src/generated \
           apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart \
           packages/auravibes_server_client/lib/src/protocol
@@ -178,7 +178,7 @@ melos:
 
     generate:localization:
       # Run build_runner and format only the generated files
-      exec: dart pub run easy_localization:generate -S assets/i18n -f keys -O lib/i18n -o locale_keys.dart --skip-unnecessary-keys && dart format lib/i18n/locale_keys.dart
+      exec: dart "$MELOS_ROOT_PATH/tool/run_quiet.dart" -- dart pub run easy_localization:generate -S assets/i18n -f keys -O lib/i18n -o locale_keys.dart --skip-unnecessary-keys && dart "$MELOS_ROOT_PATH/tool/run_quiet.dart" -- dart format lib/i18n/locale_keys.dart
       concurrency: 1
       orderDependents: true
       failFast: true
@@ -187,7 +187,7 @@ melos:
           - easy_localization
 
     clean:
-      run: melos exec -- "flutter clean"
+      run: melos exec -- "dart \"$MELOS_ROOT_PATH/tool/run_quiet.dart\" -- flutter clean"
       description: Clean all packages
 
     # Validation Pipeline (for CI)
@@ -260,7 +260,7 @@ melos:
         - melos run generate
 
     generate:flavors:
-      exec: dart pub run flutter_flavorizr -f
+      exec: dart "$MELOS_ROOT_PATH/tool/run_quiet.dart" -- dart pub run flutter_flavorizr -f
       concurrency: 1
       orderDependents: true
       failFast: true
@@ -269,7 +269,7 @@ melos:
           - flutter_flavorizr
 
     generate:icons:
-      exec: dart pub run flutter_launcher_icons
+      exec: dart "$MELOS_ROOT_PATH/tool/run_quiet.dart" -- dart pub run flutter_launcher_icons
       concurrency: 1
       orderDependents: true
       failFast: true

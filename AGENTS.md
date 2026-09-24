@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-09-17 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-09-24 -->
 
 ## Entrypoint
 
@@ -35,8 +35,8 @@
 | Quick validation        | `fvm dart run melos run validate:quick`                                      |
 | Full validation         | `fvm dart run melos run validate`                                            |
 | CI tests                | `fvm dart run melos run test:ci`                                             |
-| Dependency check        | `fvm dart run dependency_validator`                                          |
-| Import sort check       | `fvm dart run import_sorter:main --exit-if-changed`                          |
+| Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
+| DCL metrics check       | `fvm dart run melos run dcl:analyze`                                         |
 | Code generation         | `fvm dart run melos run generate`                                            |
 | Localization generation | `fvm dart run melos run generate:localization`                               |
 | Serverpod generation   | `fvm dart run melos run generate:serverpod`                           |
@@ -44,7 +44,7 @@
 ## DCL and lint compliance
 
 - `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Read it before changing Dart; do not infer permitted patterns from nearby code.
-- During iteration, run the smallest focused analyzer or test. Before a PR or after broad Dart refactors, run `fvm dart run melos analyze` and `fvm dart run melos run dcl:analyze`; `fvm dart run melos run validate:quick` is the workspace analyzer + format gate. Do not run full-repository checks after every edit.
+- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Before PR/broad refactors, run `fvm dart run melos run validate` and `fvm dart run melos run dcl:analyze`; do not run full-repository checks after every edit.
 - CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
 
 ## CI failure triage
@@ -79,7 +79,7 @@
 
 ## Verification
 
-- Run the smallest focused check that proves the change.
+- Run the smallest focused check; invoke root scripts via `fvm dart run melos run <script>`. Quiet wrappers buffer child output until exit, print `Command succeeded.` on success, and replay both streams plus exit code on failure; keep tests/watch/start/fix/upgrade/result scripts visible.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
 - Assign one owner per validation command.
 - Run broad validation once, only after implementation stabilizes and scope requires it.
