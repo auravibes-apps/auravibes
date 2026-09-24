@@ -62,13 +62,12 @@ Widget buildSubject({
   );
 }
 
-Widget _scaffoldedAppBuilder(BuildContext context, Widget child) =>
-    MaterialApp(
-      home: Scaffold(body: child),
-      locale: context.locale,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-    );
+Widget _scaffoldedAppBuilder(BuildContext context, Widget child) => MaterialApp(
+  home: Scaffold(body: child),
+  locale: context.locale,
+  localizationsDelegates: context.localizationDelegates,
+  supportedLocales: context.supportedLocales,
+);
 
 void main() {
   MessageEntity _createMessage({
