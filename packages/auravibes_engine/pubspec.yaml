@@ -16,7 +16,7 @@ dependencies:
   html: ^0.15.7
   liquify: ^1.0.1
   meta: ^1.18.0
-  openai_dart: ^8.0.0
+  openai_dart: ^9.0.0
   toon_dart: ^1.0.0+4
 
 dev_dependencies:
