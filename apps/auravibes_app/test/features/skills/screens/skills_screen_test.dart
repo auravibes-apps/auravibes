@@ -161,7 +161,9 @@ void main() {
     final router = createRouter();
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(buildRouterScreen(fixture.container, router));
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
     final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();

@@ -2433,6 +2433,17 @@ class $ApiModelsTable extends ApiModels
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _reasoningOptionsJsonMeta =
+      const VerificationMeta('reasoningOptionsJson');
+  @override
+  late final GeneratedColumn<String> reasoningOptionsJson =
+      GeneratedColumn<String>(
+        'reasoning_options_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isCanonicalMeta = const VerificationMeta(
     'isCanonical',
   );
@@ -2542,6 +2553,7 @@ class $ApiModelsTable extends ApiModels
     modalitiesOutput,
     openWeights,
     supportsReasoning,
+    reasoningOptionsJson,
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
@@ -2608,6 +2620,15 @@ class $ApiModelsTable extends ApiModels
         supportsReasoning.isAcceptableOrUnknown(
           data['supports_reasoning']!,
           _supportsReasoningMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reasoning_options_json')) {
+      context.handle(
+        _reasoningOptionsJsonMeta,
+        reasoningOptionsJson.isAcceptableOrUnknown(
+          data['reasoning_options_json']!,
+          _reasoningOptionsJsonMeta,
         ),
       );
     }
@@ -2726,6 +2747,10 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.bool,
         data['${effectivePrefix}supports_reasoning'],
       )!,
+      reasoningOptionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reasoning_options_json'],
+      ),
       isCanonical: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_canonical'],
@@ -2794,6 +2819,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final List<String>? modalitiesOutput;
   final bool? openWeights;
   final bool supportsReasoning;
+  final String? reasoningOptionsJson;
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
@@ -2811,6 +2837,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     this.modalitiesOutput,
     this.openWeights,
     required this.supportsReasoning,
+    this.reasoningOptionsJson,
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
@@ -2843,6 +2870,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       map['open_weights'] = Variable<bool>(openWeights);
     }
     map['supports_reasoning'] = Variable<bool>(supportsReasoning);
+    if (!nullToAbsent || reasoningOptionsJson != null) {
+      map['reasoning_options_json'] = Variable<String>(reasoningOptionsJson);
+    }
     map['is_canonical'] = Variable<bool>(isCanonical);
     map['supports_priority_mode'] = Variable<bool>(supportsPriorityMode);
     map['supports_tool_calls'] = Variable<bool>(supportsToolCalls);
@@ -2878,6 +2908,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ? const Value.absent()
           : Value(openWeights),
       supportsReasoning: Value(supportsReasoning),
+      reasoningOptionsJson: reasoningOptionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reasoningOptionsJson),
       isCanonical: Value(isCanonical),
       supportsPriorityMode: Value(supportsPriorityMode),
       supportsToolCalls: Value(supportsToolCalls),
@@ -2913,6 +2946,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       openWeights: serializer.fromJson<bool?>(json['openWeights']),
       supportsReasoning: serializer.fromJson<bool>(json['supportsReasoning']),
+      reasoningOptionsJson: serializer.fromJson<String?>(
+        json['reasoningOptionsJson'],
+      ),
       isCanonical: serializer.fromJson<bool>(json['isCanonical']),
       supportsPriorityMode: serializer.fromJson<bool>(
         json['supportsPriorityMode'],
@@ -2941,6 +2977,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       'openWeights': serializer.toJson<bool?>(openWeights),
       'supportsReasoning': serializer.toJson<bool>(supportsReasoning),
+      'reasoningOptionsJson': serializer.toJson<String?>(reasoningOptionsJson),
       'isCanonical': serializer.toJson<bool>(isCanonical),
       'supportsPriorityMode': serializer.toJson<bool>(supportsPriorityMode),
       'supportsToolCalls': serializer.toJson<bool>(supportsToolCalls),
@@ -2961,6 +2998,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     Value<List<String>?> modalitiesOutput = const Value.absent(),
     Value<bool?> openWeights = const Value.absent(),
     bool? supportsReasoning,
+    Value<String?> reasoningOptionsJson = const Value.absent(),
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -2982,6 +3020,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         : this.modalitiesOutput,
     openWeights: openWeights.present ? openWeights.value : this.openWeights,
     supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+    reasoningOptionsJson: reasoningOptionsJson.present
+        ? reasoningOptionsJson.value
+        : this.reasoningOptionsJson,
     isCanonical: isCanonical ?? this.isCanonical,
     supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
     supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
@@ -3013,6 +3054,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       supportsReasoning: data.supportsReasoning.present
           ? data.supportsReasoning.value
           : this.supportsReasoning,
+      reasoningOptionsJson: data.reasoningOptionsJson.present
+          ? data.reasoningOptionsJson.value
+          : this.reasoningOptionsJson,
       isCanonical: data.isCanonical.present
           ? data.isCanonical.value
           : this.isCanonical,
@@ -3049,6 +3093,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('reasoningOptionsJson: $reasoningOptionsJson, ')
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
@@ -3071,6 +3116,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modalitiesOutput,
     openWeights,
     supportsReasoning,
+    reasoningOptionsJson,
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
@@ -3092,6 +3138,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.modalitiesOutput == this.modalitiesOutput &&
           other.openWeights == this.openWeights &&
           other.supportsReasoning == this.supportsReasoning &&
+          other.reasoningOptionsJson == this.reasoningOptionsJson &&
           other.isCanonical == this.isCanonical &&
           other.supportsPriorityMode == this.supportsPriorityMode &&
           other.supportsToolCalls == this.supportsToolCalls &&
@@ -3111,6 +3158,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<List<String>?> modalitiesOutput;
   final Value<bool?> openWeights;
   final Value<bool> supportsReasoning;
+  final Value<String?> reasoningOptionsJson;
   final Value<bool> isCanonical;
   final Value<bool> supportsPriorityMode;
   final Value<bool> supportsToolCalls;
@@ -3129,6 +3177,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.reasoningOptionsJson = const Value.absent(),
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
@@ -3148,6 +3197,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.reasoningOptionsJson = const Value.absent(),
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
@@ -3171,6 +3221,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<String>? modalitiesOutput,
     Expression<bool>? openWeights,
     Expression<bool>? supportsReasoning,
+    Expression<String>? reasoningOptionsJson,
     Expression<bool>? isCanonical,
     Expression<bool>? supportsPriorityMode,
     Expression<bool>? supportsToolCalls,
@@ -3190,6 +3241,8 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (modalitiesOutput != null) 'modalities_output': modalitiesOutput,
       if (openWeights != null) 'open_weights': openWeights,
       if (supportsReasoning != null) 'supports_reasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoning_options_json': reasoningOptionsJson,
       if (isCanonical != null) 'is_canonical': isCanonical,
       if (supportsPriorityMode != null)
         'supports_priority_mode': supportsPriorityMode,
@@ -3212,6 +3265,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<List<String>?>? modalitiesOutput,
     Value<bool?>? openWeights,
     Value<bool>? supportsReasoning,
+    Value<String?>? reasoningOptionsJson,
     Value<bool>? isCanonical,
     Value<bool>? supportsPriorityMode,
     Value<bool>? supportsToolCalls,
@@ -3231,6 +3285,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       modalitiesOutput: modalitiesOutput ?? this.modalitiesOutput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+      reasoningOptionsJson: reasoningOptionsJson ?? this.reasoningOptionsJson,
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
@@ -3276,6 +3331,11 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (supportsReasoning.present) {
       map['supports_reasoning'] = Variable<bool>(supportsReasoning.value);
     }
+    if (reasoningOptionsJson.present) {
+      map['reasoning_options_json'] = Variable<String>(
+        reasoningOptionsJson.value,
+      );
+    }
     if (isCanonical.present) {
       map['is_canonical'] = Variable<bool>(isCanonical.value);
     }
@@ -3319,6 +3379,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('reasoningOptionsJson: $reasoningOptionsJson, ')
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
@@ -3992,6 +4053,17 @@ class $ConversationsTable extends Conversations
       'REFERENCES agents (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _reasoningConfigJsonMeta =
+      const VerificationMeta('reasoningConfigJson');
+  @override
+  late final GeneratedColumn<String> reasoningConfigJson =
+      GeneratedColumn<String>(
+        'reasoning_config_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _parentConversationIdMeta =
       const VerificationMeta('parentConversationId');
   @override
@@ -4074,6 +4146,7 @@ class $ConversationsTable extends Conversations
     title,
     modelId,
     agentId,
+    reasoningConfigJson,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
@@ -4137,6 +4210,15 @@ class $ConversationsTable extends Conversations
       context.handle(
         _agentIdMeta,
         agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
+      );
+    }
+    if (data.containsKey('reasoning_config_json')) {
+      context.handle(
+        _reasoningConfigJsonMeta,
+        reasoningConfigJson.isAcceptableOrUnknown(
+          data['reasoning_config_json']!,
+          _reasoningConfigJsonMeta,
+        ),
       );
     }
     if (data.containsKey('parent_conversation_id')) {
@@ -4227,6 +4309,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}agent_id'],
       ),
+      reasoningConfigJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reasoning_config_json'],
+      ),
       parentConversationId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}parent_conversation_id'],
@@ -4274,6 +4360,9 @@ class ConversationsTable extends DataClass
   final String title;
   final String? modelId;
   final String? agentId;
+
+  /// JSON-encoded conversation-scoped reasoning override.
+  final String? reasoningConfigJson;
   final String? parentConversationId;
 
   /// Stable id of the conversation this fork snapshots.
@@ -4300,6 +4389,7 @@ class ConversationsTable extends DataClass
     required this.title,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
@@ -4320,6 +4410,9 @@ class ConversationsTable extends DataClass
     }
     if (!nullToAbsent || agentId != null) {
       map['agent_id'] = Variable<String>(agentId);
+    }
+    if (!nullToAbsent || reasoningConfigJson != null) {
+      map['reasoning_config_json'] = Variable<String>(reasoningConfigJson);
     }
     if (!nullToAbsent || parentConversationId != null) {
       map['parent_conversation_id'] = Variable<String>(parentConversationId);
@@ -4355,6 +4448,9 @@ class ConversationsTable extends DataClass
       agentId: agentId == null && nullToAbsent
           ? const Value.absent()
           : Value(agentId),
+      reasoningConfigJson: reasoningConfigJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reasoningConfigJson),
       parentConversationId: parentConversationId == null && nullToAbsent
           ? const Value.absent()
           : Value(parentConversationId),
@@ -4387,6 +4483,9 @@ class ConversationsTable extends DataClass
       title: serializer.fromJson<String>(json['title']),
       modelId: serializer.fromJson<String?>(json['modelId']),
       agentId: serializer.fromJson<String?>(json['agentId']),
+      reasoningConfigJson: serializer.fromJson<String?>(
+        json['reasoningConfigJson'],
+      ),
       parentConversationId: serializer.fromJson<String?>(
         json['parentConversationId'],
       ),
@@ -4414,6 +4513,7 @@ class ConversationsTable extends DataClass
       'title': serializer.toJson<String>(title),
       'modelId': serializer.toJson<String?>(modelId),
       'agentId': serializer.toJson<String?>(agentId),
+      'reasoningConfigJson': serializer.toJson<String?>(reasoningConfigJson),
       'parentConversationId': serializer.toJson<String?>(parentConversationId),
       'forkSourceConversationId': serializer.toJson<String?>(
         forkSourceConversationId,
@@ -4433,6 +4533,7 @@ class ConversationsTable extends DataClass
     String? title,
     Value<String?> modelId = const Value.absent(),
     Value<String?> agentId = const Value.absent(),
+    Value<String?> reasoningConfigJson = const Value.absent(),
     Value<String?> parentConversationId = const Value.absent(),
     Value<String?> forkSourceConversationId = const Value.absent(),
     Value<String?> forkSourceTitle = const Value.absent(),
@@ -4447,6 +4548,9 @@ class ConversationsTable extends DataClass
     title: title ?? this.title,
     modelId: modelId.present ? modelId.value : this.modelId,
     agentId: agentId.present ? agentId.value : this.agentId,
+    reasoningConfigJson: reasoningConfigJson.present
+        ? reasoningConfigJson.value
+        : this.reasoningConfigJson,
     parentConversationId: parentConversationId.present
         ? parentConversationId.value
         : this.parentConversationId,
@@ -4475,6 +4579,9 @@ class ConversationsTable extends DataClass
       title: data.title.present ? data.title.value : this.title,
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
       agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      reasoningConfigJson: data.reasoningConfigJson.present
+          ? data.reasoningConfigJson.value
+          : this.reasoningConfigJson,
       parentConversationId: data.parentConversationId.present
           ? data.parentConversationId.value
           : this.parentConversationId,
@@ -4504,6 +4611,7 @@ class ConversationsTable extends DataClass
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('reasoningConfigJson: $reasoningConfigJson, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
@@ -4523,6 +4631,7 @@ class ConversationsTable extends DataClass
     title,
     modelId,
     agentId,
+    reasoningConfigJson,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
@@ -4541,6 +4650,7 @@ class ConversationsTable extends DataClass
           other.title == this.title &&
           other.modelId == this.modelId &&
           other.agentId == this.agentId &&
+          other.reasoningConfigJson == this.reasoningConfigJson &&
           other.parentConversationId == this.parentConversationId &&
           other.forkSourceConversationId == this.forkSourceConversationId &&
           other.forkSourceTitle == this.forkSourceTitle &&
@@ -4557,6 +4667,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String> title;
   final Value<String?> modelId;
   final Value<String?> agentId;
+  final Value<String?> reasoningConfigJson;
   final Value<String?> parentConversationId;
   final Value<String?> forkSourceConversationId;
   final Value<String?> forkSourceTitle;
@@ -4572,6 +4683,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.title = const Value.absent(),
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.reasoningConfigJson = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
@@ -4588,6 +4700,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     required String title,
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.reasoningConfigJson = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
@@ -4605,6 +4718,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? title,
     Expression<String>? modelId,
     Expression<String>? agentId,
+    Expression<String>? reasoningConfigJson,
     Expression<String>? parentConversationId,
     Expression<String>? forkSourceConversationId,
     Expression<String>? forkSourceTitle,
@@ -4621,6 +4735,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (title != null) 'title': title,
       if (modelId != null) 'model_id': modelId,
       if (agentId != null) 'agent_id': agentId,
+      if (reasoningConfigJson != null)
+        'reasoning_config_json': reasoningConfigJson,
       if (parentConversationId != null)
         'parent_conversation_id': parentConversationId,
       if (forkSourceConversationId != null)
@@ -4643,6 +4759,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String>? title,
     Value<String?>? modelId,
     Value<String?>? agentId,
+    Value<String?>? reasoningConfigJson,
     Value<String?>? parentConversationId,
     Value<String?>? forkSourceConversationId,
     Value<String?>? forkSourceTitle,
@@ -4659,6 +4776,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       title: title ?? this.title,
       modelId: modelId ?? this.modelId,
       agentId: agentId ?? this.agentId,
+      reasoningConfigJson: reasoningConfigJson ?? this.reasoningConfigJson,
       parentConversationId: parentConversationId ?? this.parentConversationId,
       forkSourceConversationId:
           forkSourceConversationId ?? this.forkSourceConversationId,
@@ -4693,6 +4811,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     }
     if (agentId.present) {
       map['agent_id'] = Variable<String>(agentId.value);
+    }
+    if (reasoningConfigJson.present) {
+      map['reasoning_config_json'] = Variable<String>(
+        reasoningConfigJson.value,
+      );
     }
     if (parentConversationId.present) {
       map['parent_conversation_id'] = Variable<String>(
@@ -4736,6 +4859,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('reasoningConfigJson: $reasoningConfigJson, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
@@ -16909,6 +17033,7 @@ typedef $$ApiModelsTableCreateCompanionBuilder = ApiModelsCompanion Function({
   Value<List<String>?> modalitiesOutput,
   Value<bool?> openWeights,
   Value<bool> supportsReasoning,
+  Value<String?> reasoningOptionsJson,
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
@@ -16928,6 +17053,7 @@ typedef $$ApiModelsTableUpdateCompanionBuilder = ApiModelsCompanion Function({
   Value<List<String>?> modalitiesOutput,
   Value<bool?> openWeights,
   Value<bool> supportsReasoning,
+  Value<String?> reasoningOptionsJson,
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
@@ -17005,6 +17131,11 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<bool> get supportsReasoning => $composableBuilder(
     column: $table.supportsReasoning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17116,6 +17247,11 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCanonical => $composableBuilder(
     column: $table.isCanonical,
     builder: (column) => ColumnOrderings(column),
@@ -17220,6 +17356,11 @@ class $$ApiModelsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isCanonical => $composableBuilder(
     column: $table.isCanonical,
     builder: (column) => column,
@@ -17319,6 +17460,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<String?> reasoningOptionsJson = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
@@ -17337,6 +17479,7 @@ class $$ApiModelsTableTableManager
                 modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                reasoningOptionsJson: reasoningOptionsJson,
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
@@ -17357,6 +17500,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<String?> reasoningOptionsJson = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
@@ -17375,6 +17519,7 @@ class $$ApiModelsTableTableManager
                 modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                reasoningOptionsJson: reasoningOptionsJson,
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
@@ -18140,6 +18285,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       required String title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> reasoningConfigJson,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
@@ -18157,6 +18303,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> reasoningConfigJson,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
@@ -18340,6 +18487,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<String> get title => $composableBuilder(
     column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18566,6 +18718,11 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
     builder: (column) => ColumnOrderings(column),
@@ -18705,6 +18862,11 @@ class $$ConversationsTableAnnotationComposer
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
@@ -18943,6 +19105,7 @@ class $$ConversationsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> reasoningConfigJson = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
@@ -18958,6 +19121,7 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                reasoningConfigJson: reasoningConfigJson,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,
@@ -18975,6 +19139,7 @@ class $$ConversationsTableTableManager
                 required String title,
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> reasoningConfigJson = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
@@ -18990,6 +19155,7 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                reasoningConfigJson: reasoningConfigJson,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,

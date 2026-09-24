@@ -27,6 +27,7 @@ void main() {
       String? connectionModelId,
       ModelProviderAuthMode authMode = ModelProviderAuthMode.apiKey,
       bool supportsReasoning = false,
+      List<ReasoningOption> reasoningOptions = const [],
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
         workspaceModelSelection: .new(
@@ -36,6 +37,7 @@ void main() {
           updatedAt: DateTime(2025),
           modelConnectionId: 'mc1',
           supportsReasoning: supportsReasoning,
+          reasoningOptions: reasoningOptions,
         ),
         modelConnection: .new(
           id: 'mc1',
@@ -202,15 +204,14 @@ void main() {
       expect(ref.name, 'openai_reasoning/glm-4.5');
     });
 
-    test('enables thinking config for reasoning-capable anthropic models', () {
-      final config = makeConfig(type: .anthropic, supportsReasoning: true);
-
-      expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-        {
-          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-        },
+    test('uses anthropic provider defaults when configuration is null', () {
+      final config = makeConfig(
+        type: .anthropic,
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
       );
+
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('does not infer anthropic reasoning from known model ids', () {
@@ -219,39 +220,47 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
-    test('uses adaptive thinking for anthropic models that support it', () {
-      for (final modelId in [
-        'claude-mythos-preview',
-        'claude-opus-4-7',
-        'claude-opus-4-6',
-        'claude-sonnet-4-6',
-      ]) {
-        final config = makeConfig(
-          type: .anthropic,
-          modelId: modelId,
-          supportsReasoning: true,
-        );
-
-        expect(
-          _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-          {
-            'thinking': {'type': 'adaptive'},
-          },
-        );
-      }
-    });
-
-    test('uses manual thinking for older anthropic reasoning models', () {
+    test('maps explicit anthropic effort and budget configuration', () {
       final config = makeConfig(
         type: .anthropic,
-        modelId: 'claude-sonnet-4-5',
         supportsReasoning: true,
+        reasoningOptions: [
+          const ReasoningOption.toggle(),
+          ReasoningOption.effort(['low', 'medium', 'high']),
+          ReasoningOption.budgetTokens(1024, 32768),
+        ],
       );
 
       expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(effort: 'high', budgetTokens: 8192),
+          ),
+        ),
         {
-          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+          'thinking': {'type': 'enabled', 'budgetTokens': 8192},
+          'outputConfig': {'effort': 'high'},
+        },
+      );
+    });
+
+    test('maps explicit anthropic disable configuration', () {
+      final config = makeConfig(
+        type: .anthropic,
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
+      );
+
+      expect(
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(enabled: false),
+          ),
+        ),
+        {
+          'thinking': {'type': 'disabled'},
         },
       );
     });
@@ -272,34 +281,59 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
-    test('enables thinking config for OpenAI-compatible reasoning models', () {
+    test('maps explicit effort for OpenAI-compatible reasoning models', () {
       final config = makeConfig(
         type: .openai,
         modelId: 'glm-4.5',
         providerUrl: 'https://openai-compatible.example.com/v1',
         supportsReasoning: true,
+        reasoningOptions: [
+          ReasoningOption.effort(['low', 'high']),
+        ],
       );
 
       expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-        {'reasoningType': 'enabled'},
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(effort: 'high'),
+          ),
+        ),
+        {'reasoningEffort': 'high'},
       );
     });
 
-    test(
-      'falls back to OpenAI namespace when reasoning model has no base URL',
-      () {
-        final config = makeConfig(
-          type: .openai,
-          modelId: 'glm-4.5',
-          supportsReasoning: true,
-        );
-        final ref = factory.getModelReference(config);
+    test('maps explicit OpenAI-compatible disable to none effort', () {
+      final config = makeConfig(
+        type: .openai,
+        modelId: 'glm-4.5',
+        providerUrl: 'https://openai-compatible.example.com/v1',
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
+      );
 
-        expect(ref.name, 'openai/glm-4.5');
-        expect(factory.getGenerationConfig<Object?>(config), isNull);
-      },
-    );
+      expect(
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(enabled: false),
+          ),
+        ),
+        {'reasoningEffort': 'none'},
+      );
+    });
+
+    test('uses reasoning namespace for OpenAI reasoning models', () {
+      final config = makeConfig(
+        type: .openai,
+        modelId: 'glm-4.5',
+        supportsReasoning: true,
+      );
+      final ref = factory.getModelReference(config);
+
+      expect(ref.name, 'openai_reasoning/glm-4.5');
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
+    });
   });
 }
 

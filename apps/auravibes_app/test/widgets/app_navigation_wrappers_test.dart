@@ -625,7 +625,9 @@ void main() {
         initialLocation: '/workspaces/ws-test/tools',
         branches: branches,
       );
-      await tester.pumpWidget(app);
+      await tester.runAsync(() async {
+        await tester.pumpWidget(app);
+      });
       await tester.pump();
 
       expect(find.byType(AuraSidebarWrapper), findsOneWidget);

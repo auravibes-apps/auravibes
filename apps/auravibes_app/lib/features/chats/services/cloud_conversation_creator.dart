@@ -39,6 +39,7 @@ class const CloudConversationCreator({
       revision: created.revision,
       modelId: created.modelId,
       agentId: created.agentId,
+      reasoningConfiguration: .decode(created.reasoningConfigJson),
       parentConversationId: created.parentConversationId,
     );
   }

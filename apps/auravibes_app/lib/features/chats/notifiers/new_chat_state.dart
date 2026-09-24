@@ -2,6 +2,7 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -19,6 +20,7 @@ abstract class NewChatState with _$NewChatState {
     /// filtering models.
     String? providerId,
     String? agentId,
+    ReasoningConfiguration? reasoningConfiguration,
     @Default(false) bool isLoading,
   }) = _NewChatState;
 }
@@ -45,6 +47,10 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(agentId: agentId);
   }
 
+  void setReasoningConfiguration(ReasoningConfiguration? value) {
+    state = state.copyWith(reasoningConfiguration: value);
+  }
+
   Future<ConversationEntity> startConversation(
     ChatDraft draft,
     SendNewMessageUsecase sendNewMessageUsecase,
@@ -61,6 +67,7 @@ class NewChatNotifier extends _$NewChatNotifier {
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,
+        reasoningConfiguration: state.reasoningConfiguration,
       ));
     } finally {
       state = state.copyWith(isLoading: false);

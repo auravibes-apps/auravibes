@@ -313,6 +313,22 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
+      "reasoning": {
+        "title": "Reasoning",
+        "enabled": "Enable reasoning",
+        "effort": "Reasoning effort",
+        "budget_tokens": "Reasoning token budget",
+        "budget_hint": "Enter a value from {min} to {max}.",
+        "budget_invalid": "Enter a whole number from {min} to {max}.",
+        "default": "Provider default",
+        "effort_default": "Default",
+        "options_tooltip": "Reasoning options",
+        "trigger_label": "Reasoning options: {status}",
+        "status_default": "Provider default",
+        "status_off": "Off",
+        "status_custom": "Custom",
+        "restore_default": "Restore provider default"
+      },
       "message_placeholder": "Type your message...",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",

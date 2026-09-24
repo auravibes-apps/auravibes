@@ -1,6 +1,9 @@
+import 'package:auravibes_engine/src/reasoning_configuration.dart';
+
 class const AgentConversationReference({
   required final String workspaceId,
   required final String? modelId,
+  final ReasoningConfiguration? reasoningConfiguration,
 });
 
 class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
@@ -8,6 +11,7 @@ class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
   required final List<TChatMessage> chatHistory,
   required final List<TTool> enabledTools,
   required final int messagesCount,
+  final ReasoningConfiguration? reasoningConfiguration,
 });
 
 class const SelectedModelNotFoundException() implements Exception {
@@ -106,6 +110,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
           ? const []
           : tools,
       messagesCount: messages.length,
+      reasoningConfiguration: conversation.reasoningConfiguration,
     );
   }
 

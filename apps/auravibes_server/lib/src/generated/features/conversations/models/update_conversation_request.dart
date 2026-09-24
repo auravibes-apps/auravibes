@@ -25,6 +25,8 @@ abstract class UpdateConversationRequest
     required this.clearModel,
     this.agentId,
     required this.clearAgent,
+    this.reasoningConfigJson,
+    required this.clearReasoningConfig,
     this.parentConversationId,
     required this.clearParent,
   });
@@ -40,6 +42,8 @@ abstract class UpdateConversationRequest
     required bool clearModel,
     String? agentId,
     required bool clearAgent,
+    String? reasoningConfigJson,
+    required bool clearReasoningConfig,
     String? parentConversationId,
     required bool clearParent,
   }) = _UpdateConversationRequestImpl;
@@ -63,6 +67,10 @@ abstract class UpdateConversationRequest
       agentId: jsonSerialization['agentId'] as String?,
       clearAgent: _is.BoolJsonExtension.fromJson(
         jsonSerialization['clearAgent'],
+      ),
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
+      clearReasoningConfig: _is.BoolJsonExtension.fromJson(
+        jsonSerialization['clearReasoningConfig'],
       ),
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
@@ -92,6 +100,10 @@ abstract class UpdateConversationRequest
 
   bool clearAgent;
 
+  String? reasoningConfigJson;
+
+  bool clearReasoningConfig;
+
   String? parentConversationId;
 
   bool clearParent;
@@ -110,6 +122,8 @@ abstract class UpdateConversationRequest
     bool? clearModel,
     String? agentId,
     bool? clearAgent,
+    String? reasoningConfigJson,
+    bool? clearReasoningConfig,
     String? parentConversationId,
     bool? clearParent,
   });
@@ -127,6 +141,9 @@ abstract class UpdateConversationRequest
       'clearModel': clearModel,
       if (agentId != null) 'agentId': agentId,
       'clearAgent': clearAgent,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
+      'clearReasoningConfig': clearReasoningConfig,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       'clearParent': clearParent,
@@ -147,6 +164,9 @@ abstract class UpdateConversationRequest
       'clearModel': clearModel,
       if (agentId != null) 'agentId': agentId,
       'clearAgent': clearAgent,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
+      'clearReasoningConfig': clearReasoningConfig,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       'clearParent': clearParent,
@@ -173,6 +193,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     required bool clearModel,
     String? agentId,
     required bool clearAgent,
+    String? reasoningConfigJson,
+    required bool clearReasoningConfig,
     String? parentConversationId,
     required bool clearParent,
   }) : super._(
@@ -186,6 +208,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
          clearModel: clearModel,
          agentId: agentId,
          clearAgent: clearAgent,
+         reasoningConfigJson: reasoningConfigJson,
+         clearReasoningConfig: clearReasoningConfig,
          parentConversationId: parentConversationId,
          clearParent: clearParent,
        );
@@ -205,6 +229,8 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
     bool? clearModel,
     Object? agentId = _Undefined,
     bool? clearAgent,
+    Object? reasoningConfigJson = _Undefined,
+    bool? clearReasoningConfig,
     Object? parentConversationId = _Undefined,
     bool? clearParent,
   }) {
@@ -219,6 +245,10 @@ class _UpdateConversationRequestImpl extends UpdateConversationRequest {
       clearModel: clearModel ?? this.clearModel,
       agentId: agentId is String? ? agentId : this.agentId,
       clearAgent: clearAgent ?? this.clearAgent,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
+      clearReasoningConfig: clearReasoningConfig ?? this.clearReasoningConfig,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,

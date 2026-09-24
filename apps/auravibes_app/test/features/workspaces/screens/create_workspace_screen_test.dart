@@ -38,36 +38,39 @@ void main() {
     Logger.root.level = .ALL;
     addTearDown(() => Logger.root.level = previousLevel);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return TestProviderScope(
-              overrides: [
-                cloudAccountsProvider.overrideWith((ref) async => const []),
-                workspaceRepositoryProvider.overrideWithValue(repository),
-              ],
-              child: MaterialApp(
-                home: AuraScreen(
-                  child: CreateWorkspaceForm(
-                    onCreated: (workspace) => expect(workspace.id, isNotEmpty),
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  cloudAccountsProvider.overrideWith((ref) async => const []),
+                  workspaceRepositoryProvider.overrideWithValue(repository),
+                ],
+                child: MaterialApp(
+                  home: AuraScreen(
+                    child: CreateWorkspaceForm(
+                      onCreated: (workspace) =>
+                          expect(workspace.id, isNotEmpty),
+                    ),
                   ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     final _ = await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'Project');

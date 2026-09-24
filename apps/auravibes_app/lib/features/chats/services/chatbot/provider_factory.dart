@@ -20,6 +20,7 @@ typedef _ProviderRequest = ({
   ProviderRuntimeSelection runtime,
   String modelId,
   String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -35,12 +36,16 @@ class const ProviderFactory({
   final Future<String> Function(String id)? resolveOAuthAccessToken,
 }) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
-  static const _thinkingBudgetTokens = 1024;
   Future<Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   }) async {
-    final request = await _providerRequest(config, sessionId);
+    final request = await _providerRequest(
+      config,
+      sessionId,
+      reasoningConfiguration,
+    );
 
     return _createGenkit(request);
   }
@@ -54,18 +59,17 @@ class const ProviderFactory({
   }
 
   T? getGenerationConfig<T>(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
+    WorkspaceModelSelectionWithConnectionEntity config, [
+    ReasoningConfiguration? reasoningConfiguration,
+  ]) {
     final runtime = _runtimeSelection(config, config.modelConnection.url);
-    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-      return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
-    }
-    if (runtime.runtime != ProviderRuntime.anthropic ||
-        !config.workspaceModelSelection.supportsReasoning) {
-      return null;
-    }
+    final selectedConfiguration = _validConfiguration(
+      config,
+      reasoningConfiguration,
+    );
+    if (selectedConfiguration == null) return null;
 
-    return _anthropicGenerationConfig(runtime);
+    return _generationConfigFor<T>(config, runtime, selectedConfiguration);
   }
 
   @visibleForTesting
@@ -78,12 +82,45 @@ class const ProviderFactory({
 
     return _blankToNull(config.modelsProvider.url);
   }
+
+  ReasoningConfiguration? _validConfiguration(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ReasoningConfiguration? value,
+  ) {
+    if (value == null ||
+        !value.isValidFor(config.workspaceModelSelection.reasoningOptions)) {
+      return null;
+    }
+
+    return value;
+  }
+}
+
+extension _ProviderFactoryGenerationConfig on ProviderFactory {
+  T? _generationConfigFor<T>(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ProviderRuntimeSelection runtime,
+    ReasoningConfiguration configuration,
+  ) {
+    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
+      return _openAIReasoningGenerationConfig<T>(configuration);
+    }
+    if (runtime.runtime == ProviderRuntime.anthropic) {
+      return _anthropicGenerationConfig<T>(configuration);
+    }
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterGenerationConfig<T>(configuration);
+    }
+
+    return null;
+  }
 }
 
 extension _ProviderFactoryCreation on ProviderFactory {
   Future<_ProviderRequest> _providerRequest(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
 
@@ -94,6 +131,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
       runtime: _runtimeSelection(config, connectionUrl),
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,
+      reasoningConfiguration: reasoningConfiguration,
     );
   }
 
@@ -120,7 +158,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     ProviderRuntime runtime,
   ) {
     if (runtime == ProviderRuntime.codexOAuth) return _codexPlugin(request);
-    if (runtime == ProviderRuntime.openAiReasoning && request.baseUrl != null) {
+    if (runtime == ProviderRuntime.openAiReasoning) {
       return _openAIReasoningPlugin(request);
     }
 
@@ -154,12 +192,12 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       accountId: request.config.modelConnection.oauthMetadata?.accountId,
       sessionId: request.sessionId,
       models: [request.modelId],
+      reasoningConfiguration: request.reasoningConfiguration,
     );
   }
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
-    final baseUrl = request.baseUrl;
-    if (baseUrl == null) return _openAIPlugin(request);
+    final baseUrl = request.baseUrl ?? providerProfile('openai').defaultUrl;
 
     return AppChatCompletionsPlugin(
       name: ProviderFactory._openAIReasoningNamespace,
@@ -205,16 +243,47 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return openAI.model(modelId);
   }
 
-  T _anthropicGenerationConfig<T>(ProviderRuntimeSelection runtime) {
-    final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
+  T? _anthropicGenerationConfig<T>(ReasoningConfiguration configuration) {
+    if (configuration.enabled == false) {
+      return AnthropicOptions(thinking: .new(type: 'disabled')) as T;
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return null;
+    }
 
-    return AnthropicOptions(
-      thinking: .new(
-        type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking
+    return _anthropicOptions(configuration) as T;
+  }
+
+  AnthropicOptions _anthropicOptions(ReasoningConfiguration configuration) =>
+      AnthropicOptions(
+        thinking: configuration.budgetTokens == null
             ? null
-            : ProviderFactory._thinkingBudgetTokens,
-      ),
+            : .new(type: 'enabled', budgetTokens: configuration.budgetTokens),
+        outputConfig: configuration.effort == null
+            ? null
+            : .new(effort: configuration.effort),
+      );
+
+  T? _openAIReasoningGenerationConfig<T>(ReasoningConfiguration configuration) {
+    if (configuration.enabled == false) {
+      return OpenAICompatReasoningOptions(reasoningEffort: 'none') as T;
+    }
+
+    final effort = configuration.effort;
+    if (effort == null) return null;
+
+    return OpenAICompatReasoningOptions(reasoningEffort: effort) as T;
+  }
+
+  T? _openRouterGenerationConfig<T>(ReasoningConfiguration configuration) {
+    return OpenRouterOptions(
+      reasoningMaxTokens: configuration.enabled == false
+          ? null
+          : configuration.budgetTokens,
+      reasoningEffort: configuration.enabled == false
+          ? null
+          : configuration.effort,
+      reasoningEnabled: configuration.enabled == false ? false : null,
     ) as T;
   }
 }
@@ -297,22 +366,38 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   }
 }
 
-ChatCompletionsCodec _openRouterCodec() {
-  return ChatCompletionsCodec(
-    errorLabel: 'OpenRouter',
-    customize: (modelName, config) {
-      final options = OpenRouterOptions.fromJson(config);
+ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
+  errorLabel: 'OpenRouter',
+  customize: _customizeOpenRouter,
+);
 
-      return (
-        model: modelName,
-        extraBody: {
-          ...options.toSamplingBody(),
-          if (options.reasoningMaxTokens != null)
-            'reasoning': {'max_tokens': options.reasoningMaxTokens},
-        },
-      );
-    },
-  );
+({String model, Map<String, dynamic> extraBody}) _customizeOpenRouter(
+  String modelName,
+  Map<String, dynamic>? config,
+) {
+  final options = OpenRouterOptions.fromJson(config);
+
+  return (model: modelName, extraBody: _openRouterBody(options));
+}
+
+Map<String, dynamic> _openRouterBody(OpenRouterOptions options) {
+  final reasoning = _openRouterReasoningBody(options);
+
+  return {...options.toSamplingBody(), 'reasoning': ?reasoning};
+}
+
+Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {
+  if (options.reasoningEnabled != false &&
+      options.reasoningEffort == null &&
+      options.reasoningMaxTokens == null) {
+    return null;
+  }
+
+  return {
+    if (options.reasoningEnabled == false) 'enabled': false,
+    'effort': ?options.reasoningEffort,
+    'max_tokens': ?options.reasoningMaxTokens,
+  };
 }
 
 ChatCompletionsCodec _openAICompatReasoningCodec() =>
@@ -330,10 +415,6 @@ _customizeOpenAICompatReasoning(
 
   return (
     model: options.version ?? modelName,
-    extraBody: {
-      ...options.toSamplingBody(),
-      if (options.reasoningType != null)
-        'thinking': {'type': options.reasoningType},
-    },
+    extraBody: {...options.toSamplingBody(), ...options.toReasoningBody()},
   );
 }

@@ -143,7 +143,9 @@ class AppDatabase extends _$AppDatabase {
       _skillResourceSchemaVersion + 1;
   static const int _legacyStreamingStatusSchemaVersion =
       _apiModelModalitiesSchemaVersion + 1;
-  static const int _currentSchemaVersion = _legacyStreamingStatusSchemaVersion;
+  static const int _reasoningControlsSchemaVersion =
+      _legacyStreamingStatusSchemaVersion + 1;
+  static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -196,9 +198,14 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
+    await _runConversationUpgrades(m, from);
+  }
+
+  Future<void> _runConversationUpgrades(Migrator m, int from) async {
     await _upgradeConversationListSchema(from);
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
+    await _upgradeReasoningControlsSchema(m, from);
   }
 
   Future<void> _upgradeApiModelModalitiesSchema(int from) async {
@@ -322,6 +329,19 @@ extension on AppDatabase {
       'CREATE INDEX IF NOT EXISTS conversations_fork_source_idx '
       'ON conversations (fork_source_conversation_id)',
     );
+  }
+
+  Future<void> _upgradeReasoningControlsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._reasoningControlsSchemaVersion) return;
+
+    if (await _tableExists('api_models') &&
+        !await _columnExists('api_models', 'reasoning_options_json')) {
+      await m.addColumn(apiModels, apiModels.reasoningOptionsJson);
+    }
+    if (await _tableExists('conversations') &&
+        !await _columnExists('conversations', 'reasoning_config_json')) {
+      await m.addColumn(conversations, conversations.reasoningConfigJson);
+    }
   }
 
   Future<void> _upgradeLegacyStreamingStatuses(int from) async {

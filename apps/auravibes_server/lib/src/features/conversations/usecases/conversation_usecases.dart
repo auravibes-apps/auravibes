@@ -5,7 +5,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatContract,
         a2uiChatFormSubmitActionName,
-        a2uiChatFormSubmitComponentId;
+        a2uiChatFormSubmitComponentId,
+        ReasoningConfiguration;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -142,6 +143,9 @@ class ConversationUseCases {
             isPinned: request.isPinned,
             modelId: request.modelId,
             agentId: request.agentId,
+            reasoningConfigJson: _normalizedReasoningConfig(
+              request.reasoningConfigJson,
+            ),
             parentConversationStableId: request.parentConversationId,
             revision: 1,
             projectionRevision: 1,
@@ -243,6 +247,7 @@ class ConversationUseCases {
           isPinned: false,
           modelId: source.modelId,
           agentId: source.agentId,
+          reasoningConfigJson: source.reasoningConfigJson,
           forkSourceConversationId: source.stableId,
           forkSourceTitle: source.title,
           forkThroughMessageId: boundary,
@@ -465,6 +470,10 @@ class ConversationUseCases {
           agentId: request.clearAgent
               ? null
               : request.agentId ?? conversation.agentId,
+          reasoningConfigJson: request.clearReasoningConfig
+              ? null
+              : _normalizedReasoningConfig(request.reasoningConfigJson) ??
+                    conversation.reasoningConfigJson,
           parentConversationStableId: request.clearParent
               ? null
               : request.parentConversationId ??
@@ -1424,6 +1433,7 @@ class ConversationUseCases {
               settingsJson: jsonEncode({
                 'modelId': conversation.modelId,
                 'agentId': conversation.agentId,
+                'reasoningConfigJson': conversation.reasoningConfigJson,
                 'parentTurnId': ?parentTurnId,
                 'parentToolCallId': ?parentToolCallId,
               }),
@@ -1524,6 +1534,8 @@ class ConversationUseCases {
                 parentTurnId: parentTurnId,
                 parentToolCallId: parentToolCallId,
                 a2uiSupportedComponents: request.a2uiSupportedComponents,
+                reasoningConfigJson: conversation.reasoningConfigJson,
+                includeReasoningConfigSnapshot: true,
               ),
               attempt: 0,
               maxAttempts: 3,
@@ -2065,6 +2077,13 @@ class ConversationUseCases {
                         .conversationParentToolCallIdForExecutionSettings(
                           execution.settingsJson,
                         ),
+              reasoningConfigJson: execution == null
+                  ? conversation.reasoningConfigJson
+                  : conversation_repo
+                        .conversationReasoningConfigForExecutionSettings(
+                          execution.settingsJson,
+                        ),
+              includeReasoningConfigSnapshot: true,
             ),
             now: now,
             transaction: transaction,
@@ -4589,6 +4608,7 @@ class ConversationUseCases {
         isPinned: conversation.isPinned,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
+        reasoningConfigJson: conversation.reasoningConfigJson,
         parentConversationId: conversation.parentConversationStableId,
         forkSourceConversationId: conversation.forkSourceConversationId,
         forkSourceTitle: conversation.forkSourceTitle,
@@ -4686,6 +4706,9 @@ class ConversationUseCases {
     if (modelId != null) _requireId(modelId);
     if (agentId != null) _requireId(agentId);
   }
+
+  String? _normalizedReasoningConfig(String? value) =>
+      ReasoningConfiguration.decode(value)?.encode();
 
   Future<void> _validateA2uiActionAssociation(
     Session session, {

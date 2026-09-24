@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'conversation_entity.freezed.dart';
@@ -38,6 +39,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// ID of the selected agent used for this conversation.
     String? agentId,
+
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
 
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
@@ -91,6 +95,9 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
     /// ID of the selected agent used for this conversation.
     String? agentId,
 
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
+
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
 
@@ -133,8 +140,14 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// ID of the selected agent used for this conversation.
     String? agentId,
 
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
+
     /// Clears [agentId]. Nullable Freezed fields cannot express null set.
     @Default(false) bool clearAgent,
+
+    /// Clears [reasoningConfiguration] and restores provider defaults.
+    @Default(false) bool clearReasoningConfiguration,
 
     /// Whether this conversation is pinned.
     bool? isPinned,
@@ -152,6 +165,8 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       modelId != null ||
       agentId != null ||
       clearAgent ||
+      reasoningConfiguration != null ||
+      clearReasoningConfiguration ||
       isPinned != null;
 
   bool hasChanges() => _hasChanges;

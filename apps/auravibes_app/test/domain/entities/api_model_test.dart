@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -59,6 +60,7 @@ void main() {
           costOutput: 60,
           openWeights: false,
           supportsReasoning: true,
+          reasoningOptions: [ReasoningOption.toggle()],
           supportsPriorityMode: true,
           supportsToolCalls: true,
         ),

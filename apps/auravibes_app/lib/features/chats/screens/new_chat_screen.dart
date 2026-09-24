@@ -4,11 +4,14 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
@@ -20,6 +23,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -98,11 +102,26 @@ class const _NewChatActions({
   }
 
   void setModelId(String? modelId) {
+    if (modelId == null) {
+      ref.read(newChatProvider(workspaceId).notifier)
+        ..setModelId(null)
+        ..setReasoningConfiguration(null);
+
+      return;
+    }
+
     ref.read(newChatProvider(workspaceId).notifier).setModelId(modelId);
+    unawaited(_clearInvalidReasoningConfiguration(modelId));
   }
 
   void setAgentId(String? agentId) {
     ref.read(newChatProvider(workspaceId).notifier).setAgentId(agentId);
+  }
+
+  void setReasoningConfiguration(ReasoningConfiguration? value) {
+    ref
+        .read(newChatProvider(workspaceId).notifier)
+        .setReasoningConfiguration(value);
   }
 
   Future<void> handleSendMessage(ChatDraft draft) async {
@@ -118,6 +137,42 @@ class const _NewChatActions({
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
+
+  Future<void> _clearInvalidReasoningConfiguration(String modelId) async {
+    try {
+      final selectedModel = await ref.read(
+        workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
+      );
+      _clearInvalidReasoningConfigurationFor(modelId, selectedModel);
+    } on Object {
+      // Keep explicit configuration when catalog is temporarily unavailable.
+    }
+  }
+
+  void _clearInvalidReasoningConfigurationFor(
+    String modelId,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) {
+    final state = ref.read(newChatProvider(workspaceId));
+    final configuration = state.reasoningConfiguration;
+    if (state.modelId != modelId || configuration == null) return;
+    if (_isInvalidReasoningConfiguration(configuration, selectedModel)) {
+      _resetReasoningConfiguration();
+    }
+  }
+
+  bool _isInvalidReasoningConfiguration(
+    ReasoningConfiguration configuration,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) =>
+      selectedModel == null ||
+      !configuration.isValidFor(
+        selectedModel.workspaceModelSelection.reasoningOptions,
+      );
+
+  void _resetReasoningConfiguration() => ref
+      .read(newChatProvider(workspaceId).notifier)
+      .setReasoningConfiguration(null);
 
   Future<void> _openNewConversation(ChatDraft draft) async {
     final conversation = await _startNewConversation(ref, workspaceId, draft);
@@ -197,10 +252,16 @@ class const _NewChatInputArea({required final _NewChatBodyData data})
       data.workspaceId,
       data.state.modelId,
     );
+    final reasoningOptions = _watchNewChatReasoningOptions(
+      ref,
+      data.workspaceId,
+      data.state.modelId,
+    );
 
     return _NewChatInputAreaContent(
       data: data,
       modalitiesInput: modalitiesInput,
+      reasoningOptions: reasoningOptions,
     );
   }
 }
@@ -208,6 +269,7 @@ class const _NewChatInputArea({required final _NewChatBodyData data})
 class const _NewChatInputAreaContent({
   required final _NewChatBodyData data,
   required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -217,9 +279,24 @@ class const _NewChatInputAreaContent({
             ? _NoModelProviderPrompt(workspaceId: data.workspaceId)
             : const SizedBox.shrink(),
       ),
-      _NewChatInput.fromData(data, modalitiesInput),
+      _NewChatInput.fromData(data, modalitiesInput, reasoningOptions),
     ],
   );
+}
+
+List<ReasoningOption> _watchNewChatReasoningOptions(
+  WidgetRef ref,
+  String workspaceId,
+  String? modelId,
+) {
+  if (modelId == null) return const [];
+
+  return ref
+          .watch(workspaceModelSelectionByIdProvider(workspaceId, modelId))
+          .value
+          ?.workspaceModelSelection
+          .reasoningOptions ??
+      const <ReasoningOption>[];
 }
 
 List<String> _watchNewChatModalities(
@@ -239,8 +316,11 @@ List<String> _watchNewChatModalities(
 
 class const _NewChatInput({required final Widget child})
     extends StatelessWidget {
-  new fromData(_NewChatBodyData data, List<String> modalitiesInput)
-    : this(
+  new fromData(
+    _NewChatBodyData data,
+    List<String> modalitiesInput,
+    List<ReasoningOption> reasoningOptions,
+  ) : this(
         child: ChatInputWidget(
           workspaceId: data.workspaceId,
           onSendMessage: data.actions.handleSendMessage,
@@ -249,6 +329,16 @@ class const _NewChatInput({required final Widget child})
           agentSheetControl: _NewChatAgentSheetControl(data: data),
           modelCompactControl: _NewChatModelCompactControl(data: data),
           agentCompactControl: _NewChatAgentCompactControl(data: data),
+          reasoningControl:
+              ChatReasoningControls.hasSupportedReasoningOptions(
+                reasoningOptions,
+              )
+              ? ChatReasoningControl(
+                  options: reasoningOptions,
+                  value: data.state.reasoningConfiguration,
+                  onChanged: data.actions.setReasoningConfiguration,
+                )
+              : null,
           modalitiesInput: modalitiesInput,
           disabledHint: data.state.modelId == null
               ? const TextLocale(

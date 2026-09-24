@@ -16,6 +16,7 @@ void main() {
       workspaceId: 'workspace-1',
       modelId: 'model-1',
       agentId: 'agent-1',
+      reasoningConfiguration: .new(effort: 'high'),
       parentConversationId: 'parent-1',
       isPinned: true,
     );
@@ -26,6 +27,7 @@ void main() {
       isPinned: true,
       modelId: 'model-1',
       agentId: 'agent-1',
+      reasoningConfigJson: value.reasoningConfiguration?.encode(),
       parentConversationId: 'parent-1',
       revision: 4,
       createdAt: now,
@@ -37,20 +39,10 @@ void main() {
       load: () async => usecase,
     ).call(value);
 
+    expect(conversation.id, 'conversation-1');
     expect(
-      conversation,
-      ConversationEntity(
-        id: 'conversation-1',
-        title: 'Created',
-        workspaceId: 'workspace-1',
-        isPinned: true,
-        createdAt: now,
-        updatedAt: now,
-        revision: 4,
-        modelId: 'model-1',
-        agentId: 'agent-1',
-        parentConversationId: 'parent-1',
-      ),
+      conversation.reasoningConfiguration?.encode(),
+      value.reasoningConfiguration?.encode(),
     );
     final _ = verify(() => usecase.create(value)).called(1);
   });

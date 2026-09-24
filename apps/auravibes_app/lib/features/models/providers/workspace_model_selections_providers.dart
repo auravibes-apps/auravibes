@@ -256,6 +256,7 @@ class _CodexModelProjection {
     modalitiesInput: model.modalitiesInput,
     modalitiesOutput: model.modalitiesOutput,
     supportsReasoning: model.supportsReasoning,
+    reasoningOptions: model.reasoningOptions,
     supportsToolCalls: model.supportsToolCalls,
   );
 

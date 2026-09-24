@@ -59,6 +59,7 @@ void main() {
     Widget agentSheetControl = const SizedBox.shrink(),
     Widget modelCompactControl = const SizedBox.shrink(),
     Widget agentCompactControl = const SizedBox.shrink(),
+    Widget? reasoningControl,
     VoidCallback? onCompact,
     bool canCompact = true,
     String? compactDisabledHint,
@@ -94,6 +95,7 @@ void main() {
                         agentSheetControl: agentSheetControl,
                         modelCompactControl: modelCompactControl,
                         agentCompactControl: agentCompactControl,
+                        reasoningControl: reasoningControl,
                         draftToLoad: draftToLoad,
                         modalitiesInput: modalitiesInput,
                         onContinueAgent: onContinueAgent,
@@ -206,6 +208,7 @@ void main() {
         modelSheetControl: const Text('sheet model'),
         agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
+        reasoningControl: const Text('reasoning control'),
         showStopButton: true,
         onStop: _noop,
         onSendMessage: (_) {
@@ -224,6 +227,7 @@ void main() {
     ]) {
       expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
     }
+    expect(find.text('reasoning control'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('chat_voice_button')),
       kIsWeb ? findsNothing : findsOneWidget,
