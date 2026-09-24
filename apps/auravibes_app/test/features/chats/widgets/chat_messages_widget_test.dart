@@ -736,9 +736,7 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
-    testWidgets('uses a click cursor for links in AI message content', (
-      tester,
-    ) async {
+    testWidgets('uses click cursor for AI links', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -775,9 +773,7 @@ void main() {
       await gesture.up();
     });
 
-    testWidgets('opens Markdown links and autolinks externally once', (
-      tester,
-    ) async {
+    testWidgets('opens Markdown and autolinks', (tester) async {
       final launchedUrls = <String>[];
       _mockUrlLauncher(tester, (call) async {
         launchedUrls.add((call.arguments as Map)['url'] as String);
@@ -811,9 +807,7 @@ void main() {
       expect(launchedUrls, ['https://example.com', 'https://example.org']);
     });
 
-    testWidgets('does not launch unsupported or malformed links', (
-      tester,
-    ) async {
+    testWidgets('rejects unsafe and malformed URLs', (tester) async {
       var launchCount = 0;
       _mockUrlLauncher(tester, (_) async {
         launchCount++;
@@ -843,9 +837,7 @@ void main() {
       expect(launchCount, 0);
     });
 
-    testWidgets('shows localized feedback when browser rejects a link', (
-      tester,
-    ) async {
+    testWidgets('shows link failure feedback', (tester) async {
       _mockUrlLauncher(tester, (_) async => false);
       await pumpAndInit(
         tester,
@@ -867,9 +859,7 @@ void main() {
       expect(find.text('Could not open link'), findsOneWidget);
     });
 
-    testWidgets('shows localized feedback when browser launch throws', (
-      tester,
-    ) async {
+    testWidgets('shows link exception feedback', (tester) async {
       _mockUrlLauncher(
         tester,
         (_) async => throw PlatformException(code: 'launch-failed'),
@@ -894,9 +884,7 @@ void main() {
       expect(find.text('Could not open link'), findsOneWidget);
     });
 
-    testWidgets('uses a click cursor for links in user message content', (
-      tester,
-    ) async {
+    testWidgets('uses correct cursor for user links and text', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -935,8 +923,8 @@ void main() {
         SystemMouseCursors.text,
       );
       await textGesture.up();
-      expect(find.byType(SelectionArea), findsOneWidget);
-      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(find.byType(SelectionArea), findsNWidgets(2));
+      expect(find.byIcon(Icons.copy_outlined), findsNWidgets(2));
     });
 
     testWidgets('keeps text-only assistant metadata inline', (tester) async {
