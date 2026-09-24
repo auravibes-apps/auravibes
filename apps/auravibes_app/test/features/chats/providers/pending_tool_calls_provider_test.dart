@@ -87,9 +87,14 @@ class const _FakeLoadConversationToolSpecsUsecase({
       : _pendingToolCatalog;
 }
 
-final _pendingToolCatalog = _buildPendingToolCatalog();
-final _calculatorToolName = _pendingToolCatalog.specs[0].name;
-final _urlToolName = _pendingToolCatalog.specs[1].name;
+final ToolCatalog<ResolvedTool> _pendingToolCatalog =
+    _buildPendingToolCatalog();
+final String _calculatorToolName =
+    _pendingToolCatalog.specs.firstOrNull?.name ??
+    (throw StateError('Expected a calculator tool spec.'));
+final String _urlToolName =
+    _pendingToolCatalog.specs.skip(1).firstOrNull?.name ??
+    (throw StateError('Expected a URL tool spec.'));
 
 ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
   bool includeSkillCommand = false,
@@ -474,14 +479,8 @@ void main() {
           id: 'msg-2',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'tc-granted',
-              name: _calculatorToolName,
-            ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'tc-granted', name: _calculatorToolName),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -548,10 +547,7 @@ void main() {
           id: 'msg-1',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'tc-needs-confirm-1',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm-1', name: _urlToolName),
             _pendingToolCall(
               id: 'tc-needs-confirm-2',
               name: _calculatorToolName,
@@ -713,10 +709,7 @@ void main() {
           id: 'child-msg-1',
           conversationId: 'child-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'child-tc-needs-confirm',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'child-tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -789,10 +782,7 @@ void main() {
           id: 'nested-msg-1',
           conversationId: 'nested-child-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'nested-tc-needs-confirm',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'nested-tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -884,10 +874,7 @@ void main() {
               argumentsRaw: '{}',
               resultStatus: .skippedByUser,
             ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -1005,9 +992,7 @@ void main() {
         _assistantMessage(
           id: 'msg-1',
           conversationId: 'conv-1',
-          toolCalls: [
-            _pendingToolCall(id: 'tc-1', name: _urlToolName),
-          ],
+          toolCalls: [_pendingToolCall(id: 'tc-1', name: _urlToolName)],
         ),
       ];
 
@@ -1193,10 +1178,7 @@ void main() {
               argumentsRaw: '{}',
               resultStatus: .stoppedByUser,
             ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: _urlToolName,
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
