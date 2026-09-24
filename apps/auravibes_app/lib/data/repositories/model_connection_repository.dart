@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
@@ -45,7 +46,7 @@ typedef _UpdateValidationData = ({
 typedef _ApiKeyConnectionInsertData = ({
   ModelConnectionToCreate modelConnection,
   String encryptedApiKey,
-  String keySuffix,
+  String? keySuffix,
   List<WorkspaceModelSelectionToCreate> models,
 });
 
@@ -63,6 +64,11 @@ typedef _UpdatePayloadBuildData = ({
   String? existingKeySuffix,
 });
 
+String? _providerUrlForValidation(
+  ModelProvidersTableType? providerType,
+  String? providerUrl,
+) => providerType == ModelProvidersTableType.openrouter ? null : providerUrl;
+
 /// Implementation of the [ModelConnectionRepository] interface.
 ///
 /// This class provides a concrete implementation of model connection data
@@ -72,11 +78,14 @@ typedef _UpdatePayloadBuildData = ({
 class ModelConnectionRepository({
   required final AppDatabase _database,
   required final EncryptionService _encryptionService,
+  LegacyApiKeyStorage? legacyApiKeyStorage,
   ModelProviderServices? modelProviderServices,
 }) implements ModelConnectionStore {
   static const _missingApiKeyMessage = 'Model connection has no API key';
   final ModelProviderServices _modelProviderServices =
       modelProviderServices ?? ModelProviderServices();
+  final LegacyApiKeyStorage _legacyApiKeyStorage =
+      legacyApiKeyStorage ?? LegacyApiKeyStorage();
 
   @override
   Future<ModelProviderVerification> verifyModelConnection(
@@ -180,6 +189,12 @@ class ModelConnectionRepository({
       throw ModelConnectionException(
         'Model connection with ID "$modelConnectionId" not found',
       );
+    }
+
+    final storedValue = modelConnection.encryptedAuthValue;
+    if (storedValue != null &&
+        _legacyApiKeyStorage.isLegacyReference(storedValue)) {
+      await _legacyApiKeyStorage.delete(storedValue);
     }
 
     // Delete from database.
@@ -336,7 +351,7 @@ extension ModelConnectionCreateValidation on ModelConnectionRepository {
     final models = await _workspaceModelSelectionsForCreate(
       modelType,
       key,
-      modelConnection.url ?? provider.url,
+      modelConnection.url ?? _providerUrlForValidation(modelType, provider.url),
     );
 
     return _requiredCreateModels(models, modelConnection.modelId);
@@ -731,7 +746,12 @@ extension ModelConnectionUpdateInputs on ModelConnectionRepository {
       .new(
         type: .fromString(validation.provider.type),
         key: validation.keyForValidation,
-        url: validation.nextUrl ?? validation.provider.provider.url,
+        url:
+            validation.nextUrl ??
+            _providerUrlForValidation(
+              validation.provider.provider.type,
+              validation.provider.provider.url,
+            ),
       ),
     );
     if (models == null) {
@@ -970,7 +990,7 @@ extension ModelConnectionMapping on ModelConnectionRepository {
   ServiceConnectionsCompanion _modelProviderToCreateToCompanion(
     ModelConnectionToCreate modelConnection,
     String encryptedApiKey,
-    String keySuffix,
+    String? keySuffix,
   ) => _modelProviderBaseCompanion(modelConnection).copyWith(
     url: .absentIfNull(modelConnection.url),
     encryptedAuthValue: .new(encryptedApiKey),
@@ -987,8 +1007,9 @@ extension ModelConnectionMapping on ModelConnectionRepository {
     workspaceId: .new(modelConnection.workspaceId),
   );
 
-  String _keySuffix(String key) {
+  String? _keySuffix(String key) {
     const keySuffixLength = 6;
+    if (key.length <= keySuffixLength) return null;
 
     return key.lastCharacters(keySuffixLength);
   }

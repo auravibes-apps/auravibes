@@ -2496,6 +2496,12 @@ class ConversationUseCases {
     String? cancelledConversationId;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
       final turn = await _requireTurnForMutation(
         session,
         userId: userId,

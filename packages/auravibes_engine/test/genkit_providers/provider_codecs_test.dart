@@ -464,6 +464,71 @@ void main() {
     }
   });
 
+  test('provider codec rejects an oversized declared response', () async {
+    final codec = _testCodec();
+
+    await expectLater(
+      codec.complete(
+        (_) async => ProviderTransportResponse(
+          statusCode: 200,
+          contentLength: 4 * 1024 * 1024 + 1,
+          body: const Stream.empty(),
+        ),
+        const {},
+      ),
+      throwsA(
+        isA<GenkitException>().having(
+          (error) => error.status,
+          'status',
+          StatusCodes.RESOURCE_EXHAUSTED,
+        ),
+      ),
+    );
+  });
+
+  test('provider codec rejects a streamed response above the byte limit', () {
+    final codec = _testCodec();
+
+    expectLater(
+      codec.stream(
+        (_) async => ProviderTransportResponse(
+          statusCode: 200,
+          body: Stream.fromIterable([
+            List<int>.filled(4 * 1024 * 1024, 0),
+            const [0],
+          ]),
+        ),
+        const {},
+        (_) {},
+      ),
+      throwsA(isA<GenkitException>()),
+    );
+  });
+
+  test('provider codec stops reading after the done event', () async {
+    final codec = _testCodec();
+    var readAfterDone = false;
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: (() async* {
+          yield utf8.encode(
+            'data: {"choices":[{"delta":{"content":"ok"},'
+            '"finish_reason":"stop"}]}\n',
+          );
+          yield utf8.encode('data: [DONE]\n');
+          readAfterDone = true;
+          yield utf8.encode('data: invalid\n');
+        })(),
+      ),
+      const {},
+      (_) {},
+    );
+
+    expect(response.message?.text, 'ok');
+    expect(readAfterDone, isFalse);
+  });
+
   test(
     'Codex retryability requires an exact structured server error',
     () async {
@@ -513,6 +578,11 @@ _openAiCompatReasoningCustomize(
     extraBody: options.toReasoningBody(),
   );
 }
+
+ChatCompletionsCodec _testCodec() => ChatCompletionsCodec(
+  errorLabel: 'Provider',
+  customize: (modelName, config) => (model: modelName, extraBody: {}),
+);
 
 ProviderTransportResponse _response(
   Map<String, Object?> body, {

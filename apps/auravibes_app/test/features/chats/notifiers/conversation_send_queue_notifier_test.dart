@@ -1,14 +1,38 @@
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
+import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('ConversationSendQueueNotifier', () {
     var container = ProviderContainer();
+    var attachmentService = _FakeLocalChatAttachmentService();
 
     setUp(() {
-      container = ProviderContainer();
+      attachmentService = _FakeLocalChatAttachmentService();
+      container = ProviderContainer(
+        overrides: [
+          localChatAttachmentServiceProvider.overrideWithValue(
+            attachmentService,
+          ),
+        ],
+      );
+    });
+
+    test('text-only queue creation does not initialize the audio recorder', () {
+      final textOnlyContainer = ProviderContainer();
+      addTearDown(textOnlyContainer.dispose);
+
+      final queuedDraft = textOnlyContainer
+          .read(conversationSendQueueProvider.notifier)
+          .enqueue(
+            conversationId: 'conv-1',
+            draft: const ChatDraft(text: 'Text only'),
+          );
+
+      expect(queuedDraft.draft.text, 'Text only');
     });
 
     tearDown(() {
@@ -103,6 +127,32 @@ void main() {
       expect(state['conv-1']?.first.id, second.id);
     });
 
+    test('remove deletes discarded draft attachments', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final draft = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Attachment', attachments: [_attachment]),
+      );
+
+      notifier.remove(conversationId: 'conv-1', draftId: draft.id);
+
+      expect(attachmentService.deletedPaths, ['/tmp/draft.txt']);
+    });
+
+    test('take preserves attachments for editing', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final draft = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Attachment', attachments: [_attachment]),
+      );
+
+      expect(
+        notifier.take(conversationId: 'conv-1', draftId: draft.id)?.id,
+        draft.id,
+      );
+      expect(attachmentService.deletedPaths, isEmpty);
+    });
+
     test('remove with unknown draftId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
@@ -178,5 +228,74 @@ void main() {
       final state = container.read(conversationSendQueueProvider);
       expect(state['conv-1']?.length, 1);
     });
+
+    test('clear deletes all discarded draft attachments', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Attachment', attachments: [_attachment]),
+      );
+
+      notifier.clear('conv-1');
+
+      expect(attachmentService.deletedPaths, ['/tmp/draft.txt']);
+    });
+
+    test('provider disposal deletes attachments still owned by queue', () {
+      final disposalService = _FakeLocalChatAttachmentService();
+      final disposalContainer = ProviderContainer(
+        overrides: [
+          localChatAttachmentServiceProvider.overrideWithValue(disposalService),
+        ],
+      );
+      final notifier = disposalContainer.read(
+        conversationSendQueueProvider.notifier,
+      );
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Attachment', attachments: [_attachment]),
+      );
+
+      disposalContainer.dispose();
+
+      expect(disposalService.deletedPaths, ['/tmp/draft.txt']);
+    });
   });
+}
+
+const _attachment = MessageAttachmentToCreate(
+  localPath: '/tmp/draft.txt',
+  fileName: 'draft.txt',
+  displayName: 'draft.txt',
+  mimeType: 'text/plain',
+  modality: .file,
+  sizeBytes: 5,
+);
+
+class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
+  final String storageNamespace = 'test';
+  final deletedPaths = <String>[];
+
+  @override
+  Future<void> deleteAttachment(String localPath) {
+    deletedPaths.add(localPath);
+
+    return Future.value();
+  }
+
+  @override
+  Future<MessageAttachmentToCreate> copyIntoAppStorage(
+    String sourcePath, {
+    String? displayName,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> startVoiceRecording() => throw UnimplementedError();
+
+  @override
+  Future<MessageAttachmentToCreate?> stopVoiceRecording() =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> cancelVoiceRecording() => throw UnimplementedError();
 }

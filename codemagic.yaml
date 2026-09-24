@@ -1,16 +1,18 @@
 reusables:
-  - &release_tag
+  - &release_build
     instance_type: mac_mini_m2
     max_build_duration: 60
-    triggering:
-      events:
-        - tag
-      tag_patterns:
-        - pattern: "auravibes_app-v+([0-9]).+([0-9]).+([0-9])"
-          include: true
-        - pattern: "auravibes_app-v+([0-9]).+([0-9]).+([0-9])-beta.+([0-9])"
-          include: true
 scripts:
+  - &script_verify_release_commit
+    name: Verify Release Commit
+    script: |
+      echo "Verifying that the release commit belongs to main..."
+      git fetch --no-tags origin main
+      if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+        echo "Refusing to release a commit that is not in main history."
+        exit 1
+      fi
+
   - &script_setup_environment
     name: Setup Environment
     script: |
@@ -42,20 +44,20 @@ scripts:
     script: |
       RELEASE_TAG=${CM_TAG:-}
 
-      if [ -z "$RELEASE_TAG" ]; then
-        git fetch --tags --force
-        RELEASE_TAG=$(git tag --points-at HEAD --list 'auravibes_app-v*' | tail -n 1)
+      if [[ ! $RELEASE_TAG =~ ^auravibes_app-v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+        echo "Invalid or missing release tag: $RELEASE_TAG" >&2
+        exit 1
       fi
 
-      if [ -z "$RELEASE_TAG" ]; then
-        RELEASE_TAG=$(git describe --tags --match 'auravibes_app-v*' --abbrev=0 2>/dev/null || true)
+      git fetch --tags --force
+      TAG_COMMIT=$(git rev-parse "${RELEASE_TAG}^{commit}")
+      HEAD_COMMIT=$(git rev-parse HEAD^{commit})
+      if [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+        echo "Release tag $RELEASE_TAG does not identify HEAD" >&2
+        exit 1
       fi
 
-      if [ -n "$RELEASE_TAG" ]; then
-        TAG_VERSION=${RELEASE_TAG##*-v}
-      else
-        TAG_VERSION=$(grep '^version:' apps/auravibes_app/pubspec.yaml | awk '{print $2}')
-      fi
+      TAG_VERSION=${RELEASE_TAG##*-v}
 
       echo "Release tag: $RELEASE_TAG"
 
@@ -82,7 +84,7 @@ workflows:
   # iOS Release Workflow
   release-ios:
     name: Release iOS
-    <<: *release_tag
+    <<: *release_build
     environment:
       flutter: fvm
       groups:
@@ -99,6 +101,7 @@ workflows:
         - ~/.pub-cache/hosted
 
     scripts:
+      - *script_verify_release_commit
       - *script_setup_environment
       - *script_install_melos
       - *script_melos_bootstrap
@@ -152,7 +155,7 @@ workflows:
   # Android Release Workflow
   release-android:
     name: Release Android
-    <<: *release_tag
+    <<: *release_build
     environment:
       flutter: fvm
       android_signing:
@@ -169,6 +172,7 @@ workflows:
         - $FLUTTER_ROOT/.pub-cache
         - ~/.gradle/cache
     scripts:
+      - *script_verify_release_commit
       - *script_setup_environment
       - *script_install_melos
       - *script_melos_bootstrap

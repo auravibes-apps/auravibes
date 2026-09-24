@@ -57,6 +57,7 @@ void main() {
       String id = 'group-1',
       String workspaceId = 'ws-1',
       String? mcpServerId,
+      bool isEnabled = true,
     }) {
       return ToolsGroupsTable(
         id: id,
@@ -65,7 +66,7 @@ void main() {
         workspaceId: workspaceId,
         mcpServerId: mcpServerId,
         name: 'Test Group',
-        isEnabled: true,
+        isEnabled: isEnabled,
         permissions: .ask,
       );
     }
@@ -386,11 +387,32 @@ void main() {
             'ws-1',
           ),
         ).thenAnswer((_) async => [createServerRow()]);
+        when(
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+        ).thenAnswer((_) async => createGroupRow(mcpServerId: 'mcp-1'));
 
         final result = await fixture.repository
             .getEnabledMcpServersForWorkspace('ws-1');
 
         expect(result, hasLength(1));
+      });
+
+      test('excludes servers whose tools group is disabled', () async {
+        when(
+          () => fixture.mockMcpServersDao.getEnabledMcpServersForWorkspace(
+            'ws-1',
+          ),
+        ).thenAnswer((_) async => [createServerRow()]);
+        when(
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+        ).thenAnswer(
+          (_) async => createGroupRow(mcpServerId: 'mcp-1', isEnabled: false),
+        );
+
+        final result = await fixture.repository
+            .getEnabledMcpServersForWorkspace('ws-1');
+
+        expect(result, isEmpty);
       });
     });
 

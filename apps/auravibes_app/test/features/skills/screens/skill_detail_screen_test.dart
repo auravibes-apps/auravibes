@@ -200,6 +200,8 @@ void main() {
       ],
     );
     addTearDown(staleCredentialContainer.dispose);
+    // Reproduce a legacy dangling reference from before FK enforcement.
+    await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = OFF');
     final skillWithStaleDefinition =
         await SkillsRepository(staleCredentialDatabase).createSkill(
           staleCredentialWorkspace.id,
@@ -211,6 +213,7 @@ void main() {
             credentialDefinitionId: 'missing-definition-id',
           ),
         );
+    await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = ON');
 
     final fixture = ValueNotifier(
       _SkillDetailScreenFixture(

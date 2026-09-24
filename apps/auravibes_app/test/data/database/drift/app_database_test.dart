@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -46,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 14);
+      expect(fixture.database.schemaVersion, 16);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -80,6 +81,45 @@ void main() {
       final strategy = fixture.database.migration;
       final _ = await fixture.database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
+    });
+
+    test('workspace deletion cascades to sensitive child records', () async {
+      final workspace = await fixture.database.workspaceDao.insertWorkspace(
+        .insert(name: 'Private workspace', type: WorkspaceType.local),
+      );
+      final conversation = await fixture.database.conversationDao
+          .insertConversation(
+            .insert(workspaceId: workspace.id, title: 'Private conversation'),
+          );
+      final _ = await fixture.database.messageDao.insertMessage(
+        .insert(
+          conversationId: conversation.id,
+          content: 'Sensitive message',
+          messageType: MessagesTableType.text,
+          isUser: true,
+          status: MessageTableStatus.sent,
+        ),
+      );
+
+      expect(
+        await fixture.database.workspaceDao.deleteWorkspace(workspace.id),
+        isTrue,
+      );
+
+      final conversations = await fixture.database
+          .customSelect(
+            'SELECT id FROM conversations WHERE workspace_id = ?',
+            variables: [Variable<String>(workspace.id)],
+          )
+          .get();
+      final messages = await fixture.database
+          .customSelect(
+            'SELECT id FROM messages WHERE conversation_id = ?',
+            variables: [Variable<String>(conversation.id)],
+          )
+          .get();
+      expect(conversations, isEmpty);
+      expect(messages, isEmpty);
     });
 
     const migrationDefinitionTestName =
@@ -141,6 +181,89 @@ void main() {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
     });
+
+    test('migration repairs the legacy api model modalities column', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 13
+        ..execute('''
+          CREATE TABLE api_models (
+            id TEXT NOT NULL PRIMARY KEY,
+            modalities_ouput TEXT NULL
+          );
+        ''')
+        ..execute('''
+          INSERT INTO api_models (id, modalities_ouput)
+          VALUES ('model-1', '["text"]');
+        ''')
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(api_models)')
+          .get();
+      final model = await fixture.database
+          .customSelect(
+            'SELECT modalities_output FROM api_models WHERE id = ?',
+            variables: [const Variable<String>('model-1')],
+          )
+          .getSingle();
+
+      expect(
+        columns.map((column) => column.read<String>('name')),
+        contains('modalities_output'),
+      );
+      expect(model.read<String>('modalities_output'), '["text"]');
+    });
+
+    test(
+      'migration converts legacy streaming messages to unfinished',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 14
+          ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL
+          );
+        ''')
+          ..execute('''
+          CREATE TABLE messages (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            conversation_id TEXT NOT NULL,
+            content TEXT NOT NULL,
+            message_type TEXT NOT NULL,
+            is_user INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            metadata TEXT
+          );
+        ''')
+          ..execute('''
+          INSERT INTO messages (
+            id, created_at, updated_at, conversation_id, content,
+            message_type, is_user, status
+          ) VALUES ('message-1', 0, 0, 'conversation-1', 'Partial response',
+            'text', 0, 'streaming');
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final message = await fixture.database.messageDao.getMessageById(
+          'message-1',
+        );
+
+        expect(message?.status, MessageTableStatus.unfinished);
+      },
+    );
 
     test(
       'migration from schema 6 preserves agents and adds catalog index',

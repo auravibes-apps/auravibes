@@ -25,6 +25,7 @@ void main() {
     var mockConnectionsDao = MockModelConnectionsDao();
     var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
     var mockEncryptionService = MockEncryptionService();
+    var mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
     var mockModelProviderServices = MockModelProviderServices();
     var database = _TestAppDatabase(
       MockApiModelProvidersDao(),
@@ -46,6 +47,7 @@ void main() {
       mockConnectionsDao = MockModelConnectionsDao();
       mockSelectionsDao = MockWorkspaceModelSelectionsDao();
       mockEncryptionService = MockEncryptionService();
+      mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
       mockModelProviderServices = MockModelProviderServices();
       database = _TestAppDatabase(
         mockProvidersDao,
@@ -55,6 +57,7 @@ void main() {
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
+        legacyApiKeyStorage: mockLegacyApiKeyStorage,
         modelProviderServices: mockModelProviderServices,
       );
       when(() => mockSelectionsDao.getByModelConnectionId(any()))
@@ -65,6 +68,8 @@ void main() {
           .thenAnswer((_) async {
             return;
           });
+      when(() => mockLegacyApiKeyStorage.isLegacyReference(any()))
+          .thenReturn(false);
     });
 
     tearDown(() async {
@@ -210,6 +215,38 @@ void main() {
         verify(() => mockConnectionsDao.insertModelConnection(any())).called(1);
         verify(() => mockSelectionsDao.insertWorkspaceModelSelections(any()))
             .called(1);
+      });
+
+      test('does not persist the complete value of a short API key', () async {
+        final shortKeyConnectionRow = connectionRow.copyWith(
+          keySuffix: const Value(null),
+        );
+        when(() => mockProvidersDao.getProviderById('openai'))
+            .thenAnswer((_) async => providerRow);
+        when(() => mockEncryptionService.encrypt(any()))
+            .thenAnswer((_) async => 'encrypted-key');
+        when(() => mockModelProviderServices.getWorkspaceModelSelections(any()))
+            .thenAnswer((_) async => const []);
+        when(() => mockConnectionsDao.insertModelConnection(any()))
+            .thenAnswer((_) async => shortKeyConnectionRow);
+        when(() => mockSelectionsDao.insertWorkspaceModelSelections(any()))
+            .thenAnswer((_) => Future.value());
+
+        final _ = await repository.createModelConnection(
+          const ModelConnectionToCreate(
+            name: 'Test',
+            workspaceId: 'ws-1',
+            modelId: 'openai',
+            key: '123456',
+          ),
+        );
+
+        final connection =
+            verify(() => mockConnectionsDao.insertModelConnection(captureAny()))
+                    .captured
+                    .single
+                as ServiceConnectionsCompanion;
+        expect(connection.keySuffix.value, isNull);
       });
 
       test('verified create reuses discovered model ids', () async {
@@ -376,7 +413,7 @@ void main() {
       });
 
       test(
-        'creates openrouter connection with openrouter validation',
+        'ignores catalog URL when validating an openrouter connection',
         () async {
           const openRouterProvider = ApiModelProvidersTable(
             id: 'openrouter',
@@ -444,7 +481,7 @@ void main() {
 
           expect(result.modelId, 'openrouter');
           expect(capturedProvider.type, CredentialsModelType.openrouter);
-          expect(capturedProvider.url, 'https://openrouter.ai/api/v1');
+          expect(capturedProvider.url, isNull);
         },
       );
     });
@@ -744,6 +781,28 @@ void main() {
                   .called(1),
           returnsNormally,
         );
+      });
+
+      test('deletes a referenced legacy API key before its row', () async {
+        const reference = '123e4567-e89b-42d3-a456-426614174000';
+        final legacyRow = connectionRow.copyWith(
+          encryptedAuthValue: const Value(reference),
+        );
+        when(() => mockConnectionsDao.getModelConnectionById('conn-1'))
+            .thenAnswer((_) async => legacyRow);
+        when(() => mockLegacyApiKeyStorage.isLegacyReference(reference))
+            .thenReturn(true);
+        when(() => mockLegacyApiKeyStorage.delete(reference))
+            .thenAnswer((_) => Future<void>.value());
+        when(() => mockConnectionsDao.deleteModelConnection('conn-1'))
+            .thenAnswer((_) => Future<void>.value());
+
+        await repository.deleteModelConnection('conn-1');
+
+        final _ = verifyInOrder([
+          () => mockLegacyApiKeyStorage.delete(reference),
+          () => mockConnectionsDao.deleteModelConnection('conn-1'),
+        ]);
       });
 
       test('throws when connection not found', () async {

@@ -139,8 +139,12 @@ class AppDatabase extends _$AppDatabase {
       _forkSchemaVersion + 1;
   static const int _skillResourceSchemaVersion =
       _skillTemplateDefinitionSchemaVersion + 1;
-  static const int _reasoningControlsSchemaVersion =
+  static const int _apiModelModalitiesSchemaVersion =
       _skillResourceSchemaVersion + 1;
+  static const int _legacyStreamingStatusSchemaVersion =
+      _apiModelModalitiesSchemaVersion + 1;
+  static const int _reasoningControlsSchemaVersion =
+      _legacyStreamingStatusSchemaVersion + 1;
   static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -173,11 +177,16 @@ extension on AppDatabase {
         await m.createAll();
       },
       onUpgrade: _runUpgrades,
+      beforeOpen: (_) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
     );
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
+    await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
   }
 
@@ -197,6 +206,18 @@ extension on AppDatabase {
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
     await _upgradeReasoningControlsSchema(m, from);
+  }
+
+  Future<void> _upgradeApiModelModalitiesSchema(int from) async {
+    if (from >= AppDatabase._apiModelModalitiesSchemaVersion ||
+        !await _columnExists('api_models', 'modalities_ouput') ||
+        await _columnExists('api_models', 'modalities_output')) {
+      return;
+    }
+    await customStatement(
+      'ALTER TABLE api_models '
+      'RENAME COLUMN modalities_ouput TO modalities_output',
+    );
   }
 
   Future<void> _runSkillUpgrades(Migrator m, int from) async {
@@ -321,6 +342,17 @@ extension on AppDatabase {
         !await _columnExists('conversations', 'reasoning_config_json')) {
       await m.addColumn(conversations, conversations.reasoningConfigJson);
     }
+  }
+
+  Future<void> _upgradeLegacyStreamingStatuses(int from) async {
+    if (from >= AppDatabase._legacyStreamingStatusSchemaVersion ||
+        !await _tableExists('messages')) {
+      return;
+    }
+    await customStatement('''
+      UPDATE messages SET status = 'unfinished'
+      WHERE status = 'streaming'
+      ''');
   }
 
   Future<void> _upgradeSkillTemplateDefinitionSchema(

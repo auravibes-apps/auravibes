@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_p
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
@@ -102,6 +103,17 @@ extension _ProviderFactoryGenerationConfig on ProviderFactory {
 
     return null;
   }
+
+  @visibleForTesting
+  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+    if (connectionUrl != null) return connectionUrl;
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return null;
+    }
+
+    return _blankToNull(config.modelsProvider.url);
+  }
 }
 
 extension _ProviderFactoryCreation on ProviderFactory {
@@ -115,7 +127,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     return (
       config: config,
       apiKey: await _resolveCredential(config),
-      baseUrl: connectionUrl ?? _blankToNull(config.modelsProvider.url),
+      baseUrl: resolvedBaseUrl(config),
       runtime: _runtimeSelection(config, connectionUrl),
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,

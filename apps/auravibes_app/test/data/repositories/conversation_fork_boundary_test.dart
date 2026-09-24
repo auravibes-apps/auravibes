@@ -26,10 +26,13 @@ void main() {
   tearDown(() => database.close());
 
   Future<void> insertSource({String? reasoningConfigJson}) async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Test Workspace', type: .local),
+    );
     final _ = await database.conversationDao.insertConversation(
       .new(
         id: const .new('source'),
-        workspaceId: const .new('workspace'),
+        workspaceId: .new(workspace.id),
         title: const .new('Source'),
         reasoningConfigJson: .new(reasoningConfigJson),
       ),
