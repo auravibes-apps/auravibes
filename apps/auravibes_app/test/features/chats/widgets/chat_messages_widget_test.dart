@@ -62,7 +62,7 @@ Widget buildSubject({
   );
 }
 
-Widget _scaffoldedAppBuilder(BuildContext context, Widget child) => MaterialApp(
+Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
   home: Scaffold(body: child),
   locale: context.locale,
   localizationsDelegates: context.localizationDelegates,
@@ -848,7 +848,7 @@ void main() {
               isUser: false,
             ),
           }),
-          appBuilder: _scaffoldedAppBuilder,
+          appBuilder: _scaffoldedApp,
         ),
       );
 
@@ -873,7 +873,7 @@ void main() {
               isUser: false,
             ),
           }),
-          appBuilder: _scaffoldedAppBuilder,
+          appBuilder: _scaffoldedApp,
         ),
       );
 
