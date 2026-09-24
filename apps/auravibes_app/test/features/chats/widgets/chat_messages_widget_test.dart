@@ -820,7 +820,8 @@ void main() {
           overrides: _messageOverrides({
             'unsafe-links': _createMessage(
               id: 'unsafe-links',
-              content: '[Unsafe](javascript:alert(1)) '
+              content:
+                  '[Unsafe](javascript:alert(1)) '
                   '[Missing host](https:///missing-host)',
               isUser: false,
             ),
@@ -893,10 +894,7 @@ void main() {
               id: 'msg-link',
               content: '[Open docs](https://example.com)',
             ),
-            'msg-text': _createMessage(
-              id: 'msg-text',
-              content: 'Plain text',
-            ),
+            'msg-text': _createMessage(id: 'msg-text', content: 'Plain text'),
           }),
         ),
       );
