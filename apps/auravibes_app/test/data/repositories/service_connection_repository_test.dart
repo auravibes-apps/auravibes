@@ -212,6 +212,31 @@ void main() {
       );
     });
 
+    test('does not persist a complete short legacy API key', () async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      final encryption = EncryptionService(_FakeSecretKeyManager());
+      const reference = '123e4567-e89b-42d3-a456-426614174000';
+      final legacyStorage = _FakeLegacyApiKeyStorage({reference: 's3cr3t'});
+      final repository = ServiceConnectionRepository(
+        database,
+        encryption,
+        legacyStorage,
+      );
+      final id = await _insertLegacyConnection(database, reference);
+
+      final secret = await repository.readSecret(id);
+
+      expect((secret as ServiceConnectionSecretApiKey).apiKey, 's3cr3t');
+      final migrated = await (database.select(
+        database.serviceConnections,
+      )..where((table) => table.id.equals(id))).getSingle();
+      expect(migrated.keySuffix, null);
+    });
+
     test('deletes only the app skill credential in its workspace', () async {
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
