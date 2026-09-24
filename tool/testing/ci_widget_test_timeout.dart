@@ -6,5 +6,5 @@ void configureCiWidgetTestTimeout() {
   if (Platform.environment['CI'] != 'true') return;
 
   AutomatedTestWidgetsFlutterBinding.ensureInitialized().defaultTestTimeout =
-      const Timeout(Duration(seconds: 30));
+      const Timeout(.new(seconds: 30));
 }
