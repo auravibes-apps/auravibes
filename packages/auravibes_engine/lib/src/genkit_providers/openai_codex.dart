@@ -70,7 +70,6 @@ class const OpenAICodexCodec() {
       'stream': stream,
       'store': false,
       'text': const {'verbosity': 'low'},
-      'include': const ['reasoning.encrypted_content'],
       'tools': ?request.tools?.map(_toolToJson).toList(),
       if (effort != null) 'reasoning': {'effort': effort},
     };
