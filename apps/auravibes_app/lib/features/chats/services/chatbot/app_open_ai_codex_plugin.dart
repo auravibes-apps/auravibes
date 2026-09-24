@@ -9,6 +9,7 @@ class AppOpenAICodexPlugin({
   final String? accountId,
   final String? sessionId,
   final List<String> models = const [],
+  final ReasoningConfiguration? reasoningConfiguration,
   final String baseUrl = 'https://chatgpt.com/backend-api/codex/responses',
   final http.Client? httpClient,
   final Duration requestTimeout = const Duration(seconds: 30),
@@ -59,6 +60,7 @@ extension on AppOpenAICodexPlugin {
     modelName: modelName,
     request: request,
     stream: streamingRequested,
+    reasoningConfiguration: reasoningConfiguration,
   );
 
   Future<ModelResponse> _streamWithRetry(

@@ -15,8 +15,14 @@ void main() {
           model: modelName,
           extraBody: {
             ...options.toSamplingBody(),
-            if (options.reasoningMaxTokens != null)
-              'reasoning': {'max_tokens': options.reasoningMaxTokens},
+            if (options.reasoningEnabled == false ||
+                options.reasoningEffort != null ||
+                options.reasoningMaxTokens != null)
+              'reasoning': {
+                if (options.reasoningEnabled == false) 'enabled': false,
+                'effort': ?options.reasoningEffort,
+                'max_tokens': ?options.reasoningMaxTokens,
+              },
           },
         );
       },
@@ -53,6 +59,48 @@ void main() {
     expect(response.message?.text, 'Answer.');
   });
 
+  test('OpenRouter maps effort and disabled reasoning options', () {
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'OpenRouter',
+      customize: (modelName, config) {
+        final options = OpenRouterOptions.fromJson(config);
+        return (
+          model: modelName,
+          extraBody: {
+            if (options.reasoningEnabled == false ||
+                options.reasoningEffort != null ||
+                options.reasoningMaxTokens != null)
+              'reasoning': {
+                if (options.reasoningEnabled == false) 'enabled': false,
+                'effort': ?options.reasoningEffort,
+                'max_tokens': ?options.reasoningMaxTokens,
+              },
+          },
+        );
+      },
+    );
+
+    final effortBody = codec.buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: const [],
+        config: OpenRouterOptions(reasoningEffort: 'high').toJson(),
+      ),
+      stream: false,
+    );
+    final disabledBody = codec.buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: const [],
+        config: OpenRouterOptions(reasoningEnabled: false).toJson(),
+      ),
+      stream: false,
+    );
+
+    expect(effortBody['reasoning'], {'effort': 'high'});
+    expect(disabledBody['reasoning'], {'enabled': false});
+  });
+
   test('OpenAI-compatible codec maps version and thinking options', () {
     final codec = ChatCompletionsCodec(
       errorLabel: 'OpenAI-compatible',
@@ -82,6 +130,33 @@ void main() {
 
     expect(body['model'], 'model-version');
     expect(body['thinking'], {'type': 'enabled'});
+  });
+
+  test('OpenAI-compatible codec maps reasoning effort', () {
+    const codec = ChatCompletionsCodec(
+      errorLabel: 'OpenAI-compatible',
+      customize: _openAiCompatReasoningCustomize,
+    );
+    final body = codec.buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: const [],
+        config: OpenAICompatReasoningOptions(reasoningEffort: 'high').toJson(),
+      ),
+      stream: false,
+    );
+    final disabledBody = codec.buildRequestBody(
+      modelName: 'model',
+      request: ModelRequest(
+        messages: const [],
+        config: OpenAICompatReasoningOptions(reasoningEffort: 'none').toJson(),
+      ),
+      stream: false,
+    );
+
+    expect(body['reasoning_effort'], 'high');
+    expect(body.containsKey('reasoning'), isFalse);
+    expect(disabledBody['reasoning_effort'], 'none');
   });
 
   test('provider codecs encode shared audio data input', () {
@@ -166,6 +241,42 @@ void main() {
     expect(body['store'], false);
     expect(chunks.single.text, 'Hi');
     expect(response.message?.text, 'Hi');
+  });
+
+  test('OpenAI-compatible reasoning body maps effort and disable', () {
+    expect(
+      OpenAICompatReasoningOptions(reasoningEffort: 'high').toReasoningBody(),
+      {'reasoning_effort': 'high'},
+    );
+    expect(OpenAICompatReasoningOptions().toReasoningBody(enabled: false), {
+      'reasoning_effort': 'none',
+    });
+    expect(OpenAICompatReasoningOptions().toReasoningBody(), isEmpty);
+  });
+
+  test('Codex maps explicit effort, disable, and provider defaults', () {
+    const codec = OpenAICodexCodec();
+    final body = codec.buildRequestBody(
+      modelName: 'gpt-5.5',
+      request: ModelRequest(messages: const []),
+      stream: false,
+      reasoningConfiguration: const ReasoningConfiguration(effort: 'high'),
+    );
+    final disabledBody = codec.buildRequestBody(
+      modelName: 'gpt-5.5',
+      request: ModelRequest(messages: const []),
+      stream: false,
+      reasoningConfiguration: const ReasoningConfiguration(enabled: false),
+    );
+    final defaultBody = codec.buildRequestBody(
+      modelName: 'gpt-5.5',
+      request: ModelRequest(messages: const []),
+      stream: false,
+    );
+
+    expect(body['reasoning'], {'effort': 'high'});
+    expect(disabledBody['reasoning'], {'effort': 'none'});
+    expect(defaultBody.containsKey('reasoning'), isFalse);
   });
 
   test('Codex retains streamed tool calls', () async {
@@ -452,6 +563,19 @@ void main() {
         expect(isRetryableCodexError(error), isFalse);
       }
     },
+  );
+}
+
+({String model, Map<String, dynamic> extraBody})
+_openAiCompatReasoningCustomize(
+  String modelName,
+  Map<String, dynamic>? config,
+) {
+  final options = OpenAICompatReasoningOptions.fromJson(config);
+
+  return (
+    model: options.version ?? modelName,
+    extraBody: options.toReasoningBody(),
   );
 }
 

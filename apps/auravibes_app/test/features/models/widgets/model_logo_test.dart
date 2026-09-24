@@ -37,11 +37,13 @@ void main() {
 
     testWidgets('svgBuilder is used when provided', (tester) async {
       const key = Key('custom-builder');
-      await tester.pumpWidget(
-        _EasyLocalizationWrapper(
-          child: ModelLogo(
-            modelId: 'openai',
-            svgBuilder: (_, _) => const SizedBox(key: key),
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(
+          _EasyLocalizationWrapper(
+            child: ModelLogo(
+              modelId: 'openai',
+              svgBuilder: (_, _) => const SizedBox(key: key),
+            ),
           ),
         ),
       );

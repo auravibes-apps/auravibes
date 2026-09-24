@@ -114,6 +114,7 @@ void main() {
           title: 'Renamed',
           clearModel: false,
           clearAgent: false,
+          clearReasoningConfig: false,
           clearParent: false,
         ),
       );
@@ -267,6 +268,7 @@ void main() {
             isPinned: true,
             clearModel: false,
             clearAgent: false,
+            clearReasoningConfig: false,
             clearParent: false,
           ),
         ),

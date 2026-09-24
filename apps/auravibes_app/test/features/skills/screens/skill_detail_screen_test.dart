@@ -224,7 +224,9 @@ void main() {
     );
     addTearDown(fixture.dispose);
 
-    await tester.pumpWidget(buildScreen(fixture));
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildScreen(fixture)),
+    );
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
     final _ = await tester.pumpAndSettle();

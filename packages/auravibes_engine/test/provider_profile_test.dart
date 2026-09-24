@@ -27,6 +27,17 @@ void main() {
       ).runtime,
       ProviderRuntime.openAiReasoning,
     );
+    expect(
+      selectProviderRuntime(
+        providerId: 'openai',
+        hasCustomUrl: false,
+        supportsReasoning: true,
+        usesOAuth: false,
+        isCodexOAuth: false,
+        modelId: 'model',
+      ).runtime,
+      ProviderRuntime.openAiReasoning,
+    );
   });
 
   test('builds provider authorization headers', () {

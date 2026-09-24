@@ -69,6 +69,7 @@ class const ChatInputWidget({
   required final Widget agentSheetControl,
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
+  final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
@@ -1321,6 +1322,10 @@ class const _ChatInputBrowseControls({required final _ChatInputState state})
         _AttachmentMenu(state: state),
         const AuraSizedBox(width: .xs),
         Expanded(child: _ModelSelectorButton(state: state)),
+        if (state.input.reasoningControl case final reasoning?) ...[
+          const AuraSizedBox(width: .xs),
+          reasoning,
+        ],
         const AuraSizedBox(width: .xs),
       ],
     );

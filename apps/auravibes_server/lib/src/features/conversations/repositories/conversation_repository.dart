@@ -31,13 +31,24 @@ String conversationTurnJobPayload(
   int? parentTurnId,
   String? parentToolCallId,
   List<String>? a2uiSupportedComponents,
+  String? reasoningConfigJson,
+  bool includeReasoningConfigSnapshot = false,
 }) => jsonEncode({
   'actorUserId': actorUserId,
   'executionId': ?executionId,
   'parentTurnId': ?parentTurnId,
   'parentToolCallId': ?parentToolCallId,
   'a2uiSupportedComponents': ?a2uiSupportedComponents,
+  if (includeReasoningConfigSnapshot)
+    'reasoningConfigJson': reasoningConfigJson,
 });
+
+String? conversationReasoningConfigForExecutionSettings(String settingsJson) {
+  final settings = jsonDecode(settingsJson);
+  return settings is Map && settings['reasoningConfigJson'] is String
+      ? settings['reasoningConfigJson']! as String
+      : null;
+}
 
 String _escapeLike(String value) =>
     value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
@@ -450,6 +461,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          reasoningConfigJson: conversation.reasoningConfigJson,
+          includeReasoningConfigSnapshot: true,
         ),
         attempt: 0,
         maxAttempts: 3,
@@ -536,6 +549,8 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         payloadJson: conversationTurnJobPayload(
           actorUserId,
           a2uiSupportedComponents: request.a2uiSupportedComponents,
+          reasoningConfigJson: conversation.reasoningConfigJson,
+          includeReasoningConfigSnapshot: true,
         ),
         attempt: 0,
         maxAttempts: 3,

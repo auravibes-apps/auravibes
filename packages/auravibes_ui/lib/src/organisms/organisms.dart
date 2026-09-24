@@ -27,6 +27,7 @@ export 'aura_popup_menu_controller.dart'
         AuraPopupMenuButton,
         AuraPopupMenuController,
         AuraPopupMenuDivider,
+        AuraPopupMenuEntry,
         AuraPopupMenuItem;
 export 'aura_radio_group.dart'
     show AuraRadioGroup, AuraRadioListTile, AuraRadioOption;

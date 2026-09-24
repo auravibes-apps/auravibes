@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart' show Ref;
 import 'package:riverpod/src/providers/provider.dart';
 
@@ -22,6 +23,7 @@ typedef _SendNewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  ReasoningConfiguration? reasoningConfiguration,
 });
 
 class const SendNewMessageUsecase({
@@ -78,18 +80,22 @@ class const SendNewMessageUsecase({
     if (model == null) throw Exception('Selected model not found');
 
     final conversation = await _createConversation(
-      .new(
-        title: 'New Conversation',
-        workspaceId: request.workspaceId,
-        modelId: request.workspaceModelSelectionId,
-        agentId: request.agentId,
-      ),
+      _conversationToCreate(request),
     );
     _generateTitle(request, conversation, model);
     await _sendFirstMessage(conversation.id, request.draft);
 
     return conversation;
   }
+
+  ConversationToCreate _conversationToCreate(_SendNewMessageRequest request) =>
+      .new(
+        title: 'New Conversation',
+        workspaceId: request.workspaceId,
+        modelId: request.workspaceModelSelectionId,
+        agentId: request.agentId,
+        reasoningConfiguration: request.reasoningConfiguration,
+      );
 
   Future<WorkspaceModelSelectionWithConnectionEntity?> _selectedModel(
     _SendNewMessageRequest request,

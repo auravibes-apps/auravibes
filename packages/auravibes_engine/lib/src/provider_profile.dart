@@ -54,7 +54,7 @@ ProviderRuntimeSelection selectProviderRuntime({
       usesAdaptiveThinking: false,
     );
   }
-  if (providerId == 'openai' && supportsReasoning && hasCustomUrl) {
+  if (providerId == 'openai' && supportsReasoning) {
     return const ProviderRuntimeSelection(
       runtime: .openAiReasoning,
       modelNamespace: 'openai_reasoning',

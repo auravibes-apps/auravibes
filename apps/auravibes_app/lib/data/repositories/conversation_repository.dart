@@ -415,6 +415,7 @@ extension on ConversationRepository {
     title: .new(title),
     modelId: .new(source.modelId),
     agentId: .new(source.agentId),
+    reasoningConfigJson: .new(source.reasoningConfigJson),
     parentConversationId: const Value(null),
     forkSourceConversationId: .new(source.id),
     forkSourceTitle: .new(source.title),
@@ -979,6 +980,7 @@ extension on ConversationRepository {
       updatedAt: conversationTable.updatedAt,
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
+      reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
       parentConversationId: conversationTable.parentConversationId,
     );
   }
@@ -991,6 +993,7 @@ extension on ConversationRepository {
       title: .new(conversation.title),
       modelId: .new(conversation.modelId),
       agentId: .new(conversation.agentId),
+      reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
       parentConversationId: .new(conversation.parentConversationId),
       isPinned: .new(conversation.isPinned ?? false),
     );
@@ -1005,6 +1008,9 @@ extension on ConversationRepository {
       agentId: conversation.clearAgent
           ? const Value(null)
           : Value.absentIfNull(conversation.agentId),
+      reasoningConfigJson: conversation.clearReasoningConfiguration
+          ? const Value(null)
+          : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }

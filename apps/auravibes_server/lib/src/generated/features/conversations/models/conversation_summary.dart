@@ -20,6 +20,7 @@ abstract class ConversationSummary
     required this.isPinned,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
@@ -36,6 +37,7 @@ abstract class ConversationSummary
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -53,6 +55,7 @@ abstract class ConversationSummary
       isPinned: _is.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       forkSourceConversationId:
@@ -85,6 +88,8 @@ abstract class ConversationSummary
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? parentConversationId;
 
   String? forkSourceConversationId;
@@ -110,6 +115,7 @@ abstract class ConversationSummary
     bool? isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -128,6 +134,8 @@ abstract class ConversationSummary
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -152,6 +160,8 @@ abstract class ConversationSummary
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -182,6 +192,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
@@ -196,6 +207,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
          isPinned: isPinned,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          parentConversationId: parentConversationId,
          forkSourceConversationId: forkSourceConversationId,
          forkSourceTitle: forkSourceTitle,
@@ -216,6 +228,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     bool? isPinned,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? parentConversationId = _Undefined,
     Object? forkSourceConversationId = _Undefined,
     Object? forkSourceTitle = _Undefined,
@@ -231,6 +244,9 @@ class _ConversationSummaryImpl extends ConversationSummary {
       isPinned: isPinned ?? this.isPinned,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,

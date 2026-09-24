@@ -142,51 +142,53 @@ Future<void> _pumpAgentScreen(
   final tools = await WorkspaceToolsRepository(fixture.database)
       .getWorkspaceTools(fixture.workspace.id);
 
-  await tester.pumpWidget(
-    TestableApp(
-      child: Navigator(
-        onGenerateInitialRoutes: (_, _) => [
-          MaterialPageRoute<void>(builder: (_) => const Text('Previous')),
-          MaterialPageRoute<void>(
+  final _ = await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        child: Navigator(
+          onGenerateInitialRoutes: (_, _) => [
+            MaterialPageRoute<void>(builder: (_) => const Text('Previous')),
+            MaterialPageRoute<void>(
+              builder: (_) => AgentDetailScreen(
+                workspaceId: fixture.workspace.id,
+                agentId: agentId,
+              ),
+            ),
+          ],
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
             builder: (_) => AgentDetailScreen(
               workspaceId: fixture.workspace.id,
               agentId: agentId,
             ),
           ),
-        ],
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => AgentDetailScreen(
-            workspaceId: fixture.workspace.id,
-            agentId: agentId,
+        ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(fixture.database),
+          agentRepositoryProvider(fixture.workspace.id)
+              .overrideWithValue(AgentsRepository(fixture.database)),
+          agentToolsRepositoryProvider(fixture.workspace.id)
+              .overrideWithValue(AgentToolsRepository(fixture.database)),
+          cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+          workspaceSkillsProvider(fixture.workspace.id).overrideWith(
+            (_) async => const [
+              WorkspaceSkill(
+                source: SkillSource.user,
+                id: 'summarizer',
+                slug: 'summarizer',
+                title: 'Summarizer',
+                description: 'Summarize things.',
+                kind: .template,
+                isEnabled: true,
+              ),
+            ],
           ),
-        ),
+          workspaceToolsProvider(fixture.workspace.id)
+              .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
+        ],
+        workspaceId: fixture.workspace.id,
+        workspaceSession: session,
+        key: UniqueKey(),
       ),
-      overrides: [
-        appDatabaseProvider.overrideWithValue(fixture.database),
-        agentRepositoryProvider(fixture.workspace.id)
-            .overrideWithValue(AgentsRepository(fixture.database)),
-        agentToolsRepositoryProvider(fixture.workspace.id)
-            .overrideWithValue(AgentToolsRepository(fixture.database)),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        workspaceSkillsProvider(fixture.workspace.id).overrideWith(
-          (_) async => const [
-            WorkspaceSkill(
-              source: SkillSource.user,
-              id: 'summarizer',
-              slug: 'summarizer',
-              title: 'Summarizer',
-              description: 'Summarize things.',
-              kind: .template,
-              isEnabled: true,
-            ),
-          ],
-        ),
-        workspaceToolsProvider(fixture.workspace.id)
-            .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
-      ],
-      workspaceId: fixture.workspace.id,
-      workspaceSession: session,
-      key: UniqueKey(),
     ),
   );
   await tester.pump();

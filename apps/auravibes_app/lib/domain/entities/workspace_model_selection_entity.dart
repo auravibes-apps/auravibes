@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_model_selection_entity.freezed.dart';
@@ -20,6 +21,7 @@ abstract class WorkspaceModelSelectionEntity
     @Default([]) List<String> modalitiesInput,
     @Default([]) List<String> modalitiesOutput,
     @Default(false) bool supportsReasoning,
+    @Default([]) List<ReasoningOption> reasoningOptions,
     @Default(true) bool supportsToolCalls,
   }) = _WorkspaceModelSelectionEntity;
 }

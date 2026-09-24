@@ -60,6 +60,7 @@ class AppAgentContinuationAdapter({
     return AgentConversationReference(
       workspaceId: conversation.workspaceId,
       modelId: conversation.modelId,
+      reasoningConfiguration: conversation.reasoningConfiguration,
     );
   }
 
