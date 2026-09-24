@@ -883,7 +883,7 @@ void main() {
       expect(find.text('Could not open link'), findsOneWidget);
     });
 
-    testWidgets('uses correct cursor for user links and text', (tester) async {
+    testWidgets('uses text cursor for user messages', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
