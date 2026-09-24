@@ -16,6 +16,8 @@ dev_dependencies:
   auravibes_app: ^0.0.4
   dart_code_linter: ^4.3.0
   dependency_validator: ^5.0.5
+  flutter_test:
+    sdk: flutter
   import_sorter: ^5.0.0-releasecandidate.1
   marionette_cli: 0.6.0
   marionette_mcp: 0.6.0

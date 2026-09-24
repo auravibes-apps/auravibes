@@ -6,7 +6,10 @@ import 'package:flutter/foundation.dart' show BindingBase;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../tool/testing/ci_widget_test_timeout.dart';
+
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  configureCiWidgetTestTimeout();
   setUpAll(() async {
     // Pure Dart tests need real HTTP, not the widget binding's HTTP 400.
     if (BindingBase.debugBindingType() == null) return;
