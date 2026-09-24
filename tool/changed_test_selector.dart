@@ -567,6 +567,7 @@ Future<int> runSelectedTests(
   SelectionResult selection, {
   required String rootPath,
   ProcessLauncher? launcher,
+  void Function(String message)? onDiagnostic,
   bool dryRun = false,
   String? packageRoot,
   int? totalShards,
@@ -576,6 +577,7 @@ Future<int> runSelectedTests(
   String? timingsDir,
 }) async {
   if (selection.mode == SelectionMode.none) return 0;
+  final reportDiagnostic = onDiagnostic ?? (message) => stderr.writeln(message);
   try {
     final groups = await _testGroups(selection, rootPath: rootPath);
     var selectedGroups = packageRoot == null
@@ -627,6 +629,11 @@ Future<int> runSelectedTests(
                     selectedGroups.indexOf(group),
                   ),
           );
+          var activeCommand = command;
+          reportDiagnostic(
+            'changed-test-selector: '
+            '${_commandDiagnostic(group, activeCommand)}',
+          );
           if (dryRun) {
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
@@ -645,12 +652,24 @@ Future<int> runSelectedTests(
             final coverageCommand = _coverageCommand(group, rootPath: rootPath);
             if (coverageCommand == null) return 0;
 
+            activeCommand = coverageCommand;
+            reportDiagnostic(
+              'changed-test-selector: '
+              '${_commandDiagnostic(group, activeCommand)}',
+            );
+
             return await launch(
-              executable: coverageCommand.executable,
-              arguments: coverageCommand.arguments,
+              executable: activeCommand.executable,
+              arguments: activeCommand.arguments,
               workingDirectory: group.package.absoluteRoot,
             );
-          } on Object catch (_) {
+          } on Object catch (error, stackTrace) {
+            reportDiagnostic(
+              'changed-test-selector: launch failed '
+              '${_commandDiagnostic(group, activeCommand)} error=$error\n'
+              'stackTrace: $stackTrace',
+            );
+
             return 1;
           }
         }),
@@ -662,7 +681,7 @@ Future<int> runSelectedTests(
 
     return firstFailure;
   } on Object catch (error) {
-    stderr.writeln('changed-test-selector: $error');
+    reportDiagnostic('changed-test-selector: $error');
 
     return 2;
   }
@@ -963,6 +982,12 @@ class _Command {
   final String executable;
   final List<String> arguments;
 }
+
+String _commandDiagnostic(_TestGroup group, _Command command) =>
+    'packageRoot=${group.package.relativeRoot} '
+    'workingDirectory=${group.package.absoluteRoot} '
+    'executable=${command.executable} '
+    'arguments=${jsonEncode(command.arguments)}';
 
 Future<List<_Package>> _loadPackages(String rootPath) async {
   final root = Directory(rootPath).absolute;

@@ -792,6 +792,53 @@ void main() {
     expect(launches, 0);
   });
 
+  test('runner reports process launch failures with command context', () async {
+    final root = await _runnerFixture(flutter: true);
+    addTearDown(() => root.delete(recursive: true));
+    final selection = SelectionResult(
+      mode: .affected,
+      packages: {
+        'packages/core': ['test/behavior_test.dart'],
+      },
+      reason: 'test',
+    );
+    final diagnostics = <String>[];
+    var capturedExecutable = '';
+    var capturedArguments = <String>[];
+    var capturedWorkingDirectory = '';
+    final code = await runSelectedTests(
+      selection,
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedExecutable = executable;
+            capturedArguments = arguments;
+            capturedWorkingDirectory = workingDirectory;
+            throw StateError('process launch failed');
+          },
+      onDiagnostic: diagnostics.add,
+    );
+
+    final diagnostic = diagnostics.join('\n');
+    expect(code, isNot(0));
+    expect(capturedExecutable, isNotEmpty);
+    expect(capturedArguments, isNotEmpty);
+    expect(
+      capturedWorkingDirectory,
+      Directory('${root.path}/packages/core').path,
+    );
+    expect(diagnostic, contains('packageRoot=packages/core'));
+    expect(diagnostic, contains('workingDirectory=$capturedWorkingDirectory'));
+    expect(diagnostic, contains('executable=$capturedExecutable'));
+    expect(diagnostic, contains('arguments=${jsonEncode(capturedArguments)}'));
+    expect(diagnostic, contains('process launch failed'));
+    expect(diagnostic, contains('stackTrace:'));
+  });
+
   test('full runner excludes helper files from explicit test paths', () async {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));

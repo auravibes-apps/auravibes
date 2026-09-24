@@ -3,7 +3,10 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 
+import '../../../tool/testing/ci_widget_test_timeout.dart';
+
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  configureCiWidgetTestTimeout();
   if (Platform.environment['CI'] == 'true') {
     EasyLocalization.logger.enableLevels = EasyLocalization.logger.enableLevels
         .where((level) => level.name == 'warning' || level.name == 'error')
