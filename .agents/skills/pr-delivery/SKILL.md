@@ -65,6 +65,15 @@ writing.
 
 Inspect the trusted workflow and changed paths, then use this loop:
 
+Before each push containing code changes, run every applicable CI validation
+that can run locally under the pinned toolchain and repository rules. Derive
+that set from the trusted workflow and `AGENTS.md`; do not treat GitHub CI as
+the first diagnostic. Scope test commands to changed behavior and affected
+packages instead of running the full test suite locally. Leave full-suite,
+hosted-service, secret-dependent, and unavailable-platform checks to CI and
+identify them as remote-only. If an applicable local check is blocked, report
+the reason and result accurately; do not substitute a broader test suite.
+
 1. **Focused iteration:** run the smallest useful check for the changed
    behavior or failure. For Dart behavior changes, use a focused test and the
    smallest targeted analyzer command documented by `AGENTS.md`; include a
