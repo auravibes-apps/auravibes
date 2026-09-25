@@ -123,6 +123,18 @@ class _CompactConversationFixture {
             updatedAt: .new(2026),
           );
         });
+    when(() => mockConversationRepo.patchConversation(any(), any()))
+        .thenAnswer((invocation) async {
+          final id = invocation.positionalArguments.first as String;
+          return ConversationEntity(
+            id: id,
+            title: 'Test',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          );
+        });
   }
 
   void dispose() {
@@ -424,9 +436,15 @@ void main() {
       );
 
       verify(() => fixture.mockMessageRepo.createMessage(any())).called(1);
-      final _ = verifyNever(
-        () => fixture.mockConversationRepo.patchConversation(any(), any()),
-      );
+      final patch =
+          verify(
+                () => fixture.mockConversationRepo.patchConversation(
+                  any(),
+                  captureAny(),
+                ),
+              ).captured.single
+              as ConversationPatch;
+      expect(patch.activeCompactionCheckpointId, startsWith('created-'));
       expect(result.status, CompactionExecutionStatus.success);
     });
   });

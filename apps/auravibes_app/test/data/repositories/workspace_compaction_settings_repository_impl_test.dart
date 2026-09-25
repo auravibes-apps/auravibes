@@ -52,6 +52,41 @@ void main() {
       expect(settings.remainingTokenThreshold, 2000); // Falls back.
       expect(settings.updatedAt, DateTime(2026, 1, 2));
     });
+
+    test(
+      'decodes valid model budgets and ignores malformed stored JSON',
+      () async {
+        final row = WorkspaceCompactionSettingsTable(
+          id: 'row-budget',
+          createdAt: .new(2026),
+          updatedAt: .new(2026, 1, 2),
+          workspaceId: 'ws-1',
+          modelOverridesJson: '{"provider/model":{"reserveTokens":256}}',
+        );
+        when(() => mockDao.getByWorkspaceId('ws-1'))
+            .thenAnswer((_) async => row);
+        expect(
+          (await repo.getEffectiveSettings('ws-1'))
+              .modelOverrides['provider/model']
+              ?.reserveTokens,
+          256,
+        );
+
+        when(() => mockDao.getByWorkspaceId('ws-1')).thenAnswer(
+          (_) async => WorkspaceCompactionSettingsTable(
+            id: 'row-budget',
+            createdAt: .new(2026),
+            updatedAt: .new(2026, 1, 2),
+            workspaceId: 'ws-1',
+            modelOverridesJson: 'not-json',
+          ),
+        );
+        expect(
+          (await repo.getEffectiveSettings('ws-1')).modelOverrides,
+          isEmpty,
+        );
+      },
+    );
   });
 
   group('watchEffectiveSettings', () {
@@ -98,6 +133,7 @@ void main() {
       expect(captured.autoCompactEnabled.value, isFalse);
       expect(captured.usagePercentageThreshold.value, 90);
       expect(captured.remainingTokenThreshold.value, 5000);
+      expect(captured.modelOverridesJson.value, '{}');
 
       expect(settings.autoCompactionEnabled, isFalse);
       expect(settings.usagePercentageThreshold, 90);

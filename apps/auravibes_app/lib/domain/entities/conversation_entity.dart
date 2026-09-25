@@ -57,6 +57,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// When inherited history was materialized into owned rows.
     DateTime? forkMaterializedAt,
+
+    /// Active compaction checkpoint; null selects latest sent summary.
+    String? activeCompactionCheckpointId,
   }) = _ConversationEntity;
 
   /// Returns true if the conversation has a valid title.
@@ -143,6 +146,10 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// Conversation-scoped reasoning override. Null uses provider defaults.
     ReasoningConfiguration? reasoningConfiguration,
 
+    /// Active compaction checkpoint, if one was restored.
+    String? activeCompactionCheckpointId,
+    @Default(false) bool clearActiveCompactionCheckpointId,
+
     /// Clears [agentId]. Nullable Freezed fields cannot express null set.
     @Default(false) bool clearAgent,
 
@@ -158,7 +165,10 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(title) &&
       _isNullOrNonEmpty(modelId) &&
       _isNullOrNonEmpty(agentId) &&
-      (!clearAgent || agentId == null);
+      (!clearAgent || agentId == null) &&
+      (!clearActiveCompactionCheckpointId ||
+          activeCompactionCheckpointId == null) &&
+      _isNullOrNonEmpty(activeCompactionCheckpointId);
 
   bool get _hasChanges =>
       title != null ||
@@ -167,7 +177,9 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       clearAgent ||
       reasoningConfiguration != null ||
       clearReasoningConfiguration ||
-      isPinned != null;
+      isPinned != null ||
+      clearActiveCompactionCheckpointId ||
+      activeCompactionCheckpointId != null;
 
   bool hasChanges() => _hasChanges;
 

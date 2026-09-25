@@ -119,18 +119,26 @@ class const CompactConversationUsecase({
     return chunks.join();
   }
 
-  Future<void> _persistCompactionSummary({
+  Future<String> _persistCompactionSummary({
     required String conversationId,
     required String summaryText,
     required CompactionRange range,
     required CompactionTrigger trigger,
+    required String providerId,
+    required String modelId,
   }) async {
-    final metadata = _compactionSummaryMetadata(range, trigger);
+    final metadata = _compactionSummaryMetadata(
+      range,
+      trigger,
+      providerId,
+      modelId,
+    );
 
     final repository = messageRepository;
     if (repository == null) {
       throw StateError('Local message repository unavailable');
     }
+
     final created = await _createCompactionSummaryMessage(
       repository,
       conversationId,
@@ -138,6 +146,8 @@ class const CompactConversationUsecase({
       metadata,
     );
     await _markCompactionMessageSent(repository, created.id);
+
+    return created.id;
   }
 
   Future<MessageEntity> _createCompactionSummaryMessage(
@@ -159,6 +169,8 @@ class const CompactConversationUsecase({
   MessageMetadataEntity _compactionSummaryMetadata(
     CompactionRange range,
     CompactionTrigger trigger,
+    String providerId,
+    String modelId,
   ) => MessageMetadataEntity(
     metadataVersion: 2,
     isCompactionSummary: true,
@@ -169,6 +181,8 @@ class const CompactConversationUsecase({
     compactedThroughMessageId: range.throughMessageId,
     compactedMessageIds: range.messageIds,
     compactionCreatedAt: .now(),
+    compactionProviderId: providerId,
+    compactionModelId: modelId,
   );
 
   Future<void> _markCompactionMessageSent(
@@ -308,7 +322,7 @@ extension on CompactConversationUsecase {
       conversationId: request.conversationId,
       trigger: request.trigger,
     );
-    await _persistCompactionSummary(
+    final summaryId = await _persistCompactionSummary(
       conversationId: request.conversationId,
       summaryText: _appendDurableSkillActivations(
         summaryText,
@@ -316,6 +330,12 @@ extension on CompactConversationUsecase {
       ),
       range: input.range,
       trigger: request.trigger,
+      providerId: model.modelsProvider.id,
+      modelId: model.workspaceModelSelection.modelId,
+    );
+    final _ = await request.conversations.patchConversation(
+      request.conversationId,
+      .new(activeCompactionCheckpointId: summaryId),
     );
   }
 

@@ -30,7 +30,8 @@ mixin _$ConversationEntity {
  String? get forkSourceConversationId;/// Source title captured when the fork was created.
  String? get forkSourceTitle;/// Inclusive terminal message boundary captured by the fork.
  String? get forkThroughMessageId;/// When inherited history was materialized into owned rows.
- DateTime? get forkMaterializedAt;
+ DateTime? get forkMaterializedAt;/// Active compaction checkpoint; null selects latest sent summary.
+ String? get activeCompactionCheckpointId;
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -42,20 +43,20 @@ $ConversationEntityCopyWith<ConversationEntity> get copyWith => _$ConversationEn
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId)&&(identical(other.forkSourceConversationId, _this.forkSourceConversationId) || other.forkSourceConversationId == _this.forkSourceConversationId)&&(identical(other.forkSourceTitle, _this.forkSourceTitle) || other.forkSourceTitle == _this.forkSourceTitle)&&(identical(other.forkThroughMessageId, _this.forkThroughMessageId) || other.forkThroughMessageId == _this.forkThroughMessageId)&&(identical(other.forkMaterializedAt, _this.forkMaterializedAt) || other.forkMaterializedAt == _this.forkMaterializedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId)&&(identical(other.forkSourceConversationId, _this.forkSourceConversationId) || other.forkSourceConversationId == _this.forkSourceConversationId)&&(identical(other.forkSourceTitle, _this.forkSourceTitle) || other.forkSourceTitle == _this.forkSourceTitle)&&(identical(other.forkThroughMessageId, _this.forkThroughMessageId) || other.forkThroughMessageId == _this.forkThroughMessageId)&&(identical(other.forkMaterializedAt, _this.forkMaterializedAt) || other.forkMaterializedAt == _this.forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, _this.activeCompactionCheckpointId) || other.activeCompactionCheckpointId == _this.activeCompactionCheckpointId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationEntity;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.workspaceId,_this.isPinned,_this.createdAt,_this.updatedAt,_this.revision,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.parentConversationId,_this.forkSourceConversationId,_this.forkSourceTitle,_this.forkThroughMessageId,_this.forkMaterializedAt);
+  return Object.hash(runtimeType,_this.id,_this.title,_this.workspaceId,_this.isPinned,_this.createdAt,_this.updatedAt,_this.revision,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.parentConversationId,_this.forkSourceConversationId,_this.forkSourceTitle,_this.forkThroughMessageId,_this.forkMaterializedAt,_this.activeCompactionCheckpointId);
 }
 
 @override
 String toString() {
   final _this = this as ConversationEntity;
-  return 'ConversationEntity(id: ${_this.id}, title: ${_this.title}, workspaceId: ${_this.workspaceId}, isPinned: ${_this.isPinned}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, revision: ${_this.revision}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, parentConversationId: ${_this.parentConversationId}, forkSourceConversationId: ${_this.forkSourceConversationId}, forkSourceTitle: ${_this.forkSourceTitle}, forkThroughMessageId: ${_this.forkThroughMessageId}, forkMaterializedAt: ${_this.forkMaterializedAt})';
+  return 'ConversationEntity(id: ${_this.id}, title: ${_this.title}, workspaceId: ${_this.workspaceId}, isPinned: ${_this.isPinned}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, revision: ${_this.revision}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, parentConversationId: ${_this.parentConversationId}, forkSourceConversationId: ${_this.forkSourceConversationId}, forkSourceTitle: ${_this.forkSourceTitle}, forkThroughMessageId: ${_this.forkThroughMessageId}, forkMaterializedAt: ${_this.forkMaterializedAt}, activeCompactionCheckpointId: ${_this.activeCompactionCheckpointId})';
 }
 
 
@@ -66,7 +67,7 @@ abstract mixin class $ConversationEntityCopyWith<$Res>  {
   factory $ConversationEntityCopyWith(ConversationEntity value, $Res Function(ConversationEntity) _then) = _$ConversationEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, int revision, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, int revision, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
 });
 
 
@@ -83,7 +84,7 @@ class _$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
   return _then(ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -100,7 +101,8 @@ as String?,forkSourceConversationId: freezed == forkSourceConversationId ? _self
 as String?,forkSourceTitle: freezed == forkSourceTitle ? _self.forkSourceTitle : forkSourceTitle // ignore: cast_nullable_to_non_nullable
 as String?,forkThroughMessageId: freezed == forkThroughMessageId ? _self.forkThroughMessageId : forkThroughMessageId // ignore: cast_nullable_to_non_nullable
 as String?,forkMaterializedAt: freezed == forkMaterializedAt ? _self.forkMaterializedAt : forkMaterializedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,activeCompactionCheckpointId: freezed == activeCompactionCheckpointId ? _self.activeCompactionCheckpointId : activeCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -185,10 +187,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   return orElse();
 
 }
@@ -206,10 +208,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity():
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -226,10 +228,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  int revision,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.revision,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   return null;
 
 }
@@ -241,7 +243,7 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 
 
 class _ConversationEntity extends ConversationEntity {
-  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt, this.revision = 0, this.modelId, this.agentId, this.reasoningConfiguration, this.parentConversationId, this.forkSourceConversationId, this.forkSourceTitle, this.forkThroughMessageId, this.forkMaterializedAt}): super._();
+  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt, this.revision = 0, this.modelId, this.agentId, this.reasoningConfiguration, this.parentConversationId, this.forkSourceConversationId, this.forkSourceTitle, this.forkThroughMessageId, this.forkMaterializedAt, this.activeCompactionCheckpointId}): super._();
   
 
 /// Unique identifier for the conversation.
@@ -274,6 +276,8 @@ class _ConversationEntity extends ConversationEntity {
 @override final  String? forkThroughMessageId;
 /// When inherited history was materialized into owned rows.
 @override final  DateTime? forkMaterializedAt;
+/// Active compaction checkpoint; null selects latest sent summary.
+@override final  String? activeCompactionCheckpointId;
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -285,18 +289,18 @@ _$ConversationEntityCopyWith<_ConversationEntity> get copyWith => __$Conversatio
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.forkSourceConversationId, forkSourceConversationId) || other.forkSourceConversationId == forkSourceConversationId)&&(identical(other.forkSourceTitle, forkSourceTitle) || other.forkSourceTitle == forkSourceTitle)&&(identical(other.forkThroughMessageId, forkThroughMessageId) || other.forkThroughMessageId == forkThroughMessageId)&&(identical(other.forkMaterializedAt, forkMaterializedAt) || other.forkMaterializedAt == forkMaterializedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.forkSourceConversationId, forkSourceConversationId) || other.forkSourceConversationId == forkSourceConversationId)&&(identical(other.forkSourceTitle, forkSourceTitle) || other.forkSourceTitle == forkSourceTitle)&&(identical(other.forkThroughMessageId, forkThroughMessageId) || other.forkThroughMessageId == forkThroughMessageId)&&(identical(other.forkMaterializedAt, forkMaterializedAt) || other.forkMaterializedAt == forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, activeCompactionCheckpointId) || other.activeCompactionCheckpointId == activeCompactionCheckpointId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,revision,modelId,agentId,reasoningConfiguration,parentConversationId,forkSourceConversationId,forkSourceTitle,forkThroughMessageId,forkMaterializedAt);
+    return Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,revision,modelId,agentId,reasoningConfiguration,parentConversationId,forkSourceConversationId,forkSourceTitle,forkThroughMessageId,forkMaterializedAt,activeCompactionCheckpointId);
 }
 
 @override
 String toString() {
-    return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, parentConversationId: $parentConversationId, forkSourceConversationId: $forkSourceConversationId, forkSourceTitle: $forkSourceTitle, forkThroughMessageId: $forkThroughMessageId, forkMaterializedAt: $forkMaterializedAt)';
+    return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, parentConversationId: $parentConversationId, forkSourceConversationId: $forkSourceConversationId, forkSourceTitle: $forkSourceTitle, forkThroughMessageId: $forkThroughMessageId, forkMaterializedAt: $forkMaterializedAt, activeCompactionCheckpointId: $activeCompactionCheckpointId)';
 }
 
 
@@ -307,7 +311,7 @@ abstract mixin class _$ConversationEntityCopyWith<$Res> implements $Conversation
   factory _$ConversationEntityCopyWith(_ConversationEntity value, $Res Function(_ConversationEntity) _then) = __$ConversationEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, int revision, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, int revision, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
 });
 
 
@@ -324,7 +328,7 @@ class __$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
   return _then(_ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -341,7 +345,8 @@ as String?,forkSourceConversationId: freezed == forkSourceConversationId ? _self
 as String?,forkSourceTitle: freezed == forkSourceTitle ? _self.forkSourceTitle : forkSourceTitle // ignore: cast_nullable_to_non_nullable
 as String?,forkThroughMessageId: freezed == forkThroughMessageId ? _self.forkThroughMessageId : forkThroughMessageId // ignore: cast_nullable_to_non_nullable
 as String?,forkMaterializedAt: freezed == forkMaterializedAt ? _self.forkMaterializedAt : forkMaterializedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,activeCompactionCheckpointId: freezed == activeCompactionCheckpointId ? _self.activeCompactionCheckpointId : activeCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -651,7 +656,8 @@ mixin _$ConversationPatch {
  String? get title;/// ID of the AI model used for this conversation.
  String? get modelId;/// ID of the selected agent used for this conversation.
  String? get agentId;/// Conversation-scoped reasoning override. Null uses provider defaults.
- ReasoningConfiguration? get reasoningConfiguration;/// Clears [agentId]. Nullable Freezed fields cannot express null set.
+ ReasoningConfiguration? get reasoningConfiguration;/// Active compaction checkpoint, if one was restored.
+ String? get activeCompactionCheckpointId; bool get clearActiveCompactionCheckpointId;/// Clears [agentId]. Nullable Freezed fields cannot express null set.
  bool get clearAgent;/// Clears [reasoningConfiguration] and restores provider defaults.
  bool get clearReasoningConfiguration;/// Whether this conversation is pinned.
  bool? get isPinned;
@@ -666,20 +672,20 @@ $ConversationPatchCopyWith<ConversationPatch> get copyWith => _$ConversationPatc
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationPatch;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPatch&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.clearAgent, _this.clearAgent) || other.clearAgent == _this.clearAgent)&&(identical(other.clearReasoningConfiguration, _this.clearReasoningConfiguration) || other.clearReasoningConfiguration == _this.clearReasoningConfiguration)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPatch&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.activeCompactionCheckpointId, _this.activeCompactionCheckpointId) || other.activeCompactionCheckpointId == _this.activeCompactionCheckpointId)&&(identical(other.clearActiveCompactionCheckpointId, _this.clearActiveCompactionCheckpointId) || other.clearActiveCompactionCheckpointId == _this.clearActiveCompactionCheckpointId)&&(identical(other.clearAgent, _this.clearAgent) || other.clearAgent == _this.clearAgent)&&(identical(other.clearReasoningConfiguration, _this.clearReasoningConfiguration) || other.clearReasoningConfiguration == _this.clearReasoningConfiguration)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationPatch;
-  return Object.hash(runtimeType,_this.title,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.clearAgent,_this.clearReasoningConfiguration,_this.isPinned);
+  return Object.hash(runtimeType,_this.title,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.activeCompactionCheckpointId,_this.clearActiveCompactionCheckpointId,_this.clearAgent,_this.clearReasoningConfiguration,_this.isPinned);
 }
 
 @override
 String toString() {
   final _this = this as ConversationPatch;
-  return 'ConversationPatch(title: ${_this.title}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, clearAgent: ${_this.clearAgent}, clearReasoningConfiguration: ${_this.clearReasoningConfiguration}, isPinned: ${_this.isPinned})';
+  return 'ConversationPatch(title: ${_this.title}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, activeCompactionCheckpointId: ${_this.activeCompactionCheckpointId}, clearActiveCompactionCheckpointId: ${_this.clearActiveCompactionCheckpointId}, clearAgent: ${_this.clearAgent}, clearReasoningConfiguration: ${_this.clearReasoningConfiguration}, isPinned: ${_this.isPinned})';
 }
 
 
@@ -690,7 +696,7 @@ abstract mixin class $ConversationPatchCopyWith<$Res>  {
   factory $ConversationPatchCopyWith(ConversationPatch value, $Res Function(ConversationPatch) _then) = _$ConversationPatchCopyWithImpl;
 @useResult
 $Res call({
- String? title, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, bool clearAgent, bool clearReasoningConfiguration, bool? isPinned
+ String? title, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? activeCompactionCheckpointId, bool clearActiveCompactionCheckpointId, bool clearAgent, bool clearReasoningConfiguration, bool? isPinned
 });
 
 
@@ -707,13 +713,15 @@ class _$ConversationPatchCopyWithImpl<$Res>
 
 /// Create a copy of ConversationPatch
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? clearAgent = null,Object? clearReasoningConfiguration = null,Object? isPinned = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? activeCompactionCheckpointId = freezed,Object? clearActiveCompactionCheckpointId = null,Object? clearAgent = null,Object? clearReasoningConfiguration = null,Object? isPinned = freezed,}) {
   return _then(ConversationPatch(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
 as String?,reasoningConfiguration: freezed == reasoningConfiguration ? _self.reasoningConfiguration : reasoningConfiguration // ignore: cast_nullable_to_non_nullable
-as ReasoningConfiguration?,clearAgent: null == clearAgent ? _self.clearAgent : clearAgent // ignore: cast_nullable_to_non_nullable
+as ReasoningConfiguration?,activeCompactionCheckpointId: freezed == activeCompactionCheckpointId ? _self.activeCompactionCheckpointId : activeCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as String?,clearActiveCompactionCheckpointId: null == clearActiveCompactionCheckpointId ? _self.clearActiveCompactionCheckpointId : clearActiveCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as bool,clearAgent: null == clearAgent ? _self.clearAgent : clearAgent // ignore: cast_nullable_to_non_nullable
 as bool,clearReasoningConfiguration: null == clearReasoningConfiguration ? _self.clearReasoningConfiguration : clearReasoningConfiguration // ignore: cast_nullable_to_non_nullable
 as bool,isPinned: freezed == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
 as bool?,
@@ -801,10 +809,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? activeCompactionCheckpointId,  bool clearActiveCompactionCheckpointId,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationPatch() when $default != null:
-return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
+return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.activeCompactionCheckpointId,_that.clearActiveCompactionCheckpointId,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
   return orElse();
 
 }
@@ -822,10 +830,10 @@ return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfigura
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? activeCompactionCheckpointId,  bool clearActiveCompactionCheckpointId,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationPatch():
-return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
+return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.activeCompactionCheckpointId,_that.clearActiveCompactionCheckpointId,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -842,10 +850,10 @@ return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfigura
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? title,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? activeCompactionCheckpointId,  bool clearActiveCompactionCheckpointId,  bool clearAgent,  bool clearReasoningConfiguration,  bool? isPinned)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationPatch() when $default != null:
-return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
+return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.activeCompactionCheckpointId,_that.clearActiveCompactionCheckpointId,_that.clearAgent,_that.clearReasoningConfiguration,_that.isPinned);case _:
   return null;
 
 }
@@ -857,7 +865,7 @@ return $default(_that.title,_that.modelId,_that.agentId,_that.reasoningConfigura
 
 
 class _ConversationPatch extends ConversationPatch {
-  const _ConversationPatch({this.title, this.modelId, this.agentId, this.reasoningConfiguration, this.clearAgent = false, this.clearReasoningConfiguration = false, this.isPinned}): super._();
+  const _ConversationPatch({this.title, this.modelId, this.agentId, this.reasoningConfiguration, this.activeCompactionCheckpointId, this.clearActiveCompactionCheckpointId = false, this.clearAgent = false, this.clearReasoningConfiguration = false, this.isPinned}): super._();
   
 
 /// Human-readable title of the conversation.
@@ -868,6 +876,9 @@ class _ConversationPatch extends ConversationPatch {
 @override final  String? agentId;
 /// Conversation-scoped reasoning override. Null uses provider defaults.
 @override final  ReasoningConfiguration? reasoningConfiguration;
+/// Active compaction checkpoint, if one was restored.
+@override final  String? activeCompactionCheckpointId;
+@override@JsonKey() final  bool clearActiveCompactionCheckpointId;
 /// Clears [agentId]. Nullable Freezed fields cannot express null set.
 @override@JsonKey() final  bool clearAgent;
 /// Clears [reasoningConfiguration] and restores provider defaults.
@@ -885,18 +896,18 @@ _$ConversationPatchCopyWith<_ConversationPatch> get copyWith => __$ConversationP
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPatch&&(identical(other.title, title) || other.title == title)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.clearAgent, clearAgent) || other.clearAgent == clearAgent)&&(identical(other.clearReasoningConfiguration, clearReasoningConfiguration) || other.clearReasoningConfiguration == clearReasoningConfiguration)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPatch&&(identical(other.title, title) || other.title == title)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.activeCompactionCheckpointId, activeCompactionCheckpointId) || other.activeCompactionCheckpointId == activeCompactionCheckpointId)&&(identical(other.clearActiveCompactionCheckpointId, clearActiveCompactionCheckpointId) || other.clearActiveCompactionCheckpointId == clearActiveCompactionCheckpointId)&&(identical(other.clearAgent, clearAgent) || other.clearAgent == clearAgent)&&(identical(other.clearReasoningConfiguration, clearReasoningConfiguration) || other.clearReasoningConfiguration == clearReasoningConfiguration)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,modelId,agentId,reasoningConfiguration,clearAgent,clearReasoningConfiguration,isPinned);
+    return Object.hash(runtimeType,title,modelId,agentId,reasoningConfiguration,activeCompactionCheckpointId,clearActiveCompactionCheckpointId,clearAgent,clearReasoningConfiguration,isPinned);
 }
 
 @override
 String toString() {
-    return 'ConversationPatch(title: $title, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, clearAgent: $clearAgent, clearReasoningConfiguration: $clearReasoningConfiguration, isPinned: $isPinned)';
+    return 'ConversationPatch(title: $title, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, activeCompactionCheckpointId: $activeCompactionCheckpointId, clearActiveCompactionCheckpointId: $clearActiveCompactionCheckpointId, clearAgent: $clearAgent, clearReasoningConfiguration: $clearReasoningConfiguration, isPinned: $isPinned)';
 }
 
 
@@ -907,7 +918,7 @@ abstract mixin class _$ConversationPatchCopyWith<$Res> implements $ConversationP
   factory _$ConversationPatchCopyWith(_ConversationPatch value, $Res Function(_ConversationPatch) _then) = __$ConversationPatchCopyWithImpl;
 @override @useResult
 $Res call({
- String? title, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, bool clearAgent, bool clearReasoningConfiguration, bool? isPinned
+ String? title, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? activeCompactionCheckpointId, bool clearActiveCompactionCheckpointId, bool clearAgent, bool clearReasoningConfiguration, bool? isPinned
 });
 
 
@@ -924,13 +935,15 @@ class __$ConversationPatchCopyWithImpl<$Res>
 
 /// Create a copy of ConversationPatch
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? clearAgent = null,Object? clearReasoningConfiguration = null,Object? isPinned = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = freezed,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? activeCompactionCheckpointId = freezed,Object? clearActiveCompactionCheckpointId = null,Object? clearAgent = null,Object? clearReasoningConfiguration = null,Object? isPinned = freezed,}) {
   return _then(_ConversationPatch(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
 as String?,reasoningConfiguration: freezed == reasoningConfiguration ? _self.reasoningConfiguration : reasoningConfiguration // ignore: cast_nullable_to_non_nullable
-as ReasoningConfiguration?,clearAgent: null == clearAgent ? _self.clearAgent : clearAgent // ignore: cast_nullable_to_non_nullable
+as ReasoningConfiguration?,activeCompactionCheckpointId: freezed == activeCompactionCheckpointId ? _self.activeCompactionCheckpointId : activeCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as String?,clearActiveCompactionCheckpointId: null == clearActiveCompactionCheckpointId ? _self.clearActiveCompactionCheckpointId : clearActiveCompactionCheckpointId // ignore: cast_nullable_to_non_nullable
+as bool,clearAgent: null == clearAgent ? _self.clearAgent : clearAgent // ignore: cast_nullable_to_non_nullable
 as bool,clearReasoningConfiguration: null == clearReasoningConfiguration ? _self.clearReasoningConfiguration : clearReasoningConfiguration // ignore: cast_nullable_to_non_nullable
 as bool,isPinned: freezed == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
 as bool?,

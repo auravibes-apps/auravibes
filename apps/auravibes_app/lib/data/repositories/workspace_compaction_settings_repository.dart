@@ -1,4 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 
@@ -23,6 +25,12 @@ class WorkspaceCompactionSettingsRepository(
       autoCompactEnabled: .new(overrides.autoCompactionEnabled),
       usagePercentageThreshold: .new(overrides.usagePercentageThreshold),
       remainingTokenThreshold: .new(overrides.remainingTokenThreshold),
+      modelOverridesJson: .new(
+        jsonEncode({
+          for (final entry in overrides.modelOverrides.entries)
+            entry.key: entry.value.toJson(),
+        }),
+      ),
     );
     final row = await _dao.upsert(workspaceId, companion);
 
@@ -48,6 +56,17 @@ class WorkspaceCompactionSettingsRepository(
       remainingTokenThreshold:
           row.remainingTokenThreshold ?? defaults.remainingTokenThreshold,
       updatedAt: row.updatedAt,
+      modelOverrides: _decodeModelOverrides(row.modelOverridesJson),
     );
+  }
+
+  Map<String, CompactionModelOverride> _decodeModelOverrides(String? json) {
+    if (json == null) return const {};
+    try {
+      return CompactionSettings.fromJson({'modelOverrides': jsonDecode(json)})
+          .modelOverrides;
+    } on FormatException {
+      return const {};
+    }
   }
 }

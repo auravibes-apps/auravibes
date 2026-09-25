@@ -982,6 +982,8 @@ extension on ConversationRepository {
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
       parentConversationId: conversationTable.parentConversationId,
+      activeCompactionCheckpointId:
+          conversationTable.activeCompactionCheckpointId,
     );
   }
 
@@ -995,6 +997,7 @@ extension on ConversationRepository {
       agentId: .new(conversation.agentId),
       reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
       parentConversationId: .new(conversation.parentConversationId),
+      activeCompactionCheckpointId: const Value(null),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1011,6 +1014,10 @@ extension on ConversationRepository {
       reasoningConfigJson: conversation.clearReasoningConfiguration
           ? const Value(null)
           : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
+      activeCompactionCheckpointId:
+          conversation.clearActiveCompactionCheckpointId
+          ? const Value(null)
+          : Value.absentIfNull(conversation.activeCompactionCheckpointId),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }

@@ -4122,6 +4122,17 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _activeCompactionCheckpointIdMeta =
+      const VerificationMeta('activeCompactionCheckpointId');
+  @override
+  late final GeneratedColumn<String> activeCompactionCheckpointId =
+      GeneratedColumn<String>(
+        'active_compaction_checkpoint_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -4152,6 +4163,7 @@ class $ConversationsTable extends Conversations
     forkSourceTitle,
     forkThroughMessageId,
     forkMaterializedAt,
+    activeCompactionCheckpointId,
     isPinned,
   ];
   @override
@@ -4266,6 +4278,15 @@ class $ConversationsTable extends Conversations
         ),
       );
     }
+    if (data.containsKey('active_compaction_checkpoint_id')) {
+      context.handle(
+        _activeCompactionCheckpointIdMeta,
+        activeCompactionCheckpointId.isAcceptableOrUnknown(
+          data['active_compaction_checkpoint_id']!,
+          _activeCompactionCheckpointIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -4333,6 +4354,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.dateTime,
         data['${effectivePrefix}fork_materialized_at'],
       ),
+      activeCompactionCheckpointId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}active_compaction_checkpoint_id'],
+      ),
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -4380,6 +4405,7 @@ class ConversationsTable extends DataClass
 
   /// Non-null after the source history has been materialized into this fork.
   final DateTime? forkMaterializedAt;
+  final String? activeCompactionCheckpointId;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4395,6 +4421,7 @@ class ConversationsTable extends DataClass
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
+    this.activeCompactionCheckpointId,
     required this.isPinned,
   });
   @override
@@ -4431,6 +4458,11 @@ class ConversationsTable extends DataClass
     if (!nullToAbsent || forkMaterializedAt != null) {
       map['fork_materialized_at'] = Variable<DateTime>(forkMaterializedAt);
     }
+    if (!nullToAbsent || activeCompactionCheckpointId != null) {
+      map['active_compaction_checkpoint_id'] = Variable<String>(
+        activeCompactionCheckpointId,
+      );
+    }
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
   }
@@ -4466,6 +4498,10 @@ class ConversationsTable extends DataClass
       forkMaterializedAt: forkMaterializedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(forkMaterializedAt),
+      activeCompactionCheckpointId:
+          activeCompactionCheckpointId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activeCompactionCheckpointId),
       isPinned: Value(isPinned),
     );
   }
@@ -4499,6 +4535,9 @@ class ConversationsTable extends DataClass
       forkMaterializedAt: serializer.fromJson<DateTime?>(
         json['forkMaterializedAt'],
       ),
+      activeCompactionCheckpointId: serializer.fromJson<String?>(
+        json['activeCompactionCheckpointId'],
+      ),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -4521,6 +4560,9 @@ class ConversationsTable extends DataClass
       'forkSourceTitle': serializer.toJson<String?>(forkSourceTitle),
       'forkThroughMessageId': serializer.toJson<String?>(forkThroughMessageId),
       'forkMaterializedAt': serializer.toJson<DateTime?>(forkMaterializedAt),
+      'activeCompactionCheckpointId': serializer.toJson<String?>(
+        activeCompactionCheckpointId,
+      ),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4539,6 +4581,7 @@ class ConversationsTable extends DataClass
     Value<String?> forkSourceTitle = const Value.absent(),
     Value<String?> forkThroughMessageId = const Value.absent(),
     Value<DateTime?> forkMaterializedAt = const Value.absent(),
+    Value<String?> activeCompactionCheckpointId = const Value.absent(),
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -4566,6 +4609,9 @@ class ConversationsTable extends DataClass
     forkMaterializedAt: forkMaterializedAt.present
         ? forkMaterializedAt.value
         : this.forkMaterializedAt,
+    activeCompactionCheckpointId: activeCompactionCheckpointId.present
+        ? activeCompactionCheckpointId.value
+        : this.activeCompactionCheckpointId,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -4597,6 +4643,9 @@ class ConversationsTable extends DataClass
       forkMaterializedAt: data.forkMaterializedAt.present
           ? data.forkMaterializedAt.value
           : this.forkMaterializedAt,
+      activeCompactionCheckpointId: data.activeCompactionCheckpointId.present
+          ? data.activeCompactionCheckpointId.value
+          : this.activeCompactionCheckpointId,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -4617,6 +4666,9 @@ class ConversationsTable extends DataClass
           ..write('forkSourceTitle: $forkSourceTitle, ')
           ..write('forkThroughMessageId: $forkThroughMessageId, ')
           ..write('forkMaterializedAt: $forkMaterializedAt, ')
+          ..write(
+            'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
+          )
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -4637,6 +4689,7 @@ class ConversationsTable extends DataClass
     forkSourceTitle,
     forkThroughMessageId,
     forkMaterializedAt,
+    activeCompactionCheckpointId,
     isPinned,
   );
   @override
@@ -4656,6 +4709,8 @@ class ConversationsTable extends DataClass
           other.forkSourceTitle == this.forkSourceTitle &&
           other.forkThroughMessageId == this.forkThroughMessageId &&
           other.forkMaterializedAt == this.forkMaterializedAt &&
+          other.activeCompactionCheckpointId ==
+              this.activeCompactionCheckpointId &&
           other.isPinned == this.isPinned);
 }
 
@@ -4673,6 +4728,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String?> forkSourceTitle;
   final Value<String?> forkThroughMessageId;
   final Value<DateTime?> forkMaterializedAt;
+  final Value<String?> activeCompactionCheckpointId;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -4689,6 +4745,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkSourceTitle = const Value.absent(),
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
+    this.activeCompactionCheckpointId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4706,6 +4763,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.forkSourceTitle = const Value.absent(),
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
+    this.activeCompactionCheckpointId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -4724,6 +4782,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? forkSourceTitle,
     Expression<String>? forkThroughMessageId,
     Expression<DateTime>? forkMaterializedAt,
+    Expression<String>? activeCompactionCheckpointId,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -4746,6 +4805,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         'fork_through_message_id': forkThroughMessageId,
       if (forkMaterializedAt != null)
         'fork_materialized_at': forkMaterializedAt,
+      if (activeCompactionCheckpointId != null)
+        'active_compaction_checkpoint_id': activeCompactionCheckpointId,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4765,6 +4826,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String?>? forkSourceTitle,
     Value<String?>? forkThroughMessageId,
     Value<DateTime?>? forkMaterializedAt,
+    Value<String?>? activeCompactionCheckpointId,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -4783,6 +4845,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       forkSourceTitle: forkSourceTitle ?? this.forkSourceTitle,
       forkThroughMessageId: forkThroughMessageId ?? this.forkThroughMessageId,
       forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
+      activeCompactionCheckpointId:
+          activeCompactionCheckpointId ?? this.activeCompactionCheckpointId,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -4840,6 +4904,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         forkMaterializedAt.value,
       );
     }
+    if (activeCompactionCheckpointId.present) {
+      map['active_compaction_checkpoint_id'] = Variable<String>(
+        activeCompactionCheckpointId.value,
+      );
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -4865,6 +4934,9 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('forkSourceTitle: $forkSourceTitle, ')
           ..write('forkThroughMessageId: $forkThroughMessageId, ')
           ..write('forkMaterializedAt: $forkMaterializedAt, ')
+          ..write(
+            'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
+          )
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10723,6 +10795,17 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         type: DriftSqlType.int,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _modelOverridesJsonMeta =
+      const VerificationMeta('modelOverridesJson');
+  @override
+  late final GeneratedColumn<String> modelOverridesJson =
+      GeneratedColumn<String>(
+        'model_overrides_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -10732,6 +10815,7 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
     autoCompactEnabled,
     usagePercentageThreshold,
     remainingTokenThreshold,
+    modelOverridesJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10798,6 +10882,15 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         ),
       );
     }
+    if (data.containsKey('model_overrides_json')) {
+      context.handle(
+        _modelOverridesJsonMeta,
+        modelOverridesJson.isAcceptableOrUnknown(
+          data['model_overrides_json']!,
+          _modelOverridesJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -10838,6 +10931,10 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         DriftSqlType.int,
         data['${effectivePrefix}remaining_token_threshold'],
       ),
+      modelOverridesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_overrides_json'],
+      ),
     );
   }
 
@@ -10861,6 +10958,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
   final bool? autoCompactEnabled;
   final int? usagePercentageThreshold;
   final int? remainingTokenThreshold;
+  final String? modelOverridesJson;
   const WorkspaceCompactionSettingsTable({
     required this.id,
     required this.createdAt,
@@ -10869,6 +10967,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     this.autoCompactEnabled,
     this.usagePercentageThreshold,
     this.remainingTokenThreshold,
+    this.modelOverridesJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10888,6 +10987,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
     if (!nullToAbsent || remainingTokenThreshold != null) {
       map['remaining_token_threshold'] = Variable<int>(remainingTokenThreshold);
     }
+    if (!nullToAbsent || modelOverridesJson != null) {
+      map['model_overrides_json'] = Variable<String>(modelOverridesJson);
+    }
     return map;
   }
 
@@ -10906,6 +11008,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: remainingTokenThreshold == null && nullToAbsent
           ? const Value.absent()
           : Value(remainingTokenThreshold),
+      modelOverridesJson: modelOverridesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelOverridesJson),
     );
   }
 
@@ -10928,6 +11033,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: serializer.fromJson<int?>(
         json['remainingTokenThreshold'],
       ),
+      modelOverridesJson: serializer.fromJson<String?>(
+        json['modelOverridesJson'],
+      ),
     );
   }
   @override
@@ -10945,6 +11053,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
       'remainingTokenThreshold': serializer.toJson<int?>(
         remainingTokenThreshold,
       ),
+      'modelOverridesJson': serializer.toJson<String?>(modelOverridesJson),
     };
   }
 
@@ -10956,6 +11065,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     Value<bool?> autoCompactEnabled = const Value.absent(),
     Value<int?> usagePercentageThreshold = const Value.absent(),
     Value<int?> remainingTokenThreshold = const Value.absent(),
+    Value<String?> modelOverridesJson = const Value.absent(),
   }) => WorkspaceCompactionSettingsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -10970,6 +11080,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
     remainingTokenThreshold: remainingTokenThreshold.present
         ? remainingTokenThreshold.value
         : this.remainingTokenThreshold,
+    modelOverridesJson: modelOverridesJson.present
+        ? modelOverridesJson.value
+        : this.modelOverridesJson,
   );
   WorkspaceCompactionSettingsTable copyWithCompanion(
     WorkspaceCompactionSettingsCompanion data,
@@ -10990,6 +11103,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: data.remainingTokenThreshold.present
           ? data.remainingTokenThreshold.value
           : this.remainingTokenThreshold,
+      modelOverridesJson: data.modelOverridesJson.present
+          ? data.modelOverridesJson.value
+          : this.modelOverridesJson,
     );
   }
 
@@ -11002,7 +11118,8 @@ class WorkspaceCompactionSettingsTable extends DataClass
           ..write('workspaceId: $workspaceId, ')
           ..write('autoCompactEnabled: $autoCompactEnabled, ')
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
-          ..write('remainingTokenThreshold: $remainingTokenThreshold')
+          ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
+          ..write('modelOverridesJson: $modelOverridesJson')
           ..write(')'))
         .toString();
   }
@@ -11016,6 +11133,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     autoCompactEnabled,
     usagePercentageThreshold,
     remainingTokenThreshold,
+    modelOverridesJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -11027,7 +11145,8 @@ class WorkspaceCompactionSettingsTable extends DataClass
           other.workspaceId == this.workspaceId &&
           other.autoCompactEnabled == this.autoCompactEnabled &&
           other.usagePercentageThreshold == this.usagePercentageThreshold &&
-          other.remainingTokenThreshold == this.remainingTokenThreshold);
+          other.remainingTokenThreshold == this.remainingTokenThreshold &&
+          other.modelOverridesJson == this.modelOverridesJson);
 }
 
 class WorkspaceCompactionSettingsCompanion
@@ -11039,6 +11158,7 @@ class WorkspaceCompactionSettingsCompanion
   final Value<bool?> autoCompactEnabled;
   final Value<int?> usagePercentageThreshold;
   final Value<int?> remainingTokenThreshold;
+  final Value<String?> modelOverridesJson;
   final Value<int> rowid;
   const WorkspaceCompactionSettingsCompanion({
     this.id = const Value.absent(),
@@ -11048,6 +11168,7 @@ class WorkspaceCompactionSettingsCompanion
     this.autoCompactEnabled = const Value.absent(),
     this.usagePercentageThreshold = const Value.absent(),
     this.remainingTokenThreshold = const Value.absent(),
+    this.modelOverridesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceCompactionSettingsCompanion.insert({
@@ -11058,6 +11179,7 @@ class WorkspaceCompactionSettingsCompanion
     this.autoCompactEnabled = const Value.absent(),
     this.usagePercentageThreshold = const Value.absent(),
     this.remainingTokenThreshold = const Value.absent(),
+    this.modelOverridesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId);
   static Insertable<WorkspaceCompactionSettingsTable> custom({
@@ -11068,6 +11190,7 @@ class WorkspaceCompactionSettingsCompanion
     Expression<bool>? autoCompactEnabled,
     Expression<int>? usagePercentageThreshold,
     Expression<int>? remainingTokenThreshold,
+    Expression<String>? modelOverridesJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -11081,6 +11204,8 @@ class WorkspaceCompactionSettingsCompanion
         'usage_percentage_threshold': usagePercentageThreshold,
       if (remainingTokenThreshold != null)
         'remaining_token_threshold': remainingTokenThreshold,
+      if (modelOverridesJson != null)
+        'model_overrides_json': modelOverridesJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -11093,6 +11218,7 @@ class WorkspaceCompactionSettingsCompanion
     Value<bool?>? autoCompactEnabled,
     Value<int?>? usagePercentageThreshold,
     Value<int?>? remainingTokenThreshold,
+    Value<String?>? modelOverridesJson,
     Value<int>? rowid,
   }) {
     return WorkspaceCompactionSettingsCompanion(
@@ -11105,6 +11231,7 @@ class WorkspaceCompactionSettingsCompanion
           usagePercentageThreshold ?? this.usagePercentageThreshold,
       remainingTokenThreshold:
           remainingTokenThreshold ?? this.remainingTokenThreshold,
+      modelOverridesJson: modelOverridesJson ?? this.modelOverridesJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -11137,6 +11264,9 @@ class WorkspaceCompactionSettingsCompanion
         remainingTokenThreshold.value,
       );
     }
+    if (modelOverridesJson.present) {
+      map['model_overrides_json'] = Variable<String>(modelOverridesJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -11153,6 +11283,7 @@ class WorkspaceCompactionSettingsCompanion
           ..write('autoCompactEnabled: $autoCompactEnabled, ')
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
           ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
+          ..write('modelOverridesJson: $modelOverridesJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -18291,6 +18422,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       Value<String?> forkSourceTitle,
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
+      Value<String?> activeCompactionCheckpointId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -18309,6 +18441,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String?> forkSourceTitle,
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
+      Value<String?> activeCompactionCheckpointId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -18512,6 +18645,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<DateTime> get forkMaterializedAt => $composableBuilder(
     column: $table.forkMaterializedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activeCompactionCheckpointId => $composableBuilder(
+    column: $table.activeCompactionCheckpointId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18743,6 +18881,12 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get activeCompactionCheckpointId =>
+      $composableBuilder(
+        column: $table.activeCompactionCheckpointId,
+        builder: (column) => ColumnOrderings(column),
+      );
+
   ColumnOrderings<bool> get isPinned => $composableBuilder(
     column: $table.isPinned,
     builder: (column) => ColumnOrderings(column),
@@ -18887,6 +19031,12 @@ class $$ConversationsTableAnnotationComposer
     column: $table.forkMaterializedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get activeCompactionCheckpointId =>
+      $composableBuilder(
+        column: $table.activeCompactionCheckpointId,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
@@ -19111,6 +19261,8 @@ class $$ConversationsTableTableManager
                 Value<String?> forkSourceTitle = const Value.absent(),
                 Value<String?> forkThroughMessageId = const Value.absent(),
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
+                Value<String?> activeCompactionCheckpointId =
+                    const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -19127,6 +19279,7 @@ class $$ConversationsTableTableManager
                 forkSourceTitle: forkSourceTitle,
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
+                activeCompactionCheckpointId: activeCompactionCheckpointId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -19145,6 +19298,8 @@ class $$ConversationsTableTableManager
                 Value<String?> forkSourceTitle = const Value.absent(),
                 Value<String?> forkThroughMessageId = const Value.absent(),
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
+                Value<String?> activeCompactionCheckpointId =
+                    const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -19161,6 +19316,7 @@ class $$ConversationsTableTableManager
                 forkSourceTitle: forkSourceTitle,
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
+                activeCompactionCheckpointId: activeCompactionCheckpointId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -25033,6 +25189,7 @@ typedef $$WorkspaceCompactionSettingsTableCreateCompanionBuilder =
       Value<bool?> autoCompactEnabled,
       Value<int?> usagePercentageThreshold,
       Value<int?> remainingTokenThreshold,
+      Value<String?> modelOverridesJson,
       Value<int> rowid,
     });
 typedef $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder =
@@ -25044,6 +25201,7 @@ typedef $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder =
       Value<bool?> autoCompactEnabled,
       Value<int?> usagePercentageThreshold,
       Value<int?> remainingTokenThreshold,
+      Value<String?> modelOverridesJson,
       Value<int> rowid,
     });
 
@@ -25119,6 +25277,11 @@ class $$WorkspaceCompactionSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkspacesTableFilterComposer get workspaceId {
     final $$WorkspacesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -25182,6 +25345,11 @@ class $$WorkspaceCompactionSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkspacesTableOrderingComposer get workspaceId {
     final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -25236,6 +25404,11 @@ class $$WorkspaceCompactionSettingsTableAnnotationComposer
 
   GeneratedColumn<int> get remainingTokenThreshold => $composableBuilder(
     column: $table.remainingTokenThreshold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
     builder: (column) => column,
   );
 
@@ -25312,6 +25485,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 Value<bool?> autoCompactEnabled = const Value.absent(),
                 Value<int?> usagePercentageThreshold = const Value.absent(),
                 Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<String?> modelOverridesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceCompactionSettingsCompanion(
                 id: id,
@@ -25321,6 +25495,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 autoCompactEnabled: autoCompactEnabled,
                 usagePercentageThreshold: usagePercentageThreshold,
                 remainingTokenThreshold: remainingTokenThreshold,
+                modelOverridesJson: modelOverridesJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25332,6 +25507,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 Value<bool?> autoCompactEnabled = const Value.absent(),
                 Value<int?> usagePercentageThreshold = const Value.absent(),
                 Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<String?> modelOverridesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceCompactionSettingsCompanion.insert(
                 id: id,
@@ -25341,6 +25517,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 autoCompactEnabled: autoCompactEnabled,
                 usagePercentageThreshold: usagePercentageThreshold,
                 remainingTokenThreshold: remainingTokenThreshold,
+                modelOverridesJson: modelOverridesJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
