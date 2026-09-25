@@ -245,6 +245,8 @@ void main() {
       WorkspaceRepository? repo,
       List<CloudAccountSession> accounts = const [],
       CloudWorkspaceViewState? cloudWorkspaceState,
+      Map<String, CloudWorkspaceViewState> cloudWorkspaceStatesByAccount =
+          const {},
       bool cloudAuthenticationRequired = false,
       WorkspaceSelectionRepository? selectionRepository,
     }) {
@@ -290,11 +292,15 @@ void main() {
                 );
               }
             }
-            if (cloudWorkspaceState != null) {
+            if (cloudWorkspaceState != null ||
+                cloudWorkspaceStatesByAccount.isNotEmpty) {
               for (final account in accounts) {
+                final state =
+                    cloudWorkspaceStatesByAccount[account.userId] ??
+                    cloudWorkspaceState;
                 overrides.add(
                   cloudWorkspaceStateProvider(account.userId)
-                      .overrideWith((ref) async => cloudWorkspaceState),
+                      .overrideWith((ref) async => state),
                 );
               }
             }
@@ -385,83 +391,115 @@ void main() {
       );
     });
 
-    testWidgets('filters workspaces by name and shows no-results state', (
+    testWidgets(
+      'filters local and connected names, then shows no-results state',
+      (tester) async {
+        final _ = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Workspace Alpha', type: .local),
+        );
+        final _ = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Workspace Beta', type: .local),
+        );
+        final _ = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: 'connected-alpha',
+          cloudAccountId: 'account-1',
+          name: 'Connected Alpha',
+          serverUrl: 'http://localhost:8080',
+        );
+        final _ = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: 'connected-beta',
+          cloudAccountId: 'account-1',
+          name: 'Connected Beta',
+          serverUrl: 'http://localhost:8080',
+        );
+
+        await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+        final _ = await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextFormField), 'alpha');
+        await tester.pump();
+
+        expect(find.text('Workspace Alpha'), findsOneWidget);
+        expect(find.text('Workspace Beta'), findsNothing);
+        expect(find.text('Connected Alpha'), findsOneWidget);
+        expect(find.text('Connected Beta'), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('workspace_select_ws-1')),
+            matching: find.text('Active'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('workspace_create')),
+          findsOneWidget,
+        );
+
+        await tester.enterText(find.byType(TextFormField), 'missing');
+        await tester.pump();
+
+        expect(find.text('No workspaces match your search.'), findsOneWidget);
+        expect(find.text('Workspace Alpha'), findsNothing);
+        expect(find.text('Connected Alpha'), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('workspace_create')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('shows matching cloud groups and one global no-results state', (
       tester,
     ) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace Alpha', type: .local),
-      );
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace Beta', type: .local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextFormField), 'alpha');
-      await tester.pump();
-
-      expect(find.text('Workspace Alpha'), findsOneWidget);
-      expect(find.text('Workspace Beta'), findsNothing);
-      expect(
-        find.descendant(
-          of: find.byKey(const ValueKey<String>('workspace_select_ws-1')),
-          matching: find.text('Active'),
+      const accounts = [
+        CloudAccountSession(
+          serverUrl: 'http://localhost:8080',
+          userId: 'account-1',
+          email: 'first@example.com',
         ),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('workspace_create')),
-        findsOneWidget,
-      );
-
-      await tester.enterText(find.byType(TextFormField), 'missing');
-      await tester.pump();
-
-      expect(find.text('No workspaces match your search.'), findsOneWidget);
-      expect(find.text('Workspace Alpha'), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('workspace_create')),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('filters available cloud workspaces by name', (tester) async {
-      const account = CloudAccountSession(
-        serverUrl: 'http://localhost:8080',
-        userId: 'account-1',
-        email: 'dev@example.com',
-      );
-      final cloudWorkspaceState = CloudWorkspaceViewState(
-        workspaces: [
-          CloudWorkspaceSummary(
-            id: 1,
-            name: 'Cloud Alpha',
-            role: 'owner',
-            revision: 1,
-            sequence: 1,
-            createdAt: .new(2026),
-            updatedAt: .new(2026),
-          ),
-          CloudWorkspaceSummary(
-            id: 2,
-            name: 'Cloud Beta',
-            role: 'owner',
-            revision: 1,
-            sequence: 2,
-            createdAt: .new(2026),
-            updatedAt: .new(2026),
-          ),
-        ],
-        pendingInvites: const [],
-      );
+        CloudAccountSession(
+          serverUrl: 'http://localhost:8080',
+          userId: 'account-2',
+          email: 'second@example.com',
+        ),
+      ];
+      final cloudWorkspaceStates = {
+        'account-1': CloudWorkspaceViewState(
+          workspaces: [
+            CloudWorkspaceSummary(
+              id: 1,
+              name: 'Cloud Alpha',
+              role: 'owner',
+              revision: 1,
+              sequence: 1,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
+            ),
+          ],
+          pendingInvites: const [],
+        ),
+        'account-2': CloudWorkspaceViewState(
+          workspaces: [
+            CloudWorkspaceSummary(
+              id: 2,
+              name: 'Cloud Beta',
+              role: 'owner',
+              revision: 1,
+              sequence: 2,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
+            ),
+          ],
+          pendingInvites: const [],
+        ),
+      };
 
       await _pumpAndInit(
         tester,
         _buildScreen(
           workspaceId: 'ws-1',
-          accounts: [account],
-          cloudWorkspaceState: cloudWorkspaceState,
+          accounts: accounts,
+          cloudWorkspaceStatesByAccount: cloudWorkspaceStates,
         ),
       );
       final _ = await tester.pumpAndSettle();
@@ -472,12 +510,17 @@ void main() {
       expect(find.text('Cloud Alpha'), findsOneWidget);
       expect(find.text('Cloud Beta'), findsNothing);
       expect(find.text('No workspaces match your search.'), findsNothing);
+      expect(find.text('first@example.com'), findsOneWidget);
+      expect(find.text('second@example.com'), findsNothing);
 
       await tester.enterText(find.byType(TextFormField), 'missing');
       await tester.pump();
 
       expect(find.text('No workspaces match your search.'), findsOneWidget);
       expect(find.text('Cloud Alpha'), findsNothing);
+      expect(find.text('Cloud Beta'), findsNothing);
+      expect(find.text('first@example.com'), findsNothing);
+      expect(find.text('second@example.com'), findsNothing);
     });
 
     testWidgets('confirms before switching workspace from a tile', (
