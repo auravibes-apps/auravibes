@@ -283,7 +283,11 @@ class const AgentService({
         message.contains('429');
     if (!isRateLimit) return null;
 
-    return _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
+    final delay = _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
+
+    return delay > defaultAgentRateLimitRetryDelay
+        ? defaultAgentRateLimitRetryDelay
+        : delay;
   }
 
   Duration? _knownRateLimitDelay(String message) {

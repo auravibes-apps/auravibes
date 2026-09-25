@@ -11,6 +11,7 @@ import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
+import 'package:http/http.dart' as http;
 
 typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderRequest = ({
@@ -34,6 +35,7 @@ typedef _RuntimeRequest = ({
 class const ProviderFactory({
   required final ServiceConnectionRepository serviceConnectionRepository,
   final Future<String> Function(String id)? resolveOAuthAccessToken,
+  final http.Client? httpClient,
 }) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
   Future<Genkit> createGenkit(
@@ -172,17 +174,25 @@ extension _ProviderFactoryPlugins on ProviderFactory {
   }
 
   GenkitPlugin _openRouterPlugin(_ProviderRequest request) {
+    final sessionId = request.sessionId;
+
     return AppChatCompletionsPlugin(
       name: 'openrouter',
       baseUrl: request.baseUrl ?? 'https://openrouter.ai/api/v1',
       apiKey: request.apiKey,
       codec: _openRouterCodec(),
       models: [ChatCompletionsModelDefinition(name: request.modelId)],
-      headers: const {
+      headers: {
         'HTTP-Referer': 'https://auravibes.me',
         'X-OpenRouter-Title': 'AuraVibes',
         'X-OpenRouter-Categories': 'personal-agent',
+        // Only documented OpenRouter endpoint gets affinity header.
+        if (request.baseUrl == null &&
+            sessionId != null &&
+            sessionId.isNotEmpty)
+          'x-session-id': sessionId,
       },
+      httpClient: httpClient,
     );
   }
 

@@ -1,5 +1,7 @@
 // Required: Tests repeat generation config lookups for readability.
 // Required: Tests keep helper functions top-level.
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -10,6 +12,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   group('ProviderFactory', () {
@@ -334,6 +337,55 @@ void main() {
       expect(ref.name, 'openai_reasoning/glm-4.5');
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
+
+    test('adds x-session-id to default OpenRouter requests', () async {
+      final client = _FakeHttpClient();
+      final openRouterFactory = ProviderFactory(
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+        httpClient: client,
+      );
+      final config = makeConfig(
+        type: .openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+      );
+      final ai = await openRouterFactory.createGenkit(
+        config,
+        sessionId: 'stable-session',
+      );
+
+      final response = await ai.generate<Object?, Object?>(
+        model: openRouterFactory.getModelReference(config),
+        prompt: 'Hi',
+      );
+
+      expect(response.text, 'ok.');
+      expect(client.request?.headers['x-session-id'], 'stable-session');
+    });
+
+    test('omits x-session-id for custom OpenRouter endpoints', () async {
+      final client = _FakeHttpClient();
+      final openRouterFactory = ProviderFactory(
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+        httpClient: client,
+      );
+      final config = makeConfig(
+        type: .openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+        connectionUrl: 'https://proxy.example.com/v1',
+      );
+      final ai = await openRouterFactory.createGenkit(
+        config,
+        sessionId: 'stable-session',
+      );
+
+      final response = await ai.generate<Object?, Object?>(
+        model: openRouterFactory.getModelReference(config),
+        prompt: 'Hi',
+      );
+
+      expect(response.text, 'ok.');
+      expect(client.request?.headers.containsKey('x-session-id'), isFalse);
+    });
   });
 }
 
@@ -364,4 +416,30 @@ class const _FakeServiceConnectionRepository({
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+final class _FakeHttpClient extends http.BaseClient {
+  http.BaseRequest? request;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    this.request = request;
+
+    return http.StreamedResponse(
+      .value(
+        utf8.encode(
+          jsonEncode({
+            'choices': [
+              {
+                'finish_reason': 'stop',
+                'message': {'role': 'assistant', 'content': 'ok.'},
+              },
+            ],
+          }),
+        ),
+      ),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  }
 }

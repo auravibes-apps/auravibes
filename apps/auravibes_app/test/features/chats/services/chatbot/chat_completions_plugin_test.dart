@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_plugin.dart';
@@ -121,11 +122,186 @@ void main() {
     expect(response.finishReason, FinishReason.failed);
     expect(response.finishMessage, contains('Provider request timed out'));
   });
+
+  test('retries selected server errors once and caps Retry-After', () async {
+    var attempts = 0;
+    final retryDelays = <Duration>[];
+    final client = _FakeClient((_) async {
+      attempts++;
+      if (attempts == 1) {
+        return _jsonResponse(
+          {
+            'error': {'message': 'temporarily unavailable'},
+          },
+          statusCode: 503,
+          headers: {'content-type': 'application/json', 'retry-after': '120'},
+        );
+      }
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (delay) {
+        retryDelays.add(delay);
+
+        return Future<void>.value();
+      },
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.text, 'ok.');
+    expect(attempts, 2);
+    expect(retryDelays, [const Duration(seconds: 60)]);
+  });
+
+  test('retries transport failures before output once', () async {
+    var attempts = 0;
+    final client = _FakeClient((_) async {
+      attempts++;
+      if (attempts == 1) throw http.ClientException('connection reset');
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) => Future<void>.value(),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.text, 'ok.');
+    expect(attempts, 2);
+  });
+
+  test('does not retry rate limits in provider plugin', () async {
+    var attempts = 0;
+    final client = _FakeClient((_) async {
+      attempts++;
+
+      return _jsonResponse(
+        {
+          'error': {'message': 'rate limited'},
+        },
+        statusCode: 429,
+        headers: {'content-type': 'application/json', 'retry-after': '120'},
+      );
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) => Future<void>.value(),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(attempts, 1);
+  });
+
+  test('does not retry after streaming output is emitted', () async {
+    var attempts = 0;
+    final client = _FakeClient((_) async {
+      attempts++;
+      final body = Stream<List<int>>.multi((controller) {
+        controller
+          ..add(
+            utf8.encode(
+              'data: {"choices":[{"delta":{"content":"partial"}, '
+              '"finish_reason":null}]}\n',
+            ),
+          )
+          ..addError(http.ClientException('stream reset'));
+        unawaited(controller.close());
+      });
+
+      return http.StreamedResponse(body, 200);
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) => Future<void>.value(),
+    );
+    final chunks = <Object?>[];
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+      onChunk: chunks.add,
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(chunks, hasLength(1));
+    expect(attempts, 1);
+  });
+
+  test('cancellation during retry wait prevents another request', () async {
+    final cancellation = CancellationController();
+    final retryStarted = Completer<void>();
+    var attempts = 0;
+    var requestSupportsAbort = false;
+    final client = _FakeClient((request) async {
+      attempts++;
+      requestSupportsAbort = request is http.Abortable;
+
+      return _jsonResponse(
+        {
+          'error': {'message': 'temporarily unavailable'},
+        },
+        statusCode: 503,
+        headers: {'content-type': 'application/json', 'retry-after': '1'},
+      );
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) {
+        retryStarted.complete();
+
+        return Completer<void>().future;
+      },
+    );
+
+    final generation = ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+      cancel: cancellation.token,
+    );
+    await retryStarted.future;
+    cancellation.cancel();
+    final response = await generation;
+
+    expect(response.finishReason, FinishReason.aborted);
+    expect(requestSupportsAbort, isTrue);
+    expect(attempts, 1);
+  });
 }
 
 Genkit _genkitWithClient(
   http.Client client, {
   Duration requestTimeout = const Duration(seconds: 30),
+  Future<void> Function(Duration)? retryWait,
 }) => Genkit(
   plugins: [
     AppChatCompletionsPlugin(
@@ -140,15 +316,20 @@ Genkit _genkitWithClient(
       models: const [ChatCompletionsModelDefinition(name: 'm')],
       httpClient: client,
       requestTimeout: requestTimeout,
+      retryWait: retryWait,
     ),
   ],
 );
 
-http.StreamedResponse _jsonResponse(Map<String, Object?> body) {
+http.StreamedResponse _jsonResponse(
+  Map<String, Object?> body, {
+  int statusCode = 200,
+  Map<String, String> headers = const {'content-type': 'application/json'},
+}) {
   return http.StreamedResponse(
     .value(utf8.encode(jsonEncode(body))),
-    200,
-    headers: {'content-type': 'application/json'},
+    statusCode,
+    headers: headers,
   );
 }
 

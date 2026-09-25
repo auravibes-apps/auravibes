@@ -214,6 +214,68 @@ void main() {
     expect(sleeps.toSet(), {const Duration(seconds: 1)});
   });
 
+  test('caps explicit Retry-After delays at 60 seconds', () async {
+    for (final message in [
+      'RateLimitException: retry after 120 seconds',
+      'RESOURCE_EXHAUSTED: try again in 10 minutes',
+    ]) {
+      var currentTime = DateTime(2026);
+      final retryAt = <DateTime>[];
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueErrors: [Exception(message)],
+      );
+      final usecase = _buildAgentService(
+        dataProvider,
+        rateLimitRetryRuntime: .new(
+          start: (_, value) => retryAt.add(value),
+          clear: (_) {},
+        ),
+        now: () => currentTime,
+        sleep: (duration) {
+          currentTime = currentTime.add(duration);
+          return Future<void>.value();
+        },
+      );
+
+      expect(
+        await usecase(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .userMessage),
+        ),
+        AgentIterationDecision.done,
+      );
+      expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 60)));
+    }
+  });
+
+  test('caps configured retry delay at 60 seconds', () async {
+    var currentTime = DateTime(2026);
+    final retryAt = <DateTime>[];
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueErrors: [Exception('429')],
+    );
+    final usecase = _buildAgentService(
+      dataProvider,
+      rateLimitRetryDelay: const Duration(minutes: 2),
+      rateLimitRetryRuntime: .new(
+        start: (_, value) => retryAt.add(value),
+        clear: (_) {},
+      ),
+      now: () => currentTime,
+      sleep: (duration) {
+        currentTime = currentTime.add(duration);
+        return Future<void>.value();
+      },
+    );
+
+    await usecase(
+      conversationId: 'conversation-1',
+      context: const AgentIterationContext(origin: .userMessage),
+    );
+
+    expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 60)));
+  });
+
   test('stops after one consecutive rate-limit retry', () async {
     var currentTime = DateTime(2026);
     final dataProvider = _FakeAgentConversationDataProvider(
@@ -242,6 +304,7 @@ void main() {
 
   test('cancels during rate-limit retry wait', () async {
     var currentTime = DateTime(2026);
+    final retryEvents = <String>[];
     final cancellationRuntime = FakeCancellationEffects();
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('429')],
@@ -253,7 +316,7 @@ void main() {
       cancellationEffects: cancellationRuntime,
       rateLimitRetryRuntime: .new(
         start: (_, _) => cancellationRuntime.requestStop('conversation-1'),
-        clear: (_) {},
+        clear: (conversationId) => retryEvents.add('clear:$conversationId'),
       ),
       now: () => currentTime,
       sleep: (duration) {
@@ -271,6 +334,7 @@ void main() {
     expect(result, AgentIterationDecision.done);
     expect(sendQueue.cleared, ['conversation-1']);
     expect(dataProvider.continuationContexts, hasLength(1));
+    expect(retryEvents, ['clear:conversation-1']);
   });
 
   test('rethrows non-rate-limit errors', () async {
