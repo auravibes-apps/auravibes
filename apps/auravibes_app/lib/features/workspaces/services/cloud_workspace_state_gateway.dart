@@ -9,6 +9,11 @@ import 'package:uuid/v7.dart';
 typedef WorkspaceStateRead = Future<ReadWorkspaceStateResponse> Function(
   ReadWorkspaceStateRequest request,
 );
+
+typedef WorkspaceAgentDuplication =
+    Future<PatchWorkspaceStateResponse> Function(
+      DuplicateWorkspaceAgentRequest request,
+    );
 typedef WorkspaceStreamSubscribe = Stream<WorkspaceStreamEnvelope> Function(
   WorkspaceSubscribeRequest request,
 );
@@ -179,6 +184,7 @@ abstract class _CloudWorkspaceStateGatewayBase {
     this._subscribe,
     this._delay,
     this._client,
+    this._duplicateAgent,
     this._calls,
   );
 
@@ -188,6 +194,7 @@ abstract class _CloudWorkspaceStateGatewayBase {
   final WorkspaceStreamSubscribe _subscribe;
   final WorkspaceReconnectDelay _delay;
   final Client? _client;
+  final WorkspaceAgentDuplication? _duplicateAgent;
   final _GatewayCallHandlers _calls;
   Future<void> _readTail = .value();
   bool _disposed = false;
@@ -217,6 +224,7 @@ class CloudWorkspaceStateGateway extends _CloudWorkspaceStateGatewayBase
          client.workspaceStream.subscribe,
          _defaultDelay,
          client,
+         null,
          .new(
            workspace: workspace,
            client: client,
@@ -231,6 +239,7 @@ class CloudWorkspaceStateGateway extends _CloudWorkspaceStateGatewayBase
     required WorkspaceStreamSubscribe subscribe,
     WorkspaceSecretPut? putSecret,
     WorkspaceCredentialMutation? mutateCredential,
+    WorkspaceAgentDuplication? duplicateAgent,
     WorkspaceReconnectDelay delay = _defaultDelay,
     Duration readTimeout = _stateReadTimeout,
   }) : super(
@@ -240,6 +249,7 @@ class CloudWorkspaceStateGateway extends _CloudWorkspaceStateGatewayBase
          subscribe,
          delay,
          null,
+         duplicateAgent,
          .new(
            workspace: workspace,
            client: null,
@@ -305,16 +315,17 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
   );
 
   Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) =>
-      CloudAppErrors.guardCall(
-        .state,
-        () => _requireClient(_client).workspaceState.duplicateAgent(
-          .new(
-            workspaceId: _workspace.cloudWorkspaceId,
-            requestId: const UuidV7().generate(),
-            sourceAgentId: sourceAgentId,
-          ),
-        ),
-      );
+      CloudAppErrors.guardCall(.state, () {
+        final request = DuplicateWorkspaceAgentRequest(
+          workspaceId: _workspace.cloudWorkspaceId,
+          requestId: const UuidV7().generate(),
+          sourceAgentId: sourceAgentId,
+        );
+        final duplicate = _duplicateAgent;
+        if (duplicate != null) return duplicate(request);
+
+        return _requireClient(_client).workspaceState.duplicateAgent(request);
+      });
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {

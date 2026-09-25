@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -163,12 +164,12 @@ class CloudWorkspaceResourceStore {
     required this._patch,
     required this._putSecret,
     required this._mutateCredential,
-    this._read = _unsupportedRead,
-    this._duplicateAgent = _unsupportedDuplicateAgent,
+    this._read,
+    this._duplicateAgent,
   }) : _client = (() async => null),
        _cloudWorkspaceId = (() async => null);
 
-  final WorkspaceResourceRead _read;
+  final WorkspaceResourceRead? _read;
   final Stream<List<WorkspaceResource>> Function(
     List<WorkspaceResourceKind> kinds,
   )
@@ -178,7 +179,7 @@ class CloudWorkspaceResourceStore {
     required List<WorkspacePatchOperation> operations,
   })
   _patch;
-  final WorkspaceAgentDuplicate _duplicateAgent;
+  final WorkspaceAgentDuplicate? _duplicateAgent;
   final _WorkspaceSecretCall _putSecret;
   final _WorkspaceCredentialCall _mutateCredential;
   final Future<Client?> Function() _client;
@@ -192,16 +193,32 @@ class CloudWorkspaceResourceStore {
     required List<WorkspaceResourcePageRequest> pages,
     int? afterSequence,
     int eventLimit = 100,
-  }) =>
-      _read(pages: pages, afterSequence: afterSequence, eventLimit: eventLimit);
+  }) {
+    final read = _read;
+    if (read == null) {
+      return Future.error(const UnsupportedWorkspaceCapabilityException());
+    }
+
+    return read(
+      pages: pages,
+      afterSequence: afterSequence,
+      eventLimit: eventLimit,
+    );
+  }
 
   Future<PatchWorkspaceStateResponse> patch({
     required String requestId,
     required List<WorkspacePatchOperation> operations,
   }) => _patch(requestId: requestId, operations: operations);
 
-  Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) =>
-      _duplicateAgent(sourceAgentId);
+  Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) {
+    final duplicateAgent = _duplicateAgent;
+    if (duplicateAgent == null) {
+      return Future.error(const UnsupportedWorkspaceCapabilityException());
+    }
+
+    return duplicateAgent(sourceAgentId);
+  }
 }
 
 _WorkspaceSecretWrite _secretWriter(_WorkspaceSecretCall putSecret) =>
@@ -432,16 +449,6 @@ Future<MutateWorkspaceCredentialResponse> _deferredMutateCredential(
   Future<CloudWorkspaceStateGateway?> gateway,
   WorkspaceCredentialInput input,
 ) async => await (await _requireGateway(gateway)).mutateCredential(input);
-
-Future<ReadWorkspaceStateResponse> _unsupportedRead({
-  required List<WorkspaceResourcePageRequest> pages,
-  required int eventLimit,
-  int? afterSequence,
-}) => throw UnimplementedError('$pages$afterSequence$eventLimit');
-
-Future<PatchWorkspaceStateResponse> _unsupportedDuplicateAgent(
-  String sourceAgentId,
-) => throw UnimplementedError(sourceAgentId);
 
 Future<CloudWorkspaceStateGateway> _requireGateway(
   Future<CloudWorkspaceStateGateway?> gateway,
