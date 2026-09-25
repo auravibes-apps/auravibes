@@ -1,22 +1,5 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "lsp": {
-    "custom-dart": {
-      "disabled": false,
-      "command": ["fvm", "dart", "language-server", "--protocol=lsp"],
-      "extensions": [".dart"],
-      "initialization": {
-        "onlyAnalyzeProjectsWithOpenFiles": false,
-        "suggestFromUnimportedLibraries": true,
-        "closingLabels": true,
-        "outline": true,
-        "flutterOutline": true
-      }
-    },
-    "dart": {
-      "disabled": true
-    }
-  },
   "formatter": {
     "prettier": {
       "command": ["npx", "-y", "prettier", "--write", "$FILE"],
@@ -28,35 +11,37 @@
     }
   },
   "mcp": {
-    "dart": {
-      "enabled": true,
-      "type": "local",
-      "command": ["fvm", "dart", "mcp-server", "--force-roots-fallback"]
-    },
-    "marionette": {
-      "enabled": true,
-      "type": "local",
-      "command": ["fvm", "dart", "run", "marionette_mcp"]
-    },
-    "pubdev": {
-      "type": "local",
-      "command": ["npx", "-y", "@devqxi/pubdev-mcp-server@1.0.1"],
-      "enabled": true
-    },
-    "serverpod": {
-      "enabled": true,
-      "type": "local",
-      "command": [
-        "serverpod",
-        "mcp-server",
-        "--server-dir",
-        "apps/auravibes_server"
-      ]
-    },
-    "sonarqube": {
-      "type": "local",
-      "command": ["sonar", "run", "mcp"],
-      "enabled": true
+    "servers": {
+      "dart": {
+        "disabled": false,
+        "type": "local",
+        "command": ["fvm", "dart", "mcp-server", "--force-roots-fallback"]
+      },
+      "marionette": {
+        "disabled": false,
+        "type": "local",
+        "command": ["fvm", "dart", "run", "marionette_mcp"]
+      },
+      "pubdev": {
+        "type": "local",
+        "command": ["npx", "-y", "@devqxi/pubdev-mcp-server@1.0.1"],
+        "disabled": false
+      },
+      "serverpod": {
+        "disabled": false,
+        "type": "local",
+        "command": [
+          "serverpod",
+          "mcp-server",
+          "--server-dir",
+          "apps/auravibes_server"
+        ]
+      },
+      "sonarqube": {
+        "type": "local",
+        "command": ["sonar", "run", "mcp"],
+        "disabled": false
+      }
     }
   }
 }
