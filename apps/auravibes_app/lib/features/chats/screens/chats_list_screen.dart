@@ -77,34 +77,34 @@ class const _ChatsListAddChatButton({
 class const _ChatsListNewChatButton({
   required final String workspaceId,
   required final bool showArchiveActions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: AuraButton(
+          onPressed: () => NewChatRoute(workspaceId: workspaceId).go(context),
+          child: const TextLocale(LocaleKeys.chats_screens_chats_list_add_chat),
+        ),
+      ),
+      if (showArchiveActions) ...[
+        const SizedBox(width: 8),
+        _ConversationArchiveImportButton(workspaceId: workspaceId),
+      ],
+    ],
+  );
+}
+
+class const _ConversationArchiveImportButton({
+  required final String workspaceId,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Expanded(
-          child: AuraButton(
-            onPressed: () {
-              NewChatRoute(workspaceId: workspaceId).go(context);
-            },
-            child: const TextLocale(
-              LocaleKeys.chats_screens_chats_list_add_chat,
-            ),
-          ),
-        ),
-        if (showArchiveActions) ...[
-          const SizedBox(width: 8),
-          AuraIconButton(
-            icon: Icons.file_open_outlined,
-            onPressed: () => unawaited(
-              _importConversationArchive(context, ref, workspaceId),
-            ),
-            tooltip: LocaleKeys.chats_screens_chats_list_archive_import.tr(),
-          ),
-        ],
-      ],
-    );
-  }
+  Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
+    icon: Icons.file_open_outlined,
+    onPressed: () =>
+        unawaited(_importConversationArchive(context, ref, workspaceId)),
+    tooltip: LocaleKeys.chats_screens_chats_list_archive_import.tr(),
+  );
 }
 
 Future<void> _importConversationArchive(
@@ -116,18 +116,26 @@ Future<void> _importConversationArchive(
     final archiveJson = await ref
         .read(conversationArchiveFileServiceProvider)
         .pickArchiveJson();
-    if (archiveJson == null) return;
-
-    final conversation = await ref
-        .read(conversationArchiveUsecaseProvider)
-        .importConversation(workspaceId: workspaceId, archiveJson: archiveJson);
-    if (!context.mounted) return;
-
-    ConversationRoute(
-      workspaceId: workspaceId,
-      chatId: conversation.id,
-    ).go(context);
+    if (archiveJson == null || !context.mounted) return;
+    await _importAndOpenArchive(context, ref, workspaceId, archiveJson);
   } on Object catch (error) {
-    showConversationArchiveError(context, error);
+    if (!context.mounted) return;
+    ConversationArchiveFeedback.showError(context, error);
   }
+}
+
+Future<void> _importAndOpenArchive(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  String archiveJson,
+) async {
+  final conversation = await ref
+      .read(conversationArchiveUsecaseProvider)
+      .importConversation(workspaceId: workspaceId, archiveJson: archiveJson);
+  if (!context.mounted) return;
+  ConversationRoute(
+    workspaceId: workspaceId,
+    chatId: conversation.id,
+  ).go(context);
 }

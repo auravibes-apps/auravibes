@@ -19,6 +19,7 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 const _wavFormatChunkOffset = 16;
+const _mimeHeaderLength = 12;
 
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
@@ -86,39 +87,64 @@ Future<MessageAttachmentToCreate> _createArchiveAttachment(
   LocalChatAttachmentServiceIo service,
   ConversationArchiveAttachment attachment,
 ) async {
-  final fileName = p.posix.basename(attachment.fileName.replaceAll(r'\', '/'));
-  if (fileName.isEmpty || fileName != attachment.fileName) {
-    throw ArgumentError.value(attachment.fileName, 'fileName');
-  }
+  final fileName = _archiveAttachmentFileName(attachment.fileName);
   _ensureAttachmentSize(attachment.bytes.length);
   final localPath = await _newAttachmentPath(service, fileName);
-  final file = File(localPath);
+  await _writeArchiveAttachment(.new(localPath), attachment.bytes);
+  final mimeType = _archiveAttachmentMimeType(fileName, attachment);
+
+  return _archiveAttachmentToCreate(attachment, localPath, fileName, mimeType);
+}
+
+MessageAttachmentToCreate _archiveAttachmentToCreate(
+  ConversationArchiveAttachment attachment,
+  String localPath,
+  String fileName,
+  String mimeType,
+) => MessageAttachmentToCreate(
+  localPath: localPath,
+  fileName: fileName,
+  displayName: attachment.displayName,
+  mimeType: mimeType,
+  modality: ChatAttachmentModality.forMimeType(mimeType),
+  sizeBytes: attachment.bytes.length,
+);
+
+String _archiveAttachmentFileName(String value) {
+  final fileName = p.posix.basename(value.replaceAll(r'\', '/'));
+  if (fileName.isEmpty || fileName != value) {
+    throw ArgumentError.value(value, 'fileName');
+  }
+
+  return fileName;
+}
+
+Future<void> _writeArchiveAttachment(File file, Uint8List bytes) async {
   try {
-    final _ = await file.writeAsBytes(attachment.bytes, flush: true);
+    final _ = await file.writeAsBytes(bytes, flush: true);
   } on Object {
-    try {
-      final _ = await file.delete();
-    } on FileSystemException {
-      // Preserve original write error when partial-file cleanup fails.
-    }
+    await _deletePartialArchiveAttachment(file);
     rethrow;
   }
-  final mimeType =
-      lookupMimeType(
-        fileName,
-        headerBytes: attachment.bytes.take(12).toList(),
-      ) ??
-      attachment.mimeType;
-
-  return MessageAttachmentToCreate(
-    localPath: localPath,
-    fileName: fileName,
-    displayName: attachment.displayName,
-    mimeType: mimeType,
-    modality: ChatAttachmentModality.forMimeType(mimeType),
-    sizeBytes: attachment.bytes.length,
-  );
 }
+
+Future<void> _deletePartialArchiveAttachment(File file) async {
+  try {
+    final _ = await file.delete();
+  } on FileSystemException {
+    // Preserve original write error when partial-file cleanup fails.
+  }
+}
+
+String _archiveAttachmentMimeType(
+  String fileName,
+  ConversationArchiveAttachment attachment,
+) =>
+    lookupMimeType(
+      fileName,
+      headerBytes: attachment.bytes.take(_mimeHeaderLength).toList(),
+    ) ??
+    attachment.mimeType;
 
 void _ensureAttachmentSize(int sizeBytes) {
   if (sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
@@ -156,7 +182,7 @@ Future<_AttachmentSource> _readAttachmentSource(String sourcePath) async {
   final file = File(sourcePath);
   final sizeBytes = await file.length();
   final headerBytes = await file
-      .openRead(0, 12)
+      .openRead(0, _mimeHeaderLength)
       .expand((bytes) => bytes)
       .toList();
 

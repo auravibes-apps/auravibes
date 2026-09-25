@@ -11,23 +11,8 @@ class const ConversationArchiveFileService() {
       allowedExtensions: const ['json'],
     );
     if (file == null) return null;
-    final length = await file.length();
-    if (length != null && length > ConversationArchiveCodec.maxArchiveBytes) {
-      throw const MalformedConversationArchiveException();
-    }
 
-    final bytes = await file.readAsBytes();
-    if (bytes.length > ConversationArchiveCodec.maxArchiveBytes) {
-      throw const MalformedConversationArchiveException();
-    }
-    try {
-      return utf8.decode(bytes);
-    } on FormatException catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        const MalformedConversationArchiveException(),
-        stackTrace,
-      );
-    }
+    return await _readArchive(file);
   }
 
   Future<bool> saveArchiveJson(String json) async {
@@ -43,5 +28,28 @@ class const ConversationArchiveFileService() {
     );
 
     return saved != null;
+  }
+
+  Future<String> _readArchive(PlatformFile file) async {
+    final length = await file.length();
+    if (length != null && length > ConversationArchiveCodec.maxArchiveBytes) {
+      throw const MalformedConversationArchiveException();
+    }
+
+    return _decodeArchiveBytes(await file.readAsBytes());
+  }
+
+  String _decodeArchiveBytes(Uint8List bytes) {
+    if (bytes.length > ConversationArchiveCodec.maxArchiveBytes) {
+      throw const MalformedConversationArchiveException();
+    }
+    try {
+      return utf8.decode(bytes);
+    } on FormatException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        const MalformedConversationArchiveException(),
+        stackTrace,
+      );
+    }
   }
 }

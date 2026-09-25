@@ -41,57 +41,138 @@ class const ConversationArchiveUsecase({
     final archive = ConversationArchiveCodec.decode(archiveJson);
     if (workspaceId.isEmpty) throw ArgumentError.value(workspaceId);
 
-    final stagedAttachments = <MessageAttachmentToCreate>[];
-    final attachmentsByMessage = <List<MessageAttachmentToCreate>>[];
-    try {
-      for (final message in archive.messages) {
-        final attachments = <MessageAttachmentToCreate>[];
-        for (final attachment in message.attachments) {
-          final staged = await attachmentService.createArchiveAttachment(
-            attachment,
-          );
-          attachments.add(staged);
-          stagedAttachments.add(staged);
-        }
-        attachmentsByMessage.add(attachments);
-      }
+    return await _importArchive(archive, workspaceId);
+  }
 
-      final conversation = await conversationRepository.createConversation(
-        .new(
-          title: archive.title,
-          workspaceId: workspaceId,
-          createdAt: archive.createdAt,
-          updatedAt: archive.updatedAt,
-        ),
+  Future<ConversationEntity> _importArchive(
+    ConversationArchive archive,
+    String workspaceId,
+  ) async {
+    final stagedAttachments = <MessageAttachmentToCreate>[];
+    try {
+      final attachments = await _stageAttachments(
+        archive.messages,
+        stagedAttachments,
       );
-      final importedMessageIds = <String>[];
-      for (var index = 0; index < archive.messages.length; index++) {
-        final message = archive.messages[index];
-        final metadata = _restoreMetadata(message.metadata, importedMessageIds);
-        final created = await messageRepository.createMessage(
-          .new(
-            conversationId: conversation.id,
-            content: message.content,
-            messageType: message.messageType,
-            isUser: message.isUser,
-            status: _restoredMessageStatus(message.status),
-            createdAt: message.createdAt,
-            updatedAt: message.createdAt,
-            metadata: jsonEncode(metadata.toJson()),
-            attachments: attachmentsByMessage[index],
-          ),
-        );
-        importedMessageIds.add(created.id);
-      }
+      final conversation = await _createImportedConversation(
+        archive,
+        workspaceId,
+      );
+      await _importMessages(archive.messages, conversation.id, attachments);
 
       return conversation;
     } finally {
-      for (final attachment in stagedAttachments) {
-        await attachmentService.deleteAttachment(attachment.localPath);
-      }
+      await _deleteStagedAttachments(stagedAttachments);
+    }
+  }
+
+  Future<List<List<MessageAttachmentToCreate>>> _stageAttachments(
+    List<ConversationArchiveMessage> messages,
+    List<MessageAttachmentToCreate> staged,
+  ) async {
+    final byMessage = <List<MessageAttachmentToCreate>>[];
+    for (final message in messages) {
+      byMessage.add(
+        await _stageMessageAttachments(message.attachments, staged),
+      );
+    }
+
+    return byMessage;
+  }
+
+  Future<List<MessageAttachmentToCreate>> _stageMessageAttachments(
+    List<ConversationArchiveAttachment> attachments,
+    List<MessageAttachmentToCreate> staged,
+  ) async {
+    final result = <MessageAttachmentToCreate>[];
+    for (final attachment in attachments) {
+      final created = await attachmentService.createArchiveAttachment(
+        attachment,
+      );
+      staged.add(created);
+      result.add(created);
+    }
+
+    return result;
+  }
+
+  Future<ConversationEntity> _createImportedConversation(
+    ConversationArchive archive,
+    String workspaceId,
+  ) => conversationRepository.createConversation(
+    .new(
+      title: archive.title,
+      workspaceId: workspaceId,
+      createdAt: archive.createdAt,
+      updatedAt: archive.updatedAt,
+    ),
+  );
+
+  Future<void> _importMessages(
+    List<ConversationArchiveMessage> messages,
+    String conversationId,
+    List<List<MessageAttachmentToCreate>> attachments,
+  ) async {
+    final importedMessageIds = <String>[];
+    for (var index = 0; index < messages.length; index++) {
+      final importedId = await _importMessage(
+        messages[index],
+        conversationId,
+        attachments[index],
+        importedMessageIds,
+      );
+      importedMessageIds.add(importedId);
+    }
+  }
+
+  Future<String> _importMessage(
+    ConversationArchiveMessage message,
+    String conversationId,
+    List<MessageAttachmentToCreate> attachments,
+    List<String> importedMessageIds,
+  ) async {
+    final created = await messageRepository.createMessage(
+      _toImportedMessage(
+        message,
+        conversationId,
+        attachments,
+        importedMessageIds,
+      ),
+    );
+
+    return created.id;
+  }
+
+  Future<void> _deleteStagedAttachments(
+    List<MessageAttachmentToCreate> attachments,
+  ) async {
+    for (final attachment in attachments) {
+      await attachmentService.deleteAttachment(attachment.localPath);
     }
   }
 }
+
+MessageToCreate _toImportedMessage(
+  ConversationArchiveMessage message,
+  String conversationId,
+  List<MessageAttachmentToCreate> attachments,
+  List<String> importedMessageIds,
+) => MessageToCreate(
+  conversationId: conversationId,
+  content: message.content,
+  messageType: message.messageType,
+  isUser: message.isUser,
+  status: _restoredMessageStatus(message.status),
+  createdAt: message.createdAt,
+  updatedAt: message.createdAt,
+  metadata: _encodedRestoredMetadata(message.metadata, importedMessageIds),
+  attachments: attachments,
+);
+
+String _encodedRestoredMetadata(
+  ConversationArchiveMetadata metadata,
+  List<String> importedMessageIds,
+) => jsonEncode(_restoreMetadata(metadata, importedMessageIds).toJson());
 
 MessageStatus _restoredMessageStatus(MessageStatus status) => switch (status) {
   .sending || .unfinished => .error,
@@ -101,26 +182,49 @@ MessageStatus _restoredMessageStatus(MessageStatus status) => switch (status) {
 MessageMetadataEntity _restoreMetadata(
   ConversationArchiveMetadata metadata,
   List<String> importedMessageIds,
-) => MessageMetadataEntity(
-  toolCalls: [
-    for (final toolCall in metadata.toolCalls)
-      .new(
-        id: const UuidV7().generate(),
-        name: toolCall.displayName ?? 'archived_tool',
-        argumentsRaw: '',
-        userFacingDescription: toolCall.displayName,
-        resultStatus: _restoredToolCallStatus(toolCall.resultStatus),
-      ),
-  ],
+) => _restoreMetadataCompaction(
+  _restoreMetadataContent(metadata),
+  metadata,
+  importedMessageIds,
+);
+
+MessageMetadataEntity _restoreMetadataContent(
+  ConversationArchiveMetadata metadata,
+) => const MessageMetadataEntity().copyWith(
+  toolCalls: _restoreToolCalls(metadata.toolCalls),
   promptTokens: metadata.promptTokens,
   completionTokens: metadata.completionTokens,
   totalTokens: metadata.totalTokens,
-  modelMetadata: {
-    'providerError': ?metadata.providerError,
-    'a2uiRequiresUserAction': ?metadata.a2uiRequiresUserAction,
-  },
+  modelMetadata: _restoreModelMetadata(metadata),
   a2uiMessages: metadata.a2uiMessages,
   isCompactionSummary: metadata.isCompactionSummary,
+);
+
+List<MessageToolCallEntity> _restoreToolCalls(
+  List<ConversationArchiveToolCall> toolCalls,
+) => [
+  for (final toolCall in toolCalls)
+    MessageToolCallEntity(
+      id: const UuidV7().generate(),
+      name: toolCall.displayName ?? 'archived_tool',
+      argumentsRaw: '',
+      userFacingDescription: toolCall.displayName,
+      resultStatus: _restoredToolCallStatus(toolCall.resultStatus),
+    ),
+];
+
+Map<String, Object?> _restoreModelMetadata(
+  ConversationArchiveMetadata metadata,
+) => {
+  'providerError': ?metadata.providerError,
+  'a2uiRequiresUserAction': ?metadata.a2uiRequiresUserAction,
+};
+
+MessageMetadataEntity _restoreMetadataCompaction(
+  MessageMetadataEntity restored,
+  ConversationArchiveMetadata metadata,
+  List<String> importedMessageIds,
+) => restored.copyWith(
   compactionKind: metadata.compactionKind,
   compactedFromMessageId: _messageIdAt(
     metadata.compactedFromMessageIndex,

@@ -5,99 +5,83 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:path/path.dart' as p;
+
+part 'conversation_archive.freezed.dart';
 
 // Limit JSON to 128 MiB (ponytail: use streaming if archives grow).
 
-final class ConversationArchive {
-  const new({
-    required this.title,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.messages,
-    this.modelLabel,
-  });
-
-  final String title;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? modelLabel;
-  final List<ConversationArchiveMessage> messages;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchive with _$ConversationArchive {
+  const factory({
+    required String title,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required List<ConversationArchiveMessage> messages,
+    String? modelLabel,
+  }) = _ConversationArchive;
 }
 
-final class ConversationArchiveMessage {
-  const new({
-    required this.content,
-    required this.messageType,
-    required this.isUser,
-    required this.status,
-    required this.createdAt,
-    required this.metadata,
-    required this.attachments,
-  });
-
-  final String content;
-  final MessageType messageType;
-  final bool isUser;
-  final MessageStatus status;
-  final DateTime createdAt;
-  final ConversationArchiveMetadata metadata;
-  final List<ConversationArchiveAttachment> attachments;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveMessage with _$ConversationArchiveMessage {
+  const factory({
+    required String content,
+    required MessageType messageType,
+    required bool isUser,
+    required MessageStatus status,
+    required DateTime createdAt,
+    required ConversationArchiveMetadata metadata,
+    required List<ConversationArchiveAttachment> attachments,
+  }) = _ConversationArchiveMessage;
 }
 
-final class ConversationArchiveMetadata {
-  const new({
-    required this.toolCalls,
-    required this.a2uiMessages,
-    required this.isCompactionSummary,
-    required this.compactedMessageIndexes,
-    this.promptTokens,
-    this.completionTokens,
-    this.totalTokens,
-    this.providerError,
-    this.a2uiRequiresUserAction,
-    this.compactionKind,
-    this.compactedFromMessageIndex,
-    this.compactedThroughMessageIndex,
-    this.compactionCreatedAt,
-  });
-
-  final int? promptTokens;
-  final int? completionTokens;
-  final int? totalTokens;
-  final bool? providerError;
-  final bool? a2uiRequiresUserAction;
-  final List<String> a2uiMessages;
-  final bool isCompactionSummary;
-  final CompactionKind? compactionKind;
-  final int? compactedFromMessageIndex;
-  final int? compactedThroughMessageIndex;
-  final List<int> compactedMessageIndexes;
-  final DateTime? compactionCreatedAt;
-  final List<ConversationArchiveToolCall> toolCalls;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveMetadata with _$ConversationArchiveMetadata {
+  const factory({
+    @Default(<ConversationArchiveToolCall>[])
+    List<ConversationArchiveToolCall> toolCalls,
+    @Default(<String>[]) List<String> a2uiMessages,
+    @Default(false) bool isCompactionSummary,
+    @Default(<int>[]) List<int> compactedMessageIndexes,
+    int? promptTokens,
+    int? completionTokens,
+    int? totalTokens,
+    bool? providerError,
+    bool? a2uiRequiresUserAction,
+    CompactionKind? compactionKind,
+    int? compactedFromMessageIndex,
+    int? compactedThroughMessageIndex,
+    DateTime? compactionCreatedAt,
+  }) = _ConversationArchiveMetadata;
 }
 
-final class ConversationArchiveToolCall {
-  const new({this.displayName, this.resultStatus});
-
-  final String? displayName;
-  final ToolCallResultStatus? resultStatus;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveToolCall with _$ConversationArchiveToolCall {
+  const factory({String? displayName, ToolCallResultStatus? resultStatus}) =
+      _ConversationArchiveToolCall;
 }
 
-final class ConversationArchiveAttachment {
-  const new({
-    required this.fileName,
-    required this.displayName,
-    required this.mimeType,
-    required this.modality,
-    required this.bytes,
-  });
-
-  final String fileName;
-  final String displayName;
-  final String mimeType;
-  final MessageAttachmentModality modality;
-  final Uint8List bytes;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class ConversationArchiveAttachment
+    with _$ConversationArchiveAttachment {
+  const factory({
+    required String fileName,
+    required String displayName,
+    required String mimeType,
+    required MessageAttachmentModality modality,
+    required Uint8List bytes,
+  }) = _ConversationArchiveAttachment;
 }
 
 abstract final class ConversationArchiveCodec {
@@ -112,60 +96,10 @@ abstract final class ConversationArchiveCodec {
     required Future<Uint8List> Function(String localPath) readAttachmentBytes,
     String? modelLabel,
   }) async {
-    final messageIndexes = <String, int>{
-      for (var index = 0; index < messages.length; index++)
-        messages[index].id: index,
-    };
-    final archivedMessages = <ConversationArchiveMessage>[];
-
-    for (final message in messages) {
-      final metadata = message.metadata;
-      archivedMessages.add(
-        ConversationArchiveMessage(
-          content: message.content,
-          messageType: message.messageType,
-          isUser: message.isUser,
-          status: message.status,
-          createdAt: message.createdAt,
-          metadata: .new(
-            toolCalls: [
-              for (final toolCall
-                  in metadata?.toolCalls ?? const <MessageToolCallEntity>[])
-                ConversationArchiveToolCall(
-                  displayName: toolCall.userFacingDescription?.trim(),
-                  resultStatus: toolCall.resultStatus,
-                ),
-            ],
-            a2uiMessages: metadata?.a2uiMessages ?? const [],
-            isCompactionSummary: metadata?.isCompactionSummary ?? false,
-            compactedMessageIndexes: [
-              for (final id
-                  in metadata?.compactedMessageIds ?? const <String>[])
-                ?messageIndexes[id],
-            ],
-            promptTokens: metadata?.promptTokens,
-            completionTokens: metadata?.completionTokens,
-            totalTokens: metadata?.totalTokens,
-            providerError: _nullableBoolean(
-              metadata?.modelMetadata['providerError'],
-            ),
-            a2uiRequiresUserAction: _nullableBoolean(
-              metadata?.modelMetadata['a2uiRequiresUserAction'],
-            ),
-            compactionKind: metadata?.compactionKind,
-            compactedFromMessageIndex:
-                messageIndexes[metadata?.compactedFromMessageId],
-            compactedThroughMessageIndex:
-                messageIndexes[metadata?.compactedThroughMessageId],
-            compactionCreatedAt: metadata?.compactionCreatedAt,
-          ),
-          attachments: [
-            for (final attachment in message.attachments)
-              await _exportAttachment(attachment, readAttachmentBytes),
-          ],
-        ),
-      );
-    }
+    final archivedMessages = await _archiveMessages(
+      messages,
+      readAttachmentBytes,
+    );
 
     return encode(
       .new(
@@ -192,47 +126,7 @@ abstract final class ConversationArchiveCodec {
       throw const MalformedConversationArchiveException();
     }
 
-    Object? decoded;
-    try {
-      decoded = jsonDecode(json);
-    } on FormatException catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        const MalformedConversationArchiveException(),
-        stackTrace,
-      );
-    }
-
-    final root = _jsonMap(decoded);
-    if (root['format'] != format) {
-      throw const MalformedConversationArchiveException();
-    }
-
-    final archiveVersion = _integer(root['version']);
-    if (archiveVersion != version) {
-      throw UnsupportedArchiveVersionException(archiveVersion);
-    }
-    _requireKeys(root, const {'format', 'version', 'conversation', 'messages'});
-
-    final conversation = _jsonMap(root['conversation']);
-    _requireKeys(conversation, const {
-      'title',
-      'createdAt',
-      'updatedAt',
-      'modelLabel',
-    });
-    final messages = _jsonList(root['messages'])
-        .map(_decodeMessage)
-        .toList(growable: false);
-    final archive = ConversationArchive(
-      title: _nonEmptyString(conversation['title']),
-      createdAt: _dateTime(conversation['createdAt']),
-      updatedAt: _dateTime(conversation['updatedAt']),
-      messages: messages,
-      modelLabel: _nullableString(conversation['modelLabel']),
-    );
-    _validateMessageIndexes(archive.messages);
-
-    return archive;
+    return _decodeArchive(_decodeJson(json));
   }
 }
 
@@ -241,18 +135,10 @@ Future<ConversationArchiveAttachment> _exportAttachment(
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
 ) async {
   final bytes = await readAttachmentBytes(attachment.localPath);
-  if (bytes.length != attachment.sizeBytes ||
-      bytes.length > ConversationArchiveCodec.maxAttachmentBytes) {
-    throw const MalformedConversationArchiveException();
-  }
-
-  final fileName = p.posix.basename(attachment.fileName.replaceAll(r'\', '/'));
-  if (fileName.isEmpty) {
-    throw const MalformedConversationArchiveException();
-  }
+  _validateExportAttachmentSize(attachment.sizeBytes, bytes.length);
 
   return ConversationArchiveAttachment(
-    fileName: fileName,
+    fileName: _archiveFileName(attachment.fileName),
     displayName: attachment.displayName,
     mimeType: attachment.mimeType,
     modality: attachment.modality,
@@ -263,89 +149,22 @@ Future<ConversationArchiveAttachment> _exportAttachment(
 Map<String, Object?> _archiveToJson(ConversationArchive archive) => {
   'format': ConversationArchiveCodec.format,
   'version': ConversationArchiveCodec.version,
-  'conversation': {
-    'title': archive.title,
-    'createdAt': archive.createdAt.toIso8601String(),
-    'updatedAt': archive.updatedAt.toIso8601String(),
-    'modelLabel': archive.modelLabel,
-  },
-  'messages': [
-    for (final message in archive.messages)
-      {
-        'content': message.content,
-        'messageType': message.messageType.value,
-        'isUser': message.isUser,
-        'status': message.status.value,
-        'createdAt': message.createdAt.toIso8601String(),
-        'metadata': _metadataToJson(message.metadata),
-        'attachments': [
-          for (final attachment in message.attachments)
-            {
-              'fileName': attachment.fileName,
-              'displayName': attachment.displayName,
-              'mimeType': attachment.mimeType,
-              'modality': attachment.modality.name,
-              'sizeBytes': attachment.bytes.length,
-              'dataBase64': base64Encode(attachment.bytes),
-            },
-        ],
-      },
-  ],
+  'conversation': _conversationToJson(archive),
+  'messages': [for (final message in archive.messages) _messageToJson(message)],
 };
 
 Map<String, Object?> _metadataToJson(ConversationArchiveMetadata metadata) => {
-  'promptTokens': metadata.promptTokens,
-  'completionTokens': metadata.completionTokens,
-  'totalTokens': metadata.totalTokens,
-  'providerError': metadata.providerError,
-  'a2uiRequiresUserAction': metadata.a2uiRequiresUserAction,
+  ..._metadataTokenFieldsToJson(metadata),
   'a2uiMessages': metadata.a2uiMessages,
   'isCompactionSummary': metadata.isCompactionSummary,
-  'compactionKind': metadata.compactionKind?.name,
-  'compactedFromMessageIndex': metadata.compactedFromMessageIndex,
-  'compactedThroughMessageIndex': metadata.compactedThroughMessageIndex,
-  'compactedMessageIndexes': metadata.compactedMessageIndexes,
-  'compactionCreatedAt': metadata.compactionCreatedAt?.toIso8601String(),
+  ..._metadataCompactionFieldsToJson(metadata),
   'toolCalls': [
-    for (final toolCall in metadata.toolCalls)
-      {
-        'displayName': toolCall.displayName,
-        'resultStatus': _toolStatusToJson(toolCall.resultStatus),
-      },
+    for (final toolCall in metadata.toolCalls) _toolCallToJson(toolCall),
   ],
 };
 
-ConversationArchiveMessage _decodeMessage(Object? value) {
-  final json = _jsonMap(value);
-  _requireKeys(json, const {
-    'content',
-    'messageType',
-    'isUser',
-    'status',
-    'createdAt',
-    'metadata',
-    'attachments',
-  });
-  final messageType = _enumByName(MessageType.values, json['messageType']);
-  final status = _enumByName(MessageStatus.values, json['status']);
-  final attachments = _jsonList(json['attachments'])
-      .map(_decodeAttachment)
-      .toList(growable: false);
-  final content = _string(json['content']);
-  if (content.trim().isEmpty && attachments.isEmpty) {
-    throw const MalformedConversationArchiveException();
-  }
-
-  return ConversationArchiveMessage(
-    content: content,
-    messageType: messageType,
-    isUser: _boolean(json['isUser']),
-    status: status,
-    createdAt: _dateTime(json['createdAt']),
-    metadata: _decodeMetadata(json['metadata']),
-    attachments: attachments,
-  );
-}
+ConversationArchiveMessage _decodeMessage(Object? value) =>
+    _decodeArchiveMessage(_messageJson(value));
 
 ConversationArchiveMetadata _decodeMetadata(Object? value) {
   final json = _jsonMap(value);
@@ -365,31 +184,9 @@ ConversationArchiveMetadata _decodeMetadata(Object? value) {
     'toolCalls',
   });
 
-  return ConversationArchiveMetadata(
-    toolCalls: _jsonList(json['toolCalls'])
-        .map(_decodeToolCall)
-        .toList(growable: false),
-    a2uiMessages: _jsonList(json['a2uiMessages']).map(_string).toList(),
-    isCompactionSummary: _boolean(json['isCompactionSummary']),
-    compactedMessageIndexes: _jsonList(json['compactedMessageIndexes'])
-        .map(_integer)
-        .toList(),
-    promptTokens: _nullableInteger(json['promptTokens']),
-    completionTokens: _nullableInteger(json['completionTokens']),
-    totalTokens: _nullableInteger(json['totalTokens']),
-    providerError: _nullableBoolean(json['providerError']),
-    a2uiRequiresUserAction: _nullableBoolean(json['a2uiRequiresUserAction']),
-    compactionKind: _nullableEnumByName(
-      CompactionKind.values,
-      json['compactionKind'],
-    ),
-    compactedFromMessageIndex: _nullableInteger(
-      json['compactedFromMessageIndex'],
-    ),
-    compactedThroughMessageIndex: _nullableInteger(
-      json['compactedThroughMessageIndex'],
-    ),
-    compactionCreatedAt: _nullableDateTime(json['compactionCreatedAt']),
+  return _decodeMetadataCompaction(
+    _decodeMetadataTokens(_decodeMetadataContent(json), json),
+    json,
   );
 }
 
@@ -403,52 +200,8 @@ ConversationArchiveToolCall _decodeToolCall(Object? value) {
   );
 }
 
-ConversationArchiveAttachment _decodeAttachment(Object? value) {
-  final json = _jsonMap(value);
-  _requireKeys(json, const {
-    'fileName',
-    'displayName',
-    'mimeType',
-    'modality',
-    'sizeBytes',
-    'dataBase64',
-  });
-  final fileName = _nonEmptyString(json['fileName']);
-  if (fileName == '.' ||
-      fileName == '..' ||
-      fileName != p.posix.basename(fileName.replaceAll(r'\', '/'))) {
-    throw const MalformedConversationArchiveException();
-  }
-  final data = _string(json['dataBase64']);
-  Uint8List bytes;
-  try {
-    bytes = Uint8List.fromList(base64Decode(data));
-  } on FormatException catch (error, stackTrace) {
-    Error.throwWithStackTrace(
-      const MalformedConversationArchiveException(),
-      stackTrace,
-    );
-  }
-  final sizeBytes = _integer(json['sizeBytes']);
-  if (sizeBytes < 0 ||
-      sizeBytes > ConversationArchiveCodec.maxAttachmentBytes ||
-      bytes.length != sizeBytes) {
-    throw const MalformedConversationArchiveException();
-  }
-
-  final mimeType = _nonEmptyString(json['mimeType']);
-  if (!RegExp(r'^[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+$').hasMatch(mimeType)) {
-    throw const MalformedConversationArchiveException();
-  }
-
-  return ConversationArchiveAttachment(
-    fileName: fileName,
-    displayName: _nonEmptyString(json['displayName']),
-    mimeType: mimeType,
-    modality: _enumByName(MessageAttachmentModality.values, json['modality']),
-    bytes: bytes,
-  );
-}
+ConversationArchiveAttachment _decodeAttachment(Object? value) =>
+    _decodeArchiveAttachment(_attachmentJson(value));
 
 void _validateMessageIndexes(List<ConversationArchiveMessage> messages) {
   for (final message in messages) {
@@ -571,17 +324,432 @@ ToolCallResultStatus? _nullableToolStatus(Object? value) {
   throw const MalformedConversationArchiveException();
 }
 
-final class MalformedConversationArchiveException implements Exception {
-  const new();
+Object? _decodeJson(String json) {
+  try {
+    return jsonDecode(json);
+  } on FormatException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      const MalformedConversationArchiveException(),
+      stackTrace,
+    );
+  }
+}
+
+ConversationArchive _decodeArchive(Object? value) {
+  final root = _jsonMap(value);
+  _validateArchiveRoot(root);
+  final archive = _decodeArchiveContents(root);
+  _validateMessageIndexes(archive.messages);
+
+  return archive;
+}
+
+ConversationArchive _decodeArchiveContents(Map<String, Object?> root) {
+  final conversation = _decodeConversation(root['conversation']);
+
+  return ConversationArchive(
+    title: conversation.title,
+    createdAt: conversation.createdAt,
+    updatedAt: conversation.updatedAt,
+    messages: _decodeMessages(root['messages']),
+    modelLabel: conversation.modelLabel,
+  );
+}
+
+List<ConversationArchiveMessage> _decodeMessages(Object? value) =>
+    _jsonList(value).map(_decodeMessage).toList(growable: false);
+
+void _validateArchiveRoot(Map<String, Object?> root) {
+  if (root['format'] != ConversationArchiveCodec.format) {
+    throw const MalformedConversationArchiveException();
+  }
+  final version = _integer(root['version']);
+  if (version != ConversationArchiveCodec.version) {
+    throw UnsupportedArchiveVersionException(version);
+  }
+  _requireKeys(root, const {'format', 'version', 'conversation', 'messages'});
+}
+
+({String title, DateTime createdAt, DateTime updatedAt, String? modelLabel})
+_decodeConversation(Object? value) {
+  final json = _jsonMap(value);
+  _requireKeys(json, const {'title', 'createdAt', 'updatedAt', 'modelLabel'});
+
+  return (
+    title: _nonEmptyString(json['title']),
+    createdAt: _dateTime(json['createdAt']),
+    updatedAt: _dateTime(json['updatedAt']),
+    modelLabel: _nullableString(json['modelLabel']),
+  );
+}
+
+Future<List<ConversationArchiveMessage>> _archiveMessages(
+  List<MessageEntity> messages,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+) async {
+  final messageIndexes = {
+    for (var index = 0; index < messages.length; index++)
+      messages[index].id: index,
+  };
+  final archivedMessages = <ConversationArchiveMessage>[];
+  for (final message in messages) {
+    archivedMessages.add(
+      await _archiveMessage(message, messageIndexes, readAttachmentBytes),
+    );
+  }
+
+  return archivedMessages;
+}
+
+Future<ConversationArchiveMessage> _archiveMessage(
+  MessageEntity message,
+  Map<String, int> messageIndexes,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+) async {
+  final attachments = await _archiveMessageAttachments(
+    message.attachments,
+    readAttachmentBytes,
+  );
+
+  return _archiveMessageTranscript(message, messageIndexes, attachments);
+}
+
+Future<List<ConversationArchiveAttachment>> _archiveMessageAttachments(
+  List<MessageAttachmentEntity> attachments,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+) async {
+  final archived = <ConversationArchiveAttachment>[];
+  for (final attachment in attachments) {
+    archived.add(await _exportAttachment(attachment, readAttachmentBytes));
+  }
+
+  return archived;
+}
+
+ConversationArchiveMessage _archiveMessageTranscript(
+  MessageEntity message,
+  Map<String, int> messageIndexes,
+  List<ConversationArchiveAttachment> attachments,
+) => ConversationArchiveMessage(
+  content: message.content,
+  messageType: message.messageType,
+  isUser: message.isUser,
+  status: message.status,
+  createdAt: message.createdAt,
+  metadata: _archiveMetadata(message.metadata, messageIndexes),
+  attachments: attachments,
+);
+
+ConversationArchiveMetadata _archiveMetadata(
+  MessageMetadataEntity? source,
+  Map<String, int> messageIndexes,
+) {
+  final metadata = source ?? const MessageMetadataEntity();
+
+  return _archiveMetadataCore(metadata).copyWith(
+    compactionKind: metadata.compactionKind,
+    compactedFromMessageIndex: messageIndexes[metadata.compactedFromMessageId],
+    compactedThroughMessageIndex:
+        messageIndexes[metadata.compactedThroughMessageId],
+    compactedMessageIndexes: [
+      for (final id in metadata.compactedMessageIds) ?messageIndexes[id],
+    ],
+    compactionCreatedAt: metadata.compactionCreatedAt,
+  );
+}
+
+ConversationArchiveMetadata _archiveMetadataCore(
+  MessageMetadataEntity metadata,
+) => ConversationArchiveMetadata(
+  toolCalls: _archiveToolCalls(metadata.toolCalls),
+  a2uiMessages: metadata.a2uiMessages,
+  isCompactionSummary: metadata.isCompactionSummary,
+  promptTokens: metadata.promptTokens,
+  completionTokens: metadata.completionTokens,
+  totalTokens: metadata.totalTokens,
+  providerError: _nullableBoolean(metadata.modelMetadata['providerError']),
+  a2uiRequiresUserAction: _nullableBoolean(
+    metadata.modelMetadata['a2uiRequiresUserAction'],
+  ),
+);
+
+List<ConversationArchiveToolCall> _archiveToolCalls(
+  List<MessageToolCallEntity> toolCalls,
+) => [
+  for (final toolCall in toolCalls)
+    ConversationArchiveToolCall(
+      displayName: toolCall.userFacingDescription?.trim(),
+      resultStatus: toolCall.resultStatus,
+    ),
+];
+
+Map<String, Object?> _conversationToJson(ConversationArchive archive) => {
+  'title': archive.title,
+  'createdAt': archive.createdAt.toIso8601String(),
+  'updatedAt': archive.updatedAt.toIso8601String(),
+  'modelLabel': archive.modelLabel,
+};
+
+Map<String, Object?> _messageToJson(ConversationArchiveMessage message) => {
+  ..._messageFieldsToJson(message),
+  'metadata': _metadataToJson(message.metadata),
+  'attachments': [
+    for (final attachment in message.attachments) _attachmentToJson(attachment),
+  ],
+};
+
+Map<String, Object?> _messageFieldsToJson(ConversationArchiveMessage message) =>
+    {
+      'content': message.content,
+      'messageType': message.messageType.value,
+      'isUser': message.isUser,
+      'status': message.status.value,
+      'createdAt': message.createdAt.toIso8601String(),
+    };
+
+Map<String, Object?> _attachmentToJson(
+  ConversationArchiveAttachment attachment,
+) => {
+  'fileName': attachment.fileName,
+  'displayName': attachment.displayName,
+  'mimeType': attachment.mimeType,
+  'modality': attachment.modality.name,
+  'sizeBytes': attachment.bytes.length,
+  'dataBase64': base64Encode(attachment.bytes),
+};
+
+Map<String, Object?> _metadataTokenFieldsToJson(
+  ConversationArchiveMetadata metadata,
+) => {
+  'promptTokens': metadata.promptTokens,
+  'completionTokens': metadata.completionTokens,
+  'totalTokens': metadata.totalTokens,
+  'providerError': metadata.providerError,
+  'a2uiRequiresUserAction': metadata.a2uiRequiresUserAction,
+};
+
+Map<String, Object?> _metadataCompactionFieldsToJson(
+  ConversationArchiveMetadata metadata,
+) => {
+  'compactionKind': metadata.compactionKind?.name,
+  'compactedFromMessageIndex': metadata.compactedFromMessageIndex,
+  'compactedThroughMessageIndex': metadata.compactedThroughMessageIndex,
+  'compactedMessageIndexes': metadata.compactedMessageIndexes,
+  'compactionCreatedAt': metadata.compactionCreatedAt?.toIso8601String(),
+};
+
+Map<String, Object?> _toolCallToJson(ConversationArchiveToolCall toolCall) => {
+  'displayName': toolCall.displayName,
+  'resultStatus': _toolStatusToJson(toolCall.resultStatus),
+};
+
+Map<String, Object?> _messageJson(Object? value) {
+  final json = _jsonMap(value);
+  _requireKeys(json, const {
+    'content',
+    'messageType',
+    'isUser',
+    'status',
+    'createdAt',
+    'metadata',
+    'attachments',
+  });
+
+  return json;
+}
+
+ConversationArchiveMessage _decodeArchiveMessage(Map<String, Object?> json) {
+  final attachments = _decodeMessageAttachments(json['attachments']);
+
+  return _decodedArchiveMessage(json, attachments);
+}
+
+List<ConversationArchiveAttachment> _decodeMessageAttachments(Object? value) =>
+    _jsonList(value).map(_decodeAttachment).toList(growable: false);
+
+ConversationArchiveMessage _decodedArchiveMessage(
+  Map<String, Object?> json,
+  List<ConversationArchiveAttachment> attachments,
+) => ConversationArchiveMessage(
+  content: _decodeMessageContent(json['content'], attachments),
+  messageType: _enumByName(MessageType.values, json['messageType']),
+  isUser: _boolean(json['isUser']),
+  status: _enumByName(MessageStatus.values, json['status']),
+  createdAt: _dateTime(json['createdAt']),
+  metadata: _decodeMetadata(json['metadata']),
+  attachments: attachments,
+);
+
+String _decodeMessageContent(
+  Object? value,
+  List<ConversationArchiveAttachment> attachments,
+) {
+  final content = _string(value);
+  if (content.trim().isEmpty && attachments.isEmpty) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return content;
+}
+
+ConversationArchiveMetadata _decodeMetadataContent(Map<String, Object?> json) =>
+    ConversationArchiveMetadata(
+      toolCalls: _jsonList(json['toolCalls'])
+          .map(_decodeToolCall)
+          .toList(growable: false),
+      a2uiMessages: _jsonList(json['a2uiMessages']).map(_string).toList(),
+      isCompactionSummary: _boolean(json['isCompactionSummary']),
+      compactedMessageIndexes: _jsonList(json['compactedMessageIndexes'])
+          .map(_integer)
+          .toList(),
+    );
+
+ConversationArchiveMetadata _decodeMetadataTokens(
+  ConversationArchiveMetadata metadata,
+  Map<String, Object?> json,
+) => metadata.copyWith(
+  promptTokens: _nullableInteger(json['promptTokens']),
+  completionTokens: _nullableInteger(json['completionTokens']),
+  totalTokens: _nullableInteger(json['totalTokens']),
+  providerError: _nullableBoolean(json['providerError']),
+  a2uiRequiresUserAction: _nullableBoolean(json['a2uiRequiresUserAction']),
+);
+
+ConversationArchiveMetadata _decodeMetadataCompaction(
+  ConversationArchiveMetadata metadata,
+  Map<String, Object?> json,
+) => metadata.copyWith(
+  compactionKind: _nullableEnumByName(
+    CompactionKind.values,
+    json['compactionKind'],
+  ),
+  compactedFromMessageIndex: _nullableInteger(
+    json['compactedFromMessageIndex'],
+  ),
+  compactedThroughMessageIndex: _nullableInteger(
+    json['compactedThroughMessageIndex'],
+  ),
+  compactionCreatedAt: _nullableDateTime(json['compactionCreatedAt']),
+);
+
+Map<String, Object?> _attachmentJson(Object? value) {
+  final json = _jsonMap(value);
+  _requireKeys(json, const {
+    'fileName',
+    'displayName',
+    'mimeType',
+    'modality',
+    'sizeBytes',
+    'dataBase64',
+  });
+
+  return json;
+}
+
+ConversationArchiveAttachment _decodeArchiveAttachment(
+  Map<String, Object?> json,
+) => ConversationArchiveAttachment(
+  fileName: _decodeFileName(json['fileName']),
+  displayName: _nonEmptyString(json['displayName']),
+  mimeType: _decodeMimeType(json['mimeType']),
+  modality: _enumByName(MessageAttachmentModality.values, json['modality']),
+  bytes: _decodeAttachmentBytes(json['dataBase64'], json['sizeBytes']),
+);
+
+String _decodeFileName(Object? value) {
+  final fileName = _nonEmptyString(value);
+  if (fileName == '.' ||
+      fileName == '..' ||
+      fileName != p.posix.basename(fileName.replaceAll(r'\', '/'))) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return fileName;
+}
+
+String _decodeMimeType(Object? value) {
+  final mimeType = _nonEmptyString(value);
+  if (!RegExp(r'^[a-zA-Z0-9.+-]+/[a-zA-Z0-9.+-]+$').hasMatch(mimeType)) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return mimeType;
+}
+
+Uint8List _decodeAttachmentBytes(Object? dataValue, Object? sizeValue) {
+  final sizeBytes = _validatedAttachmentSize(sizeValue);
+  final data = _string(dataValue);
+  _validateBase64Length(data, sizeBytes);
+
+  return _decodeBase64Attachment(data, sizeBytes);
+}
+
+int _validatedAttachmentSize(Object? value) {
+  final sizeBytes = _integer(value);
+  if (sizeBytes < 0 ||
+      sizeBytes > ConversationArchiveCodec.maxAttachmentBytes) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return sizeBytes;
+}
+
+void _validateBase64Length(String data, int sizeBytes) {
+  final expectedLength = ((sizeBytes + 2) ~/ 3) * 4;
+  if (data.length != expectedLength) {
+    throw const MalformedConversationArchiveException();
+  }
+}
+
+Uint8List _decodeBase64Attachment(String data, int sizeBytes) {
+  try {
+    final bytes = Uint8List.fromList(base64Decode(data));
+    if (bytes.length != sizeBytes) {
+      throw const MalformedConversationArchiveException();
+    }
+
+    return bytes;
+  } on FormatException catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      const MalformedConversationArchiveException(),
+      stackTrace,
+    );
+  }
+}
+
+String _archiveFileName(String value) {
+  final fileName = p.posix.basename(value.replaceAll(r'\', '/'));
+  if (fileName.isEmpty) throw const MalformedConversationArchiveException();
+
+  return fileName;
+}
+
+void _validateExportAttachmentSize(int expected, int actual) {
+  if (actual != expected ||
+      actual > ConversationArchiveCodec.maxAttachmentBytes) {
+    throw const MalformedConversationArchiveException();
+  }
+}
+
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class const MalformedConversationArchiveException._()
+    with _$MalformedConversationArchiveException
+    implements Exception {
+  const factory() = _MalformedConversationArchiveException;
 
   String get localizationKey =>
       'chats.screens.chat_conversation.archive_invalid';
 }
 
-final class UnsupportedArchiveVersionException implements Exception {
-  const new(this.version);
-
-  final int version;
+@freezed
+// DCL cannot see Freezed-generated members in the part file.
+// ignore: weight-of-class
+abstract class const UnsupportedArchiveVersionException._()
+    with _$UnsupportedArchiveVersionException
+    implements Exception {
+  const factory(int version) = _UnsupportedArchiveVersionException;
 
   String get localizationKey =>
       'chats.screens.chat_conversation.archive_unsupported_version';

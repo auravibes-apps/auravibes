@@ -143,7 +143,6 @@ typedef _ChatTileCallbacks = ({
   VoidCallback onDelete,
   VoidCallback onTogglePin,
   VoidCallback onRename,
-  VoidCallback onArchiveExport,
   VoidCallback onMenuToggle,
   VoidCallback onTap,
 });
@@ -551,6 +550,7 @@ extension on _ChatTileState {
     workspaceId: widget.workspaceId,
     controller: _menuController,
     callbacks: _tileCallbacks(context),
+    onArchiveExport: () => unawaited(_exportConversationArchive(context)),
   );
 
   _ChatTileCallbacks _tileCallbacks(BuildContext context) => (
@@ -558,7 +558,6 @@ extension on _ChatTileState {
     onDelete: () => _handleDelete(context),
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
-    onArchiveExport: () => unawaited(_exportConversationArchive(context)),
     onMenuToggle: _menuController.toggle,
     onTap: () => _openConversation(context),
   );
@@ -587,28 +586,31 @@ extension on _ChatTileState {
 
   Future<void> _exportConversationArchive(BuildContext context) async {
     try {
-      final archiveJson = await ref
-          .read(conversationArchiveUsecaseProvider)
-          .exportConversation(conversationId: widget.chat.id);
-      final saved = await ref
-          .read(conversationArchiveFileServiceProvider)
-          .saveArchiveJson(archiveJson);
+      final saved = await _saveConversationArchive();
       if (!saved || !context.mounted) return;
-
-      final _ = AuraSnackBars.show(
-        context: context,
-        content: const TextLocale(
-          LocaleKeys.chats_screens_chat_conversation_archive_exported,
-        ),
-      );
+      ConversationArchiveFeedback.showExported(context);
     } on Object catch (error, stackTrace) {
-      _logger.warning(
-        'Failed to export conversation archive',
-        error,
-        stackTrace,
-      );
-      showConversationArchiveError(context, error);
+      _reportArchiveExportError(context, error, stackTrace);
     }
+  }
+
+  Future<bool> _saveConversationArchive() async {
+    final archiveJson = await ref
+        .read(conversationArchiveUsecaseProvider)
+        .exportConversation(conversationId: widget.chat.id);
+
+    return await ref
+        .read(conversationArchiveFileServiceProvider)
+        .saveArchiveJson(archiveJson);
+  }
+
+  void _reportArchiveExportError(
+    BuildContext context,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    _logger.warning('Failed to export conversation archive', error, stackTrace);
+    ConversationArchiveFeedback.showError(context, error);
   }
 
   Future<void> _deleteChat(ConversationEntity chat) async {
@@ -773,6 +775,7 @@ class const _ChatTileProvider({
   required final String workspaceId,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
+  required final VoidCallback onArchiveExport,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => _buildTile(ref);
@@ -782,12 +785,7 @@ extension on _ChatTileProvider {
   Widget _buildTile(WidgetRef ref) {
     final modelDisplayName = _chatModelDisplayName(ref, workspaceId, chat);
     final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
-    final showArchiveAction = switch (ref.watch(
-      workspaceSessionForRouteProvider(workspaceId),
-    )) {
-      AsyncData(value: final session) => session.cloud == null,
-      AsyncLoading() || AsyncError() => false,
-    };
+    final showArchiveAction = _shouldShowArchiveAction(ref, workspaceId);
 
     return _buildView(modelDisplayName, title, showArchiveAction);
   }
@@ -805,7 +803,7 @@ extension on _ChatTileProvider {
     onDelete: callbacks.onDelete,
     onTogglePin: callbacks.onTogglePin,
     onRename: callbacks.onRename,
-    onArchiveExport: showArchiveAction ? callbacks.onArchiveExport : null,
+    onArchiveExport: showArchiveAction ? onArchiveExport : null,
     onMenuToggle: callbacks.onMenuToggle,
     onTap: callbacks.onTap,
   );
@@ -823,6 +821,12 @@ String? _chatModelDisplayName(
     .firstOrNull
     ?.workspaceModelSelection
     .modelId;
+
+bool _shouldShowArchiveAction(WidgetRef ref, String workspaceId) =>
+    switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
+      AsyncData(value: final session) => session.cloud == null,
+      AsyncLoading() || AsyncError() => false,
+    };
 
 class const _ChatListLoaded({required final _ChatListViewState state})
     extends StatelessWidget {
