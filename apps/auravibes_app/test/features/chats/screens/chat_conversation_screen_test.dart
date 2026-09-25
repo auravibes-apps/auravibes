@@ -32,7 +32,6 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -301,7 +300,7 @@ void main() {
         ),
       ),
     );
-    final _ = await tester.pumpAndSettle();
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(
       find.byWidgetPredicate((widget) => widget is AppErrorWidget),
@@ -814,7 +813,7 @@ void main() {
     expect(status, findsNothing);
 
     final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
-    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    final firstRequest = runtime.start(parentId: _chatId, childId: 'child-1');
     await tester.pump();
     expect(status, findsOneWidget);
     expect(
@@ -822,33 +821,21 @@ void main() {
       findsOneWidget,
     );
 
-    final _ = runtime.start(parentId: _chatId, childId: 'child-2');
+    final secondRequest = runtime.start(parentId: _chatId, childId: 'child-2');
     await tester.pump();
     expect(
       find.descendant(of: status, matching: find.text('2')),
       findsOneWidget,
     );
 
-    runtime.finish((
-      parentId: _chatId,
-      childId: 'child-1',
-      status: .done,
-      error: null,
-      stackTrace: null,
-    ));
+    firstRequest.finish();
     await tester.pump();
     expect(
       find.descendant(of: status, matching: find.text('1')),
       findsOneWidget,
     );
 
-    runtime.finish((
-      parentId: _chatId,
-      childId: 'child-2',
-      status: .done,
-      error: null,
-      stackTrace: null,
-    ));
+    secondRequest.finish();
     await tester.pump();
     expect(status, findsNothing);
   });
@@ -1128,7 +1115,11 @@ void main() {
   testWidgets('hides active sub-agent action when no children are live', (
     tester,
   ) async {
-    await _pumpActiveSubAgentStatusWidget(tester, childConversations: const []);
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: const [],
+    );
+    expect(container.read(activeSubAgentRuntimeProvider), isEmpty);
 
     expect(
       find.byKey(const ValueKey<String>('chat_active_sub_agents')),
@@ -1144,7 +1135,7 @@ void main() {
       childConversations: [_childConversation('child-1', 'Research')],
     );
     final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
-    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    final request = runtime.start(parentId: _chatId, childId: 'child-1');
     await tester.pump();
 
     final status = find.byKey(const ValueKey<String>('chat_active_sub_agents'));
@@ -1155,9 +1146,10 @@ void main() {
     expect(node, matchesSemantics(isButton: true, hasTapAction: true));
 
     await tester.tap(status, kind: .mouse);
-    await tester.pumpAndSettle();
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(find.text('Opened child-1'), findsOneWidget);
+    request.finish();
 
     semantics.dispose();
   });
@@ -1168,14 +1160,15 @@ void main() {
       childConversations: [_childConversation('child-1', 'Research')],
     );
     final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
-    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    final request = runtime.start(parentId: _chatId, childId: 'child-1');
     await tester.pump();
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pumpAndSettle();
+    expect(await tester.sendKeyEvent(.tab), isTrue);
+    expect(await tester.sendKeyEvent(.enter), isTrue);
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(find.text('Opened child-1'), findsOneWidget);
+    request.finish();
   });
 
   testWidgets('offers persisted child titles in multi-child chooser', (
@@ -1189,23 +1182,25 @@ void main() {
       ],
     );
     final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
-    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
-    final _ = runtime.start(parentId: _chatId, childId: 'child-2');
+    final firstRequest = runtime.start(parentId: _chatId, childId: 'child-1');
+    final secondRequest = runtime.start(parentId: _chatId, childId: 'child-2');
     await tester.pump();
 
     await tester.tap(
       find.byKey(const ValueKey<String>('chat_active_sub_agents')),
     );
-    await tester.pumpAndSettle();
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(find.text('Active sub-agents'), findsOneWidget);
     expect(find.text('Research notes'), findsOneWidget);
     expect(find.text('Write summary'), findsOneWidget);
 
     await tester.tap(find.text('Write summary'));
-    await tester.pumpAndSettle();
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(find.text('Opened child-2'), findsOneWidget);
+    firstRequest.finish();
+    secondRequest.finish();
   });
 
   testWidgets('keeps live and terminal status details safe in chooser', (
@@ -1221,15 +1216,16 @@ void main() {
       ],
     );
     final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
-    for (final childId in ['running', 'approval', 'failed', 'stopped']) {
-      final _ = runtime.start(parentId: _chatId, childId: childId);
-    }
+    final requests = [
+      for (final childId in ['running', 'approval', 'failed', 'stopped'])
+        runtime.start(parentId: _chatId, childId: childId),
+    ];
     runtime.markAwaitingApproval('approval');
     await tester.pump();
     await tester.tap(
       find.byKey(const ValueKey<String>('chat_active_sub_agents')),
     );
-    await tester.pumpAndSettle();
+    expect(await tester.pumpAndSettle(), greaterThan(0));
 
     expect(
       find.descendant(
@@ -1246,20 +1242,21 @@ void main() {
       findsOneWidget,
     );
 
-    runtime.finish((
-      parentId: _chatId,
-      childId: 'failed',
-      status: .error,
-      error: 'api_key=top-secret',
-      stackTrace: StackTrace.fromString('stack-secret'),
-    ));
-    runtime.finish((
-      parentId: _chatId,
-      childId: 'stopped',
-      status: .stopped,
-      error: null,
-      stackTrace: null,
-    ));
+    runtime
+      ..finish((
+        parentId: _chatId,
+        childId: 'failed',
+        status: .error,
+        error: 'api_key=top-secret',
+        stackTrace: StackTrace.fromString('stack-secret'),
+      ))
+      ..finish((
+        parentId: _chatId,
+        childId: 'stopped',
+        status: .stopped,
+        error: null,
+        stackTrace: null,
+      ));
     await tester.pump();
 
     expect(find.text('Failed'), findsOneWidget);
@@ -1267,6 +1264,10 @@ void main() {
     expect(find.text('Error: api_key=[REDACTED]'), findsOneWidget);
     expect(find.textContaining('top-secret'), findsNothing);
     expect(find.textContaining('stack-secret'), findsNothing);
+
+    for (final request in requests) {
+      request.finish();
+    }
   });
 }
 
@@ -1331,7 +1332,7 @@ Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
     await tester.pump();
     await tester.pump();
   });
-  await tester.pumpAndSettle();
+  expect(await tester.pumpAndSettle(), greaterThan(0));
 
   return container;
 }
@@ -1341,10 +1342,10 @@ ConversationEntity _childConversation(String id, String title) =>
       id: id,
       title: title,
       workspaceId: _workspaceId,
-      parentConversationId: _chatId,
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      parentConversationId: _chatId,
     );
 
 Future<void> _pumpCloudConversationScreen(

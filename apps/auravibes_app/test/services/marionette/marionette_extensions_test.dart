@@ -272,6 +272,7 @@ final class _FakeActions implements MarionetteExtensionActions {
   }) async {
     actionCalls++;
     lastSubAgentSmokeCount = count;
+
     return {'count': count};
   }
 
@@ -281,6 +282,7 @@ final class _FakeActions implements MarionetteExtensionActions {
   }) async {
     actionCalls++;
     lastSubAgentSmokeChildId = childId;
+
     return {'childId': childId};
   }
 }

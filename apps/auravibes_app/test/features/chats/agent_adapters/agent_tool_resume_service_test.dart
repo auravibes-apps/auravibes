@@ -6,7 +6,10 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationContext, AgentIterationDecision;
+    show
+        AgentIterationContext,
+        AgentIterationDecision,
+        SubAgentCompletionStatus;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -153,7 +156,10 @@ void main() {
         final activeSubAgents = container.read(
           activeSubAgentRuntimeProvider.notifier,
         );
-        activeSubAgents.start(parentId: 'parent-1', childId: conversationId);
+        final request = activeSubAgents.start(
+          parentId: 'parent-1',
+          childId: conversationId,
+        );
         activeSubAgents.markAwaitingApproval(conversationId);
         usecase = AgentToolResumeService(
           messageRepository: messageRepository,
@@ -171,6 +177,7 @@ void main() {
           ),
         ).thenAnswer((_) async {
           statusAtContinuation = activeSubAgents.statusOf(conversationId);
+
           return AgentIterationDecision.done;
         });
 
@@ -181,6 +188,7 @@ void main() {
           activeSubAgents.statusOf(conversationId),
           ActiveSubAgentStatus.completed,
         );
+        expect(await request.completion, SubAgentCompletionStatus.done);
         expect(
           () => verify(
             () => agentLoop.call(

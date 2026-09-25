@@ -5,14 +5,12 @@ import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/marionette/marionette_development_state.dart';
-import 'package:auravibes_app/services/marionette/marionette_sub_agent_smoke_fixture.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -31,12 +29,14 @@ void main() {
   String? lastLocation;
   var modelSelectionCalls = 0;
   var container = ProviderContainer();
-  late _ObservedSubAgentMessageStore smokeMessageStore;
+  var smokeMessageStore = _ObservedSubAgentMessageStore(
+    AppSubAgentMessageStore(.new(database)),
+  );
 
   MarionetteDevelopmentState createState() {
     final conversationRepository = ConversationRepository(database);
     smokeMessageStore = _ObservedSubAgentMessageStore(
-      AppSubAgentMessageStore(MessageRepository(database)),
+      AppSubAgentMessageStore(.new(database)),
     );
 
     return MarionetteDevelopmentState(
@@ -47,7 +47,7 @@ void main() {
       preferences: SharedPreferences.getInstance(),
       navigateTo: (location) => lastLocation = location,
       setNewChatModel: (_, _) => modelSelectionCalls++,
-      subAgentSmokeFixture: MarionetteSubAgentSmokeFixture(
+      subAgentSmokeFixture: .new(
         parentConversationId: MarionetteDevelopmentState.demoConversationId,
         workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
         agentCatalog: AppSubAgentCatalog(AgentsRepository(database)),
@@ -142,7 +142,11 @@ void main() {
   test(
     'fixture creates local child conversations and finishes each child',
     () async {
-      await state.seedDemoData();
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
 
       final result = await state.startSubAgentSmokeFixture(count: 2);
       final childIds = result['childIds'] as List<String>;
@@ -153,6 +157,7 @@ void main() {
       );
 
       expect(childIds, hasLength(2));
+      final [firstChildId, secondChildId] = childIds;
       expect(children.map((child) => child.id), containsAll(childIds));
       expect(
         children.every(
@@ -178,14 +183,20 @@ void main() {
         state.finishSubAgentSmokeFixture(childId: 'foreign-child'),
         throwsArgumentError,
       );
-      await state.finishSubAgentSmokeFixture(childId: childIds.first);
+      final firstFinishResult = await state.finishSubAgentSmokeFixture(
+        childId: firstChildId,
+      );
+      expect(firstFinishResult['childId'], firstChildId);
       expect(
         activeSubAgents.childrenOf(
           MarionetteDevelopmentState.demoConversationId,
         ),
-        {childIds.last},
+        {secondChildId},
       );
-      await state.finishSubAgentSmokeFixture(childId: childIds.last);
+      final secondFinishResult = await state.finishSubAgentSmokeFixture(
+        childId: secondChildId,
+      );
+      expect(secondFinishResult['childId'], secondChildId);
       expect(
         activeSubAgents.childrenOf(
           MarionetteDevelopmentState.demoConversationId,
@@ -196,7 +207,11 @@ void main() {
   );
 
   test('fixture runner completes after parent stops its child', () async {
-    await state.seedDemoData();
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
     final result = await state.startSubAgentSmokeFixture(count: 1);
     final childId = (result['childIds'] as List<String>).single;
 
@@ -216,7 +231,11 @@ void main() {
   test(
     'selects only local workspace models and applies intended state',
     () async {
-      final _ = await state.seedDemoData();
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
 
       final workspaceResult = await state.selectWorkspace(
         workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
@@ -258,7 +277,11 @@ void main() {
     );
     expect(lastLocation, isNull);
 
-    final _ = await state.seedDemoData();
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
     final _ = await database.workspaceDao.insertWorkspace(
       .insert(
         id: const Value('other-workspace'),
@@ -302,7 +325,11 @@ void main() {
         type: .local,
       ),
     );
-    final _ = await state.seedDemoData();
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
     await database.recentModelSelectionsDao.recordSelection(
       MarionetteDevelopmentState.demoWorkspaceId,
       MarionetteDevelopmentState.demoModelSelectionId,
@@ -377,6 +404,7 @@ final class _ObservedSubAgentMessageStore(
       Completer<void>.new,
     );
     if (!completion.isCompleted) completion.complete();
+
     return content;
   }
 

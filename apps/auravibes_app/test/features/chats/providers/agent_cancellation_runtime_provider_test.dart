@@ -3,8 +3,9 @@ import 'dart:async';
 // ignore_for_file: cascade_invocations
 
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/riverpod.dart';
 
 void main() {
   group('AgentCancellationRuntime', () {
@@ -116,15 +117,21 @@ void main() {
       expect(runtime.current('c1'), isNull);
     });
 
-    test('duplicate child finish preserves failure and sibling', () {
+    test('duplicate child finish preserves failure and sibling', () async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
       final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
       final error = StateError('provider-token=secret');
       final stackTrace = StackTrace.current;
 
-      runtime.start(parentId: 'parent', childId: 'child-1');
-      runtime.start(parentId: 'parent', childId: 'child-2');
+      final firstRequest = runtime.start(
+        parentId: 'parent',
+        childId: 'child-1',
+      );
+      final secondRequest = runtime.start(
+        parentId: 'parent',
+        childId: 'child-2',
+      );
       runtime.finish((
         parentId: 'parent',
         childId: 'child-1',
@@ -146,6 +153,7 @@ void main() {
       expect(runtime.childrenOf('parent'), {'child-2'});
 
       expect(runtime.statusOf('child-1'), ActiveSubAgentStatus.failed);
+      expect(await firstRequest.completion, SubAgentCompletionStatus.error);
       expect(runtime.statusOf('child-2'), ActiveSubAgentStatus.running);
       runtime.markAwaitingApproval('child-2');
       expect(
@@ -163,7 +171,24 @@ void main() {
         stackTrace: null,
       ));
       expect(runtime.statusOf('child-2'), ActiveSubAgentStatus.stopped);
+      expect(await secondRequest.completion, SubAgentCompletionStatus.stopped);
       expect(runtime.childrenOf('parent'), isEmpty);
+    });
+
+    test('request failure completes handle as failed', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+      final error = StateError('child failed');
+      final request = runtime.start(parentId: 'parent', childId: 'child');
+
+      request.finish(
+        failure: .new(error: error, stackTrace: .current),
+      );
+
+      expect(runtime.statusOf('child'), ActiveSubAgentStatus.failed);
+      expect(await request.completion, SubAgentCompletionStatus.error);
+      expect(runtime.failure('child')?.error, same(error));
     });
 
     test('replacement keeps completion tied to its scope', () async {
@@ -175,9 +200,10 @@ void main() {
 
       final replacement = runtime.start('c1');
       var replacementCompleted = false;
-      final replacementCompletion = runtime.waitForCompletion('c1').then((_) {
+      final replacementCompletion = () async {
+        await runtime.waitForCompletion('c1');
         replacementCompleted = true;
-      });
+      }();
       cleanupRelease.complete();
       await oldCompletion.timeout(const Duration(milliseconds: 200));
       expect(replacementCompleted, isFalse);

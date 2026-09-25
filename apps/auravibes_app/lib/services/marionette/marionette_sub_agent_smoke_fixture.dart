@@ -33,6 +33,7 @@ final class MarionetteSubAgentSmokeFixture({
     for (var index = 0; index < count; index++) {
       childIds.add(await _startChild());
     }
+
     return childIds;
   }
 
@@ -51,53 +52,147 @@ final class MarionetteSubAgentSmokeFixture({
   }
 
   Future<String> _startChild() async {
-    final started = Completer<String>();
-    agent.SubAgentRequestHandle? requestHandle;
-    String? activeChildId;
-    final runner = agent.SubAgentRunner(
-      agentCatalog: _agentCatalog,
-      conversationStore: _conversationStore,
-      messageStore: _messageStore,
-      startRequest: ({required parentId, required childId}) {
-        final handle = _activeSubAgents.start(
-          parentId: parentId,
-          childId: childId,
-        );
-        requestHandle = handle;
-        activeChildId = childId;
-        return handle;
-      },
-      continueAgentTurn: ({required conversationId, required context}) async {
-        final _ = context;
-        _activeSubAgents.markAwaitingApproval(conversationId);
-        if (!started.isCompleted) started.complete(conversationId);
-        return agent.AgentIterationDecision.waitForToolApproval;
-      },
+    final started = Completer<_StartedMarionetteChild>();
+    final requestStarted = Completer<agent.SubAgentRequestHandle>();
+    final launched = await _launchChild(started, requestStarted);
+    _storeLaunchedChild(launched);
+
+    return launched.child.childId;
+  }
+
+  void _storeLaunchedChild(
+    ({_StartedMarionetteChild child, Future<void> execution}) launched,
+  ) {
+    final child = launched.child;
+    _children[child.childId] = (
+      request: child.request,
+      execution: launched.execution,
     );
-    final run = runner.run(
+  }
+
+  agent.SubAgentRunner _createRunner(
+    Completer<_StartedMarionetteChild> started,
+    Completer<agent.SubAgentRequestHandle> requestStarted,
+    void Function(String) onChildStarted,
+  ) => agent.SubAgentRunner(
+    agentCatalog: _agentCatalog,
+    conversationStore: _conversationStore,
+    messageStore: _messageStore,
+    startRequest: _startRequestCallback(this, requestStarted, onChildStarted),
+    continueAgentTurn: _continueAgentTurnCallback(
+      this,
+      started,
+      requestStarted,
+    ),
+  );
+
+  Future<({_StartedMarionetteChild child, Future<void> execution})>
+  _launchChild(
+    Completer<_StartedMarionetteChild> started,
+    Completer<agent.SubAgentRequestHandle> requestStarted,
+  ) async {
+    String? activeChildId;
+    final runner = _createRunner(
+      started,
+      requestStarted,
+      (childId) => activeChildId = childId,
+    );
+    final execution = _runChild(runner, started, () => activeChildId);
+
+    return (child: await started.future, execution: execution);
+  }
+
+  Future<void> _runChild(
+    agent.SubAgentRunner runner,
+    Completer<_StartedMarionetteChild> started,
+    String? Function() activeChildId,
+  ) => _observeExecution(
+    run: runner.run(
       parentConversationId: _parentConversationId,
       workspaceId: _workspaceId,
       arguments: {
         'title': 'Marionette smoke child ${_nextChildNumber++}',
         'prompt': 'Deterministic local smoke fixture.',
       },
-    );
-    final execution = run.then<void>(
-      (_) {
-        final id = activeChildId;
-        if (id != null) _children.remove(id);
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!started.isCompleted) started.completeError(error, stackTrace);
-        final id = activeChildId;
-        if (id != null) _children.remove(id);
-      },
-    );
+    ),
+    started: started,
+    activeChildId: activeChildId,
+  );
 
-    final startedChildId = await started.future;
-    final handle = requestHandle;
-    if (handle == null) throw StateError('Fixture child did not start.');
-    _children[startedChildId] = (request: handle, execution: execution);
-    return startedChildId;
+  agent.SubAgentRequestHandle _startRequest(
+    String parentId,
+    String childId,
+    Completer<agent.SubAgentRequestHandle> requestStarted,
+    void Function(String) onChildStarted,
+  ) {
+    final request = _activeSubAgents.start(
+      parentId: parentId,
+      childId: childId,
+    );
+    onChildStarted(childId);
+    if (!requestStarted.isCompleted) requestStarted.complete(request);
+
+    return request;
+  }
+
+  Future<agent.AgentIterationDecision> _continueAgentTurn(
+    String conversationId,
+    Completer<_StartedMarionetteChild> started,
+    Completer<agent.SubAgentRequestHandle> requestStarted,
+  ) async {
+    _activeSubAgents.markAwaitingApproval(conversationId);
+    final request = await requestStarted.future;
+    if (!started.isCompleted) {
+      started.complete((childId: conversationId, request: request));
+    }
+
+    return agent.AgentIterationDecision.waitForToolApproval;
+  }
+
+  Future<void> _observeExecution({
+    required Future<String> run,
+    required Completer<_StartedMarionetteChild> started,
+    required String? Function() activeChildId,
+  }) async {
+    try {
+      // Discard response while preserving runner completion and errors.
+      await run.asStream().drain<void>();
+    } on Object catch (error, stackTrace) {
+      if (!started.isCompleted) {
+        started.completeError(error, stackTrace);
+      }
+    } finally {
+      final childId = activeChildId();
+      if (childId != null) {
+        final _ = _children.remove(childId);
+      }
+    }
   }
 }
+
+agent.StartSubAgentRequest _startRequestCallback(
+  MarionetteSubAgentSmokeFixture fixture,
+  Completer<agent.SubAgentRequestHandle> requestStarted,
+  void Function(String) onChildStarted,
+) =>
+    ({required parentId, required childId}) => fixture._startRequest(
+      parentId,
+      childId,
+      requestStarted,
+      onChildStarted,
+    );
+
+agent.ContinueSubAgentTurn _continueAgentTurnCallback(
+  MarionetteSubAgentSmokeFixture fixture,
+  Completer<_StartedMarionetteChild> started,
+  Completer<agent.SubAgentRequestHandle> requestStarted,
+) => ({required conversationId, required context}) {
+  final _ = context;
+
+  return fixture._continueAgentTurn(conversationId, started, requestStarted);
+};
+
+typedef _StartedMarionetteChild = ({
+  String childId,
+  agent.SubAgentRequestHandle request,
+});

@@ -58,7 +58,8 @@ class const MarionetteExtensions(final MarionetteExtensionActions _actions) {
       'count',
       MarionetteDevelopmentState.allowedSubAgentSmokeCountValues.toSet(),
     );
-    return _actions.startSubAgentSmokeFixture(count: int.parse(count));
+
+    return _actions.startSubAgentSmokeFixture(count: .parse(count));
   });
 
   Future<MarionetteExtensionResult> finishSubAgentSmokeFixture(
@@ -247,22 +248,19 @@ final class _MarionetteStateDependencies(ProviderContainer container) {
     sharedPreferencesProvider.future,
   );
   final MarionetteNavigation navigateTo = container.read(routerProvider).go;
+  final MarionetteSubAgentSmokeFixture subAgentSmokeFixture = .new(
+    parentConversationId: MarionetteDevelopmentState.demoConversationId,
+    workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+    agentCatalog: AppSubAgentCatalog(container.read(agentsRepositoryProvider)),
+    conversationStore: AppSubAgentConversationStore(
+      container.read(conversationRepositoryProvider),
+    ),
+    messageStore: AppSubAgentMessageStore(
+      container.read(messageRepositoryProvider),
+    ),
+    activeSubAgents: container.read(activeSubAgentRuntimeProvider.notifier),
+  );
   final ProviderContainer _container = container;
-  final MarionetteSubAgentSmokeFixture subAgentSmokeFixture =
-      MarionetteSubAgentSmokeFixture(
-        parentConversationId: MarionetteDevelopmentState.demoConversationId,
-        workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
-        agentCatalog: AppSubAgentCatalog(
-          container.read(agentsRepositoryProvider),
-        ),
-        conversationStore: AppSubAgentConversationStore(
-          container.read(conversationRepositoryProvider),
-        ),
-        messageStore: AppSubAgentMessageStore(
-          container.read(messageRepositoryProvider),
-        ),
-        activeSubAgents: container.read(activeSubAgentRuntimeProvider.notifier),
-      );
 
   void setNewChatModel(String workspaceId, String modelSelectionId) =>
       _container

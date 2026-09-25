@@ -129,6 +129,7 @@ class MarionetteDevelopmentState({
     required int count,
   }) async {
     final childIds = await subAgentSmokeFixture.start(count: count);
+
     return {'parentConversationId': demoConversationId, 'childIds': childIds};
   }
 
@@ -137,6 +138,7 @@ class MarionetteDevelopmentState({
     required String childId,
   }) async {
     await subAgentSmokeFixture.finish(childId: childId);
+
     return {'childId': childId};
   }
 
@@ -200,35 +202,31 @@ class MarionetteDevelopmentState({
       );
     }
   }
-
-  void _requireStableIdentifier(String value, String parameter) {
-    if (value.isEmpty ||
-        value.length > maxIdentifierLength ||
-        value == '.' ||
-        value == '..' ||
-        value != Uri.encodeComponent(value)) {
-      throw ArgumentError.value(
-        value,
-        parameter,
-        'must be a stable identifier',
-      );
-    }
-  }
-
-  String _routeLocation(String route, String workspaceId) => switch (route) {
-    'new_chat' => NewChatRoute(workspaceId: workspaceId).location,
-    'chats' => ChatsRoute(workspaceId: workspaceId).location,
-    'tools' => ToolsRoute(workspaceId: workspaceId).location,
-    'models' => ModelsRoute(workspaceId: workspaceId).location,
-    'service_connections' => ServiceConnectionsRoute(
-      workspaceId: workspaceId,
-    ).location,
-    'skills' => SkillsRoute(workspaceId: workspaceId).location,
-    'agents' => AgentsRoute(workspaceId: workspaceId).location,
-    'settings' => SettingsRoute(workspaceId: workspaceId).location,
-    _ => _throwMarionetteNotAllowlisted(route, 'route'),
-  };
 }
+
+void _requireStableIdentifier(String value, String parameter) {
+  if (value.isEmpty ||
+      value.length > MarionetteDevelopmentState.maxIdentifierLength ||
+      value == '.' ||
+      value == '..' ||
+      value != Uri.encodeComponent(value)) {
+    throw ArgumentError.value(value, parameter, 'must be a stable identifier');
+  }
+}
+
+String _routeLocation(String route, String workspaceId) => switch (route) {
+  'new_chat' => NewChatRoute(workspaceId: workspaceId).location,
+  'chats' => ChatsRoute(workspaceId: workspaceId).location,
+  'tools' => ToolsRoute(workspaceId: workspaceId).location,
+  'models' => ModelsRoute(workspaceId: workspaceId).location,
+  'service_connections' => ServiceConnectionsRoute(
+    workspaceId: workspaceId,
+  ).location,
+  'skills' => SkillsRoute(workspaceId: workspaceId).location,
+  'agents' => AgentsRoute(workspaceId: workspaceId).location,
+  'settings' => SettingsRoute(workspaceId: workspaceId).location,
+  _ => _throwMarionetteNotAllowlisted(route, 'route'),
+};
 
 Never _throwMarionetteNotAllowlisted(Object value, String parameter) =>
     throw ArgumentError.value(value, parameter, 'is not allowlisted');

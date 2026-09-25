@@ -142,6 +142,7 @@ class AppAgentToolResumeProvider({
   ) {
     if (decision == agent.AgentIterationDecision.waitForToolApproval) {
       activeSubAgents?.markAwaitingApproval(conversationId);
+
       return;
     }
 
