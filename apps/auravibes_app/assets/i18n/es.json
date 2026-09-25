@@ -420,6 +420,15 @@
         "one": "1 subagente en ejecución",
         "other": "{} subagentes en ejecución"
       },
+
+      "active_sub_agents_accessible_label": "{count}. Ver subagentes activos",
+      "active_sub_agents_title": "Subagentes activos",
+      "sub_agent_error_detail": "Error: {error}",
+      "sub_agent_status_awaiting_approval": "Esperando aprobación",
+      "sub_agent_status_completed": "Completado",
+      "sub_agent_status_failed": "Falló",
+      "sub_agent_status_running": "En ejecución",
+      "sub_agent_status_stopped": "Detenido",
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",

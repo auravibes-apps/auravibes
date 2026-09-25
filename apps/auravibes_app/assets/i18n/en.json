@@ -420,6 +420,15 @@
         "one": "1 sub-agent running",
         "other": "{} sub-agents running"
       },
+
+      "active_sub_agents_accessible_label": "{count}. View active sub-agents",
+      "active_sub_agents_title": "Active sub-agents",
+      "sub_agent_error_detail": "Error: {error}",
+      "sub_agent_status_awaiting_approval": "Awaiting approval",
+      "sub_agent_status_completed": "Completed",
+      "sub_agent_status_failed": "Failed",
+      "sub_agent_status_running": "Running",
+      "sub_agent_status_stopped": "Stopped",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
         "one": "1 queued message",
