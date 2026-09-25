@@ -7,6 +7,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -24,23 +25,22 @@ export 'app_with_responsive_drawer.dart';
 /// It delegates the visual presentation to AuraSidebarOrganism
 /// from the auravibes_ui package.
 
-final List<AuraNavigationData> _navigationItems = [
-  // Const AuraNavigationData(.
-  //   Icon: Icon(Icons.dashboard_outlined),.
-  //   Label: TextLocale(LocaleKeys.menu_home),.
-  // ),.
-  const AuraNavigationData(
-    icon: Icon(Icons.chat_outlined),
-    label: TextLocale(LocaleKeys.menu_new_chat),
+List<AuraNavigationData> _navigationItems(BuildContext context) => [
+  AuraNavigationData(
+    icon: const Icon(Icons.chat_outlined),
+    label: const TextLocale(LocaleKeys.menu_new_chat),
+    semanticLabel: LocaleKeys.menu_new_chat.tr(context: context),
   ),
-  const AuraNavigationData(
-    icon: Icon(Icons.settings_applications_outlined),
-    label: TextLocale(LocaleKeys.menu_more),
+  AuraNavigationData(
+    icon: const Icon(Icons.settings_applications_outlined),
+    label: const TextLocale(LocaleKeys.menu_more),
+    semanticLabel: LocaleKeys.menu_more.tr(context: context),
   ),
-  const AuraNavigationData(
-    icon: Icon(Icons.settings_outlined),
-    label: TextLocale(LocaleKeys.settings_screen_title),
+  AuraNavigationData(
+    icon: const Icon(Icons.settings_outlined),
+    label: const TextLocale(LocaleKeys.settings_screen_title),
     footer: true,
+    semanticLabel: LocaleKeys.settings_screen_title.tr(context: context),
   ),
 ];
 
@@ -111,7 +111,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
 
     return AppWithResponsiveDrawer(
       child: navigationShell,
-      navigationItems: _navigationItems,
+      navigationItems: _navigationItems(context),
       onNavigationTap: _handleNavigationTap,
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,

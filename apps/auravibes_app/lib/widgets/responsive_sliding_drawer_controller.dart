@@ -7,6 +7,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -94,7 +95,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   bool? _dragStartedWhenOpen;
   _DrawerDragDirection? _dragDirection;
 
-  bool get isDesktop => MediaQuery.sizeOf(context).width >= 600;
+  bool get isDesktop =>
+      responsiveShellLayoutForWidth(MediaQuery.sizeOf(context).width) ==
+      ResponsiveShellLayout.desktop;
 
   AnimationController get _requiredController {
     final controller = _controller;
