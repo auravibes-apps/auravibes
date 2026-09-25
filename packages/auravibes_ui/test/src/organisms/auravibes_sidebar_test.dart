@@ -48,6 +48,53 @@ void main() {
       expect(size.width, 280);
     });
 
+    testWidgets('fits navigation labels at large RTL text scale', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(200, 800);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final semantics = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: const .linear(2)),
+                  child: Directionality(
+                    textDirection: .rtl,
+                    child: AuraSidebar(
+                      navigationItems: const [
+                        AuraNavigationData(
+                          icon: Icon(Icons.home),
+                          label: Text('Nuevo Chat'),
+                          semanticLabel: 'Nuevo Chat',
+                        ),
+                      ],
+                      onNavigationTap: (_) {
+                        final _ = Object();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Nuevo Chat'), findsOneWidget);
+        expect(find.bySemanticsLabel('Nuevo Chat'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        semantics.dispose();
+      }
+    });
+
     testWidgets('has collapsed width when isExpanded is false', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

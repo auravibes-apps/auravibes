@@ -401,6 +401,28 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.search_placeholder';
   static const chats_screens_chats_list_search_no_results =
       'chats_screens.chats_list.search_no_results';
+  static const chats_screens_chats_list_select_conversation =
+      'chats_screens.chats_list.select_conversation';
+  static const chats_screens_chats_list_deselect_conversation =
+      'chats_screens.chats_list.deselect_conversation';
+  static const chats_screens_chats_list_selected_count =
+      'chats_screens.chats_list.selected_count';
+  static const chats_screens_chats_list_clear_selection =
+      'chats_screens.chats_list.clear_selection';
+  static const chats_screens_chats_list_bulk_pin =
+      'chats_screens.chats_list.bulk_pin';
+  static const chats_screens_chats_list_bulk_unpin =
+      'chats_screens.chats_list.bulk_unpin';
+  static const chats_screens_chats_list_bulk_delete =
+      'chats_screens.chats_list.bulk_delete';
+  static const chats_screens_chats_list_bulk_delete_title =
+      'chats_screens.chats_list.bulk_delete_title';
+  static const chats_screens_chats_list_bulk_delete_confirm =
+      'chats_screens.chats_list.bulk_delete_confirm';
+  static const chats_screens_chats_list_bulk_pin_failures =
+      'chats_screens.chats_list.bulk_pin_failures';
+  static const chats_screens_chats_list_bulk_delete_failures =
+      'chats_screens.chats_list.bulk_delete_failures';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
   static const chats_screens_new_chat_start_error =

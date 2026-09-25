@@ -895,7 +895,7 @@ void main() {
       capturedArguments,
       containsAllInOrder([
         'test',
-        '--exclude-tags=integration',
+        '--exclude-tags=integration,golden',
         '--concurrency=1',
         '--timeout=30s',
         '--reporter=compact',
