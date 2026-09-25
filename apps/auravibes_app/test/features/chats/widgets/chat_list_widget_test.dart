@@ -711,6 +711,53 @@ void main() {
       );
     });
 
+    testWidgets('bulk unpin preserves search and selection', (tester) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Alpha', isPinned: true),
+          _createConversation(id: 'conv-2', title: 'Beta', isPinned: true),
+        ]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-2')),
+      );
+      await tester.enterText(find.byType(EditableText), 'Beta');
+      await tester.pump(const Duration(milliseconds: 301));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Alpha'), findsNothing);
+      expect(find.text('1 selected'), findsOneWidget);
+      await tester.tap(find.text('Unpin selected'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        repo.patches,
+        equals([
+          (id: 'conv-2', patch: const ConversationPatch(isPinned: false)),
+        ]),
+      );
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        'Beta',
+      );
+      expect(find.text('1 selected'), findsOneWidget);
+    });
+
     testWidgets('bulk pin reports failures and keeps failed chats selected', (
       tester,
     ) async {

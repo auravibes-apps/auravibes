@@ -5,11 +5,10 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
@@ -641,18 +640,17 @@ extension on _ChatTileState {
       _forkChatAndNavigate(this, context);
 
   Future<void> _deleteChat(ConversationEntity chat) async {
-    final _ = await _deleteConversation(context, ref, chat);
+    final _ = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .delete(chat);
     if (!mounted) return;
     _invalidateConversations(chat.workspaceId);
   }
 
   Future<void> _togglePin(ConversationEntity chat) async {
-    final updated = await _setConversationPin(
-      context,
-      ref,
-      chat,
-      !chat.isPinned,
-    );
+    final updated = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .setPinned(chat, isPinned: !chat.isPinned);
     if (!mounted || updated == null) return;
     _invalidateConversations(chat.workspaceId);
   }
@@ -682,75 +680,6 @@ extension on _ChatTileState {
       workspaceId: widget.workspaceId,
       chatId: widget.chat.id,
     ).go(context);
-  }
-}
-
-Future<bool> _deleteConversation(
-  BuildContext context,
-  WidgetRef ref,
-  ConversationEntity chat,
-) async {
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (!context.mounted) return false;
-  if (cloud != null) {
-    await cloud.delete(chat);
-
-    return true;
-  }
-
-  return await ref.read(deleteConversationUsecaseProvider).call(chat.id);
-}
-
-Future<ConversationEntity?> _setConversationPin(
-  BuildContext context,
-  WidgetRef ref,
-  ConversationEntity chat,
-  bool isPinned,
-) async {
-  final cloud = await ref.read(
-    cloudConversationUsecaseProvider(chat.workspaceId).future,
-  );
-  if (!context.mounted) return null;
-  if (cloud != null) {
-    return await _setCloudConversationPin(cloud, chat, isPinned);
-  }
-
-  return await _setLocalConversationPin(ref, chat, isPinned);
-}
-
-Future<ConversationEntity?> _setCloudConversationPin(
-  CloudConversationUsecase cloud,
-  ConversationEntity chat,
-  bool isPinned,
-) async {
-  try {
-    final updated = await cloud.update(chat, .new(isPinned: isPinned));
-
-    return chat.copyWith(
-      isPinned: isPinned,
-      revision: updated.revision,
-      updatedAt: updated.updatedAt,
-    );
-  } on CloudAppException catch (error) {
-    if (error.code != 'validationFailed') rethrow;
-
-    return null;
-  }
-}
-
-Future<ConversationEntity?> _setLocalConversationPin(
-  WidgetRef ref,
-  ConversationEntity chat,
-  bool isPinned,
-) async {
-  try {
-    return await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(chat.id, .new(isPinned: isPinned));
-  } on ConversationPinLimitException {
-    return null;
   }
 }
 
@@ -935,35 +864,18 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
   }
 
   Future<void> _applyPins(List<ConversationEntity> chats, bool isPinned) async {
-    final failures = <ConversationEntity>[];
-    for (final chat in chats) {
-      if (chat.isPinned == isPinned) continue;
-      final updated = await _tryPin(chat, isPinned);
-      if (!mounted) return;
-      _recordPinResult(widget.selectedChats, chat, updated, failures);
-    }
+    final result = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .pinMany(chats, isPinned: isPinned);
+    if (!mounted) return;
 
+    _recordPinnedChats(widget.selectedChats, result.updated);
     _finishBulkAction(
       LocaleKeys.chats_screens_chats_list_bulk_pin_failures,
-      failures,
+      result.failures,
+      result.errors,
+      action: 'pin',
     );
-  }
-
-  Future<ConversationEntity?> _tryPin(
-    ConversationEntity chat,
-    bool isPinned,
-  ) async {
-    try {
-      return await _setConversationPin(context, ref, chat, isPinned);
-    } on Object catch (error, stackTrace) {
-      _logger.severe(
-        'Failed to pin conversation ${chat.id}',
-        error,
-        stackTrace,
-      );
-
-      return null;
-    }
   }
 
   Future<void> _deleteSelected() async {
@@ -979,31 +891,18 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
   }
 
   Future<void> _deleteChats(List<ConversationEntity> chats) async {
-    final failures = <ConversationEntity>[];
-    for (final chat in chats) {
-      final deleted = await _tryDelete(chat);
-      if (!mounted) return;
-      _recordDeleteResult(widget.selectedChats, chat, deleted, failures);
-    }
+    final result = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .deleteMany(chats);
+    if (!mounted) return;
 
+    _recordDeletedChats(widget.selectedChats, result.deleted);
     _finishBulkAction(
       LocaleKeys.chats_screens_chats_list_bulk_delete_failures,
-      failures,
+      result.failures,
+      result.errors,
+      action: 'delete',
     );
-  }
-
-  Future<bool> _tryDelete(ConversationEntity chat) async {
-    try {
-      return await _deleteConversation(context, ref, chat);
-    } on Object catch (error, stackTrace) {
-      _logger.severe(
-        'Failed to delete conversation ${chat.id}',
-        error,
-        stackTrace,
-      );
-
-      return false;
-    }
   }
 
   Future<void> _withWorking(Future<void> Function() action) async {
@@ -1015,8 +914,20 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
     }
   }
 
-  void _finishBulkAction(String key, List<ConversationEntity> failures) {
+  void _finishBulkAction(
+    String key,
+    List<ConversationEntity> failures,
+    List<BulkConversationOperationError> errors, {
+    required String action,
+  }) {
     if (!mounted) return;
+    for (final failure in errors) {
+      _logger.severe(
+        'Failed to $action conversation ${failure.conversation.id}',
+        failure.error,
+        failure.stackTrace,
+      );
+    }
     ref.invalidate(
       conversationsStreamProvider(workspaceId: widget.workspaceId),
     );
@@ -1024,30 +935,26 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
   }
 }
 
-void _recordPinResult(
+void _recordPinnedChats(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
-  ConversationEntity chat,
-  ConversationEntity? updated,
-  List<ConversationEntity> failures,
+  List<ConversationEntity> chats,
 ) {
-  if (updated == null) {
-    failures.add(chat);
-  } else {
-    selectedChats.value = {...selectedChats.value, chat.id: updated};
+  final updated = {...selectedChats.value};
+  for (final chat in chats) {
+    updated[chat.id] = chat;
   }
+  selectedChats.value = updated;
 }
 
-void _recordDeleteResult(
+void _recordDeletedChats(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
-  ConversationEntity chat,
-  bool deleted,
-  List<ConversationEntity> failures,
+  List<ConversationEntity> chats,
 ) {
-  if (deleted) {
-    selectedChats.value = {...selectedChats.value}..remove(chat.id);
-  } else {
-    failures.add(chat);
+  final updated = {...selectedChats.value};
+  for (final chat in chats) {
+    final _ = updated.remove(chat.id);
   }
+  selectedChats.value = updated;
 }
 
 void _showConversationFailures(
