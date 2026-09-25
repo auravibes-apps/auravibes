@@ -111,7 +111,12 @@ class const _AuraDialogShellActions({required final List<Widget> actions})
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-    child: Row(mainAxisAlignment: .end, children: actions),
+    child: Wrap(
+      alignment: .end,
+      spacing: context.auraTheme.fromSpacing(.sm),
+      runSpacing: context.auraTheme.fromSpacing(.xs),
+      children: actions,
+    ),
   );
 }
 

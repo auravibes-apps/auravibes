@@ -1,4 +1,5 @@
 // Required: Existing UI spacing uses small numeric values.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -33,11 +34,22 @@ class _SkillCredentialDefinitionEditScreenState
   bool _initialized = false;
   bool _isSaving = false;
 
+  bool _isDirty = false;
+  String _savedSnapshot = '';
+
   bool get _isCreate => widget.definitionId == null;
 
   @override
+  void initState() {
+    super.initState();
+    _titleController.addListener(_onFormChanged);
+  }
+
+  @override
   void dispose() {
-    _titleController.dispose();
+    _titleController
+      ..removeListener(_onFormChanged)
+      ..dispose();
     for (final row in _attributeRows) {
       row.dispose();
     }
@@ -48,10 +60,23 @@ class _SkillCredentialDefinitionEditScreenState
   Widget build(BuildContext context) {
     final definitionAsync = _watchDefinition();
 
-    return _screen(definitionAsync);
+    return PopScope(
+      child: _screen(definitionAsync),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_handleBack(context));
+      },
+    );
   }
 
-  void _updateState(VoidCallback callback) => setState(callback);
+  void _updateState([VoidCallback? callback]) {
+    setState(() {
+      callback?.call();
+      if (_initialized) {
+        _isDirty = _currentSnapshot() != _savedSnapshot;
+      }
+    });
+  }
 }
 
 extension on _SkillCredentialDefinitionEditScreenState {
@@ -78,8 +103,35 @@ extension on _SkillCredentialDefinitionEditScreenState {
     if (_attributeRows.isEmpty) {
       _attributeRows.add(_AttributeFormRow());
     }
+
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
     _initialized = true;
   }
+
+  String _currentSnapshot() {
+    final attributes = [
+      for (final row in _attributeRows)
+        if (!_isEmptyPlaceholder(row))
+          <String, Object>{
+            'variable': row.variableController.text.trim(),
+            'description': row.descriptionController.text.trim(),
+            'optional': row.optional,
+            'secret': row.secret,
+          },
+    ]..sort((left, right) => jsonEncode(left).compareTo(jsonEncode(right)));
+
+    return jsonEncode({
+      'title': _titleController.text.trim(),
+      'attributes': attributes,
+    });
+  }
+
+  bool _isEmptyPlaceholder(_AttributeFormRow row) =>
+      row.variableController.text.trim().isEmpty &&
+      row.descriptionController.text.trim().isEmpty &&
+      !row.optional &&
+      row.secret;
 
   List<_AttributeFormRow> _parseAttributeRows(String attributesJson) {
     final attributes = SkillCredentialAttributeDefinition.parseMap(
@@ -102,6 +154,8 @@ extension on _SkillCredentialDefinitionEditScreenState {
     try {
       await _saveDefinition();
       if (!context.mounted) return;
+
+      _updateState(() => _savedSnapshot = _currentSnapshot());
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
@@ -151,14 +205,40 @@ extension on _SkillCredentialDefinitionEditScreenState {
 }
 
 extension on _SkillCredentialDefinitionEditScreenState {
+  Future<void> _handleBack(BuildContext context) async {
+    if (_isSaving || !context.mounted) return;
+
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+
+      return;
+    }
+
+    final shouldDiscard = await AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
+      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
+        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
+      ),
+      isDestructive: true,
+    );
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _updateState(() => _savedSnapshot = _currentSnapshot());
+    Navigator.of(context).pop();
+  }
+}
+
+extension on _SkillCredentialDefinitionEditScreenState {
   void _addAttributeRow() {
     _updateState(() => _attributeRows.add(_AttributeFormRow()));
   }
 
   void _onFormChanged() {
-    _updateState(() {
-      final _ = Object();
-    });
+    if (!_initialized || !mounted) return;
+    _updateState();
   }
 
   void _deleteAttributeRow(_AttributeFormRow row) {
@@ -242,6 +322,8 @@ extension on _SkillCredentialDefinitionEditScreenState {
   ) async {
     await _deleteDefinition(definitionId);
     if (!context.mounted) return;
+
+    _updateState(() => _savedSnapshot = _currentSnapshot());
     Navigator.of(context).pop();
   }
 
@@ -404,7 +486,7 @@ class _CredentialDefinitionAppBarData {
           if (!state._isCreate) _CredentialDefinitionDeleteButton(state: state),
           _CredentialDefinitionAppBarSaveButton(state: state),
         ],
-        leading: _CredentialDefinitionBackButton(),
+        leading: _CredentialDefinitionBackButton(state: state),
       );
 
   final Widget child;
@@ -440,12 +522,14 @@ class const _CredentialDefinitionAppBarSaveButton({
   }
 }
 
-class _CredentialDefinitionBackButton extends StatelessWidget {
+class const _CredentialDefinitionBackButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraIconButton(
       icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: () => state._handleBack(context),
     );
   }
 }

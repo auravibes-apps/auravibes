@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -22,16 +24,21 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   final _controller = TextfEditingController();
   final _focusNode = FocusNode();
   bool _isFocused = false;
+  bool _allowPop = false;
+
+  bool get _isDirty => _controller.text != widget.initialMarkdown;
 
   @override
   void initState() {
     super.initState();
     _controller.text = widget.initialMarkdown;
+    _controller.addListener(_onMarkdownChanged);
     _focusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onMarkdownChanged);
     _focusNode.removeListener(_onFocusChange);
     _controller.dispose();
     _focusNode.dispose();
@@ -39,8 +46,8 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return _MarkdownEditorView(
+  Widget build(BuildContext context) => PopScope<Object?>(
+    child: _MarkdownEditorView(
       controller: _controller,
       focusNode: _focusNode,
       isFocused: _isFocused,
@@ -48,13 +55,51 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
       onUnfocus: _unfocusInput,
       onCancel: () => _cancel(context),
       onSave: () => _save(context),
+    ),
+    canPop: _allowPop || !_isDirty,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) unawaited(_handleBack(context));
+    },
+  );
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (!context.mounted) return;
+    if (!_isDirty) {
+      _pop(context);
+
+      return;
+    }
+
+    final shouldDiscard = await AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
+      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
+        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
+      ),
+      isDestructive: true,
     );
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _pop(context);
   }
 
-  void _cancel(BuildContext context) => Navigator.of(context).pop();
+  void _pop(BuildContext context, [String? result]) {
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop<String>(result);
+    });
+  }
 
-  void _save(BuildContext context) =>
-      Navigator.of(context).pop(_controller.text);
+  void _cancel(BuildContext context) => _pop(context);
+
+  void _save(BuildContext context) => _pop(context, _controller.text);
+
+  void _onMarkdownChanged() {
+    setState(() => _allowPop = false);
+  }
 
   void _onFocusChange() {
     setState(() {

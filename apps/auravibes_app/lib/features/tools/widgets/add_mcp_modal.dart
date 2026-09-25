@@ -39,25 +39,81 @@ class const AddMcpModal({required final String workspaceId, super.key})
 }
 
 class const _AddMcpDialog({required final String workspaceId})
-    extends ConsumerWidget {
+    extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef _) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          .circular(context.auraTheme.fromBorderRadius(.xl)),
+  ConsumerState<_AddMcpDialog> createState() => _AddMcpDialogState();
+}
+
+class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
+  var _allowPop = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final workspaceId = widget.workspaceId;
+    final hasUnsavedChanges = ref.watch(
+      mcpFormProvider(workspaceId).select(
+        (state) =>
+            state.name.trim().isNotEmpty ||
+            state.description.trim().isNotEmpty ||
+            state.url.trim().isNotEmpty ||
+            state.transport != McpTransportTypeOptions.streamableHttp ||
+            state.authenticationType != McpAuthenticationTypeOptions.none ||
+            state.bearerToken.trim().isNotEmpty ||
+            state.oauthClientId.trim().isNotEmpty ||
+            state.useHttp2,
+      ),
+    );
+
+    return PopScope(
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            .circular(context.auraTheme.fromBorderRadius(.xl)),
+          ),
+        ),
+        child: _AddMcpDialogContent(
+          workspaceId: workspaceId,
+          onSubmitSuccess: _popAfterSubmit,
         ),
       ),
-      child: _AddMcpDialogContent(workspaceId: workspaceId),
+      canPop: !hasUnsavedChanges || _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_confirmDiscard(context));
+      },
     );
+  }
+
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final shouldDiscard = await AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
+      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
+      actions: const AuraConfirmDialogActions(
+        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
+        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
+      ),
+      isDestructive: true,
+    );
+    if (shouldDiscard != true || !context.mounted) return;
+
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop();
+  }
+
+  void _popAfterSubmit() {
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop();
   }
 }
 
-class const _AddMcpDialogContent({required final String workspaceId})
-    extends StatelessWidget {
+class const _AddMcpDialogContent({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AddMcpDialogLayout(
     workspaceId: workspaceId,
+    onSubmitSuccess: onSubmitSuccess,
     width: MediaQuery.sizeOf(context).width * 0.9,
     maxHeight: MediaQuery.sizeOf(context).height * 0.85,
   );
@@ -65,6 +121,7 @@ class const _AddMcpDialogContent({required final String workspaceId})
 
 class const _AddMcpDialogLayout({
   required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
   required final double width,
   required final double maxHeight,
 }) extends StatelessWidget {
@@ -72,19 +129,24 @@ class const _AddMcpDialogLayout({
   Widget build(BuildContext context) => Container(
     width: width,
     constraints: .new(maxWidth: 450, maxHeight: maxHeight),
-    child: _AddMcpDialogColumn(workspaceId: workspaceId),
+    child: _AddMcpDialogColumn(
+      workspaceId: workspaceId,
+      onSubmitSuccess: onSubmitSuccess,
+    ),
   );
 }
 
-class const _AddMcpDialogColumn({required final String workspaceId})
-    extends StatelessWidget {
+class const _AddMcpDialogColumn({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
     children: [
       const _AddMcpModalHeader(),
       Flexible(child: _AddMcpForm(workspaceId: workspaceId)),
-      _Footer(workspaceId: workspaceId),
+      _Footer(workspaceId: workspaceId, onSubmitSuccess: onSubmitSuccess),
     ],
   );
 }
@@ -220,7 +282,7 @@ class _McpModalHeaderChildren {
         ),
         AuraIconButton(
           icon: Icons.close,
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
       ];
 
@@ -420,8 +482,10 @@ class const _VerificationStatusContent({
   }
 }
 
-class const _Footer({required final String workspaceId})
-    extends ConsumerWidget {
+class const _Footer({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _watchMcpFooterState(ref, workspaceId);
@@ -432,7 +496,8 @@ class const _Footer({required final String workspaceId})
       isConnectionVerified: state.isConnectionVerified,
       onTestConnection: () =>
           unawaited(_testConnection(context, ref, workspaceId)),
-      onSubmit: () => unawaited(_submit(context, ref, workspaceId)),
+      onSubmit: () =>
+          unawaited(_submit(context, ref, workspaceId, onSubmitSuccess)),
     );
   }
 
@@ -453,12 +518,13 @@ class const _Footer({required final String workspaceId})
     BuildContext context,
     WidgetRef ref,
     String workspaceId,
+    VoidCallback onSubmitSuccess,
   ) async {
     final success = await _submitMcpForm(ref, workspaceId);
     if (!success || !context.mounted) return;
 
     _showMcpSaveSuccess(context);
-    Navigator.of(context).pop();
+    onSubmitSuccess();
   }
 }
 
@@ -573,7 +639,7 @@ class const _FooterButtons({
 class const _FooterCancelButton() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => Navigator.of(context).pop(),
+    onPressed: () => Navigator.of(context).maybePop(),
     child: const TextLocale(LocaleKeys.common_cancel),
     variant: .outlined,
   );
