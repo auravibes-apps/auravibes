@@ -104,12 +104,8 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   }
 }
 
-
-class _FakeModelCatalogStore implements ModelCatalogStore {
-  _FakeModelCatalogStore(this.models);
-
-  final List<ApiModelEntity> models;
-
+class _FakeModelCatalogStore(final List<ApiModelEntity> models)
+    implements ModelCatalogStore {
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async => const [];
 
@@ -117,9 +113,7 @@ class _FakeModelCatalogStore implements ModelCatalogStore {
   Future<List<ApiModelEntity>> getAllModels() async => models;
 
   @override
-  Future<List<ApiModelEntity>> getModelsByProvider(
-    String providerId,
-  ) async =>
+  Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async =>
       models.where((model) => model.modelProvider == providerId).toList();
 
   @override
@@ -128,8 +122,7 @@ class _FakeModelCatalogStore implements ModelCatalogStore {
     String modelId,
   ) async => models
       .where(
-        (model) =>
-            model.modelProvider == providerId && model.id == modelId,
+        (model) => model.modelProvider == providerId && model.id == modelId,
       )
       .firstOrNull;
 
@@ -149,10 +142,8 @@ class _FakeCodexOAuthService extends CodexOAuthService {
   Future<OAuthTokenEntity> authenticateWithDeviceCode({
     void Function(CodexDeviceCode deviceCode)? onDeviceCode,
     bool Function()? isCancelled,
-  }) async => OAuthTokenEntity(
-    accessToken: 'access-token',
-    issuedAt: DateTime(2026),
-  );
+  }) async =>
+      OAuthTokenEntity(accessToken: 'access-token', issuedAt: .new(2026));
 }
 
 ApiModelEntity _makeCatalogModel({
@@ -789,9 +780,7 @@ void main() {
               ),
             ],
           ),
-          codexOAuthServiceProvider.overrideWithValue(
-            _FakeCodexOAuthService(),
-          ),
+          codexOAuthServiceProvider.overrideWithValue(_FakeCodexOAuthService()),
         ],
       );
       addTearDown(container2.dispose);
@@ -803,7 +792,7 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       )..setModel(ModelProviderOAuthProfiles.providerId);
 
-      await notifier.addModelProvider(codexOAuthMethod: .deviceCode);
+      final _ = await notifier.addModelProvider(codexOAuthMethod: .deviceCode);
 
       expect(repo.createdModelIds, ['gpt-5.5', 'gpt-5.5-spark']);
     });

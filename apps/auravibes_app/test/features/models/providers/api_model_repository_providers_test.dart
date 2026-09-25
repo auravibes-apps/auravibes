@@ -380,10 +380,11 @@ void main() {
         ).future,
       );
 
-      expect(
-        result.map((model) => model.id).toList(),
-        ['gpt-5.5', 'gpt-3.5-turbo', 'gpt-5.5-spark'],
-      );
+      expect(result.map((model) => model.id).toList(), [
+        'gpt-5.5',
+        'gpt-3.5-turbo',
+        'gpt-5.5-spark',
+      ]);
     });
   });
 }

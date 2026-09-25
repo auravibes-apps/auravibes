@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -491,8 +492,8 @@ void main() {
         modelConnectionName: 'OpenAI Codex',
         providerId: 'openai',
         providerName: 'OpenAI',
-        connectionProviderId: 'openai-codex',
         modelId: 'gpt-3.5-turbo',
+        connectionProviderId: 'openai-codex',
       );
       const catalog = _FakeApiModelRepository(
         providers: [
@@ -513,9 +514,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           modelSelectionStoreProvider.overrideWith(
-            (_, _) async => _FakeWorkspaceModelSelectionRepository(
-              [selection],
-            ),
+            (_, _) async => _FakeWorkspaceModelSelectionRepository([selection]),
           ),
           modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
         ],
@@ -523,10 +522,7 @@ void main() {
       addTearDown(container.dispose);
 
       final result = await container.read(
-        workspaceModelSelectionByIdProvider(
-          'ws-1',
-          'sel-codex-old',
-        ).future,
+        workspaceModelSelectionByIdProvider('ws-1', 'sel-codex-old').future,
       );
 
       expect(result, isNull);
@@ -539,8 +535,8 @@ void main() {
         modelConnectionName: 'OpenAI Codex',
         providerId: 'openai',
         providerName: 'OpenAI',
-        connectionProviderId: 'openai-codex',
         modelId: 'gpt-5.5-removed',
+        connectionProviderId: 'openai-codex',
       );
       const catalog = _FakeApiModelRepository();
       final container = ProviderContainer(
@@ -554,10 +550,7 @@ void main() {
       addTearDown(container.dispose);
 
       final result = await container.read(
-        workspaceModelSelectionByIdProvider(
-          'ws-1',
-          'sel-codex-missing',
-        ).future,
+        workspaceModelSelectionByIdProvider('ws-1', 'sel-codex-missing').future,
       );
 
       expect(result, isNull);

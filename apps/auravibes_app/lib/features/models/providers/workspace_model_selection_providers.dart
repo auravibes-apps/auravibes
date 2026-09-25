@@ -46,10 +46,7 @@ Future<WorkspaceModelSelectionWithConnectionEntity?> _resolveSelectedModel(
       : selectedModel;
   if (resolvedSelection == null) return null;
 
-  return _resolveCatalogCapabilities(
-    Future.value(resolvedSelection),
-    catalog,
-  );
+  return await _resolveCatalogCapabilities(.value(resolvedSelection), catalog);
 }
 
 Future<WorkspaceModelSelectionWithConnectionEntity> _resolveCatalogCapabilities(
