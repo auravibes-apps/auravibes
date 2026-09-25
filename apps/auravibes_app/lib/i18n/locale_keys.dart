@@ -1341,6 +1341,10 @@ abstract class LocaleKeys {
       'workspace_management.switch_confirm';
   static const workspace_management_switch_error =
       'workspace_management.switch_error';
+  static const workspace_management_switch_loading =
+      'workspace_management.switch_loading';
+  static const workspace_management_switch_retry =
+      'workspace_management.switch_retry';
   static const workspace_management_loading = 'workspace_management.loading';
   static const workspace_management_load_error =
       'workspace_management.load_error';
