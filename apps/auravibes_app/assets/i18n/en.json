@@ -956,6 +956,14 @@
     "settings": {
       "title": "Conversation Compaction",
       "subtitle": "Configure automatic context compaction behavior",
+      "model_budgets_title": "Model-specific budgets",
+      "model_budgets_hint": "Enter nonnegative token counts; leave both fields blank to remove an override.",
+      "reserve_tokens": "Output reserve (tokens)",
+      "keep_recent_tokens": "Recent context to keep (tokens)",
+      "budget_optional": "Optional nonnegative integer",
+      "models_empty": "Select a model to configure a model-specific budget.",
+      "models_loading": "Loading workspace models…",
+      "models_unavailable": "Workspace models are unavailable. Existing budgets remain unchanged.",
       "auto_enabled": "Auto Compaction",
       "auto_enabled_hint": "Automatically compact older context when thresholds are met",
       "usage_threshold": "Usage Percentage Threshold",
@@ -971,7 +979,7 @@
         "usage_range": "Usage threshold must be between 5 and 100",
         "remaining_positive": "Remaining token threshold must be greater than 0",
         "remaining_below_limit": "Remaining token threshold must be below the model context limit",
-        "settings_invalid": "Please enter valid numeric values for all fields"
+        "settings_invalid": "Enter valid numbers. Model budgets must be nonnegative integers."
       }
     },
     "compacting": {
@@ -987,7 +995,15 @@
       "details_range": "Compacted Range",
       "details_created": "Created",
       "details_messages": "Messages compacted",
-      "details_content_label": "Summary Content"
+      "details_content_label": "Summary Content",
+      "details_model": "Model",
+      "details_unknown": "Unknown",
+      "history_action": "Checkpoint history",
+      "history_active": "Active checkpoint",
+      "history_restore": "Use this checkpoint",
+      "history_empty": "No checkpoints available.",
+      "history_loading": "Loading checkpoint history…",
+      "history_unavailable": "Checkpoint history is unavailable."
     },
     "manual": {
       "button_tooltip": "Compact conversation",
@@ -1006,7 +1022,8 @@
       "model_missing": "Cannot compact because the selected model is missing. Select another model.",
       "context_overflow_retry_failed": "Context overflow occurred and recovery compaction failed. Please try compacting manually.",
       "auto_blocked": "Automatic compaction is required but failed. Assistant continuation is blocked. Try compacting manually.",
-      "settings_invalid": "Invalid compaction settings. Please check your values."
+      "settings_invalid": "Invalid compaction settings. Please check your values.",
+      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending."
     }
   },
   "workspace_management": {
