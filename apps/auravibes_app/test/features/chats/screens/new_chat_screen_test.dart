@@ -1,14 +1,23 @@
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
+import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -17,6 +26,7 @@ import '../../../helpers/test_app.dart';
 Future<void> _pumpNewChatWithinPausedBranch(
   WidgetTester tester, {
   required List<Object> overrides,
+  String workspaceId = 'test-ws',
   bool tickerEnabled = false,
 }) async {
   await tester.runAsync(() async {
@@ -26,11 +36,11 @@ Future<void> _pumpNewChatWithinPausedBranch(
           enabled: tickerEnabled,
           child: Theme(
             data: .new(extensions: [AuraTheme.light]),
-            child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
+            child: Portal(child: NewChatScreen(workspaceId: workspaceId)),
           ),
         ),
         overrides: overrides,
-        workspaceId: 'test-ws',
+        workspaceId: workspaceId,
       ),
     );
     await Future<void>.delayed(.zero);
@@ -47,14 +57,51 @@ WorkspaceEntity _workspace(String id) => WorkspaceEntity(
   updatedAt: .new(2026),
 );
 
-List<Object> _newChatOverrides({NewChatState state = const NewChatState()}) => [
+class _FailOnceWorkspaceSelectionRepository
+    implements WorkspaceSelectionRepository {
+  final firstSave = Completer<void>();
+  final savedWorkspaceIds = <String>[];
+
+  @override
+  Future<void> clearIfMatches(String workspaceId) => Future<void>.value();
+
+  @override
+  Future<String?> read() async => null;
+
+  @override
+  Future<void> save(String workspaceId) {
+    savedWorkspaceIds.add(workspaceId);
+    if (savedWorkspaceIds.length == 1) return firstSave.future;
+
+    return Future<void>.value();
+  }
+}
+
+class _FakeGoRouter implements GoRouter {
+  String? lastLocation;
+
+  @override
+  void go(String location, {Object? extra}) => lastLocation = location;
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+List<Object> _newChatOverrides({
+  NewChatState state = const NewChatState(),
+  List<WorkspaceEntity>? workspaces,
+}) => [
   newChatProvider('test-ws').overrideWithValue(state),
+  workspaceModelSelectionByIdProvider(
+    'test-ws',
+    'model',
+  ).overrideWithValue(const AsyncData(null)),
   listModelsGroupedByProviderProvider.overrideWith(
     (ref, workspaceId) => Stream.value({}),
   ),
   agentsProvider('test-ws').overrideWith((ref) => Stream.value(const [])),
-  allWorkspacesProvider.overrideWith(
-    (ref) => Stream.value([_workspace('test-ws')]),
+  allWorkspacesProvider.overrideWithValue(
+    AsyncData(workspaces ?? [_workspace('test-ws')]),
   ),
 ];
 
@@ -119,6 +166,130 @@ void main() {
   });
 
   group('render', () {
+    testWidgets('canceling workspace switch preserves unsent text', (
+      tester,
+    ) async {
+      await _pumpNewChatWithinPausedBranch(
+        tester,
+        overrides: _newChatOverrides(
+          state: const NewChatState(modelId: 'model'),
+          workspaces: [_workspace('test-ws'), _workspace('target-ws')],
+        ),
+        tickerEnabled: true,
+      );
+
+      final textField = find.byType(EditableText).first;
+      await tester.enterText(textField, 'unsent draft');
+      await tester.pump();
+      await tester.pump();
+      final selector = tester.widget<AuraDropdownSelector<String>>(
+        find.byKey(const Key('new_chat_workspace_selector')),
+      );
+      selector.onChanged?.call('target-ws');
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<EditableText>(textField).controller.text,
+        'unsent draft',
+      );
+      expect(find.byType(NewChatScreen), findsOneWidget);
+    });
+
+    testWidgets('failed switch keeps draft and retry completes switch', (
+      tester,
+    ) async {
+      final selectionRepository = _FailOnceWorkspaceSelectionRepository();
+      final router = _FakeGoRouter();
+      final overrides = [
+        ..._newChatOverrides(
+          state: const NewChatState(modelId: 'model'),
+          workspaces: [_workspace('test-ws'), _workspace('target-ws')],
+        ),
+        newChatProvider('target-ws')
+            .overrideWithValue(const NewChatState(modelId: 'model')),
+        workspaceModelSelectionByIdProvider(
+          'target-ws',
+          'model',
+        ).overrideWithValue(const AsyncData(null)),
+        agentsProvider('target-ws')
+            .overrideWith((ref) => Stream.value(const [])),
+        lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
+          selectionRepository,
+        ),
+        routerProvider.overrideWithValue(router),
+      ];
+      await _pumpNewChatWithinPausedBranch(
+        tester,
+        overrides: overrides,
+        tickerEnabled: true,
+      );
+
+      final textField = find.byType(EditableText).first;
+      await tester.enterText(textField, 'unsent draft');
+      await tester.pump();
+      await tester.pump();
+      final selector = tester.widget<AuraDropdownSelector<String>>(
+        find.byKey(const Key('new_chat_workspace_selector')),
+      );
+      selector.onChanged?.call('target-ws');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      final switchStateUnderTest = ProviderScope.containerOf(
+        tester.element(find.byType(NewChatScreen)),
+        listen: false,
+      ).read(workspaceSwitcherProvider);
+      expect(switchStateUnderTest.status, SwitchStatus.loading);
+      await tester.pump();
+      expect(find.text('Switching workspace...'), findsOneWidget);
+      selectionRepository.firstSave.completeError(
+        StateError('Unable to save selected workspace.'),
+      );
+      await tester.pump();
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text('Failed to switch workspace. Please try again.'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<EditableText>(textField).controller.text,
+        'unsent draft',
+      );
+      expect(find.byType(NewChatScreen), findsOneWidget);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsNothing);
+      expect(router.lastLocation, '/workspaces/target-ws/chat/new');
+      expect(selectionRepository.savedWorkspaceIds, ['target-ws', 'target-ws']);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(NewChatScreen)),
+        listen: false,
+      );
+      expect(
+        container.read(workspaceSwitcherProvider).status,
+        SwitchStatus.idle,
+      );
+      await _pumpNewChatWithinPausedBranch(
+        tester,
+        overrides: overrides,
+        workspaceId: 'target-ws',
+        tickerEnabled: true,
+      );
+      final switchedTextField = tester.widget<EditableText>(
+        find.byType(EditableText).first,
+      );
+      expect(switchedTextField.controller.text, isEmpty);
+    });
     testWidgets('keeps New Chat listeners active in a paused branch', (
       tester,
     ) async {

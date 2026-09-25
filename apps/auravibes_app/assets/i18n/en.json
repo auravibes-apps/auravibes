@@ -1036,6 +1036,8 @@
     "switch_title": "Switch workspace?",
     "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",
+    "switch_loading": "Switching workspace...",
+    "switch_retry": "Retry",
     "loading": "Loading workspaces...",
     "load_error": "Failed to load workspaces. Please try again.",
     "dropdown_placeholder": "Select workspace",

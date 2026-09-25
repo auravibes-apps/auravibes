@@ -1036,6 +1036,8 @@
     "switch_title": "¿Cambiar de espacio de trabajo?",
     "switch_confirm": "¿Cambiar a \"{name}\"?",
     "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",
+    "switch_loading": "Cambiando espacio de trabajo...",
+    "switch_retry": "Reintentar",
     "loading": "Cargando espacios de trabajo...",
     "load_error": "Error al cargar espacios de trabajo. Inténtalo de nuevo.",
     "dropdown_placeholder": "Seleccionar espacio de trabajo",
