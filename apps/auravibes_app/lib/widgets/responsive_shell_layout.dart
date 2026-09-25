@@ -1,11 +1,8 @@
-/// Responsive layout variants supported by the app shell.
-enum ResponsiveShellLayout { mobile, desktop }
+/// App shell's responsive layout policy.
+abstract final class ResponsiveShellLayout {
+  /// Logical width at which desktop layout begins.
+  static const double desktopBreakpoint = 600;
 
-/// Width at which the app shell switches to desktop layout.
-const responsiveShellDesktopBreakpoint = 600.0;
-
-/// Selects an app-shell layout for a logical viewport [width].
-ResponsiveShellLayout responsiveShellLayoutForWidth(double width) =>
-    width < responsiveShellDesktopBreakpoint
-    ? ResponsiveShellLayout.mobile
-    : ResponsiveShellLayout.desktop;
+  /// Whether [width] selects the desktop layout.
+  static bool isDesktop(double width) => width >= desktopBreakpoint;
+}

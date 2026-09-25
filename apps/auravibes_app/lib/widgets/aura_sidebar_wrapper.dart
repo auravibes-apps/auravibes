@@ -26,23 +26,35 @@ export 'app_with_responsive_drawer.dart';
 /// from the auravibes_ui package.
 
 List<AuraNavigationData> _navigationItems(BuildContext context) => [
-  AuraNavigationData(
-    icon: const Icon(Icons.chat_outlined),
-    label: const TextLocale(LocaleKeys.menu_new_chat),
-    semanticLabel: LocaleKeys.menu_new_chat.tr(context: context),
+  _navigationItem(
+    context,
+    LocaleKeys.menu_new_chat,
+    const Icon(Icons.chat_outlined),
   ),
-  AuraNavigationData(
-    icon: const Icon(Icons.settings_applications_outlined),
-    label: const TextLocale(LocaleKeys.menu_more),
-    semanticLabel: LocaleKeys.menu_more.tr(context: context),
+  _navigationItem(
+    context,
+    LocaleKeys.menu_more,
+    const Icon(Icons.settings_applications_outlined),
   ),
-  AuraNavigationData(
-    icon: const Icon(Icons.settings_outlined),
-    label: const TextLocale(LocaleKeys.settings_screen_title),
+  _navigationItem(
+    context,
+    LocaleKeys.settings_screen_title,
+    const Icon(Icons.settings_outlined),
     footer: true,
-    semanticLabel: LocaleKeys.settings_screen_title.tr(context: context),
   ),
 ];
+
+AuraNavigationData _navigationItem(
+  BuildContext context,
+  String translationKey,
+  Widget icon, {
+  bool footer = false,
+}) => AuraNavigationData(
+  icon: icon,
+  label: TextLocale(translationKey),
+  footer: footer,
+  semanticLabel: translationKey.tr(context: context),
+);
 
 /// Calculates the correct sidebar navigation index based on the current route
 /// path.

@@ -97,9 +97,9 @@ class const _ResponsiveDrawerView({
     ),
     isDarkMode: Theme.of(context).brightness == Brightness.dark,
     controller: state._controller,
-    initiallyOpen:
-        responsiveShellLayoutForWidth(MediaQuery.sizeOf(context).width) ==
-        ResponsiveShellLayout.desktop,
+    initiallyOpen: ResponsiveShellLayout.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    ),
   );
 }
 

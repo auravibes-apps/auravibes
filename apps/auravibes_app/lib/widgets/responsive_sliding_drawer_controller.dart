@@ -96,8 +96,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   _DrawerDragDirection? _dragDirection;
 
   bool get isDesktop =>
-      responsiveShellLayoutForWidth(MediaQuery.sizeOf(context).width) ==
-      ResponsiveShellLayout.desktop;
+      ResponsiveShellLayout.isDesktop(MediaQuery.sizeOf(context).width);
 
   AnimationController get _requiredController {
     final controller = _controller;
