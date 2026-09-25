@@ -1,13 +1,21 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/data/repositories/agents_repository.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
+import 'package:auravibes_app/features/agents/agent_adapters/app_sub_agent_catalog.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/marionette/marionette_development_state.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -20,18 +28,41 @@ void main() {
   var selectionRepository = _SelectionRepository();
   String? lastLocation;
   var modelSelectionCalls = 0;
-  MarionetteDevelopmentState createState() => MarionetteDevelopmentState(
-    database: database,
-    workspaceRepository: .new(database),
-    selectWorkspaceUsecase: .new(selectionRepository: selectionRepository),
-    modelSelectionRepository: .new(database),
-    preferences: SharedPreferences.getInstance(),
-    navigateTo: (location) => lastLocation = location,
-    setNewChatModel: (_, _) => modelSelectionCalls++,
+  var container = ProviderContainer();
+  var smokeMessageStore = _ObservedSubAgentMessageStore(
+    AppSubAgentMessageStore(.new(database)),
   );
+
+  MarionetteDevelopmentState createState() {
+    final conversationRepository = ConversationRepository(database);
+    smokeMessageStore = _ObservedSubAgentMessageStore(
+      AppSubAgentMessageStore(.new(database)),
+    );
+
+    return MarionetteDevelopmentState(
+      database: database,
+      workspaceRepository: .new(database),
+      selectWorkspaceUsecase: .new(selectionRepository: selectionRepository),
+      modelSelectionRepository: .new(database),
+      preferences: SharedPreferences.getInstance(),
+      navigateTo: (location) => lastLocation = location,
+      setNewChatModel: (_, _) => modelSelectionCalls++,
+      subAgentSmokeFixture: .new(
+        parentConversationId: MarionetteDevelopmentState.demoConversationId,
+        workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
+        agentCatalog: AppSubAgentCatalog(AgentsRepository(database)),
+        conversationStore: AppSubAgentConversationStore(conversationRepository),
+        messageStore: smokeMessageStore,
+        activeSubAgents: container.read(activeSubAgentRuntimeProvider.notifier),
+      ),
+    );
+  }
+
   var state = createState();
 
   setUp(() async {
+    container.dispose();
+    container = ProviderContainer();
     await database.close();
     SharedPreferences.setMockInitialValues({});
     database = AppDatabase(
@@ -44,6 +75,7 @@ void main() {
   });
 
   tearDown(() async {
+    container.dispose();
     await database.close();
   });
 
@@ -108,9 +140,102 @@ void main() {
   });
 
   test(
+    'fixture creates local child conversations and finishes each child',
+    () async {
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
+
+      final result = await state.startSubAgentSmokeFixture(count: 2);
+      final childIds = result['childIds'] as List<String>;
+      final children = await ConversationRepository(database)
+          .getChildConversations(MarionetteDevelopmentState.demoConversationId);
+      final activeSubAgents = container.read(
+        activeSubAgentRuntimeProvider.notifier,
+      );
+
+      expect(childIds, hasLength(2));
+      final [firstChildId, secondChildId] = childIds;
+      expect(children.map((child) => child.id), containsAll(childIds));
+      expect(
+        children.every(
+          (child) =>
+              child.parentConversationId ==
+                  MarionetteDevelopmentState.demoConversationId &&
+              child.workspaceId == MarionetteDevelopmentState.demoWorkspaceId,
+        ),
+        isTrue,
+      );
+      expect(
+        activeSubAgents.childrenOf(
+          MarionetteDevelopmentState.demoConversationId,
+        ),
+        childIds.toSet(),
+      );
+      expect(childIds.map(activeSubAgents.statusOf), [
+        ActiveSubAgentStatus.awaitingApproval,
+        ActiveSubAgentStatus.awaitingApproval,
+      ]);
+
+      await expectLater(
+        state.finishSubAgentSmokeFixture(childId: 'foreign-child'),
+        throwsArgumentError,
+      );
+      final firstFinishResult = await state.finishSubAgentSmokeFixture(
+        childId: firstChildId,
+      );
+      expect(firstFinishResult['childId'], firstChildId);
+      expect(
+        activeSubAgents.childrenOf(
+          MarionetteDevelopmentState.demoConversationId,
+        ),
+        {secondChildId},
+      );
+      final secondFinishResult = await state.finishSubAgentSmokeFixture(
+        childId: secondChildId,
+      );
+      expect(secondFinishResult['childId'], secondChildId);
+      expect(
+        activeSubAgents.childrenOf(
+          MarionetteDevelopmentState.demoConversationId,
+        ),
+        isEmpty,
+      );
+    },
+  );
+
+  test('fixture runner completes after parent stops its child', () async {
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
+    final result = await state.startSubAgentSmokeFixture(count: 1);
+    final childId = (result['childIds'] as List<String>).single;
+
+    container.read(activeSubAgentRuntimeProvider.notifier).finish((
+      parentId: MarionetteDevelopmentState.demoConversationId,
+      childId: childId,
+      status: .stopped,
+      error: null,
+      stackTrace: null,
+    ));
+
+    await smokeMessageStore
+        .waitForAssistantRead(childId)
+        .timeout(const Duration(seconds: 2));
+  });
+
+  test(
     'selects only local workspace models and applies intended state',
     () async {
-      final _ = await state.seedDemoData();
+      final seededData = await state.seedDemoData();
+      expect(
+        seededData['conversationId'],
+        MarionetteDevelopmentState.demoConversationId,
+      );
 
       final workspaceResult = await state.selectWorkspace(
         workspaceId: MarionetteDevelopmentState.demoWorkspaceId,
@@ -152,7 +277,11 @@ void main() {
     );
     expect(lastLocation, isNull);
 
-    final _ = await state.seedDemoData();
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
     final _ = await database.workspaceDao.insertWorkspace(
       .insert(
         id: const Value('other-workspace'),
@@ -196,7 +325,11 @@ void main() {
         type: .local,
       ),
     );
-    final _ = await state.seedDemoData();
+    final seededData = await state.seedDemoData();
+    expect(
+      seededData['conversationId'],
+      MarionetteDevelopmentState.demoConversationId,
+    );
     await database.recentModelSelectionsDao.recordSelection(
       MarionetteDevelopmentState.demoWorkspaceId,
       MarionetteDevelopmentState.demoModelSelectionId,
@@ -247,4 +380,36 @@ final class _SelectionRepository implements WorkspaceSelectionRepository {
   Future<void> save(String workspaceId) async {
     selectedWorkspaceId = workspaceId;
   }
+}
+
+final class _ObservedSubAgentMessageStore(
+  final agent.SubAgentMessageStore _delegate,
+) implements agent.SubAgentMessageStore {
+  final _assistantReadByConversationId = <String, Completer<void>>{};
+
+  @override
+  Future<agent.SubAgentMessageRecord> createUserPrompt({
+    required String conversationId,
+    required String prompt,
+  }) => _delegate.createUserPrompt(
+    conversationId: conversationId,
+    prompt: prompt,
+  );
+
+  @override
+  Future<String> latestAssistantContent(String conversationId) async {
+    final content = await _delegate.latestAssistantContent(conversationId);
+    final completion = _assistantReadByConversationId.putIfAbsent(
+      conversationId,
+      Completer<void>.new,
+    );
+    if (!completion.isCompleted) completion.complete();
+
+    return content;
+  }
+
+  Future<void> waitForAssistantRead(String conversationId) =>
+      _assistantReadByConversationId
+          .putIfAbsent(conversationId, Completer<void>.new)
+          .future;
 }

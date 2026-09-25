@@ -597,6 +597,22 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_open_sub_agent';
   static const chats_screens_chat_conversation_active_sub_agents_count =
       'chats_screens.chat_conversation.active_sub_agents_count';
+  static const chats_screens_chat_conversation_active_sub_agents_accessible_label =
+      'chats_screens.chat_conversation.active_sub_agents_accessible_label';
+  static const chats_screens_chat_conversation_active_sub_agents_title =
+      'chats_screens.chat_conversation.active_sub_agents_title';
+  static const chats_screens_chat_conversation_sub_agent_error_detail =
+      'chats_screens.chat_conversation.sub_agent_error_detail';
+  static const chats_screens_chat_conversation_sub_agent_status_awaiting_approval =
+      'chats_screens.chat_conversation.sub_agent_status_awaiting_approval';
+  static const chats_screens_chat_conversation_sub_agent_status_completed =
+      'chats_screens.chat_conversation.sub_agent_status_completed';
+  static const chats_screens_chat_conversation_sub_agent_status_failed =
+      'chats_screens.chat_conversation.sub_agent_status_failed';
+  static const chats_screens_chat_conversation_sub_agent_status_running =
+      'chats_screens.chat_conversation.sub_agent_status_running';
+  static const chats_screens_chat_conversation_sub_agent_status_stopped =
+      'chats_screens.chat_conversation.sub_agent_status_stopped';
   static const chats_screens_chat_conversation_tool_resolution_status =
       'chats_screens.chat_conversation.tool_resolution_status';
   static const chats_screens_chat_conversation_queued_messages_count =

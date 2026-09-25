@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/workspace_model_selection_reposi
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/marionette/marionette_sub_agent_smoke_fixture.dart';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,6 +21,7 @@ class MarionetteDevelopmentState({
   required final Future<SharedPreferences> preferences,
   required final MarionetteNavigation navigateTo,
   required final MarionetteModelSelection setNewChatModel,
+  required final MarionetteSubAgentSmokeFixture subAgentSmokeFixture,
 }) implements MarionetteExtensionActions {
   static const allowedRouteValues = <String>[
     'new_chat',
@@ -40,6 +42,7 @@ class MarionetteDevelopmentState({
   ];
   static const allowedFeatureFlags = <String>{...allowedFeatureFlagValues};
   static const maxIdentifierLength = 128;
+  static const allowedSubAgentSmokeCountValues = <String>['1', '2'];
 
   static const demoWorkspaceId = 'marionette-demo-workspace';
   static const demoConnectionId = 'marionette-demo-connection';
@@ -122,6 +125,24 @@ class MarionetteDevelopmentState({
   }
 
   @override
+  Future<Map<String, dynamic>> startSubAgentSmokeFixture({
+    required int count,
+  }) async {
+    final childIds = await subAgentSmokeFixture.start(count: count);
+
+    return {'parentConversationId': demoConversationId, 'childIds': childIds};
+  }
+
+  @override
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
+    required String childId,
+  }) async {
+    await subAgentSmokeFixture.finish(childId: childId);
+
+    return {'childId': childId};
+  }
+
+  @override
   Future<Map<String, dynamic>> clearDevelopmentState() async {
     final deletedWorkspace = await workspaceRepository.deleteWorkspace(
       demoWorkspaceId,
@@ -181,35 +202,31 @@ class MarionetteDevelopmentState({
       );
     }
   }
-
-  void _requireStableIdentifier(String value, String parameter) {
-    if (value.isEmpty ||
-        value.length > maxIdentifierLength ||
-        value == '.' ||
-        value == '..' ||
-        value != Uri.encodeComponent(value)) {
-      throw ArgumentError.value(
-        value,
-        parameter,
-        'must be a stable identifier',
-      );
-    }
-  }
-
-  String _routeLocation(String route, String workspaceId) => switch (route) {
-    'new_chat' => NewChatRoute(workspaceId: workspaceId).location,
-    'chats' => ChatsRoute(workspaceId: workspaceId).location,
-    'tools' => ToolsRoute(workspaceId: workspaceId).location,
-    'models' => ModelsRoute(workspaceId: workspaceId).location,
-    'service_connections' => ServiceConnectionsRoute(
-      workspaceId: workspaceId,
-    ).location,
-    'skills' => SkillsRoute(workspaceId: workspaceId).location,
-    'agents' => AgentsRoute(workspaceId: workspaceId).location,
-    'settings' => SettingsRoute(workspaceId: workspaceId).location,
-    _ => _throwMarionetteNotAllowlisted(route, 'route'),
-  };
 }
+
+void _requireStableIdentifier(String value, String parameter) {
+  if (value.isEmpty ||
+      value.length > MarionetteDevelopmentState.maxIdentifierLength ||
+      value == '.' ||
+      value == '..' ||
+      value != Uri.encodeComponent(value)) {
+    throw ArgumentError.value(value, parameter, 'must be a stable identifier');
+  }
+}
+
+String _routeLocation(String route, String workspaceId) => switch (route) {
+  'new_chat' => NewChatRoute(workspaceId: workspaceId).location,
+  'chats' => ChatsRoute(workspaceId: workspaceId).location,
+  'tools' => ToolsRoute(workspaceId: workspaceId).location,
+  'models' => ModelsRoute(workspaceId: workspaceId).location,
+  'service_connections' => ServiceConnectionsRoute(
+    workspaceId: workspaceId,
+  ).location,
+  'skills' => SkillsRoute(workspaceId: workspaceId).location,
+  'agents' => AgentsRoute(workspaceId: workspaceId).location,
+  'settings' => SettingsRoute(workspaceId: workspaceId).location,
+  _ => _throwMarionetteNotAllowlisted(route, 'route'),
+};
 
 Never _throwMarionetteNotAllowlisted(Object value, String parameter) =>
     throw ArgumentError.value(value, parameter, 'is not allowlisted');
@@ -467,6 +484,12 @@ abstract interface class MarionetteExtensionActions {
   });
 
   Future<Map<String, dynamic>> seedDemoData();
+
+  Future<Map<String, dynamic>> startSubAgentSmokeFixture({required int count});
+
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
+    required String childId,
+  });
 
   Future<Map<String, dynamic>> clearDevelopmentState();
 

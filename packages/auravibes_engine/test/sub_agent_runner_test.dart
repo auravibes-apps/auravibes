@@ -376,6 +376,7 @@ void main() {
 
       expect(result['conversationId'], 'child');
       expect(result['status'], 'stopped');
+      expect(tracker.status('child'), SubAgentCompletionStatus.stopped);
     });
 
     test('returns error when approval wait completes with error', () async {
@@ -436,7 +437,9 @@ void main() {
 
     test('preserves child ID and continuation diagnostics safely', () async {
       final error = StateError('provider secret');
+      final tracker = _Tracker();
       final runner = _runner(
+        tracker: tracker,
         continueTurn: ({required conversationId, required context}) async {
           throw error;
         },
@@ -455,6 +458,8 @@ void main() {
       expect(result['status'], 'error');
       expect(result['content'], 'Sub-agent failed.');
       expect(failure.error, same(error));
+      expect(tracker.failure('child')?.error, same(error));
+      expect(tracker.status('child'), SubAgentCompletionStatus.error);
       expect(failure.failurePhase, 'run.continueAgent');
       expect(failure.responseRaw, isNot(contains('provider secret')));
     });
@@ -706,6 +711,7 @@ class _Tracker {
   final _completers = <String, Completer<SubAgentCompletionStatus>>{};
   final _stoppedChildIds = <String>{};
   final _failures = <String, SubAgentCompletionFailure>{};
+  final _statuses = <String, SubAgentCompletionStatus>{};
 
   SubAgentRequestHandle start({
     required String parentId,
@@ -722,6 +728,7 @@ class _Tracker {
     Object? error,
     StackTrace? stackTrace,
   }) {
+    _statuses[childId] = status;
     final completer = _completers.remove(childId);
     if (error != null) {
       _failures[childId] = SubAgentCompletionFailure(
@@ -753,6 +760,7 @@ class _Tracker {
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 
   SubAgentCompletionFailure? failure(String childId) => _failures[childId];
+  SubAgentCompletionStatus? status(String childId) => _statuses[childId];
 }
 
 class const _TestSubAgentRequestHandle(
@@ -771,9 +779,16 @@ class const _TestSubAgentRequestHandle(
   bool get isStopped => _tracker.isStopped(_childId);
 
   @override
-  void finish([
+  void finish({
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-  ]) {
-    _tracker.finish(parentId: _parentId, childId: _childId, status: status);
+    SubAgentCompletionFailure? failure,
+  }) {
+    _tracker.finish(
+      parentId: _parentId,
+      childId: _childId,
+      status: status,
+      error: failure?.error,
+      stackTrace: failure?.stackTrace,
+    );
   }
 }
