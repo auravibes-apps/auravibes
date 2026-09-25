@@ -199,10 +199,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Model catalog synced'), findsOneWidget);
+    expect(find.text('Last refreshed'), findsOneWidget);
     await _unmountScreen(tester);
   });
 
-  testWidgets('shows model catalog sync failure', (tester) async {
+  testWidgets('shows sync failure and allows retry', (tester) async {
     _addWidgetTearDown(tester);
     final usecase = _MockSyncApiModelsUseCase();
     when(usecase.call).thenThrow(Exception('Network error'));
@@ -215,8 +216,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.sync));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-
     expect(find.text('Could not sync model catalog'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.sync));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Could not sync model catalog'), findsOneWidget);
+    verify(usecase.call).called(2);
     await _unmountScreen(tester);
   });
 
