@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:auravibes_app/app_env_config.dart';
-import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
@@ -128,7 +128,11 @@ void _runApp(ProviderContainer container) {
 
 void _scheduleModelSync(ProviderContainer container) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(container.read(modelSyncServiceProvider).performFullSync());
+    unawaited(
+      container
+          .read(modelCatalogSyncNotifierProvider.notifier)
+          .syncAutomatically(),
+    );
   });
 }
 

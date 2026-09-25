@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -18,10 +19,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('service_connections_screen');
-final _modelCatalogSyncMutation = Mutation<void>();
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 const _deleteConfirmationActions = AuraConfirmDialogActions(
@@ -166,20 +165,28 @@ Future<void> _syncModelCatalog(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final wasSuccessful = await _performModelCatalogSync(ref, workspaceId);
-  if (!context.mounted || wasSuccessful == null) return;
+  final wasSuccessful = await _performModelCatalogSync(
+    context,
+    ref,
+    workspaceId,
+  );
+  if (!context.mounted || wasSuccessful != true) return;
 
-  _showModelCatalogSyncResult(context, wasSuccessful);
+  _showModelCatalogSyncResult(context);
 }
 
 Future<bool?> _performModelCatalogSync(
+  BuildContext context,
   WidgetRef ref,
   String workspaceId,
 ) async {
-  if (ref.read(_modelCatalogSyncMutation).isPending) return null;
+  if (ref.read(modelCatalogSyncNotifierProvider).isSyncing) return null;
 
   try {
-    await _runModelCatalogSync(ref, workspaceId);
+    await ref.read(modelCatalogSyncNotifierProvider.notifier).retryManually();
+    if (context.mounted) {
+      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
+    }
 
     return true;
   } on Object catch (error, stackTrace) {
@@ -189,30 +196,11 @@ Future<bool?> _performModelCatalogSync(
   }
 }
 
-Future<void> _runModelCatalogSync(WidgetRef ref, String workspaceId) =>
-    _modelCatalogSyncMutation.run(ref, (_) async {
-      await ref.read(modelSyncServiceProvider).performManualSync();
-      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
-    });
-
-void _showModelCatalogSyncResult(BuildContext context, bool wasSuccessful) =>
-    _showModelCatalogSyncSnackBar(
-      context,
-      wasSuccessful
-          ? LocaleKeys.models_screens_catalog_sync_success
-          : LocaleKeys.models_screens_catalog_sync_error,
-      wasSuccessful ? .success : .error,
-    );
-
-void _showModelCatalogSyncSnackBar(
-  BuildContext context,
-  String localeKey,
-  AuraSnackBarVariant variant,
-) {
+void _showModelCatalogSyncResult(BuildContext context) {
   final _ = AuraSnackBars.show(
     context: context,
-    content: TextLocale(localeKey),
-    variant: variant,
+    content: const TextLocale(LocaleKeys.models_screens_catalog_sync_success),
+    variant: .success,
   );
 }
 
@@ -269,16 +257,97 @@ class const _ServiceConnectionsBody({
   @override
   Widget build(BuildContext context) {
     final connections = _connectionsValue(connectionsAsync);
-    if (connections != null) {
-      return _ConnectionsList(
-        connections: connections,
-        onAddConnection: onAddConnection,
-      );
-    }
+    final content = connections == null
+        ? _ConnectionsLoadState(isLoading: connectionsAsync.isLoading)
+        : _ConnectionsList(
+            connections: connections,
+            onAddConnection: onAddConnection,
+          );
 
-    return connectionsAsync.isLoading
-        ? const Center(child: AuraSpinner())
-        : const Center(child: _ConnectionsLoadError());
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _ModelCatalogSyncStatus(),
+        Expanded(child: content),
+      ],
+    );
+  }
+}
+
+class const _ConnectionsLoadState({required final bool isLoading})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Center(
+    child: isLoading ? const AuraSpinner() : const _ConnectionsLoadError(),
+  );
+}
+
+class const _ModelCatalogSyncStatus() extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(modelCatalogSyncNotifierProvider);
+    final lastAttemptAt = state.lastAttemptAt;
+    if (lastAttemptAt == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: _ModelCatalogSyncStatusRows(
+        isSyncing: state.isSyncing,
+        hasFailure: state.failure != null,
+        lastAttemptAt: lastAttemptAt,
+        lastSuccessfulSyncAt: state.lastSuccessfulSyncAt,
+      ),
+    );
+  }
+}
+
+class const _ModelCatalogSyncStatusRows({
+  required final bool isSyncing,
+  required final bool hasFailure,
+  required final DateTime lastAttemptAt,
+  required final DateTime? lastSuccessfulSyncAt,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      if (isSyncing)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_tooltip,
+          timestamp: lastAttemptAt,
+        ),
+      if (hasFailure)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_error,
+          timestamp: lastAttemptAt,
+        ),
+      if (lastSuccessfulSyncAt case final timestamp?)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.service_connections_metadata_last_refreshed_at,
+          timestamp: timestamp,
+        ),
+    ],
+  );
+}
+
+class const _ModelCatalogSyncStatusRow({
+  required final String labelKey,
+  required final DateTime timestamp,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final formattedTimestamp =
+        '${localizations.formatMediumDate(timestamp)} '
+        '${localizations.formatTimeOfDay(.fromDateTime(timestamp))}';
+
+    return Row(
+      children: [
+        Expanded(child: TextLocale(labelKey)),
+        const SizedBox(width: 8),
+        Text(formattedTimestamp),
+      ],
+    );
   }
 }
 
@@ -334,7 +403,7 @@ class const _SyncModelCatalogControl({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSyncing = ref.watch(_modelCatalogSyncMutation).isPending;
+    final isSyncing = ref.watch(modelCatalogSyncNotifierProvider).isSyncing;
 
     return _ModelCatalogSyncIconButton(
       onPressed: () => unawaited(_syncModelCatalog(context, ref, workspaceId)),
