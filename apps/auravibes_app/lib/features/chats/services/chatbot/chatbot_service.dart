@@ -164,10 +164,9 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   final finalResponse = await responseStream.onResult;
   final responseError = finalResponse.error;
   if (responseError != null) {
-    throw GenkitException(
-      responseError.message,
-      underlyingException: finalResponse.cause,
-    );
+    final cause = finalResponse.cause;
+    if (cause is AgentRateLimitRetryException) throw cause;
+    throw GenkitException(responseError.message, underlyingException: cause);
   }
 
   request.a2uiRuntime?.commitCurrentMessage();

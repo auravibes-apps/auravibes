@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
+import 'package:genkit/plugin.dart' show GenkitException;
 import 'package:test/test.dart';
 
 import 'support/fake_cancellation_effects.dart';
@@ -276,6 +277,101 @@ void main() {
     expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 60)));
   });
 
+  test(
+    'uses provider Retry-After hints and caps delay at 60 seconds',
+    () async {
+      for (final testCase in [
+        (
+          retryAfter: const Duration(seconds: 2),
+          expectedDelay: const Duration(seconds: 2),
+        ),
+        (
+          retryAfter: const Duration(seconds: 120),
+          expectedDelay: const Duration(seconds: 60),
+        ),
+      ]) {
+        var currentTime = DateTime(2026);
+        final retryAt = <DateTime>[];
+        final dataProvider = _FakeAgentConversationDataProvider(
+          continueErrors: [
+            AgentRateLimitRetryException(
+              providerException: GenkitException(
+                'Provider API request failed.',
+              ),
+              retryAfter: testCase.retryAfter,
+            ),
+          ],
+        );
+        final usecase = _buildAgentService(
+          dataProvider,
+          rateLimitRetryRuntime: .new(
+            start: (_, value) => retryAt.add(value),
+            clear: (_) {},
+          ),
+          now: () => currentTime,
+          sleep: (duration) {
+            currentTime = currentTime.add(duration);
+            return Future<void>.value();
+          },
+        );
+
+        expect(
+          await usecase(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(origin: .userMessage),
+          ),
+          AgentIterationDecision.done,
+        );
+        expect(retryAt.single, DateTime(2026).add(testCase.expectedDelay));
+      }
+    },
+  );
+
+  test(
+    'rethrows original provider error after retry budget is exhausted',
+    () async {
+      var currentTime = DateTime(2026);
+      final retryAt = <DateTime>[];
+      final providerException = GenkitException(
+        'Provider API request failed (HTTP 429).',
+      );
+      final retryError = AgentRateLimitRetryException(
+        providerException: providerException,
+        retryAfter: const Duration(seconds: 2),
+      );
+      final sendQueue = _FakeAgentSendQueueRuntime(
+        drafts: const [AgentQueuedDraft(content: 'queued')],
+      );
+      final dataProvider = _FakeAgentConversationDataProvider(
+        continueErrors: [retryError, retryError],
+      );
+      final usecase = _buildAgentService(
+        dataProvider,
+        sendQueueRuntime: sendQueue,
+        rateLimitRetryRuntime: .new(
+          start: (_, value) => retryAt.add(value),
+          clear: (_) {},
+        ),
+        now: () => currentTime,
+        sleep: (duration) {
+          currentTime = currentTime.add(duration);
+          return Future<void>.value();
+        },
+      );
+
+      await expectLater(
+        () => usecase(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(origin: .userMessage),
+        ),
+        throwsA(same(providerException)),
+      );
+      expect(retryAt.single, DateTime(2026).add(const Duration(seconds: 2)));
+      expect(dataProvider.continuationContexts, hasLength(2));
+      expect(dataProvider.markedErrored, ['created-1']);
+    },
+  );
+
   test('stops after one consecutive rate-limit retry', () async {
     var currentTime = DateTime(2026);
     final dataProvider = _FakeAgentConversationDataProvider(
@@ -309,7 +405,9 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('429')],
     );
-    final sendQueue = _FakeAgentSendQueueRuntime();
+    final sendQueue = _FakeAgentSendQueueRuntime(
+      drafts: const [AgentQueuedDraft(content: 'queued')],
+    );
     final usecase = _buildAgentService(
       dataProvider,
       sendQueueRuntime: sendQueue,
@@ -333,6 +431,7 @@ void main() {
 
     expect(result, AgentIterationDecision.done);
     expect(sendQueue.cleared, ['conversation-1']);
+    expect(dataProvider.markedSent, ['created-1']);
     expect(dataProvider.continuationContexts, hasLength(1));
     expect(retryEvents, ['clear:conversation-1']);
   });

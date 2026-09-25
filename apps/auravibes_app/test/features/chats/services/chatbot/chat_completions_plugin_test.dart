@@ -195,32 +195,49 @@ void main() {
     expect(attempts, 2);
   });
 
-  test('does not retry rate limits in provider plugin', () async {
-    var attempts = 0;
-    final client = _FakeClient((_) async {
-      attempts++;
+  test(
+    'forwards rate-limit Retry-After without retrying in provider plugin',
+    () async {
+      var attempts = 0;
+      final client = _FakeClient((_) async {
+        attempts++;
 
-      return _jsonResponse(
-        {
-          'error': {'message': 'rate limited'},
-        },
-        statusCode: 429,
-        headers: {'content-type': 'application/json', 'retry-after': '120'},
+        return _jsonResponse(
+          {
+            'error': {'message': 'rate limited'},
+          },
+          statusCode: 429,
+          headers: {'content-type': 'application/json', 'retry-after': '120'},
+        );
+      });
+      final ai = _genkitWithClient(
+        client,
+        retryWait: (_) => Future<void>.value(),
       );
-    });
-    final ai = _genkitWithClient(
-      client,
-      retryWait: (_) => Future<void>.value(),
-    );
 
-    final response = await ai.generate<Object?, Object?>(
-      model: modelRef<Object?>('transport-test/m'),
-      messages: const [],
-    );
+      final response = await ai.generate<Object?, Object?>(
+        model: modelRef<Object?>('transport-test/m'),
+        messages: const [],
+      );
 
-    expect(response.finishReason, FinishReason.failed);
-    expect(attempts, 1);
-  });
+      expect(response.finishReason, FinishReason.failed);
+      expect(
+        response.cause,
+        isA<AgentRateLimitRetryException>()
+            .having(
+              (error) => error.retryAfter,
+              'retryAfter',
+              const Duration(seconds: 120),
+            )
+            .having(
+              (error) => error.providerException.details,
+              'provider details',
+              'rate limited',
+            ),
+      );
+      expect(attempts, 1);
+    },
+  );
 
   test('does not retry after streaming output is emitted', () async {
     var attempts = 0;

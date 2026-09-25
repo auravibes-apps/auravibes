@@ -338,6 +338,66 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
+    test('selects affinity headers only for supported transports', () {
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        {'x-session-id': 'stable-session'},
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: 'https://api.anthropic.com/v1',
+          sessionId: 'stable-session',
+        ),
+        {'x-session-affinity': 'stable-session'},
+      );
+
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        {'x-session-affinity': 'stable-session'},
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: 'https://proxy.example.com/v1',
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: 'https://proxy.example.com/v1',
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: null,
+          sessionId: '',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openai,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+    });
+
     test('adds x-session-id to default OpenRouter requests', () async {
       final client = _FakeHttpClient();
       final openRouterFactory = ProviderFactory(
@@ -352,14 +412,23 @@ void main() {
         config,
         sessionId: 'stable-session',
       );
+      final model = openRouterFactory.getModelReference(config);
 
-      final response = await ai.generate<Object?, Object?>(
-        model: openRouterFactory.getModelReference(config),
-        prompt: 'Hi',
-      );
+      for (var attempt = 0; attempt < 2; attempt++) {
+        final response = await ai.generate<Object?, Object?>(
+          model: model,
+          prompt: 'Hi',
+        );
+        expect(response.text, 'ok.');
+      }
 
-      expect(response.text, 'ok.');
-      expect(client.request?.headers['x-session-id'], 'stable-session');
+      expect(client.requests, hasLength(2));
+      for (final request in client.requests) {
+        expect(request.headers['x-session-id'], 'stable-session');
+        expect(request.headers['http-referer'], 'https://auravibes.me');
+        expect(request.headers['x-openrouter-title'], 'AuraVibes');
+        expect(request.headers['x-openrouter-categories'], 'personal-agent');
+      }
     });
 
     test('omits x-session-id for custom OpenRouter endpoints', () async {
@@ -420,10 +489,12 @@ class const _FakeServiceConnectionRepository({
 
 final class _FakeHttpClient extends http.BaseClient {
   http.BaseRequest? request;
+  final requests = <http.BaseRequest>[];
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     this.request = request;
+    requests.add(request);
 
     return http.StreamedResponse(
       .value(

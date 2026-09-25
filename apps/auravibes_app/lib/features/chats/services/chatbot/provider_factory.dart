@@ -85,6 +85,30 @@ class const ProviderFactory({
     return _blankToNull(config.modelsProvider.url);
   }
 
+  /// Returns affinity headers for supported provider transports only.
+  @visibleForTesting
+  Map<String, String> sessionAffinityHeaders({
+    required ModelProvidersType? providerType,
+    required String? baseUrl,
+    required String? sessionId,
+  }) {
+    if (sessionId == null || sessionId.isEmpty) return const {};
+    if (providerType == .openrouter && baseUrl == null) {
+      return {'x-session-id': sessionId};
+    }
+    if (providerType == .anthropic) {
+      final uri = baseUrl == null ? null : Uri.tryParse(baseUrl);
+      if (baseUrl == null ||
+          (uri?.scheme == 'https' &&
+              uri?.host == 'api.anthropic.com' &&
+              uri?.port == 443)) {
+        return {'x-session-affinity': sessionId};
+      }
+    }
+
+    return const {};
+  }
+
   ReasoningConfiguration? _validConfiguration(
     WorkspaceModelSelectionWithConnectionEntity config,
     ReasoningConfiguration? value,
@@ -170,12 +194,18 @@ extension _ProviderFactoryCreation on ProviderFactory {
 
 extension _ProviderFactoryPlugins on ProviderFactory {
   GenkitPlugin _anthropicPlugin(_ProviderRequest request) {
-    return anthropic(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    return anthropic(
+      apiKey: request.apiKey,
+      headers: sessionAffinityHeaders(
+        providerType: request.config.modelsProvider.type,
+        baseUrl: request.baseUrl,
+        sessionId: request.sessionId,
+      ),
+      baseUrl: request.baseUrl,
+    );
   }
 
   GenkitPlugin _openRouterPlugin(_ProviderRequest request) {
-    final sessionId = request.sessionId;
-
     return AppChatCompletionsPlugin(
       name: 'openrouter',
       baseUrl: request.baseUrl ?? 'https://openrouter.ai/api/v1',
@@ -186,11 +216,11 @@ extension _ProviderFactoryPlugins on ProviderFactory {
         'HTTP-Referer': 'https://auravibes.me',
         'X-OpenRouter-Title': 'AuraVibes',
         'X-OpenRouter-Categories': 'personal-agent',
-        // Only documented OpenRouter endpoint gets affinity header.
-        if (request.baseUrl == null &&
-            sessionId != null &&
-            sessionId.isNotEmpty)
-          'x-session-id': sessionId,
+        ...sessionAffinityHeaders(
+          providerType: request.config.modelsProvider.type,
+          baseUrl: request.baseUrl,
+          sessionId: request.sessionId,
+        ),
       },
       httpClient: httpClient,
     );

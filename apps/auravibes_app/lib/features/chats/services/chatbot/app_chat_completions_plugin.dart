@@ -213,13 +213,27 @@ Future<ModelResponse> _generateWithRetry(
     final attempt = _ProviderRetryState();
     try {
       return await _generateModelAttempt(plugin, body, context, attempt);
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
       final delay = attempt.delayFor(
         error,
         canRetry: canRetry,
         context: context,
       );
-      if (delay == null) rethrow;
+      if (delay == null) {
+        final retryAfter = attempt.retryAfter;
+        if (error is GenkitException &&
+            attempt.statusCode == 429 &&
+            retryAfter != null) {
+          return await Future<ModelResponse>.error(
+            AgentRateLimitRetryException(
+              providerException: error,
+              retryAfter: retryAfter,
+            ),
+            stackTrace,
+          );
+        }
+        rethrow;
+      }
       canRetry = false;
       await _waitForRetry(delay, context, plugin.retryWait);
     }
