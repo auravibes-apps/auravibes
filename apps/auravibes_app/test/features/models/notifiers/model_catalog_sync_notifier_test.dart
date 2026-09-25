@@ -96,7 +96,7 @@ void main() {
     test('concurrent automatic callers share one sync sequence', () async {
       final service = _MockModelSyncService();
       final completer = Completer<void>();
-      when(() => service.sync()).thenAnswer((_) => completer.future);
+      when(service.sync).thenAnswer((_) => completer.future);
       final container = _containerFor(service);
       addTearDown(container.dispose);
       final notifier = container.read(

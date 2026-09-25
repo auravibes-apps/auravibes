@@ -259,7 +259,7 @@ class const _ServiceConnectionsBody({
   @override
   Widget build(BuildContext context) {
     final connections = _connectionsValue(connectionsAsync);
-    final Widget content = connections == null
+    final content = connections == null
         ? _ConnectionsLoadState(isLoading: connectionsAsync.isLoading)
         : _ConnectionsList(
             connections: connections,
@@ -294,8 +294,9 @@ class const _ModelCatalogSyncStatus() extends ConsumerWidget {
     if (lastAttemptAt == null) return const SizedBox.shrink();
 
     final lastSuccessfulSyncAt = state.lastSuccessfulSyncAt;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Column(
         crossAxisAlignment: .start,
         children: [
@@ -329,7 +330,7 @@ class const _ModelCatalogSyncStatusRow({
   Widget build(BuildContext context) {
     final localizations = MaterialLocalizations.of(context);
     final formattedTimestamp = '${localizations.formatMediumDate(timestamp)} '
-        '${localizations.formatTimeOfDay(TimeOfDay.fromDateTime(timestamp))}';
+        '${localizations.formatTimeOfDay(.fromDateTime(timestamp))}';
 
     return Row(
       children: [
