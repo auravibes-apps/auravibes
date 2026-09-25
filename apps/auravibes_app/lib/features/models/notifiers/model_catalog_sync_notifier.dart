@@ -10,6 +10,7 @@ const _retryDelays = [
   Duration(milliseconds: 250),
   Duration(milliseconds: 500),
 ];
+const _firstServerErrorStatusCode = 500;
 const _firstNonServerErrorStatusCode = 600;
 
 final modelCatalogSyncNotifierProvider =
@@ -101,7 +102,8 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     final statusCode = error.response?.statusCode;
     if (statusCode != null) {
       return statusCode == 429 ||
-          (statusCode >= 500 && statusCode < _firstNonServerErrorStatusCode);
+          (statusCode >= _firstServerErrorStatusCode &&
+              statusCode < _firstNonServerErrorStatusCode);
     }
 
     return switch (error.type) {
