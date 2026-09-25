@@ -159,6 +159,11 @@ void main() {
       textDirection: ui.TextDirection.rtl,
       textScaleFactor: 2,
     );
+    await tester.runAsync(() async {
+      await tester
+          .element(find.byType(MaterialApp))
+          .setLocale(const Locale('es'));
+    });
     expect(await tester.pumpAndSettle(), greaterThan(0));
 
     final semantics = tester.ensureSemantics();
@@ -168,7 +173,7 @@ void main() {
       final label = LocaleKeys.menu_new_chat.tr(
         context: tester.element(sidebar),
       );
-      expect(label, 'New Chat');
+      expect(label, 'Nuevo Chat');
 
       final navigationAction = find.bySemanticsLabel(label);
       expect(navigationAction, findsOneWidget);
@@ -295,6 +300,7 @@ void main() {
     startLocale: const Locale('en'),
     useOnlyLangCode: true,
     useFallbackTranslations: true,
+    saveLocale: false,
   );
 
   return (app: app, router: router);
