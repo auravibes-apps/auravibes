@@ -318,7 +318,7 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
       CloudAppErrors.guardCall(
         .state,
         () => _sendDuplicateAgent(
-          DuplicateWorkspaceAgentRequest(
+          .new(
             workspaceId: _workspace.cloudWorkspaceId,
             requestId: const UuidV7().generate(),
             sourceAgentId: sourceAgentId,
