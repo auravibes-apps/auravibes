@@ -303,6 +303,7 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Agregar Chat",
+      "archive_import": "Importar archivo",
       "search_placeholder": "Buscar conversaciones...",
       "search_no_results": "Ninguna conversación coincide con tu búsqueda",
       "select_conversation": "Seleccionar {}",
@@ -328,6 +329,11 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
+      "archive_export": "Exportar archivo",
+      "archive_exported": "Archivo de conversación guardado.",
+      "archive_invalid": "Este archivo de conversación no es válido o está dañado.",
+      "archive_unsupported_version": "Este archivo de conversación usa una versión no compatible.",
+      "archive_error": "No se pudo exportar o importar esta conversación.",
       "reasoning": {
         "title": "Razonamiento",
         "enabled": "Activar razonamiento",
@@ -1060,6 +1066,8 @@
     "switch_title": "¿Cambiar de espacio de trabajo?",
     "switch_confirm": "¿Cambiar a \"{name}\"?",
     "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",
+    "switch_loading": "Cambiando espacio de trabajo...",
+    "switch_retry": "Reintentar",
     "loading": "Cargando espacios de trabajo...",
     "load_error": "Error al cargar espacios de trabajo. Inténtalo de nuevo.",
     "dropdown_placeholder": "Seleccionar espacio de trabajo",

@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -66,6 +67,7 @@ void main() {
     String? continueDisabledHint,
     Widget? disabledHint,
     bool isCompacting = false,
+    ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
   }) {
     return EasyLocalization(
@@ -95,6 +97,7 @@ void main() {
                         agentSheetControl: agentSheetControl,
                         modelCompactControl: modelCompactControl,
                         agentCompactControl: agentCompactControl,
+                        onDraftStatusChanged: onDraftStatusChanged,
                         reasoningControl: reasoningControl,
                         draftToLoad: draftToLoad,
                         modalitiesInput: modalitiesInput,
@@ -143,6 +146,77 @@ void main() {
     debugDefaultTargetPlatformOverride = platform;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
   }
+
+  testWidgets('reports text draft changes', (tester) async {
+    final draftStatuses = <bool>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        onDraftStatusChanged: draftStatuses.add,
+      ),
+    );
+
+    await tester.enterText(find.byType(EditableText), 'unsent draft');
+    await tester.pump();
+    expect(draftStatuses.last, isTrue);
+
+    await tester.enterText(find.byType(EditableText), '');
+    await tester.pump();
+    expect(draftStatuses.last, isFalse);
+  });
+
+  testWidgets('reports loaded attachment as a draft', (tester) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final draftStatuses = <bool>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        attachmentService: _FakeLocalChatAttachmentService(attachment),
+        draftToLoad: const ChatDraft(text: '', attachments: [attachment]),
+        onDraftStatusChanged: draftStatuses.add,
+      ),
+    );
+
+    expect(draftStatuses.last, isTrue);
+  });
+
+  testWidgets('reports active recording as a draft', (tester) async {
+    if (kIsWeb) return;
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/recording.m4a',
+      fileName: 'recording.m4a',
+      displayName: 'recording.m4a',
+      mimeType: 'audio/m4a',
+      modality: .audio,
+      sizeBytes: 2048,
+    );
+    final draftStatuses = <bool>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        modalitiesInput: const ['audio'],
+        attachmentService: _FakeLocalChatAttachmentService(attachment),
+        onDraftStatusChanged: draftStatuses.add,
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
+    await tester.pump();
+    expect(draftStatuses.last, isTrue);
+  });
 
   testWidgets('renders without error', (tester) async {
     await pumpAndInit(
@@ -936,6 +1010,15 @@ class _FakeLocalChatAttachmentService(
 
   @override
   Future<MessageAttachmentToCreate?> stopVoiceRecording() async => null;
+
+  @override
+  @override
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment _,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();
 
   @override
   Future<void> cancelVoiceRecording() => Future.value();
