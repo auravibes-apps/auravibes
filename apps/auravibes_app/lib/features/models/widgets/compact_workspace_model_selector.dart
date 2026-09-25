@@ -697,16 +697,15 @@ class const _ModelCompactChip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (modelUnavailable) {
-      return const _ModelChip(
-        label: TextLocale(
-          LocaleKeys.models_screens_model_unavailable,
-          softWrap: false,
-          overflow: .ellipsis,
-          maxLines: 1,
-        ),
-        trailing: AuraIcon(Icons.warning_amber_rounded, tint: .warning),
-      );
+    final selectedModel = _selectedModel(
+      groupedModels,
+      workspaceModelSelectionId,
+    );
+    final isUnavailable =
+        modelUnavailable ||
+        (workspaceModelSelectionId != null && selectedModel == null);
+    if (isUnavailable) {
+      return _unavailableModelChip;
     }
 
     if (groupedModels.isEmpty) {
@@ -720,11 +719,19 @@ class const _ModelCompactChip({
       );
     }
 
-    return _SelectedModelChip(
-      selectedModel: _selectedModel(groupedModels, workspaceModelSelectionId),
-    );
+    return _SelectedModelChip(selectedModel: selectedModel);
   }
 }
+
+const _unavailableModelChip = _ModelChip(
+  label: TextLocale(
+    LocaleKeys.models_screens_model_unavailable,
+    softWrap: false,
+    overflow: .ellipsis,
+    maxLines: 1,
+  ),
+  trailing: AuraIcon(Icons.warning_amber_rounded, tint: .warning),
+);
 
 class _SelectedModelChip extends _ModelChip {
   new({required WorkspaceModelSelectionWithConnectionEntity? selectedModel})

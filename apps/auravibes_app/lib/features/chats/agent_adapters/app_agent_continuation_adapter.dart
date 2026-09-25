@@ -165,11 +165,8 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(
 }
 
 ApiModelEntity _ensureCodexModel(ApiModelEntity? model) {
-  if (model == null) {
-    throw Exception('OpenAI model catalog is unavailable');
-  }
-  if (!model.isCodexRuntimeModel) {
-    throw Exception('Selected Codex model is not supported');
+  if (model == null || !model.isCodexRuntimeModel) {
+    throw const SelectedModelNotFoundException();
   }
 
   return model;

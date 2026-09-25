@@ -718,13 +718,7 @@ void main() {
 
       await expectLater(
         usecase.call(conversationId: 'conversation-1'),
-        throwsA(
-          isA<Exception>().having(
-            (error) => error.toString(),
-            'message',
-            contains('Selected Codex model is not supported'),
-          ),
-        ),
+        throwsA(isA<SelectedModelNotFoundException>()),
       );
       final _ = verifyNever(
         () => chatbotService.sendMessage(

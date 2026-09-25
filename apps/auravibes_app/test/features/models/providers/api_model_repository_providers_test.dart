@@ -328,5 +328,63 @@ void main() {
       expect(result, hasLength(1));
       expect(result.firstOrNull?.id, 'gpt-4');
     });
+
+    test('keeps all OpenAI models in the general catalog', () async {
+      const models = [
+        ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-5.5',
+          name: 'GPT-5.5',
+          limitContext: 400000,
+          limitOutput: 128000,
+          modalitiesInput: ['text'],
+          modalitiesOutput: ['text'],
+          supportsPriorityMode: true,
+        ),
+        ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-3.5-turbo',
+          name: 'GPT-3.5 Turbo',
+          limitContext: 16000,
+          limitOutput: 4096,
+          modalitiesInput: ['text'],
+          modalitiesOutput: ['text'],
+        ),
+        ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-5.5-spark',
+          name: 'GPT-5.5 Spark',
+          limitContext: 400000,
+          limitOutput: 128000,
+          modalitiesInput: ['text'],
+          modalitiesOutput: ['text'],
+          supportsPriorityMode: true,
+        ),
+      ];
+      final container = ProviderContainer(
+        overrides: [
+          apiModelRepositoryProvider.overrideWithValue(
+            _FakeApiModelRepository(models: models),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(models: models),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        getModelsByProviderProvider(
+          workspaceId: 'workspace',
+          providerId: 'openai',
+        ).future,
+      );
+
+      expect(result.map((model) => model.id).toList(), [
+        'gpt-5.5',
+        'gpt-3.5-turbo',
+        'gpt-5.5-spark',
+      ]);
+    });
   });
 }
