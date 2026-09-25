@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:async';
+
 import 'package:async/async.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
@@ -155,9 +157,11 @@ class _FakeSubAgentRequestHandle implements SubAgentRequestHandle {
   bool get isStopped => false;
 
   @override
-  void finish([
+  void finish({
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-  ]) {
+    SubAgentCompletionFailure? failure,
+  }) {
+    final _ = failure;
     if (status != SubAgentCompletionStatus.done) return;
   }
 }
@@ -1386,7 +1390,7 @@ void main() {
         conversationId: 'child-1',
         context: any(named: 'context'),
       ),
-    ).thenAnswer((_) async => AgentIterationDecision.done);
+    ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
 
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
@@ -1414,7 +1418,17 @@ void main() {
     addTearDown(container.dispose);
 
     final service = container.read(resolvedToolServiceProvider);
-    final result = await service.call(
+    final activeSubAgents = container.read(
+      activeSubAgentRuntimeProvider.notifier,
+    );
+    final approvalWait = Completer<void>();
+    final _ = container.listen(activeSubAgentRuntimeProvider, (_, _) {
+      if (activeSubAgents.statusOf('child-1') == .awaitingApproval &&
+          !approvalWait.isCompleted) {
+        approvalWait.complete();
+      }
+    });
+    final resultFuture = service.call(
       conversationId: 'parent-1',
       tool: ResolvedTool.skillNative(
         tableId: runSubAgentToolName,
@@ -1423,9 +1437,25 @@ void main() {
       ),
       arguments: const {'title': 'Child', 'prompt': 'Run task'},
     );
+    await approvalWait.future;
+    expect(
+      activeSubAgents.statusOf('child-1'),
+      ActiveSubAgentStatus.awaitingApproval,
+    );
+
+    activeSubAgents.finish((
+      parentId: 'parent-1',
+      childId: 'child-1',
+      status: .done,
+      error: null,
+      stackTrace: null,
+    ));
+    final result = await resultFuture;
 
     expect(result, contains('"conversationId":"child-1"'));
     expect(result, contains('"status":"done"'));
+
+    expect(activeSubAgents.statusOf('child-1'), ActiveSubAgentStatus.completed);
     verify(
       () => agentLoop.call(
         conversationId: 'child-1',

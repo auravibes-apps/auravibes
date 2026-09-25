@@ -34,6 +34,11 @@ void main() {
           'enabled': 'yes',
         }),
         await dispatcher.seedDemoData({'unexpected': 'value'}),
+        await dispatcher.startSubAgentSmokeFixture({'count': '3'}),
+        await dispatcher.finishSubAgentSmokeFixture({
+          'childId': 'fixture-child',
+          'workspaceId': 'arbitrary',
+        }),
       ];
 
       expect(results, everyElement(isA<MarionetteExtensionInvalidParams>()));
@@ -56,14 +61,25 @@ void main() {
       final clear = await dispatcher.clearDevelopmentState({});
       final flag = await dispatcher.setDevelopmentFeatureFlag({'flag': 'a2ui'});
 
+      final smokeStart = await dispatcher.startSubAgentSmokeFixture({
+        'count': '2',
+      });
+      final smokeFinish = await dispatcher.finishSubAgentSmokeFixture({
+        'childId': 'fixture-child',
+      });
+
       expect(navigation, isA<MarionetteExtensionSuccess>());
       expect(workspace, isA<MarionetteExtensionSuccess>());
       expect(model, isA<MarionetteExtensionSuccess>());
       expect(seed, isA<MarionetteExtensionSuccess>());
       expect(clear, isA<MarionetteExtensionSuccess>());
       expect(flag, isA<MarionetteExtensionSuccess>());
-      expect(actions.actionCalls, 6);
+      expect(smokeStart, isA<MarionetteExtensionSuccess>());
+      expect(smokeFinish, isA<MarionetteExtensionSuccess>());
+      expect(actions.actionCalls, 8);
       expect(actions.lastFeatureFlag, (flag: 'a2ui', enabled: true));
+      expect(actions.lastSubAgentSmokeCount, 2);
+      expect(actions.lastSubAgentSmokeChildId, 'fixture-child');
     });
 
     test('ignores the VM service isolate parameter', () async {
@@ -86,6 +102,8 @@ void main() {
       'auravibes.selectWorkspace',
       'auravibes.selectModel',
       'auravibes.seedDemoData',
+      'auravibes.startSubAgentSmokeFixture',
+      'auravibes.finishSubAgentSmokeFixture',
       'auravibes.clearDevelopmentState',
       'auravibes.setDevelopmentFeatureFlag',
     ];
@@ -119,6 +137,26 @@ void main() {
       containsPair('enum', MarionetteDevelopmentState.allowedFeatureFlagValues),
     );
     expect(flagProperties['enabled'], containsPair('default', true));
+
+    final startInputSchema =
+        details['auravibes.startSubAgentSmokeFixture']?.inputSchema;
+    if (startInputSchema == null) {
+      fail('auravibes.startSubAgentSmokeFixture schema was not registered');
+    }
+    final startSchema = startInputSchema.toJson();
+    expect(startSchema['required'], ['count']);
+    final startProperties = startSchema['properties'] as Map<String, dynamic>;
+    expect(startProperties, hasLength(1));
+    expect(startProperties['count'], containsPair('enum', ['1', '2']));
+
+    final finishInputSchema =
+        details['auravibes.finishSubAgentSmokeFixture']?.inputSchema;
+    if (finishInputSchema == null) {
+      fail('auravibes.finishSubAgentSmokeFixture schema was not registered');
+    }
+    final finishSchema = finishInputSchema.toJson();
+    expect(finishSchema['required'], ['childId']);
+    expect(finishSchema['properties'], hasLength(1));
   });
 
   group('MarionetteExtensionBootstrap.shouldEnable', () {
@@ -171,6 +209,8 @@ void main() {
 final class _FakeActions implements MarionetteExtensionActions {
   int actionCalls = 0;
   ({String flag, bool enabled})? lastFeatureFlag;
+  int? lastSubAgentSmokeCount;
+  String? lastSubAgentSmokeChildId;
 
   @override
   Future<Map<String, dynamic>> navigate({
@@ -224,5 +264,23 @@ final class _FakeActions implements MarionetteExtensionActions {
     lastFeatureFlag = (flag: flag, enabled: enabled);
 
     return {'flag': flag, 'enabled': enabled};
+  }
+
+  @override
+  Future<Map<String, dynamic>> startSubAgentSmokeFixture({
+    required int count,
+  }) async {
+    actionCalls++;
+    lastSubAgentSmokeCount = count;
+    return {'count': count};
+  }
+
+  @override
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
+    required String childId,
+  }) async {
+    actionCalls++;
+    lastSubAgentSmokeChildId = childId;
+    return {'childId': childId};
   }
 }

@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/workspace_model_selection_reposi
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/marionette/marionette_sub_agent_smoke_fixture.dart';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,6 +21,7 @@ class MarionetteDevelopmentState({
   required final Future<SharedPreferences> preferences,
   required final MarionetteNavigation navigateTo,
   required final MarionetteModelSelection setNewChatModel,
+  required final MarionetteSubAgentSmokeFixture subAgentSmokeFixture,
 }) implements MarionetteExtensionActions {
   static const allowedRouteValues = <String>[
     'new_chat',
@@ -40,6 +42,7 @@ class MarionetteDevelopmentState({
   ];
   static const allowedFeatureFlags = <String>{...allowedFeatureFlagValues};
   static const maxIdentifierLength = 128;
+  static const allowedSubAgentSmokeCountValues = <String>['1', '2'];
 
   static const demoWorkspaceId = 'marionette-demo-workspace';
   static const demoConnectionId = 'marionette-demo-connection';
@@ -119,6 +122,22 @@ class MarionetteDevelopmentState({
       'conversationId': demoConversationId,
       'messageId': demoMessageId,
     };
+  }
+
+  @override
+  Future<Map<String, dynamic>> startSubAgentSmokeFixture({
+    required int count,
+  }) async {
+    final childIds = await subAgentSmokeFixture.start(count: count);
+    return {'parentConversationId': demoConversationId, 'childIds': childIds};
+  }
+
+  @override
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
+    required String childId,
+  }) async {
+    await subAgentSmokeFixture.finish(childId: childId);
+    return {'childId': childId};
   }
 
   @override
@@ -467,6 +486,12 @@ abstract interface class MarionetteExtensionActions {
   });
 
   Future<Map<String, dynamic>> seedDemoData();
+
+  Future<Map<String, dynamic>> startSubAgentSmokeFixture({required int count});
+
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
+    required String childId,
+  });
 
   Future<Map<String, dynamic>> clearDevelopmentState();
 

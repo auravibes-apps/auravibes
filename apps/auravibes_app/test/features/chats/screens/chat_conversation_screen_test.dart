@@ -18,24 +18,28 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
@@ -1120,7 +1124,228 @@ void main() {
       );
     },
   );
+
+  testWidgets('hides active sub-agent action when no children are live', (
+    tester,
+  ) async {
+    await _pumpActiveSubAgentStatusWidget(tester, childConversations: const []);
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('routes one live child directly with localized semantics', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [_childConversation('child-1', 'Research')],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    await tester.pump();
+
+    final status = find.byKey(const ValueKey<String>('chat_active_sub_agents'));
+    final semantics = tester.ensureSemantics();
+    final node = tester.getSemantics(status);
+    expect(node.label, contains('1 sub-agent running'));
+    expect(node.label, contains('View active sub-agents'));
+    expect(node, matchesSemantics(isButton: true, hasTapAction: true));
+
+    await tester.tap(status, kind: .mouse);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Opened child-1'), findsOneWidget);
+
+    semantics.dispose();
+  });
+
+  testWidgets('opens one live child with keyboard activation', (tester) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [_childConversation('child-1', 'Research')],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Opened child-1'), findsOneWidget);
+  });
+
+  testWidgets('offers persisted child titles in multi-child chooser', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [
+        _childConversation('child-1', 'Research notes'),
+        _childConversation('child-2', 'Write summary'),
+      ],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    final _ = runtime.start(parentId: _chatId, childId: 'child-1');
+    final _ = runtime.start(parentId: _chatId, childId: 'child-2');
+    await tester.pump();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Active sub-agents'), findsOneWidget);
+    expect(find.text('Research notes'), findsOneWidget);
+    expect(find.text('Write summary'), findsOneWidget);
+
+    await tester.tap(find.text('Write summary'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Opened child-2'), findsOneWidget);
+  });
+
+  testWidgets('keeps live and terminal status details safe in chooser', (
+    tester,
+  ) async {
+    final container = await _pumpActiveSubAgentStatusWidget(
+      tester,
+      childConversations: [
+        _childConversation('running', 'Running child'),
+        _childConversation('approval', 'Approval child'),
+        _childConversation('failed', 'Failed child'),
+        _childConversation('stopped', 'Stopped child'),
+      ],
+    );
+    final runtime = container.read(activeSubAgentRuntimeProvider.notifier);
+    for (final childId in ['running', 'approval', 'failed', 'stopped']) {
+      final _ = runtime.start(parentId: _chatId, childId: childId);
+    }
+    runtime.markAwaitingApproval('approval');
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_active_sub_agents')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('active_sub_agent_running')),
+        matching: find.text('Running'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('active_sub_agent_approval')),
+        matching: find.text('Awaiting approval'),
+      ),
+      findsOneWidget,
+    );
+
+    runtime.finish((
+      parentId: _chatId,
+      childId: 'failed',
+      status: .error,
+      error: 'api_key=top-secret',
+      stackTrace: StackTrace.fromString('stack-secret'),
+    ));
+    runtime.finish((
+      parentId: _chatId,
+      childId: 'stopped',
+      status: .stopped,
+      error: null,
+      stackTrace: null,
+    ));
+    await tester.pump();
+
+    expect(find.text('Failed'), findsOneWidget);
+    expect(find.text('Stopped'), findsOneWidget);
+    expect(find.text('Error: api_key=[REDACTED]'), findsOneWidget);
+    expect(find.textContaining('top-secret'), findsNothing);
+    expect(find.textContaining('stack-secret'), findsNothing);
+  });
 }
+
+Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
+  WidgetTester tester, {
+  required List<ConversationEntity> childConversations,
+}) async {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const Scaffold(
+          body: ActiveSubAgentStatusWidget(
+            workspaceId: _workspaceId,
+            conversationId: _chatId,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/workspaces/:workspaceId/chats/:chatId/sub-agents/:subAgentConversationId',
+        builder: (_, state) => Scaffold(
+          body: Text(
+            'Opened ${state.pathParameters['subAgentConversationId']}',
+          ),
+        ),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+  final container = ProviderContainer(
+    overrides: [
+      childConversationsStreamProvider(
+        _workspaceId,
+        parentConversationId: _chatId,
+      ).overrideWith((ref) => Stream.value(childConversations)),
+    ],
+  );
+  addTearDown(container.dispose);
+
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        child: UncontrolledProviderScope(
+          container: container,
+          child: Builder(
+            builder: (context) => MaterialApp.router(
+              routerConfig: router,
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            ),
+          ),
+        ),
+        supportedLocales: const [Locale('en'), Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+  });
+  await tester.pumpAndSettle();
+
+  return container;
+}
+
+ConversationEntity _childConversation(String id, String title) =>
+    ConversationEntity(
+      id: id,
+      title: title,
+      workspaceId: _workspaceId,
+      parentConversationId: _chatId,
+      isPinned: false,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+    );
 
 Future<void> _pumpCloudConversationScreen(
   WidgetTester tester, {

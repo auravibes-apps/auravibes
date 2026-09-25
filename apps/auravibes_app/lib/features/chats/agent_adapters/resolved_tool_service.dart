@@ -1284,10 +1284,15 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         ref.watch(messageRepositoryProvider),
       ),
       startRequest: activeSubAgents.start,
-      continueAgentTurn: ({required conversationId, required context}) {
-        return container
+      continueAgentTurn: ({required conversationId, required context}) async {
+        final decision = await container
             .read(appAgentLoopProvider)
             .call(conversationId: conversationId, context: context);
+        if (decision == agent.AgentIterationDecision.waitForToolApproval) {
+          activeSubAgents.markAwaitingApproval(conversationId);
+        }
+
+        return decision;
       },
       onChildStarted: ({required parentId, required childId}) {
         agentCancellationRuntime.registerCleanup(parentId, () {
