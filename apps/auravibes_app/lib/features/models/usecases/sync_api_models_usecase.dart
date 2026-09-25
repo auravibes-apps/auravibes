@@ -7,17 +7,22 @@ class const SyncApiModelsUseCase({
 }) {
   Future<void> call() async {
     final apiResponse = await apiService.fetchAllModels();
+    _validateCatalog(apiResponse);
+
     final providers = apiResponse.providers;
     final models = providers.expand((provider) => provider.models).toList();
-    if (providers.isEmpty || models.isEmpty) {
-      throw const FormatException(
-        'Model catalog response contained no providers or models.',
-      );
-    }
-
     await repository.replaceAllData(
       providers: providers.map((provider) => provider.modelProvider).toList(),
       models: models,
+    );
+  }
+}
+
+void _validateCatalog(ModelApiResponse apiResponse) {
+  if (apiResponse.providers.isEmpty ||
+      apiResponse.providers.every((provider) => provider.models.isEmpty)) {
+    throw const FormatException(
+      'Model catalog response contained no providers or models.',
     );
   }
 }

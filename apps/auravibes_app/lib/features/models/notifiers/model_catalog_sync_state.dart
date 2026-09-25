@@ -6,7 +6,6 @@ class const ModelCatalogSyncState({
   final DateTime? lastSuccessfulSyncAt,
   final ModelCatalogSyncFailure? failure,
 }) {
-
   ModelCatalogSyncState copyWith({
     bool? isSyncing,
     DateTime? lastAttemptAt,

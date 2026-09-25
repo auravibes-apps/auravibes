@@ -6,17 +6,14 @@ import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 final _logger = Logger('notifier:model_catalog_sync');
-const _retryDelays = [
-  Duration(milliseconds: 250),
-  Duration(milliseconds: 500),
-];
+const _retryDelays = [Duration(milliseconds: 250), Duration(milliseconds: 500)];
 const _firstServerErrorStatusCode = 500;
 const _firstNonServerErrorStatusCode = 600;
 
 final modelCatalogSyncNotifierProvider =
     NotifierProvider<ModelCatalogSyncNotifier, ModelCatalogSyncState>(
-  ModelCatalogSyncNotifier.new,
-);
+      ModelCatalogSyncNotifier.new,
+    );
 
 class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
   Future<void>? _syncInFlight;
@@ -29,11 +26,7 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     try {
       await _startSync(retryTransientErrors: true);
     } on Object catch (error, stackTrace) {
-      _logger.warning(
-        'Automatic model catalog sync failed',
-        error,
-        stackTrace,
-      );
+      _logger.warning('Automatic model catalog sync failed', error, stackTrace);
     }
   }
 
@@ -56,49 +49,58 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
   }
 
   Future<void> _sync({required bool retryTransientErrors}) async {
-    state = state.copyWith(
-      isSyncing: true,
-      clearFailure: true,
-    );
+    state = state.copyWith(isSyncing: true, clearFailure: true);
 
     var retries = 0;
     while (true) {
-      if (!ref.mounted) return;
-      state = state.copyWith(lastAttemptAt: .now());
       try {
-        await ref.read(modelSyncServiceProvider).sync();
-        if (!ref.mounted) return;
-
-        state = state.copyWith(
-          isSyncing: false,
-          lastSuccessfulSyncAt: .now(),
-          clearFailure: true,
-        );
+        await _syncAttempt();
 
         return;
       } on Object catch (error, stackTrace) {
-        if (retryTransientErrors &&
-            retries < _retryDelays.length &&
-            _isTransient(error)) {
-          await Future<void>.delayed(_retryDelays[retries++]);
-          if (!ref.mounted) return;
-          continue;
-        }
-
-        if (ref.mounted) {
-          state = state.copyWith(
-            isSyncing: false,
-            failure: _failureFor(error),
-          );
-        }
-        Error.throwWithStackTrace(error, stackTrace);
+        await _retryOrFail(error, stackTrace, retryTransientErrors, retries++);
       }
     }
   }
 
+  Future<void> _syncAttempt() async {
+    if (!ref.mounted) return;
+    state = state.copyWith(lastAttemptAt: .now());
+    await ref.read(modelSyncServiceProvider).sync();
+    if (!ref.mounted) return;
+
+    state = state.copyWith(
+      isSyncing: false,
+      lastSuccessfulSyncAt: .now(),
+      clearFailure: true,
+    );
+  }
+
+  Future<void> _retryOrFail(
+    Object error,
+    StackTrace stackTrace,
+    bool retryTransientErrors,
+    int retries,
+  ) async {
+    if (retryTransientErrors &&
+        retries < _retryDelays.length &&
+        _isTransient(error)) {
+      await Future<void>.delayed(_retryDelays[retries]);
+
+      return;
+    }
+
+    _recordFailure(error);
+    Error.throwWithStackTrace(error, stackTrace);
+  }
+
+  void _recordFailure(Object error) {
+    if (!ref.mounted) return;
+    state = state.copyWith(isSyncing: false, failure: _failureFor(error));
+  }
+
   bool _isTransient(Object error) {
     if (error is! DioException) return false;
-
     final statusCode = error.response?.statusCode;
     if (statusCode != null) {
       return statusCode == 429 ||
@@ -106,13 +108,7 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
               statusCode < _firstNonServerErrorStatusCode);
     }
 
-    return switch (error.type) {
-      DioExceptionType.connectionTimeout ||
-      DioExceptionType.sendTimeout ||
-      DioExceptionType.receiveTimeout ||
-      DioExceptionType.connectionError => true,
-      _ => false,
-    };
+    return _isTransientDioExceptionType(error.type);
   }
 
   ModelCatalogSyncFailure _failureFor(Object error) => switch (error) {
@@ -121,3 +117,11 @@ class ModelCatalogSyncNotifier extends Notifier<ModelCatalogSyncState> {
     _ => .unexpected,
   };
 }
+
+bool _isTransientDioExceptionType(DioExceptionType type) => switch (type) {
+  DioExceptionType.connectionTimeout ||
+  DioExceptionType.sendTimeout ||
+  DioExceptionType.receiveTimeout ||
+  DioExceptionType.connectionError => true,
+  _ => false,
+};

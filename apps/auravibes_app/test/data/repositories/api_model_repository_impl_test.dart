@@ -400,10 +400,9 @@ void main() {
           (await repository.getAllProviders()).map((provider) => provider.id),
           ['existing-provider'],
         );
-        expect(
-          (await repository.getAllModels()).map((model) => model.id),
-          ['existing-model'],
-        );
+        expect((await repository.getAllModels()).map((model) => model.id), [
+          'existing-model',
+        ]);
       });
 
       test('prunes rows missing from replacement data', () async {

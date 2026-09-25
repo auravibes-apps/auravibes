@@ -50,9 +50,8 @@ void main() {
     });
 
     test('rejects catalogs without providers before writing', () async {
-      when(() => apiService.fetchAllModels()).thenAnswer(
-        (_) async => ModelApiResponse(providers: []),
-      );
+      when(() => apiService.fetchAllModels())
+          .thenAnswer((_) async => ModelApiResponse(providers: []));
 
       await expectLater(useCase(), throwsA(isA<FormatException>()));
 

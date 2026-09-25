@@ -46,12 +46,10 @@ void main() {
       );
 
       await notifier.retryManually();
-      final lastSuccessfulSyncAt =
-          container.read(modelCatalogSyncNotifierProvider).lastSuccessfulSyncAt;
-      await expectLater(
-        notifier.retryManually(),
-        throwsA(isA<DioException>()),
-      );
+      final lastSuccessfulSyncAt = container
+          .read(modelCatalogSyncNotifierProvider)
+          .lastSuccessfulSyncAt;
+      await expectLater(notifier.retryManually(), throwsA(isA<DioException>()));
 
       final state = container.read(modelCatalogSyncNotifierProvider);
       expect(state.failure, ModelCatalogSyncFailure.unavailable);
@@ -118,20 +116,16 @@ void main() {
   });
 }
 
-ProviderContainer _containerFor(ModelSyncService service) =>
-    ProviderContainer(
-      overrides: [modelSyncServiceProvider.overrideWithValue(service)],
-    );
+ProviderContainer _containerFor(ModelSyncService service) => ProviderContainer(
+  overrides: [modelSyncServiceProvider.overrideWithValue(service)],
+);
 
 DioException _serviceUnavailable() {
   final request = RequestOptions(path: '/api.json');
 
   return DioException(
     requestOptions: request,
-    response: Response<void>(
-      requestOptions: request,
-      statusCode: 503,
-    ),
+    response: Response<void>(requestOptions: request, statusCode: 503),
     type: .badResponse,
   );
 }

@@ -183,9 +183,7 @@ Future<bool?> _performModelCatalogSync(
   if (ref.read(modelCatalogSyncNotifierProvider).isSyncing) return null;
 
   try {
-    await ref
-        .read(modelCatalogSyncNotifierProvider.notifier)
-        .retryManually();
+    await ref.read(modelCatalogSyncNotifierProvider.notifier).retryManually();
     if (context.mounted) {
       ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
     }
@@ -280,9 +278,7 @@ class const _ConnectionsLoadState({required final bool isLoading})
     extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Center(
-    child: isLoading
-        ? const AuraSpinner()
-        : const _ConnectionsLoadError(),
+    child: isLoading ? const AuraSpinner() : const _ConnectionsLoadError(),
   );
 }
 
@@ -293,33 +289,45 @@ class const _ModelCatalogSyncStatus() extends ConsumerWidget {
     final lastAttemptAt = state.lastAttemptAt;
     if (lastAttemptAt == null) return const SizedBox.shrink();
 
-    final lastSuccessfulSyncAt = state.lastSuccessfulSyncAt;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Column(
-        crossAxisAlignment: .start,
-        children: [
-          if (state.isSyncing)
-            _ModelCatalogSyncStatusRow(
-              labelKey: LocaleKeys.models_screens_catalog_sync_tooltip,
-              timestamp: lastAttemptAt,
-            ),
-          if (state.failure != null)
-            _ModelCatalogSyncStatusRow(
-              labelKey: LocaleKeys.models_screens_catalog_sync_error,
-              timestamp: lastAttemptAt,
-            ),
-          if (lastSuccessfulSyncAt != null)
-            _ModelCatalogSyncStatusRow(
-              labelKey:
-                  LocaleKeys.service_connections_metadata_last_refreshed_at,
-              timestamp: lastSuccessfulSyncAt,
-            ),
-        ],
+      child: _ModelCatalogSyncStatusRows(
+        isSyncing: state.isSyncing,
+        hasFailure: state.failure != null,
+        lastAttemptAt: lastAttemptAt,
+        lastSuccessfulSyncAt: state.lastSuccessfulSyncAt,
       ),
     );
   }
+}
+
+class const _ModelCatalogSyncStatusRows({
+  required final bool isSyncing,
+  required final bool hasFailure,
+  required final DateTime lastAttemptAt,
+  required final DateTime? lastSuccessfulSyncAt,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      if (isSyncing)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_tooltip,
+          timestamp: lastAttemptAt,
+        ),
+      if (hasFailure)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_error,
+          timestamp: lastAttemptAt,
+        ),
+      if (lastSuccessfulSyncAt case final timestamp?)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.service_connections_metadata_last_refreshed_at,
+          timestamp: timestamp,
+        ),
+    ],
+  );
 }
 
 class const _ModelCatalogSyncStatusRow({
@@ -329,7 +337,8 @@ class const _ModelCatalogSyncStatusRow({
   @override
   Widget build(BuildContext context) {
     final localizations = MaterialLocalizations.of(context);
-    final formattedTimestamp = '${localizations.formatMediumDate(timestamp)} '
+    final formattedTimestamp =
+        '${localizations.formatMediumDate(timestamp)} '
         '${localizations.formatTimeOfDay(.fromDateTime(timestamp))}';
 
     return Row(
