@@ -64,6 +64,11 @@ class const _NewChatAvailable({required final String workspaceId, super.key})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
+    final switchPending = useState(false);
+    final isSwitchPending = useListenableSelector(
+      switchPending,
+      () => switchPending.value,
+    );
     final state = ref.watch(newChatProvider(workspaceId));
     final hasNoProviders = _hasNoModelProviders(ref, workspaceId);
     final actions = _NewChatActions(
@@ -78,6 +83,8 @@ class const _NewChatAvailable({required final String workspaceId, super.key})
         state: state,
         hasNoProviders: hasNoProviders,
         draftStatus: draftStatus,
+        switchPending: switchPending,
+        isSwitchPending: isSwitchPending,
         actions: actions,
       ),
     );
@@ -233,6 +240,8 @@ class _NewChatBodyData({
   required final NewChatState state,
   required final bool hasNoProviders,
   required final ValueNotifier<bool> draftStatus,
+  required final ValueNotifier<bool> switchPending,
+  required final bool isSwitchPending,
   required final _NewChatActions actions,
 });
 
@@ -249,6 +258,7 @@ class const _NewChatBody({required final _NewChatBodyData data})
       title: _WorkspaceSelector(
         workspaceId: data.workspaceId,
         draftStatus: data.draftStatus,
+        switchPending: data.switchPending,
       ),
     ),
   );
@@ -325,8 +335,10 @@ List<String> _watchNewChatModalities(
       const <String>[];
 }
 
-class const _NewChatInput({required final Widget child})
-    extends StatelessWidget {
+class const _NewChatInput({
+  required final Widget child,
+  required final bool isSwitchPending,
+}) extends StatelessWidget {
   new fromData(
     _NewChatBodyData data,
     List<String> modalitiesInput,
@@ -359,10 +371,12 @@ class const _NewChatInput({required final Widget child})
               : null,
           disabled: data.state.isLoading || data.state.modelId == null,
         ),
+        isSwitchPending: data.isSwitchPending,
       );
 
   @override
-  Widget build(BuildContext context) => child;
+  Widget build(BuildContext context) =>
+      IgnorePointer(ignoring: isSwitchPending, child: child);
 }
 
 class const _NewChatModelSheetControl({required final _NewChatBodyData data})
@@ -470,15 +484,27 @@ class const _UnavailableChatInput({required final String workspaceId})
 class const _WorkspaceSelector({
   required final String workspaceId,
   required final ValueNotifier<bool> draftStatus,
+  final ValueNotifier<bool>? switchPending,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
+    final localSwitchPending = useState(false);
+    final switchPending = this.switchPending ?? localSwitchPending;
+    final isSwitchPending = useListenableSelector(
+      switchPending,
+      () => switchPending.value,
+    );
     final switchState = ref.watch(workspaceSwitcherProvider);
-    final switchWorkspace = _workspaceSwitchAction(context, ref, this);
+    final switchWorkspace = _workspaceSwitchAction(
+      context,
+      ref,
+      this,
+      switchPending,
+    );
 
     return _WorkspaceSelectorView(
-      isSwitching: switchState.status == .loading,
+      isSwitching: switchState.status == .loading || isSwitchPending,
       workspaces: workspaces,
       workspaceId: workspaceId,
       onChanged: (value) => unawaited(switchWorkspace(value)),
@@ -490,17 +516,17 @@ Future<void> Function(String?) _workspaceSwitchAction(
   BuildContext context,
   WidgetRef ref,
   _WorkspaceSelector selector,
+  ValueNotifier<bool> switchPending,
 ) {
-  final confirmedTargetWorkspaceId = useState<String?>(null);
   final request = (
     context: context,
     ref: ref,
     selector: selector,
-    confirmedTargetWorkspaceId: confirmedTargetWorkspaceId,
+    switchPending: switchPending,
   );
   Future<void> switchWorkspace(String? targetWorkspaceId) =>
       _switchNewChatWorkspace(request, targetWorkspaceId);
-  _listenForWorkspaceSwitchErrors(context, ref, switchWorkspace);
+  _listenForWorkspaceSwitchErrors(context, ref, switchWorkspace, switchPending);
 
   return switchWorkspace;
 }
@@ -545,7 +571,7 @@ typedef _WorkspaceSwitchRequest = ({
   BuildContext context,
   WidgetRef ref,
   _WorkspaceSelector selector,
-  ValueNotifier<String?> confirmedTargetWorkspaceId,
+  ValueNotifier<bool> switchPending,
 });
 
 Future<void> _switchNewChatWorkspace(
@@ -556,25 +582,20 @@ Future<void> _switchNewChatWorkspace(
       targetWorkspaceId == request.selector.workspaceId) {
     return;
   }
-  if (!await _confirmWorkspaceSwitch(request, targetWorkspaceId)) return;
+  if (!await _confirmWorkspaceSwitch(request)) return;
+  FocusManager.instance.primaryFocus?.unfocus();
+  request.switchPending.value = true;
   request.ref.read(workspaceSwitcherProvider.notifier)
     ..clearError()
     ..switchToWorkspace(targetWorkspaceId);
 }
 
-Future<bool> _confirmWorkspaceSwitch(
-  _WorkspaceSwitchRequest request,
-  String targetWorkspaceId,
-) async {
-  if (!request.selector.draftStatus.value ||
-      request.confirmedTargetWorkspaceId.value == targetWorkspaceId) {
-    return true;
-  }
+Future<bool> _confirmWorkspaceSwitch(_WorkspaceSwitchRequest request) async {
+  if (!request.selector.draftStatus.value) return true;
   if (!await _confirmNewChatWorkspaceDiscard(request.context) ||
       !request.context.mounted) {
     return false;
   }
-  request.confirmedTargetWorkspaceId.value = targetWorkspaceId;
 
   return true;
 }
@@ -601,13 +622,18 @@ void _listenForWorkspaceSwitchErrors(
   BuildContext context,
   WidgetRef ref,
   Future<void> Function(String?) switchWorkspace,
+  ValueNotifier<bool> switchPending,
 ) {
-  ref.listen(workspaceSwitcherProvider, (_, next) {
+  ref.listen(workspaceSwitcherProvider, (previous, next) {
+    if (previous?.status == .loading && next.status == .idle) {
+      switchPending.value = false;
+    }
     if (next case WorkspaceSwitchState(
       status: .error,
       errorLocalizationKey: final String errorKey,
       targetWorkspaceId: final String targetWorkspaceId,
     )) {
+      switchPending.value = false;
       _showWorkspaceSwitchError(
         context,
         errorKey,

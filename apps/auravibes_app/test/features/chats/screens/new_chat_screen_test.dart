@@ -239,6 +239,20 @@ void main() {
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Discard'));
       await tester.pump();
+      expect(find.text('Switching workspace...'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.byType(ChatInputWidget),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is IgnorePointer && widget.ignoring,
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<EditableText>(textField).focusNode.hasFocus,
+        isFalse,
+      );
       await tester.pump(const Duration(milliseconds: 350));
       final switchStateUnderTest = ProviderScope.containerOf(
         tester.element(find.byType(NewChatScreen)),
@@ -263,7 +277,25 @@ void main() {
       );
       expect(find.byType(NewChatScreen), findsOneWidget);
 
+      await tester.enterText(textField, 'updated draft after failure');
+      await tester.pump();
+      expect(
+        find.ancestor(
+          of: find.byType(ChatInputWidget),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is IgnorePointer && widget.ignoring,
+          ),
+        ),
+        findsNothing,
+      );
       await tester.tap(find.text('Retry'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Discard unsaved changes?'), findsOneWidget);
+      expect(
+        tester.widget<EditableText>(textField).controller.text,
+        'updated draft after failure',
+      );
+      await tester.tap(find.text('Discard'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 350));
       final _ = await tester.pumpAndSettle();
