@@ -303,8 +303,24 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Add Chat",
+      "archive_import": "Import archive",
       "search_placeholder": "Search conversations...",
-      "search_no_results": "No conversations match your search"
+      "search_no_results": "No conversations match your search",
+      "select_conversation": "Select {}",
+      "deselect_conversation": "Deselect {}",
+      "selected_count": {
+        "zero": "No conversations selected",
+        "one": "{} selected",
+        "other": "{} selected"
+      },
+      "clear_selection": "Clear selection",
+      "bulk_pin": "Pin selected",
+      "bulk_unpin": "Unpin selected",
+      "bulk_delete": "Delete selected",
+      "bulk_delete_title": "Delete selected conversations",
+      "bulk_delete_confirm": "Delete all selected conversations? This action cannot be undone.",
+      "bulk_pin_failures": "Could not update pin for: {}",
+      "bulk_delete_failures": "Could not delete: {}"
     },
     "new_chat": {
       "starting": "Starting conversation...",
@@ -313,6 +329,11 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
+      "archive_export": "Export archive",
+      "archive_exported": "Conversation archive saved.",
+      "archive_invalid": "This conversation archive is invalid or corrupted.",
+      "archive_unsupported_version": "This conversation archive uses an unsupported version.",
+      "archive_error": "Could not export or import this conversation.",
       "reasoning": {
         "title": "Reasoning",
         "enabled": "Enable reasoning",
@@ -1036,6 +1057,8 @@
     "switch_title": "Switch workspace?",
     "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",
+    "switch_loading": "Switching workspace...",
+    "switch_retry": "Retry",
     "loading": "Loading workspaces...",
     "load_error": "Failed to load workspaces. Please try again.",
     "dropdown_placeholder": "Select workspace",
