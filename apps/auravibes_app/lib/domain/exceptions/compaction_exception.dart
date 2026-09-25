@@ -59,3 +59,12 @@ class const CompactionModelMissingException() extends CompactionException {
 
 class const CompactionSettingsValidationException(super.localeKey)
     extends CompactionException;
+
+class const CompactionCheckpointRestoreException() extends CompactionException {
+  this
+    : super(
+        LocaleKeys.compaction_errors_checkpoint_restore_unavailable,
+        recoveryHint:
+            LocaleKeys.compaction_errors_checkpoint_restore_unavailable,
+      );
+}

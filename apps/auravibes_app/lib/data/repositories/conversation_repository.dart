@@ -153,7 +153,8 @@ class ConversationRepository(
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
     final title = await _forkTitle(source.workspaceId, source.title);
-    final fork = await _createFork(source, title, boundary);
+    final activeCheckpointId = _forkCheckpointId(source, effective, boundary);
+    final fork = await _createFork(source, title, boundary, activeCheckpointId);
 
     return _mapToConversation(fork);
   }
@@ -410,6 +411,7 @@ extension on ConversationRepository {
     ConversationsTable source,
     String title,
     String boundary,
+    String? activeCheckpointId,
   ) => ConversationsCompanion(
     workspaceId: .new(source.workspaceId),
     title: .new(title),
@@ -420,6 +422,7 @@ extension on ConversationRepository {
     forkSourceConversationId: .new(source.id),
     forkSourceTitle: .new(source.title),
     forkThroughMessageId: .new(boundary),
+    activeCompactionCheckpointId: .new(activeCheckpointId),
     isPinned: const Value(false),
   );
 
@@ -456,6 +459,28 @@ extension on ConversationRepository {
     String boundary,
   ) => rows.any((row) => row.table.id == boundary && _isDurable(row.table));
 
+  String? _forkCheckpointId(
+    ConversationsTable source,
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String boundary,
+  ) {
+    final checkpointId = source.activeCompactionCheckpointId;
+    if (checkpointId == null) return null;
+    final checkpointIndex = rows.indexWhere(
+      (row) =>
+          row.table.id == checkpointId &&
+          row.table.conversationId == source.id &&
+          row.table.status == MessageTableStatus.sent &&
+          MessageMetadataEntity.fromJsonString(row.table.metadata)
+                  ?.isCompactionSummary ==
+              true,
+    );
+    final boundaryIndex = rows.indexWhere((row) => row.table.id == boundary);
+    if (checkpointIndex < 0 || boundaryIndex < checkpointIndex) return null;
+
+    return checkpointId;
+  }
+
   Never _throwInvalidForkBoundary() =>
       throw const ConversationValidationException(
         'Fork boundary must be a terminal message',
@@ -465,9 +490,10 @@ extension on ConversationRepository {
     ConversationsTable source,
     String title,
     String boundary,
+    String? activeCheckpointId,
   ) => _database.transaction(() async {
     final created = await _database.conversationDao.insertConversation(
-      _forkCompanion(source, title, boundary),
+      _forkCompanion(source, title, boundary, activeCheckpointId),
     );
     await _copyConversationSettings(source.id, created.id);
 
