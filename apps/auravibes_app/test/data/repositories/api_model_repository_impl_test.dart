@@ -344,7 +344,6 @@ void main() {
         expect(models.map((model) => model.id), ['existing-model']);
       });
 
-
       test('rolls back when provider deletion fails', () async {
         final database = AppDatabase(
           connection: DatabaseConnection(NativeDatabase.memory()),

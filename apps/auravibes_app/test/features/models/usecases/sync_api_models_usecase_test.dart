@@ -119,7 +119,6 @@ void main() {
   });
 }
 
-
 const _openAiProvider = ApiModelProviderEntity(
   id: 'openai',
   name: 'OpenAI',
