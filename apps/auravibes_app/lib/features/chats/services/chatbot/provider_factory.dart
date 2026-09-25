@@ -93,17 +93,11 @@ class const ProviderFactory({
     required String? sessionId,
   }) {
     if (sessionId == null || sessionId.isEmpty) return const {};
-    if (providerType == .openrouter && baseUrl == null) {
+    if (_supportsOpenRouterSessionAffinity(providerType, baseUrl)) {
       return {'x-session-id': sessionId};
     }
-    if (providerType == .anthropic) {
-      final uri = baseUrl == null ? null : Uri.tryParse(baseUrl);
-      if (baseUrl == null ||
-          (uri?.scheme == 'https' &&
-              uri?.host == 'api.anthropic.com' &&
-              uri?.port == 443)) {
-        return {'x-session-affinity': sessionId};
-      }
+    if (_supportsAnthropicSessionAffinity(providerType, baseUrl)) {
+      return {'x-session-affinity': sessionId};
     }
 
     return const {};
@@ -120,6 +114,24 @@ class const ProviderFactory({
 
     return value;
   }
+}
+
+bool _supportsOpenRouterSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) => providerType == .openrouter && baseUrl == null;
+
+bool _supportsAnthropicSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) {
+  if (providerType != .anthropic) return false;
+  if (baseUrl == null) return true;
+  final uri = Uri.tryParse(baseUrl);
+
+  return uri?.scheme == 'https' &&
+      uri?.host == 'api.anthropic.com' &&
+      uri?.port == 443;
 }
 
 extension _ProviderFactoryGenerationConfig on ProviderFactory {

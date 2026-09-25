@@ -167,6 +167,13 @@ extension on AppChatCompletionsPlugin {
 const _maxProviderRetryDelay = Duration(seconds: 60);
 const _retryableProviderStatuses = {500, 502, 503, 504};
 
+typedef _ProviderRetryRequest = ({
+  AppChatCompletionsPlugin plugin,
+  Map<String, dynamic> body,
+  ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+  bool canRetry,
+});
+
 final class _ProviderRetryState {
   int? statusCode;
   Duration? retryAfter;
@@ -181,6 +188,18 @@ final class _ProviderRetryState {
     if (!canRetry || hasEmittedChunk) return null;
 
     return _retryDelayFor(error, statusCode, retryAfter);
+  }
+
+  AgentRateLimitRetryException? rateLimitRetryException(Object error) {
+    final retryAfter = this.retryAfter;
+    if (error is! GenkitException || statusCode != 429 || retryAfter == null) {
+      return null;
+    }
+
+    return AgentRateLimitRetryException(
+      providerException: error,
+      retryAfter: retryAfter,
+    );
   }
 
   void captureResponse(http.StreamedResponse response) {
@@ -207,37 +226,55 @@ Future<ModelResponse> _generateWithRetry(
   AppChatCompletionsPlugin plugin,
   Map<String, dynamic> body,
   ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
+) => _generateWithRetryAttempt((
+  plugin: plugin,
+  body: body,
+  context: context,
+  canRetry: true,
+));
+
+Future<ModelResponse> _generateWithRetryAttempt(
+  _ProviderRetryRequest request,
 ) async {
-  var canRetry = true;
-  while (true) {
-    final attempt = _ProviderRetryState();
-    try {
-      return await _generateModelAttempt(plugin, body, context, attempt);
-    } on Object catch (error, stackTrace) {
-      final delay = attempt.delayFor(
-        error,
-        canRetry: canRetry,
-        context: context,
-      );
-      if (delay == null) {
-        final retryAfter = attempt.retryAfter;
-        if (error is GenkitException &&
-            attempt.statusCode == 429 &&
-            retryAfter != null) {
-          return await Future<ModelResponse>.error(
-            AgentRateLimitRetryException(
-              providerException: error,
-              retryAfter: retryAfter,
-            ),
-            stackTrace,
-          );
-        }
-        rethrow;
-      }
-      canRetry = false;
-      await _waitForRetry(delay, context, plugin.retryWait);
-    }
+  final attempt = _ProviderRetryState();
+  try {
+    return await _generateModelAttempt(
+      request.plugin,
+      request.body,
+      request.context,
+      attempt,
+    );
+  } on Object catch (error, stackTrace) {
+    await _retryOrThrow(request, attempt, error, stackTrace);
+
+    return await _generateWithRetryAttempt((
+      plugin: request.plugin,
+      body: request.body,
+      context: request.context,
+      canRetry: false,
+    ));
   }
+}
+
+Future<void> _retryOrThrow(
+  _ProviderRetryRequest request,
+  _ProviderRetryState attempt,
+  Object error,
+  StackTrace stackTrace,
+) {
+  final delay = attempt.delayFor(
+    error,
+    canRetry: request.canRetry,
+    context: request.context,
+  );
+  if (delay == null) {
+    return Future<void>.error(
+      attempt.rateLimitRetryException(error) ?? error,
+      stackTrace,
+    );
+  }
+
+  return _waitForRetry(delay, request.context, request.plugin.retryWait);
 }
 
 Future<ModelResponse> _generateModelAttempt(
