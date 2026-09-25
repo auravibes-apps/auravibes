@@ -1127,7 +1127,7 @@ _Command _command(
   _workspaceExecutable(rootPath, group.package.flutter ? 'flutter' : 'dart'),
   [
     'test',
-    '--exclude-tags=integration',
+    '--exclude-tags=integration,golden',
     if (coverage && group.package.flutter) '--coverage',
     if (coverage && !group.package.flutter) '--coverage=coverage',
     '--concurrency=${group.package.flutter ? 1 : 2}',
