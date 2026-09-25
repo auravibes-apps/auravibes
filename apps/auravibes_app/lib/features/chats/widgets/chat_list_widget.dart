@@ -5,11 +5,10 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
-import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
@@ -58,11 +57,15 @@ class _ChatListViewState {
        isLoadingMore = visible.isLoadingMore,
        isSearching = data.isDebouncing || data.isRefreshing,
        isRefreshing = data.isRefreshing,
-       onLoadMore = actions.onLoadMore,
-       onSearchChanged = actions.onSearchChanged,
-       searchController = actions.searchController,
-       searchQuery = actions.searchQuery,
+       onLoadMore = actions.callbacks.onLoadMore,
+       onSearchChanged = actions.callbacks.onSearchChanged,
+       searchController = actions.input.searchController,
+       searchQuery = actions.input.searchText.value,
        showSearchInput = data.hasSearchInput,
+       selectedChats = actions.results.selectedChats,
+       onSelectionChanged = _conversationSelectionChanged(
+         actions.results.selectedChats,
+       ),
        workspaceId = actions.workspaceId;
 
   final List<ConversationEntity> chats;
@@ -76,6 +79,8 @@ class _ChatListViewState {
   final TextEditingController searchController;
   final String searchQuery;
   final bool showSearchInput;
+  final ValueNotifier<Map<String, ConversationEntity>> selectedChats;
+  final _ChatListSelectionChanged onSelectionChanged;
   final String workspaceId;
 }
 
@@ -97,6 +102,7 @@ typedef _ChatListResultsState = ({
   ValueNotifier<List<ConversationEntity>> loadedChats,
   ValueNotifier<bool> hasMore,
   ValueNotifier<bool> isLoadingMore,
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
 });
 
 typedef _ChatListDataState = ({
@@ -123,16 +129,20 @@ typedef _ChatListVisibleData = ({
 });
 
 typedef _ChatListActions = ({
-  VoidCallback onLoadMore,
-  ValueChanged<String> onSearchChanged,
-  TextEditingController searchController,
-  String searchQuery,
+  _ChatListActionCallbacks callbacks,
+  _ChatListInputState input,
+  _ChatListResultsState results,
   String workspaceId,
 });
 
 typedef _ChatListActionCallbacks = ({
   VoidCallback onLoadMore,
   ValueChanged<String> onSearchChanged,
+});
+
+typedef _ChatListSelectionChanged = void Function(
+  ConversationEntity chat, {
+  required bool selected,
 });
 
 typedef _ChatTileCallbacks = ({
@@ -142,6 +152,13 @@ typedef _ChatTileCallbacks = ({
   VoidCallback onRename,
   VoidCallback onMenuToggle,
   VoidCallback onTap,
+  ValueChanged<bool> onSelectionChanged,
+});
+
+typedef _ChatTileSelectionState = ({
+  bool isSelected,
+  bool isSelectionMode,
+  ValueChanged<bool> onSelectionChanged,
 });
 
 Dispose? _resetSearchEffect(ValueNotifier<bool> hasMore) {
@@ -251,6 +268,8 @@ class const ChatListWidget({required final String workspaceId, super.key})
 _ChatListHookState _useChatListHookState(WidgetRef ref, String workspaceId) {
   final input = _useChatListInputState();
   final results = _useChatListResultsState();
+
+  useEffect(() => _clearSelectedChats(results.selectedChats), [workspaceId]);
   final query = _useChatListQueryState(ref, workspaceId, input.searchText);
 
   return (
@@ -272,7 +291,16 @@ _ChatListResultsState _useChatListResultsState() => (
   loadedChats: useState<List<ConversationEntity>>([]),
   hasMore: useState(false),
   isLoadingMore: useState(false),
+  selectedChats: useState<Map<String, ConversationEntity>>({}),
 );
+
+void Function()? _clearSelectedChats(
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+) {
+  selectedChats.value = {};
+
+  return null;
+}
 
 typedef _ChatListQueryState = ({
   String normalizedSearch,
@@ -409,19 +437,24 @@ _ChatListActions _chatListActions(
   _ChatListRuntimeState runtime,
   String databaseSearch,
 ) {
-  final input = runtime.hooks.input;
-  final searchText = input.searchText;
-  final paginationState = _chatListPaginationState(runtime, databaseSearch);
-  final callbacks = _chatListActionCallbacks(searchText, paginationState);
+  final hooks = runtime.hooks;
 
   return (
-    onLoadMore: callbacks.onLoadMore,
-    onSearchChanged: callbacks.onSearchChanged,
-    searchController: input.searchController,
-    searchQuery: searchText.value,
+    callbacks: _chatListActionCallbacks(
+      hooks.input.searchText,
+      _chatListPaginationState(runtime, databaseSearch),
+    ),
+    input: hooks.input,
+    results: hooks.results,
     workspaceId: runtime.workspaceId,
   );
 }
+
+_ChatListSelectionChanged _conversationSelectionChanged(
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+) =>
+    (chat, {required selected}) =>
+        _setConversationSelection(selectedChats, chat, selected: selected);
 
 _ChatListActionCallbacks _chatListActionCallbacks(
   ValueNotifier<String> searchText,
@@ -430,6 +463,20 @@ _ChatListActionCallbacks _chatListActionCallbacks(
   onLoadMore: () => unawaited(_loadMoreConversations(paginationState)),
   onSearchChanged: (value) => searchText.value = value,
 );
+
+void _setConversationSelection(
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  ConversationEntity chat, {
+  required bool selected,
+}) {
+  final updated = {...selectedChats.value};
+  if (selected) {
+    updated[chat.id] = chat;
+  } else {
+    final _ = updated.remove(chat.id);
+  }
+  selectedChats.value = updated;
+}
 
 _ChatListPaginationState _chatListPaginationState(
   _ChatListRuntimeState runtime,
@@ -523,6 +570,8 @@ class const _ChatListStartButton({required final String workspaceId})
 class const _ChatTile({
   required final ConversationEntity chat,
   required final String workspaceId,
+  required final _ChatTileSelectionState selection,
+  super.key,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ChatTile> createState() => _ChatTileState();
@@ -545,6 +594,7 @@ extension on _ChatTileState {
   Widget _buildTileProvider(BuildContext context) => _ChatTileProvider(
     chat: widget.chat,
     workspaceId: widget.workspaceId,
+    isSelected: widget.selection.isSelected,
     controller: _menuController,
     callbacks: _tileCallbacks(context),
   );
@@ -555,8 +605,17 @@ extension on _ChatTileState {
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
     onMenuToggle: _menuController.toggle,
-    onTap: () => _openConversation(context),
+    onTap: _selectionAwareTap(context),
+    onSelectionChanged: widget.selection.onSelectionChanged,
   );
+
+  VoidCallback _selectionAwareTap(BuildContext context) {
+    final selection = widget.selection;
+
+    return selection.isSelectionMode
+        ? () => selection.onSelectionChanged(!selection.isSelected)
+        : () => _openConversation(context);
+  }
 }
 
 extension on _ChatTileState {
@@ -581,62 +640,19 @@ extension on _ChatTileState {
       _forkChatAndNavigate(this, context);
 
   Future<void> _deleteChat(ConversationEntity chat) async {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(chat);
-      _invalidateConversations(chat.workspaceId);
-
-      return;
-    }
-
-    final _ = await ref.read(deleteConversationUsecaseProvider).call(chat.id);
+    final _ = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .delete(chat);
+    if (!mounted) return;
     _invalidateConversations(chat.workspaceId);
-
-    return;
   }
 
   Future<void> _togglePin(ConversationEntity chat) async {
-    if (await _toggleCloudPin(chat)) return;
-    await _toggleLocalPin(chat);
-  }
-
-  Future<bool> _toggleCloudPin(ConversationEntity chat) async {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(chat.workspaceId).future,
-    );
-    if (cloud == null) return false;
-
-    await _updateCloudPin(cloud, chat);
-    if (!mounted) return true;
-    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
-
-    return true;
-  }
-
-  Future<void> _updateCloudPin(
-    CloudConversationUsecase cloud,
-    ConversationEntity chat,
-  ) async {
-    final patch = ConversationPatch(isPinned: !chat.isPinned);
-    try {
-      final _ = await cloud.update(chat, patch);
-    } on CloudAppException catch (error) {
-      if (error.code != 'validationFailed') rethrow;
-    }
-  }
-
-  Future<void> _toggleLocalPin(ConversationEntity chat) async {
-    if (!mounted) return;
-    final patch = ConversationPatch(isPinned: !chat.isPinned);
-    try {
-      final _ = await ref
-          .read(conversationRepositoryProvider)
-          .patchConversation(chat.id, patch);
-    } on ConversationPinLimitException {
-      return;
-    }
+    final updated = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .setPinned(chat, isPinned: !chat.isPinned);
+    if (!mounted || updated == null) return;
+    _invalidateConversations(chat.workspaceId);
   }
 
   Future<String> _forkChat(ConversationEntity chat) async {
@@ -740,6 +756,7 @@ String _chatDeleteErrorKey(Object error) => error is CloudAppException
 class const _ChatTileProvider({
   required final ConversationEntity chat,
   required final String workspaceId,
+  required final bool isSelected,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
 }) extends ConsumerWidget {
@@ -757,15 +774,11 @@ extension on _ChatTileProvider {
 
   Widget _buildView(String? modelDisplayName, String title) => _ChatTileView(
     chat: chat,
+    isSelected: isSelected,
     modelDisplayName: modelDisplayName,
     title: title,
     controller: controller,
-    onFork: callbacks.onFork,
-    onDelete: callbacks.onDelete,
-    onTogglePin: callbacks.onTogglePin,
-    onRename: callbacks.onRename,
-    onMenuToggle: callbacks.onMenuToggle,
-    onTap: callbacks.onTap,
+    callbacks: callbacks,
   );
 }
 
@@ -800,11 +813,322 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
   @override
   Widget build(BuildContext _) => Column(
     children: [
+      _ChatListBulkActions(
+        workspaceId: state.workspaceId,
+        selectedChats: state.selectedChats,
+      ),
       _ChatListSearchInput(state: state),
       Expanded(child: _ChatListResults(state: state)),
       if (state.hasMore && !state.isRefreshing && !state.hasError)
         _ChatListLoadMore(state: state),
     ],
+  );
+}
+
+class const _ChatListBulkActions({
+  required final String workspaceId,
+  required final ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+}) extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ChatListBulkActions> createState() =>
+      _ChatListBulkActionsState();
+}
+
+class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
+  bool _isWorking = false;
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<Map<String, ConversationEntity>>(
+        valueListenable: widget.selectedChats,
+        builder: (context, selected, _) => selected.isEmpty
+            ? const SizedBox.shrink()
+            : _buildActionBar(selected),
+      );
+
+  Widget _buildActionBar(Map<String, ConversationEntity> selected) =>
+      _ChatListBulkActionBar(
+        selected: selected,
+        isWorking: _isWorking,
+        callbacks: (
+          onPin: (isPinned) =>
+              unawaited(_setPins(selected.values.toList(), isPinned)),
+          onDelete: () => unawaited(_deleteSelected()),
+          onClear: () => widget.selectedChats.value = {},
+        ),
+      );
+
+  Future<void> _setPins(List<ConversationEntity> chats, bool isPinned) async {
+    if (_isWorking) return;
+    await _withWorking(() => _applyPins(chats, isPinned));
+  }
+
+  Future<void> _applyPins(List<ConversationEntity> chats, bool isPinned) async {
+    final result = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .pinMany(chats, isPinned: isPinned);
+    if (!mounted) return;
+
+    _recordPinnedChats(widget.selectedChats, result.updated);
+    _finishBulkAction(
+      LocaleKeys.chats_screens_chats_list_bulk_pin_failures,
+      result.failures,
+      result.errors,
+      action: 'pin',
+    );
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_isWorking) return;
+    final confirmed = await DeleteConversationConfirmDialog.show(
+      context,
+      bulk: true,
+    );
+    if (!confirmed || !mounted) return;
+    final chats = widget.selectedChats.value.values.toList();
+    if (chats.isEmpty) return;
+    await _withWorking(() => _deleteChats(chats));
+  }
+
+  Future<void> _deleteChats(List<ConversationEntity> chats) async {
+    final result = await ref
+        .read(bulkConversationActionsUsecaseProvider)
+        .deleteMany(chats);
+    if (!mounted) return;
+
+    _recordDeletedChats(widget.selectedChats, result.deleted);
+    _finishBulkAction(
+      LocaleKeys.chats_screens_chats_list_bulk_delete_failures,
+      result.failures,
+      result.errors,
+      action: 'delete',
+    );
+  }
+
+  Future<void> _withWorking(Future<void> Function() action) async {
+    setState(() => _isWorking = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _isWorking = false);
+    }
+  }
+
+  void _finishBulkAction(
+    String key,
+    List<ConversationEntity> failures,
+    List<BulkConversationOperationError> errors, {
+    required String action,
+  }) {
+    if (!mounted) return;
+    for (final failure in errors) {
+      _logger.severe(
+        'Failed to $action conversation ${failure.conversation.id}',
+        failure.error,
+        failure.stackTrace,
+      );
+    }
+    ref.invalidate(
+      conversationsStreamProvider(workspaceId: widget.workspaceId),
+    );
+    _showConversationFailures(context, key, failures);
+  }
+}
+
+void _recordPinnedChats(
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  List<ConversationEntity> chats,
+) {
+  final updated = {...selectedChats.value};
+  for (final chat in chats) {
+    updated[chat.id] = chat;
+  }
+  selectedChats.value = updated;
+}
+
+void _recordDeletedChats(
+  ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  List<ConversationEntity> chats,
+) {
+  final updated = {...selectedChats.value};
+  for (final chat in chats) {
+    final _ = updated.remove(chat.id);
+  }
+  selectedChats.value = updated;
+}
+
+void _showConversationFailures(
+  BuildContext context,
+  String key,
+  List<ConversationEntity> failures,
+) {
+  if (failures.isEmpty || !context.mounted) return;
+  final titles = failures.map((chat) => chat.title).join(', ');
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(key, args: [titles]),
+    variant: .error,
+  );
+}
+
+typedef _ChatListBulkActionCallbacks = ({
+  ValueChanged<bool> onPin,
+  VoidCallback onDelete,
+  VoidCallback onClear,
+});
+
+class const _ChatListBulkActionBar({
+  required final Map<String, ConversationEntity> selected,
+  required final bool isWorking,
+  required final _ChatListBulkActionCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const AuraEdgeInsetsGeometry.only(
+      left: .base,
+      top: .sm,
+      right: .base,
+    ).toEdgeInsets(context),
+    child: _ChatListBulkActionLayout(
+      count: selected.length,
+      shouldPin: !selected.values.every((chat) => chat.isPinned),
+      isWorking: isWorking,
+      callbacks: callbacks,
+    ),
+  );
+}
+
+class const _ChatListBulkActionLayout({
+  required final int count,
+  required final bool shouldPin,
+  required final bool isWorking,
+  required final _ChatListBulkActionCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.auraTheme.fromSpacing(.sm);
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      crossAxisAlignment: .center,
+      children: [
+        _ChatListSelectionActions(
+          count: count,
+          shouldPin: shouldPin,
+          isWorking: isWorking,
+          callbacks: callbacks,
+        ),
+        _ChatListManagementActions(isWorking: isWorking, callbacks: callbacks),
+      ],
+    );
+  }
+}
+
+class const _ChatListSelectionActions({
+  required final int count,
+  required final bool shouldPin,
+  required final bool isWorking,
+  required final _ChatListBulkActionCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.auraTheme.fromSpacing(.sm);
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      crossAxisAlignment: .center,
+      children: [
+        _ChatListSelectedCount(count: count),
+        _ChatListBulkPinButton(
+          shouldPin: shouldPin,
+          isWorking: isWorking,
+          onPin: callbacks.onPin,
+        ),
+      ],
+    );
+  }
+}
+
+class const _ChatListManagementActions({
+  required final bool isWorking,
+  required final _ChatListBulkActionCallbacks callbacks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.auraTheme.fromSpacing(.sm);
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      crossAxisAlignment: .center,
+      children: [
+        _ChatListBulkDeleteButton(
+          isWorking: isWorking,
+          onDelete: callbacks.onDelete,
+        ),
+        _ChatListBulkClearButton(
+          isWorking: isWorking,
+          onClear: callbacks.onClear,
+        ),
+      ],
+    );
+  }
+}
+
+class const _ChatListSelectedCount({required final int count})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      context.plural(LocaleKeys.chats_screens_chats_list_selected_count, count),
+    ),
+    style: .bodySmall,
+  );
+}
+
+class const _ChatListBulkPinButton({
+  required final bool shouldPin,
+  required final bool isWorking,
+  required final ValueChanged<bool> onPin,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: () => onPin(shouldPin),
+    child: TextLocale(
+      shouldPin
+          ? LocaleKeys.chats_screens_chats_list_bulk_pin
+          : LocaleKeys.chats_screens_chats_list_bulk_unpin,
+    ),
+    size: .small,
+    isLoading: isWorking,
+  );
+}
+
+class const _ChatListBulkDeleteButton({
+  required final bool isWorking,
+  required final VoidCallback onDelete,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onDelete,
+    child: const TextLocale(LocaleKeys.chats_screens_chats_list_bulk_delete),
+    size: .small,
+    isLoading: isWorking,
+  );
+}
+
+class const _ChatListBulkClearButton({
+  required final bool isWorking,
+  required final VoidCallback onClear,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraIconButton(
+    icon: Icons.close,
+    onPressed: isWorking ? null : onClear,
+    size: .small,
+    tooltip: LocaleKeys.chats_screens_chats_list_clear_selection.tr(),
   );
 }
 
@@ -852,8 +1176,6 @@ class const _ChatListResults({required final _ChatListViewState state})
   @override
   Widget build(BuildContext _) {
     final viewState = state;
-    final chats = viewState.chats;
-    final workspaceId = viewState.workspaceId;
     if (viewState.isRefreshing) {
       return const Center(child: AuraSpinner());
     }
@@ -864,11 +1186,11 @@ class const _ChatListResults({required final _ChatListViewState state})
         ),
       );
     }
-    if (chats.isEmpty) {
+    if (viewState.chats.isEmpty) {
       return _ChatListEmptyResults(state: viewState);
     }
 
-    return _ChatListConversationList(chats: chats, workspaceId: workspaceId);
+    return _ChatListConversationList(state: viewState);
   }
 }
 
@@ -880,17 +1202,54 @@ class const _ChatListEmptyResults({required final _ChatListViewState state})
       : const _ChatListSearchEmptyState();
 }
 
-class const _ChatListConversationList({
-  required final List<ConversationEntity> chats,
-  required final String workspaceId,
-}) extends StatelessWidget {
+class const _ChatListConversationList({required final _ChatListViewState state})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext _) => ListView.separated(
     padding: const EdgeInsets.all(16),
-    itemBuilder: (context, index) =>
-        _ChatTile(chat: chats[index], workspaceId: workspaceId),
+    itemBuilder: _buildTile,
     separatorBuilder: (context, index) => const SizedBox(height: 10),
-    itemCount: chats.length,
+    itemCount: state.chats.length,
+  );
+
+  Widget _buildTile(BuildContext _, int index) =>
+      _ChatListConversationListTile(state: state, index: index);
+}
+
+class const _ChatListConversationListTile({
+  required final _ChatListViewState state,
+  required final int index,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      ValueListenableBuilder<Map<String, ConversationEntity>>(
+        valueListenable: state.selectedChats,
+        builder: _buildChatTile,
+      );
+
+  Widget _buildChatTile(
+    BuildContext _,
+    Map<String, ConversationEntity> selected,
+    Widget? _,
+  ) {
+    final chat = state.chats[index];
+
+    return _ChatTile(
+      chat: chat,
+      workspaceId: state.workspaceId,
+      selection: _tileSelection(chat, selected),
+      key: ValueKey(chat.id),
+    );
+  }
+
+  _ChatTileSelectionState _tileSelection(
+    ConversationEntity chat,
+    Map<String, ConversationEntity> selected,
+  ) => (
+    isSelected: selected.containsKey(chat.id),
+    isSelectionMode: selected.isNotEmpty,
+    onSelectionChanged: (isSelected) =>
+        state.onSelectionChanged(chat, selected: isSelected),
   );
 }
 
@@ -932,63 +1291,93 @@ class const _ChatListSearchEmptyState() extends StatelessWidget {
 
 class const _ChatTileView({
   required final ConversationEntity chat,
+  required final bool isSelected,
   required final String? modelDisplayName,
   required final String title,
   required final AuraPopupMenuController controller,
-  required final VoidCallback onFork,
-  required final VoidCallback onDelete,
-  required final VoidCallback onTogglePin,
-  required final VoidCallback onRename,
-  required final VoidCallback onMenuToggle,
-  required final VoidCallback onTap,
+  required final _ChatTileCallbacks callbacks,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
     child: _ChatTileRow(
       chat: chat,
+      isSelected: isSelected,
       modelDisplayName: modelDisplayName,
       title: title,
       controller: controller,
-      onFork: onFork,
-      onDelete: onDelete,
-      onTogglePin: onTogglePin,
-      onRename: onRename,
-      onMenuToggle: onMenuToggle,
+      callbacks: callbacks,
     ),
-    onTap: onTap,
+    onTap: callbacks.onTap,
     style: .border,
   );
 }
 
 class const _ChatTileRow({
   required final ConversationEntity chat,
+  required final bool isSelected,
   required final String? modelDisplayName,
   required final String title,
   required final AuraPopupMenuController controller,
-  required final VoidCallback onFork,
-  required final VoidCallback onDelete,
-  required final VoidCallback onTogglePin,
-  required final VoidCallback onRename,
-  required final VoidCallback onMenuToggle,
+  required final _ChatTileCallbacks callbacks,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext _) => Row(
     crossAxisAlignment: .start,
     children: [
-      Expanded(
-        child: _ChatTileInfo(chat: chat, title: title),
+      _ChatTileMainSection(
+        chat: chat,
+        isSelected: isSelected,
+        title: title,
+        onSelectionChanged: callbacks.onSelectionChanged,
       ),
       _ChatTileModelBadge(displayName: modelDisplayName),
-      _ChatTileMenu(
-        chat: chat,
-        controller: controller,
-        onFork: onFork,
-        onDelete: onDelete,
-        onTogglePin: onTogglePin,
-        onRename: onRename,
-        onToggle: onMenuToggle,
-      ),
+      _ChatTileMenu(chat: chat, controller: controller, callbacks: callbacks),
     ],
+  );
+}
+
+class const _ChatTileMainSection({
+  required final ConversationEntity chat,
+  required final bool isSelected,
+  required final String title,
+  required final ValueChanged<bool> onSelectionChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Expanded(
+    child: Row(
+      crossAxisAlignment: .start,
+      children: [
+        _ChatTileSelectionControl(
+          conversationId: chat.id,
+          isSelected: isSelected,
+          title: title,
+          onChanged: onSelectionChanged,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _ChatTileInfo(chat: chat, title: title),
+        ),
+      ],
+    ),
+  );
+}
+
+class const _ChatTileSelectionControl({
+  required final String conversationId,
+  required final bool isSelected,
+  required final String title,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckbox(
+    value: isSelected,
+    onChanged: onChanged,
+    key: ValueKey('conversation-selection-$conversationId'),
+    semanticLabel:
+        (isSelected
+                ? LocaleKeys.chats_screens_chats_list_deselect_conversation
+                : LocaleKeys.chats_screens_chats_list_select_conversation)
+            .tr(args: [title]),
   );
 }
 
@@ -1055,11 +1444,7 @@ class const _ChatTileTitleRow({
 class const _ChatTileMenu({
   required final ConversationEntity chat,
   required final AuraPopupMenuController controller,
-  required final VoidCallback onFork,
-  required final VoidCallback onDelete,
-  required final VoidCallback onTogglePin,
-  required final VoidCallback onRename,
-  required final VoidCallback onToggle,
+  required final _ChatTileCallbacks callbacks,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _buildMenu();
@@ -1069,7 +1454,7 @@ extension on _ChatTileMenu {
   Widget _buildMenu() => AuraPopupMenu(
     child: AuraIconButton(
       icon: Icons.more_vert,
-      onPressed: onToggle,
+      onPressed: callbacks.onMenuToggle,
       size: .small,
       tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr(),
     ),
@@ -1078,13 +1463,16 @@ extension on _ChatTileMenu {
   );
 
   List<AuraPopupMenuItem> _menuItems() => [
-    _chatTilePinItem(chat, onTogglePin),
+    _chatTilePinItem(chat, callbacks.onTogglePin),
     AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
-      onTap: onFork,
+      onTap: callbacks.onFork,
       leading: const AuraIcon(Icons.call_split_outlined),
     ),
-    ..._chatTileMenuItems(onRename: onRename, onDelete: onDelete),
+    ..._chatTileMenuItems(
+      onRename: callbacks.onRename,
+      onDelete: callbacks.onDelete,
+    ),
   ];
 }
 
