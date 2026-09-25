@@ -987,12 +987,15 @@ extension on ConversationRepository {
 
   ConversationsCompanion _mapToConversationsCompanion(
     ConversationToCreate conversation,
+  ) => _mapConversationFieldsToCompanion(conversation).copyWith(
+    createdAt: .absentIfNull(conversation.createdAt),
+    updatedAt: .absentIfNull(conversation.updatedAt ?? conversation.createdAt),
+  );
+
+  ConversationsCompanion _mapConversationFieldsToCompanion(
+    ConversationToCreate conversation,
   ) {
     return ConversationsCompanion(
-      createdAt: .absentIfNull(conversation.createdAt),
-      updatedAt: .absentIfNull(
-        conversation.updatedAt ?? conversation.createdAt,
-      ),
       workspaceId: .new(conversation.workspaceId),
       title: .new(conversation.title),
       modelId: .new(conversation.modelId),

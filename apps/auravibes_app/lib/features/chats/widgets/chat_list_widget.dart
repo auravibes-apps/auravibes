@@ -1525,13 +1525,7 @@ extension on _ChatTileMenu {
       leading: const AuraIcon(Icons.call_split_outlined),
     ),
     if (onArchiveExport case final onArchiveExport?)
-      AuraPopupMenuItem(
-        title: const TextLocale(
-          LocaleKeys.chats_screens_chat_conversation_archive_export,
-        ),
-        onTap: onArchiveExport,
-        leading: const AuraIcon(Icons.archive_outlined),
-      ),
+      _chatTileArchiveItem(onArchiveExport),
     ..._chatTileMenuItems(
       onRename: callbacks.onRename,
       onDelete: callbacks.onDelete,
@@ -1551,6 +1545,15 @@ AuraPopupMenuItem _chatTilePinItem(
   onTap: onTogglePin,
   leading: AuraIcon(chat.isPinned ? Icons.push_pin : Icons.push_pin_outlined),
 );
+
+AuraPopupMenuItem _chatTileArchiveItem(VoidCallback onArchiveExport) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_archive_export,
+      ),
+      onTap: onArchiveExport,
+      leading: const AuraIcon(Icons.archive_outlined),
+    );
 
 List<AuraPopupMenuItem> _chatTileMenuItems({
   required VoidCallback onRename,
