@@ -27,53 +27,64 @@ class const AgentCompactionUnsafeUnresolvedTool()
     extends AgentCompactionRangeSelection;
 
 AgentPromptHistorySelection selectAgentPromptHistory(
-  AgentContextSnapshot context,
-) {
+  AgentContextSnapshot context, {
+  String? activeCompactionCheckpointId,
+}) {
   final messages = context.messages;
-  final latestSummaryIndex = messages.lastIndexWhere(
-    (message) =>
-        message.role == AgentTranscriptRole.system &&
-        message.isCompactionSummary &&
-        message.status == AgentTranscriptStatus.sent,
-  );
-  if (latestSummaryIndex == -1) {
+  bool isValidSummary(AgentTranscriptMessageSnapshot message) =>
+      message.role == AgentTranscriptRole.system &&
+      message.isCompactionSummary &&
+      message.status == AgentTranscriptStatus.sent;
+
+  final selectedIndex = activeCompactionCheckpointId == null
+      ? messages.lastIndexWhere(isValidSummary)
+      : messages.lastIndexWhere(
+          (message) =>
+              message.id == activeCompactionCheckpointId &&
+              isValidSummary(message),
+        );
+  final summaryIndex = selectedIndex >= 0
+      ? selectedIndex
+      : messages.lastIndexWhere(isValidSummary);
+  if (summaryIndex == -1) {
     return AgentPromptHistorySelection(
       messages.map((message) => message.id).toList(),
     );
   }
 
-  final summary = messages[latestSummaryIndex];
+  final summary = messages[summaryIndex];
   final excludedIds = summary.excludedMessageIds.toSet();
   final throughId = summary.compactedThroughMessageId;
   final throughIndex = throughId == null
       ? -1
       : messages.indexWhere((message) => message.id == throughId);
-  final tailStart = throughIndex >= 0 && throughIndex < latestSummaryIndex
+  final tailStart = throughIndex >= 0 && throughIndex < summaryIndex
       ? throughIndex + 1
-      : latestSummaryIndex + 1;
+      : summaryIndex + 1;
   final tail = messages
-      .sublist(tailStart)
+      .skip(tailStart)
       .where(
         (message) =>
-            message.id != summary.id &&
-            !excludedIds.contains(message.id) &&
-            !message.isCompactionSummary,
-      );
-  final tailList = tail.toList();
-  final firstUserIndex = tailList.indexWhere(
+            !excludedIds.contains(message.id) && !message.isCompactionSummary,
+      )
+      .toList();
+  final firstUserIndex = tail.indexWhere(
     (message) => message.role == AgentTranscriptRole.user,
   );
-
   return AgentPromptHistorySelection([
     summary.id,
     if (firstUserIndex >= 0)
-      ...tailList.skip(firstUserIndex).map((message) => message.id),
+      ...tail.skip(firstUserIndex).map((message) => message.id),
   ]);
 }
 
 AgentCompactionRangeSelection selectAgentCompactionRange(
-  AgentContextSnapshot context,
-) {
+  AgentContextSnapshot context, {
+  int? limitContext,
+  int? limitOutput,
+  int? reserveTokens,
+  int? keepRecentTokens,
+}) {
   final messages = context.messages;
   if (messages.length < 3) return const AgentCompactionNoRange();
 
@@ -82,26 +93,51 @@ AgentCompactionRangeSelection selectAgentCompactionRange(
   if (lastUserIndex <= 0 || lastModelTextIndex == -1) {
     return const AgentCompactionNoRange();
   }
-
   if (_hasUnresolvedToolBeforeTail(messages, lastUserIndex)) {
     return const AgentCompactionUnsafeUnresolvedTool();
   }
 
-  final compactable = messages
-      .take(lastUserIndex)
-      .where(_isCompactable)
-      .toList();
-  if (compactable.isEmpty) return const AgentCompactionNoRange();
+  var tailStart = lastUserIndex;
+  if (limitContext != null &&
+      limitContext > 0 &&
+      limitOutput != null &&
+      limitOutput > 0) {
+    final reserve = (reserveTokens ?? 0).clamp(0, limitOutput);
+    final keepRecent = keepRecentTokens != null && keepRecentTokens >= 0
+        ? keepRecentTokens
+        : 0;
+    while (tailStart > 0 &&
+        _estimatedTokens(messages.skip(tailStart)) < keepRecent) {
+      tailStart--;
+    }
+    if (_estimatedTokens(messages.skip(tailStart)) + reserve > limitContext) {
+      return const AgentCompactionNoRange();
+    }
+  }
 
+  final compactable = messages.take(tailStart).where(_isCompactable).toList();
+  if (compactable.isEmpty) return const AgentCompactionNoRange();
   return AgentCompactionRangeSelected(
     fromMessageId: compactable.first.id,
     throughMessageId: compactable.last.id,
     messageIds: compactable.map((message) => message.id).toList(),
     keptTailMessageIds: messages
-        .skip(lastUserIndex)
+        .skip(tailStart)
         .map((message) => message.id)
         .toList(),
   );
+}
+
+int _estimatedTokens(Iterable<AgentTranscriptMessageSnapshot> messages) {
+  var characterCount = 0;
+  for (final message in messages) {
+    characterCount += message.textCharacterCount;
+    for (final toolCall in message.toolCalls) {
+      characterCount += toolCall.argumentCharacterCount;
+      characterCount += toolCall.resultCharacterCount;
+    }
+  }
+  return (characterCount / 4).ceil();
 }
 
 int _lastUserIndex(List<AgentTranscriptMessageSnapshot> messages) => messages
