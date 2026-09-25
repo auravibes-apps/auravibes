@@ -162,19 +162,20 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   responseStream,
 ) async* {
   final finalResponse = await responseStream.onResult;
-  final responseError = finalResponse.error;
-  if (responseError != null) {
-    throw GenkitException(
-      responseError.message,
-      underlyingException: finalResponse.cause,
-    );
-  }
-
+  _throwFinalResponseError(finalResponse);
   request.a2uiRuntime?.commitCurrentMessage();
   yield request.service._withA2uiState(
     request.service._finalChatResult(finalResponse),
     request.a2uiRuntime,
   );
+}
+
+void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
+  final responseError = finalResponse.error;
+  if (responseError == null) return;
+  final cause = finalResponse.cause;
+  if (cause is AgentRateLimitRetryException) throw cause;
+  throw GenkitException(responseError.message, underlyingException: cause);
 }
 
 Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(

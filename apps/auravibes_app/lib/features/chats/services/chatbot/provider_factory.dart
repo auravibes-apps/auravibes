@@ -11,6 +11,7 @@ import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
+import 'package:http/http.dart' as http;
 
 typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderRequest = ({
@@ -34,6 +35,7 @@ typedef _RuntimeRequest = ({
 class const ProviderFactory({
   required final ServiceConnectionRepository serviceConnectionRepository,
   final Future<String> Function(String id)? resolveOAuthAccessToken,
+  final http.Client? httpClient,
 }) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
   Future<Genkit> createGenkit(
@@ -83,6 +85,24 @@ class const ProviderFactory({
     return _blankToNull(config.modelsProvider.url);
   }
 
+  /// Returns affinity headers for supported provider transports only.
+  @visibleForTesting
+  Map<String, String> sessionAffinityHeaders({
+    required ModelProvidersType? providerType,
+    required String? baseUrl,
+    required String? sessionId,
+  }) {
+    if (sessionId == null || sessionId.isEmpty) return const {};
+    if (_supportsOpenRouterSessionAffinity(providerType, baseUrl)) {
+      return {'x-session-id': sessionId};
+    }
+    if (_supportsAnthropicSessionAffinity(providerType, baseUrl)) {
+      return {'x-session-affinity': sessionId};
+    }
+
+    return const {};
+  }
+
   ReasoningConfiguration? _validConfiguration(
     WorkspaceModelSelectionWithConnectionEntity config,
     ReasoningConfiguration? value,
@@ -94,6 +114,24 @@ class const ProviderFactory({
 
     return value;
   }
+}
+
+bool _supportsOpenRouterSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) => providerType == .openrouter && baseUrl == null;
+
+bool _supportsAnthropicSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) {
+  if (providerType != .anthropic) return false;
+  if (baseUrl == null) return true;
+  final uri = Uri.tryParse(baseUrl);
+
+  return uri?.scheme == 'https' &&
+      uri?.host == 'api.anthropic.com' &&
+      uri?.port == 443;
 }
 
 extension _ProviderFactoryGenerationConfig on ProviderFactory {
@@ -168,7 +206,15 @@ extension _ProviderFactoryCreation on ProviderFactory {
 
 extension _ProviderFactoryPlugins on ProviderFactory {
   GenkitPlugin _anthropicPlugin(_ProviderRequest request) {
-    return anthropic(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    return anthropic(
+      apiKey: request.apiKey,
+      headers: sessionAffinityHeaders(
+        providerType: request.config.modelsProvider.type,
+        baseUrl: request.baseUrl,
+        sessionId: request.sessionId,
+      ),
+      baseUrl: request.baseUrl,
+    );
   }
 
   GenkitPlugin _openRouterPlugin(_ProviderRequest request) {
@@ -178,11 +224,17 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       apiKey: request.apiKey,
       codec: _openRouterCodec(),
       models: [ChatCompletionsModelDefinition(name: request.modelId)],
-      headers: const {
+      headers: {
         'HTTP-Referer': 'https://auravibes.me',
         'X-OpenRouter-Title': 'AuraVibes',
         'X-OpenRouter-Categories': 'personal-agent',
+        ...sessionAffinityHeaders(
+          providerType: request.config.modelsProvider.type,
+          baseUrl: request.baseUrl,
+          sessionId: request.sessionId,
+        ),
       },
+      httpClient: httpClient,
     );
   }
 
