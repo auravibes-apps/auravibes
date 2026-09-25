@@ -315,17 +315,25 @@ mixin _CloudWorkspaceStateWatchApi on _CloudWorkspaceStateGatewayBase {
   );
 
   Future<PatchWorkspaceStateResponse> duplicateAgent(String sourceAgentId) =>
-      CloudAppErrors.guardCall(.state, () {
-        final request = DuplicateWorkspaceAgentRequest(
-          workspaceId: _workspace.cloudWorkspaceId,
-          requestId: const UuidV7().generate(),
-          sourceAgentId: sourceAgentId,
-        );
-        final duplicate = _duplicateAgent;
-        if (duplicate != null) return duplicate(request);
+      CloudAppErrors.guardCall(
+        .state,
+        () => _sendDuplicateAgent(
+          DuplicateWorkspaceAgentRequest(
+            workspaceId: _workspace.cloudWorkspaceId,
+            requestId: const UuidV7().generate(),
+            sourceAgentId: sourceAgentId,
+          ),
+        ),
+      );
 
-        return _requireClient(_client).workspaceState.duplicateAgent(request);
-      });
+  Future<PatchWorkspaceStateResponse> _sendDuplicateAgent(
+    DuplicateWorkspaceAgentRequest request,
+  ) {
+    final duplicate = _duplicateAgent;
+    if (duplicate != null) return duplicate(request);
+
+    return _requireClient(_client).workspaceState.duplicateAgent(request);
+  }
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {
