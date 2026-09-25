@@ -261,6 +261,8 @@ abstract class const MessageToCreate._() with _$MessageToCreate {
     required bool isUser,
 
     required MessageStatus status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
 
     /// Additional metadata for the message (JSON).
     String? metadata,

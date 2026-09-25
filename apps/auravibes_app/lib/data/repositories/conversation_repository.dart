@@ -989,6 +989,10 @@ extension on ConversationRepository {
     ConversationToCreate conversation,
   ) {
     return ConversationsCompanion(
+      createdAt: .absentIfNull(conversation.createdAt),
+      updatedAt: .absentIfNull(
+        conversation.updatedAt ?? conversation.createdAt,
+      ),
       workspaceId: .new(conversation.workspaceId),
       title: .new(conversation.title),
       modelId: .new(conversation.modelId),

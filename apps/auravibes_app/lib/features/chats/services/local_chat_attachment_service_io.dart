@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
@@ -35,6 +36,13 @@ class LocalChatAttachmentServiceIo({
     String sourcePath, {
     String? displayName,
   }) => _copyIntoAppStorage(this, sourcePath, displayName);
+
+  Future<Uint8List> readAttachmentBytes(String localPath) =>
+      File(localPath).readAsBytes();
+
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment attachment,
+  ) => _createArchiveAttachment(this, attachment);
 
   Future<void> startVoiceRecording() => _startVoiceRecording(this);
 
@@ -72,6 +80,44 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
   final copied = await source.file.copy(localPath);
 
   return _newAttachment(copied, source, displayName);
+}
+
+Future<MessageAttachmentToCreate> _createArchiveAttachment(
+  LocalChatAttachmentServiceIo service,
+  ConversationArchiveAttachment attachment,
+) async {
+  final fileName = p.posix.basename(attachment.fileName.replaceAll(r'\', '/'));
+  if (fileName.isEmpty || fileName != attachment.fileName) {
+    throw ArgumentError.value(attachment.fileName, 'fileName');
+  }
+  _ensureAttachmentSize(attachment.bytes.length);
+  final localPath = await _newAttachmentPath(service, fileName);
+  final file = File(localPath);
+  try {
+    final _ = await file.writeAsBytes(attachment.bytes, flush: true);
+  } on Object {
+    try {
+      final _ = await file.delete();
+    } on FileSystemException {
+      // Preserve original write error when partial-file cleanup fails.
+    }
+    rethrow;
+  }
+  final mimeType =
+      lookupMimeType(
+        fileName,
+        headerBytes: attachment.bytes.take(12).toList(),
+      ) ??
+      attachment.mimeType;
+
+  return MessageAttachmentToCreate(
+    localPath: localPath,
+    fileName: fileName,
+    displayName: attachment.displayName,
+    mimeType: mimeType,
+    modality: ChatAttachmentModality.forMimeType(mimeType),
+    sizeBytes: attachment.bytes.length,
+  );
 }
 
 void _ensureAttachmentSize(int sizeBytes) {

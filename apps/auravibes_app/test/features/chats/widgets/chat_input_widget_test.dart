@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -936,6 +937,15 @@ class _FakeLocalChatAttachmentService(
 
   @override
   Future<MessageAttachmentToCreate?> stopVoiceRecording() async => null;
+
+  @override
+  @override
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment _,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();
 
   @override
   Future<void> cancelVoiceRecording() => Future.value();

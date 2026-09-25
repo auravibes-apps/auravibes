@@ -1581,7 +1581,7 @@ mixin _$MessageToCreate {
  String get conversationId;/// Content of the message (JSON structure based on message type).
  String get content;/// Type of the message.
  MessageType get messageType;/// Whether this message was sent by the user.
- bool get isUser; MessageStatus get status;/// Additional metadata for the message (JSON).
+ bool get isUser; MessageStatus get status; DateTime? get createdAt; DateTime? get updatedAt;/// Additional metadata for the message (JSON).
  String? get metadata; List<MessageAttachmentToCreate> get attachments;
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1594,20 +1594,20 @@ $MessageToCreateCopyWith<MessageToCreate> get copyWith => _$MessageToCreateCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as MessageToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments));
 }
 
 
 @override
 int get hashCode {
   final _this = this as MessageToCreate;
-  return Object.hash(runtimeType,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.metadata,const DeepCollectionEquality().hash(_this.attachments));
+  return Object.hash(runtimeType,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.metadata,const DeepCollectionEquality().hash(_this.attachments));
 }
 
 @override
 String toString() {
   final _this = this as MessageToCreate;
-  return 'MessageToCreate(conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, metadata: ${_this.metadata}, attachments: ${_this.attachments})';
+  return 'MessageToCreate(conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, metadata: ${_this.metadata}, attachments: ${_this.attachments})';
 }
 
 
@@ -1618,7 +1618,7 @@ abstract mixin class $MessageToCreateCopyWith<$Res>  {
   factory $MessageToCreateCopyWith(MessageToCreate value, $Res Function(MessageToCreate) _then) = _$MessageToCreateCopyWithImpl;
 @useResult
 $Res call({
- String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata, List<MessageAttachmentToCreate> attachments
+ String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime? createdAt, DateTime? updatedAt, String? metadata, List<MessageAttachmentToCreate> attachments
 });
 
 
@@ -1635,14 +1635,16 @@ class _$MessageToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,Object? attachments = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(MessageToCreate(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,messageType: null == messageType ? _self.messageType : messageType // ignore: cast_nullable_to_non_nullable
 as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as MessageStatus,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as MessageStatus,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as String?,attachments: null == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentToCreate>,
   ));
@@ -1729,10 +1731,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime? createdAt,  DateTime? updatedAt,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToCreate() when $default != null:
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   return orElse();
 
 }
@@ -1750,10 +1752,10 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime? createdAt,  DateTime? updatedAt,  String? metadata,  List<MessageAttachmentToCreate> attachments)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToCreate():
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1770,10 +1772,10 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime? createdAt,  DateTime? updatedAt,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToCreate() when $default != null:
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   return null;
 
 }
@@ -1785,7 +1787,7 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 
 
 class _MessageToCreate extends MessageToCreate {
-  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata,  List<MessageAttachmentToCreate> attachments = const <MessageAttachmentToCreate>[]}): _attachments = attachments,super._();
+  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.createdAt, this.updatedAt, this.metadata,  List<MessageAttachmentToCreate> attachments = const <MessageAttachmentToCreate>[]}): _attachments = attachments,super._();
   
 
 /// ID of the conversation this message belongs to.
@@ -1797,6 +1799,8 @@ class _MessageToCreate extends MessageToCreate {
 /// Whether this message was sent by the user.
 @override final  bool isUser;
 @override final  MessageStatus status;
+@override final  DateTime? createdAt;
+@override final  DateTime? updatedAt;
 /// Additional metadata for the message (JSON).
 @override final  String? metadata;
  final  List<MessageAttachmentToCreate> _attachments;
@@ -1817,18 +1821,18 @@ _$MessageToCreateCopyWith<_MessageToCreate> get copyWith => __$MessageToCreateCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(_attachments));
+    return Object.hash(runtimeType,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments));
 }
 
 @override
 String toString() {
-    return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
+    return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -1839,7 +1843,7 @@ abstract mixin class _$MessageToCreateCopyWith<$Res> implements $MessageToCreate
   factory _$MessageToCreateCopyWith(_MessageToCreate value, $Res Function(_MessageToCreate) _then) = __$MessageToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata, List<MessageAttachmentToCreate> attachments
+ String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime? createdAt, DateTime? updatedAt, String? metadata, List<MessageAttachmentToCreate> attachments
 });
 
 
@@ -1856,14 +1860,16 @@ class __$MessageToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,Object? attachments = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = freezed,Object? updatedAt = freezed,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(_MessageToCreate(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,messageType: null == messageType ? _self.messageType : messageType // ignore: cast_nullable_to_non_nullable
 as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as MessageStatus,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
+as MessageStatus,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as String?,attachments: null == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<MessageAttachmentToCreate>,
   ));

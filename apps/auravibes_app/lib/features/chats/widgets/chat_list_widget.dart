@@ -6,14 +6,17 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -140,6 +143,7 @@ typedef _ChatTileCallbacks = ({
   VoidCallback onDelete,
   VoidCallback onTogglePin,
   VoidCallback onRename,
+  VoidCallback onArchiveExport,
   VoidCallback onMenuToggle,
   VoidCallback onTap,
 });
@@ -554,6 +558,7 @@ extension on _ChatTileState {
     onDelete: () => _handleDelete(context),
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
+    onArchiveExport: () => unawaited(_exportConversationArchive(context)),
     onMenuToggle: _menuController.toggle,
     onTap: () => _openConversation(context),
   );
@@ -579,6 +584,32 @@ extension on _ChatTileState {
 
   Future<void> _handleFork(BuildContext context) =>
       _forkChatAndNavigate(this, context);
+
+  Future<void> _exportConversationArchive(BuildContext context) async {
+    try {
+      final archiveJson = await ref
+          .read(conversationArchiveUsecaseProvider)
+          .exportConversation(conversationId: widget.chat.id);
+      final saved = await ref
+          .read(conversationArchiveFileServiceProvider)
+          .saveArchiveJson(archiveJson);
+      if (!saved || !context.mounted) return;
+
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_archive_exported,
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      _logger.warning(
+        'Failed to export conversation archive',
+        error,
+        stackTrace,
+      );
+      showConversationArchiveError(context, error);
+    }
+  }
 
   Future<void> _deleteChat(ConversationEntity chat) async {
     final cloud = await ref.read(
@@ -751,11 +782,21 @@ extension on _ChatTileProvider {
   Widget _buildTile(WidgetRef ref) {
     final modelDisplayName = _chatModelDisplayName(ref, workspaceId, chat);
     final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
+    final showArchiveAction = switch (ref.watch(
+      workspaceSessionForRouteProvider(workspaceId),
+    )) {
+      AsyncData(value: final session) => session.cloud == null,
+      AsyncLoading() || AsyncError() => false,
+    };
 
-    return _buildView(modelDisplayName, title);
+    return _buildView(modelDisplayName, title, showArchiveAction);
   }
 
-  Widget _buildView(String? modelDisplayName, String title) => _ChatTileView(
+  Widget _buildView(
+    String? modelDisplayName,
+    String title,
+    bool showArchiveAction,
+  ) => _ChatTileView(
     chat: chat,
     modelDisplayName: modelDisplayName,
     title: title,
@@ -764,6 +805,7 @@ extension on _ChatTileProvider {
     onDelete: callbacks.onDelete,
     onTogglePin: callbacks.onTogglePin,
     onRename: callbacks.onRename,
+    onArchiveExport: showArchiveAction ? callbacks.onArchiveExport : null,
     onMenuToggle: callbacks.onMenuToggle,
     onTap: callbacks.onTap,
   );
@@ -939,6 +981,7 @@ class const _ChatTileView({
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
+  required final VoidCallback? onArchiveExport,
   required final VoidCallback onMenuToggle,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
@@ -953,6 +996,7 @@ class const _ChatTileView({
       onDelete: onDelete,
       onTogglePin: onTogglePin,
       onRename: onRename,
+      onArchiveExport: onArchiveExport,
       onMenuToggle: onMenuToggle,
     ),
     onTap: onTap,
@@ -969,6 +1013,7 @@ class const _ChatTileRow({
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
+  required final VoidCallback? onArchiveExport,
   required final VoidCallback onMenuToggle,
 }) extends StatelessWidget {
   @override
@@ -986,6 +1031,7 @@ class const _ChatTileRow({
         onDelete: onDelete,
         onTogglePin: onTogglePin,
         onRename: onRename,
+        onArchiveExport: onArchiveExport,
         onToggle: onMenuToggle,
       ),
     ],
@@ -1059,6 +1105,7 @@ class const _ChatTileMenu({
   required final VoidCallback onDelete,
   required final VoidCallback onTogglePin,
   required final VoidCallback onRename,
+  required final VoidCallback? onArchiveExport,
   required final VoidCallback onToggle,
 }) extends StatelessWidget {
   @override
@@ -1084,6 +1131,14 @@ extension on _ChatTileMenu {
       onTap: onFork,
       leading: const AuraIcon(Icons.call_split_outlined),
     ),
+    if (onArchiveExport case final onArchiveExport?)
+      AuraPopupMenuItem(
+        title: const TextLocale(
+          LocaleKeys.chats_screens_chat_conversation_archive_export,
+        ),
+        onTap: onArchiveExport,
+        leading: const AuraIcon(Icons.archive_outlined),
+      ),
     ..._chatTileMenuItems(onRename: onRename, onDelete: onDelete),
   ];
 }
