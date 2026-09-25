@@ -303,6 +303,7 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Add Chat",
+      "archive_import": "Import archive",
       "search_placeholder": "Search conversations...",
       "search_no_results": "No conversations match your search",
       "select_conversation": "Select {}",
@@ -328,6 +329,11 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
+      "archive_export": "Export archive",
+      "archive_exported": "Conversation archive saved.",
+      "archive_invalid": "This conversation archive is invalid or corrupted.",
+      "archive_unsupported_version": "This conversation archive uses an unsupported version.",
+      "archive_error": "Could not export or import this conversation.",
       "reasoning": {
         "title": "Reasoning",
         "enabled": "Enable reasoning",

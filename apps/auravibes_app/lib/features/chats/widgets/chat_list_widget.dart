@@ -7,12 +7,15 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -597,6 +600,7 @@ extension on _ChatTileState {
     isSelected: widget.selection.isSelected,
     controller: _menuController,
     callbacks: _tileCallbacks(context),
+    onArchiveExport: () => unawaited(_exportConversationArchive(context)),
   );
 
   _ChatTileCallbacks _tileCallbacks(BuildContext context) => (
@@ -638,6 +642,35 @@ extension on _ChatTileState {
 
   Future<void> _handleFork(BuildContext context) =>
       _forkChatAndNavigate(this, context);
+
+  Future<void> _exportConversationArchive(BuildContext context) async {
+    try {
+      final saved = await _saveConversationArchive();
+      if (!saved || !context.mounted) return;
+      ConversationArchiveFeedback.showExported(context);
+    } on Object catch (error, stackTrace) {
+      _reportArchiveExportError(context, error, stackTrace);
+    }
+  }
+
+  Future<bool> _saveConversationArchive() async {
+    final archiveJson = await ref
+        .read(conversationArchiveUsecaseProvider)
+        .exportConversation(conversationId: widget.chat.id);
+
+    return await ref
+        .read(conversationArchiveFileServiceProvider)
+        .saveArchiveJson(archiveJson);
+  }
+
+  void _reportArchiveExportError(
+    BuildContext context,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    _logger.warning('Failed to export conversation archive', error, stackTrace);
+    ConversationArchiveFeedback.showError(context, error);
+  }
 
   Future<void> _deleteChat(ConversationEntity chat) async {
     final _ = await ref
@@ -759,6 +792,7 @@ class const _ChatTileProvider({
   required final bool isSelected,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
+  required final VoidCallback onArchiveExport,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => _buildTile(ref);
@@ -768,17 +802,23 @@ extension on _ChatTileProvider {
   Widget _buildTile(WidgetRef ref) {
     final modelDisplayName = _chatModelDisplayName(ref, workspaceId, chat);
     final title = ref.watch(streamingTitleProvider(chat.id)) ?? chat.title;
+    final showArchiveAction = _shouldShowArchiveAction(ref, workspaceId);
 
-    return _buildView(modelDisplayName, title);
+    return _buildView(modelDisplayName, title, showArchiveAction);
   }
 
-  Widget _buildView(String? modelDisplayName, String title) => _ChatTileView(
+  Widget _buildView(
+    String? modelDisplayName,
+    String title,
+    bool showArchiveAction,
+  ) => _ChatTileView(
     chat: chat,
     isSelected: isSelected,
     modelDisplayName: modelDisplayName,
     title: title,
     controller: controller,
     callbacks: callbacks,
+    onArchiveExport: showArchiveAction ? onArchiveExport : null,
   );
 }
 
@@ -794,6 +834,12 @@ String? _chatModelDisplayName(
     .firstOrNull
     ?.workspaceModelSelection
     .modelId;
+
+bool _shouldShowArchiveAction(WidgetRef ref, String workspaceId) =>
+    switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
+      AsyncData(value: final session) => session.cloud == null,
+      AsyncLoading() || AsyncError() => false,
+    };
 
 class const _ChatListLoaded({required final _ChatListViewState state})
     extends StatelessWidget {
@@ -1296,6 +1342,7 @@ class const _ChatTileView({
   required final String title,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
+  required final VoidCallback? onArchiveExport,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
@@ -1306,6 +1353,7 @@ class const _ChatTileView({
       title: title,
       controller: controller,
       callbacks: callbacks,
+      onArchiveExport: onArchiveExport,
     ),
     onTap: callbacks.onTap,
     style: .border,
@@ -1319,6 +1367,7 @@ class const _ChatTileRow({
   required final String title,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
+  required final VoidCallback? onArchiveExport,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Row(
@@ -1331,7 +1380,12 @@ class const _ChatTileRow({
         onSelectionChanged: callbacks.onSelectionChanged,
       ),
       _ChatTileModelBadge(displayName: modelDisplayName),
-      _ChatTileMenu(chat: chat, controller: controller, callbacks: callbacks),
+      _ChatTileMenu(
+        chat: chat,
+        controller: controller,
+        callbacks: callbacks,
+        onArchiveExport: onArchiveExport,
+      ),
     ],
   );
 }
@@ -1445,6 +1499,7 @@ class const _ChatTileMenu({
   required final ConversationEntity chat,
   required final AuraPopupMenuController controller,
   required final _ChatTileCallbacks callbacks,
+  required final VoidCallback? onArchiveExport,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _buildMenu();
@@ -1469,6 +1524,8 @@ extension on _ChatTileMenu {
       onTap: callbacks.onFork,
       leading: const AuraIcon(Icons.call_split_outlined),
     ),
+    if (onArchiveExport case final onArchiveExport?)
+      _chatTileArchiveItem(onArchiveExport),
     ..._chatTileMenuItems(
       onRename: callbacks.onRename,
       onDelete: callbacks.onDelete,
@@ -1488,6 +1545,15 @@ AuraPopupMenuItem _chatTilePinItem(
   onTap: onTogglePin,
   leading: AuraIcon(chat.isPinned ? Icons.push_pin : Icons.push_pin_outlined),
 );
+
+AuraPopupMenuItem _chatTileArchiveItem(VoidCallback onArchiveExport) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_archive_export,
+      ),
+      onTap: onArchiveExport,
+      leading: const AuraIcon(Icons.archive_outlined),
+    );
 
 List<AuraPopupMenuItem> _chatTileMenuItems({
   required VoidCallback onRename,
