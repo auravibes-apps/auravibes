@@ -304,7 +304,22 @@
       "title": "Chats",
       "add_chat": "Agregar Chat",
       "search_placeholder": "Buscar conversaciones...",
-      "search_no_results": "Ninguna conversación coincide con tu búsqueda"
+      "search_no_results": "Ninguna conversación coincide con tu búsqueda",
+      "select_conversation": "Seleccionar {}",
+      "deselect_conversation": "Dejar de seleccionar {}",
+      "selected_count": {
+        "zero": "No hay conversaciones seleccionadas",
+        "one": "{} seleccionada",
+        "other": "{} seleccionadas"
+      },
+      "clear_selection": "Borrar selección",
+      "bulk_pin": "Fijar seleccionadas",
+      "bulk_unpin": "Desfijar seleccionadas",
+      "bulk_delete": "Eliminar seleccionadas",
+      "bulk_delete_title": "Eliminar conversaciones seleccionadas",
+      "bulk_delete_confirm": "¿Eliminar todas las conversaciones seleccionadas? Esta acción no se puede deshacer.",
+      "bulk_pin_failures": "No se pudo cambiar la fijación de: {}",
+      "bulk_delete_failures": "No se pudo eliminar: {}"
     },
     "new_chat": {
       "starting": "Iniciando conversación...",

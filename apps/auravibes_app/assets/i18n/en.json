@@ -304,7 +304,22 @@
       "title": "Chats",
       "add_chat": "Add Chat",
       "search_placeholder": "Search conversations...",
-      "search_no_results": "No conversations match your search"
+      "search_no_results": "No conversations match your search",
+      "select_conversation": "Select {}",
+      "deselect_conversation": "Deselect {}",
+      "selected_count": {
+        "zero": "No conversations selected",
+        "one": "{} selected",
+        "other": "{} selected"
+      },
+      "clear_selection": "Clear selection",
+      "bulk_pin": "Pin selected",
+      "bulk_unpin": "Unpin selected",
+      "bulk_delete": "Delete selected",
+      "bulk_delete_title": "Delete selected conversations",
+      "bulk_delete_confirm": "Delete all selected conversations? This action cannot be undone.",
+      "bulk_pin_failures": "Could not update pin for: {}",
+      "bulk_delete_failures": "Could not delete: {}"
     },
     "new_chat": {
       "starting": "Starting conversation...",
