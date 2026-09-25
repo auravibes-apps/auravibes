@@ -344,6 +344,67 @@ void main() {
         expect(models.map((model) => model.id), ['existing-model']);
       });
 
+      test('rolls back when provider deletion fails', () async {
+        final database = AppDatabase(
+          connection: DatabaseConnection(NativeDatabase.memory()),
+        );
+        addTearDown(database.close);
+        final repository = ApiModelRepository(database);
+
+        final _ = await database.apiModelProvidersDao.upsertProvider(
+          .insert(id: 'existing-provider', name: 'Existing Provider'),
+        );
+        final _ = await database.apiModelsDao.upsertModel(
+          .insert(
+            modelProvider: 'existing-provider',
+            id: 'existing-model',
+            name: 'Existing Model',
+            limitContext: 128000,
+            limitOutput: 4096,
+          ),
+        );
+        await database.customStatement('''
+          CREATE TRIGGER fail_stale_provider_delete
+          BEFORE DELETE ON api_model_providers
+          WHEN OLD.id = 'existing-provider'
+          BEGIN
+            SELECT RAISE(ABORT, 'forced provider prune failure');
+          END;
+        ''');
+
+        await expectLater(
+          repository.replaceAllData(
+            providers: const [
+              ApiModelProviderEntity(
+                id: 'new-provider',
+                name: 'New Provider',
+                type: .openai,
+              ),
+            ],
+            models: const [
+              ApiModelEntity(
+                modelProvider: 'new-provider',
+                id: 'new-model',
+                name: 'New Model',
+                limitContext: 128000,
+                limitOutput: 4096,
+                modalitiesInput: [],
+                modalitiesOutput: [],
+              ),
+            ],
+          ),
+          throwsA(isA<SqliteException>()),
+        );
+
+        expect(
+          (await repository.getAllProviders()).map((provider) => provider.id),
+          ['existing-provider'],
+        );
+        expect((await repository.getAllModels()).map((model) => model.id), [
+          'existing-model',
+        ]);
+      });
+
       test('prunes rows missing from replacement data', () async {
         when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
             .thenAnswer((_) async => [providerRow]);
