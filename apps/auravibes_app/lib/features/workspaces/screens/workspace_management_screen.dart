@@ -244,12 +244,51 @@ bool _isAvailableCloudWorkspace(
       local.cloudAccountId == accountId,
 );
 
+List<CloudWorkspaceSummary> _availableCloudWorkspaces(
+  List<CloudWorkspaceSummary> workspaces,
+  CloudAccountSession account,
+  List<WorkspaceEntity> localWorkspaces,
+) => workspaces
+    .where(
+      (workspace) => _isAvailableCloudWorkspace(
+        workspace,
+        account.userId,
+        localWorkspaces,
+      ),
+    )
+    .toList();
+
 bool _hasLoadedCloudWorkspaceData(AsyncValue<CloudWorkspaceViewState?> state) =>
     switch (state) {
       AsyncData(value: null) => true,
       AsyncData(value: final value?) => !value.authenticationRequired,
       AsyncLoading() || AsyncError() => false,
     };
+
+typedef _CloudAccountWorkspaceState = ({
+  CloudAccountSession account,
+  AsyncValue<CloudWorkspaceViewState?> state,
+});
+
+List<_CloudAccountWorkspaceState> _watchCloudAccountStates(
+  WidgetRef ref,
+  List<CloudAccountSession> accounts,
+) => [
+  for (final account in accounts)
+    (
+      account: account,
+      state: ref.watch(cloudWorkspaceStateProvider(account.userId)),
+    ),
+];
+
+bool _isMatchingAvailableCloudWorkspace(
+  CloudWorkspaceSummary workspace,
+  String query,
+  CloudAccountSession account,
+  List<WorkspaceEntity> localWorkspaces,
+) =>
+    _matchesWorkspaceName(workspace.name, query) &&
+    _isAvailableCloudWorkspace(workspace, account.userId, localWorkspaces);
 
 bool _hasMatchingAvailableCloudWorkspace({
   required AsyncValue<CloudWorkspaceViewState?> state,
@@ -258,13 +297,12 @@ bool _hasMatchingAvailableCloudWorkspace({
 }) => switch (state) {
   AsyncData(value: final value?) when !value.authenticationRequired =>
     value.workspaces.any(
-      (workspace) =>
-          _matchesWorkspaceName(workspace.name, data.searchQuery) &&
-          _isAvailableCloudWorkspace(
-            workspace,
-            account.userId,
-            data.workspaces,
-          ),
+      (workspace) => _isMatchingAvailableCloudWorkspace(
+        workspace,
+        data.searchQuery,
+        account,
+        data.workspaces,
+      ),
     ),
   AsyncData() || AsyncLoading() || AsyncError() => false,
 };
@@ -274,6 +312,45 @@ bool _hasNoCloudAccounts(AsyncValue<List<CloudAccountSession>> accounts) =>
       AsyncData(:final value) => value.isEmpty,
       AsyncLoading() || AsyncError() => false,
     };
+
+Set<String> _matchingCloudAccountIds(
+  List<_CloudAccountWorkspaceState> accountStates,
+  _WorkspaceListData data,
+) => {
+  for (final accountState in accountStates)
+    if (_hasMatchingAvailableCloudWorkspace(
+      state: accountState.state,
+      account: accountState.account,
+      data: data,
+    ))
+      accountState.account.userId,
+};
+
+bool _areCloudAccountStatesLoaded(
+  List<_CloudAccountWorkspaceState> accountStates,
+) => accountStates.every(
+  (accountState) => _hasLoadedCloudWorkspaceData(accountState.state),
+);
+
+bool _shouldShowNoSearchResults(
+  _WorkspaceListData data,
+  Set<String> matchingAccountIds,
+  bool allCloudStatesLoaded,
+) =>
+    data.isSearchActive &&
+    allCloudStatesLoaded &&
+    data.local.isEmpty &&
+    data.connected.isEmpty &&
+    matchingAccountIds.isEmpty;
+
+bool _shouldShowCloudAccount(
+  _CloudAccountWorkspaceState accountState,
+  _WorkspaceListData data,
+  Set<String> matchingAccountIds,
+) =>
+    !data.isSearchActive ||
+    matchingAccountIds.contains(accountState.account.userId) ||
+    !_hasLoadedCloudWorkspaceData(accountState.state);
 
 class const _WorkspaceListData({
   required final String activeWorkspaceId,
@@ -799,80 +876,66 @@ class const _AvailableCloudAccountItems({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cloudStates = [
-      for (final account in accounts)
-        ref.watch(cloudWorkspaceStateProvider(account.userId)),
-    ];
-    final matchingAccountIds = <String>{};
-    var allCloudStatesLoaded = true;
-
-    for (final (index, account) in accounts.indexed) {
-      final state = cloudStates[index];
-      if (!_hasLoadedCloudWorkspaceData(state)) {
-        allCloudStatesLoaded = false;
-      }
-      if (_hasMatchingAvailableCloudWorkspace(
-        state: state,
-        account: account,
-        data: data,
-      )) {
-        final _ = matchingAccountIds.add(account.userId);
-      }
-    }
-
-    final searchActive = data.searchQuery.isNotEmpty;
-    final hasSearchMatches =
-        data.local.isNotEmpty ||
-        data.connected.isNotEmpty ||
-        matchingAccountIds.isNotEmpty;
-    if (searchActive && allCloudStatesLoaded && !hasSearchMatches) {
+    final accountStates = _watchCloudAccountStates(ref, accounts);
+    final matchingAccountIds = _matchingCloudAccountIds(accountStates, data);
+    if (_shouldShowNoSearchResults(
+      data,
+      matchingAccountIds,
+      _areCloudAccountStatesLoaded(accountStates),
+    )) {
       return const TextLocale(
         LocaleKeys.workspace_management_no_search_results,
       );
     }
 
-    return Column(
-      crossAxisAlignment: .stretch,
-      children: [
-        for (final (index, account) in accounts.indexed)
-          if (!searchActive ||
-              matchingAccountIds.contains(account.userId) ||
-              !_hasLoadedCloudWorkspaceData(cloudStates[index]))
-            _AvailableCloudAccountGroup(
-              account: account,
-              accounts: accounts,
-              localWorkspaces: data.workspaces,
-              hasPersistedMatches:
-                  data.local.isNotEmpty || data.connected.isNotEmpty,
-              searchQuery: data.searchQuery,
-              workspaceId: data.activeWorkspaceId,
-              state: cloudStates[index],
-              actions: actions,
-            ),
-      ],
+    return _AvailableCloudAccountGroups(
+      accounts: accounts,
+      accountStates: accountStates,
+      matchingAccountIds: matchingAccountIds,
+      data: data,
+      actions: actions,
     );
   }
 }
 
-class const _AvailableCloudAccountGroup({
-  required final CloudAccountSession account,
+class const _AvailableCloudAccountGroups({
   required final List<CloudAccountSession> accounts,
-  required final List<WorkspaceEntity> localWorkspaces,
-  required final bool hasPersistedMatches,
-  required final String searchQuery,
-  required final String workspaceId,
-  required final AsyncValue<CloudWorkspaceViewState?> state,
+  required final List<_CloudAccountWorkspaceState> accountStates,
+  required final Set<String> matchingAccountIds,
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      for (final accountState in accountStates)
+        if (_shouldShowCloudAccount(accountState, data, matchingAccountIds))
+          _AvailableCloudAccountGroup(
+            accountState: accountState,
+            accounts: accounts,
+            data: data,
+            actions: actions,
+          ),
+    ],
+  );
+}
+
+class const _AvailableCloudAccountGroup({
+  required final _CloudAccountWorkspaceState accountState,
+  required final List<CloudAccountSession> accounts,
+  required final _WorkspaceListData data,
   required final _WorkspaceListActions actions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AvailableCloudAccountGroupLayout(
-    account: account,
+    account: accountState.account,
     accounts: accounts,
-    localWorkspaces: localWorkspaces,
-    hasPersistedMatches: hasPersistedMatches,
-    searchQuery: searchQuery,
-    workspaceId: workspaceId,
-    state: state,
+    localWorkspaces: data.workspaces,
+    hasPersistedMatches: data.local.isNotEmpty || data.connected.isNotEmpty,
+    searchQuery: data.searchQuery,
+    workspaceId: data.activeWorkspaceId,
+    state: accountState.state,
     actions: actions,
   );
 }
@@ -1060,15 +1123,11 @@ class const _AvailableCloudWorkspaceList({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final matching = _matchingCloudWorkspaces(workspaces, searchQuery);
-    final available = matching
-        .where(
-          (workspace) => _isAvailableCloudWorkspace(
-            workspace,
-            account.userId,
-            localWorkspaces,
-          ),
-        )
-        .toList();
+    final available = _availableCloudWorkspaces(
+      matching,
+      account,
+      localWorkspaces,
+    );
     if (available.isEmpty) {
       return _AvailableCloudWorkspaceEmptyState(
         hasMatchingWorkspaces: matching.isNotEmpty,
