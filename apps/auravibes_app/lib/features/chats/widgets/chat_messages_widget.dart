@@ -1189,8 +1189,7 @@ class const _MessageActions({
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (resolve != null)
-            _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
+          if (resolve != null) _MessageCopyAction(resolveContent: resolve),
           if (retry != null)
             _MessageRetryAction(message: message, onRetryMessage: retry),
           if (_canForkMessage(message))
@@ -1336,10 +1335,9 @@ class const _ForkBoundaryDivider({
 }
 
 class _MessageCopyAction extends StatefulWidget {
-  const new({required this.resolveContent, required this.isUser, super.key});
+  const new({required this.resolveContent, super.key});
 
   final String? Function() resolveContent;
-  final bool isUser;
 
   @override
   State<_MessageCopyAction> createState() => _MessageCopyActionState();
@@ -1349,17 +1347,14 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   var _copied = false;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: widget.isUser ? Alignment.centerRight : Alignment.centerLeft,
-    child: AuraIconButton(
-      icon: _copied ? Icons.check : Icons.copy_outlined,
-      onPressed: () => unawaited(_copy()),
-      tooltip:
-          (_copied
-                  ? LocaleKeys.chats_screens_chat_conversation_message_copied
-                  : LocaleKeys.chats_screens_chat_conversation_copy_message)
-              .tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: _copied ? Icons.check : Icons.copy_outlined,
+    onPressed: () => unawaited(_copy()),
+    tooltip:
+        (_copied
+                ? LocaleKeys.chats_screens_chat_conversation_message_copied
+                : LocaleKeys.chats_screens_chat_conversation_copy_message)
+            .tr(),
   );
 
   Future<void> _copy() async {
