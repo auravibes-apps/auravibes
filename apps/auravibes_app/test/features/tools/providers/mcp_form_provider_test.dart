@@ -10,17 +10,24 @@ import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
+  bool Function()? _oauthCancellationCheck;
+  final _discardedVerificationIds = <String>[];
+
   @override
   Future<McpConnectionVerification> prepareMcpConnection(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
     void Function(McpOAuthDeviceCode deviceCode)? onOAuthDeviceCode,
     bool Function()? isOAuthCancelled,
-  }) async => (
-    id: 'verification-id',
-    toolCount: 2,
-    expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
-  );
+  }) async {
+    _oauthCancellationCheck = isOAuthCancelled;
+
+    return (
+      id: 'verification-id',
+      toolCount: 2,
+      expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+    );
+  }
 
   @override
   Future<void> commitPreparedMcpConnection(
@@ -28,6 +35,11 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
     required String workspaceId,
     required String verificationId,
   }) => Future<void>.value();
+
+  @override
+  Future<void> discardPreparedMcpConnection(String verificationId) async {
+    _discardedVerificationIds.add(verificationId);
+  }
 }
 
 class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
@@ -272,6 +284,48 @@ void main() {
 
     test('build returns default state', () {
       expect(readContainer().read(mcpFormProvider('ws1')).name, '');
+    });
+
+    test('disposal cancels OAuth and discards prepared verification', () async {
+      final cleanupLogs = <LogRecord>[];
+      final logSubscription = Logger.root.onRecord.listen(cleanupLogs.add);
+      addTearDown(logSubscription.cancel);
+      final observedStates = <McpFormState>[];
+      final subscription = readContainer().listen(
+        mcpFormProvider('ws1'),
+        (_, next) => observedStates.add(next),
+      );
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setOAuthClientId('client-id')
+        ..setAuthenticationType(.oauth);
+
+      expect(await readNotifier().testConnection(), isTrue);
+
+      expect(observedStates.last.isConnectionVerified, isTrue);
+
+      expect(
+        readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+        isTrue,
+      );
+      final connection = readContainer().read(
+        mcpConnectionProvider.notifier,
+      ) as _FakeMcpConnectionNotifier;
+
+      subscription.close();
+      await readContainer().pump();
+
+      expect(connection._oauthCancellationCheck?.call(), isTrue);
+
+      expect(
+        cleanupLogs.where(
+          (record) =>
+              record.message.contains('MCP verification cleanup failed'),
+        ),
+        isEmpty,
+      );
+      expect(connection._discardedVerificationIds, ['verification-id']);
     });
 
     test('name field updates name', () {

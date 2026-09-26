@@ -1064,6 +1064,11 @@ abstract class LocaleKeys {
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
   static const common_error_message = 'common.error_message';
+  static const common_unsaved_changes_title = 'common.unsaved_changes_title';
+  static const common_unsaved_changes_message =
+      'common.unsaved_changes_message';
+  static const common_discard_changes = 'common.discard_changes';
+  static const common_keep_editing = 'common.keep_editing';
   static const workspace_capabilities_unsupported_error =
       'workspace_capabilities.unsupported_error';
   static const tools_names_calculator_name = 'tools_names.calculator.name';

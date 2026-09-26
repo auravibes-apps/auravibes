@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -39,52 +40,114 @@ class const AddMcpModal({required final String workspaceId, super.key})
 }
 
 class const _AddMcpDialog({required final String workspaceId})
-    extends ConsumerWidget {
+    extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef _) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
+  ConsumerState<_AddMcpDialog> createState() => _AddMcpDialogState();
+}
+
+class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
+  var _allowPop = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final workspaceId = widget.workspaceId;
+    final hasUnsavedChanges = ref.watch(
+      mcpFormProvider(workspaceId).select(_hasUnsavedMcpFormChanges),
+    );
+
+    return PopScope<Object?>(
+      child: _AddMcpDialogContent(
+        workspaceId: workspaceId,
+        onSubmitSuccess: _popAfterSubmit,
+      ),
+      canPop: !hasUnsavedChanges || _allowPop,
+      onPopInvokedWithResult: _onPopInvoked,
+    );
+  }
+
+  void _onPopInvoked(bool didPop, Object? _) {
+    if (!didPop) unawaited(_confirmDiscard(context));
+  }
+
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _allowAndPop();
+  }
+
+  void _allowAndPop() {
+    setState(() => _allowPop = true);
+    Navigator.of(context).pop();
+  }
+
+  void _popAfterSubmit() => _allowAndPop();
+}
+
+bool _hasUnsavedMcpFormChanges(McpFormState state) =>
+    _hasMcpTextChanges(state) ||
+    state.transport != McpTransportTypeOptions.streamableHttp ||
+    state.authenticationType != McpAuthenticationTypeOptions.none ||
+    state.useHttp2;
+
+bool _hasMcpTextChanges(McpFormState state) => [
+  state.name,
+  state.description,
+  state.url,
+  state.bearerToken,
+  state.oauthClientId,
+].any((value) => value.trim().isNotEmpty);
+
+class const _AddMcpDialogContent({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Dialog(
+    shape: _dialogShape(context),
+    child: _AddMcpDialogLayout(
+      workspaceId: workspaceId,
+      onSubmitSuccess: onSubmitSuccess,
+    ),
+  );
+
+  RoundedRectangleBorder _dialogShape(BuildContext context) =>
+      RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
-      ),
-      child: _AddMcpDialogContent(workspaceId: workspaceId),
-    );
-  }
-}
-
-class const _AddMcpDialogContent({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _AddMcpDialogLayout(
-    workspaceId: workspaceId,
-    width: MediaQuery.sizeOf(context).width * 0.9,
-    maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-  );
+      );
 }
 
 class const _AddMcpDialogLayout({
   required final String workspaceId,
-  required final double width,
-  required final double maxHeight,
+  required final VoidCallback onSubmitSuccess,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    width: width,
-    constraints: .new(maxWidth: 450, maxHeight: maxHeight),
-    child: _AddMcpDialogColumn(workspaceId: workspaceId),
+    width: MediaQuery.sizeOf(context).width * 0.9,
+    constraints: .new(
+      maxWidth: 450,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+    ),
+    child: _AddMcpDialogColumn(
+      workspaceId: workspaceId,
+      onSubmitSuccess: onSubmitSuccess,
+    ),
   );
 }
 
-class const _AddMcpDialogColumn({required final String workspaceId})
-    extends StatelessWidget {
+class const _AddMcpDialogColumn({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
     children: [
       const _AddMcpModalHeader(),
       Flexible(child: _AddMcpForm(workspaceId: workspaceId)),
-      _Footer(workspaceId: workspaceId),
+      _Footer(workspaceId: workspaceId, onSubmitSuccess: onSubmitSuccess),
     ],
   );
 }
@@ -220,7 +283,7 @@ class _McpModalHeaderChildren {
         ),
         AuraIconButton(
           icon: Icons.close,
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
       ];
 
@@ -420,8 +483,10 @@ class const _VerificationStatusContent({
   }
 }
 
-class const _Footer({required final String workspaceId})
-    extends ConsumerWidget {
+class const _Footer({
+  required final String workspaceId,
+  required final VoidCallback onSubmitSuccess,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = _watchMcpFooterState(ref, workspaceId);
@@ -432,7 +497,7 @@ class const _Footer({required final String workspaceId})
       isConnectionVerified: state.isConnectionVerified,
       onTestConnection: () =>
           unawaited(_testConnection(context, ref, workspaceId)),
-      onSubmit: () => unawaited(_submit(context, ref, workspaceId)),
+      onSubmit: () => unawaited(_submit(context, ref)),
     );
   }
 
@@ -449,16 +514,12 @@ class const _Footer({required final String workspaceId})
     _showMcpConnectionTestSuccess(context);
   }
 
-  Future<void> _submit(
-    BuildContext context,
-    WidgetRef ref,
-    String workspaceId,
-  ) async {
+  Future<void> _submit(BuildContext context, WidgetRef ref) async {
     final success = await _submitMcpForm(ref, workspaceId);
     if (!success || !context.mounted) return;
 
     _showMcpSaveSuccess(context);
-    Navigator.of(context).pop();
+    onSubmitSuccess();
   }
 }
 
@@ -573,7 +634,7 @@ class const _FooterButtons({
 class const _FooterCancelButton() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraButton(
-    onPressed: () => Navigator.of(context).pop(),
+    onPressed: () => Navigator.of(context).maybePop(),
     child: const TextLocale(LocaleKeys.common_cancel),
     variant: .outlined,
   );

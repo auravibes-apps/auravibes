@@ -132,12 +132,12 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                     ),
                     GoRouteData.$route(
                       path: ':skillId/tools/new',
-                      hasOverriddenOnExit: false,
+                      hasOverriddenOnExit: true,
                       factory: $SkillToolCreateRoute._fromState,
                     ),
                     GoRouteData.$route(
                       path: ':skillId/tools/:toolId',
-                      hasOverriddenOnExit: false,
+                      hasOverriddenOnExit: true,
                       factory: $SkillToolEditRoute._fromState,
                     ),
                     GoRouteData.$route(

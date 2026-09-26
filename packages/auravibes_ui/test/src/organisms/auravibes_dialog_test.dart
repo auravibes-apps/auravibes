@@ -63,6 +63,30 @@ void main() {
       expect(find.text('Are you sure you want to proceed?'), findsOneWidget);
     });
 
+    testWidgets('wraps confirmation actions on narrow screens', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
+            title: Text('Unsaved changes'),
+            message: Text('Discard unsaved changes?'),
+            confirmLabel: Text('Discard changes'),
+            cancelLabel: Text('Keep editing'),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getRect(find.text('Discard changes')).top,
+        greaterThan(tester.getRect(find.text('Keep editing')).bottom),
+      );
+    });
+
     testWidgets('displays confirm and cancel buttons', (tester) async {
       await tester.pumpWidget(
         const AuraThemeWrapper(

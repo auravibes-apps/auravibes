@@ -111,6 +111,7 @@ extension McpFormStateExtensions on McpFormState {
 @riverpod
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
+  McpConnectionNotifier? _connection;
   String? _verificationId;
   Timer? _verificationExpiryTimer;
   var _connectionVersion = 0;
@@ -134,6 +135,7 @@ class McpFormNotifier extends _$McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
+    _connection = ref.read(mcpConnectionProvider.notifier);
     _isDisposed = false;
     _oauthCancelled = false;
     final _ = ref.onDispose(() {
@@ -160,10 +162,11 @@ class McpFormNotifier extends _$McpFormNotifier {
       operation(ref.read(mcpConnectionProvider.notifier), this, verificationId);
 
   Future<void> _discardPreparedVerification(String verificationId) async {
+    final connection = _connection;
+    if (connection == null) return;
+
     try {
-      await ref
-          .read(mcpConnectionProvider.notifier)
-          .discardPreparedMcpConnection(verificationId);
+      await connection.discardPreparedMcpConnection(verificationId);
     } on Object catch (error, stackTrace) {
       _logger.warning(
         'MCP verification cleanup failed workspace=$_workspaceId',

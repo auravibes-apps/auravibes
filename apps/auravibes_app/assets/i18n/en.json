@@ -796,7 +796,11 @@
     "show_more": "Show more",
     "show_less": "Show less",
     "error_title": "Something went wrong",
-    "error_message": "Try again or reopen this screen."
+    "error_message": "Try again or reopen this screen.",
+    "unsaved_changes_title": "Unsaved changes",
+    "unsaved_changes_message": "You have unsaved changes. Discard them?",
+    "discard_changes": "Discard changes",
+    "keep_editing": "Keep editing"
   },
   "workspace_capabilities": {
     "unsupported_error": "This feature is not available in this workspace."
