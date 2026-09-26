@@ -42,16 +42,18 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: EasyLocalization(
-          child: const app.MyApp(),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: EasyLocalization(
+            child: const app.MyApp(),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+          ),
         ),
       ),
     );

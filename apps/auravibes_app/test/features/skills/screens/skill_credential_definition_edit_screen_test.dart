@@ -60,6 +60,11 @@ Future<void> _setSurfaceSize(WidgetTester tester) async {
   addTearDown(() => tester.binding.setSurfaceSize(null));
 }
 
+Finder _editableInputAt(int index) => find.descendant(
+  of: find.byType(AuraInput).at(index),
+  matching: find.byType(EditableText),
+);
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -142,13 +147,13 @@ void main() {
     expect(find.text('Add attribute'), findsOneWidget);
     expect(find.text('Secret'), findsOneWidget);
 
-    await tester.enterText(find.byType(AuraInput).at(0), 'Example Service');
-    await tester.enterText(find.byType(AuraInput).at(1), 'api_key');
-    await tester.enterText(find.byType(AuraInput).at(2), 'API key');
+    await tester.enterText(_editableInputAt(0), 'Example Service');
+    await tester.enterText(_editableInputAt(1), 'api_key');
+    await tester.enterText(_editableInputAt(2), 'API key');
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(AuraInput).at(3), 'user_id');
-    await tester.enterText(find.byType(AuraInput).at(4), 'User id');
+    await tester.enterText(_editableInputAt(3), 'user_id');
+    await tester.enterText(_editableInputAt(4), 'User id');
     await tester.ensureVisible(find.text('Optional').last);
     await tester.tap(find.byType(AuraSwitch).at(2));
     final _ = await tester.pumpAndSettle();
@@ -201,7 +206,7 @@ void main() {
     await tester.tap(find.text('Open editor'));
     final _ = await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).first, 'Changed Service');
+    await tester.enterText(_editableInputAt(0), 'Changed Service');
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 
@@ -254,14 +259,11 @@ void main() {
     await tester.tap(find.text('Open editor'));
     final _ = await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'Example Service ',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'user_id');
-    await tester.enterText(find.byType(TextFormField).at(2), 'User id');
-    await tester.enterText(find.byType(TextFormField).at(3), 'api_key');
-    await tester.enterText(find.byType(TextFormField).at(4), 'API key');
+    await tester.enterText(_editableInputAt(0), 'Example Service ');
+    await tester.enterText(_editableInputAt(1), 'user_id');
+    await tester.enterText(_editableInputAt(2), 'User id');
+    await tester.enterText(_editableInputAt(3), 'api_key');
+    await tester.enterText(_editableInputAt(4), 'API key');
 
     await tester.ensureVisible(find.text('Add attribute'));
 
@@ -276,7 +278,7 @@ void main() {
 
     await tester.tap(find.text('Open editor'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).first, 'Changed Service');
+    await tester.enterText(_editableInputAt(0), 'Changed Service');
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 

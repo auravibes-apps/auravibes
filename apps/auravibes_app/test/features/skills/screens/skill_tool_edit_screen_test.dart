@@ -187,7 +187,10 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.enterText(selectedInput, value);
+      await tester.enterText(
+        find.descendant(of: selectedInput, matching: find.byType(EditableText)),
+        value,
+      );
       final _ = await tester.pumpAndSettle();
     }
 
@@ -195,7 +198,7 @@ void main() {
     await tester.tap(find.text('Edit description'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(
-      find.byType(TextFormField).last,
+      find.byType(EditableText).last,
       'Find company records.',
     );
     await tester.tap(find.byIcon(Icons.save_outlined).last);
@@ -345,7 +348,7 @@ void main() {
         .first;
     final addedHeaderFields = find.descendant(
       of: addedHeaderRow,
-      matching: find.byType(TextFormField),
+      matching: find.byType(EditableText),
     );
     await tester.enterText(addedHeaderFields.last, secret);
     final _ = await tester.pumpAndSettle();

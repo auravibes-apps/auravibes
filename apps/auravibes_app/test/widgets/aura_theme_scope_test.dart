@@ -9,14 +9,16 @@ void main() {
     tester,
   ) async {
     AuraTheme? observedTheme;
-    await tester.pumpWidget(
-      TestableApp(
-        child: Builder(
-          builder: (context) {
-            observedTheme = context.auraTheme;
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        TestableApp(
+          child: Builder(
+            builder: (context) {
+              observedTheme = context.auraTheme;
 
-            return const SizedBox.shrink();
-          },
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
     );
