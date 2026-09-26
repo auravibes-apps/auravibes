@@ -4,14 +4,27 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:uuid/v7.dart';
+
+typedef _RestoreCloudCheckpoint = Future<bool> Function({
+  required String workspaceId,
+  required String conversationId,
+  required String checkpointMessageId,
+  required int revision,
+});
 
 class const RestoreCompactionCheckpointUsecase({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
   required final GetConversationBusyStateUsecase getConversationBusyState,
   required final bool Function(String conversationId) isCompacting,
+  final _RestoreCloudCheckpoint? restoreCloudCheckpoint,
 }) {
   Future<void> call({
     required String conversationId,
@@ -22,6 +35,32 @@ class const RestoreCompactionCheckpointUsecase({
     );
     if (conversation == null) {
       throw const CompactionCheckpointRestoreException();
+    }
+
+    if (restoreCloudCheckpoint case final restoreCloudCheckpoint?) {
+      CloudAppException? restoreError;
+      try {
+        final restored = await restoreCloudCheckpoint(
+          workspaceId: conversation.workspaceId,
+          conversationId: conversationId,
+          checkpointMessageId: checkpointMessageId,
+          revision: conversation.revision,
+        );
+
+        if (restored) return;
+      } on CloudAppException catch (error) {
+        if (error.code ==
+                ConversationErrorCode.checkpointRestoreConflict.name ||
+            error.code == ConversationErrorCode.staleRevision.name) {
+          restoreError = error;
+        } else {
+          rethrow;
+        }
+      }
+
+      if (restoreError != null) {
+        throw const CompactionCheckpointRestoreException();
+      }
     }
 
     final messages = await messageRepository.getMessagesByConversation(
@@ -64,5 +103,37 @@ final restoreCompactionCheckpointUsecaseProvider =
         isCompacting: ref
             .watch(compactionExecutionProvider.notifier)
             .isCompacting,
+        restoreCloudCheckpoint:
+            ({
+              required workspaceId,
+              required conversationId,
+              required checkpointMessageId,
+              required revision,
+            }) async {
+              final session = await ref.read(
+                workspaceSessionForRouteProvider(workspaceId).future,
+              );
+              if (session.cloud case final cloud?) {
+                final gateway = await ref.read(
+                  cloudWorkspaceStateGatewayForWorkspaceProvider(
+                    cloud.localWorkspaceId,
+                  ).future,
+                );
+                if (gateway == null) {
+                  throw const CompactionCheckpointRestoreException();
+                }
+                final _ = await CloudChatGateway(gateway)
+                    .restoreCompactionCheckpoint(
+                      requestId: const UuidV7().generate(),
+                      conversationId: conversationId,
+                      checkpointMessageId: checkpointMessageId,
+                      expectedConversationRevision: revision,
+                    );
+
+                return true;
+              }
+
+              return false;
+            },
       );
     });

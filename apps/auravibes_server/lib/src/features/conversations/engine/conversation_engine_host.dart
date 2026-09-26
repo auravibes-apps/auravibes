@@ -36,6 +36,8 @@ class const ConversationEngineResult({
 class const ConversationCompactionResult({
   required final String summary,
   required final AgentCompactionRangeSelected range,
+  required final String providerId,
+  required final String modelId,
 });
 
 String appendDurableSkillActivations(
@@ -921,9 +923,21 @@ final class const ServerConversationEngineHost({
     required String conversationStableId,
     required Set<String> a2uiSupportedComponents,
   }) async {
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.stableId.equals(conversationStableId),
+    );
+    final selectedMessageIds = selectAgentPromptHistory(
+      AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+      activeCompactionCheckpointId: conversation?.activeCompactionCheckpointId,
+    ).messageIds.toSet();
     final result = <Map<String, dynamic>>[];
     for (final message in messages.where(
-      (message) => message.status != 'queued',
+      (message) =>
+          message.status != 'queued' &&
+          selectedMessageIds.contains('${message.id}'),
     )) {
       final metadata = message.metadataJson == null
           ? const <String, dynamic>{}
@@ -1248,7 +1262,27 @@ final class const ServerConversationEngineHost({
     required List<ConversationMessage> messages,
     Future<void>? leaseLost,
   }) async {
-    final range = selectConversationCompactionRange(messages);
+    final config = await _loadConfig(session, job, messages);
+    final toolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.messageId.inSet(
+            messages.map((message) => message.id).whereType<int>().toSet(),
+          ),
+    );
+    final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
+    for (final toolCall in toolCalls) {
+      (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
+    }
+    final range = selectConversationCompactionRange(
+      messages,
+      toolCallsByMessageId: toolCallsByMessageId,
+      limitContext: config.limitContext,
+      limitOutput: config.limitOutput,
+      reserveTokens: config.reserveTokens,
+      keepRecentTokens: config.keepRecentTokens,
+    );
     if (range is! AgentCompactionRangeSelected) {
       throw const ConversationEngineConfigurationException(
         'compaction_range',
@@ -1258,7 +1292,6 @@ final class const ServerConversationEngineHost({
     final compactable = messages
         .where((message) => compactableIds.contains('${message.id}'))
         .toList();
-    final config = await _loadConfig(session, job, messages);
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       customize: (modelName, _) => (model: modelName, extraBody: const {}),
@@ -1299,6 +1332,8 @@ final class const ServerConversationEngineHost({
         await _durableSkillActivations(session, job.workspaceId, range),
       ),
       range: range,
+      providerId: config.providerId,
+      modelId: config.modelId,
     );
   }
 
@@ -1415,6 +1450,33 @@ final class const ServerConversationEngineHost({
       throw const ConversationCancelledException();
     }
     final uri = providerRequestUri(connection.providerId, validated.uri);
+    final compactionResource = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.compactionSetting) &
+          table.resourceId.equals('workspace') &
+          table.deletedAt.equals(null),
+    );
+    Map<String, dynamic> compactionSettings = const {};
+    if (compactionResource != null) {
+      try {
+        final decoded = jsonDecode(compactionResource.data);
+        if (decoded is Map<String, dynamic>) compactionSettings = decoded;
+      } on FormatException {
+        // Invalid optional budgets preserve legacy compaction selection.
+      }
+    }
+    final overrides = compactionSettings['modelOverrides'];
+    final modelOverride = overrides is Map
+        ? overrides['${connection.providerId}/${selection.model.modelId}']
+        : null;
+    final override = modelOverride is Map ? modelOverride : const {};
+    int? nonNegativeInt(String key) {
+      final value = override[key];
+      return value is int && value >= 0 ? value : null;
+    }
+
     session.log(
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
@@ -1432,6 +1494,10 @@ final class const ServerConversationEngineHost({
         ),
       ),
       reasoningConfiguration: reasoningConfiguration,
+      limitContext: selection.model.limitContext,
+      limitOutput: selection.model.limitOutput,
+      reserveTokens: nonNegativeInt('reserveTokens'),
+      keepRecentTokens: nonNegativeInt('keepRecentTokens'),
     );
   }
 
@@ -1602,12 +1668,33 @@ Future<void> _waitForCancellation(Session session, int turnId) async {
 }
 
 AgentCompactionRangeSelection selectConversationCompactionRange(
-  List<ConversationMessage> messages,
-) => selectAgentCompactionRange(
-  AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+  List<ConversationMessage> messages, {
+  Map<int, List<ConversationToolCall>> toolCallsByMessageId = const {},
+  int? limitContext,
+  int? limitOutput,
+  int? reserveTokens,
+  int? keepRecentTokens,
+}) => selectAgentCompactionRange(
+  AgentContextSnapshot(
+    messages
+        .map(
+          (message) => _messageSnapshot(
+            message,
+            toolCalls: toolCallsByMessageId[message.id] ?? const [],
+          ),
+        )
+        .toList(),
+  ),
+  limitContext: limitContext,
+  limitOutput: limitOutput,
+  reserveTokens: reserveTokens,
+  keepRecentTokens: keepRecentTokens,
 );
 
-AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
+AgentTranscriptMessageSnapshot _messageSnapshot(
+  ConversationMessage message, {
+  List<ConversationToolCall> toolCalls = const [],
+}) {
   final metadata = switch (message.metadataJson) {
     final String source => _jsonObject(source),
     null => const <String, dynamic>{},
@@ -1629,7 +1716,27 @@ AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
       _ => AgentTranscriptStatus.error,
     },
     textCharacterCount: message.content.length,
-    toolCalls: const [],
+    toolCalls: [
+      for (final call in toolCalls)
+        AgentTranscriptToolCallSnapshot(
+          id: call.stableId,
+          lifecycle: switch (call.status) {
+            'pending' ||
+            'running' ||
+            'needsConfirmation' ||
+            'approved' ||
+            'granted' ||
+            'awaitingSubAgents' => AgentToolCallLifecycle.pending,
+            'success' => AgentToolCallLifecycle.success,
+            'skippedByUser' => AgentToolCallLifecycle.skippedByUser,
+            'stoppedByUser' ||
+            'cancelled' => AgentToolCallLifecycle.stoppedByUser,
+            _ => AgentToolCallLifecycle.failed,
+          },
+          argumentCharacterCount: call.argumentsJson.length,
+          resultCharacterCount: call.resultJson?.length ?? 0,
+        ),
+    ],
     latestCumulativeTokenCount: null,
     isCompactionSummary: metadata['isCompactionSummary'] == true,
     compactedThroughMessageId: switch (message.compactedThroughMessageId) {
@@ -1661,6 +1768,10 @@ class const _ProviderConfig({
   required final InternetAddress address,
   required final Map<String, String> headers,
   final ReasoningConfiguration? reasoningConfiguration,
+  final int? limitContext,
+  final int? limitOutput,
+  final int? reserveTokens,
+  final int? keepRecentTokens,
 });
 
 List<ReasoningOption> _reasoningOptions(

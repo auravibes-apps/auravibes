@@ -121,6 +121,8 @@ import 'features/conversations/models/remove_pending_conversation_message_reques
     as _iy526sio;
 import 'features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _infbxzxr;
+import 'features/conversations/models/restore_conversation_checkpoint_request.dart'
+    as _ia1pnkb0;
 import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
 import 'features/conversations/models/stop_conversation_request.dart'
@@ -348,6 +350,7 @@ export 'features/conversations/models/provider_admission_reservation.dart';
 export 'features/conversations/models/queue_conversation_message_request.dart';
 export 'features/conversations/models/remove_pending_conversation_message_request.dart';
 export 'features/conversations/models/reorder_pending_conversation_message_request.dart';
+export 'features/conversations/models/restore_conversation_checkpoint_request.dart';
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
 export 'features/conversations/models/stop_conversation_request.dart';
@@ -959,6 +962,12 @@ class Protocol extends _is.DatabaseSerializationManager {
           columnType: _isp.ColumnType.bigint,
           isNullable: true,
           dartType: 'int?',
+        ),
+        _isp.ColumnDefinition(
+          name: 'activeCompactionCheckpointId',
+          columnType: _isp.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
         ),
         _isp.ColumnDefinition(
           name: 'createdAt',
@@ -4648,6 +4657,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       return _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(data)
           as T;
     }
+    if (t == _ia1pnkb0.RestoreConversationCheckpointRequest) {
+      return _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data) as T;
+    }
     if (t == _iocu6u94.StartTurnRequest) {
       return _iocu6u94.StartTurnRequest.fromJson(data) as T;
     }
@@ -5261,6 +5273,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               ? _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(
                   data,
                 )
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ia1pnkb0.RestoreConversationCheckpointRequest?>()) {
+      return (data != null
+              ? _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data)
               : null)
           as T;
     }
@@ -6085,6 +6103,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         'RemovePendingConversationMessageRequest',
       _infbxzxr.ReorderPendingConversationMessageRequest =>
         'ReorderPendingConversationMessageRequest',
+      _ia1pnkb0.RestoreConversationCheckpointRequest =>
+        'RestoreConversationCheckpointRequest',
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
       _i4cgq7zt.StopConversationRequest => 'StopConversationRequest',
@@ -6329,6 +6349,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'RemovePendingConversationMessageRequest';
       case _infbxzxr.ReorderPendingConversationMessageRequest():
         return 'ReorderPendingConversationMessageRequest';
+      case _ia1pnkb0.RestoreConversationCheckpointRequest():
+        return 'RestoreConversationCheckpointRequest';
       case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
       case _iw8le0j7.StartTurnResult():
@@ -6737,6 +6759,11 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'ReorderPendingConversationMessageRequest') {
       return deserialize<_infbxzxr.ReorderPendingConversationMessageRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'RestoreConversationCheckpointRequest') {
+      return deserialize<_ia1pnkb0.RestoreConversationCheckpointRequest>(
         data['data'],
       );
     }

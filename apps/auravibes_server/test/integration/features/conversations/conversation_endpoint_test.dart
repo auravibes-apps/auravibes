@@ -1,4 +1,7 @@
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
+
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -368,6 +371,179 @@ void main() {
         throwsA(isA<ConversationException>()),
       );
     });
+
+    test(
+      'restores cloud checkpoints only for idle conversation history',
+      () async {
+        final userId = const Uuid().v4().toString();
+        final session = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            userId,
+            const {},
+          ),
+        );
+        final databaseSession = session.build();
+        await AuthUser.db.insertRow(
+          databaseSession,
+          AuthUser(id: UuidValue.fromString(userId), scopeNames: const {}),
+        );
+        await EmailAccount.db.insertRow(
+          databaseSession,
+          EmailAccount(
+            authUserId: UuidValue.fromString(userId),
+            email: 'checkpoint@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+        final workspace = await workspace_repo.CloudWorkspaceRepository()
+            .createWorkspace(
+              databaseSession,
+              name: 'Checkpoint workspace',
+              ownerUserId: userId,
+              now: DateTime.now().toUtc(),
+            );
+        final workspaceId = workspace.id!;
+        for (final conversationId in ['conversation-checkpoint', 'other']) {
+          await endpoints.conversation.create(
+            session,
+            CreateConversationRequest(
+              workspaceId: workspaceId,
+              requestId: 'create-$conversationId',
+              conversationId: conversationId,
+              title: conversationId,
+              isPinned: false,
+            ),
+          );
+        }
+        final conversations = await Conversation.db.find(
+          databaseSession,
+          where: (table) => table.workspaceId.equals(workspaceId),
+        );
+        final now = DateTime.now().toUtc();
+        final checkpoint = await ConversationMessage.db.insertRow(
+          databaseSession,
+          ConversationMessage(
+            workspaceId: workspaceId,
+            conversationId: conversations
+                .singleWhere((row) => row.stableId == 'conversation-checkpoint')
+                .id!,
+            stableId: 'checkpoint-1',
+            role: 'system',
+            kind: 'system',
+            status: 'sent',
+            content: 'Summary',
+            metadataJson: jsonEncode({'isCompactionSummary': true}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.insertRow(
+          databaseSession,
+          ConversationMessage(
+            workspaceId: workspaceId,
+            conversationId: conversations
+                .singleWhere((row) => row.stableId == 'other')
+                .id!,
+            stableId: 'checkpoint-other',
+            role: 'system',
+            kind: 'system',
+            status: 'sent',
+            content: 'Other summary',
+            metadataJson: jsonEncode({'isCompactionSummary': true}),
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final restored = await endpoints.conversation
+            .restoreCompactionCheckpoint(
+              session,
+              RestoreConversationCheckpointRequest(
+                workspaceId: workspaceId,
+                requestId: 'restore-1',
+                conversationId: 'conversation-checkpoint',
+                checkpointMessageId: checkpoint.stableId,
+                expectedConversationRevision: 1,
+              ),
+            );
+        expect(
+          restored.conversation.activeCompactionCheckpointId,
+          checkpoint.stableId,
+        );
+        expect(restored.conversation.projectionRevision, 2);
+        expect(
+          await ConversationMessage.db.count(
+            databaseSession,
+            where: (table) =>
+                table.workspaceId.equals(workspaceId) &
+                table.conversationId.equals(checkpoint.conversationId),
+          ),
+          1,
+        );
+
+        await expectLater(
+          endpoints.conversation.restoreCompactionCheckpoint(
+            session,
+            RestoreConversationCheckpointRequest(
+              workspaceId: workspaceId,
+              requestId: 'restore-cross-conversation',
+              conversationId: 'conversation-checkpoint',
+              checkpointMessageId: 'checkpoint-other',
+              expectedConversationRevision:
+                  restored.conversation.projectionRevision,
+            ),
+          ),
+          throwsA(isA<ConversationException>()),
+        );
+        await expectLater(
+          endpoints.conversation.restoreCompactionCheckpoint(
+            session,
+            RestoreConversationCheckpointRequest(
+              workspaceId: workspaceId,
+              requestId: 'restore-stale',
+              conversationId: 'conversation-checkpoint',
+              checkpointMessageId: checkpoint.stableId,
+              expectedConversationRevision: 1,
+            ),
+          ),
+          throwsA(isA<ConversationException>()),
+        );
+        final current = await Conversation.db.findById(
+          databaseSession,
+          checkpoint.conversationId,
+        );
+        await Conversation.db.updateRow(
+          databaseSession,
+          current!.copyWith(
+            executionState: ConversationStatuses.running,
+            revision: current.revision + 1,
+          ),
+        );
+        await expectLater(
+          endpoints.conversation.restoreCompactionCheckpoint(
+            session,
+            RestoreConversationCheckpointRequest(
+              workspaceId: workspaceId,
+              requestId: 'restore-busy',
+              conversationId: 'conversation-checkpoint',
+              checkpointMessageId: checkpoint.stableId,
+              expectedConversationRevision: current.revision + 1,
+            ),
+          ),
+          throwsA(isA<ConversationException>()),
+        );
+        final unchanged = await Conversation.db.findById(
+          databaseSession,
+          checkpoint.conversationId,
+        );
+        expect(
+          unchanged?.activeCompactionCheckpointId,
+          checkpoint.stableId,
+        );
+      },
+    );
 
     test(
       'rejects another member\'s active attachment without a reference',

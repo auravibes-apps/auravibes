@@ -87,6 +87,7 @@ class ConversationUseCases {
     'approved',
     'granted',
     'running',
+    'awaitingSubAgents',
   };
   static const _cancelledMessageMetadata = '{"errorCode":"cancelled"}';
   static const _subAgentCancelledMessage = 'Sub-agent cancelled.';
@@ -231,6 +232,14 @@ class ConversationUseCases {
       if (boundaryIndex >= ConversationLimits.maxForkHistoryMessages) {
         _fail(ConversationErrorCode.validationFailed);
       }
+      final activeCheckpointId = source.activeCompactionCheckpointId;
+      final inheritedCheckpointId =
+          activeCheckpointId != null &&
+              sourceMessages
+                  .take(boundaryIndex + 1)
+                  .any((message) => message.stableId == activeCheckpointId)
+          ? activeCheckpointId
+          : null;
       final title = await _copyConversationTitle(
         session,
         workspaceId: request.workspaceId,
@@ -251,6 +260,7 @@ class ConversationUseCases {
           forkSourceConversationId: source.stableId,
           forkSourceTitle: source.title,
           forkThroughMessageId: boundary,
+          activeCompactionCheckpointId: inheritedCheckpointId,
           revision: 1,
           projectionRevision: 1,
           eventSequence: 0,
@@ -1032,6 +1042,7 @@ class ConversationUseCases {
         forkThroughMessageId: conversation.forkThroughMessageId,
         forkMaterializedAt: conversation.forkMaterializedAt,
         activeExecutionId: execution?.stableId,
+        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
         updatedAt: conversation.updatedAt,
       ),
       messages: messages,
@@ -2962,6 +2973,132 @@ class ConversationUseCases {
     });
   }
 
+  Future<ConversationSnapshot> restoreCompactionCheckpoint(
+    Session session, {
+    required String userId,
+    required RestoreConversationCheckpointRequest request,
+  }) async {
+    await _mutate<ConversationMutationResult>(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.restoreCompactionCheckpoint',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: ConversationMutationResult.fromJson,
+      run: (transaction, now) async {
+        final conversation = await _repository.findConversationByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null) _fail(ConversationErrorCode.notFound);
+        if (conversation.revision != request.expectedConversationRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        if (conversation.executionState != 'idle' ||
+            conversation.activeExecutionId != null ||
+            await _repository.hasActiveMutation(
+              session,
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              transaction: transaction,
+            )) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final checkpoint = await ConversationMessage.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.stableId.equals(request.checkpointMessageId) &
+              table.role.equals('system') &
+              table.status.equals('sent'),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (checkpoint == null ||
+            _tryDecodeJson(checkpoint.metadataJson ?? '') is! Map ||
+            (_tryDecodeJson(checkpoint.metadataJson ?? '')
+                    as Map)['isCompactionSummary'] !=
+                true) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final unresolvedCalls = await ConversationToolCall.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.status.inSet(_transientToolCallStatuses),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (unresolvedCalls != null) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final activeTurns = await ConversationTurn.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.status.inSet(_transientMessageStatuses),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (activeTurns != null) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final updated = await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            activeCompactionCheckpointId: request.checkpointMessageId,
+            revision: conversation.revision + 1,
+            projectionRevision: conversation.projectionRevision + 1,
+            eventSequence: conversation.eventSequence + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: request.workspaceId,
+            conversationId: conversation.id!,
+            sequence: updated.eventSequence,
+            eventId: const Uuid().v7(),
+            actorUserId: userId,
+            requestId: request.requestId,
+            kind: ConversationEventType.settingsChanged,
+            payloadJson: jsonEncode({
+              'activeCompactionCheckpointId': request.checkpointMessageId,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return _Mutation(
+          ConversationMutationResult(
+            conversationId: updated.stableId,
+            revision: updated.revision,
+            status: 'checkpointRestored',
+          ),
+          'checkpointRestored',
+          updated.stableId,
+        );
+      },
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
   Future<ConversationMutationResult> compact(
     Session session, {
     required String userId,
@@ -3590,6 +3727,12 @@ class ConversationUseCases {
             ? null
             : copies.stableMessageIds[context.fork.forkThroughMessageId!] ??
                   context.fork.forkThroughMessageId,
+        activeCompactionCheckpointId:
+            context.fork.activeCompactionCheckpointId == null
+            ? null
+            : copies.stableMessageIds[context
+                  .fork
+                  .activeCompactionCheckpointId!],
         forkMaterializedAt: context.now,
         revision: context.fork.revision + 1,
         projectionRevision: context.fork.projectionRevision + 1,
@@ -4615,6 +4758,7 @@ class ConversationUseCases {
         forkThroughMessageId: conversation.forkThroughMessageId,
         forkMaterializedAt: conversation.forkMaterializedAt,
         revision: conversation.revision,
+        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
       );

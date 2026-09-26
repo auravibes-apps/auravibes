@@ -135,4 +135,40 @@ void main() {
     );
     verifyNever(() => conversations.patchConversation(any(), any()));
   });
+
+  test('routes cloud restore through server checkpoint API', () async {
+    var capturedWorkspaceId = '';
+    var capturedRevision = -1;
+    final usecase = RestoreCompactionCheckpointUsecase(
+      conversationRepository: conversations,
+      messageRepository: messages,
+      getConversationBusyState: busyState,
+      isCompacting: (_) => false,
+      restoreCloudCheckpoint:
+          ({
+            required workspaceId,
+            required conversationId,
+            required checkpointMessageId,
+            required revision,
+          }) async {
+            capturedWorkspaceId = workspaceId;
+            capturedRevision = revision;
+            expect(conversationId, 'conversation-1');
+            expect(checkpointMessageId, checkpointId);
+            return true;
+          },
+    );
+    when(() => conversations.getConversationById(conversationId))
+        .thenAnswer((_) async => conversation.copyWith(revision: 12));
+
+    await usecase.call(
+      conversationId: conversationId,
+      checkpointMessageId: checkpointId,
+    );
+
+    expect(capturedWorkspaceId, 'workspace-1');
+    expect(capturedRevision, 12);
+    verifyNever(() => messages.getMessagesByConversation(any()));
+    verifyNever(() => conversations.patchConversation(any(), any()));
+  });
 }

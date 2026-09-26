@@ -72,6 +72,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i2sc9nxe;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _i28kt77m;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/restore_conversation_checkpoint_request.dart'
+    as _id785g3f;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
@@ -721,6 +723,14 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_iyn6xv3g.ConversationMutationResult>(
     'conversation',
     'compact',
+    {'request': request},
+  );
+
+  _ida.Future<_i0ao9hou.ConversationSnapshot> restoreCompactionCheckpoint(
+    _id785g3f.RestoreConversationCheckpointRequest request,
+  ) => caller.callServerEndpoint<_i0ao9hou.ConversationSnapshot>(
+    'conversation',
+    'restoreCompactionCheckpoint',
     {'request': request},
   );
 }

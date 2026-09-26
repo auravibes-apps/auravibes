@@ -29,6 +29,7 @@ abstract class Conversation
     int? eventSequence,
     String? executionState,
     this.activeExecutionId,
+    this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -55,6 +56,7 @@ abstract class Conversation
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -81,6 +83,8 @@ abstract class Conversation
       eventSequence: jsonSerialization['eventSequence'] as int?,
       executionState: jsonSerialization['executionState'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -134,6 +138,8 @@ abstract class Conversation
 
   int? activeExecutionId;
 
+  String? activeCompactionCheckpointId;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -166,6 +172,7 @@ abstract class Conversation
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -194,6 +201,8 @@ abstract class Conversation
       'eventSequence': eventSequence,
       'executionState': executionState,
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -227,6 +236,8 @@ abstract class Conversation
       'eventSequence': eventSequence,
       'executionState': executionState,
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -264,6 +275,7 @@ class _ConversationImpl extends Conversation {
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -286,6 +298,7 @@ class _ConversationImpl extends Conversation {
          eventSequence: eventSequence,
          executionState: executionState,
          activeExecutionId: activeExecutionId,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -314,6 +327,7 @@ class _ConversationImpl extends Conversation {
     int? eventSequence,
     String? executionState,
     Object? activeExecutionId = _Undefined,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -343,6 +357,9 @@ class _ConversationImpl extends Conversation {
       activeExecutionId: activeExecutionId is int?
           ? activeExecutionId
           : this.activeExecutionId,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,

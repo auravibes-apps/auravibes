@@ -2232,6 +2232,8 @@ class _CountingCompletingHost({
     }
     return ConversationCompactionResult(
       summary: 'Compacted',
+      providerId: 'test-provider',
+      modelId: 'test-model',
       range: AgentCompactionRangeSelected(
         fromMessageId: '$messageId',
         throughMessageId: '$messageId',

@@ -75,6 +75,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/rem
     as _irlsykk6;
 import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _ilmuzuyl;
+import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
+    as _if7qtxue;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
@@ -1638,6 +1640,35 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_ih1nup0c.ConversationSnapshot> restoreCompactionCheckpoint(
+    _ist.TestSessionBuilder sessionBuilder,
+    _if7qtxue.RestoreConversationCheckpointRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'restoreCompactionCheckpoint',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'restoreCompactionCheckpoint',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
