@@ -1395,9 +1395,29 @@ Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
       !uri.isAbsolute ||
       !uri.hasAuthority ||
       (uri.scheme != 'http' && uri.scheme != 'https') ||
-      uri.host.isEmpty) {
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty) {
     return;
   }
+
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: Text(
+      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
+    ),
+    message: AuraSelectableText(
+      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+        namedArgs: {'host': uri.host, 'url': uri.toString()},
+      ),
+    ),
+    actions: AuraConfirmDialogActions(
+      confirmLabel: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+      ),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
 
   try {
     await OpenSystemBrowser.call(uri);
