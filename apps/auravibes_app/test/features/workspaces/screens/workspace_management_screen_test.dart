@@ -334,15 +334,12 @@ void main() {
       await tester.pump();
     }
 
-    Finder _workspaceNameEditor() => find.descendant(
-      of: find.byKey(const ValueKey<String>('workspace_name_editor')),
-      matching: find.byType(TextField),
-    );
-
+    Finder _workspaceNameEditor() =>
+        find.byKey(const ValueKey<String>('workspace_name_editor'));
     testWidgets('renders loading initially', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsOneWidget);
     });
 
     testWidgets('shows loading when stream has no cached data', (tester) async {
@@ -352,7 +349,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsOneWidget);
     });
 
     testWidgets('shows error when stream fails', (tester) async {
@@ -416,7 +413,7 @@ void main() {
         await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
         final _ = await tester.pumpAndSettle();
 
-        await tester.enterText(find.byType(TextFormField), 'alpha');
+        await tester.enterText(find.byType(AuraInput), 'alpha');
         await tester.pump();
 
         expect(find.text('Workspace Alpha'), findsOneWidget);
@@ -435,7 +432,7 @@ void main() {
           findsOneWidget,
         );
 
-        await tester.enterText(find.byType(TextFormField), 'missing');
+        await tester.enterText(find.byType(AuraInput), 'missing');
         await tester.pump();
 
         expect(find.text('No workspaces match your search.'), findsOneWidget);
@@ -504,7 +501,7 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField), 'alpha');
+      await tester.enterText(find.byType(AuraInput), 'alpha');
       await tester.pump();
 
       expect(find.text('Cloud Alpha'), findsOneWidget);
@@ -513,7 +510,7 @@ void main() {
       expect(find.text('first@example.com'), findsOneWidget);
       expect(find.text('second@example.com'), findsNothing);
 
-      await tester.enterText(find.byType(TextFormField), 'missing');
+      await tester.enterText(find.byType(AuraInput), 'missing');
       await tester.pump();
 
       expect(find.text('No workspaces match your search.'), findsOneWidget);
@@ -821,7 +818,7 @@ void main() {
         find.byKey(const ValueKey<String>('workspace_create')),
         findsOneWidget,
       );
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(AuraInput), findsOneWidget);
       expect(find.byType(AuraPopupMenuButton), findsOneWidget);
     });
 

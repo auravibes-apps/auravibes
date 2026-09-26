@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/organisms/aura_button_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('merges labeled item semantics and keeps a 48px hit target', (
@@ -46,18 +46,21 @@ void main() {
     String? selected = 'save';
 
     await tester.pumpWidget(
-      Theme(
-        data: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
-        child: Directionality(
-          textDirection: .ltr,
-          child: StatefulBuilder(
-            builder: (context, setState) => AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'save', child: Text('Save')),
-                AuraButtonGroupItem(value: 'open', child: Text('Open')),
-              ],
-              selectedValue: selected,
-              onChanged: (value) => setState(() => selected = value),
+      AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: ThemeData.light().copyWith(),
+          child: Directionality(
+            textDirection: .ltr,
+            child: StatefulBuilder(
+              builder: (context, setState) => AuraButtonGroup<String>.single(
+                items: const [
+                  AuraButtonGroupItem(value: 'save', child: Text('Save')),
+                  AuraButtonGroupItem(value: 'open', child: Text('Open')),
+                ],
+                selectedValue: selected,
+                onChanged: (value) => setState(() => selected = value),
+              ),
             ),
           ),
         ),

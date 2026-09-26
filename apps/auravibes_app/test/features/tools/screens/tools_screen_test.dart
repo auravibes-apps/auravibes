@@ -101,9 +101,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               workspaceToolsProvider('test-ws')
@@ -135,9 +138,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               workspaceToolsProvider('test-ws').overrideWith(() => notifier),
@@ -190,9 +196,12 @@ void main() {
               pages: [
                 const MaterialPage<void>(child: Placeholder()),
                 MaterialPage<void>(
-                  child: Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: const ToolsScreen(workspaceId: 'test-ws'),
+                  child: AuraThemeScope(
+                    theme: .light,
+                    child: Theme(
+                      data: .new(),
+                      child: const ToolsScreen(workspaceId: 'test-ws'),
+                    ),
                   ),
                 ),
               ],
@@ -232,9 +241,12 @@ void main() {
         await tester.runAsync(() async {
           await tester.pumpWidget(
             TestableApp(
-              child: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const ToolsScreen(workspaceId: 'test-ws'),
+              child: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const ToolsScreen(workspaceId: 'test-ws'),
+                ),
               ),
               overrides: [
                 workspaceToolsProvider('test-ws')
@@ -280,9 +292,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               workspaceToolsProvider('test-ws')

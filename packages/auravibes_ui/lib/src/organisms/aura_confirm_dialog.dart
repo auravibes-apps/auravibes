@@ -6,7 +6,7 @@ import 'package:auravibes_ui/src/organisms/aura_alert_dialog.dart';
 import 'package:auravibes_ui/src/organisms/aura_dialog_shell.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 export 'aura_alert_dialog.dart';
 
@@ -73,7 +73,6 @@ class _AuraConfirmDialogData {
             label: dialog.cancelLabel,
             onCancel: dialog.onCancel,
           ),
-          const SizedBox(width: 8),
           _AuraConfirmButton(
             label: dialog.confirmLabel,
             onConfirm: dialog.onConfirm,

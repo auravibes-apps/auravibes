@@ -75,7 +75,7 @@ void main() {
 
     final _ = await tester.tap(find.text('Open create'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Workspace Draft');
+    await tester.enterText(find.byType(AuraInput), 'Workspace Draft');
     await tester.pump();
 
     final _ = await tester.tap(find.byIcon(Icons.arrow_back));
@@ -100,8 +100,8 @@ void main() {
     final _ = await tester.pump();
     final _ = await tester.tap(find.text('dev@example.com'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Workspace Draft');
-    await tester.enterText(find.byType(TextField), '');
+    await tester.enterText(find.byType(AuraInput), 'Workspace Draft');
+    await tester.enterText(find.byType(AuraInput), '');
     await tester.pump();
 
     final _ = await tester.tap(find.byIcon(Icons.arrow_back));

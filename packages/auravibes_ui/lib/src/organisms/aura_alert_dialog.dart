@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_dialog_shell.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A custom alert dialog with a single dismiss action.
 class AuraAlertDialog extends StatelessWidget {

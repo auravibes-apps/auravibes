@@ -37,21 +37,21 @@ void main() {
     await _tapVisible(tester, find.byKey(_continueKey));
     await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
-    await tester.enterText(find.byType(TextField), 'ab');
+    await tester.enterText(find.byType(AuraInput), 'ab');
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at least 3 characters'),
     );
 
-    await tester.enterText(find.byType(TextField), 'a' * 21);
+    await tester.enterText(find.byType(AuraInput), 'a' * 21);
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at most 20 characters'),
     );
 
-    await tester.enterText(find.byType(TextField), 'Project');
+    await tester.enterText(find.byType(AuraInput), 'Project');
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(tester, find.text('Ready to start'));
 
@@ -121,7 +121,7 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
   await _tapVisible(tester, find.byKey(_continueKey));
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
-  await tester.enterText(find.byType(TextField), name);
+  await tester.enterText(find.byType(AuraInput), name);
   await _tapVisible(tester, find.byKey(_createWorkspaceKey));
   await _pumpUntilFound(tester, find.text('Ready to start'));
 }

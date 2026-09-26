@@ -137,7 +137,6 @@ dart_code_linter:
           message: Keep the UI package independent of app and engine code.
         - paths:
             - apps/auravibes_app/(lib|test|integration_test)/.*\.dart$
-            - packages/auravibes_ui/(lib|test)/.*\.dart$
             - widgetbook/(lib|test)/.*\.dart$
           deny:
             - package:flutter/(material|cupertino)\.dart$

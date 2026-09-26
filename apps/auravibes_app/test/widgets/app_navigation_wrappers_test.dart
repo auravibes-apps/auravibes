@@ -530,13 +530,16 @@ void main() {
                 builder: (context, state, navigationShell) {
                   final workspaceId = state.pathParameters['workspaceId'] ?? '';
 
-                  return Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: Material(
-                      child: Portal(
-                        child: AuraSidebarWrapper(
-                          navigationShell: navigationShell,
-                          workspaceId: workspaceId,
+                  return AuraThemeScope(
+                    theme: .light,
+                    child: Theme(
+                      data: .new(),
+                      child: Material(
+                        child: Portal(
+                          child: AuraSidebarWrapper(
+                            navigationShell: navigationShell,
+                            workspaceId: workspaceId,
+                          ),
                         ),
                       ),
                     ),
