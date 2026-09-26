@@ -448,7 +448,7 @@ jobs:
             echo "- Mode: $TEST_MODE"
             echo "- Reason: $TEST_REASON"
             echo "- Timing source: $TIMING_SOURCE"
-            echo "- Package: `$package_display`"
+            printf -- '- Package: `%s`\n' "$package_display"
             echo "- Sharding: $MATRIX_SHARD_MODE $MATRIX_SHARD_INDEX/$MATRIX_TOTAL_SHARDS"
             if [ "$MATRIX_SHARD_MODE" = "timed" ]; then
               echo "- Timed paths:"
