@@ -2530,10 +2530,7 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(
-            resolveContent: () => visibleContent,
-            isUser: false,
-          ),
+          _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,
