@@ -123,7 +123,8 @@ String _conversationKey(ConversationErrorCode code) => switch (code) {
   .staleRevision ||
   .idempotencyConflict ||
   .turnConflict ||
-  .toolDecisionConflict => LocaleKeys.cloud_errors_conflict,
+  .toolDecisionConflict ||
+  .checkpointRestoreConflict => LocaleKeys.cloud_errors_conflict,
 };
 
 const _objectLocalizationKeys = <ObjectErrorCode, String>{

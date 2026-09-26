@@ -391,6 +391,7 @@ extension on WorkspaceRepository {
     autoCompactEnabled: .new(settings.autoCompactEnabled),
     usagePercentageThreshold: .new(settings.usagePercentageThreshold),
     remainingTokenThreshold: .new(settings.remainingTokenThreshold),
+    modelOverridesJson: .new(settings.modelOverridesJson),
   );
 
   Future<WorkspacesTable> _requireWorkspace(String id) async {

@@ -18,6 +18,8 @@ class WorkspaceCompactionSettings extends Table with TableMixin {
 
   IntColumn get remainingTokenThreshold => integer().nullable()();
 
+  TextColumn get modelOverridesJson => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {workspaceId};
 }

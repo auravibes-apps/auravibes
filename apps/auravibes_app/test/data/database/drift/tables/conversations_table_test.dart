@@ -60,12 +60,14 @@ void main() {
           'reasoning_config_json',
           'parent_conversation_id',
           'is_pinned',
+
+          'active_compaction_checkpoint_id',
         ]),
       );
     });
 
-    test('has 14 columns', () {
-      expect(columns.length, 14);
+    test('has 15 columns', () {
+      expect(columns.length, 15);
     });
 
     test('workspace_id is not null', () {

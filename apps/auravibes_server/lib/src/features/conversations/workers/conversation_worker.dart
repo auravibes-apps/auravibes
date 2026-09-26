@@ -1813,6 +1813,8 @@ class const ConversationWorker({
               .map(int.parse)
               .toList(),
           'compactionCreatedAt': now.toIso8601String(),
+          'compactionProviderId': result.providerId,
+          'compactionModelId': result.modelId,
         }),
         compactedThroughMessageId: int.parse(result.range.throughMessageId),
         revision: 1,
@@ -1849,6 +1851,7 @@ class const ConversationWorker({
       session,
       conversation.copyWith(
         revision: conversation.revision + 1,
+        activeCompactionCheckpointId: summary.stableId,
         updatedAt: now,
       ),
       transaction: transaction,

@@ -265,5 +265,6 @@ ConversationEntity _cloudConversationCore(
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),
     parentConversationId: conversation.parentConversationId,
+    activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
   );
 }

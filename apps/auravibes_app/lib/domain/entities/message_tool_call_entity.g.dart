@@ -83,6 +83,8 @@ _MessageMetadataEntity _$MessageMetadataEntityFromJson(
   compactionCreatedAt: json['compactionCreatedAt'] == null
       ? null
       : DateTime.parse(json['compactionCreatedAt'] as String),
+  compactionProviderId: json['compactionProviderId'] as String?,
+  compactionModelId: json['compactionModelId'] as String?,
 );
 
 Map<String, dynamic> _$MessageMetadataEntityToJson(
@@ -104,6 +106,8 @@ Map<String, dynamic> _$MessageMetadataEntityToJson(
   'compactedThroughMessageId': instance.compactedThroughMessageId,
   'compactedMessageIds': instance.compactedMessageIds,
   'compactionCreatedAt': instance.compactionCreatedAt?.toIso8601String(),
+  'compactionProviderId': instance.compactionProviderId,
+  'compactionModelId': instance.compactionModelId,
 };
 
 const _$CompactionKindEnumMap = {

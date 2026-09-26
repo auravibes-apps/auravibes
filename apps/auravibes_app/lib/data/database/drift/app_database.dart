@@ -145,7 +145,11 @@ class AppDatabase extends _$AppDatabase {
       _apiModelModalitiesSchemaVersion + 1;
   static const int _reasoningControlsSchemaVersion =
       _legacyStreamingStatusSchemaVersion + 1;
-  static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
+  static const int _compactionBudgetsSchemaVersion =
+      _reasoningControlsSchemaVersion + 1;
+  static const int _compactionCheckpointSchemaVersion =
+      _compactionBudgetsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _compactionCheckpointSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -206,6 +210,8 @@ extension on AppDatabase {
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
     await _upgradeReasoningControlsSchema(m, from);
+    await _upgradeCompactionBudgetsSchema(m, from);
+    await _upgradeCompactionCheckpointSchema(m, from);
   }
 
   Future<void> _upgradeApiModelModalitiesSchema(int from) async {
@@ -342,6 +348,36 @@ extension on AppDatabase {
         !await _columnExists('conversations', 'reasoning_config_json')) {
       await m.addColumn(conversations, conversations.reasoningConfigJson);
     }
+  }
+
+  Future<void> _upgradeCompactionBudgetsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._compactionBudgetsSchemaVersion ||
+        !await _tableExists('workspace_compaction_settings') ||
+        await _columnExists(
+          'workspace_compaction_settings',
+          'model_overrides_json',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      workspaceCompactionSettings,
+      workspaceCompactionSettings.modelOverridesJson,
+    );
+  }
+
+  Future<void> _upgradeCompactionCheckpointSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._compactionCheckpointSchemaVersion ||
+        !await _tableExists('conversations') ||
+        await _columnExists(
+          'conversations',
+          'active_compaction_checkpoint_id',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      conversations,
+      conversations.activeCompactionCheckpointId,
+    );
   }
 
   Future<void> _upgradeLegacyStreamingStatuses(int from) async {

@@ -27,6 +27,7 @@ abstract class ConversationSummary
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     required this.revision,
+    this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -44,6 +45,7 @@ abstract class ConversationSummary
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     required int revision,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _ConversationSummaryImpl;
@@ -69,6 +71,8 @@ abstract class ConversationSummary
               jsonSerialization['forkMaterializedAt'],
             ),
       revision: jsonSerialization['revision'] as int,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -102,6 +106,8 @@ abstract class ConversationSummary
 
   int revision;
 
+  String? activeCompactionCheckpointId;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -122,6 +128,7 @@ abstract class ConversationSummary
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     int? revision,
+    String? activeCompactionCheckpointId,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -146,6 +153,8 @@ abstract class ConversationSummary
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -172,6 +181,8 @@ abstract class ConversationSummary
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -199,6 +210,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     required int revision,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
@@ -214,6 +226,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
          forkThroughMessageId: forkThroughMessageId,
          forkMaterializedAt: forkMaterializedAt,
          revision: revision,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -235,6 +248,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     Object? forkThroughMessageId = _Undefined,
     Object? forkMaterializedAt = _Undefined,
     int? revision,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -263,6 +277,9 @@ class _ConversationSummaryImpl extends ConversationSummary {
           ? forkMaterializedAt
           : this.forkMaterializedAt,
       revision: revision ?? this.revision,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

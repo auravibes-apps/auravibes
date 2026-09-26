@@ -17,9 +17,14 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
     @Default(80) int usagePercentageThreshold,
     @Default(2000) int remainingTokenThreshold,
     DateTime? updatedAt,
+    @JsonKey(toJson: _serializeModelOverrides)
+    @Default(<String, CompactionModelOverride>{})
+    Map<String, CompactionModelOverride> modelOverrides,
   }) = _CompactionSettings;
-  factory fromJson(Map<String, dynamic> json) =>
-      _$CompactionSettingsFromJson(json);
+  factory fromJson(Map<String, dynamic> json) => _$CompactionSettingsFromJson({
+    ...json,
+    'modelOverrides': _validModelOverrides(json['modelOverrides']),
+  });
 
   // Null context limit means the model has no known limit.
   // ignore: unnecessary-nullable
@@ -33,6 +38,35 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
 
   bool hasConfiguredThreshold() => remainingTokenThreshold > 0;
 }
+
+@freezed
+abstract class CompactionModelOverride with _$CompactionModelOverride {
+  const factory({int? reserveTokens, int? keepRecentTokens}) =
+      _CompactionModelOverride;
+
+  factory fromJson(Map<String, dynamic> json) =>
+      _$CompactionModelOverrideFromJson({
+        'reserveTokens': _nonNegativeInt(json['reserveTokens']),
+        'keepRecentTokens': _nonNegativeInt(json['keepRecentTokens']),
+      });
+}
+
+int? _nonNegativeInt(Object? value) =>
+    value is int && value >= 0 ? value : null;
+
+Map<String, dynamic> _validModelOverrides(Object? value) {
+  if (value is! Map) return const {};
+
+  return {
+    for (final entry in value.entries)
+      if (entry.key is String && entry.value is Map)
+        entry.key as String: entry.value,
+  };
+}
+
+Map<String, dynamic> _serializeModelOverrides(
+  Map<String, CompactionModelOverride> value,
+) => {for (final entry in value.entries) entry.key: entry.value.toJson()};
 
 @freezed
 abstract class const ConversationPromptEstimate._()

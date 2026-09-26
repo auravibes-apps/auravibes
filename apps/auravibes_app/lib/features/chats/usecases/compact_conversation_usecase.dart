@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -23,7 +24,10 @@ import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.da
 import 'package:auravibes_app/features/chats/usecases/cloud_compaction_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart'
+    as model_repositories;
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -41,6 +45,10 @@ typedef _LocalCompactionRequest = ({
   Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
   MessageRepository messagesRepository,
   SelectCompactionRangeUsecase selectRange,
+  Future<ApiModelEntity?> Function(String providerId, String modelId)?
+  getApiModel,
+  Future<CompactionSettings> Function(String workspaceId)?
+  getCompactionSettings,
   String conversationId,
   CompactionTrigger trigger,
 });
@@ -59,6 +67,10 @@ class const CompactConversationUsecase({
   modelSelectionStore,
   final ChatbotService? chatbotService,
   final SelectCompactionRangeUsecase? selectCompactionRangeUsecase,
+  final Future<ApiModelEntity?> Function(String providerId, String modelId)?
+  getApiModel,
+  final Future<CompactionSettings> Function(String workspaceId)?
+  getCompactionSettings,
   final CloudCompactionUsecase? cloudCompaction,
   final Future<ConversationEntity?> Function(String id)? cloudConversation,
 }) {
@@ -119,18 +131,26 @@ class const CompactConversationUsecase({
     return chunks.join();
   }
 
-  Future<void> _persistCompactionSummary({
+  Future<String> _persistCompactionSummary({
     required String conversationId,
     required String summaryText,
     required CompactionRange range,
     required CompactionTrigger trigger,
+    required String providerId,
+    required String modelId,
   }) async {
-    final metadata = _compactionSummaryMetadata(range, trigger);
+    final metadata = _compactionSummaryMetadata(
+      range,
+      trigger,
+      providerId,
+      modelId,
+    );
 
     final repository = messageRepository;
     if (repository == null) {
       throw StateError('Local message repository unavailable');
     }
+
     final created = await _createCompactionSummaryMessage(
       repository,
       conversationId,
@@ -138,6 +158,8 @@ class const CompactConversationUsecase({
       metadata,
     );
     await _markCompactionMessageSent(repository, created.id);
+
+    return created.id;
   }
 
   Future<MessageEntity> _createCompactionSummaryMessage(
@@ -159,6 +181,8 @@ class const CompactConversationUsecase({
   MessageMetadataEntity _compactionSummaryMetadata(
     CompactionRange range,
     CompactionTrigger trigger,
+    String providerId,
+    String modelId,
   ) => MessageMetadataEntity(
     metadataVersion: 2,
     isCompactionSummary: true,
@@ -169,6 +193,8 @@ class const CompactConversationUsecase({
     compactedThroughMessageId: range.throughMessageId,
     compactedMessageIds: range.messageIds,
     compactionCreatedAt: .now(),
+    compactionProviderId: providerId,
+    compactionModelId: modelId,
   );
 
   Future<void> _markCompactionMessageSent(
@@ -263,6 +289,10 @@ extension on CompactConversationUsecase {
     MessageRepository messagesRepository,
     Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
     SelectCompactionRangeUsecase selectRange,
+    Future<ApiModelEntity?> Function(String providerId, String modelId)?
+    getApiModel,
+    Future<CompactionSettings> Function(String workspaceId)?
+    getCompactionSettings,
   })
   _requiredLocalDependencies() {
     final conversations = this.conversationRepository;
@@ -281,6 +311,8 @@ extension on CompactConversationUsecase {
       messagesRepository: messagesRepository,
       getModelStore: getModelStore,
       selectRange: selectRange,
+      getApiModel: getApiModel,
+      getCompactionSettings: getCompactionSettings,
     );
   }
 
@@ -293,7 +325,11 @@ extension on CompactConversationUsecase {
     }
 
     final foundModel = await _findCompactionModel(request, conversation);
-    final input = await _buildCompactionInput(request, conversation);
+    final input = await _buildCompactionInput(
+      request,
+      conversation,
+      foundModel,
+    );
     await _persistGeneratedSummary(request, foundModel, input);
   }
 
@@ -308,7 +344,7 @@ extension on CompactConversationUsecase {
       conversationId: request.conversationId,
       trigger: request.trigger,
     );
-    await _persistCompactionSummary(
+    final summaryId = await _persistCompactionSummary(
       conversationId: request.conversationId,
       summaryText: _appendDurableSkillActivations(
         summaryText,
@@ -316,17 +352,29 @@ extension on CompactConversationUsecase {
       ),
       range: input.range,
       trigger: request.trigger,
+      providerId: model.modelsProvider.id,
+      modelId: model.workspaceModelSelection.modelId,
+    );
+    final _ = await request.conversations.patchConversation(
+      request.conversationId,
+      .new(activeCompactionCheckpointId: summaryId),
     );
   }
 
   Future<_CompactionInput> _buildCompactionInput(
     _LocalCompactionRequest request,
     ConversationEntity conversation,
+    WorkspaceModelSelectionWithConnectionEntity model,
   ) async {
     final messages = await request.messagesRepository.getMessagesByConversation(
       conversation.id,
     );
-    final range = request.selectRange(messages);
+    final range = await _selectCompactionRange(
+      request,
+      conversation,
+      model,
+      messages,
+    );
     if (range == null) throw const CompactionUnsafeException();
     final compactableMessages = _compactableMessages(messages, range);
 
@@ -335,6 +383,36 @@ extension on CompactConversationUsecase {
       messages: compactableMessages,
       range: range,
     );
+  }
+
+  Future<CompactionRange?> _selectCompactionRange(
+    _LocalCompactionRequest request,
+    ConversationEntity conversation,
+    WorkspaceModelSelectionWithConnectionEntity model,
+    List<MessageEntity> messages,
+  ) async {
+    final getApiModel = request.getApiModel;
+    final getSettings = request.getCompactionSettings;
+    if (getApiModel == null || getSettings == null) {
+      return request.selectRange(messages);
+    }
+    try {
+      final providerId = model.modelsProvider.id;
+      final modelId = model.workspaceModelSelection.modelId;
+      final apiModel = await getApiModel(providerId, modelId);
+      final settings = await getSettings(conversation.workspaceId);
+      final override = settings.modelOverrides['$providerId/$modelId'];
+
+      return request.selectRange(
+        messages,
+        limitContext: apiModel?.limitContext,
+        limitOutput: apiModel?.limitOutput,
+        reserveTokens: override?.reserveTokens,
+        keepRecentTokens: override?.keepRecentTokens,
+      );
+    } on Exception {
+      return request.selectRange(messages);
+    }
   }
 
   Future<WorkspaceModelSelectionWithConnectionEntity> _findCompactionModel(
@@ -464,6 +542,10 @@ _LocalCompactionRequest _localCompactionRequest(
     MessageRepository messagesRepository,
     Future<ModelSelectionStore> Function(String workspaceId) getModelStore,
     SelectCompactionRangeUsecase selectRange,
+    Future<ApiModelEntity?> Function(String providerId, String modelId)?
+    getApiModel,
+    Future<CompactionSettings> Function(String workspaceId)?
+    getCompactionSettings,
   })
   dependencies,
   String conversationId,
@@ -473,6 +555,8 @@ _LocalCompactionRequest _localCompactionRequest(
   getModelStore: dependencies.getModelStore,
   messagesRepository: dependencies.messagesRepository,
   selectRange: dependencies.selectRange,
+  getApiModel: dependencies.getApiModel,
+  getCompactionSettings: dependencies.getCompactionSettings,
   conversationId: conversationId,
   trigger: trigger,
 );
@@ -533,5 +617,10 @@ compactConversationUsecaseProvider =
         selectCompactionRangeUsecase: ref.watch(
           selectCompactionRangeUsecaseProvider,
         ),
+        getApiModel: (providerId, modelId) => ref
+            .read(model_repositories.apiModelRepositoryProvider)
+            .getModelByProviderAndModelId(providerId, modelId),
+        getCompactionSettings: (workspaceId) =>
+            ref.read(compactionSettingsProvider(workspaceId).future),
       );
     });

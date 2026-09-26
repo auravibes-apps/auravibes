@@ -1233,6 +1233,22 @@ abstract class LocaleKeys {
       'mcp_modal.verification_expired';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
+  static const compaction_settings_model_budgets_title =
+      'compaction.settings.model_budgets_title';
+  static const compaction_settings_model_budgets_hint =
+      'compaction.settings.model_budgets_hint';
+  static const compaction_settings_reserve_tokens =
+      'compaction.settings.reserve_tokens';
+  static const compaction_settings_keep_recent_tokens =
+      'compaction.settings.keep_recent_tokens';
+  static const compaction_settings_budget_optional =
+      'compaction.settings.budget_optional';
+  static const compaction_settings_models_empty =
+      'compaction.settings.models_empty';
+  static const compaction_settings_models_loading =
+      'compaction.settings.models_loading';
+  static const compaction_settings_models_unavailable =
+      'compaction.settings.models_unavailable';
   static const compaction_settings_auto_enabled =
       'compaction.settings.auto_enabled';
   static const compaction_settings_auto_enabled_hint =
@@ -1284,6 +1300,22 @@ abstract class LocaleKeys {
       'compaction.compacted.details_messages';
   static const compaction_compacted_details_content_label =
       'compaction.compacted.details_content_label';
+  static const compaction_compacted_details_model =
+      'compaction.compacted.details_model';
+  static const compaction_compacted_details_unknown =
+      'compaction.compacted.details_unknown';
+  static const compaction_compacted_history_action =
+      'compaction.compacted.history_action';
+  static const compaction_compacted_history_active =
+      'compaction.compacted.history_active';
+  static const compaction_compacted_history_restore =
+      'compaction.compacted.history_restore';
+  static const compaction_compacted_history_empty =
+      'compaction.compacted.history_empty';
+  static const compaction_compacted_history_loading =
+      'compaction.compacted.history_loading';
+  static const compaction_compacted_history_unavailable =
+      'compaction.compacted.history_unavailable';
   static const compaction_manual_button_tooltip =
       'compaction.manual.button_tooltip';
   static const compaction_manual_disabled_tooltip_busy =
@@ -1311,6 +1343,8 @@ abstract class LocaleKeys {
       'compaction.errors.auto_blocked';
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
+  static const compaction_errors_checkpoint_restore_unavailable =
+      'compaction.errors.checkpoint_restore_unavailable';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_create_button =
       'workspace_management.create_button';

@@ -9,9 +9,19 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class const SelectCompactionRangeUsecase() {
-  CompactionRange? call(List<MessageEntity> messages) {
+  CompactionRange? call(
+    List<MessageEntity> messages, {
+    int? limitContext,
+    int? limitOutput,
+    int? reserveTokens,
+    int? keepRecentTokens,
+  }) {
     return switch (selectAgentCompactionRange(
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
+      limitContext: limitContext,
+      limitOutput: limitOutput,
+      reserveTokens: reserveTokens,
+      keepRecentTokens: keepRecentTokens,
     )) {
       final AgentCompactionRangeSelected range => CompactionRange(
         fromMessageId: range.fromMessageId,

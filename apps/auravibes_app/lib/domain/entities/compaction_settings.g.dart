@@ -16,6 +16,14 @@ _CompactionSettings _$CompactionSettingsFromJson(Map<String, dynamic> json) =>
       updatedAt: json['updatedAt'] == null
           ? null
           : DateTime.parse(json['updatedAt'] as String),
+      modelOverrides:
+          (json['modelOverrides'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(
+              k,
+              CompactionModelOverride.fromJson(e as Map<String, dynamic>),
+            ),
+          ) ??
+          const <String, CompactionModelOverride>{},
     );
 
 Map<String, dynamic> _$CompactionSettingsToJson(_CompactionSettings instance) =>
@@ -24,7 +32,22 @@ Map<String, dynamic> _$CompactionSettingsToJson(_CompactionSettings instance) =>
       'usagePercentageThreshold': instance.usagePercentageThreshold,
       'remainingTokenThreshold': instance.remainingTokenThreshold,
       'updatedAt': instance.updatedAt?.toIso8601String(),
+      'modelOverrides': _serializeModelOverrides(instance.modelOverrides),
     };
+
+_CompactionModelOverride _$CompactionModelOverrideFromJson(
+  Map<String, dynamic> json,
+) => _CompactionModelOverride(
+  reserveTokens: (json['reserveTokens'] as num?)?.toInt(),
+  keepRecentTokens: (json['keepRecentTokens'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$CompactionModelOverrideToJson(
+  _CompactionModelOverride instance,
+) => <String, dynamic>{
+  'reserveTokens': instance.reserveTokens,
+  'keepRecentTokens': instance.keepRecentTokens,
+};
 
 _ConversationPromptEstimate _$ConversationPromptEstimateFromJson(
   Map<String, dynamic> json,

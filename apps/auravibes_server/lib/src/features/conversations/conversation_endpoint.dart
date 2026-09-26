@@ -267,4 +267,16 @@ class ConversationEndpoint extends Endpoint {
     final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.compact(session, userId: account.userId, request: request);
   }
+
+  Future<ConversationSnapshot> restoreCompactionCheckpoint(
+    Session session,
+    RestoreConversationCheckpointRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.restoreCompactionCheckpoint(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
 }

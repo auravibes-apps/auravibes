@@ -226,6 +226,9 @@ void main() {
         'compactedThroughMessageId': 'msg-2',
         'compactedMessageIds': ['msg-1', 'msg-2'],
         'compactionCreatedAt': '2026-05-03T10:00:00.000Z',
+
+        'compactionProviderId': null,
+        'compactionModelId': null,
       });
     });
 

@@ -190,6 +190,24 @@ mixin _CloudChatGatewayConversationApi on _CloudChatGatewayBase {
         ),
       );
 
+  Future<ConversationSnapshot> restoreCompactionCheckpoint({
+    required String requestId,
+    required String conversationId,
+    required String checkpointMessageId,
+    required int expectedConversationRevision,
+  }) => CloudAppErrors.guardCall(
+    .conversation,
+    () => _client.conversation.restoreCompactionCheckpoint(
+      .new(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        checkpointMessageId: checkpointMessageId,
+        expectedConversationRevision: expectedConversationRevision,
+      ),
+    ),
+  );
+
   Future<ConversationSummary> updateConversation(
     UpdateConversationRequest request,
   ) => CloudAppErrors.guardCall(

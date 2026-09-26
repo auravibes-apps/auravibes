@@ -9,3 +9,4 @@ values:
   - idempotencyConflict
   - turnConflict
   - toolDecisionConflict
+  - checkpointRestoreConflict
