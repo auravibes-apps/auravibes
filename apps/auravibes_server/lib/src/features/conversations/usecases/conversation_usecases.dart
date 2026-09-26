@@ -6,7 +6,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         A2uiChatContract,
         a2uiChatFormSubmitActionName,
         a2uiChatFormSubmitComponentId,
-        ReasoningConfiguration;
+        ReasoningConfiguration,
+        ReasoningOption;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -126,6 +127,13 @@ class ConversationUseCases {
         parentConversationId: request.parentConversationId,
         transaction: transaction,
       );
+      final reasoningConfigJson = await _validatedReasoningConfig(
+        session,
+        workspaceId: request.workspaceId,
+        modelId: request.modelId,
+        value: request.reasoningConfigJson,
+        transaction: transaction,
+      );
       if (request.isPinned) {
         await _ensurePinnedCapacity(
           session,
@@ -143,9 +151,7 @@ class ConversationUseCases {
             isPinned: request.isPinned,
             modelId: request.modelId,
             agentId: request.agentId,
-            reasoningConfigJson: _normalizedReasoningConfig(
-              request.reasoningConfigJson,
-            ),
+            reasoningConfigJson: reasoningConfigJson,
             parentConversationStableId: request.parentConversationId,
             revision: 1,
             projectionRevision: 1,
@@ -452,6 +458,24 @@ class ConversationUseCases {
             : request.parentConversationId,
         transaction: transaction,
       );
+      final requestedReasoningConfigJson = request.clearReasoningConfig
+          ? null
+          : request.reasoningConfigJson ?? conversation.reasoningConfigJson;
+      final mustValidateReasoning = requestedReasoningConfigJson != null &&
+          (request.reasoningConfigJson != null ||
+              request.modelId != null ||
+              request.clearModel);
+      final reasoningConfigJson = mustValidateReasoning
+          ? await _validatedReasoningConfig(
+              session,
+              workspaceId: request.workspaceId,
+              modelId: request.clearModel
+                  ? null
+                  : request.modelId ?? conversation.modelId,
+              value: requestedReasoningConfigJson,
+              transaction: transaction,
+            )
+          : requestedReasoningConfigJson;
       if (request.isPinned == true && !conversation.isPinned) {
         await _ensurePinnedCapacity(
           session,
@@ -470,10 +494,7 @@ class ConversationUseCases {
           agentId: request.clearAgent
               ? null
               : request.agentId ?? conversation.agentId,
-          reasoningConfigJson: request.clearReasoningConfig
-              ? null
-              : _normalizedReasoningConfig(request.reasoningConfigJson) ??
-                    conversation.reasoningConfigJson,
+          reasoningConfigJson: reasoningConfigJson,
           parentConversationStableId: request.clearParent
               ? null
               : request.parentConversationId ??
@@ -4707,8 +4728,42 @@ class ConversationUseCases {
     if (agentId != null) _requireId(agentId);
   }
 
-  String? _normalizedReasoningConfig(String? value) =>
-      ReasoningConfiguration.decode(value)?.encode();
+  Future<String?> _validatedReasoningConfig(
+    Session session, {
+    required int workspaceId,
+    required String? modelId,
+    required String? value,
+    required Transaction transaction,
+  }) async {
+    if (value == null) return null;
+    if (value.length > ReasoningConfiguration.maxEncodedLength) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final configuration = ReasoningConfiguration.decode(value);
+    if (configuration == null || modelId == null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final selection = await _repository.resolveModelSelection(
+      session,
+      workspaceId: workspaceId,
+      modelId: modelId,
+      transaction: transaction,
+    );
+    if (selection == null ||
+        !configuration.isValidFor(
+          ReasoningOption.decodeJsonList(
+            selection.model.reasoningOptionsJson,
+            supportsReasoning: selection.model.supportsReasoning,
+          ),
+        )) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final normalized = configuration.encode();
+    if (normalized.length > ReasoningConfiguration.maxEncodedLength) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    return normalized;
+  }
 
   Future<void> _validateA2uiActionAssociation(
     Session session, {
