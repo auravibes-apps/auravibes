@@ -147,5 +147,4 @@
 ## Agent skills
 
 - Issues/specs: GitHub issues in `auravibes-apps/auravibes` via `gh`; see `docs/agents/issue-tracker.md`.
-- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`.
-- Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.
+- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`. Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.
