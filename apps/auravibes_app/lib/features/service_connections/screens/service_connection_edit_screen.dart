@@ -1,6 +1,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -15,6 +16,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_operati
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -42,6 +44,9 @@ class _ServiceConnectionEditScreenState
   final _clearedSecrets = <String>{};
   Future<_ConnectionEditState>? _futureValue;
   bool _initialized = false;
+  bool _isDirty = false;
+  String _savedSnapshot = '';
+  _ConnectionEditState? _editState;
   bool _isSaving = false;
   bool _isTestingModelProvider = false;
   ModelProviderVerification? _modelProviderVerification;
@@ -103,11 +108,18 @@ class _ServiceConnectionEditScreenState
 
   @override
   Widget build(BuildContext context) {
-    return _ConnectionEditScreenView(owner: this);
+    return PopScope(
+      child: _ConnectionEditScreenView(owner: this),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_handleBack(context));
+      },
+    );
   }
 
   void _initialize(_ConnectionEditState state) {
     if (_initialized) return;
+    _editState = state;
     _initializeEditControllers(
       state,
       .new(
@@ -118,12 +130,18 @@ class _ServiceConnectionEditScreenState
       ),
     );
     _initialized = true;
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
   }
 
-  void _refreshForm([VoidCallback? update]) => setState(() {
-    update?.call();
-    _initialized = true;
-  });
+  void _refreshForm([VoidCallback? update]) {
+    setState(() {
+      update?.call();
+      _initialized = true;
+      final state = _editState;
+      if (state != null) _isDirty = _currentSnapshot() != _savedSnapshot;
+    });
+  }
 
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
@@ -135,6 +153,7 @@ class _ServiceConnectionEditScreenState
         _skillCredentialUpdateData(this, widget.connectionId),
       ),
       LocaleKeys.skill_credentials_save_error,
+      onSaved: _markSaved,
     );
     if (mounted) setState(() => _isSaving = false);
   }
@@ -152,8 +171,105 @@ class _ServiceConnectionEditScreenState
         _genericConnectionUpdateData(state, this),
       ),
       LocaleKeys.service_connections_save_error,
+      onSaved: _markSaved,
     );
     if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+extension ServiceConnectionEditUnsavedChanges
+    on _ServiceConnectionEditScreenState {
+  String _currentSnapshot() {
+    final state = _editState;
+    if (state == null) return '';
+
+    final name = _nameController.text.trim();
+
+    return switch (state) {
+      final _SkillCredentialEditState skillState => _skillCredentialSnapshot(
+        skillState,
+        name,
+      ),
+      final _ModelProviderEditState modelState => _modelProviderSnapshot(
+        modelState,
+        name,
+      ),
+      final _GenericServiceConnectionEditState genericState =>
+        _genericConnectionSnapshot(genericState, name),
+    };
+  }
+
+  String _skillCredentialSnapshot(
+    _SkillCredentialEditState state,
+    String name,
+  ) {
+    final nonSecretNames = _nonSecretControllers.keys.toList()..sort();
+    final secretNames = _secretControllers.keys.toList()..sort();
+
+    return jsonEncode({
+      'type': 'skillCredential',
+      'connectionId': state.credential.id,
+      'name': name,
+      'nonSecretAttributes': _nonSecretAttributeSnapshots(nonSecretNames),
+      'secretIntents': _secretIntentSnapshots(secretNames),
+    });
+  }
+
+  List<List<String>> _nonSecretAttributeSnapshots(List<String> names) => [
+    for (final name in names) [name, _nonSecretControllers[name]!.text],
+  ];
+
+  List<List<String>> _secretIntentSnapshots(List<String> names) => [
+    for (final name in names)
+      [
+        name,
+        _secretEditFor(
+          _secretControllers[name]!.text,
+          _clearedSecrets.contains(name),
+        ).name,
+      ],
+  ];
+
+  String _modelProviderSnapshot(_ModelProviderEditState state, String name) =>
+      jsonEncode({
+        'type': 'modelProvider',
+        'connectionId': state.connection.id,
+        'name': name,
+        'url': _modelUrlController.text.trim(),
+        'keyIntent': _secretEditFor(
+          _modelKeyController.text.trim(),
+          false,
+        ).name,
+      });
+
+  String _genericConnectionSnapshot(
+    _GenericServiceConnectionEditState state,
+    String name,
+  ) => jsonEncode({
+    'type': 'genericConnection',
+    'connectionId': state.connection.id,
+    'name': name,
+    'secretIntent': _secretEditFor(
+      _modelKeyController.text.trim(),
+      _clearedSecrets.contains('secret'),
+    ).name,
+  });
+
+  void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (_isSaving || !context.mounted) return;
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+
+      return;
+    }
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _refreshForm(() => _savedSnapshot = _currentSnapshot());
+    Navigator.of(context).pop();
   }
 }
 
@@ -227,6 +343,7 @@ extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
         _modelProviderUpdateData(this, widget.connectionId),
       ),
       LocaleKeys.service_connections_save_error,
+      onSaved: _markSaved,
     );
     if (mounted) {
       _refreshForm(() {
@@ -675,11 +792,13 @@ Future<void> _updateGenericConnection(
 Future<void> _runEditSave(
   BuildContext context,
   Future<void> Function() operation,
-  String errorKey,
-) async {
+  String errorKey, {
+  required VoidCallback onSaved,
+}) async {
   try {
     await operation();
     if (!context.mounted) return;
+    onSaved();
     Navigator.of(context).pop(true);
   } on Object {
     if (!context.mounted) return;
@@ -702,14 +821,14 @@ class const _ConnectionEditScreenView({
   Widget build(BuildContext context) {
     return AuraScreen(
       child: _ConnectionEditBody(owner: owner),
-      appBar: const _ConnectionEditAppBar(),
+      appBar: _ConnectionEditAppBar(owner: owner),
     );
   }
 }
 
-class const _ConnectionEditAppBar()
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _ConnectionEditAppBar({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
@@ -719,7 +838,7 @@ class const _ConnectionEditAppBar()
       title: const TextLocale(LocaleKeys.service_connections_edit_title),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => owner._handleBack(context),
       ),
     );
   }
@@ -1279,7 +1398,10 @@ class const _GenericServiceConnectionSecretInput({
     owner._refreshForm();
   }
 
-  void _onChanged(String _) => owner._refreshForm();
+  void _onChanged(String _) {
+    final _ = owner._clearedSecrets.remove('secret');
+    owner._refreshForm();
+  }
 }
 
 class _GenericServiceConnectionSecretAuraInput extends AuraInput {

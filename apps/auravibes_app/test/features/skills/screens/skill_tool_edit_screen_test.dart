@@ -29,7 +29,7 @@ import 'package:material_ui/material_ui.dart';
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('creates template tool from structured fields', (tester) async {
+  testWidgets('guards all skill tool exit paths', (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final database = AppDatabase(
@@ -95,6 +95,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    final createRouteGuard = SkillToolEditRouteGuard();
+    final editRouteGuard = SkillToolEditRouteGuard();
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -106,7 +108,19 @@ void main() {
           builder: (context, state) => SkillToolEditScreen(
             workspaceId: state.pathParameters['workspaceId']!,
             skillId: state.pathParameters['skillId']!,
+            routeExitGuard: createRouteGuard,
           ),
+          onExit: (context, _) => createRouteGuard.canExit(context),
+        ),
+        GoRoute(
+          path: '/workspaces/:workspaceId/more/skills/:skillId/tools/:toolId/edit',
+          builder: (context, state) => SkillToolEditScreen(
+            workspaceId: state.pathParameters['workspaceId']!,
+            skillId: state.pathParameters['skillId']!,
+            toolId: state.pathParameters['toolId'],
+            routeExitGuard: editRouteGuard,
+          ),
+          onExit: (context, _) => editRouteGuard.canExit(context),
         ),
       ],
       initialLocation: '/workspaces/${workspace.id}/more/skills/${skill.id}',
@@ -228,5 +242,129 @@ void main() {
       'company_id': {'type': 'string', 'description': 'Company id'},
     });
     expect(tool.requiresCredential, isTrue);
+
+    final editorLocation =
+        '/workspaces/${workspace.id}/more/skills/${skill.id}/tools/${tool.id}/edit';
+    Future<void> openToolEditor() async {
+      final _ = router.push(editorLocation);
+      final _ = await tester.pumpAndSettle();
+    }
+
+    Future<void> goBack() async {
+      final _ = await tester.binding.handlePopRoute();
+      final _ = await tester.pumpAndSettle();
+    }
+
+    await openToolEditor();
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await tester.ensureVisible(find.text('Edit raw definition JSON'));
+    await tester.tap(find.text('Edit raw definition JSON'));
+    final _ = await tester.pumpAndSettle();
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await tester.ensureVisible(find.text('Add query parameter'));
+    await tester.tap(find.text('Add query parameter'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Remove').last);
+    final _ = await tester.pumpAndSettle();
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await enterLabeledField('Description', 'Company identifier');
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    final _ = await tester.pumpAndSettle();
+    await enterLabeledField('Description', 'Company id');
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await enterLabeledField('Description', 'Company identifier');
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(AuraConfirmDialog), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    final _ = await tester.pumpAndSettle();
+    await enterLabeledField('Description', 'Company id');
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await enterLabeledField('Description', 'Company identifier');
+    router.go('/workspaces/${workspace.id}/more/skills/${skill.id}');
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(AuraConfirmDialog), findsOneWidget);
+    await tester.tap(find.text('Keep editing'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(SkillToolEditScreen), findsOneWidget);
+    await enterLabeledField('Description', 'Company id');
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+
+    await openToolEditor();
+    await enterLabeledField('Description', 'Company identifier');
+    router.go('/workspaces/${workspace.id}/more/skills/${skill.id}');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Discard changes'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(SkillToolEditScreen), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
+    final persistedTool = await skillTemplateToolsRepository.getToolBySlug(
+      skill.id,
+      'find_company',
+    );
+    expect(persistedTool?.inputsJson, tool.inputsJson);
+
+    const secret = 'private-tool-secret';
+    await openToolEditor();
+    await tester.ensureVisible(find.text('Add header'));
+    await tester.tap(find.text('Add header'));
+    final _ = await tester.pumpAndSettle();
+    await enterLabeledField('Name', 'X-Test-Header', last: true);
+    final addedHeaderName = find.byWidgetPredicate((widget) {
+      if (widget is! AuraInput) return false;
+      final label = widget.label;
+
+      return label is Text && label.data == 'Name';
+    }).last;
+    final addedHeaderRow = find
+        .ancestor(of: addedHeaderName, matching: find.byType(Row))
+        .first;
+    final addedHeaderFields = find.descendant(
+      of: addedHeaderRow,
+      matching: find.byType(TextFormField),
+    );
+    await tester.enterText(addedHeaderFields.last, secret);
+    final _ = await tester.pumpAndSettle();
+    await goBack();
+
+    final dialog = find.byType(AuraConfirmDialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text(secret)),
+      findsNothing,
+    );
+    await tester.tap(find.text('Keep editing'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(of: addedHeaderRow, matching: find.byTooltip('Remove')),
+    );
+    final _ = await tester.pumpAndSettle();
+    await goBack();
+    expect(find.byType(AuraConfirmDialog), findsNothing);
+    expect(find.text('Skill detail'), findsOneWidget);
   });
 }

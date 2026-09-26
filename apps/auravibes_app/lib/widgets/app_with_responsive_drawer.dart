@@ -2,6 +2,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -96,7 +97,9 @@ class const _ResponsiveDrawerView({
     ),
     isDarkMode: Theme.of(context).brightness == Brightness.dark,
     controller: state._controller,
-    initiallyOpen: MediaQuery.sizeOf(context).width >= 600,
+    initiallyOpen: ResponsiveShellLayout.isDesktop(
+      MediaQuery.sizeOf(context).width,
+    ),
   );
 }
 

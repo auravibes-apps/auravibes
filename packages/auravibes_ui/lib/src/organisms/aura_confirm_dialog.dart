@@ -73,7 +73,6 @@ class _AuraConfirmDialogData {
             label: dialog.cancelLabel,
             onCancel: dialog.onCancel,
           ),
-          const SizedBox(width: 8),
           _AuraConfirmButton(
             label: dialog.confirmLabel,
             onConfirm: dialog.onConfirm,

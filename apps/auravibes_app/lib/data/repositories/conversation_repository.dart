@@ -1015,6 +1015,13 @@ extension on ConversationRepository {
 
   ConversationsCompanion _mapToConversationsCompanion(
     ConversationToCreate conversation,
+  ) => _mapConversationFieldsToCompanion(conversation).copyWith(
+    createdAt: .absentIfNull(conversation.createdAt),
+    updatedAt: .absentIfNull(conversation.updatedAt ?? conversation.createdAt),
+  );
+
+  ConversationsCompanion _mapConversationFieldsToCompanion(
+    ConversationToCreate conversation,
   ) {
     return ConversationsCompanion(
       workspaceId: .new(conversation.workspaceId),

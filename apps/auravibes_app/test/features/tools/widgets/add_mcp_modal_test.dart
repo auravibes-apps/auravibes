@@ -26,6 +26,14 @@ class _FakeMcpFormNotifier extends McpFormNotifier {
   McpFormState build(String workspaceId) => const McpFormState();
 }
 
+class _DirtyMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) => const McpFormState(
+    name: 'Private MCP',
+    bearerToken: 'secret-token-value',
+  );
+}
+
 class _OAuthMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) =>
@@ -71,6 +79,9 @@ const _wsId = 'ws1';
 
 class const _Subject({
   final McpFormNotifier Function() formNotifier = _FakeMcpFormNotifier.new,
+  final WorkspaceRef workspace = const LocalWorkspaceRef(
+    localWorkspaceId: _wsId,
+  ),
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -80,11 +91,8 @@ class const _Subject({
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
           // ignore: deprecated_member_use - Required to override generated provider.
           mcpFormProvider.overrideWith(formNotifier),
-          workspaceSessionForRouteProvider(_wsId).overrideWithValue(
-            const AsyncData(
-              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
-            ),
-          ),
+          workspaceSessionForRouteProvider(_wsId)
+              .overrideWithValue(AsyncData(WorkspaceSession(workspace))),
         ],
         child: Portal(
           child: Builder(
@@ -169,6 +177,51 @@ void main() {
       await tester.tap(find.byIcon(Icons.close));
       await tester.pump();
 
+      expect(find.byType(AddMcpModal), findsNothing);
+    });
+
+    testWidgets('dirty close asks before discarding without exposing secrets', (
+      tester,
+    ) async {
+      await _pumpAndInit(
+        tester,
+        const _Subject(
+          formNotifier: _DirtyMcpFormNotifier.new,
+          workspace: CloudWorkspaceRef(
+            localWorkspaceId: _wsId,
+            serverUrl: 'https://cloud.example.com',
+            accountId: 'account',
+            cloudWorkspaceId: 1,
+          ),
+        ),
+      );
+      await _showDialog(tester);
+
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(LocaleKeys.common_unsaved_changes_title.tr()),
+        findsOneWidget,
+      );
+      final confirmationDialog = find.byType(AuraConfirmDialog);
+      expect(confirmationDialog, findsOneWidget);
+      expect(
+        find.descendant(
+          of: confirmationDialog,
+          matching: find.textContaining('secret-token-value'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.text(LocaleKeys.common_keep_editing.tr()));
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(AddMcpModal), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text(LocaleKeys.common_discard_changes.tr()));
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(AddMcpModal), findsNothing);
     });
 
