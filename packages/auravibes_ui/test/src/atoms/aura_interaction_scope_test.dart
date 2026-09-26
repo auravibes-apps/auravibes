@@ -1,7 +1,7 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 void main() {
   testWidgets('keeps default Aura controls interactive', (tester) async {
@@ -171,9 +171,12 @@ void main() {
   });
 }
 
-Widget _app(Widget child) => MaterialApp(
-  home: Scaffold(body: child),
-  theme: ThemeData(extensions: [AuraTheme.light]),
+Widget _app(Widget child) => AuraThemeScope(
+  theme: .light,
+  child: MaterialApp(
+    home: Scaffold(body: child),
+    theme: ThemeData(),
+  ),
 );
 
 void _noop() {

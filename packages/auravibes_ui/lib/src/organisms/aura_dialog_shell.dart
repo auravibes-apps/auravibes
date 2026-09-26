@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Shared visual shell for Aura dialogs.
 class AuraDialogShell extends StatelessWidget {
@@ -111,7 +111,12 @@ class const _AuraDialogShellActions({required final List<Widget> actions})
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-    child: Row(mainAxisAlignment: .end, children: actions),
+    child: Wrap(
+      alignment: .end,
+      spacing: context.auraTheme.fromSpacing(.sm),
+      runSpacing: context.auraTheme.fromSpacing(.xs),
+      children: actions,
+    ),
   );
 }
 

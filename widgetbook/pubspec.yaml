@@ -10,6 +10,8 @@ dependencies:
   build: ^4.0.11
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   material_ui: ^1.2.0
   widgetbook: ^4.0.0-beta.14
 dev_dependencies:

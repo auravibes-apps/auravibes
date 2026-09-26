@@ -796,7 +796,11 @@
     "show_more": "Ver más",
     "show_less": "Ver menos",
     "error_title": "Algo salió mal",
-    "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."
+    "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla.",
+    "unsaved_changes_title": "Cambios sin guardar",
+    "unsaved_changes_message": "Hay cambios sin guardar. ¿Quieres descartarlos?",
+    "discard_changes": "Descartar cambios",
+    "keep_editing": "Seguir editando"
   },
   "workspace_capabilities": {
     "unsupported_error": "Esta función no está disponible en este espacio de trabajo."

@@ -231,13 +231,18 @@ void main() {
               key: const ValueKey('responsive-shell-golden'),
               child: Theme(
                 data: _responsiveShellTestTheme(currentSettings.brightness),
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    textScaler: .linear(currentSettings.textScaleFactor),
-                  ),
-                  child: Directionality(
-                    textDirection: currentSettings.textDirection,
-                    child: child ?? const SizedBox.shrink(),
+                child: AuraThemeScope(
+                  theme: currentSettings.brightness == Brightness.dark
+                      ? AuraTheme.dark
+                      : AuraTheme.light,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: .linear(currentSettings.textScaleFactor),
+                    ),
+                    child: Directionality(
+                      textDirection: currentSettings.textDirection,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -312,7 +317,6 @@ ThemeData _responsiveShellTestTheme(Brightness brightness) {
       : AuraTheme.light;
 
   return ThemeData(
-    extensions: [auraTheme],
     useMaterial3: true,
     brightness: brightness,
     fontFamily: auraTheme.typography.bodyFontFamily,

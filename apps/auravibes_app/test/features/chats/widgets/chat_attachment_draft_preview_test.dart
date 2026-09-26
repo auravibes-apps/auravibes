@@ -20,15 +20,18 @@ void main() {
     required ValueChanged<MessageAttachmentToCreate> onRemove,
     bool enabled = true,
   }) {
-    return MaterialApp(
-      home: Material(
-        child: ChatAttachmentDraftPreview(
-          attachment: attachment,
-          onRemove: onRemove,
-          enabled: enabled,
+    return AuraThemeScope(
+      theme: .light,
+      child: MaterialApp(
+        home: Material(
+          child: ChatAttachmentDraftPreview(
+            attachment: attachment,
+            onRemove: onRemove,
+            enabled: enabled,
+          ),
         ),
+        theme: .new(),
       ),
-      theme: .new(extensions: [AuraTheme.light]),
     );
   }
 

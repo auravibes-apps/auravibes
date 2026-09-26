@@ -10,8 +10,6 @@ import 'package:path/path.dart' as p;
 
 part 'conversation_archive.freezed.dart';
 
-// Limit JSON to 128 MiB (ponytail: use streaming if archives grow).
-
 @freezed
 // DCL cannot see Freezed-generated members in the part file.
 // ignore: weight-of-class
@@ -87,8 +85,15 @@ abstract class ConversationArchiveAttachment
 abstract final class ConversationArchiveCodec {
   static const format = 'auravibes.conversation';
   static const version = 1;
-  static const int maxArchiveBytes = 128 * 1024 * 1024;
-  static const int maxAttachmentBytes = 25 * 1024 * 1024;
+  static const int maxArchiveBytes = 8 * 1024 * 1024;
+  static const int maxAttachmentBytes = 5 * 1024 * 1024;
+  static const int maxAttachmentBytesTotal = 6 * 1024 * 1024;
+  static const int maxMessages = 10000;
+  static const int maxAttachmentsPerMessage = 25;
+  static const int maxToolCallsPerMessage = 100;
+  static const int maxA2uiMessagesPerMessage = 100;
+  static const int maxJsonDepth = 32;
+  static const int maxStringLength = 1024 * 1024;
 
   static Future<String> exportConversation({
     required ConversationEntity conversation,
@@ -122,9 +127,10 @@ abstract final class ConversationArchiveCodec {
   }
 
   static ConversationArchive decode(String json) {
-    if (utf8.encode(json).length > maxArchiveBytes) {
+    if (!_hasValidUtf8Length(json, maxArchiveBytes)) {
       throw const MalformedConversationArchiveException();
     }
+    _validateJsonDepth(json);
 
     return _decodeArchive(_decodeJson(json));
   }
@@ -235,7 +241,10 @@ void _requireKeys(Map<String, Object?> json, Set<String> expected) {
 }
 
 String _string(Object? value) {
-  if (value is String) return value;
+  if (value is String &&
+      value.length <= ConversationArchiveCodec.maxStringLength) {
+    return value;
+  }
   throw const MalformedConversationArchiveException();
 }
 
@@ -335,9 +344,116 @@ Object? _decodeJson(String json) {
   }
 }
 
+bool _hasValidUtf8Length(String value, int maximumBytes) {
+  var byteCount = 0;
+  for (var index = 0; index < value.length; index++) {
+    final codeUnit = value.codeUnitAt(index);
+    final length = _utf8CodeUnitLength(value, codeUnit, index);
+    if (length == null) return false;
+    if (length == _utf8SurrogatePairLength) index++;
+    byteCount += length;
+    if (byteCount > maximumBytes) return false;
+  }
+
+  return true;
+}
+
+const _utf8AsciiLimit = 0x7F;
+const _utf8TwoByteLimit = 0x7FF;
+const _utf8LeadingSurrogateStart = 0xD800;
+const _utf8LeadingSurrogateEnd = 0xDBFF;
+const _utf8TrailingSurrogateStart = 0xDC00;
+const _utf8TrailingSurrogateEnd = 0xDFFF;
+const _utf8AsciiLength = 1;
+const _utf8TwoByteLength = 2;
+const _utf8ThreeByteLength = 3;
+const _utf8SurrogatePairLength = 4;
+
+int? _utf8CodeUnitLength(String value, int codeUnit, int index) {
+  if (codeUnit <= _utf8AsciiLimit) return _utf8AsciiLength;
+  if (codeUnit <= _utf8TwoByteLimit) return _utf8TwoByteLength;
+  if (codeUnit < _utf8LeadingSurrogateStart) return _utf8ThreeByteLength;
+  if (codeUnit > _utf8TrailingSurrogateEnd) return _utf8ThreeByteLength;
+
+  return _utf8SurrogateLength(value, codeUnit, index);
+}
+
+int? _utf8SurrogateLength(String value, int codeUnit, int index) {
+  if (codeUnit > _utf8LeadingSurrogateEnd) return null;
+  if (index + 1 >= value.length) return null;
+  final trailing = value.codeUnitAt(index + 1);
+  if (trailing < _utf8TrailingSurrogateStart ||
+      trailing > _utf8TrailingSurrogateEnd) {
+    return null;
+  }
+
+  return _utf8SurrogatePairLength;
+}
+
+const _jsonBackslash = 0x5C;
+const _jsonDoubleQuote = 0x22;
+const _jsonOpenBrace = 0x7B;
+const _jsonOpenBracket = 0x5B;
+const _jsonCloseBrace = 0x7D;
+const _jsonCloseBracket = 0x5D;
+
+void _validateJsonDepth(String json) {
+  var state = (depth: 0, insideString: false, escaped: false);
+  for (final codeUnit in json.codeUnits) {
+    state = _nextJsonScanState(state, codeUnit);
+    if (state.depth > ConversationArchiveCodec.maxJsonDepth) {
+      throw const MalformedConversationArchiveException();
+    }
+  }
+}
+
+({int depth, bool insideString, bool escaped}) _nextJsonScanState(
+  ({int depth, bool insideString, bool escaped}) state,
+  int codeUnit,
+) {
+  if (state.insideString) return _scanInsideJsonString(state, codeUnit);
+
+  return _scanOutsideJsonString(state, codeUnit);
+}
+
+({int depth, bool insideString, bool escaped}) _scanInsideJsonString(
+  ({int depth, bool insideString, bool escaped}) state,
+  int codeUnit,
+) {
+  if (state.escaped) {
+    return (depth: state.depth, insideString: true, escaped: false);
+  }
+  if (codeUnit == _jsonBackslash) {
+    return (depth: state.depth, insideString: true, escaped: true);
+  }
+  if (codeUnit == _jsonDoubleQuote) {
+    return (depth: state.depth, insideString: false, escaped: false);
+  }
+
+  return state;
+}
+
+({int depth, bool insideString, bool escaped}) _scanOutsideJsonString(
+  ({int depth, bool insideString, bool escaped}) state,
+  int codeUnit,
+) {
+  if (codeUnit == _jsonDoubleQuote) {
+    return (depth: state.depth, insideString: true, escaped: false);
+  }
+  if (codeUnit == _jsonOpenBrace || codeUnit == _jsonOpenBracket) {
+    return (depth: state.depth + 1, insideString: false, escaped: false);
+  }
+  if (codeUnit == _jsonCloseBrace || codeUnit == _jsonCloseBracket) {
+    return (depth: state.depth - 1, insideString: false, escaped: false);
+  }
+
+  return state;
+}
+
 ConversationArchive _decodeArchive(Object? value) {
   final root = _jsonMap(value);
   _validateArchiveRoot(root);
+  _validateArchiveResourceLimits(root);
   final archive = _decodeArchiveContents(root);
   _validateMessageIndexes(archive.messages);
 
@@ -358,6 +474,57 @@ ConversationArchive _decodeArchiveContents(Map<String, Object?> root) {
 
 List<ConversationArchiveMessage> _decodeMessages(Object? value) =>
     _jsonList(value).map(_decodeMessage).toList(growable: false);
+
+void _validateArchiveResourceLimits(Map<String, Object?> root) {
+  final messages = _limitedList(
+    root['messages'],
+    ConversationArchiveCodec.maxMessages,
+  );
+  var attachmentBytes = 0;
+  for (final messageValue in messages) {
+    attachmentBytes += _validateMessageResourceLimits(messageValue);
+    if (attachmentBytes > ConversationArchiveCodec.maxAttachmentBytesTotal) {
+      throw const MalformedConversationArchiveException();
+    }
+  }
+}
+
+int _validateMessageResourceLimits(Object? value) {
+  final message = _jsonMap(value);
+  final attachments = _limitedList(
+    message['attachments'],
+    ConversationArchiveCodec.maxAttachmentsPerMessage,
+  );
+  final metadata = _jsonMap(message['metadata']);
+  _validateListLength(
+    metadata['toolCalls'],
+    ConversationArchiveCodec.maxToolCallsPerMessage,
+  );
+  _validateListLength(
+    metadata['a2uiMessages'],
+    ConversationArchiveCodec.maxA2uiMessagesPerMessage,
+  );
+  var attachmentBytes = 0;
+  for (final attachmentValue in attachments) {
+    final attachment = _jsonMap(attachmentValue);
+    attachmentBytes += _validatedAttachmentSize(attachment['sizeBytes']);
+  }
+
+  return attachmentBytes;
+}
+
+List<Object?> _limitedList(Object? value, int maximumLength) {
+  final list = _jsonList(value);
+  _validateListLength(list, maximumLength);
+
+  return list;
+}
+
+void _validateListLength(Object? value, int maximumLength) {
+  if (_jsonList(value).length > maximumLength) {
+    throw const MalformedConversationArchiveException();
+  }
+}
 
 void _validateArchiveRoot(Map<String, Object?> root) {
   if (root['format'] != ConversationArchiveCodec.format) {
@@ -678,10 +845,15 @@ String _decodeMimeType(Object? value) {
 
 Uint8List _decodeAttachmentBytes(Object? dataValue, Object? sizeValue) {
   final sizeBytes = _validatedAttachmentSize(sizeValue);
-  final data = _string(dataValue);
+  final data = _base64String(dataValue);
   _validateBase64Length(data, sizeBytes);
 
   return _decodeBase64Attachment(data, sizeBytes);
+}
+
+String _base64String(Object? value) {
+  if (value is String) return value;
+  throw const MalformedConversationArchiveException();
 }
 
 int _validatedAttachmentSize(Object? value) {

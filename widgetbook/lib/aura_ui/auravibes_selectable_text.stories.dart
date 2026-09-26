@@ -1,5 +1,6 @@
 // Required: Widgetbook stories use intentional no-op callbacks.
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
@@ -110,14 +111,14 @@ abstract final class _StorybookDefinitions {
       _Scenario(
         name: 'Tapped',
         run: (tester, args) async {
-          await tester.tap(find.byType(SelectableText));
+          await tester.tap(find.byType(flutter.EditableText));
           await tester.pump(const Duration(milliseconds: 300));
         },
       ),
       _Scenario(
         name: 'Selects Text',
         run: (tester, args) async {
-          await tester.longPress(find.byType(SelectableText));
+          await tester.longPress(find.byType(flutter.EditableText));
           await tester.pump(const Duration(milliseconds: 300));
         },
       ),

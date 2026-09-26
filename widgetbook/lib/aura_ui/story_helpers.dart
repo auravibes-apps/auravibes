@@ -1,3 +1,5 @@
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 
@@ -100,7 +102,10 @@ abstract final class StoryHelpers {
   );
 
   static const List<LocalizationsDelegate<dynamic>> auraLocalizationDelegates =
-      GlobalMaterialLocalizations.delegates;
+      [
+        ...GlobalMaterialLocalizations.delegates,
+        sdk_localizations.GlobalMaterialLocalizations.delegate,
+      ];
 
   static final _auraIconLabels = <IconData, String>{
     Icons.add: 'Add',

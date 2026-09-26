@@ -5,7 +5,7 @@ import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/services.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A customizable input field component following the Aura design system.
 ///

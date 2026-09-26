@@ -33,6 +33,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -784,9 +785,11 @@ void main() {
               return UncontrolledProviderScope(
                 container: container,
                 child: MaterialApp(
-                  home: const ChatConversationScreen(
-                    workspaceId: _workspaceId,
-                    chatId: _chatId,
+                  home: const AuraLegacyMaterialBridge(
+                    child: ChatConversationScreen(
+                      workspaceId: _workspaceId,
+                      chatId: _chatId,
+                    ),
                   ),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
