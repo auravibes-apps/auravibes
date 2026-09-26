@@ -41,10 +41,8 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
 
 @freezed
 abstract class CompactionModelOverride with _$CompactionModelOverride {
-  const factory({
-    int? reserveTokens,
-    int? keepRecentTokens,
-  }) = _CompactionModelOverride;
+  const factory({int? reserveTokens, int? keepRecentTokens}) =
+      _CompactionModelOverride;
 
   factory fromJson(Map<String, dynamic> json) =>
       _$CompactionModelOverrideFromJson({

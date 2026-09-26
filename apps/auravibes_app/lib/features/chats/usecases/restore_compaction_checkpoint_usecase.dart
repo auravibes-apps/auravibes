@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
@@ -16,7 +17,6 @@ typedef _RestoreCloudCheckpoint = Future<bool> Function({
   required String workspaceId,
   required String conversationId,
   required String checkpointMessageId,
-  required int revision,
 });
 
 class const RestoreCompactionCheckpointUsecase({
@@ -27,24 +27,17 @@ class const RestoreCompactionCheckpointUsecase({
   final _RestoreCloudCheckpoint? restoreCloudCheckpoint,
 }) {
   Future<void> call({
+    required String workspaceId,
     required String conversationId,
     required String checkpointMessageId,
   }) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    if (conversation == null) {
-      throw const CompactionCheckpointRestoreException();
-    }
-
     if (restoreCloudCheckpoint case final restoreCloudCheckpoint?) {
       CloudAppException? restoreError;
       try {
         final restored = await restoreCloudCheckpoint(
-          workspaceId: conversation.workspaceId,
+          workspaceId: workspaceId,
           conversationId: conversationId,
           checkpointMessageId: checkpointMessageId,
-          revision: conversation.revision,
         );
 
         if (restored) return;
@@ -61,6 +54,13 @@ class const RestoreCompactionCheckpointUsecase({
       if (restoreError != null) {
         throw const CompactionCheckpointRestoreException();
       }
+    }
+
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      throw const CompactionCheckpointRestoreException();
     }
 
     final messages = await messageRepository.getMessagesByConversation(
@@ -108,12 +108,21 @@ final restoreCompactionCheckpointUsecaseProvider =
               required workspaceId,
               required conversationId,
               required checkpointMessageId,
-              required revision,
             }) async {
               final session = await ref.read(
                 workspaceSessionForRouteProvider(workspaceId).future,
               );
               if (session.cloud case final cloud?) {
+                final conversation = await ref.read(
+                  conversationByIdStreamProvider(
+                    workspaceId,
+                    conversationId: conversationId,
+                  ).future,
+                );
+                if (conversation == null) {
+                  throw const CompactionCheckpointRestoreException();
+                }
+
                 final gateway = await ref.read(
                   cloudWorkspaceStateGatewayForWorkspaceProvider(
                     cloud.localWorkspaceId,
@@ -127,7 +136,7 @@ final restoreCompactionCheckpointUsecaseProvider =
                       requestId: const UuidV7().generate(),
                       conversationId: conversationId,
                       checkpointMessageId: checkpointMessageId,
-                      expectedConversationRevision: revision,
+                      expectedConversationRevision: conversation.revision,
                     );
 
                 return true;

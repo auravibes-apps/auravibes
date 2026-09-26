@@ -126,6 +126,7 @@ class _CompactConversationFixture {
     when(() => mockConversationRepo.patchConversation(any(), any()))
         .thenAnswer((invocation) async {
           final id = invocation.positionalArguments.first as String;
+
           return ConversationEntity(
             id: id,
             title: 'Test',

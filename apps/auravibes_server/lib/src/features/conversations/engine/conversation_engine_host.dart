@@ -929,9 +929,14 @@ final class const ServerConversationEngineHost({
           table.workspaceId.equals(job.workspaceId) &
           table.stableId.equals(conversationStableId),
     );
+    final activeCheckpointTranscriptId =
+        conversationPromptCheckpointTranscriptId(
+          messages: messages,
+          activeCheckpointStableId: conversation?.activeCompactionCheckpointId,
+        );
     final selectedMessageIds = selectAgentPromptHistory(
       AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
-      activeCompactionCheckpointId: conversation?.activeCompactionCheckpointId,
+      activeCompactionCheckpointId: activeCheckpointTranscriptId,
     ).messageIds.toSet();
     final result = <Map<String, dynamic>>[];
     for (final message in messages.where(
@@ -1690,6 +1695,16 @@ AgentCompactionRangeSelection selectConversationCompactionRange(
   reserveTokens: reserveTokens,
   keepRecentTokens: keepRecentTokens,
 );
+String? conversationPromptCheckpointTranscriptId({
+  required Iterable<ConversationMessage> messages,
+  required String? activeCheckpointStableId,
+}) {
+  if (activeCheckpointStableId == null) return null;
+  for (final message in messages) {
+    if (message.stableId == activeCheckpointStableId) return '${message.id}';
+  }
+  return null;
+}
 
 AgentTranscriptMessageSnapshot _messageSnapshot(
   ConversationMessage message, {

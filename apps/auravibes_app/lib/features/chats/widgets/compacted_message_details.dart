@@ -13,6 +13,7 @@ import 'package:material_ui/material_ui.dart';
 
 class const CompactedMessageDetails({
   required final MessageEntity message,
+  required final String workspaceId,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -24,6 +25,7 @@ class const CompactedMessageDetails({
           _CompactedDetailsMetadata(metadata: message.metadata),
           _CompactedDetailsContent(content: message.content),
           CompactionCheckpointHistoryDialog(
+            workspaceId: workspaceId,
             conversationId: message.conversationId,
           ),
         ],

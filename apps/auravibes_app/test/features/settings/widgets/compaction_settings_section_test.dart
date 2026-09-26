@@ -3,12 +3,11 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
-import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
@@ -67,7 +66,7 @@ void main() {
     return TestableApp(
       child: Theme(
         data: .new(extensions: [AuraTheme.light]),
-        child: Scaffold(
+        child: const Scaffold(
           body: SingleChildScrollView(
             child: Material(
               child: CompactionSettingsSection(workspaceId: testWorkspaceId),
@@ -154,7 +153,7 @@ void main() {
     ) async {
       final now = DateTime(2026);
       final model = WorkspaceModelSelectionWithConnectionEntity(
-        workspaceModelSelection: WorkspaceModelSelectionEntity(
+        workspaceModelSelection: .new(
           id: 'selection',
           modelId: 'model-a',
           createdAt: now,
@@ -162,7 +161,7 @@ void main() {
           modelConnectionId: 'connection',
           modelName: 'Model A',
         ),
-        modelConnection: ModelConnectionEntity(
+        modelConnection: .new(
           id: 'connection',
           name: 'Provider connection',
           modelId: 'provider',
@@ -171,7 +170,7 @@ void main() {
           workspaceId: testWorkspaceId,
           hasKey: true,
         ),
-        modelsProvider: const ApiModelProviderEntity(
+        modelsProvider: const .new(
           id: 'provider',
           name: 'Provider',
           type: ModelProvidersType.openai,

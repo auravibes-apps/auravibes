@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
@@ -38,7 +39,14 @@ void main() {
               data: .new(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
+            overrides: [
+              themeProvider.overrideWith(_MockThemeNotifier.new),
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
           ),
         );
       });
@@ -95,6 +103,8 @@ void main() {
               compactionSettingsProvider('test-ws').overrideWith(
                 (ref) => Stream.value(CompactionSettings.defaults),
               ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
             ],
           ),
         );
@@ -127,7 +137,14 @@ void main() {
               data: .new(extensions: [AuraTheme.light]),
               child: const SettingsScreen(workspaceId: 'test-ws'),
             ),
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
+            overrides: [
+              themeProvider.overrideWith(_MockThemeNotifier.new),
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
           ),
         );
       });
@@ -149,6 +166,8 @@ void main() {
         overrides: [
           compactionSettingsProvider('test-ws')
               .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
+          listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+              .overrideWith((ref) => Stream.value(const [])),
         ],
       );
       addTearDown(container.dispose);

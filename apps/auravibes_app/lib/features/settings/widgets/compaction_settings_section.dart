@@ -4,10 +4,10 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -133,6 +133,7 @@ class _CompactionSettingsSectionState
     final value = reserveTokens
         ? override?.reserveTokens
         : override?.keepRecentTokens;
+
     return _budgetControllers.putIfAbsent(
       key,
       () => TextEditingController(text: value?.toString() ?? ''),
@@ -148,10 +149,11 @@ class _CompactionSettingsSectionState
     final parsed = value.isEmpty ? null : int.tryParse(value);
     setState(() {
       if (value.isNotEmpty && (parsed == null || parsed < 0)) {
-        _invalidModelBudgets.add(fieldKey);
+        final _ = _invalidModelBudgets.add(fieldKey);
+
         return;
       }
-      _invalidModelBudgets.remove(fieldKey);
+      final _ = _invalidModelBudgets.remove(fieldKey);
       final previous =
           _modelOverrides[modelKey] ?? const CompactionModelOverride();
       final updated = CompactionModelOverride(
@@ -160,7 +162,7 @@ class _CompactionSettingsSectionState
       );
       _modelOverrides = {..._modelOverrides};
       if (updated.reserveTokens == null && updated.keepRecentTokens == null) {
-        _modelOverrides.remove(modelKey);
+        final _ = _modelOverrides.remove(modelKey);
       } else {
         _modelOverrides[modelKey] = updated;
       }
@@ -449,7 +451,9 @@ class const _CompactionModelBudgets({
     AsyncError() => const TextLocale(
       LocaleKeys.compaction_settings_models_unavailable,
     ),
-    _ => const TextLocale(LocaleKeys.compaction_settings_models_loading),
+    AsyncLoading() => const TextLocale(
+      LocaleKeys.compaction_settings_models_loading,
+    ),
   };
 }
 
@@ -462,6 +466,7 @@ class const _CompactionModelBudgetFields({
     final model = selection.workspaceModelSelection;
     final modelKey = '${selection.modelsProvider.id}/${model.modelId}';
     final name = model.modelName ?? model.modelId;
+
     return AuraColumn(
       children: [
         AuraText(child: Text('${selection.modelsProvider.name} / $name')),
@@ -470,10 +475,10 @@ class const _CompactionModelBudgetFields({
             modelKey: modelKey,
             reserveTokens: true,
           ),
-          label: Text(LocaleKeys.compaction_settings_reserve_tokens.tr()),
           placeholder: Text(
             LocaleKeys.compaction_settings_budget_optional.tr(),
           ),
+          label: Text(LocaleKeys.compaction_settings_reserve_tokens.tr()),
           keyboardType: .number,
           onChanged: (value) => state._updateModelBudget(
             modelKey: modelKey,
@@ -486,10 +491,10 @@ class const _CompactionModelBudgetFields({
             modelKey: modelKey,
             reserveTokens: false,
           ),
-          label: Text(LocaleKeys.compaction_settings_keep_recent_tokens.tr()),
           placeholder: Text(
             LocaleKeys.compaction_settings_budget_optional.tr(),
           ),
+          label: Text(LocaleKeys.compaction_settings_keep_recent_tokens.tr()),
           keyboardType: .number,
           onChanged: (value) => state._updateModelBudget(
             modelKey: modelKey,

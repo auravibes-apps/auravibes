@@ -11,6 +11,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const CompactionCheckpointHistoryDialog({
+  required final String workspaceId,
   required final String conversationId,
   super.key,
 }) extends ConsumerStatefulWidget {
@@ -36,7 +37,10 @@ class _CompactionCheckpointHistoryDialogState
       if (_errorKey case final error?) TextLocale(error),
       if (_expanded)
         switch (ref.watch(
-          compactionCheckpointHistoryProvider(widget.conversationId),
+          compactionCheckpointHistoryProvider((
+            workspaceId: widget.workspaceId,
+            conversationId: widget.conversationId,
+          )),
         )) {
           AsyncData(:final value) when value.summaries.isEmpty =>
             const TextLocale(LocaleKeys.compaction_compacted_history_empty),
@@ -72,11 +76,15 @@ class _CompactionCheckpointHistoryDialogState
       await ref
           .read(restoreCompactionCheckpointUsecaseProvider)
           .call(
+            workspaceId: widget.workspaceId,
             conversationId: widget.conversationId,
             checkpointMessageId: checkpointId,
           );
       ref.invalidate(
-        compactionCheckpointHistoryProvider(widget.conversationId),
+        compactionCheckpointHistoryProvider((
+          workspaceId: widget.workspaceId,
+          conversationId: widget.conversationId,
+        )),
       );
     } on CompactionException catch (error) {
       if (mounted) setState(() => _errorKey = error.localeKey);

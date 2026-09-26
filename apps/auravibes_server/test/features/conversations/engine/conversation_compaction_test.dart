@@ -22,6 +22,21 @@ void main() {
     expect(selected.keptTailMessageIds, ['3', '4']);
   });
 
+  test('maps active checkpoint stable ID to the transcript message ID', () {
+    final messages = [
+      _message(1, 'user', 'before'),
+      _message(2, 'system', 'summary'),
+    ];
+
+    expect(
+      conversationPromptCheckpointTranscriptId(
+        messages: messages,
+        activeCheckpointStableId: 'message-2',
+      ),
+      '2',
+    );
+  });
+
   test('excludes prior summary and carries its boundary metadata', () {
     final messages = [
       _message(1, 'user', 'old'),
