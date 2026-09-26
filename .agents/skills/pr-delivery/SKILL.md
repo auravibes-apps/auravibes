@@ -65,14 +65,26 @@ writing.
 
 Inspect the trusted workflow and changed paths, then use this loop:
 
-Before each push containing code changes, run every applicable CI validation
-that can run locally under the pinned toolchain and repository rules. Derive
-that set from the trusted workflow and `AGENTS.md`; do not treat GitHub CI as
-the first diagnostic. Scope test commands to changed behavior and affected
-packages instead of running the full test suite locally. Leave full-suite,
-hosted-service, secret-dependent, and unavailable-platform checks to CI and
-identify them as remote-only. If an applicable local check is blocked, report
-the reason and result accurately; do not substitute a broader test suite.
+Treat every command that loads or executes checked-out code, configuration,
+build logic, tests, generators, package scripts, or hooks as untrusted. Run it
+only in a disposable sandbox or container with no GitHub, SSH, signing, cloud,
+or developer credentials; no access outside a disposable checkout; an
+isolated, disposable package cache; and no network unless a human explicitly
+approved the required destination. If those controls are unavailable, mark
+the check remote-only and rely on GitHub CI. Merely unsetting named environment
+variables is not isolation. On the developer host, limit work to non-executing
+reads, diffs, and static validation that does not load repository code. Disable
+repository hooks, external diff/textconv drivers, pagers, and other
+repository-configured helpers where applicable. Never invoke a checked-out
+executable or source a checked-out file.
+
+Before each push containing code changes, identify every applicable CI
+validation from the trusted workflow and `AGENTS.md`. Run locally only the
+checks that satisfy the isolation boundary above; identify the remainder as
+remote-only. Scope isolated test commands to changed behavior and affected
+packages instead of running the full test suite. If an applicable check is
+blocked, report the reason and result accurately; do not substitute a broader
+test suite.
 
 1. **Focused iteration:** run the smallest useful check for the changed
    behavior or failure. For Dart behavior changes, use a focused test and the
@@ -93,26 +105,25 @@ the reason and result accurately; do not substitute a broader test suite.
    configuration-only changes, skip Dart tests, analyzers, generators, and
    app builds; run relevant syntax and diff checks.
 
-Use the repository's pinned toolchain and documented dependency setup. For
-AuraVibes, check `.fvmrc` and use the configured FVM Flutter/Dart versions and
-repository bootstrap/cache. Do not assume a host Dart/Flutter version is
-compatible. Docker is optional, not a prerequisite: use it only when required
-isolation or an unavailable host platform warrants it, and provision the
-`.fvmrc` Flutter release and matching Dart SDK. Preserve a writable `PUB_CACHE`
-between runs (default: `$HOME/.pub-cache`) and allow network access to required
-package/native-asset registries. A blocked cache, native asset download, or
-unavailable platform is a blocked check, not evidence of a code failure.
-Follow `AGENTS.md` on command safety; do not source untrusted files or run
-repository hooks implicitly.
+Inside the disposable environment, use the repository's pinned toolchain and
+documented dependency setup. For AuraVibes, provision the Flutter release in
+`.fvmrc` and its matching Dart SDK. Never mount the developer's home directory,
+credential stores, or shared writable package cache into the environment. Use
+a disposable `PUB_CACHE`. Keep network disabled by default; if dependency or
+native-asset access is required, obtain explicit human approval for narrowly
+scoped destinations before enabling it. A blocked cache, download, sandbox, or
+platform is a blocked check, not evidence of a code failure.
 
 For workflow, action, or reusable-workflow changes, inspect permissions,
 secrets access, token scopes, and write capabilities in the trusted base and
 proposed diff. Run safe static validation locally (such as YAML parsing,
-action/workflow linting, and diff review) where available. Ask for explicit
-approval only before execution that exposes credentials, grants elevated
-permissions, performs external writes/deployments, or otherwise creates
-material risk. Ordinary local validation covered by `AGENTS.md` does not need
-a separate approval solely because workflow files changed.
+action/workflow linting, and diff review) only when it does not load repository
+code. Require explicit human review of workflow or local-action changes before
+any code-executing validation; approval to deliver the PR is not approval to
+execute those changes. Also ask for explicit approval before enabling network
+access or performing execution that grants elevated permissions, external
+writes, deployments, or other material risk. Approval never permits exposing
+developer credentials or escaping the disposable filesystem boundary.
 
 For hosted services, secrets, or unavailable operating systems, identify the
 corresponding remote check rather than inventing a local substitute. After
