@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/colors/color_contrast.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('ColorContrast.apcaLc', () {

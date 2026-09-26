@@ -246,9 +246,12 @@ Future<void> _pumpSubject(
   await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
-        child: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: const AgentsScreen(workspaceId: _workspaceId),
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: const AgentsScreen(workspaceId: _workspaceId),
+          ),
         ),
         overrides: [agentRepositoryProvider.overrideWith((_, _) => repository)],
         workspaceId: _workspaceId,

@@ -2,8 +2,8 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_badge.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraBadge', () {
@@ -41,19 +41,22 @@ void main() {
       TextStyle? contentStyle;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraBadge.text(
-              child: Builder(
-                builder: (context) {
-                  contentStyle = DefaultTextStyle.of(context).style;
+        AuraThemeScope(
+          theme: .dark,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraBadge.text(
+                child: Builder(
+                  builder: (context) {
+                    contentStyle = DefaultTextStyle.of(context).style;
 
-                  return const Text('Dark');
-                },
+                    return const Text('Dark');
+                  },
+                ),
               ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.dark]),
         ),
       );
 

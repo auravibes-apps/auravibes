@@ -17,14 +17,17 @@ void main() {
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: MediaQuery(
-                data: .new(textScaler: textScaler ?? TextScaler.noScaling),
-                child: Scaffold(
-                  body: ToolCallResponsePreview(
-                    toolName: toolName,
-                    content: content,
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: MediaQuery(
+                  data: .new(textScaler: textScaler ?? TextScaler.noScaling),
+                  child: Scaffold(
+                    body: ToolCallResponsePreview(
+                      toolName: toolName,
+                      content: content,
+                    ),
                   ),
                 ),
               ),

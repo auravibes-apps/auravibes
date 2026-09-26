@@ -43,13 +43,16 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: Material(
-                  child: ChatQueuedMessagesIndicator(
-                    conversationId: 'conv-1',
-                    queuedDrafts: queuedDrafts,
-                    onEditDraft: onEditDraft,
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: Material(
+                    child: ChatQueuedMessagesIndicator(
+                      conversationId: 'conv-1',
+                      queuedDrafts: queuedDrafts,
+                      onEditDraft: onEditDraft,
+                    ),
                   ),
                 ),
               ),

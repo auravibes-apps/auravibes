@@ -128,18 +128,21 @@ void main() {
       return EasyLocalization(
         child: Builder(
           builder: (context) {
-            return MaterialApp(
-              home: ResponsiveSlidingDrawer(
-                drawer: drawer,
-                body: body,
-                isDarkMode: isDarkMode,
-                controller: controller,
-                initiallyOpen: initiallyOpen,
+            return AuraThemeScope(
+              theme: .light,
+              child: MaterialApp(
+                home: ResponsiveSlidingDrawer(
+                  drawer: drawer,
+                  body: body,
+                  isDarkMode: isDarkMode,
+                  controller: controller,
+                  initiallyOpen: initiallyOpen,
+                ),
+                theme: .new(),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
-              theme: .new(extensions: [AuraTheme.light]),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
             );
           },
         ),

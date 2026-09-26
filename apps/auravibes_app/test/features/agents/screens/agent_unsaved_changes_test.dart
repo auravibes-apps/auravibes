@@ -41,7 +41,7 @@ void main() {
     );
     await _pumpAgentScreen(tester, fixture, agent.id);
 
-    await tester.enterText(find.byType(TextFormField).first, 'Changed agent');
+    await tester.enterText(find.byType(AuraInput).first, 'Changed agent');
     await tester.pump();
     final didPop = await Navigator.of(
       tester.element(find.byType(AgentDetailScreen)),
@@ -80,7 +80,7 @@ void main() {
 
     await _pushAgentScreen(tester, fixture, agent.id);
 
-    await tester.enterText(find.byType(TextFormField).first, 'Saved agent');
+    await tester.enterText(find.byType(AuraInput).first, 'Saved agent');
     await tester.pump();
     await tester.tap(find.widgetWithText(AuraButton, 'Save'));
     final _ = await tester.pumpAndSettle();
@@ -193,7 +193,7 @@ Future<void> _pumpAgentScreen(
   );
   await tester.pump();
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 Future<void> _pushAgentScreen(
@@ -212,7 +212,7 @@ Future<void> _pushAgentScreen(
   );
   await tester.pump();
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {

@@ -15,92 +15,95 @@ void main() {
           ? AuraTheme.light
           : AuraTheme.dark;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepaintBoundary(
-              key: const ValueKey('dashboard'),
-              child: ColoredBox(
-                color: theme.colors.surface,
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      spacing: 24,
-                      children: [
-                        const AuraAvatarGroup(
-                          children: [
-                            AuraAvatar(
-                              child: Text('AL'),
-                              semanticLabel: 'Alex Lee',
-                            ),
-                            AuraAvatar(
-                              child: Text('SR'),
-                              semanticLabel: 'Sam Rivera',
-                            ),
-                            AuraAvatar(
-                              child: Text('JT'),
-                              semanticLabel: 'Jamie Taylor',
-                            ),
-                          ],
-                          maxVisible: 2,
-                          overflowSemanticLabel: '1 more person',
-                        ),
-                        Row(
-                          spacing: 24,
-                          children: [
-                            for (final type in const [
-                              AuraChartType.line,
-                              AuraChartType.bar,
-                            ])
-                              Expanded(
-                                child: AuraChart(
-                                  labels: const ['A', 'B', 'C'],
-                                  series: const [
-                                    AuraChartSeries(
-                                      label: 'Samples',
-                                      values: [2, -1, 4],
-                                    ),
-                                    AuraChartSeries(
-                                      label: 'Comparison',
-                                      values: [1, 3, 2],
-                                      tint: .secondary,
-                                    ),
-                                  ],
-                                  semanticLabel:
-                                      'Samples and comparison over A, B, C.',
-                                  type: type,
-                                ),
+        AuraThemeScope(
+          theme: theme,
+          child: MaterialApp(
+            home: Scaffold(
+              body: RepaintBoundary(
+                key: const ValueKey('dashboard'),
+                child: ColoredBox(
+                  color: theme.colors.surface,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        spacing: 24,
+                        children: [
+                          const AuraAvatarGroup(
+                            children: [
+                              AuraAvatar(
+                                child: Text('AL'),
+                                semanticLabel: 'Alex Lee',
                               ),
-                          ],
-                        ),
-                        const AuraTable(
-                          columns: ['Name', 'Count', 'Available'],
-                          rows: [
-                            ['Sample A', 12, true],
-                            ['Sample B', 0, false],
-                          ],
-                          caption: Text('Inventory'),
-                        ),
-                        const ChoicePickerDemo(
-                          variant: .multipleSelection,
-                          tint: .primary,
-                          presentation: .chips,
-                        ),
-                        const AuraAnimatedContent(
-                          child: AuraEmptyState(
-                            title: Text('No more items'),
-                            description: Text('New items appear here.'),
+                              AuraAvatar(
+                                child: Text('SR'),
+                                semanticLabel: 'Sam Rivera',
+                              ),
+                              AuraAvatar(
+                                child: Text('JT'),
+                                semanticLabel: 'Jamie Taylor',
+                              ),
+                            ],
+                            maxVisible: 2,
+                            overflowSemanticLabel: '1 more person',
                           ),
-                          transition: .none,
-                        ),
-                      ],
+                          Row(
+                            spacing: 24,
+                            children: [
+                              for (final type in const [
+                                AuraChartType.line,
+                                AuraChartType.bar,
+                              ])
+                                Expanded(
+                                  child: AuraChart(
+                                    labels: const ['A', 'B', 'C'],
+                                    series: const [
+                                      AuraChartSeries(
+                                        label: 'Samples',
+                                        values: [2, -1, 4],
+                                      ),
+                                      AuraChartSeries(
+                                        label: 'Comparison',
+                                        values: [1, 3, 2],
+                                        tint: .secondary,
+                                      ),
+                                    ],
+                                    semanticLabel:
+                                        'Samples and comparison over A, B, C.',
+                                    type: type,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const AuraTable(
+                            columns: ['Name', 'Count', 'Available'],
+                            rows: [
+                              ['Sample A', 12, true],
+                              ['Sample B', 0, false],
+                            ],
+                            caption: Text('Inventory'),
+                          ),
+                          const ChoicePickerDemo(
+                            variant: .multipleSelection,
+                            tint: .primary,
+                            presentation: .chips,
+                          ),
+                          const AuraAnimatedContent(
+                            child: AuraEmptyState(
+                              title: Text('No more items'),
+                              description: Text('New items appear here.'),
+                            ),
+                            transition: .none,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
+            theme: .new(brightness: brightness),
           ),
-          theme: .new(extensions: [theme], brightness: brightness),
         ),
       );
       final _ = await tester.pumpAndSettle();

@@ -1,7 +1,7 @@
 // Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 const _dotCount = 3;
 const _stagger = 0.2;

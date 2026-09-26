@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -367,7 +368,7 @@ void main() {
     );
     semantics.dispose();
 
-    await tester.enterText(find.byType(TextFormField), '32769');
+    await tester.enterText(find.byType(AuraInput), '32769');
     await tester.pump();
     expect(
       find.text('Enter a whole number from 1024 to 32768.', findRichText: true),
@@ -375,7 +376,7 @@ void main() {
     );
     expect(changed, isNull);
 
-    await tester.enterText(find.byType(TextFormField), '4096');
+    await tester.enterText(find.byType(AuraInput), '4096');
     await tester.pump();
     expect(changed?.budgetTokens, 4096);
 
@@ -424,8 +425,14 @@ class const _LocalizedApp({required final Widget child})
     child: Builder(
       builder: (context) => MaterialApp(
         home: Theme(
-          data: .new(extensions: [AuraTheme.light]),
+          data: .new(),
           child: Material(child: Portal(child: child)),
+        ),
+        builder: (_, child) => AuraThemeScope(
+          theme: .light,
+          child: AuraLegacyMaterialBridge(
+            child: AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+          ),
         ),
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,

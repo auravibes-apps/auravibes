@@ -38,7 +38,7 @@ void main() {
     expect(find.text('Open editor'), findsOneWidget);
     await _openEditor(tester);
 
-    await tester.enterText(find.byType(TextFormField).at(1), secret);
+    await tester.enterText(find.byType(EditableText).at(1), secret);
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 
@@ -106,7 +106,7 @@ void main() {
     await _openEditor(tester);
 
     await tester.tap(find.byIcon(Icons.clear));
-    await tester.enterText(find.byType(TextFormField).last, secret);
+    await tester.enterText(find.byType(EditableText).last, secret);
     await tester.pump();
     final _ = await tester.binding.handlePopRoute();
     final _ = await tester.pumpAndSettle();
@@ -147,7 +147,7 @@ void main() {
     expect(find.text('Open editor'), findsOneWidget);
     await _openEditor(tester);
 
-    await tester.enterText(find.byType(TextFormField).at(1), 'new-team');
+    await tester.enterText(find.byType(EditableText).at(1), 'new-team');
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
     expect(find.byType(AuraConfirmDialog), findsOneWidget);
@@ -155,7 +155,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.clear));
-    await tester.enterText(find.byType(TextFormField).last, secret);
+    await tester.enterText(find.byType(EditableText).last, secret);
     await tester.pump();
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();

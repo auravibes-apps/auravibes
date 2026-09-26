@@ -10,6 +10,7 @@ apps/auravibes_app
 
 packages/auravibes_ui
   may not import app, domain, data, Riverpod app providers, auravibes_engine, or localization keys
+  may import Flutter SDK libraries directly; must not import material_ui or cupertino_ui
 
 packages/auravibes_engine
   may not import Flutter, Riverpod, app, UI, Drift, or localization
@@ -87,7 +88,7 @@ Belongs here:
 
 - atoms/molecules/organisms
 - design tokens
-- theme/color utilities
+- theme/color utilities, with `AuraThemeScope` independent of host `ThemeData`
 - domain-neutral component behavior
 
 Does not belong here:
@@ -97,6 +98,11 @@ Does not belong here:
 - business rules
 - repositories/services/providers from the app
 - product-specific copy
+- imports/exports from `material_ui` or `cupertino_ui`; legacy compatibility belongs at app and Widgetbook integration boundaries.
+
+The app and Widgetbook provide `AuraThemeScope` around UI subtrees. App-owned
+`AuraLegacyMaterialBridge` and Widgetbook's local compatibility wrapper isolate
+legacy third-party widgets from the UI package.
 
 ## `widgetbook`
 

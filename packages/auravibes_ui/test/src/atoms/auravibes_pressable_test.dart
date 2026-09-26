@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraPressable', () {
@@ -55,19 +55,22 @@ Color _stateLayerColor(WidgetTester tester) {
 }
 
 Widget _host() {
-  return MaterialApp(
-    home: Scaffold(
-      body: SizedBox(
-        width: 200,
-        height: 80,
-        child: AuraPressable(
-          child: const Text('Press'),
-          color: AuraTheme.light.colors.primary,
-          onPressed: _noop,
+  return AuraThemeScope(
+    theme: .light,
+    child: MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 200,
+          height: 80,
+          child: AuraPressable(
+            child: const Text('Press'),
+            color: AuraTheme.light.colors.primary,
+            onPressed: _noop,
+          ),
         ),
       ),
+      theme: .new(),
     ),
-    theme: .new(extensions: [AuraTheme.light]),
   );
 }
 

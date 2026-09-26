@@ -1,21 +1,24 @@
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraMessageStatus', () {
     testWidgets('renders sending status with correct icon', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraMessageStatus(
-              status: .sending,
-              showAnimation: false, // Disable animation for stable testing.
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraMessageStatus(
+                status: .sending,
+                showAnimation: false, // Disable animation for stable testing.
+              ),
             ),
+            theme: ThemeData.light().copyWith(),
           ),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -29,14 +32,17 @@ void main() {
 
     testWidgets('renders sent status with correct icon', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraMessageStatus(
-              status: .sent,
-              showAnimation: false, // Disable animation for stable testing.
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraMessageStatus(
+                status: .sent,
+                showAnimation: false, // Disable animation for stable testing.
+              ),
             ),
+            theme: ThemeData.light().copyWith(),
           ),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 

@@ -1,26 +1,29 @@
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('renders every step state', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          body: AuraStepper(
-            steps: [
-              AuraStep(title: 'Complete', state: .complete),
-              AuraStep(
-                title: 'Current',
-                description: 'In progress',
-                state: .current,
-              ),
-              AuraStep(title: 'Error', state: .error),
-              AuraStep(title: 'Pending'),
-            ],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AuraStepper(
+              steps: [
+                AuraStep(title: 'Complete', state: .complete),
+                AuraStep(
+                  title: 'Current',
+                  description: 'In progress',
+                  state: .current,
+                ),
+                AuraStep(title: 'Error', state: .error),
+                AuraStep(title: 'Pending'),
+              ],
+            ),
           ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

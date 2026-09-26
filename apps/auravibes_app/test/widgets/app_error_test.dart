@@ -9,11 +9,14 @@ void main() {
     const error = 'test error message';
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          body: AppErrorWidget(error: error, stackTrace: .empty),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AppErrorWidget(error: error, stackTrace: .empty),
+          ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -28,11 +31,14 @@ void main() {
 
   testWidgets('renders different error types', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          body: AppErrorWidget(error: 42, stackTrace: .empty),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AppErrorWidget(error: 42, stackTrace: .empty),
+          ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -45,15 +51,18 @@ void main() {
 
   testWidgets('renders optional action', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: AppErrorWidget(
-            error: StateError('failed'),
-            stackTrace: .empty,
-            action: const Text('Retry'),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: Scaffold(
+            body: AppErrorWidget(
+              error: StateError('failed'),
+              stackTrace: .empty,
+              action: const Text('Retry'),
+            ),
           ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -67,11 +76,14 @@ void main() {
     final stackTrace = StackTrace.current;
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: AppErrorWidget(error: error, stackTrace: stackTrace),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: Scaffold(
+            body: AppErrorWidget(error: error, stackTrace: stackTrace),
+          ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

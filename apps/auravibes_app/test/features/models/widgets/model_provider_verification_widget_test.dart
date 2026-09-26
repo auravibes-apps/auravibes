@@ -135,7 +135,7 @@ void main() {
     );
 
     await tester.enterText(
-      find.byType(TextFormField).last,
+      find.byType(AuraInput).last,
       'https://new.example.com',
     );
     await tester.pump();

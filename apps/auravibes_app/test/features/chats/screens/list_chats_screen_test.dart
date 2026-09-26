@@ -28,9 +28,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ChatsListScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ChatsListScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               conversationsStreamProvider.overrideWith(

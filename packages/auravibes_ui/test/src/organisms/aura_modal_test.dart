@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraModal', () {
@@ -262,13 +262,9 @@ class const _AuraModalTestApp({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Theme(
-          data: .new(extensions: [auraTheme ?? AuraTheme.light]),
-          child: child,
-        ),
-      ),
+    return AuraThemeScope(
+      theme: auraTheme ?? AuraTheme.light,
+      child: MaterialApp(home: Scaffold(body: child)),
     );
   }
 }

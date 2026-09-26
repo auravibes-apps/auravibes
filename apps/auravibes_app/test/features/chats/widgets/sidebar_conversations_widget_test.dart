@@ -162,15 +162,18 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Material(
-              child: SizedBox(
-                width: 300,
-                height: 800,
-                child: SidebarConversationsWidget(
-                  workspaceId: 'workspace-1',
-                  limit: 5,
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: const Material(
+                child: SizedBox(
+                  width: 300,
+                  height: 800,
+                  child: SidebarConversationsWidget(
+                    workspaceId: 'workspace-1',
+                    limit: 5,
+                  ),
                 ),
               ),
             ),
@@ -227,13 +230,16 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Material(
-              child: SizedBox(
-                width: 300,
-                height: 800,
-                child: SidebarConversationsWidget(workspaceId: ''),
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: const Material(
+                child: SizedBox(
+                  width: 300,
+                  height: 800,
+                  child: SidebarConversationsWidget(workspaceId: ''),
+                ),
               ),
             ),
           ),
@@ -261,13 +267,16 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Material(
-              child: SizedBox(
-                width: 300,
-                height: 800,
-                child: SidebarConversationsWidget(workspaceId: 'workspace-1'),
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: const Material(
+                child: SizedBox(
+                  width: 300,
+                  height: 800,
+                  child: SidebarConversationsWidget(workspaceId: 'workspace-1'),
+                ),
               ),
             ),
           ),
@@ -300,14 +309,17 @@ void main() {
                   conversationRepositoryProvider.overrideWithValue(repository),
                 ],
                 child: MaterialApp(
-                  home: Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: const Material(
-                      child: SizedBox(
-                        width: 300,
-                        height: 800,
-                        child: SidebarConversationsWidget(
-                          workspaceId: 'workspace-1',
+                  home: AuraThemeScope(
+                    theme: .light,
+                    child: Theme(
+                      data: .new(),
+                      child: const Material(
+                        child: SizedBox(
+                          width: 300,
+                          height: 800,
+                          child: SidebarConversationsWidget(
+                            workspaceId: 'workspace-1',
+                          ),
                         ),
                       ),
                     ),
@@ -379,14 +391,17 @@ void main() {
                     }),
                   ],
                   child: MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Material(
-                        child: SizedBox(
-                          width: 300,
-                          height: 800,
-                          child: SidebarConversationsWidget(
-                            workspaceId: 'workspace-1',
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Material(
+                          child: SizedBox(
+                            width: 300,
+                            height: 800,
+                            child: SidebarConversationsWidget(
+                              workspaceId: 'workspace-1',
+                            ),
                           ),
                         ),
                       ),
@@ -471,23 +486,26 @@ class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: .new(extensions: [AuraTheme.light]),
-      child: Material(
-        child: Column(
-          children: [
-            TextButton(
-              key: _SidebarWorkspaceHost.loadWorkspaceKey,
-              onPressed: () => setState(() => _workspaceId = 'workspace-1'),
-              child: const Text('Load workspace'),
-            ),
-            TextButton(
-              key: _SidebarWorkspaceHost.switchWorkspaceKey,
-              onPressed: () => setState(() => _workspaceId = 'workspace-2'),
-              child: const Text('Switch workspace'),
-            ),
-            SidebarConversationsWidget(workspaceId: _workspaceId),
-          ],
+    return AuraThemeScope(
+      theme: .light,
+      child: Theme(
+        data: .new(),
+        child: Material(
+          child: Column(
+            children: [
+              TextButton(
+                key: _SidebarWorkspaceHost.loadWorkspaceKey,
+                onPressed: () => setState(() => _workspaceId = 'workspace-1'),
+                child: const Text('Load workspace'),
+              ),
+              TextButton(
+                key: _SidebarWorkspaceHost.switchWorkspaceKey,
+                onPressed: () => setState(() => _workspaceId = 'workspace-2'),
+                child: const Text('Switch workspace'),
+              ),
+              SidebarConversationsWidget(workspaceId: _workspaceId),
+            ],
+          ),
         ),
       ),
     );

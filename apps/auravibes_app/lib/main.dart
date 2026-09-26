@@ -10,11 +10,14 @@ import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -181,22 +184,26 @@ class const _MaterialAppShell({
       lightTheme: _auraThemeData(hue, .light),
       darkTheme: _auraThemeData(hue, .dark),
       themeMode: themeMode,
+      hue: hue,
     );
   }
 }
 
 ThemeData _auraThemeData(double hue, Brightness brightness) {
+  return _auraMaterialTheme(_auraThemeFor(hue, brightness), brightness);
+}
+
+AuraTheme _auraThemeFor(double hue, Brightness brightness) {
   final baseTheme = brightness == Brightness.light
       ? AuraTheme.light
       : AuraTheme.dark;
-  final auraTheme = baseTheme.copyWith(
+
+  return baseTheme.copyWith(
     colors: AuraComputedColorScheme(
       primaryHue: hue,
       brightness: brightness == Brightness.light ? .light : .dark,
     ),
   );
-
-  return _auraMaterialTheme(auraTheme, brightness);
 }
 
 class const _MaterialAppRoot({
@@ -204,6 +211,7 @@ class const _MaterialAppRoot({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -213,6 +221,7 @@ class const _MaterialAppRoot({
         lightTheme: lightTheme,
         darkTheme: darkTheme,
         themeMode: themeMode,
+        hue: hue,
       ),
     );
   }
@@ -223,6 +232,7 @@ class const _MaterialAppRouter({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -231,6 +241,7 @@ class const _MaterialAppRouter({
       lightTheme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
+      hue: hue,
     );
   }
 }
@@ -240,16 +251,20 @@ class const _MaterialAppRouterView({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localization = _appLocalization(context);
+    final brightness = _effectiveBrightness(themeMode, context);
+    final targetAuraTheme = _auraThemeFor(hue, brightness);
 
     return _AuraMaterialApp(
       routerConfig: routerConfig,
       lightTheme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
+      targetAuraTheme: targetAuraTheme,
       locale: localization.locale,
       delegates: localization.delegates,
       locales: localization.locales,
@@ -257,18 +272,33 @@ class const _MaterialAppRouterView({
   }
 }
 
+Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
+    switch (themeMode) {
+      .light => .light,
+      .dark => .dark,
+      .system => MediaQuery.platformBrightnessOf(context),
+    };
+
 class _AuraMaterialApp extends MaterialApp {
   new({
     required GoRouter routerConfig,
     required ThemeData lightTheme,
     required ThemeData darkTheme,
     required ThemeMode themeMode,
+    required AuraTheme targetAuraTheme,
     required Locale locale,
     required Iterable<LocalizationsDelegate<dynamic>> delegates,
     required Iterable<Locale> locales,
   }) : super.router(
          routerConfig: routerConfig,
-         builder: _snackBarBuilder,
+         builder: (context, child) => TweenAnimationBuilder<AuraTheme>(
+           tween: _AuraThemeTween(end: targetAuraTheme),
+           duration: kThemeAnimationDuration,
+           builder: (context, theme, _) => AuraThemeScope(
+             theme: theme,
+             child: _snackBarBuilder(context, child),
+           ),
+         ),
          title: AppFlavorConfig.instance.title,
          theme: lightTheme,
          darkTheme: darkTheme,
@@ -290,10 +320,24 @@ _appLocalization(BuildContext context) {
     locale: context.locale,
     delegates: [
       ...GlobalMaterialLocalizations.delegates,
+      sdk_localizations.GlobalMaterialLocalizations.delegate,
       ...context.localizationDelegates,
     ],
     locales: context.supportedLocales,
   );
+}
+
+class _AuraThemeTween extends Tween<AuraTheme> {
+  new({required AuraTheme end}) : super(begin: end, end: end);
+
+  @override
+  AuraTheme lerp(double t) {
+    final begin = this.begin;
+    final end = this.end;
+    if (begin == null || end == null) return AuraTheme.light;
+
+    return begin.lerp(end, t);
+  }
 }
 
 Widget Function(BuildContext, Widget?) get _snackBarBuilder {
@@ -365,7 +409,6 @@ ThemeData _buildBaseTheme(_AuraThemeParts parts) =>
     _buildBaseThemeDetails(_buildBaseThemeCore(parts), parts);
 
 ThemeData _buildBaseThemeCore(_AuraThemeParts parts) => ThemeData(
-  extensions: [parts.auraTheme],
   useMaterial3: true,
   colorScheme: _auraColorScheme(parts.colors, parts.brightness),
   brightness: parts.brightness,

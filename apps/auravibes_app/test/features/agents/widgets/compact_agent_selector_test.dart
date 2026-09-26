@@ -163,16 +163,19 @@ Future<void> _pumpSubject(
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
-        child: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: Scaffold(
-            body: Portal(
-              child: CompactAgentSelector(
-                workspaceId: 'ws-1',
-                agentId: agentId,
-                onChanged: onChanged,
-                compactMode: compactMode,
-                sheetMode: sheetMode,
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Scaffold(
+              body: Portal(
+                child: CompactAgentSelector(
+                  workspaceId: 'ws-1',
+                  agentId: agentId,
+                  onChanged: onChanged,
+                  compactMode: compactMode,
+                  sheetMode: sheetMode,
+                ),
               ),
             ),
           ),

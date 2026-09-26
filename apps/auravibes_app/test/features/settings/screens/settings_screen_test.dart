@@ -34,9 +34,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
           ),
@@ -87,9 +90,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               compactionSettingsProvider('test-ws').overrideWith(
@@ -123,9 +129,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
           ),
@@ -194,18 +203,21 @@ class const _ThemeModeTestApp() extends ConsumerWidget {
     final themeMode =
         ref.watch(themeProvider).asData?.value.themeMode ?? ThemeMode.system;
 
-    return MaterialApp(
-      home: Navigator(
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => const SettingsScreen(workspaceId: 'test-ws'),
+    return AuraThemeScope(
+      theme: .dark,
+      child: MaterialApp(
+        home: Navigator(
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (_) => const SettingsScreen(workspaceId: 'test-ws'),
+          ),
         ),
+        theme: .new(),
+        darkTheme: .new(),
+        themeMode: themeMode,
+        locale: context.locale,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
       ),
-      theme: .new(extensions: [AuraTheme.light]),
-      darkTheme: .new(extensions: [AuraTheme.dark]),
-      themeMode: themeMode,
-      locale: context.locale,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
     );
   }
 }

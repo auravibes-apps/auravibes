@@ -1,7 +1,10 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -67,11 +70,22 @@ class _TestableAppState extends State<TestableApp> {
         child: Builder(
           builder: (context) => MaterialApp(
             home: widget.child,
-            builder: (context, child) => AuraLegacyMaterialBridge(
-              child: AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+            builder: (context, child) => AuraThemeScope(
+              theme: Theme.of(context).brightness == Brightness.light
+                  ? AuraTheme.light
+                  : AuraTheme.dark,
+              child: AuraLegacyMaterialBridge(
+                child: AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
             ),
             locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
+            localizationsDelegates: [
+              ...GlobalMaterialLocalizations.delegates,
+              sdk_localizations.GlobalMaterialLocalizations.delegate,
+              ...context.localizationDelegates,
+            ],
             supportedLocales: context.supportedLocales,
           ),
         ),

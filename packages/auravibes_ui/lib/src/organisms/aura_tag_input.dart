@@ -2,7 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_badge.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A controlled set of short text tags.
 class AuraTagInput extends StatefulWidget {
