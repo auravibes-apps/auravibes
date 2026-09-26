@@ -9,6 +9,7 @@ export 'src/a2ui/a2ui_wire_codec.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
+export 'src/agent_rate_limit_retry_exception.dart';
 export 'src/agent_runners.dart';
 export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
