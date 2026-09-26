@@ -217,5 +217,50 @@ void main() {
         throwsA(isA<UnsupportedArchiveVersionException>()),
       );
     });
+
+    test('rejects input that exceeds resource limits before decoding', () {
+      final oversized = '"${'a' * ConversationArchiveCodec.maxArchiveBytes}"';
+      final tooManyMessages = jsonEncode({
+        'format': ConversationArchiveCodec.format,
+        'version': ConversationArchiveCodec.version,
+        'conversation': null,
+        'messages': List<Object?>.filled(
+          ConversationArchiveCodec.maxMessages + 1,
+          null,
+        ),
+      });
+      final tooDeep =
+          '${'[' * (ConversationArchiveCodec.maxJsonDepth + 1)}'
+          '${']' * (ConversationArchiveCodec.maxJsonDepth + 1)}';
+
+      for (final archiveJson in [oversized, tooManyMessages, tooDeep]) {
+        expect(
+          () => ConversationArchiveCodec.decode(archiveJson),
+          throwsA(isA<MalformedConversationArchiveException>()),
+        );
+      }
+    });
+
+    test('rejects aggregate attachment bytes before base64 decoding', () {
+      final archiveJson = jsonEncode({
+        'format': ConversationArchiveCodec.format,
+        'version': ConversationArchiveCodec.version,
+        'conversation': null,
+        'messages': [
+          {
+            'metadata': {'toolCalls': <Object?>[], 'a2uiMessages': <Object?>[]},
+            'attachments': [
+              {'sizeBytes': ConversationArchiveCodec.maxAttachmentBytes},
+              {'sizeBytes': ConversationArchiveCodec.maxAttachmentBytes},
+            ],
+          },
+        ],
+      });
+
+      expect(
+        () => ConversationArchiveCodec.decode(archiveJson),
+        throwsA(isA<MalformedConversationArchiveException>()),
+      );
+    });
   });
 }
