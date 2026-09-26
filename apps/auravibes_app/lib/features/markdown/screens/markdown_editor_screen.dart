@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -47,51 +48,10 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
 
   @override
   Widget build(BuildContext context) => PopScope<Object?>(
-    child: _MarkdownEditorView(
-      controller: _controller,
-      focusNode: _focusNode,
-      isFocused: _isFocused,
-      maxCharacters: widget.maxCharacters,
-      onUnfocus: _unfocusInput,
-      onCancel: () => _cancel(context),
-      onSave: () => _save(context),
-    ),
+    child: _markdownEditorView(context),
     canPop: _allowPop || !_isDirty,
-    onPopInvokedWithResult: (didPop, _) {
-      if (!didPop) unawaited(_handleBack(context));
-    },
+    onPopInvokedWithResult: _onPopInvoked,
   );
-
-  Future<void> _handleBack(BuildContext context) async {
-    if (!context.mounted) return;
-    if (!_isDirty) {
-      _pop(context);
-
-      return;
-    }
-
-    final shouldDiscard = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
-      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
-        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
-      ),
-      isDestructive: true,
-    );
-    if (shouldDiscard != true || !context.mounted) return;
-
-    _pop(context);
-  }
-
-  void _pop(BuildContext context, [String? result]) {
-    setState(() => _allowPop = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop<String>(result);
-    });
-  }
 
   void _cancel(BuildContext context) => _pop(context);
 
@@ -109,6 +69,44 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
 
   void _unfocusInput() {
     FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _pop(BuildContext context, [String? result]) {
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop<String>(result);
+    });
+  }
+}
+
+extension on _MarkdownEditorScreenState {
+  Widget _markdownEditorView(BuildContext context) => _MarkdownEditorView(
+    controller: _controller,
+    focusNode: _focusNode,
+    isFocused: _isFocused,
+    maxCharacters: widget.maxCharacters,
+    onUnfocus: _unfocusInput,
+    onCancel: () => _cancel(context),
+    onSave: () => _save(context),
+  );
+
+  void _onPopInvoked(bool didPop, Object? _) {
+    if (!didPop) unawaited(_handleBack(context));
+  }
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (!context.mounted) return;
+    if (!_isDirty) {
+      _pop(context);
+
+      return;
+    }
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _pop(context);
   }
 }
 

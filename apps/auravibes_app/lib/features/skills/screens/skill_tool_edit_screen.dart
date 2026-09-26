@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_template_too
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         SkillTemplateDefinition,
@@ -116,16 +117,7 @@ class SkillToolEditRouteGuard {
     if (_isSaving || !context.mounted) return false;
     if (!_isDirty) return true;
 
-    final shouldDiscard = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
-      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
-        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
-      ),
-      isDestructive: true,
-    );
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
     if (shouldDiscard != true || !context.mounted) return false;
 
     _isDirty = false;
@@ -177,27 +169,14 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 
   @override
   void dispose() {
-    _titleController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _descriptionController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _urlController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _bodyController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _definitionController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _credentialDefinitionIdController
-      ..removeListener(_onFormChanged)
-      ..dispose();
-    _headerFields.forEach(_disposeKeyValueField);
-    _queryFields.forEach(_disposeKeyValueField);
-    _inputFields.forEach(_disposeInputField);
+    _titleController.removeListener(_onFormChanged);
+    _descriptionController.removeListener(_onFormChanged);
+    _urlController.removeListener(_onFormChanged);
+    _bodyController.removeListener(_onFormChanged);
+    _definitionController.removeListener(_onFormChanged);
+    _credentialDefinitionIdController.removeListener(_onFormChanged);
+    _disposeFormControllers();
+    _disposeDynamicFields();
     super.dispose();
   }
 
@@ -208,21 +187,17 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 
     return PopScope<Object?>(
       child: _SkillToolEditView(data: _viewData(context, data)),
-      canPop: _allowPop || (!_isDirty && !_isSaving),
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_handleBack(context));
-      },
+      canPop: _canPop,
+      onPopInvokedWithResult: _onPopInvoked,
     );
   }
 
-  void _setState(VoidCallback callback) {
+  void _setState([VoidCallback? callback]) {
     _isUpdating = true;
     try {
       setState(() {
-        callback();
-        if (_initialized) {
-          _isDirty = _currentSnapshot() != _savedSnapshot;
-        }
+        callback?.call();
+        _updateDirtyState();
         _syncRouteExitGuard();
       });
     } finally {
@@ -232,6 +207,28 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 
   void _syncRouteExitGuard() =>
       _exitGuard.update(isDirty: _isDirty, isSaving: _isSaving);
+}
+
+extension SkillToolControllerCleanup on _SkillToolEditScreenState {
+  void _disposeFormControllers() {
+    for (final controller in [
+      _titleController,
+      _descriptionController,
+      _urlController,
+      _bodyController,
+      _definitionController,
+      _credentialDefinitionIdController,
+    ]) {
+      controller.dispose();
+    }
+  }
+
+  void _disposeDynamicFields() {
+    for (final fields in [_headerFields, _queryFields]) {
+      fields.forEach(_disposeKeyValueField);
+    }
+    _inputFields.forEach(_disposeInputField);
+  }
 }
 
 extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
@@ -287,7 +284,20 @@ extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
 
   void _onFormChanged() {
     if (!mounted || !_initialized || _isUpdating) return;
-    _setState(() => _isDirty = _currentSnapshot() != _savedSnapshot);
+    _setState();
+  }
+
+  void _updateDirtyState() {
+    if (!_initialized) return;
+    _isDirty = _currentSnapshot() != _savedSnapshot;
+  }
+}
+
+extension _SkillToolEditScreenStateNavigation on _SkillToolEditScreenState {
+  bool get _canPop => _allowPop || (!_isDirty && !_isSaving);
+
+  void _onPopInvoked(bool didPop, Object? _) {
+    if (!didPop) unawaited(_handleBack(context));
   }
 
   Future<void> _handleBack(BuildContext context) async {
@@ -303,61 +313,66 @@ extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
       Navigator.of(context).pop<bool>(saved);
     });
   }
+}
 
+extension _SkillToolEditScreenStateSnapshots on _SkillToolEditScreenState {
   String _currentSnapshot() {
     try {
-      final payload = _savePayload();
-
-      return jsonEncode({
-        'title': payload.title,
-        'description': payload.description,
-        'template': _canonicalJsonValue(jsonDecode(payload.templateJson)),
-        'inputs': _canonicalJsonValue(jsonDecode(payload.inputsJson)),
-        'definition': _canonicalJsonValue(jsonDecode(payload.definitionJson)),
-        'credentialDefinitionId': payload.credentialDefinitionId,
-        'clearCredentialDefinition': payload.clearCredentialDefinition,
-        'requiresCredential': payload.requiresCredential,
-        'isEnabled': payload.isEnabled,
-      });
+      return jsonEncode(_payloadSnapshot(_savePayload()));
     } on Object {
-      return jsonEncode({
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'url': _urlController.text,
-        'method': _method.value,
-        'body': _bodyController.text,
-        'bodyFormat': _bodyFormat.value,
-        'headers': [
-          for (final field in _headerFields)
-            [field.keyController.text, field.valueController.text],
-        ],
-        'query': [
-          for (final field in _queryFields)
-            [field.keyController.text, field.valueController.text],
-        ],
-        'inputs': [
-          for (final field in _inputFields)
-            [
-              field.nameController.text,
-              field.type,
-              field.descriptionController.text,
-              field.optional,
-              field.defaultController.text,
-              field.enumController.text,
-              field.minimumController.text,
-              field.maximumController.text,
-              field.itemType,
-              field.nestedPropertiesController.text,
-            ],
-        ],
-        'definition': _definitionController.text,
-        'editRawDefinition': _editRawDefinition,
-        'credentialDefinitionId': _credentialDefinitionIdController.text,
-        'requiresCredential': _requiresCredential,
-        'isEnabled': _isEnabled,
-      });
+      return jsonEncode(_formSnapshot());
     }
   }
+
+  Map<String, Object?> _payloadSnapshot(_SkillToolSavePayload payload) => {
+    'title': payload.title,
+    'description': payload.description,
+    'template': _canonicalJsonValue(jsonDecode(payload.templateJson)),
+    'inputs': _canonicalJsonValue(jsonDecode(payload.inputsJson)),
+    'definition': _canonicalJsonValue(jsonDecode(payload.definitionJson)),
+    'credentialDefinitionId': payload.credentialDefinitionId,
+    'clearCredentialDefinition': payload.clearCredentialDefinition,
+    'requiresCredential': payload.requiresCredential,
+    'isEnabled': payload.isEnabled,
+  };
+
+  Map<String, Object?> _formSnapshot() => {
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'url': _urlController.text,
+    'method': _method.value,
+    'body': _bodyController.text,
+    'bodyFormat': _bodyFormat.value,
+    'headers': _keyValueSnapshots(_headerFields),
+    'query': _keyValueSnapshots(_queryFields),
+    'inputs': _inputSnapshots(),
+    'definition': _definitionController.text,
+    'editRawDefinition': _editRawDefinition,
+    'credentialDefinitionId': _credentialDefinitionIdController.text,
+    'requiresCredential': _requiresCredential,
+    'isEnabled': _isEnabled,
+  };
+
+  List<List<String>> _keyValueSnapshots(List<_KeyValueField> fields) => [
+    for (final field in fields)
+      [field.keyController.text, field.valueController.text],
+  ];
+
+  List<List<Object?>> _inputSnapshots() => [
+    for (final field in _inputFields)
+      [
+        field.nameController.text,
+        field.type,
+        field.descriptionController.text,
+        field.optional,
+        field.defaultController.text,
+        field.enumController.text,
+        field.minimumController.text,
+        field.maximumController.text,
+        field.itemType,
+        field.nestedPropertiesController.text,
+      ],
+  ];
 }
 
 Object? _canonicalJsonValue(Object? value) {
@@ -593,6 +608,18 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
 
     _applyToolMetadata(tool);
     final definition = _parseSkillTemplateDefinition(tool);
+    _applyToolDefinition(tool, definition);
+    _listenToExistingFields();
+    _initialized = true;
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
+    _syncRouteExitGuard();
+  }
+
+  void _applyToolDefinition(
+    SkillTemplateToolEntity tool,
+    SkillTemplateDefinition? definition,
+  ) {
     _definitionController.text = definition?.toJsonString() ?? '';
     _applyTemplate(
       definition == null
@@ -600,13 +627,12 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
           : tool.copyWith(templateJson: definition.legacyTemplateJson),
     );
     _applyInputFields(definition?.legacyInputsJson ?? tool.inputsJson);
+  }
+
+  void _listenToExistingFields() {
     _headerFields.forEach(_listenToKeyValueField);
     _queryFields.forEach(_listenToKeyValueField);
     _inputFields.forEach(_listenToInputField);
-    _initialized = true;
-    _savedSnapshot = _currentSnapshot();
-    _isDirty = false;
-    _syncRouteExitGuard();
   }
 
   void _applyToolMetadata(SkillTemplateToolEntity tool) {

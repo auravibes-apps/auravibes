@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_operati
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -142,81 +143,6 @@ class _ServiceConnectionEditScreenState
     });
   }
 
-  String _currentSnapshot() {
-    final state = _editState;
-    if (state == null) return '';
-
-    final nonSecretNames = _nonSecretControllers.keys.toList()..sort();
-    final secretNames = _secretControllers.keys.toList()..sort();
-
-    return switch (state) {
-      final _SkillCredentialEditState skillState => jsonEncode({
-        'type': 'skillCredential',
-        'connectionId': skillState.credential.id,
-        'name': _nameController.text.trim(),
-        'nonSecretAttributes': [
-          for (final name in nonSecretNames)
-            [name, _nonSecretControllers[name]!.text],
-        ],
-        'secretIntents': [
-          for (final name in secretNames)
-            [
-              name,
-              _secretEditFor(
-                _secretControllers[name]!.text,
-                _clearedSecrets.contains(name),
-              ).name,
-            ],
-        ],
-      }),
-      final _ModelProviderEditState modelState => jsonEncode({
-        'type': 'modelProvider',
-        'connectionId': modelState.connection.id,
-        'name': _nameController.text.trim(),
-        'url': _modelUrlController.text.trim(),
-        'keyIntent': _secretEditFor(
-          _modelKeyController.text.trim(),
-          false,
-        ).name,
-      }),
-      final _GenericServiceConnectionEditState genericState => jsonEncode({
-        'type': 'genericConnection',
-        'connectionId': genericState.connection.id,
-        'name': _nameController.text.trim(),
-        'secretIntent': _secretEditFor(
-          _modelKeyController.text.trim(),
-          _clearedSecrets.contains('secret'),
-        ).name,
-      }),
-    };
-  }
-
-  void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
-
-  Future<void> _handleBack(BuildContext context) async {
-    if (_isSaving || !context.mounted) return;
-    if (!_isDirty) {
-      Navigator.of(context).pop();
-
-      return;
-    }
-
-    final shouldDiscard = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
-      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
-        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
-      ),
-      isDestructive: true,
-    );
-    if (shouldDiscard != true || !context.mounted) return;
-
-    _refreshForm(() => _savedSnapshot = _currentSnapshot());
-    Navigator.of(context).pop();
-  }
-
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
     await _runEditSave(
@@ -248,6 +174,102 @@ class _ServiceConnectionEditScreenState
       onSaved: _markSaved,
     );
     if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+extension ServiceConnectionEditUnsavedChanges
+    on _ServiceConnectionEditScreenState {
+  String _currentSnapshot() {
+    final state = _editState;
+    if (state == null) return '';
+
+    final name = _nameController.text.trim();
+
+    return switch (state) {
+      final _SkillCredentialEditState skillState => _skillCredentialSnapshot(
+        skillState,
+        name,
+      ),
+      final _ModelProviderEditState modelState => _modelProviderSnapshot(
+        modelState,
+        name,
+      ),
+      final _GenericServiceConnectionEditState genericState =>
+        _genericConnectionSnapshot(genericState, name),
+    };
+  }
+
+  String _skillCredentialSnapshot(
+    _SkillCredentialEditState state,
+    String name,
+  ) {
+    final nonSecretNames = _nonSecretControllers.keys.toList()..sort();
+    final secretNames = _secretControllers.keys.toList()..sort();
+
+    return jsonEncode({
+      'type': 'skillCredential',
+      'connectionId': state.credential.id,
+      'name': name,
+      'nonSecretAttributes': _nonSecretAttributeSnapshots(nonSecretNames),
+      'secretIntents': _secretIntentSnapshots(secretNames),
+    });
+  }
+
+  List<List<String>> _nonSecretAttributeSnapshots(List<String> names) => [
+    for (final name in names) [name, _nonSecretControllers[name]!.text],
+  ];
+
+  List<List<String>> _secretIntentSnapshots(List<String> names) => [
+    for (final name in names)
+      [
+        name,
+        _secretEditFor(
+          _secretControllers[name]!.text,
+          _clearedSecrets.contains(name),
+        ).name,
+      ],
+  ];
+
+  String _modelProviderSnapshot(_ModelProviderEditState state, String name) =>
+      jsonEncode({
+        'type': 'modelProvider',
+        'connectionId': state.connection.id,
+        'name': name,
+        'url': _modelUrlController.text.trim(),
+        'keyIntent': _secretEditFor(
+          _modelKeyController.text.trim(),
+          false,
+        ).name,
+      });
+
+  String _genericConnectionSnapshot(
+    _GenericServiceConnectionEditState state,
+    String name,
+  ) => jsonEncode({
+    'type': 'genericConnection',
+    'connectionId': state.connection.id,
+    'name': name,
+    'secretIntent': _secretEditFor(
+      _modelKeyController.text.trim(),
+      _clearedSecrets.contains('secret'),
+    ).name,
+  });
+
+  void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (_isSaving || !context.mounted) return;
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+
+      return;
+    }
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _refreshForm(() => _savedSnapshot = _currentSnapshot());
+    Navigator.of(context).pop();
   }
 }
 

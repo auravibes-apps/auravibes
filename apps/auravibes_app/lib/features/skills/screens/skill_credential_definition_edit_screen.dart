@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_credential_d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -109,23 +110,22 @@ extension on _SkillCredentialDefinitionEditScreenState {
     _initialized = true;
   }
 
-  String _currentSnapshot() {
-    final attributes = [
-      for (final row in _attributeRows)
-        if (!_isEmptyPlaceholder(row))
-          <String, Object>{
-            'variable': row.variableController.text.trim(),
-            'description': row.descriptionController.text.trim(),
-            'optional': row.optional,
-            'secret': row.secret,
-          },
-    ]..sort((left, right) => jsonEncode(left).compareTo(jsonEncode(right)));
+  String _currentSnapshot() => jsonEncode({
+    'title': _titleController.text.trim(),
+    'attributes': _attributeSnapshots(),
+  });
 
-    return jsonEncode({
-      'title': _titleController.text.trim(),
-      'attributes': attributes,
-    });
-  }
+  List<Map<String, Object>> _attributeSnapshots() => [
+    for (final row in _attributeRows)
+      if (!_isEmptyPlaceholder(row)) _attributeSnapshot(row),
+  ]..sort((left, right) => jsonEncode(left).compareTo(jsonEncode(right)));
+
+  Map<String, Object> _attributeSnapshot(_AttributeFormRow row) => {
+    'variable': row.variableController.text.trim(),
+    'description': row.descriptionController.text.trim(),
+    'optional': row.optional,
+    'secret': row.secret,
+  };
 
   bool _isEmptyPlaceholder(_AttributeFormRow row) =>
       row.variableController.text.trim().isEmpty &&
@@ -214,16 +214,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
       return;
     }
 
-    final shouldDiscard = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.common_unsaved_changes_title),
-      message: const TextLocale(LocaleKeys.common_unsaved_changes_message),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_discard_changes),
-        cancelLabel: TextLocale(LocaleKeys.common_keep_editing),
-      ),
-      isDestructive: true,
-    );
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
     if (shouldDiscard != true || !context.mounted) return;
 
     _updateState(() => _savedSnapshot = _currentSnapshot());
