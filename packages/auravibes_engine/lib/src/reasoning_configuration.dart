@@ -112,6 +112,11 @@ class const ReasoningConfiguration({
         'Reasoning configuration effort must be string.',
       );
     }
+    if (effort is String && effort.length > maxEffortLength) {
+      throw const FormatException(
+        'Reasoning configuration effort is too long.',
+      );
+    }
     if (budgetTokens != null && budgetTokens is! int) {
       throw const FormatException(
         'Reasoning configuration budget_tokens must be integer.',
@@ -125,6 +130,9 @@ class const ReasoningConfiguration({
     );
   }
 
+  static const maxEncodedLength = 4096;
+  static const maxEffortLength = 128;
+
   static ReasoningConfiguration? tryFromJson(Object? value) {
     if (value == null) return null;
     try {
@@ -135,7 +143,11 @@ class const ReasoningConfiguration({
   }
 
   static ReasoningConfiguration? decode(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
+    if (value == null ||
+        value.trim().isEmpty ||
+        value.length > maxEncodedLength) {
+      return null;
+    }
     try {
       return tryFromJson(jsonDecode(value));
     } on FormatException {
