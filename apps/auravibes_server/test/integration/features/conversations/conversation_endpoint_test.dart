@@ -40,6 +40,27 @@ void main() {
           );
       final workspaceId = workspace.id!;
 
+      await expectLater(
+        endpoints.conversation.create(
+          session,
+          CreateConversationRequest(
+            workspaceId: workspaceId,
+            requestId: 'create-oversized-reasoning',
+            conversationId: 'oversized-reasoning',
+            title: 'Oversized reasoning',
+            isPinned: false,
+            reasoningConfigJson: '{"effort":"${'x' * 5000}"}',
+          ),
+        ),
+        throwsA(
+          isA<ConversationException>().having(
+            (error) => error.code,
+            'code',
+            ConversationErrorCode.validationFailed,
+          ),
+        ),
+      );
+
       final created = await endpoints.conversation.create(
         session,
         CreateConversationRequest(

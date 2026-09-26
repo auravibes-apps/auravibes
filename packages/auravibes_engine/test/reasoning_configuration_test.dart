@@ -85,4 +85,19 @@ void main() {
     expect(ReasoningConfiguration.decode('{"budget_tokens":"bad"}'), isNull);
     expect(ReasoningConfiguration.decode(null), isNull);
   });
+
+  test('rejects oversized encoded configurations and effort values', () {
+    expect(
+      ReasoningConfiguration.decode(
+        ' ' * (ReasoningConfiguration.maxEncodedLength + 1),
+      ),
+      isNull,
+    );
+    expect(
+      () => ReasoningConfiguration.fromJson({
+        'effort': 'x' * (ReasoningConfiguration.maxEffortLength + 1),
+      }),
+      throwsFormatException,
+    );
+  });
 }
