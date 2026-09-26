@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
@@ -84,34 +85,39 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: AuraSnackBarHost(
-                  child: Material(
-                    child: Portal(
-                      child: ChatInputWidget(
-                        workspaceId: 'ws-1',
-                        onSendMessage: onSendMessage,
-                        onToolsPress: onToolsPress,
-                        modelSheetControl: modelSheetControl,
-                        agentSheetControl: agentSheetControl,
-                        modelCompactControl: modelCompactControl,
-                        agentCompactControl: agentCompactControl,
-                        onDraftStatusChanged: onDraftStatusChanged,
-                        reasoningControl: reasoningControl,
-                        draftToLoad: draftToLoad,
-                        modalitiesInput: modalitiesInput,
-                        onContinueAgent: onContinueAgent,
-                        continueDisabledHint: continueDisabledHint,
-                        disabledHint: disabledHint,
-                        compactDisabledHint: compactDisabledHint,
-                        disabled: disabled,
-                        isBusy: isBusy,
-                        showStopButton: showStopButton,
-                        onStop: onStop,
-                        onCompact: onCompact,
-                        canCompact: canCompact,
-                        isCompacting: isCompacting,
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: AuraLegacyMaterialBridge(
+                    child: AuraSnackBarHost(
+                      child: Material(
+                        child: Portal(
+                          child: ChatInputWidget(
+                            workspaceId: 'ws-1',
+                            onSendMessage: onSendMessage,
+                            onToolsPress: onToolsPress,
+                            modelSheetControl: modelSheetControl,
+                            agentSheetControl: agentSheetControl,
+                            modelCompactControl: modelCompactControl,
+                            agentCompactControl: agentCompactControl,
+                            onDraftStatusChanged: onDraftStatusChanged,
+                            reasoningControl: reasoningControl,
+                            draftToLoad: draftToLoad,
+                            modalitiesInput: modalitiesInput,
+                            onContinueAgent: onContinueAgent,
+                            continueDisabledHint: continueDisabledHint,
+                            disabledHint: disabledHint,
+                            compactDisabledHint: compactDisabledHint,
+                            disabled: disabled,
+                            isBusy: isBusy,
+                            showStopButton: showStopButton,
+                            onStop: onStop,
+                            onCompact: onCompact,
+                            canCompact: canCompact,
+                            isCompacting: isCompacting,
+                          ),
+                        ),
                       ),
                     ),
                   ),

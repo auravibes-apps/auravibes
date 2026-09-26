@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_column.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraColumn', () {
@@ -69,11 +69,14 @@ void main() {
 
     testWidgets('applies tokenized padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraColumn(children: [SizedBox.shrink()], padding: .medium),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraColumn(children: [SizedBox.shrink()], padding: .medium),
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -150,11 +153,14 @@ void main() {
 
     testWidgets('applies tokenized padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraRow(children: [SizedBox.shrink()], padding: .small),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraRow(children: [SizedBox.shrink()], padding: .small),
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

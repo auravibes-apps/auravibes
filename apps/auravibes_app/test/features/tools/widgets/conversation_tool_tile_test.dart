@@ -38,14 +38,17 @@ class const _Subject({
   @override
   Widget build(BuildContext context) {
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: Material(
-          child: SingleChildScrollView(
-            child: ConversationToolTile(
-              toolState: toolState,
-              workspaceId: _workspaceId,
-              conversationId: conversationId,
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: Material(
+            child: SingleChildScrollView(
+              child: ConversationToolTile(
+                toolState: toolState,
+                workspaceId: _workspaceId,
+                conversationId: conversationId,
+              ),
             ),
           ),
         ),

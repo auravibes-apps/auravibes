@@ -89,35 +89,32 @@ void main() {
     expect(find.text('*'), findsNWidgets(3));
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(find.byType(TextFormField).at(0), '   ');
-    await tester.enterText(find.byType(TextFormField).at(1), '   ');
+    await tester.enterText(find.byType(AuraInput).at(0), '   ');
+    await tester.enterText(find.byType(AuraInput).at(1), '   ');
     await tester.pump();
     expect(find.text('0 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Summarizer');
+    await tester.enterText(find.byType(AuraInput).at(0), 'Summarizer');
     await tester.pump();
     expect(find.text('1 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'Summarize requests.',
-    );
+    await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
     await tester.pump();
     expect(find.text('2 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.tap(find.byType(TextFormField).at(1));
-    final descriptionField = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(1),
+    await tester.tap(find.byType(AuraInput).at(1));
+    final descriptionField = tester.widget<AuraInput>(
+      find.byType(AuraInput).at(1),
     );
     final descriptionController = descriptionField.controller;
     if (descriptionController == null) {
       throw StateError('Description field must expose its controller.');
     }
     descriptionController.text = 'x' * (AgentLimits.descriptionMaxLength + 1);
-    await tester.tap(find.byType(TextFormField).at(0));
+    await tester.tap(find.byType(AuraInput).at(0));
     await tester.pump();
     expect(find.text('1 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
@@ -126,10 +123,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'Summarize requests.',
-    );
+    await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
     await tester.pump();
     expect(find.text('2 of 3 required fields complete'), findsOneWidget);
 
@@ -259,7 +253,7 @@ Future<void> _pumpAgentScreen(
     ),
   );
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 bool _isSaveButtonDisabled(WidgetTester tester, String label) {
@@ -277,11 +271,8 @@ Future<void> _openPromptEditor(WidgetTester tester) async {
 }
 
 Future<void> _enterValidDraft(WidgetTester tester) async {
-  await tester.enterText(find.byType(TextFormField).at(0), 'Summarizer');
-  await tester.enterText(
-    find.byType(TextFormField).at(1),
-    'Summarize requests.',
-  );
+  await tester.enterText(find.byType(AuraInput).at(0), 'Summarizer');
+  await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
   await _openPromptEditor(tester);
   await tester.enterText(find.byType(TextFormField), 'Summarize clearly.');
   await tester.tap(find.byIcon(Icons.save_outlined));

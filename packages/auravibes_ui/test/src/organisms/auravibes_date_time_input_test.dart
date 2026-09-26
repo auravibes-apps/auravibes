@@ -2,9 +2,9 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/src/organisms/aura_date_time_input.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraDateTimeInput', () {
@@ -148,9 +148,12 @@ void main() {
 
     testWidgets('picker inherits the active Aura theme', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
-          theme: .new(extensions: [AuraTheme.dark]),
+        AuraThemeScope(
+          theme: .dark,
+          child: MaterialApp(
+            home: Scaffold(body: AuraDateTimeInput(value: .new(2024, 1, 15))),
+            theme: .new(),
+          ),
         ),
       );
 

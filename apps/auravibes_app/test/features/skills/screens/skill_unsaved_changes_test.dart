@@ -52,15 +52,12 @@ void main() {
   });
 }
 
-Finder _titleField() => find.descendant(
-  of: find.byWidgetPredicate((widget) {
-    if (widget is! AuraInput) return false;
-    final label = widget.label;
+Finder _titleField() => find.byWidgetPredicate((widget) {
+  if (widget is! AuraInput) return false;
+  final label = widget.label;
 
-    return label is Text && label.data == 'Title';
-  }),
-  matching: find.byType(TextFormField),
-);
+  return label is Text && label.data == 'Title';
+});
 
 class const _SkillUnsavedChangesApp({required final _SkillFixture fixture})
     extends StatelessWidget {

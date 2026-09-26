@@ -21,12 +21,15 @@ void main() {
       container: container,
       child: EasyLocalization(
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Material(
-              child: ConversationContextUsagePill(
-                workspaceId: 'ws-1',
-                conversationId: 'conv-1',
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: const Material(
+                child: ConversationContextUsagePill(
+                  workspaceId: 'ws-1',
+                  conversationId: 'conv-1',
+                ),
               ),
             ),
           ),

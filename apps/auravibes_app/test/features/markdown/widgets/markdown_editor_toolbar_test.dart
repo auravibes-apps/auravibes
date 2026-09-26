@@ -13,17 +13,20 @@ void main() {
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: Column(
-                  children: [
-                    TextField(controller: controller, focusNode: focusNode),
-                    MarkdownEditorToolbar(
-                      controller: controller,
-                      focusNode: focusNode,
-                    ),
-                  ],
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: Scaffold(
+                  body: Column(
+                    children: [
+                      TextField(controller: controller, focusNode: focusNode),
+                      MarkdownEditorToolbar(
+                        controller: controller,
+                        focusNode: focusNode,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

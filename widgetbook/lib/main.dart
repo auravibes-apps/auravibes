@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:material_ui/material_ui.dart' hide ThemeMode;
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
@@ -22,15 +24,26 @@ abstract final class WidgetbookConfig {
 
   static Widget applyApp(BuildContext _, Widget child) => MaterialApp(
     home: child,
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    localizationsDelegates: const [
+      ...GlobalMaterialLocalizations.delegates,
+      sdk_localizations.GlobalMaterialLocalizations.delegate,
+    ],
     supportedLocales: _auraLocales,
     debugShowCheckedModeBanner: false,
   );
 
   static Widget applyTheme(BuildContext _, ThemeData theme, Widget child) =>
-      Theme(
-        data: theme,
-        child: AuraLegacyMaterialBridge(child: Material(child: child)),
+      AuraThemeScope(
+        theme: theme.brightness == Brightness.light
+            ? AuraTheme.light
+            : AuraTheme.dark,
+        child: Theme(
+          data: theme,
+          child: AuraSdkMaterialSurface(
+            // ignore: deprecated_member_use - Widgetbook previews legacy dependencies.
+            child: MaterialUiCompatibilityBridge(child: Material(child: child)),
+          ),
+        ),
       );
 
   static Addon _createViewportAddon() => ViewportAddon([
@@ -117,7 +130,6 @@ ScenarioDefinition _createDarkScenario() => ScenarioDefinition(
 
 ThemeData _createLightTheme() {
   return ThemeData(
-    extensions: [AuraTheme.light],
     useMaterial3: true,
     colorScheme: _createColorScheme(.light, .light),
     textTheme: _createTextTheme(.light, ThemeData.light().textTheme),
@@ -126,7 +138,6 @@ ThemeData _createLightTheme() {
 
 ThemeData _createDarkTheme() {
   return ThemeData(
-    extensions: [AuraTheme.dark],
     useMaterial3: true,
     colorScheme: _createColorScheme(.dark, .dark),
     textTheme: _createTextTheme(.dark, ThemeData.dark().textTheme),

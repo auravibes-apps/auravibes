@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dar
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -3890,7 +3891,7 @@ void main() {
       );
 
       expect(find.text(providerDetails), findsOneWidget);
-      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.byType(AuraSelectableText), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -3942,17 +3943,22 @@ class const _ChatMessagesTestSubject({
       child: EasyLocalization(
         child: Builder(
           builder: (context) {
-            final child = Theme(
-              data: ThemeData(extensions: [theme ?? AuraTheme.light]),
-              child: Material(
-                child: ChatMessagesWidget(
-                  workspaceId: 'ws-1',
-                  conversationId: conversationId,
-                  messages: messages,
-                  messageEntitiesById: messageEntitiesById,
-                  pendingToolCalls: pendingToolCalls,
-                  showThinking: showThinking,
-                  onRetryMessage: onRetryMessage,
+            final child = AuraThemeScope(
+              theme: theme ?? AuraTheme.light,
+              child: Theme(
+                data: ThemeData(),
+                child: AuraLegacyMaterialBridge(
+                  child: Material(
+                    child: ChatMessagesWidget(
+                      workspaceId: 'ws-1',
+                      conversationId: conversationId,
+                      messages: messages,
+                      messageEntitiesById: messageEntitiesById,
+                      pendingToolCalls: pendingToolCalls,
+                      showThinking: showThinking,
+                      onRetryMessage: onRetryMessage,
+                    ),
+                  ),
                 ),
               ),
             );

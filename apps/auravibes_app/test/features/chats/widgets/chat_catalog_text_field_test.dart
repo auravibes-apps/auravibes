@@ -1,12 +1,16 @@
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  Widget app(Widget child) => MaterialApp(
-    home: Scaffold(body: child),
-    theme: .new(extensions: [AuraTheme.light]),
+  Widget app(Widget child) => AuraThemeScope(
+    theme: .light,
+    child: MaterialApp(
+      home: Scaffold(body: AuraLegacyMaterialBridge(child: child)),
+      theme: .new(),
+    ),
   );
 
   testWidgets('model updates replace and clear text without user callbacks', (
@@ -23,8 +27,8 @@ void main() {
           ),
         ),
       );
-      final field = tester.widget<TextField>(find.byType(TextField));
-      expect(field.controller?.text, value ?? '');
+      final field = tester.widget<EditableText>(find.byType(EditableText));
+      expect(field.controller.text, value ?? '');
       expect(
         tester.widget<AuraInput>(find.byType(AuraInput)).initialValue,
         isNull,
@@ -48,8 +52,8 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byType(TextField));
-      final original = tester.widget<TextField>(find.byType(TextField));
+      await tester.tap(find.byType(EditableText));
+      final original = tester.widget<EditableText>(find.byType(EditableText));
       const edit = TextEditingValue(
         text: 'Edited',
         selection: .collapsed(offset: 3),
@@ -57,12 +61,12 @@ void main() {
       );
       tester.testTextInput.updateEditingValue(edit);
       await tester.pump();
-      final field = tester.widget<TextField>(find.byType(TextField));
+      final field = tester.widget<EditableText>(find.byType(EditableText));
       expect(value, 'Edited');
       expect(field.controller, same(original.controller));
-      expect(field.controller?.value, edit);
+      expect(field.controller.value, edit);
       expect(field.focusNode, same(original.focusNode));
-      expect(field.focusNode?.hasFocus, isTrue);
+      expect(field.focusNode.hasFocus, isTrue);
     },
   );
 
@@ -89,7 +93,7 @@ void main() {
       );
       expect(input.inputFormatters, isNull);
       expect(input.semanticLabel, 'Value');
-      await tester.enterText(find.byType(TextField), 'letters');
+      await tester.enterText(find.byType(EditableText), 'letters');
       expect(edited, 'letters');
     }
   });

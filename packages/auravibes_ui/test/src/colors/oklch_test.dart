@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/colors/vector.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('ValueColor', () {

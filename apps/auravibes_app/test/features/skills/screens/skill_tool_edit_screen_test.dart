@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_template_too
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -136,8 +137,11 @@ void main() {
                 container: container,
                 child: MaterialApp.router(
                   routerConfig: router,
-                  builder: (context, child) =>
-                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  builder: (_, child) => AuraLegacyMaterialBridge(
+                    child: AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  ),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -183,11 +187,7 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      final field = find.descendant(
-        of: selectedInput,
-        matching: find.byType(TextFormField),
-      );
-      await tester.enterText(field, value);
+      await tester.enterText(selectedInput, value);
       final _ = await tester.pumpAndSettle();
     }
 

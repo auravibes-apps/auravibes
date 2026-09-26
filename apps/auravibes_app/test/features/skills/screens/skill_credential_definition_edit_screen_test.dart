@@ -142,13 +142,13 @@ void main() {
     expect(find.text('Add attribute'), findsOneWidget);
     expect(find.text('Secret'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Example Service');
-    await tester.enterText(find.byType(TextFormField).at(1), 'api_key');
-    await tester.enterText(find.byType(TextFormField).at(2), 'API key');
+    await tester.enterText(find.byType(AuraInput).at(0), 'Example Service');
+    await tester.enterText(find.byType(AuraInput).at(1), 'api_key');
+    await tester.enterText(find.byType(AuraInput).at(2), 'API key');
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).at(3), 'user_id');
-    await tester.enterText(find.byType(TextFormField).at(4), 'User id');
+    await tester.enterText(find.byType(AuraInput).at(3), 'user_id');
+    await tester.enterText(find.byType(AuraInput).at(4), 'User id');
     await tester.ensureVisible(find.text('Optional').last);
     await tester.tap(find.byType(AuraSwitch).at(2));
     final _ = await tester.pumpAndSettle();

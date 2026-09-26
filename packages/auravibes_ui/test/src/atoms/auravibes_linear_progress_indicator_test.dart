@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_linear_progress_indicator.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraLinearProgressIndicator', () {
@@ -59,15 +59,18 @@ void main() {
 
     testWidgets('resolves tints', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraLinearProgressIndicator(
-              value: 0.5,
-              tint: .error,
-              backgroundAlpha: 0.25,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraLinearProgressIndicator(
+                value: 0.5,
+                tint: .error,
+                backgroundAlpha: 0.25,
+              ),
             ),
+            theme: ThemeData.light().copyWith(),
           ),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 

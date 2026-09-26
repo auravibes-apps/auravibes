@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraIcon', () {
@@ -18,9 +18,12 @@ void main() {
       const customColor = AuraTint.error;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(body: AuraIcon(Icons.star, tint: customColor)),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(body: AuraIcon(Icons.star, tint: customColor)),
+            theme: ThemeData.light().copyWith(),
+          ),
         ),
       );
 
@@ -211,18 +214,21 @@ void main() {
       const customTint = AuraTint.error;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              tint: customTint,
-              variant: .filled,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraIconButton(
+                icon: Icons.star,
+                onPressed: () {
+                  final _ = Object();
+                },
+                tint: customTint,
+                variant: .filled,
+              ),
             ),
+            theme: ThemeData.light().copyWith(),
           ),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 

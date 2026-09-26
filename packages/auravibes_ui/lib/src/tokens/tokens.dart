@@ -17,6 +17,7 @@ export 'aura_theme.dart'
         AuraSpacingScale,
         AuraTheme,
         AuraThemeExtension,
+        AuraThemeScope,
         AuraTypographyScale;
 export 'design_tokens.dart'
     show

@@ -87,10 +87,13 @@ class const _ListApp({required final List<Object> overrides})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TestableApp(
-    child: Theme(
-      data: .new(extensions: [AuraTheme.light]),
-      child: const Scaffold(
-        body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+    child: AuraThemeScope(
+      theme: .light,
+      child: Theme(
+        data: .new(),
+        child: const Scaffold(
+          body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+        ),
       ),
     ),
     overrides: overrides,
@@ -145,7 +148,7 @@ void main() {
 
     await tester.enterText(find.byType(AuraInput), 'local files');
     await tester.pump();
-    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);
@@ -172,7 +175,7 @@ void main() {
 
     await tester.enterText(find.byType(AuraInput), 'remote');
     await tester.pump();
-    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     final rows = tester.widgetList<ToolItemRow>(find.byType(ToolItemRow));

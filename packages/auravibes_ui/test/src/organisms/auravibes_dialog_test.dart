@@ -4,8 +4,8 @@ import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_confirm_dialog.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// Test helper to create a widget with Aura theme.
 class AuraThemeWrapper extends StatelessWidget {
@@ -17,9 +17,12 @@ class AuraThemeWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(body: child),
-      theme: .new(extensions: [AuraTheme.light]),
+    return AuraThemeScope(
+      theme: .light,
+      child: MaterialApp(
+        home: Scaffold(body: child),
+        theme: .new(),
+      ),
     );
   }
 }

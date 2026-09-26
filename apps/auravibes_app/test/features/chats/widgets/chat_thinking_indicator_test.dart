@@ -8,9 +8,12 @@ void main() {
   Widget buildSubject(Widget child) {
     return EasyLocalization(
       child: MaterialApp(
-        home: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: Material(child: child),
+        home: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Material(child: child),
+          ),
         ),
       ),
       supportedLocales: const [Locale('en')],

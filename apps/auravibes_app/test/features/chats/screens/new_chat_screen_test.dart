@@ -34,9 +34,12 @@ Future<void> _pumpNewChatWithinPausedBranch(
       TestableApp(
         child: TickerMode(
           enabled: tickerEnabled,
-          child: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: Portal(child: NewChatScreen(workspaceId: workspaceId)),
+          child: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: Portal(child: NewChatScreen(workspaceId: workspaceId)),
+            ),
           ),
         ),
         overrides: overrides,
@@ -384,9 +387,14 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const Portal(
+                  child: NewChatScreen(workspaceId: 'test-ws'),
+                ),
+              ),
             ),
             overrides: _newChatOverrides(),
             workspaceId: 'test-ws',
@@ -416,9 +424,14 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const Portal(
+                  child: NewChatScreen(workspaceId: 'test-ws'),
+                ),
+              ),
             ),
             overrides: _newChatOverrides(
               state: const NewChatState(isLoading: true),

@@ -89,9 +89,12 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
               .overrideWith(() => _MockGroupedNotifier([])),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: Material(child: child),
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: Material(child: child),
+            ),
           ),
         ),
       ),
@@ -166,7 +169,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsNWidgets(2));
@@ -225,7 +228,7 @@ void main() {
 
     expect(find.byType(AuraDivider), findsNothing);
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraDivider), findsOneWidget);
@@ -247,11 +250,11 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).first);
+    await tester.tap(find.byType(AuraIconButton).first);
     final _ = await tester.pumpAndSettle();
     expect(find.byType(ToolItemRow), findsOneWidget);
 
-    await tester.tap(find.byType(IconButton).first);
+    await tester.tap(find.byType(AuraIconButton).first);
     final _ = await tester.pumpAndSettle();
     expect(find.byType(ToolItemRow), findsNothing);
   });
@@ -271,7 +274,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('tools_screen.no_tools_in_group'), findsOneWidget);
@@ -358,7 +361,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsNWidgets(3));
@@ -518,7 +521,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);
@@ -542,7 +545,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);

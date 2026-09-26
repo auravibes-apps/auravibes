@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraEdgeInsetsGeometry', () {
@@ -117,9 +117,12 @@ void main() {
   group('AuraPadding', () {
     testWidgets('renders child with default padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(body: AuraPadding(child: Text('Padded'))),
-          theme: .new(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(body: AuraPadding(child: Text('Padded'))),
+            theme: .new(),
+          ),
         ),
       );
 
@@ -129,11 +132,14 @@ void main() {
 
     testWidgets('renders child with custom padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraPadding(child: Text('Large Padded'), padding: .large),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraPadding(child: Text('Large Padded'), padding: .large),
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -150,14 +156,17 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(
-            body: AuraPadding(
-              child: SizedBox(width: 100, height: 100),
-              padding: .medium,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(
+              body: AuraPadding(
+                child: SizedBox(width: 100, height: 100),
+                padding: .medium,
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

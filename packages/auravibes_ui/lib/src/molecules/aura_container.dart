@@ -4,7 +4,7 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart'
     show AuraTheme, AuraThemeExtension;
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show DesignColors, DesignShadows;
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A customizable layout container component following the Aura design system.
 ///

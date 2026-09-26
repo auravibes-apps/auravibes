@@ -64,10 +64,13 @@ void main() {
                   .overrideWith(_LoadingToolsNotifier.new),
             ],
             child: MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const Scaffold(
-                  body: ToolCountEnabledWidget(workspaceId: workspaceId),
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const Scaffold(
+                    body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                  ),
                 ),
               ),
             ),
@@ -106,10 +109,13 @@ void main() {
                       .overrideWith(() => _DataToolsNotifier(tools)),
                 ],
                 child: MaterialApp(
-                  home: Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: const Scaffold(
-                      body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                  home: AuraThemeScope(
+                    theme: .light,
+                    child: Theme(
+                      data: .new(),
+                      child: const Scaffold(
+                        body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                      ),
                     ),
                   ),
                   locale: context.locale,
@@ -143,10 +149,13 @@ void main() {
               .overrideWith(_ErrorToolsNotifier.new),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: const Scaffold(
-              body: ToolCountEnabledWidget(workspaceId: workspaceId),
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: const Scaffold(
+                body: ToolCountEnabledWidget(workspaceId: workspaceId),
+              ),
             ),
           ),
         ),

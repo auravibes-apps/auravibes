@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,9 +25,15 @@ class const _Subject({required final List<Object> overrides})
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const Scaffold(body: SizedBox.shrink()),
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const Scaffold(body: SizedBox.shrink()),
+                ),
+              ),
+              builder: (_, child) => AuraLegacyMaterialBridge(
+                child: child ?? const SizedBox.shrink(),
               ),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,

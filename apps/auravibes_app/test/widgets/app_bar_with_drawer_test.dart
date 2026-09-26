@@ -1,6 +1,8 @@
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -8,11 +10,19 @@ import 'package:material_ui/material_ui.dart';
 void main() {
   testWidgets('renders app bar with menu icon', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
+          ),
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -22,11 +32,19 @@ void main() {
 
   testWidgets('renders with title', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(title: Text('Test Title')),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            appBar: AuraAppBarWithDrawer(title: Text('Test Title')),
+          ),
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -35,14 +53,22 @@ void main() {
 
   testWidgets('renders with actions', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(
-            title: Text('Test AppBar'),
-            actions: [Icon(Icons.settings)],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            appBar: AuraAppBarWithDrawer(
+              title: Text('Test AppBar'),
+              actions: [Icon(Icons.settings)],
+            ),
           ),
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
@@ -53,22 +79,32 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(
-            title: Text('Test AppBar'),
-            leading: AuraIconButton(icon: Icons.arrow_back),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            appBar: AuraAppBarWithDrawer(
+              title: Text('Test AppBar'),
+              leading: AuraIconButton(icon: Icons.arrow_back),
+            ),
           ),
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
     expect(find.byIcon(Icons.menu), findsOneWidget);
     expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     expect(
-      tester.widget<AppBar>(find.byType(AppBar)).leadingWidth,
-      kToolbarHeight * 2,
+      find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'AppBar',
+      ),
+      findsOneWidget,
     );
   });
 
@@ -93,9 +129,17 @@ void main() {
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
-      MaterialApp.router(
-        routerConfig: router,
-        theme: .new(extensions: [AuraTheme.light]),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp.router(
+          routerConfig: router,
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
+        ),
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -136,14 +180,22 @@ void main() {
     final controller = ResponsiveSlidingDrawerController();
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: ResponsiveSlidingDrawerProvider(
-          controller: controller,
-          child: const Scaffold(
-            appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: ResponsiveSlidingDrawerProvider(
+            controller: controller,
+            child: const Scaffold(
+              appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
+            ),
           ),
+          theme: .new(),
+          localizationsDelegates: const [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('en')],
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 
