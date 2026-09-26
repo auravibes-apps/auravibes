@@ -1184,20 +1184,23 @@ class const _MessageActions({
     final resolve = resolveContent;
     final retry = onRetryMessage;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (resolve != null)
-          _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
-        if (retry != null)
-          _MessageRetryAction(message: message, onRetryMessage: retry),
-        if (_canForkMessage(message))
-          _MessageForkAction(
-            message: message,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          ),
-      ],
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (resolve != null)
+            _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
+          if (retry != null)
+            _MessageRetryAction(message: message, onRetryMessage: retry),
+          if (_canForkMessage(message))
+            _MessageForkAction(
+              message: message,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
+        ],
+      ),
     );
   }
 }
