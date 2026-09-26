@@ -461,7 +461,8 @@ class ConversationUseCases {
       final requestedReasoningConfigJson = request.clearReasoningConfig
           ? null
           : request.reasoningConfigJson ?? conversation.reasoningConfigJson;
-      final mustValidateReasoning = requestedReasoningConfigJson != null &&
+      final mustValidateReasoning =
+          requestedReasoningConfigJson != null &&
           (request.reasoningConfigJson != null ||
               request.modelId != null ||
               request.clearModel);
