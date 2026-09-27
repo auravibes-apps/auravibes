@@ -780,7 +780,7 @@
     "agents": {
       "title": "Agentes",
       "description": "Inspecciona los agentes activos del espacio de trabajo.",
-      "content": "Usa esta habilidad para listar agentes activos y filtrarlos por tipo. Cargar esta habilidad agrega solo list_agents a la conversación. run_sub_agent es una herramienta del harness y sigue disponible sin cargar esta habilidad."
+      "content": "Usa list_agents para buscar agentes configurados; filtra por type=sub_agent al elegir un especialista. Un subagente general no requiere un agente configurado: llama a run_sub_agent con title y prompt y omite agentId. Cargar esta habilidad solo agrega list_agents; run_sub_agent sigue disponible sin cargarla."
     }
   },
   "tool_confirmation": {

@@ -780,7 +780,7 @@
     "agents": {
       "title": "Agents",
       "description": "Inspect enabled workspace agents.",
-      "content": "Use this skill to list enabled agents and filter them by type. Loading this skill adds only list_agents to the conversation. run_sub_agent is a harness tool and stays available without loading this skill."
+      "content": "Use list_agents to find configured agents; filter by type=sub_agent when selecting a specialist. A general sub-agent needs no configured agent: call run_sub_agent with title and prompt and omit agentId. Loading this skill adds only list_agents; run_sub_agent remains available without loading it."
     }
   },
   "tool_confirmation": {
