@@ -1,6 +1,7 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -421,65 +422,67 @@ class const _DropdownMenu<T>({
                 final leading = option.leading;
                 final trailing = option.trailing;
                 final child = option.child ?? const Text('');
+                final customOption = optionBuilder?.call(context, option);
 
-                return optionBuilder?.call(context, option) ??
-                    AuraPressable(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: context.auraTheme.fromSpacing(.sm),
-                          horizontal: context.auraTheme.fromSpacing(.md),
-                        ),
-                        child: Row(
-                          children: [
-                            if (leading != null) ...[
-                              leading,
-                              const AuraSizedBox(width: .sm),
-                            ],
-                            Expanded(
-                              child: AuraText(
-                                child: DefaultTextStyle(
-                                  style: TextStyle(
-                                    color: option.isEnabled
-                                        ? auraColors.onSurface
-                                        : auraColors.onSurface.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                  ),
-                                  child: child,
-                                ),
+                if (customOption != null) {
+                  return AuraInteractionTarget(child: customOption);
+                }
+
+                return AuraPressable(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: context.auraTheme.fromSpacing(.sm),
+                      horizontal: context.auraTheme.fromSpacing(.md),
+                    ),
+                    child: Row(
+                      children: [
+                        if (leading != null) ...[
+                          leading,
+                          const AuraSizedBox(width: .sm),
+                        ],
+                        Expanded(
+                          child: AuraText(
+                            child: DefaultTextStyle(
+                              style: TextStyle(
+                                color: option.isEnabled
+                                    ? auraColors.onSurface
+                                    : auraColors.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
                               ),
+                              child: child,
                             ),
-                            if (trailing != null) ...[
-                              const AuraSizedBox(width: .sm),
-                              trailing,
-                            ] else if (isSelected) ...[
-                              const AuraSizedBox(width: .sm),
-                              const AuraIcon(
-                                Icons.check,
-                                size: AuraIconSize.small,
-                                tint: AuraTint.primary,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      color: context.auraColors.primary,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? auraColors.primary.withValues(alpha: 0.08)
-                            : DesignColors.transparent,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
                           ),
                         ),
-                      ),
-                      onPressed: option.isEnabled
-                          ? () {
-                              onOptionSelected(option.value);
-                            }
-                          : null,
-                    );
+                        if (trailing != null) ...[
+                          const AuraSizedBox(width: .sm),
+                          trailing,
+                        ] else if (isSelected) ...[
+                          const AuraSizedBox(width: .sm),
+                          const AuraIcon(
+                            Icons.check,
+                            size: AuraIconSize.small,
+                            tint: AuraTint.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  color: context.auraColors.primary,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? auraColors.primary.withValues(alpha: 0.08)
+                        : DesignColors.transparent,
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
+                    ),
+                  ),
+                  onPressed: option.isEnabled
+                      ? () {
+                          onOptionSelected(option.value);
+                        }
+                      : null,
+                );
               },
               itemCount: options.length,
             ),
