@@ -1,5 +1,7 @@
 // Required: Tests use numeric fixtures.
 
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -10,9 +12,10 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -226,7 +229,9 @@ void main() {
     expect(unchanged?.title, 'Example Service');
   });
 
-  testWidgets('ignores empty rows and attribute ordering', (tester) async {
+  testWidgets('ignores empty placeholder but treats attribute order as dirty', (
+    tester,
+  ) async {
     await _setSurfaceSize(tester);
     final harness = await _createHarness();
     addTearDown(harness.dispose);
@@ -259,14 +264,7 @@ void main() {
     await tester.tap(find.text('Open editor'));
     final _ = await tester.pumpAndSettle();
 
-    await tester.enterText(_editableInputAt(0), 'Example Service ');
-    await tester.enterText(_editableInputAt(1), 'user_id');
-    await tester.enterText(_editableInputAt(2), 'User id');
-    await tester.enterText(_editableInputAt(3), 'api_key');
-    await tester.enterText(_editableInputAt(4), 'API key');
-
     await tester.ensureVisible(find.text('Add attribute'));
-
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
@@ -278,7 +276,8 @@ void main() {
 
     await tester.tap(find.text('Open editor'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(_editableInputAt(0), 'Changed Service');
+    await tester.tap(find.byIcon(Icons.arrow_downward).first);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 
@@ -286,5 +285,144 @@ void main() {
     await tester.tap(find.text('Discard changes'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Open editor'), findsOneWidget);
+  });
+
+  testWidgets('persists credential attribute order', (tester) async {
+    await _setSurfaceSize(tester);
+    final harness = await _createHarness();
+    addTearDown(harness.dispose);
+    final definition = await harness.repository.createDefinition(
+      harness.workspaceId,
+      const .new(
+        title: 'Example Service',
+        attributesJson: '''
+          {
+            "api_key": {"description": "API key"},
+            "user_id": {"description": "User id"}
+          }
+          ''',
+      ),
+    );
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        buildScreen(
+          container: harness.container,
+          workspaceId: harness.workspaceId,
+          home: editorLauncher(
+            harness.workspaceId,
+            definitionId: definition.id,
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Open editor'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Move attribute up'), findsNWidgets(2));
+    expect(find.byTooltip('Move attribute down'), findsNWidgets(2));
+    await tester.tap(find.byIcon(Icons.arrow_downward).first);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.save_outlined));
+    final _ = await tester.pumpAndSettle();
+
+    final updated = await harness.repository.getDefinitionById(definition.id);
+    if (updated == null) fail('Updated definition was not found.');
+    final attributes = jsonDecode(updated.attributesJson) as Map;
+    expect(attributes.keys, ['user_id', 'api_key']);
+  });
+
+  testWidgets('shows required and duplicate variable errors inline', (
+    tester,
+  ) async {
+    await _setSurfaceSize(tester);
+    final harness = await _createHarness();
+    addTearDown(harness.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        buildScreen(
+          container: harness.container,
+          workspaceId: harness.workspaceId,
+          home: editorLauncher(harness.workspaceId),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Open editor'));
+    final _ = await tester.pumpAndSettle();
+
+    await tester.enterText(_editableInputAt(0), 'Example Service');
+    await tester.tap(find.text('Add attribute'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Add attribute'));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(_editableInputAt(3), 'api_key');
+    await tester.enterText(_editableInputAt(5), 'api_key');
+    await tester.tap(find.byIcon(Icons.save_outlined));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Variable is required'), findsOneWidget);
+    expect(find.text('Variable must be unique'), findsNWidgets(2));
+    expect(find.text('Unable to save credential'), findsNothing);
+    expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
+    expect(
+      await harness.repository.getDefinitionBySlug(
+        harness.workspaceId,
+        'example_service',
+      ),
+      isNull,
+    );
+  });
+
+  testWidgets('copies the exact credential definition slug', (tester) async {
+    await _setSurfaceSize(tester);
+    final harness = await _createHarness();
+    addTearDown(harness.dispose);
+    final definition = await harness.repository.createDefinition(
+      harness.workspaceId,
+      const .new(title: 'Example Service', attributesJson: '{}'),
+    );
+    String? copiedText;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copiedText = (call.arguments as Map)['text'] as String?;
+        }
+
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        buildScreen(
+          container: harness.container,
+          workspaceId: harness.workspaceId,
+          home: editorLauncher(
+            harness.workspaceId,
+            definitionId: definition.id,
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Open editor'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Copy slug'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.copy_outlined));
+    final _ = await tester.pumpAndSettle();
+
+    expect(copiedText, definition.slug);
+    expect(find.text('Slug copied'), findsOneWidget);
   });
 }
