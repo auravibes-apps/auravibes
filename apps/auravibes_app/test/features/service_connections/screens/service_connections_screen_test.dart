@@ -88,6 +88,77 @@ void main() {
     );
   });
 
+  testWidgets('opens redacted details only for failed MCP connections', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Failed MCP',
+          displayStatus: .failed,
+          canReconnect: true,
+          lastAuthError: 'Authorization: Bearer replace-me',
+        ),
+        _mcpConnection(
+          name: 'Healthy MCP',
+          displayStatus: .connected,
+          canReconnect: true,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await _openConnectionMenu(tester, 'Failed MCP');
+
+    expect(find.text('View details'), findsOneWidget);
+    expect(find.text('Reconnect'), findsWidgets);
+
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.textContaining('Bearer [REDACTED]'), findsOneWidget);
+    expect(find.textContaining('replace-me'), findsNothing);
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
+    final healthyMenu = find.byKey(
+      const ValueKey<String>('service_connection_menu_Healthy MCP'),
+    );
+    final _ = await tester.ensureVisible(healthyMenu);
+    final _ = await tester.pumpAndSettle();
+    await _openConnectionMenu(tester, 'Healthy MCP');
+
+    expect(find.text('View details'), findsNothing);
+    expect(find.text('Reconnect'), findsWidgets);
+  });
+
+  testWidgets('opens details for MCP connections needing authentication', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Needs auth MCP',
+          displayStatus: .needsReauth,
+          lastAuthError: 'Authentication expired',
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await _openConnectionMenu(tester, 'Needs auth MCP');
+
+    expect(find.text('View details'), findsOneWidget);
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('Authentication expired'), findsOneWidget);
+  });
+
   testWidgets('searches connection metadata and applies status filters', (
     tester,
   ) async {
@@ -520,6 +591,7 @@ ServiceConnectionListItem _mcpConnection({
   List<ServiceConnectionMetadataValue> metadataValues = const [],
   bool canRefresh = false,
   bool canReconnect = false,
+  String? lastAuthError,
 }) => ServiceConnectionListItem(
   id: name,
   workspaceId: _syncWorkspaceId,
@@ -533,7 +605,7 @@ ServiceConnectionListItem _mcpConnection({
   displayStatus: displayStatus,
   expiresAt: null,
   lastRefreshedAt: null,
-  lastAuthError: null,
+  lastAuthError: lastAuthError,
   metadataValues: metadataValues,
   canRefresh: canRefresh,
   canReconnect: canReconnect,
@@ -573,6 +645,16 @@ Future<void> _pumpScreen(
     );
     await Future<void>.delayed(.zero);
   });
+  final _ = await tester.pumpAndSettle();
+}
+
+Future<void> _openConnectionMenu(WidgetTester tester, String name) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byKey(ValueKey<String>('service_connection_menu_$name')),
+      matching: find.byIcon(Icons.more_vert),
+    ),
+  );
   final _ = await tester.pumpAndSettle();
 }
 
