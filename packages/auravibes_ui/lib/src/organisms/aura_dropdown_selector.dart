@@ -32,6 +32,7 @@ class AuraDropdownSelector<T> extends StatefulWidget {
     this.isRequired = false,
     this.isEnabled = true,
     this.focusNode,
+    this.identifier,
     this.semanticLabel,
     this.optionBuilder,
   });
@@ -71,6 +72,9 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 
   /// Defines the keyboard focus for this widget.
   final FocusNode? focusNode;
+
+  /// An optional stable identifier for the dropdown trigger.
+  final String? identifier;
 
   /// A semantic label for accessibility.
   final String? semanticLabel;
@@ -162,6 +166,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       state: state,
       focusNode: _requiredFocusNode,
       menuFocusScopeNode: _requiredMenuFocusScopeNode,
+      identifier: widget.identifier,
       semanticLabel: widget.semanticLabel,
       onChanged: widget.onChanged,
       onToggle: _toggleDropdown,
@@ -271,6 +276,7 @@ class const _DropdownSelectorShell<T>({
   required final AuraFieldState state,
   required final FocusNode focusNode,
   required final FocusScopeNode menuFocusScopeNode,
+  required final String? identifier,
   required final String? semanticLabel,
   required final ValueChanged<T?>? onChanged,
   required final VoidCallback onToggle,
@@ -346,6 +352,7 @@ class const _DropdownSelectorShell<T>({
           isFocused: isDropdownOpen || isTriggerFocused,
           onTap: isEnabled ? onToggle : null,
           onFocusChange: onFocusChange,
+          identifier: identifier,
           semanticLabel: semanticLabel,
         ),
         groupId: this,
@@ -464,6 +471,7 @@ class const _DropdownMenu<T>({
                         ),
                       ),
                       color: context.auraColors.primary,
+                      identifier: option.identifier,
                       decoration: BoxDecoration(
                         color: isSelected
                             ? auraColors.primary.withValues(alpha: 0.08)

@@ -23,6 +23,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
     this.isEnabled = true,
     this.isSelected = false,
     this.onTap,
+    this.identifier,
     this.semanticLabel,
   });
 
@@ -47,6 +48,9 @@ class AuraDropdownOption<T> extends StatelessWidget {
   /// Callback when the option is tapped.
   final VoidCallback? onTap;
 
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
+
   /// A semantic label for accessibility.
   final String? semanticLabel;
 
@@ -68,8 +72,16 @@ class const _AuraDropdownOptionBody<T>({
   Widget build(BuildContext context) {
     final result = _AuraDropdownOptionButton(option: option);
     final label = option.semanticLabel;
+    final identifier = option.identifier;
 
-    return label == null ? result : Semantics(child: result, label: label);
+    if (label == null && identifier == null) return result;
+
+    return Semantics(
+      key: identifier == null ? null : ValueKey<String>(identifier),
+      child: result,
+      identifier: identifier,
+      label: label,
+    );
   }
 }
 
