@@ -480,6 +480,16 @@ class Endpoints extends _is.EndpointDispatch {
               ) async => (endpoints['account'] as _iytsp81w.AccountEndpoint)
                   .currentUser(session),
         ),
+        'deleteCurrentUser': _is.MethodConnector(
+          name: 'deleteCurrentUser',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['account'] as _iytsp81w.AccountEndpoint)
+                  .deleteCurrentUser(session),
+        ),
       },
     );
     connectors['agentCatalog'] = _is.EndpointConnector(

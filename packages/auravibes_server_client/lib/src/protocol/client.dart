@@ -471,6 +471,12 @@ class EndpointAccount extends _isc.EndpointRef {
         'currentUser',
         {},
       );
+
+  _ida.Future<void> deleteCurrentUser() => caller.callServerEndpoint<void>(
+    'account',
+    'deleteCurrentUser',
+    {},
+  );
 }
 
 /// {@category Endpoint}

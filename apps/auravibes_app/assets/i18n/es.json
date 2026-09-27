@@ -1145,8 +1145,10 @@
     "session_expired": "La sesión expiró. Inicia sesión otra vez.",
     "sign_in_again": "Iniciar sesión otra vez",
     "remove": "Eliminar cuenta",
-    "remove_title": "¿Eliminar cuenta en la nube?",
-    "remove_message": "¿Eliminar {email} de esta app? Los datos en la nube permanecen en la nube.",
-    "remove_local_mirrors_warning": "Los accesos locales a espacios en la nube conectados con esta cuenta se quitarán de esta app."
+    "remove_title": "¿Eliminar definitivamente la cuenta en la nube?",
+    "remove_message": "¿Eliminar definitivamente {email} y sus credenciales de acceso? Perderás acceso a los espacios en la nube compartidos, pero su contenido permanecerá. Primero elimina o transfiere los espacios en la nube que posees. Esta acción no se puede deshacer.",
+    "remove_local_mirrors_warning": "Los accesos locales a espacios en la nube conectados con esta cuenta se quitarán de esta app.",
+    "delete_owned_workspaces_error": "Elimina o transfiere los espacios en la nube que posees antes de eliminar esta cuenta.",
+    "delete_failed": "No se pudo completar la eliminación de esta cuenta. Revisa tu conexión e inténtalo otra vez."
   }
 }

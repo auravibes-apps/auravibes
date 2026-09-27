@@ -1482,4 +1482,7 @@ abstract class LocaleKeys {
   static const cloud_accounts_remove_message = 'cloud_accounts.remove_message';
   static const cloud_accounts_remove_local_mirrors_warning =
       'cloud_accounts.remove_local_mirrors_warning';
+  static const cloud_accounts_delete_owned_workspaces_error =
+      'cloud_accounts.delete_owned_workspaces_error';
+  static const cloud_accounts_delete_failed = 'cloud_accounts.delete_failed';
 }

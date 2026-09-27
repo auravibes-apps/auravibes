@@ -11,6 +11,7 @@ jwtRefresh:
   - refreshAccessToken:
 account:
   - currentUser:
+  - deleteCurrentUser:
 agentCatalog:
   - list:
   - getResources:

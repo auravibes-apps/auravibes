@@ -10,6 +10,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -131,14 +132,38 @@ class const _AccountList({
         .read(workspaceRepositoryProvider)
         .getWorkspaceById(workspaceId);
 
-    await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
-      await ref
-          .read(cloudAccountUseCasesProvider)
-          .remove(serverUrl: account.serverUrl, userId: account.userId);
+    try {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
+        await ref
+            .read(cloudAccountUseCasesProvider)
+            .remove(serverUrl: account.serverUrl, userId: account.userId);
+        ref
+          ..invalidate(cloudAccountsProvider)
+          ..invalidate(allWorkspacesProvider);
+      });
+    } on Object catch (error) {
+      if (!context.mounted) return;
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(allWorkspacesProvider);
-    });
+      final errorKey = switch (error) {
+        CloudAccountDeletionException(:final localizationKey) =>
+          localizationKey,
+        CloudWorkspaceException(code: .ownershipTransferRequired) =>
+          LocaleKeys.cloud_accounts_delete_owned_workspaces_error,
+        CloudWorkspaceException(code: .authenticationRequired) =>
+          LocaleKeys.cloud_accounts_session_expired,
+        CloudWorkspaceException(code: .emailAccountRequired) =>
+          LocaleKeys.cloud_accounts_session_expired,
+        _ => LocaleKeys.cloud_accounts_delete_failed,
+      };
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(errorKey),
+        variant: .error,
+      );
+      return;
+    }
     if (!context.mounted ||
         activeWorkspace?.cloudAccountId != account.userId ||
         ref.read(WorkspaceManagementMutations.cloudAccount) is MutationError) {
