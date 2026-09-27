@@ -28,7 +28,8 @@ void main() {
     final usecases = CloudAccountUseCases(
       store: store,
       workspaceRepository: repository,
-      deleteRemoteAccount: ({required serverUrl, required userId}) async {},
+      deleteRemoteAccount: ({required serverUrl, required userId}) =>
+          Future<void>.value(),
       invalidateAccount: (serverUrl, userId) {
         invalidatedIdentity = CloudAccountIdentity.accountIdentity(
           serverUrl,
