@@ -1,6 +1,12 @@
 import 'package:auravibes_app/app_env_config.dart';
 
-enum ModelProviderAuthMode { apiKey, oauth2 }
+enum ModelProviderAuthMode {
+  apiKey,
+  oauth2;
+
+  static ModelProviderAuthMode forProviderId(String? providerId) =>
+      ModelProviderOAuthProfiles.isCodexProvider(providerId) ? oauth2 : apiKey;
+}
 
 abstract final class ModelProviderOAuthProfiles {
   static const providerId = 'openai-codex';
