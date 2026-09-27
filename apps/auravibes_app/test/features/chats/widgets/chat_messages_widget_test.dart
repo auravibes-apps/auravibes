@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dar
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -799,11 +800,55 @@ void main() {
       );
 
       await tester.tap(find.text('Open docs'));
-      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('https://example.org'));
-      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
 
       expect(launchedUrls, ['https://example.com', 'https://example.org']);
+    });
+
+    testWidgets('does not open Markdown link without confirmation', (
+      tester,
+    ) async {
+      var launchCount = 0;
+      _mockUrlLauncher(tester, (_) async {
+        launchCount++;
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['markdown-link'],
+          overrides: _messageOverrides({
+            'markdown-link': _createMessage(
+              content: '[Open docs](https://example.com/path?value=secret)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      expect(
+        find.textContaining('https://example.com/path?value=secret'),
+        findsOneWidget,
+      );
+      expect(launchCount, 0);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(launchCount, 0);
     });
 
     testWidgets('rejects unsafe and malformed URLs', (tester) async {
@@ -822,7 +867,8 @@ void main() {
               id: 'unsafe-links',
               content:
                   '[Unsafe](javascript:alert(1)) '
-                  '[Missing host](https:///missing-host)',
+                  '[Missing host](https:///missing-host) '
+                  '[Deceptive](https://accounts.example@attacker.example/sso)',
               isUser: false,
             ),
           }),
@@ -833,8 +879,11 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Missing host'));
       await tester.pump();
+      await tester.tap(find.text('Deceptive'));
+      await tester.pump();
 
       expect(launchCount, 0);
+      expect(find.text('Open external link?'), findsNothing);
     });
 
     testWidgets('shows link failure feedback', (tester) async {
@@ -854,6 +903,8 @@ void main() {
       );
 
       await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
 
       expect(find.text('Could not open link'), findsOneWidget);
@@ -879,6 +930,8 @@ void main() {
       );
 
       await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
       await tester.pumpAndSettle();
 
       expect(find.text('Could not open link'), findsOneWidget);
@@ -3890,7 +3943,7 @@ void main() {
       );
 
       expect(find.text(providerDetails), findsOneWidget);
-      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.byType(AuraSelectableText), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -3942,17 +3995,22 @@ class const _ChatMessagesTestSubject({
       child: EasyLocalization(
         child: Builder(
           builder: (context) {
-            final child = Theme(
-              data: ThemeData(extensions: [theme ?? AuraTheme.light]),
-              child: Material(
-                child: ChatMessagesWidget(
-                  workspaceId: 'ws-1',
-                  conversationId: conversationId,
-                  messages: messages,
-                  messageEntitiesById: messageEntitiesById,
-                  pendingToolCalls: pendingToolCalls,
-                  showThinking: showThinking,
-                  onRetryMessage: onRetryMessage,
+            final child = AuraThemeScope(
+              theme: theme ?? AuraTheme.light,
+              child: Theme(
+                data: ThemeData(),
+                child: AuraLegacyMaterialBridge(
+                  child: Material(
+                    child: ChatMessagesWidget(
+                      workspaceId: 'ws-1',
+                      conversationId: conversationId,
+                      messages: messages,
+                      messageEntitiesById: messageEntitiesById,
+                      pendingToolCalls: pendingToolCalls,
+                      showThinking: showThinking,
+                      onRetryMessage: onRetryMessage,
+                    ),
+                  ),
                 ),
               ),
             );

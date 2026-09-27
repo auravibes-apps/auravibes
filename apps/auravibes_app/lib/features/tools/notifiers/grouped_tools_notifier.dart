@@ -97,15 +97,19 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   ///
   /// This disconnects from the MCP server and deletes it, cascading to its
   /// tools group and tools.
-  Future<void> deleteMcpGroup(String groupId) async {
+  Future<bool> deleteMcpGroup(String groupId, {bool invalidate = true}) async {
     final operation = await _groupOperation(groupId);
-    if (operation == null) return;
+    if (operation == null) return false;
     final didDelete = await _deleteMcpGroup(operation);
-    if (!didDelete) return;
+    if (!didDelete) return false;
 
-    ref
-      ..invalidateSelf()
-      ..invalidate(workspaceToolsProvider(_workspaceId));
+    if (invalidate) {
+      ref
+        ..invalidateSelf()
+        ..invalidate(workspaceToolsProvider(_workspaceId));
+    }
+
+    return true;
   }
 
   /// Reconnect to an MCP server.

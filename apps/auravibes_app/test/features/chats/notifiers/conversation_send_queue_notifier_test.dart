@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -295,6 +298,15 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
   @override
   Future<MessageAttachmentToCreate?> stopVoiceRecording() =>
       throw UnimplementedError();
+
+  @override
+  @override
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment _,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();
 
   @override
   Future<void> cancelVoiceRecording() => throw UnimplementedError();

@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/agent_rate_limit_retry_exception.dart';
 import 'package:auravibes_engine/src/agent_runtime.dart';
 import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
@@ -79,17 +80,24 @@ class const AgentService({
 
       final _AgentIterationStep result;
       try {
+        currentContext = await _withQueuedDrafts(
+          conversationId: conversationId,
+          context: currentContext,
+        );
         result = await _runIteration(
           conversationId: conversationId,
           workspaceId: workspaceId,
           context: currentContext,
           cancellationScope: cancellationScope,
         );
-      } catch (error, stackTrace) {
+      } on Object catch (error, stackTrace) {
         final retryDelay = _rateLimitRetryDelayFor(error);
         if (retryDelay == null || rateLimitRetries >= rateLimitRetryCount) {
           await _markAckMessagesErrored(currentContext);
-          Error.throwWithStackTrace(error, stackTrace);
+          final providerError = error is AgentRateLimitRetryException
+              ? error.providerException
+              : error;
+          Error.throwWithStackTrace(providerError, stackTrace);
         }
         rateLimitRetries++;
 
@@ -119,10 +127,7 @@ class const AgentService({
     required AgentIterationContext? context,
     required AgentCancellationScope cancellationScope,
   }) async {
-    var currentContext = await _withQueuedDrafts(
-      conversationId: conversationId,
-      context: context,
-    );
+    var currentContext = context;
     final cancelDecision = await _cancelIfRequested(
       conversationId,
       cancellationScope,
@@ -277,13 +282,20 @@ class const AgentService({
   Duration? _rateLimitRetryDelayFor(Object error) {
     final message = error.toString().toLowerCase();
     final isRateLimit =
+        error is AgentRateLimitRetryException ||
         message.contains('ratelimitexception') ||
         message.contains('resource_exhausted') ||
         message.contains('rate limit') ||
         message.contains('429');
     if (!isRateLimit) return null;
 
-    return _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
+    final delay = error is AgentRateLimitRetryException
+        ? error.retryAfter
+        : _knownRateLimitDelay(message) ?? rateLimitRetryDelay;
+
+    return delay > defaultAgentRateLimitRetryDelay
+        ? defaultAgentRateLimitRetryDelay
+        : delay;
   }
 
   Duration? _knownRateLimitDelay(String message) {

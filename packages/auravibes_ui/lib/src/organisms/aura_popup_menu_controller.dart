@@ -3,9 +3,9 @@ import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart' show AuraTileVariant;
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
-import 'package:material_ui/material_ui.dart';
 
 export 'aura_popup_menu_button.dart';
 
@@ -426,6 +426,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
     this.leading,
     this.trailing,
     this.variant = .ghost,
+    this.identifier,
   });
 
   /// The main content of the menu item.
@@ -442,6 +443,9 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
 
   /// The visual variant of the menu item.
   final AuraTileVariant variant;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   @override
   Widget build(BuildContext context) => _AuraPopupMenuItemButton(item: this);
@@ -495,6 +499,7 @@ class _AuraPopupMenuPressable extends StatelessWidget {
     ),
     color: interactionColor,
     onPressed: _onPressed(context),
+    identifier: item.identifier,
     isButtonSemantics: true,
   );
 

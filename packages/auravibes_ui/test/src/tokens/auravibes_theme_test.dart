@@ -1,8 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraTheme', () {
@@ -263,30 +263,36 @@ void main() {
   group('AuraThemeExtension', () {
     testWidgets('auraTheme returns theme from context', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(context.auraTheme, AuraTheme.light);
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                expect(context.auraTheme, AuraTheme.light);
 
-              return const SizedBox();
-            },
+                return const SizedBox();
+              },
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });
 
     testWidgets('auraColors returns colors from context', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(context.auraColors, AuraTheme.light.colors);
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                expect(context.auraColors, AuraTheme.light.colors);
 
-              return const SizedBox();
-            },
+                return const SizedBox();
+              },
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });

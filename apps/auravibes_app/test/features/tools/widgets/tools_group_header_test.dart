@@ -53,9 +53,12 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
   Widget build(BuildContext context) {
     return EasyLocalization(
       child: MaterialApp(
-        home: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: Material(child: child),
+        home: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Material(child: child),
+          ),
         ),
       ),
       supportedLocales: const [Locale('en')],
@@ -159,7 +162,10 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(
-      find.widgetWithIcon(IconButton, Icons.keyboard_arrow_down),
+      find.ancestor(
+        of: find.byIcon(Icons.keyboard_arrow_down),
+        matching: find.byType(AuraIconButton),
+      ),
       findsOneWidget,
     );
   });

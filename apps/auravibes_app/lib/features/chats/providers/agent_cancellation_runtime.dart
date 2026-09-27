@@ -58,20 +58,31 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
         _complete(conversationId);
       }
     } else {
-      scope.requestStop();
-      unawaited(_completeScope(scope));
+      scope
+        ..requestStop()
+        ..close();
+      unawaited(
+        _completeScope(scope, _completionByConversationId[conversationId]),
+      );
     }
     final _ = _pendingStops.remove(conversationId);
   }
 
-  Future<void> _completeScope(AgentCancellationScope scope) async {
-    await scope.waitForCleanupCompletion();
+  Future<void> _completeScope(
+    AgentCancellationScope scope,
+    Completer<void>? completion,
+  ) async {
+    await _waitForScopeCleanup(scope);
     final conversationId = _conversationByScope.remove(scope);
-    if (conversationId == null) return;
-    final completion = _completionByConversationId[conversationId];
-    if (completion == null || completion.isCompleted) return;
+    if (conversationId == null ||
+        completion == null ||
+        completion.isCompleted) {
+      return;
+    }
     if (identical(_entries[conversationId], scope)) return;
-    final _ = _completionByConversationId.remove(conversationId);
+    if (identical(_completionByConversationId[conversationId], completion)) {
+      final _ = _completionByConversationId.remove(conversationId);
+    }
     completion.complete();
   }
 
@@ -85,7 +96,7 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
   AgentCancellationScope _startScope(String conversationId) {
     final scope = AgentCancellationScope();
     _replaceScope(conversationId);
-    _completionByConversationId[conversationId] ??= Completer<void>();
+    _completionByConversationId[conversationId] = Completer<void>();
     _conversationByScope[scope] = conversationId;
     _entries[conversationId] = scope;
     if (_pendingStops.remove(conversationId)) scope.requestStop();
@@ -117,8 +128,19 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
   void _replaceScope(String conversationId) {
     final previous = _entries.remove(conversationId);
     if (previous == null) return;
-    previous.requestStop();
-    unawaited(_completeScope(previous));
+    final completion = _completionByConversationId[conversationId];
+    previous
+      ..requestStop()
+      ..close();
+    unawaited(_completeScope(previous, completion));
+  }
+}
+
+Future<void> _waitForScopeCleanup(AgentCancellationScope scope) async {
+  try {
+    await scope.waitForCleanupCompletion().timeout(const Duration(seconds: 5));
+  } on Object {
+    // Cleanup failure or timeout must not strand completion waiters.
   }
 }
 
@@ -127,6 +149,14 @@ final agentCancellationRuntimeProvider = Provider<AgentCancellationRuntime>((
 ) {
   return AgentCancellationRuntime();
 });
+
+enum ActiveSubAgentStatus {
+  running,
+  awaitingApproval,
+  completed,
+  failed,
+  stopped,
+}
 
 abstract interface class ActiveSubAgentController {
   SubAgentRequestHandle start({
@@ -137,6 +167,12 @@ abstract interface class ActiveSubAgentController {
   Set<String> childrenOf(String parentId);
 
   String? parentOf(String childId);
+
+  ActiveSubAgentStatus statusOf(String childId);
+
+  void markAwaitingApproval(String childId);
+
+  void markRunning(String childId);
 }
 
 typedef SubAgentCompletionRequest = ({
@@ -150,8 +186,16 @@ typedef SubAgentCompletionRequest = ({
 class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     implements ActiveSubAgentController {
   final _completionByChildId = <String, Completer<SubAgentCompletionStatus>>{};
-  final _stoppedChildIds = <String>{};
+  final _liveStatusByChildId = <String, ActiveSubAgentStatus>{};
+  final _terminalStatusByChildId = <String, ActiveSubAgentStatus>{};
   final _failureByChildId = <String, SubAgentCompletionFailure>{};
+
+  _ActiveSubAgentRuntimeMaps get _maps => (
+    completions: _completionByChildId,
+    liveStatuses: _liveStatusByChildId,
+    terminalStatuses: _terminalStatusByChildId,
+    failures: _failureByChildId,
+  );
 
   @override
   Map<String, Set<String>> build() => {};
@@ -161,21 +205,32 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     required String parentId,
     required String childId,
   }) {
-    _completionByChildId[childId] = Completer<SubAgentCompletionStatus>();
+    final completion = _registerSubAgentStart(childId, _maps);
     state = {
       ...state,
       parentId: {...state[parentId] ?? const <String>{}, childId},
     };
 
-    return _AppSubAgentRequestHandle(this, parentId, childId);
+    return _AppSubAgentRequestHandle(
+      this,
+      parentId,
+      childId,
+      completion.future,
+    );
   }
 
   void finish(SubAgentCompletionRequest request) {
-    _completeChild(request);
+    final activeChildren = state[request.parentId];
+    if (activeChildren == null || !activeChildren.contains(request.childId)) {
+      return;
+    }
 
-    final children = {...state[request.parentId] ?? const <String>{}}
-      ..remove(request.childId);
-    state = _stateAfterChildCompletion(request.parentId, children);
+    _completeSubAgentChild(request, _maps);
+    state = _stateAfterChildCompletion(
+      state,
+      request.parentId,
+      {...activeChildren}..remove(request.childId),
+    );
   }
 
   SubAgentCompletionFailure? failure(String childId) =>
@@ -194,38 +249,107 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
     return null;
   }
 
-  Future<SubAgentCompletionStatus> waitForCompletion(String childId) {
-    if (_stoppedChildIds.remove(childId)) {
-      return Future<SubAgentCompletionStatus>.value(
-        SubAgentCompletionStatus.stopped,
+  @override
+  ActiveSubAgentStatus statusOf(String childId) =>
+      _liveStatusByChildId[childId] ??
+      _terminalStatusByChildId[childId] ??
+      .completed;
+
+  @override
+  void markAwaitingApproval(String childId) =>
+      state = _stateAfterMarkingSubAgentStatus(
+        state,
+        _liveStatusByChildId,
+        childId,
+        .awaitingApproval,
       );
-    }
 
-    return _completionByChildId[childId]?.future ??
-        Future<SubAgentCompletionStatus>.value(SubAgentCompletionStatus.done);
+  @override
+  void markRunning(String childId) => state = _stateAfterMarkingSubAgentStatus(
+    state,
+    _liveStatusByChildId,
+    childId,
+    .running,
+  );
+}
+
+typedef _ActiveSubAgentRuntimeMaps = ({
+  Map<String, Completer<SubAgentCompletionStatus>> completions,
+  Map<String, ActiveSubAgentStatus> liveStatuses,
+  Map<String, ActiveSubAgentStatus> terminalStatuses,
+  Map<String, SubAgentCompletionFailure> failures,
+});
+
+Completer<SubAgentCompletionStatus> _registerSubAgentStart(
+  String childId,
+  _ActiveSubAgentRuntimeMaps maps,
+) {
+  final completion = Completer<SubAgentCompletionStatus>();
+  maps.completions[childId] = completion;
+  maps.liveStatuses[childId] = .running;
+  final _ = maps.terminalStatuses.remove(childId);
+  final _ = maps.failures.remove(childId);
+
+  return completion;
+}
+
+void _completeSubAgentChild(
+  SubAgentCompletionRequest request,
+  _ActiveSubAgentRuntimeMaps maps,
+) {
+  final completion = maps.completions.remove(request.childId);
+  _recordSubAgentFailure(maps.failures, request, completion);
+  _recordSubAgentStatus(maps, request);
+  _completeSubAgentWaiter(completion, request.status);
+}
+
+void _recordSubAgentStatus(
+  _ActiveSubAgentRuntimeMaps maps,
+  SubAgentCompletionRequest request,
+) {
+  final childId = request.childId;
+  final _ = maps.liveStatuses.remove(childId);
+  if (request.status == .done) {
+    final _ = maps.terminalStatuses.remove(childId);
+  } else {
+    maps.terminalStatuses[childId] = request.status == .stopped
+        ? .stopped
+        : .failed;
+  }
+}
+
+void _completeSubAgentWaiter(
+  Completer<SubAgentCompletionStatus>? completion,
+  SubAgentCompletionStatus status,
+) {
+  if (completion != null && !completion.isCompleted) {
+    completion.complete(status);
+  }
+}
+
+Map<String, Set<String>> _stateAfterChildCompletion(
+  Map<String, Set<String>> currentState,
+  String parentId,
+  Set<String> children,
+) => {
+  for (final entry in currentState.entries)
+    if (entry.key != parentId) entry.key: entry.value,
+  if (children.isNotEmpty) parentId: children,
+};
+
+Map<String, Set<String>> _stateAfterMarkingSubAgentStatus(
+  Map<String, Set<String>> currentState,
+  Map<String, ActiveSubAgentStatus> liveStatuses,
+  String childId,
+  ActiveSubAgentStatus status,
+) {
+  if (!currentState.values.any((children) => children.contains(childId))) {
+    return currentState;
   }
 
-  bool isStopped(String childId) => _stoppedChildIds.contains(childId);
+  liveStatuses[childId] = status;
 
-  void _completeChild(SubAgentCompletionRequest request) {
-    final completion = _completionByChildId.remove(request.childId);
-    _recordSubAgentFailure(_failureByChildId, request, completion);
-    _updateSubAgentStoppedState(_stoppedChildIds, request);
-    if (completion != null && !completion.isCompleted) {
-      completion.complete(request.status);
-    }
-  }
-
-  Map<String, Set<String>> _stateAfterChildCompletion(
-    String parentId,
-    Set<String> children,
-  ) {
-    return {
-      for (final entry in state.entries)
-        if (entry.key != parentId) entry.key: entry.value,
-      if (children.isNotEmpty) parentId: children,
-    };
-  }
+  return {...currentState};
 }
 
 void _recordSubAgentFailure(
@@ -244,48 +368,50 @@ void _recordSubAgentFailure(
   }
 }
 
-void _updateSubAgentStoppedState(
-  Set<String> stoppedChildIds,
-  SubAgentCompletionRequest request,
-) {
-  if (request.status == SubAgentCompletionStatus.stopped) {
-    final _ = stoppedChildIds.add(request.childId);
-  } else {
-    final _ = stoppedChildIds.remove(request.childId);
-  }
-}
-
 class const _AppSubAgentRequestHandle(
   final ActiveSubAgentRuntime _runtime,
   final String _parentId,
   final String _childId,
+  final Future<SubAgentCompletionStatus> _completion,
 ) implements SubAgentRequestHandle {
   @override
-  Future<SubAgentCompletionStatus> get completion =>
-      _runtime.waitForCompletion(_childId);
+  Future<SubAgentCompletionStatus> get completion => _completion;
 
   @override
   SubAgentCompletionFailure? get failure => _runtime.failure(_childId);
 
   @override
-  bool get isStopped => _runtime.isStopped(_childId);
+  bool get isStopped => _runtime.statusOf(_childId) == .stopped;
 
   @override
-  void finish([
+  void finish({
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-  ]) {
-    _runtime.finish((
-      parentId: _parentId,
-      childId: _childId,
-      status: status,
-      error: null,
-      stackTrace: null,
-    ));
+    SubAgentCompletionFailure? failure,
+  }) {
+    if (failure != null) {
+      finishWithFailure(status: status, failure: failure);
+
+      return;
+    }
+
+    _finish(status: status);
   }
 
-  void finishStopped() {
-    finish(.stopped);
-  }
+  void finishWithFailure({
+    required SubAgentCompletionStatus status,
+    required SubAgentCompletionFailure failure,
+  }) => _finish(status: status == .done ? .error : status, failure: failure);
+
+  void _finish({
+    required SubAgentCompletionStatus status,
+    SubAgentCompletionFailure? failure,
+  }) => _runtime.finish((
+    parentId: _parentId,
+    childId: _childId,
+    status: status,
+    error: failure?.error,
+    stackTrace: failure?.stackTrace,
+  ));
 }
 
 final activeSubAgentRuntimeProvider =

@@ -31,11 +31,14 @@ class const _Subject({required final MessageEntity message})
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: SingleChildScrollView(
-                  child: CompactedMessageDetails(message: message),
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: Scaffold(
+                  body: SingleChildScrollView(
+                    child: CompactedMessageDetails(message: message),
+                  ),
                 ),
               ),
             ),

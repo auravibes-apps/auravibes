@@ -474,6 +474,25 @@ void main() {
         ),
       );
     });
+
+    test('preserves provider rate-limit retry errors', () async {
+      final providerException = genkit.GenkitException(
+        'Provider API request failed (HTTP 429).',
+        details: 'rate limited',
+      );
+      final retryError = AgentRateLimitRetryException(
+        providerException: providerException,
+        retryAfter: const Duration(seconds: 2),
+      );
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(generateError: retryError),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(same(retryError)),
+      );
+    });
   });
 
   group('ChatbotService.generateFallbackTitle', () {
@@ -797,6 +816,7 @@ class _FakeProviderFactory extends ProviderFactory {
     genkit.ModelResponse? response,
     this.onRequest,
     this.throwsOnGenerate = false,
+    this.generateError,
     this.throwsOnCreateGenkit = false,
   }) : response = response ?? _modelResponse(genkit.FinishReason.stop),
        super(
@@ -807,6 +827,7 @@ class _FakeProviderFactory extends ProviderFactory {
   final genkit.ModelResponse response;
   final void Function(genkit.ModelRequest request)? onRequest;
   final bool throwsOnGenerate;
+  final Object? generateError;
   final bool throwsOnCreateGenkit;
 
   @override
@@ -820,6 +841,8 @@ class _FakeProviderFactory extends ProviderFactory {
       name: 'test/model',
       fn: (input, context) async {
         onRequest?.call(input);
+        final error = generateError;
+        if (error != null) throw error;
         if (throwsOnGenerate) {
           throw Exception('failed');
         }

@@ -69,7 +69,7 @@ jobs:
           fi
 
           jq -e '.mcpServers.marionette.command == "fvm" and .mcpServers.marionette.args == ["dart", "run", "marionette_mcp"]' .mcp.json
-          jq -e '.mcp.marionette.command == ["fvm", "dart", "run", "marionette_mcp"]' opencode.json
+          jq -e '.mcp.servers.marionette.command == ["fvm", "dart", "run", "marionette_mcp"]' opencode.json
           jq -e '.mcpServers.marionette.command == "fvm" and .mcpServers.marionette.args == ["dart", "run", "marionette_mcp"]' .pi/mcp.json
           grep -Fx 'command = "fvm"' .codex/config.toml
           grep -Fx 'args = ["dart", "run", "marionette_mcp"]' .codex/config.toml

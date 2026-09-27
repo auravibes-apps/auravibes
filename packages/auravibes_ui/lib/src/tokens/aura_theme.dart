@@ -2,8 +2,11 @@
 // Required: UI package exposes top-level helpers and constants.
 
 import 'package:auravibes_ui/src/colors/value_color.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme_scope.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
+
+export 'aura_theme_scope.dart' show AuraThemeScope;
 
 typedef _SpacingCoreLerpValues = ({
   double none,
@@ -181,14 +184,14 @@ typedef _ChromeLerpValues = ({
   Color scrim,
 });
 
-/// Aura theme extension that provides theme-aware design tokens.
+/// Immutable Aura theme value providing theme-aware design tokens.
 ///
 /// Colors, spacing, border radius, and typography all live here so a subtree
 /// `Theme` override can rescale them. Call sites select values via the
 /// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type), resolved
 /// at build time through [fromSpacing] / [fromBorderRadius] / [typography].
 @immutable
-class AuraTheme extends ThemeExtension<AuraTheme> {
+class AuraTheme {
   static const _standardAnimation = AuraAnimationTheme._standard();
 
   /// Light theme variant.
@@ -295,7 +298,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     scrim: const Color(0xB3000000),
   );
 
-  /// Creates a Aura theme extension.
+  /// Creates an Aura theme value.
   const new({
     required this.colors,
     required this.animation,
@@ -319,7 +322,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   /// Theme-owned typography scale (rethemeable, lerp-able).
   final AuraTypographyScale typography;
 
-  @override
+  /// Returns a copy with selected theme values replaced.
   AuraTheme copyWith({
     AuraColorScheme? colors,
     AuraAnimationTheme? animation,
@@ -336,7 +339,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
     );
   }
 
-  @override
+  /// Interpolates this theme's values toward [other].
   AuraTheme lerp(AuraTheme? other, double t) {
     if (other == null) return this;
 
@@ -1399,9 +1402,9 @@ class AuraAnimationTheme {
 
 /// Extension to get Aura theme from BuildContext.
 extension AuraThemeExtension on BuildContext {
-  /// Resolves the Aura theme attached to [context].
+  /// Resolves the Aura theme scoped to [context].
   static AuraTheme resolve(BuildContext context) =>
-      Theme.of(context).extension<AuraTheme>() ?? AuraTheme.light;
+      AuraThemeScope.maybeOf(context) ?? AuraTheme.light;
 
   /// Resolves the Aura color scheme attached to [context].
   static AuraColorScheme resolveColors(BuildContext context) =>

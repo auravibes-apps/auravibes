@@ -57,12 +57,15 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const Material(
-                  child: ChatToolApprovalCard(
-                    workspaceId: 'ws-1',
-                    conversationId: 'conv-1',
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const Material(
+                    child: ChatToolApprovalCard(
+                      workspaceId: 'ws-1',
+                      conversationId: 'conv-1',
+                    ),
                   ),
                 ),
               ),

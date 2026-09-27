@@ -3,7 +3,7 @@ import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraBorderRadius, AuraTint, DesignColors;
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 typedef _AuraIconButtonValues = ({
   double iconSize,
@@ -40,6 +40,7 @@ class AuraIconButton extends StatelessWidget {
     this.size = AuraIconSize.medium,
     this.tint,
     this.variant = AuraIconButtonVariant.ghost,
+    this.identifier,
     this.semanticLabel,
     this.tooltip,
   }) : child = null;
@@ -55,6 +56,7 @@ class AuraIconButton extends StatelessWidget {
     this.size = AuraIconSize.medium,
     this.tint,
     this.variant = AuraIconButtonVariant.ghost,
+    this.identifier,
     this.semanticLabel,
     this.tooltip,
   }) : icon = null;
@@ -79,6 +81,9 @@ class AuraIconButton extends StatelessWidget {
 
   /// The visual variant of the icon button.
   final AuraIconButtonVariant variant;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   /// A semantic label for the button for accessibility.
   final String? semanticLabel;
@@ -208,11 +213,21 @@ class const _AuraIconButtonButton({
   required final AuraColorScheme colors,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _AuraIconButtonButtonData(
-    button: button,
-    colors: colors,
-    theme: context.auraTheme,
-  ).toWidget();
+  Widget build(BuildContext context) {
+    final content = _AuraIconButtonButtonData(
+      button: button,
+      colors: colors,
+      theme: context.auraTheme,
+    ).toWidget();
+    final identifier = button.identifier;
+    if (identifier == null) return content;
+
+    return Semantics(
+      key: ValueKey<String>(identifier),
+      child: content,
+      identifier: identifier,
+    );
+  }
 }
 
 class _AuraIconButtonButtonData {

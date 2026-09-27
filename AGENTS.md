@@ -18,7 +18,7 @@
 
 ## Workspace source of truth
 
-- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.2`); Melos: `^8.6.0`.
+- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.6.0`.
 - Commands and package membership live in root `pubspec.yaml`.
 - Diagnostics and scoped exceptions live in `analysis_options.yaml`.
 - Required CI gates live in `.github/workflows/ci.yml`.
@@ -133,6 +133,7 @@
 
 ## Skill routing
 
+- Agent instruction maintenance: at task completion, check whether the work exposed a missing, stale, conflicting, ignored, or burdensome reusable rule. If so, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing `AGENTS.md` or a skill; skip broad audits when no concrete gap surfaced.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
 - Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.6.0.
@@ -146,5 +147,4 @@
 ## Agent skills
 
 - Issues/specs: GitHub issues in `auravibes-apps/auravibes` via `gh`; see `docs/agents/issue-tracker.md`.
-- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`.
-- Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.
+- Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`. Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.

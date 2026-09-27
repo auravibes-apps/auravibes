@@ -4,8 +4,8 @@ import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/organisms/aura_confirm_dialog.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 /// Test helper to create a widget with Aura theme.
 class AuraThemeWrapper extends StatelessWidget {
@@ -17,9 +17,12 @@ class AuraThemeWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(body: child),
-      theme: .new(extensions: [AuraTheme.light]),
+    return AuraThemeScope(
+      theme: .light,
+      child: MaterialApp(
+        home: Scaffold(body: child),
+        theme: .new(),
+      ),
     );
   }
 }
@@ -61,6 +64,30 @@ void main() {
 
       expect(find.text('Confirm Action'), findsOneWidget);
       expect(find.text('Are you sure you want to proceed?'), findsOneWidget);
+    });
+
+    testWidgets('wraps confirmation actions on narrow screens', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const AuraThemeWrapper(
+          child: AuraConfirmDialog(
+            title: Text('Unsaved changes'),
+            message: Text('Discard unsaved changes?'),
+            confirmLabel: Text('Discard changes'),
+            cancelLabel: Text('Keep editing'),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester.getRect(find.text('Discard changes')).top,
+        greaterThan(tester.getRect(find.text('Keep editing')).bottom),
+      );
     });
 
     testWidgets('displays confirm and cancel buttons', (tester) async {

@@ -14,6 +14,59 @@ void main() {
     cloudWorkspaceId: 7,
   );
 
+  test('read sends a typed request and returns the server response', () async {
+    final page = WorkspaceResourcePageRequest(resourceKind: .skill, limit: 2);
+    final response = _response(sequence: 4);
+    ReadWorkspaceStateRequest? request;
+    final gateway = CloudWorkspaceStateGateway.forTesting(
+      workspace: workspace,
+      readState: (value) async {
+        request = value;
+
+        return response;
+      },
+      subscribe: (_) => const Stream.empty(),
+    );
+
+    final result = await gateway.read(
+      pages: [page],
+      afterSequence: 3,
+      eventLimit: 4,
+    );
+
+    expect(request?.workspaceId, 7);
+    expect(request?.pages.single.resourceKind, WorkspaceResourceKind.skill);
+    expect(request?.pages.single.limit, 2);
+    expect(request?.afterSequence, 3);
+    expect(request?.eventLimit, 4);
+    expect(result, same(response));
+  });
+
+  test(
+    'duplicate agent sends a typed request and returns the server response',
+    () async {
+      DuplicateWorkspaceAgentRequest? request;
+      final response = PatchWorkspaceStateResponse(resources: [], sequence: 8);
+      final gateway = CloudWorkspaceStateGateway.forTesting(
+        workspace: workspace,
+        readState: (_) async => _response(sequence: 0),
+        subscribe: (_) => const Stream.empty(),
+        duplicateAgent: (value) async {
+          request = value;
+
+          return response;
+        },
+      );
+
+      final result = await gateway.duplicateAgent('agent-1');
+
+      expect(request?.workspaceId, 7);
+      expect(request?.requestId, isNotEmpty);
+      expect(request?.sourceAgentId, 'agent-1');
+      expect(result, same(response));
+    },
+  );
+
   test('turns a stalled state read into a typed cloud error', () async {
     final gateway = CloudWorkspaceStateGateway.forTesting(
       workspace: workspace,

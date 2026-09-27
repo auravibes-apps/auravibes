@@ -11,22 +11,25 @@ void main() {
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: Builder(
-                  builder: (innerContext) {
-                    return TextButton(
-                      onPressed: () {
-                        ToolCallResponseModal.show(
-                          innerContext,
-                          toolName: toolName,
-                          content: content,
-                        );
-                      },
-                      child: const Text('Open Modal'),
-                    );
-                  },
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: Scaffold(
+                  body: Builder(
+                    builder: (innerContext) {
+                      return TextButton(
+                        onPressed: () {
+                          ToolCallResponseModal.show(
+                            innerContext,
+                            toolName: toolName,
+                            content: content,
+                          );
+                        },
+                        child: const Text('Open Modal'),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

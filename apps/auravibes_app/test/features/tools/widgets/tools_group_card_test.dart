@@ -89,9 +89,12 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
               .overrideWith(() => _MockGroupedNotifier([])),
         ],
         child: MaterialApp(
-          home: Theme(
-            data: .new(extensions: [AuraTheme.light]),
-            child: Material(child: child),
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: Material(child: child),
+            ),
           ),
         ),
       ),
@@ -166,7 +169,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsNWidgets(2));
@@ -225,7 +228,7 @@ void main() {
 
     expect(find.byType(AuraDivider), findsNothing);
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraDivider), findsOneWidget);
@@ -247,11 +250,11 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).first);
+    await tester.tap(find.byType(AuraIconButton).first);
     final _ = await tester.pumpAndSettle();
     expect(find.byType(ToolItemRow), findsOneWidget);
 
-    await tester.tap(find.byType(IconButton).first);
+    await tester.tap(find.byType(AuraIconButton).first);
     final _ = await tester.pumpAndSettle();
     expect(find.byType(ToolItemRow), findsNothing);
   });
@@ -271,7 +274,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('tools_screen.no_tools_in_group'), findsOneWidget);
@@ -298,8 +301,12 @@ void main() {
     expect(find.byType(AuraCard), findsOneWidget);
   });
 
-  testWidgets('MCP group with error shows reconnect', (tester) async {
-    final mcpGroup = _group(id: 'mcp-g1', name: 'MCP Server');
+  testWidgets('shows MCP group error details action', (tester) async {
+    final mcpGroup = _group(
+      id: 'mcp-g1',
+      name: 'MCP Server',
+      mcpServerId: 'srv-1',
+    );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
@@ -330,12 +337,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraCard), findsOneWidget);
-    expect(
-      tester
-          .widget<ToolsGroupHeader>(find.byType(ToolsGroupHeader))
-          .onViewError,
-      isNotNull,
-    );
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
   });
 
   testWidgets('renders multiple tools in expanded state', (tester) async {
@@ -358,7 +360,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsNWidgets(3));
@@ -518,7 +520,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);
@@ -542,7 +544,7 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);

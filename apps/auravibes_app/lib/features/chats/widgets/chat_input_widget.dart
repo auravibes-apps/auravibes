@@ -69,6 +69,7 @@ class const ChatInputWidget({
   required final Widget agentSheetControl,
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
+  final ValueChanged<bool>? onDraftStatusChanged,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
@@ -88,8 +89,12 @@ class const ChatInputWidget({
 }) extends HookConsumerWidget {
   static const _maxInputLines = 2;
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _ChatInputLayout(state: _ChatInputHooksFactory.state(ref, this));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _ChatInputHooksFactory.state(ref, this);
+    _reportDraftStatus(context, this, state);
+
+    return _ChatInputLayout(state: state);
+  }
 }
 
 class const _ChatInputDraftHooks({
@@ -181,6 +186,19 @@ abstract final class _ChatInputHooksFactory {
     return isTextEmpty && areAttachmentsEmpty;
   }
 
+  static bool hasDraft(_ChatInputHooks hooks, {required bool isEmpty}) {
+    final isRecording = useListenableSelector(
+      hooks.recording.isRecording,
+      () => hooks.recording.isRecording.value,
+    );
+    final isStartingRecording = useListenableSelector(
+      hooks.recording.isStartingRecording,
+      () => hooks.recording.isStartingRecording.value,
+    );
+
+    return !isEmpty || isRecording || isStartingRecording;
+  }
+
   static _ChatInputActions _createAndRegisterActions({
     required WidgetRef ref,
     required _ChatInputHooks hooks,
@@ -196,6 +214,34 @@ abstract final class _ChatInputHooksFactory {
 
     return actions;
   }
+}
+
+void _reportDraftStatus(
+  BuildContext context,
+  ChatInputWidget input,
+  _ChatInputState state,
+) {
+  final hasDraft = _ChatInputHooksFactory.hasDraft(
+    state.hooks,
+    isEmpty: state.isEmpty,
+  );
+  useEffect(() => _scheduleDraftStatusUpdate(context, input, hasDraft), [
+    hasDraft,
+    input.onDraftStatusChanged,
+  ]);
+}
+
+VoidCallback? _scheduleDraftStatusUpdate(
+  BuildContext context,
+  ChatInputWidget input,
+  bool hasDraft,
+) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    input.onDraftStatusChanged?.call(hasDraft);
+  });
+
+  return null;
 }
 
 Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {

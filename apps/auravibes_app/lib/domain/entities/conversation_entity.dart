@@ -88,6 +88,8 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
 
     /// ID of the workspace this conversation belongs to.
     required String workspaceId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
 
     /// ID of the AI model used for this conversation.
     String? modelId,

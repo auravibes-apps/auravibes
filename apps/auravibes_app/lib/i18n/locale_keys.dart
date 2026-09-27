@@ -395,10 +395,34 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
       'chats_screens.chats_list.add_chat';
+  static const chats_screens_chats_list_archive_import =
+      'chats_screens.chats_list.archive_import';
   static const chats_screens_chats_list_search_placeholder =
       'chats_screens.chats_list.search_placeholder';
   static const chats_screens_chats_list_search_no_results =
       'chats_screens.chats_list.search_no_results';
+  static const chats_screens_chats_list_select_conversation =
+      'chats_screens.chats_list.select_conversation';
+  static const chats_screens_chats_list_deselect_conversation =
+      'chats_screens.chats_list.deselect_conversation';
+  static const chats_screens_chats_list_selected_count =
+      'chats_screens.chats_list.selected_count';
+  static const chats_screens_chats_list_clear_selection =
+      'chats_screens.chats_list.clear_selection';
+  static const chats_screens_chats_list_bulk_pin =
+      'chats_screens.chats_list.bulk_pin';
+  static const chats_screens_chats_list_bulk_unpin =
+      'chats_screens.chats_list.bulk_unpin';
+  static const chats_screens_chats_list_bulk_delete =
+      'chats_screens.chats_list.bulk_delete';
+  static const chats_screens_chats_list_bulk_delete_title =
+      'chats_screens.chats_list.bulk_delete_title';
+  static const chats_screens_chats_list_bulk_delete_confirm =
+      'chats_screens.chats_list.bulk_delete_confirm';
+  static const chats_screens_chats_list_bulk_pin_failures =
+      'chats_screens.chats_list.bulk_pin_failures';
+  static const chats_screens_chats_list_bulk_delete_failures =
+      'chats_screens.chats_list.bulk_delete_failures';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
   static const chats_screens_new_chat_start_error =
@@ -407,6 +431,16 @@ abstract class LocaleKeys {
       'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
       'chats_screens.chat_conversation.select_model_selctor';
+  static const chats_screens_chat_conversation_archive_export =
+      'chats_screens.chat_conversation.archive_export';
+  static const chats_screens_chat_conversation_archive_exported =
+      'chats_screens.chat_conversation.archive_exported';
+  static const chats_screens_chat_conversation_archive_invalid =
+      'chats_screens.chat_conversation.archive_invalid';
+  static const chats_screens_chat_conversation_archive_unsupported_version =
+      'chats_screens.chat_conversation.archive_unsupported_version';
+  static const chats_screens_chat_conversation_archive_error =
+      'chats_screens.chat_conversation.archive_error';
   static const chats_screens_chat_conversation_reasoning_title =
       'chats_screens.chat_conversation.reasoning.title';
   static const chats_screens_chat_conversation_reasoning_enabled =
@@ -479,6 +513,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.switch_model_cancel';
   static const chats_screens_chat_conversation_switch_model_confirm =
       'chats_screens.chat_conversation.switch_model_confirm';
+  static const chats_screens_chat_conversation_external_link_title =
+      'chats_screens.chat_conversation.external_link_title';
+  static const chats_screens_chat_conversation_external_link_message =
+      'chats_screens.chat_conversation.external_link_message';
+  static const chats_screens_chat_conversation_external_link_open =
+      'chats_screens.chat_conversation.external_link_open';
   static const chats_screens_chat_conversation_rename =
       'chats_screens.chat_conversation.rename';
   static const chats_screens_chat_conversation_rename_title =
@@ -563,6 +603,24 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_open_sub_agent';
   static const chats_screens_chat_conversation_active_sub_agents_count =
       'chats_screens.chat_conversation.active_sub_agents_count';
+  static const chats_screens_chat_conversation_active_sub_agents_accessible_label =
+      'chats_screens.chat_conversation.active_sub_agents_accessible_label';
+  static const chats_screens_chat_conversation_active_sub_agents_chat_accessible_label =
+      'chats_screens.chat_conversation.active_sub_agents_chat_accessible_label';
+  static const chats_screens_chat_conversation_active_sub_agents_title =
+      'chats_screens.chat_conversation.active_sub_agents_title';
+  static const chats_screens_chat_conversation_sub_agent_error_detail =
+      'chats_screens.chat_conversation.sub_agent_error_detail';
+  static const chats_screens_chat_conversation_sub_agent_status_awaiting_approval =
+      'chats_screens.chat_conversation.sub_agent_status_awaiting_approval';
+  static const chats_screens_chat_conversation_sub_agent_status_completed =
+      'chats_screens.chat_conversation.sub_agent_status_completed';
+  static const chats_screens_chat_conversation_sub_agent_status_failed =
+      'chats_screens.chat_conversation.sub_agent_status_failed';
+  static const chats_screens_chat_conversation_sub_agent_status_running =
+      'chats_screens.chat_conversation.sub_agent_status_running';
+  static const chats_screens_chat_conversation_sub_agent_status_stopped =
+      'chats_screens.chat_conversation.sub_agent_status_stopped';
   static const chats_screens_chat_conversation_tool_resolution_status =
       'chats_screens.chat_conversation.tool_resolution_status';
   static const chats_screens_chat_conversation_queued_messages_count =
@@ -644,6 +702,16 @@ abstract class LocaleKeys {
       'tools_screen.remove_tool_confirm';
   static const tools_screen_remove_tool_tooltip =
       'tools_screen.remove_tool_tooltip';
+  static const tools_screen_select_group = 'tools_screen.select_group';
+  static const tools_screen_deselect_group = 'tools_screen.deselect_group';
+  static const tools_screen_select_tool = 'tools_screen.select_tool';
+  static const tools_screen_deselect_tool = 'tools_screen.deselect_tool';
+  static const tools_screen_bulk_delete_title =
+      'tools_screen.bulk_delete_title';
+  static const tools_screen_bulk_delete_confirm =
+      'tools_screen.bulk_delete_confirm';
+  static const tools_screen_bulk_delete_failures =
+      'tools_screen.bulk_delete_failures';
   static const tools_screen_permission_always_ask =
       'tools_screen.permission_always_ask';
   static const tools_screen_permission_always_allow =
@@ -692,6 +760,14 @@ abstract class LocaleKeys {
   static const skills_screen_delete = 'skills_screen.delete';
   static const skills_screen_duplicate = 'skills_screen.duplicate';
   static const skills_screen_delete_confirm = 'skills_screen.delete_confirm';
+  static const skills_screen_select_skill = 'skills_screen.select_skill';
+  static const skills_screen_deselect_skill = 'skills_screen.deselect_skill';
+  static const skills_screen_bulk_delete_title =
+      'skills_screen.bulk_delete_title';
+  static const skills_screen_bulk_delete_confirm =
+      'skills_screen.bulk_delete_confirm';
+  static const skills_screen_bulk_delete_failures =
+      'skills_screen.bulk_delete_failures';
   static const skills_screen_save_error = 'skills_screen.save_error';
   static const skills_screen_unsaved_changes_title =
       'skills_screen.unsaved_changes_title';
@@ -751,8 +827,16 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.heading';
   static const markdown_editor_toolbar_bullets =
       'markdown_editor.toolbar.bullets';
+  static const markdown_editor_toolbar_numbered_list =
+      'markdown_editor.toolbar.numbered_list';
+  static const markdown_editor_toolbar_link = 'markdown_editor.toolbar.link';
+  static const markdown_editor_toolbar_link_text_placeholder =
+      'markdown_editor.toolbar.link_text_placeholder';
+  static const markdown_editor_toolbar_link_url_placeholder =
+      'markdown_editor.toolbar.link_url_placeholder';
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
+  static const markdown_editor_toolbar_undo = 'markdown_editor.toolbar.undo';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';
@@ -1010,10 +1094,24 @@ abstract class LocaleKeys {
   static const common_close_dialog = 'common.close_dialog';
   static const common_reload = 'common.reload';
   static const common_details = 'common.details';
+  static const common_sort_by = 'common.sort_by';
+  static const common_sort_name_ascending = 'common.sort_name_ascending';
+  static const common_sort_name_descending = 'common.sort_name_descending';
+  static const common_sort_enabled_first = 'common.sort_enabled_first';
+  static const common_select_all = 'common.select_all';
+  static const common_deselect_all = 'common.deselect_all';
+  static const common_clear_selection = 'common.clear_selection';
+  static const common_delete_selected = 'common.delete_selected';
+  static const common_selected_count = 'common.selected_count';
   static const common_show_more = 'common.show_more';
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
   static const common_error_message = 'common.error_message';
+  static const common_unsaved_changes_title = 'common.unsaved_changes_title';
+  static const common_unsaved_changes_message =
+      'common.unsaved_changes_message';
+  static const common_discard_changes = 'common.discard_changes';
+  static const common_keep_editing = 'common.keep_editing';
   static const workspace_capabilities_unsupported_error =
       'workspace_capabilities.unsupported_error';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
@@ -1257,6 +1355,21 @@ abstract class LocaleKeys {
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
   static const workspace_management_title = 'workspace_management.title';
+  static const workspace_management_copy_id = 'workspace_management.copy_id';
+  static const workspace_management_id_copied =
+      'workspace_management.id_copied';
+  static const workspace_management_copy_id_error =
+      'workspace_management.copy_id_error';
+  static const workspace_management_select_workspace =
+      'workspace_management.select_workspace';
+  static const workspace_management_deselect_workspace =
+      'workspace_management.deselect_workspace';
+  static const workspace_management_bulk_delete_title =
+      'workspace_management.bulk_delete_title';
+  static const workspace_management_bulk_delete_confirm =
+      'workspace_management.bulk_delete_confirm';
+  static const workspace_management_bulk_delete_failures =
+      'workspace_management.bulk_delete_failures';
   static const workspace_management_create_button =
       'workspace_management.create_button';
   static const workspace_management_duplicate =
@@ -1307,6 +1420,10 @@ abstract class LocaleKeys {
       'workspace_management.switch_confirm';
   static const workspace_management_switch_error =
       'workspace_management.switch_error';
+  static const workspace_management_switch_loading =
+      'workspace_management.switch_loading';
+  static const workspace_management_switch_retry =
+      'workspace_management.switch_retry';
   static const workspace_management_loading = 'workspace_management.loading';
   static const workspace_management_load_error =
       'workspace_management.load_error';

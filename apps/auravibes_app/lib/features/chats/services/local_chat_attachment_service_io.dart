@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
@@ -18,6 +19,7 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 const _wavFormatChunkOffset = 16;
+const _mimeHeaderLength = 12;
 
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
@@ -35,6 +37,13 @@ class LocalChatAttachmentServiceIo({
     String sourcePath, {
     String? displayName,
   }) => _copyIntoAppStorage(this, sourcePath, displayName);
+
+  Future<Uint8List> readAttachmentBytes(String localPath) =>
+      File(localPath).readAsBytes();
+
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment attachment,
+  ) => _createArchiveAttachment(this, attachment);
 
   Future<void> startVoiceRecording() => _startVoiceRecording(this);
 
@@ -74,6 +83,69 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
   return _newAttachment(copied, source, displayName);
 }
 
+Future<MessageAttachmentToCreate> _createArchiveAttachment(
+  LocalChatAttachmentServiceIo service,
+  ConversationArchiveAttachment attachment,
+) async {
+  final fileName = _archiveAttachmentFileName(attachment.fileName);
+  _ensureAttachmentSize(attachment.bytes.length);
+  final localPath = await _newAttachmentPath(service, fileName);
+  await _writeArchiveAttachment(.new(localPath), attachment.bytes);
+  final mimeType = _archiveAttachmentMimeType(fileName, attachment);
+
+  return _archiveAttachmentToCreate(attachment, localPath, fileName, mimeType);
+}
+
+MessageAttachmentToCreate _archiveAttachmentToCreate(
+  ConversationArchiveAttachment attachment,
+  String localPath,
+  String fileName,
+  String mimeType,
+) => MessageAttachmentToCreate(
+  localPath: localPath,
+  fileName: fileName,
+  displayName: attachment.displayName,
+  mimeType: mimeType,
+  modality: ChatAttachmentModality.forMimeType(mimeType),
+  sizeBytes: attachment.bytes.length,
+);
+
+String _archiveAttachmentFileName(String value) {
+  final fileName = p.posix.basename(value.replaceAll(r'\', '/'));
+  if (fileName.isEmpty || fileName != value) {
+    throw ArgumentError.value(value, 'fileName');
+  }
+
+  return fileName;
+}
+
+Future<void> _writeArchiveAttachment(File file, Uint8List bytes) async {
+  try {
+    final _ = await file.writeAsBytes(bytes, flush: true);
+  } on Object {
+    await _deletePartialArchiveAttachment(file);
+    rethrow;
+  }
+}
+
+Future<void> _deletePartialArchiveAttachment(File file) async {
+  try {
+    final _ = await file.delete();
+  } on FileSystemException {
+    // Preserve original write error when partial-file cleanup fails.
+  }
+}
+
+String _archiveAttachmentMimeType(
+  String fileName,
+  ConversationArchiveAttachment attachment,
+) =>
+    lookupMimeType(
+      fileName,
+      headerBytes: attachment.bytes.take(_mimeHeaderLength).toList(),
+    ) ??
+    attachment.mimeType;
+
 void _ensureAttachmentSize(int sizeBytes) {
   if (sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
     throw const ChatAttachmentTooLargeException();
@@ -110,7 +182,7 @@ Future<_AttachmentSource> _readAttachmentSource(String sourcePath) async {
   final file = File(sourcePath);
   final sizeBytes = await file.length();
   final headerBytes = await file
-      .openRead(0, 12)
+      .openRead(0, _mimeHeaderLength)
       .expand((bytes) => bytes)
       .toList();
 

@@ -97,9 +97,12 @@ Future<void> _pumpModal(
   await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
-        child: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: const ToolsManagementModal(workspaceId: _workspaceId),
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: const ToolsManagementModal(workspaceId: _workspaceId),
+          ),
         ),
         overrides: [
           conversationToolsProvider(workspaceId: _workspaceId)
@@ -148,9 +151,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsManagementModal(workspaceId: 'ws-1'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsManagementModal(workspaceId: 'ws-1'),
+              ),
             ),
             overrides: [
               conversationToolsProvider(workspaceId: 'ws-1')
@@ -184,7 +190,7 @@ void main() {
       expect(find.byType(AuraInput), findsOneWidget);
       await tester.enterText(find.byType(AuraInput), 'local files');
       await tester.pump();
-      final _ = await tester.tap(find.byType(IconButton).last);
+      final _ = await tester.tap(find.byType(AuraIconButton).last);
       final _ = await tester.pumpAndSettle();
 
       expect(find.byType(ConversationToolTile), findsOneWidget);
@@ -203,7 +209,7 @@ void main() {
 
       await tester.enterText(find.byType(AuraInput), 'built-in');
       await tester.pump();
-      final _ = await tester.tap(find.byType(IconButton).last);
+      final _ = await tester.tap(find.byType(AuraIconButton).last);
       final _ = await tester.pumpAndSettle();
 
       final tiles = tester
@@ -300,7 +306,7 @@ void main() {
 
       final firstGroup = find.byType(ConversationToolsGroupCard).first;
       final _ = await tester.tap(
-        find.descendant(of: firstGroup, matching: find.byType(IconButton)),
+        find.descendant(of: firstGroup, matching: find.byType(AuraIconButton)),
       );
       final _ = await tester.pumpAndSettle();
 

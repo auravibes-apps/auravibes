@@ -303,8 +303,24 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Agregar Chat",
+      "archive_import": "Importar archivo",
       "search_placeholder": "Buscar conversaciones...",
-      "search_no_results": "Ninguna conversación coincide con tu búsqueda"
+      "search_no_results": "Ninguna conversación coincide con tu búsqueda",
+      "select_conversation": "Seleccionar {}",
+      "deselect_conversation": "Dejar de seleccionar {}",
+      "selected_count": {
+        "zero": "No hay conversaciones seleccionadas",
+        "one": "{} seleccionada",
+        "other": "{} seleccionadas"
+      },
+      "clear_selection": "Borrar selección",
+      "bulk_pin": "Fijar seleccionadas",
+      "bulk_unpin": "Desfijar seleccionadas",
+      "bulk_delete": "Eliminar seleccionadas",
+      "bulk_delete_title": "Eliminar conversaciones seleccionadas",
+      "bulk_delete_confirm": "¿Eliminar todas las conversaciones seleccionadas? Esta acción no se puede deshacer.",
+      "bulk_pin_failures": "No se pudo cambiar la fijación de: {}",
+      "bulk_delete_failures": "No se pudo eliminar: {}"
     },
     "new_chat": {
       "starting": "Iniciando conversación...",
@@ -313,6 +329,11 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Selecionar Modelo",
+      "archive_export": "Exportar archivo",
+      "archive_exported": "Archivo de conversación guardado.",
+      "archive_invalid": "Este archivo de conversación no es válido o está dañado.",
+      "archive_unsupported_version": "Este archivo de conversación usa una versión no compatible.",
+      "archive_error": "No se pudo exportar o importar esta conversación.",
       "reasoning": {
         "title": "Razonamiento",
         "enabled": "Activar razonamiento",
@@ -351,6 +372,9 @@
       "switch_model_unsupported_body": "Este modelo no admite {modalities}. Los adjuntos no compatibles se omitirán.",
       "switch_model_cancel": "Cancelar",
       "switch_model_confirm": "Cambiar",
+      "external_link_title": "¿Abrir enlace externo?",
+      "external_link_message": "Este enlace proviene del contenido del chat. Comprueba el destino antes de abrirlo.\n\nHost: {host}\nURL: {url}",
+      "external_link_open": "Abrir enlace",
       "rename": "Cambiar nombre",
       "rename_title": "Cambiar nombre del chat",
       "rename_field_label": "Título del chat",
@@ -399,6 +423,16 @@
         "one": "1 subagente en ejecución",
         "other": "{} subagentes en ejecución"
       },
+
+      "active_sub_agents_accessible_label": "{count}. Ver subagentes activos",
+      "active_sub_agents_chat_accessible_label": "{count} en {conversation}. Ver subagentes activos",
+      "active_sub_agents_title": "Subagentes activos",
+      "sub_agent_error_detail": "Error: {error}",
+      "sub_agent_status_awaiting_approval": "Esperando aprobación",
+      "sub_agent_status_completed": "Completado",
+      "sub_agent_status_failed": "Falló",
+      "sub_agent_status_running": "En ejecución",
+      "sub_agent_status_stopped": "Detenido",
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
         "one": "1 mensaje en cola",
@@ -456,6 +490,13 @@
     "remove_tool_title": "Eliminar Herramienta",
     "remove_tool_confirm": "¿Estás seguro de que deseas eliminar esta herramienta del espacio de trabajo?",
     "remove_tool_tooltip": "Eliminar herramienta",
+    "select_group": "Seleccionar grupo {}",
+    "deselect_group": "Deseleccionar grupo {}",
+    "select_tool": "Seleccionar herramienta {}",
+    "deselect_tool": "Deseleccionar herramienta {}",
+    "bulk_delete_title": "¿Eliminar las herramientas seleccionadas?",
+    "bulk_delete_confirm": "Se quitarán las herramientas personalizadas seleccionadas. Los grupos MCP seleccionados eliminarán su servidor y todas sus herramientas.",
+    "bulk_delete_failures": "No se pudo eliminar: {}",
     "permission_always_ask": "Siempre Preguntar",
     "permission_always_allow": "Siempre Permitir",
     "permission_label": "Permiso",
@@ -497,6 +538,11 @@
     "delete": "Eliminar habilidad",
     "duplicate": "Duplicar habilidad",
     "delete_confirm": "¿Eliminar esta habilidad? También se eliminará su estado de carga en conversaciones y sus herramientas de plantilla.",
+    "select_skill": "Seleccionar habilidad {}",
+    "deselect_skill": "Deseleccionar habilidad {}",
+    "bulk_delete_title": "¿Eliminar las habilidades seleccionadas?",
+    "bulk_delete_confirm": "¿Eliminar las habilidades de usuario seleccionadas? También se eliminarán su estado de carga en conversaciones y sus herramientas de plantilla.",
+    "bulk_delete_failures": "No se pudo eliminar: {}",
     "save_error": "No se pudo guardar la habilidad",
     "unsaved_changes_title": "Cambios sin guardar",
     "unsaved_changes_message": "Tienes cambios sin guardar. ¿Descartarlos y salir?",
@@ -547,8 +593,13 @@
       "italic": "Cursiva",
       "heading": "Encabezado",
       "bullets": "Viñetas",
+      "numbered_list": "Lista numerada",
+      "link": "Enlace",
+      "link_text_placeholder": "Texto del enlace",
+      "link_url_placeholder": "https://example.com",
       "code": "Código",
-      "quote": "Cita"
+      "quote": "Cita",
+      "undo": "Deshacer"
     }
   },
   "skills_resource": {
@@ -763,10 +814,26 @@
     "close_dialog": "Cerrar diálogo",
     "reload": "Recargar",
     "details": "Detalles",
+    "sort_by": "Ordenar por",
+    "sort_name_ascending": "Nombre (A-Z)",
+    "sort_name_descending": "Nombre (Z-A)",
+    "sort_enabled_first": "Activadas primero",
+    "select_all": "Seleccionar todo lo visible",
+    "deselect_all": "Deseleccionar todo lo visible",
+    "clear_selection": "Borrar selección",
+    "delete_selected": "Eliminar selección",
+    "selected_count": {
+      "one": "1 elemento seleccionado",
+      "other": "{} elementos seleccionados"
+    },
     "show_more": "Ver más",
     "show_less": "Ver menos",
     "error_title": "Algo salió mal",
-    "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."
+    "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla.",
+    "unsaved_changes_title": "Cambios sin guardar",
+    "unsaved_changes_message": "Hay cambios sin guardar. ¿Quieres descartarlos?",
+    "discard_changes": "Descartar cambios",
+    "keep_editing": "Seguir editando"
   },
   "workspace_capabilities": {
     "unsupported_error": "Esta función no está disponible en este espacio de trabajo."
@@ -1011,6 +1078,14 @@
   },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
+    "copy_id": "Copiar ID",
+    "id_copied": "ID del espacio de trabajo copiado",
+    "copy_id_error": "No se pudo copiar el ID del espacio de trabajo",
+    "select_workspace": "Seleccionar espacio de trabajo {}",
+    "deselect_workspace": "Deseleccionar espacio de trabajo {}",
+    "bulk_delete_title": "¿Eliminar los espacios de trabajo seleccionados?",
+    "bulk_delete_confirm": "Los espacios locales se eliminarán de este dispositivo. Los espacios conectados en la nube solo se quitarán de esta app.",
+    "bulk_delete_failures": "No se pudo eliminar o quitar: {}",
     "create_button": "Crear Espacio de Trabajo",
     "duplicate": "Duplicar Espacio de Trabajo",
     "create_title": "Crear Nuevo Espacio de Trabajo",
@@ -1036,6 +1111,8 @@
     "switch_title": "¿Cambiar de espacio de trabajo?",
     "switch_confirm": "¿Cambiar a \"{name}\"?",
     "switch_error": "Error al cambiar de espacio de trabajo. Inténtalo de nuevo.",
+    "switch_loading": "Cambiando espacio de trabajo...",
+    "switch_retry": "Reintentar",
     "loading": "Cargando espacios de trabajo...",
     "load_error": "Error al cargar espacios de trabajo. Inténtalo de nuevo.",
     "dropdown_placeholder": "Seleccionar espacio de trabajo",

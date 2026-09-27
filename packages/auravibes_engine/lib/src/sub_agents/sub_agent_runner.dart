@@ -84,6 +84,7 @@ class const SubAgentRunner({
     SubAgentConversationRecord? child;
     SubAgentRequestHandle? requestHandle;
     var completionStatus = SubAgentCompletionStatus.done;
+    SubAgentCompletionFailure? completionFailure;
     var failurePhase = 'run.parentValidation';
     try {
       final parent = await conversationStore.getConversation(
@@ -161,6 +162,10 @@ class const SubAgentRunner({
       return await _result(child.id, 'done', agentId: request.agentId);
     } on AgentToolExecutionFailure catch (failure) {
       completionStatus = SubAgentCompletionStatus.error;
+      completionFailure = SubAgentCompletionFailure(
+        error: failure.error,
+        stackTrace: failure.stackTrace,
+      );
       if (child == null) rethrow;
 
       throw _failure(
@@ -171,6 +176,10 @@ class const SubAgentRunner({
       );
     } on Object catch (error, stackTrace) {
       completionStatus = SubAgentCompletionStatus.error;
+      completionFailure = SubAgentCompletionFailure(
+        error: error,
+        stackTrace: stackTrace,
+      );
 
       throw _failure(
         responseRaw: _failedResult(child?.id, request.agentId),
@@ -179,7 +188,10 @@ class const SubAgentRunner({
         failurePhase: failurePhase,
       );
     } finally {
-      requestHandle?.finish(completionStatus);
+      requestHandle?.finish(
+        status: completionStatus,
+        failure: completionFailure,
+      );
     }
   }
 
@@ -404,9 +416,10 @@ abstract interface class SubAgentRequestHandle {
 
   bool get isStopped;
 
-  void finish([
+  void finish({
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-  ]);
+    SubAgentCompletionFailure? failure,
+  });
 }
 
 enum SubAgentCompletionStatus { done, stopped, error }

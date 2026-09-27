@@ -16,7 +16,8 @@ normal debugging and Flutter Driver.
   The root `pubspec.yaml` and `pubspec.lock` pin `marionette_mcp` and
   `marionette_flutter` to the same exact compatible version. Do not activate
   or invoke a globally installed Marionette MCP executable.
-- Project configuration registers the bridge for shared MCP (`.mcp.json`), Pi
+- Project configuration registers the bridge for shared MCP (`.mcp.json`),
+  Antigravity (`.agents/plugins/auravibes/mcp_config.json`), Pi
   (`.pi/mcp.json` and `pi-mcp-adapter`), OpenCode (`opencode.json`), and Codex
   (`.codex/config.toml`). Each agent runtime must start its own bridge process.
 - Start the isolated app path with:

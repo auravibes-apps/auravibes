@@ -1261,6 +1261,8 @@ extension MessageRepositoryCompanionMappings on MessageRepository {
   /// Returns a corresponding [MessagesCompanion].
   MessagesCompanion _mapToMessagesCompanion(MessageToCreate message) {
     return MessagesCompanion(
+      createdAt: .absentIfNull(message.createdAt),
+      updatedAt: .absentIfNull(message.updatedAt ?? message.createdAt),
       conversationId: .new(message.conversationId),
       content: .new(message.content),
       messageType: .new(_messageTypeToTableType(message.messageType)),
