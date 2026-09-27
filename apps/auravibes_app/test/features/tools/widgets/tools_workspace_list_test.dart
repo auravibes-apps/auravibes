@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
@@ -47,16 +48,20 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
 ToolsGroupWithTools _groupWithTools({
   required List<WorkspaceToolEntity> tools,
   String name = 'Test Group',
+  String id = 'group-1',
+  bool isEnabled = true,
+  String? mcpServerId,
 }) {
   return ToolsGroupWithTools(
     group: .new(
-      id: 'group-1',
+      id: id,
       workspaceId: _workspaceId,
       name: name,
-      isEnabled: true,
+      isEnabled: isEnabled,
       permissions: .ask,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      mcpServerId: mcpServerId,
     ),
     tools: tools,
   );
@@ -72,8 +77,19 @@ class _LoadingNotifier extends GroupedToolsNotifier {
 
 class _DataNotifier(final List<ToolsGroupWithTools> groups)
     extends GroupedToolsNotifier {
+  final deletedGroupIds = <String>[];
+  final deleteInvalidations = <bool>[];
+
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
+
+  @override
+  Future<bool> deleteMcpGroup(String groupId, {bool invalidate = true}) async {
+    deletedGroupIds.add(groupId);
+    deleteInvalidations.add(invalidate);
+
+    return true;
+  }
 }
 
 class _ErrorNotifier extends GroupedToolsNotifier {
@@ -83,16 +99,35 @@ class _ErrorNotifier extends GroupedToolsNotifier {
   }
 }
 
+class _WorkspaceToolsDataNotifier extends WorkspaceToolsNotifier {
+  new(this.tools);
+
+  final List<WorkspaceToolEntity> tools;
+  final removedIds = <String>[];
+
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
+
+  @override
+  Future<bool> removeToolById(String id) async {
+    removedIds.add(id);
+
+    return true;
+  }
+}
+
 class const _ListApp({required final List<Object> overrides})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TestableApp(
     child: AuraThemeScope(
       theme: .light,
-      child: Theme(
-        data: .new(),
-        child: const Scaffold(
-          body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+      child: Portal(
+        child: Theme(
+          data: .new(),
+          child: const Scaffold(
+            body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+          ),
         ),
       ),
     ),
@@ -207,5 +242,169 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AppErrorWidget), findsOneWidget);
+  });
+
+  testWidgets('sorts tool groups by name and enabled status', (tester) async {
+    final groups = [
+      _groupWithTools(
+        tools: [_tool(id: 'zeta-tool')],
+        name: 'Zeta Group',
+        id: 'zeta-group',
+      ),
+      _groupWithTools(
+        tools: [
+          _tool(id: 'zeta-tool', toolId: 'zeta_tool'),
+          _tool(id: 'alpha-tool', toolId: 'alpha_tool', isEnabled: false),
+        ],
+        name: 'Alpha Group',
+        id: 'alpha-group',
+        isEnabled: false,
+      ),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    expect(
+      tester.getTopLeft(find.text('Alpha Group')).dy,
+      lessThan(tester.getTopLeft(find.text('Zeta Group')).dy),
+    );
+    final alphaGroupCard = find.ancestor(
+      of: find.text('Alpha Group'),
+      matching: find.byType(ToolsGroupCard),
+    );
+    await tester.tap(
+      find.descendant(
+        of: alphaGroupCard,
+        matching: find.byType(AuraIconButton),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(find.text('alpha_tool')).dy,
+      lessThan(tester.getTopLeft(find.text('zeta_tool')).dy),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tools-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled first').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Zeta Group')).dy,
+      lessThan(tester.getTopLeft(find.text('Alpha Group')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('zeta_tool')).dy,
+      lessThan(tester.getTopLeft(find.text('alpha_tool')).dy),
+    );
+  });
+
+  testWidgets('selects filtered removable tools and confirms bulk deletion', (
+    tester,
+  ) async {
+    final alpha = _tool(id: 'alpha-id', toolId: 'alpha_tool');
+    final zeta = _tool(id: 'zeta-id', toolId: 'zeta_tool');
+    final workspaceToolsNotifier = _WorkspaceToolsDataNotifier([alpha, zeta]);
+    final groups = [
+      _defaultGroup([zeta, alpha]),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+      workspaceToolsProvider(_workspaceId)
+          .overrideWith(() => workspaceToolsNotifier),
+    ]);
+
+    await tester.enterText(find.byType(AuraInput), 'alpha');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(AuraInput), '');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(const ValueKey('tool-selection-alpha-id')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(const ValueKey('tool-selection-zeta-id')),
+          )
+          .value,
+      isFalse,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Delete selected tools?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(workspaceToolsNotifier.removedIds, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(workspaceToolsNotifier.removedIds, [alpha.id]);
+  });
+
+  testWidgets('bulk deletes each MCP group once without early invalidation', (
+    tester,
+  ) async {
+    final groups = [
+      _groupWithTools(
+        tools: [_tool(id: 'mcp-tool-1')],
+        id: 'mcp-group-1',
+        mcpServerId: 'mcp-server-1',
+      ),
+      _groupWithTools(
+        tools: [_tool(id: 'mcp-tool-2')],
+        id: 'mcp-group-2',
+        mcpServerId: 'mcp-server-2',
+      ),
+    ];
+    final groupedToolsNotifier = _DataNotifier(groups);
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => groupedToolsNotifier),
+    ]);
+
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+
+    for (final groupId in ['mcp-group-1', 'mcp-group-2']) {
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(ValueKey('tools-group-selection-$groupId')),
+            )
+            .value,
+        isTrue,
+      );
+    }
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(groupedToolsNotifier.deletedGroupIds, [
+      'mcp-group-1',
+      'mcp-group-2',
+    ]);
+    expect(groupedToolsNotifier.deleteInvalidations, [false, false]);
   });
 }

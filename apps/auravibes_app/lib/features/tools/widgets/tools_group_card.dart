@@ -38,6 +38,10 @@ typedef _McpDeleteInput = ({
 class const ToolsGroupCard({
   required final ToolsGroupWithTools groupWithTools,
   required final String workspaceId,
+  final Set<String> selectedTargetKeys = const {},
+  final bool isDeleting = false,
+  final void Function(String key, ({bool isSelected}) change)?
+  onSelectionChanged,
   final List<WorkspaceToolEntity>? visibleTools,
   super.key,
 }) extends HookConsumerWidget {
@@ -52,12 +56,10 @@ class const ToolsGroupCard({
     );
 
     return _ToolsGroupCardLayout(
-      groupWithTools: groupWithTools,
-      workspaceId: workspaceId,
+      card: this,
       isExpanded: isExpanded.value,
       onToggleExpand: () => isExpanded.value = !isExpanded.value,
       callbacks: callbacks,
-      visibleTools: visibleTools,
     );
   }
 }
@@ -137,7 +139,7 @@ Future<void> _deleteMcpGroup(_McpDeleteInput input) async {
 
   if (!await _confirmMcpDelete(context)) return;
 
-  await ref
+  final _ = await ref
       .read(groupedToolsProvider(workspaceId).notifier)
       .deleteMcpGroup(group.id);
 }
@@ -158,12 +160,10 @@ Future<bool> _confirmMcpDelete(BuildContext context) async {
 }
 
 class const _ToolsGroupCardLayout({
-  required final ToolsGroupWithTools groupWithTools,
-  required final String workspaceId,
+  required final ToolsGroupCard card,
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ToolsGroupCardCallbacks callbacks,
-  final List<WorkspaceToolEntity>? visibleTools,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -171,12 +171,10 @@ class const _ToolsGroupCardLayout({
       padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
         child: _ToolsGroupCardContent(
-          groupWithTools: groupWithTools,
-          workspaceId: workspaceId,
+          card: card,
           isExpanded: isExpanded,
           onToggleExpand: onToggleExpand,
           callbacks: callbacks,
-          visibleTools: visibleTools,
         ),
         style: .border,
       ),
@@ -185,56 +183,114 @@ class const _ToolsGroupCardLayout({
 }
 
 class const _ToolsGroupCardContent({
-  required final ToolsGroupWithTools groupWithTools,
-  required final String workspaceId,
+  required final ToolsGroupCard card,
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
   required final _ToolsGroupCardCallbacks callbacks,
-  final List<WorkspaceToolEntity>? visibleTools,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ToolsGroupCardHeader(
+        card: card,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        callbacks: callbacks,
+      ),
+      _ExpandedToolsGroup(card: card, isExpanded: isExpanded),
+    ],
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _ToolsGroupCardHeader({
+  required final ToolsGroupCard card,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
+  required final _ToolsGroupCardCallbacks callbacks,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraColumn(
+    return ToolsGroupHeader.managed(
+      groupWithTools: card.groupWithTools,
+      isExpanded: isExpanded,
+      onToggleExpand: onToggleExpand,
+      selection: _toolsGroupSelection(card),
+      actions: _toolsGroupActions(card, callbacks),
+    );
+  }
+}
+
+ToolsGroupHeaderSelection _toolsGroupSelection(ToolsGroupCard card) {
+  final selectionKey = _groupSelectionKey(card);
+
+  return (
+    isSelected:
+        selectionKey != null && card.selectedTargetKeys.contains(selectionKey),
+    isWorking: card.isDeleting,
+    onChanged: _groupSelectionChanged(card, selectionKey),
+  );
+}
+
+String? _groupSelectionKey(ToolsGroupCard card) {
+  final groupId = card.groupWithTools.group?.id;
+
+  return groupId == null ? null : 'group:$groupId';
+}
+
+ToolsGroupHeaderActions _toolsGroupActions(
+  ToolsGroupCard card,
+  _ToolsGroupCardCallbacks callbacks,
+) => (
+  onToggleEnabled: _unlessDeleting(card, callbacks.onToggleEnabled),
+  onReconnect: _unlessDeleting(card, callbacks.onReconnect),
+  onDelete: _unlessDeleting(card, callbacks.onDelete),
+  onViewError: _unlessDeleting(card, callbacks.onViewError),
+);
+
+T? _unlessDeleting<T>(ToolsGroupCard card, T? callback) =>
+    card.isDeleting ? null : callback;
+
+ValueChanged<bool>? _groupSelectionChanged(
+  ToolsGroupCard card,
+  String? selectionKey,
+) {
+  final onSelectionChanged = card.onSelectionChanged;
+  if (!card.groupWithTools.isMcpGroup ||
+      selectionKey == null ||
+      onSelectionChanged == null) {
+    return null;
+  }
+
+  return (value) => onSelectionChanged(selectionKey, (isSelected: value));
+}
+
+class const _ExpandedToolsGroup({
+  required final ToolsGroupCard card,
+  required final bool isExpanded,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!isExpanded) return const SizedBox.shrink();
+
+    return Column(
       children: [
-        ToolsGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: isExpanded,
-          onToggleExpand: onToggleExpand,
-          onToggleEnabled: callbacks.onToggleEnabled,
-          onReconnect: callbacks.onReconnect,
-          onDelete: callbacks.onDelete,
-          onViewError: callbacks.onViewError,
-        ),
-        if (isExpanded) ...[
-          const AuraDivider(),
-          _ToolsList(
-            groupWithTools: groupWithTools,
-            workspaceId: workspaceId,
-            visibleTools: visibleTools,
-          ),
-        ],
+        const AuraDivider(),
+        _ToolsList(card: card),
       ],
-      crossAxisAlignment: .start,
     );
   }
 }
 
 /// List of tools within a group.
-class const _ToolsList({
-  required final ToolsGroupWithTools groupWithTools,
-  required final String workspaceId,
-  final List<WorkspaceToolEntity>? visibleTools,
-}) extends StatelessWidget {
+class const _ToolsList({required final ToolsGroupCard card})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final tools = visibleTools ?? groupWithTools.tools;
+    final tools = card.visibleTools ?? card.groupWithTools.tools;
     if (tools.isEmpty) return const _EmptyToolsGroup();
 
-    return _ToolsGroupRows(
-      groupWithTools: groupWithTools,
-      tools: tools,
-      workspaceId: workspaceId,
-    );
+    return _ToolsGroupRows(card: card, tools: tools);
   }
 }
 
@@ -261,9 +317,8 @@ class const _EmptyToolsMessage() extends StatelessWidget {
 }
 
 class const _ToolsGroupRows({
-  required final ToolsGroupWithTools groupWithTools,
+  required final ToolsGroupCard card,
   required final List<WorkspaceToolEntity> tools,
-  required final String workspaceId,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -271,31 +326,89 @@ class const _ToolsGroupRows({
       padding: EdgeInsets.symmetric(
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
-      child: _ToolRows(
-        tools: tools,
-        workspaceId: workspaceId,
-        showDeleteButton: !groupWithTools.isMcpGroup,
-      ),
+      child: _ToolRows(card: card, tools: tools),
     );
   }
 }
 
 class const _ToolRows({
+  required final ToolsGroupCard card,
   required final List<WorkspaceToolEntity> tools,
-  required final String workspaceId,
-  required final bool showDeleteButton,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         for (final tool in tools)
-          ToolItemRow(
+          _SelectableToolRow(
+            card: card,
             tool: tool,
-            workspaceId: workspaceId,
-            showDeleteButton: showDeleteButton,
+            key: ValueKey('tool-row-${tool.id}'),
           ),
       ],
     );
   }
+}
+
+class const _SelectableToolRow({
+  required final ToolsGroupCard card,
+  required final WorkspaceToolEntity tool,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ToolItemRowForSelection(
+    card: card,
+    tool: tool,
+    selection: _toolItemSelection(
+      card,
+      tool,
+      'tool:${tool.id}',
+      !card.groupWithTools.isMcpGroup,
+    ),
+  );
+}
+
+class const _ToolItemRowForSelection({
+  required final ToolsGroupCard card,
+  required final WorkspaceToolEntity tool,
+  required final ToolItemSelection? selection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final showDeleteButton = !card.groupWithTools.isMcpGroup;
+    final currentSelection = selection;
+    if (currentSelection == null) {
+      return ToolItemRow(
+        tool: tool,
+        workspaceId: card.workspaceId,
+        showDeleteButton: showDeleteButton,
+        isWorking: card.isDeleting,
+      );
+    }
+
+    return ToolItemRow.selectable(
+      tool: tool,
+      workspaceId: card.workspaceId,
+      selection: currentSelection,
+      showDeleteButton: showDeleteButton,
+    );
+  }
+}
+
+ToolItemSelection? _toolItemSelection(
+  ToolsGroupCard card,
+  WorkspaceToolEntity tool,
+  String selectionKey,
+  bool showDeleteButton,
+) {
+  final onSelectionChanged = card.onSelectionChanged;
+  if (onSelectionChanged == null || !showDeleteButton || tool.isNative) {
+    return null;
+  }
+
+  return (
+    isSelected: card.selectedTargetKeys.contains(selectionKey),
+    isWorking: card.isDeleting,
+    onChanged: (value) => onSelectionChanged(selectionKey, (isSelected: value)),
+  );
 }

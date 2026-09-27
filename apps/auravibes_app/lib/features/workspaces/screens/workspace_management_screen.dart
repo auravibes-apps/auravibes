@@ -22,6 +22,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -42,6 +43,8 @@ const _switchConfirmationActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_confirm),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
 );
+
+enum _WorkspaceSort { nameAscending, nameDescending }
 
 class const WorkspaceManagementScreen({
   required final String workspaceId,
@@ -163,6 +166,9 @@ class const _WorkspaceListView({
 
 class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
   String _searchQuery = '';
+  _WorkspaceSort _sort = .nameAscending;
+  Set<String> _selectedIds = <String>{};
+  bool _isBulkDeleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -174,21 +180,18 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
   }
 
   _WorkspaceListData _data() {
-    final searchQuery = _searchQuery.trim().toLowerCase();
-    final filteredWorkspaces = _filterWorkspaces(
-      widget.workspaces,
-      searchQuery,
+    final source = _workspaceListSource(
+      widget,
+      _searchQuery,
+      _sort,
+      _isBulkDeleting,
     );
+    final results = _workspaceListResults(source);
 
     return _WorkspaceListData(
-      activeWorkspaceId: widget.activeWorkspaceId,
-      accounts: widget.accounts,
-      editingWorkspace: widget.editingWorkspace,
-      isSearchActive: searchQuery.isNotEmpty,
-      local: _localWorkspaces(filteredWorkspaces),
-      connected: _connectedWorkspaces(filteredWorkspaces),
-      searchQuery: searchQuery,
-      workspaces: widget.workspaces,
+      source: source,
+      results: results,
+      selection: _workspaceSelectionData(source, results, _selectedIds),
     );
   }
 
@@ -196,21 +199,222 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
     setState(() => _searchQuery = query);
   }
 
-  List<WorkspaceEntity> _localWorkspaces(List<WorkspaceEntity> workspaces) {
-    return workspaces.where((item) => item.cloudWorkspaceId == null).toList();
-  }
-
-  List<WorkspaceEntity> _connectedWorkspaces(List<WorkspaceEntity> workspaces) {
-    return workspaces.where((item) => item.cloudWorkspaceId != null).toList();
-  }
-
   _WorkspaceListActions _actions(BuildContext context) {
     return _WorkspaceListActions(
       context: context,
       ref: ref,
       activeWorkspaceId: widget.activeWorkspaceId,
+      sort: _sort,
+      onSortChanged: _updateSort,
+      onSelectAll: _toggleAllVisible,
+      onClearSelection: _clearSelection,
+      onDeleteSelected: () => unawaited(_confirmDeleteSelected(context)),
+      onSelectionChanged: _setSelected,
     );
   }
+
+  void _updateSort(_WorkspaceSort sort) => setState(() => _sort = sort);
+
+  void _clearSelection() => setState(_selectedIds.clear);
+
+  void _setSelected(WorkspaceEntity workspace, ({bool isSelected}) change) {
+    setState(() {
+      final _ = change.isSelected
+          ? _selectedIds.add(workspace.id)
+          : _selectedIds.remove(workspace.id);
+    });
+  }
+
+  void _toggleAllVisible() {
+    final data = _data();
+    final visibleIds = _visibleSelectableWorkspaces(data)
+        .map((workspace) => workspace.id);
+    setState(() {
+      if (data.allVisibleSelected) {
+        _selectedIds.removeAll(visibleIds);
+      } else {
+        _selectedIds.addAll(visibleIds);
+      }
+    });
+  }
+
+  Future<void> _confirmDeleteSelected(BuildContext context) async {
+    final selected = _selectedWorkspaces(widget.workspaces, _selectedIds);
+    if (selected.isEmpty || _isBulkDeleting) return;
+    final confirmed = await _confirmWorkspaceBulkDelete(context);
+    if (confirmed != true || !context.mounted) return;
+
+    await _deleteSelected(selected);
+  }
+
+  Future<void> _deleteSelected(List<WorkspaceEntity> selected) async {
+    setState(() => _isBulkDeleting = true);
+    final failed = await _actions(context).deleteSelected(selected);
+    if (!mounted) return;
+    setState(() {
+      _isBulkDeleting = false;
+      _selectedIds = _workspaceIds(failed);
+    });
+    if (failed.isEmpty) return;
+
+    _showWorkspaceBulkDeleteFailures(context, failed);
+  }
+}
+
+List<WorkspaceEntity> _selectedWorkspaces(
+  List<WorkspaceEntity> workspaces,
+  Set<String> selectedIds,
+) => workspaces
+    .where((workspace) => selectedIds.contains(workspace.id))
+    .toList();
+
+Future<bool?> _confirmWorkspaceBulkDelete(BuildContext context) =>
+    AuraDialogs.confirm(
+      context: context,
+      title: const TextLocale(
+        LocaleKeys.workspace_management_bulk_delete_title,
+      ),
+      message: const TextLocale(
+        LocaleKeys.workspace_management_bulk_delete_confirm,
+      ),
+      actions: _deleteConfirmationActions,
+      isDestructive: true,
+    );
+
+void _showWorkspaceBulkDeleteFailures(
+  BuildContext context,
+  List<WorkspaceEntity> failed,
+) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: Text(
+      LocaleKeys.workspace_management_bulk_delete_failures.tr(
+        args: [failed.map((workspace) => workspace.name).join(', ')],
+      ),
+    ),
+    variant: .error,
+  );
+}
+
+Set<String> _workspaceIds(List<WorkspaceEntity> workspaces) =>
+    workspaces.map((workspace) => workspace.id).toSet();
+
+_WorkspaceListSource _workspaceListSource(
+  _WorkspaceListView widget,
+  String searchQuery,
+  _WorkspaceSort sort,
+  bool isBulkDeleting,
+) => (
+  activeWorkspaceId: widget.activeWorkspaceId,
+  accounts: widget.accounts,
+  editingWorkspace: widget.editingWorkspace,
+  searchQuery: searchQuery.trim().toLowerCase(),
+  sort: sort,
+  isBulkDeleting: isBulkDeleting,
+  workspaces: widget.workspaces,
+);
+
+_WorkspaceListResults _workspaceListResults(_WorkspaceListSource source) {
+  final filtered = _filterWorkspaces(source.workspaces, source.searchQuery);
+
+  return (
+    isSearchActive: source.searchQuery.isNotEmpty,
+    local: _sortWorkspaces(_localWorkspaces(filtered), source.sort),
+    connected: _sortWorkspaces(_connectedWorkspaces(filtered), source.sort),
+  );
+}
+
+_WorkspaceSelectionData _workspaceSelectionData(
+  _WorkspaceListSource source,
+  _WorkspaceListResults results,
+  Set<String> selectedIds,
+) {
+  final visible = _visibleSelectableWorkspaceResults(source, results);
+
+  return (
+    selectedIds: selectedIds,
+    selectedCount: _selectedWorkspaceCount(source.workspaces, selectedIds),
+    selectableCount: visible.length,
+    allVisibleSelected: _allWorkspacesSelected(visible, selectedIds),
+  );
+}
+
+int _selectedWorkspaceCount(
+  List<WorkspaceEntity> workspaces,
+  Set<String> selectedIds,
+) => workspaces.where((workspace) => selectedIds.contains(workspace.id)).length;
+
+bool _allWorkspacesSelected(
+  List<WorkspaceEntity> workspaces,
+  Set<String> selectedIds,
+) =>
+    workspaces.isNotEmpty &&
+    workspaces.every((workspace) => selectedIds.contains(workspace.id));
+
+List<WorkspaceEntity> _localWorkspaces(List<WorkspaceEntity> workspaces) =>
+    workspaces.where((item) => item.cloudWorkspaceId == null).toList();
+
+List<WorkspaceEntity> _connectedWorkspaces(List<WorkspaceEntity> workspaces) =>
+    workspaces.where((item) => item.cloudWorkspaceId != null).toList();
+
+List<WorkspaceEntity> _visibleSelectableWorkspaceResults(
+  _WorkspaceListSource source,
+  _WorkspaceListResults results,
+) => [
+  ...results.local.where((item) => item.id != source.editingWorkspace?.id),
+  ...results.connected,
+];
+
+List<WorkspaceEntity> _visibleSelectableWorkspaces(_WorkspaceListData data) => [
+  ...data.local.where((item) => item.id != data.editingWorkspace?.id),
+  ...data.connected,
+];
+
+List<WorkspaceEntity> _sortWorkspaces(
+  List<WorkspaceEntity> workspaces,
+  _WorkspaceSort sort,
+) => List<WorkspaceEntity>.of(workspaces)
+  ..sort(
+    (left, right) => _compareWorkspaceSortKeys(
+      _localWorkspaceSortKey(left),
+      _localWorkspaceSortKey(right),
+      sort,
+    ),
+  );
+
+List<CloudWorkspaceSummary> _sortCloudWorkspaces(
+  List<CloudWorkspaceSummary> workspaces,
+  _WorkspaceSort sort,
+) => List<CloudWorkspaceSummary>.of(workspaces)
+  ..sort(
+    (left, right) => _compareWorkspaceSortKeys(
+      _cloudWorkspaceSortKey(left),
+      _cloudWorkspaceSortKey(right),
+      sort,
+    ),
+  );
+
+typedef _WorkspaceSortKey = ({String name, String id});
+
+_WorkspaceSortKey _localWorkspaceSortKey(WorkspaceEntity workspace) =>
+    (name: workspace.name, id: workspace.id);
+
+_WorkspaceSortKey _cloudWorkspaceSortKey(CloudWorkspaceSummary workspace) =>
+    (name: workspace.name, id: workspace.id.toString());
+
+int _compareWorkspaceSortKeys(
+  _WorkspaceSortKey left,
+  _WorkspaceSortKey right,
+  _WorkspaceSort sort,
+) {
+  final nameComparison = left.name.toLowerCase().compareTo(
+    right.name.toLowerCase(),
+  );
+  final comparison = nameComparison != 0
+      ? nameComparison
+      : left.id.compareTo(right.id);
+
+  return sort == _WorkspaceSort.nameAscending ? comparison : -comparison;
 }
 
 List<WorkspaceEntity> _filterWorkspaces(
@@ -352,16 +556,64 @@ bool _shouldShowCloudAccount(
     matchingAccountIds.contains(accountState.account.userId) ||
     !_hasLoadedCloudWorkspaceData(accountState.state);
 
-class const _WorkspaceListData({
-  required final String activeWorkspaceId,
-  required final AsyncValue<List<CloudAccountSession>> accounts,
-  required final WorkspaceEntity? editingWorkspace,
-  required final bool isSearchActive,
-  required final List<WorkspaceEntity> local,
-  required final List<WorkspaceEntity> connected,
-  required final String searchQuery,
-  required final List<WorkspaceEntity> workspaces,
+typedef _WorkspaceListSource = ({
+  String activeWorkspaceId,
+  AsyncValue<List<CloudAccountSession>> accounts,
+  WorkspaceEntity? editingWorkspace,
+  String searchQuery,
+  _WorkspaceSort sort,
+  bool isBulkDeleting,
+  List<WorkspaceEntity> workspaces,
 });
+
+typedef _WorkspaceListResults = ({
+  bool isSearchActive,
+  List<WorkspaceEntity> local,
+  List<WorkspaceEntity> connected,
+});
+
+typedef _WorkspaceSelectionData = ({
+  Set<String> selectedIds,
+  int selectedCount,
+  int selectableCount,
+  bool allVisibleSelected,
+});
+
+class _WorkspaceListData {
+  new({
+    required _WorkspaceListSource source,
+    required _WorkspaceListResults results,
+    required _WorkspaceSelectionData selection,
+  }) : activeWorkspaceId = source.activeWorkspaceId,
+       accounts = source.accounts,
+       editingWorkspace = source.editingWorkspace,
+       isSearchActive = results.isSearchActive,
+       local = results.local,
+       connected = results.connected,
+       searchQuery = source.searchQuery,
+       sort = source.sort,
+       selectedIds = selection.selectedIds,
+       selectedCount = selection.selectedCount,
+       selectableCount = selection.selectableCount,
+       allVisibleSelected = selection.allVisibleSelected,
+       isBulkDeleting = source.isBulkDeleting,
+       workspaces = source.workspaces;
+
+  final String activeWorkspaceId;
+  final AsyncValue<List<CloudAccountSession>> accounts;
+  final WorkspaceEntity? editingWorkspace;
+  final bool isSearchActive;
+  final List<WorkspaceEntity> local;
+  final List<WorkspaceEntity> connected;
+  final String searchQuery;
+  final _WorkspaceSort sort;
+  final Set<String> selectedIds;
+  final int selectedCount;
+  final int selectableCount;
+  final bool allVisibleSelected;
+  final bool isBulkDeleting;
+  final List<WorkspaceEntity> workspaces;
+}
 
 class const _WorkspaceListSections({
   required final _WorkspaceListData data,
@@ -374,6 +626,9 @@ class const _WorkspaceListSections({
       padding: const EdgeInsets.all(16),
       children: [
         _WorkspaceSearchInput(onChanged: onSearchChanged),
+        _WorkspaceManagementRow(data: data, actions: actions),
+        if (data.selectedCount > 0)
+          _WorkspaceSelectionActions(data: data, actions: actions),
         _LocalWorkspaceSection(data: data, actions: actions),
         _ConnectedWorkspaceSection(data: data, actions: actions),
         _AvailableCloudWorkspaceSection(data: data, actions: actions),
@@ -403,13 +658,175 @@ class const _WorkspaceSearchInput({
   );
 }
 
+class const _WorkspaceManagementRow({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: _WorkspaceManagementControls(data: data, actions: actions),
+  );
+}
+
+class const _WorkspaceManagementControls({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: _WorkspaceSortSelector(data: data, actions: actions),
+      ),
+      const SizedBox(width: 8),
+      _WorkspaceSelectAllButton(data: data, onPressed: actions.onSelectAll),
+    ],
+  );
+}
+
+class const _WorkspaceSortSelector({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<_WorkspaceSort>(
+    options: _workspaceSortOptions,
+    key: const ValueKey('workspace-sort'),
+    value: data.sort,
+    onChanged: _workspaceSortChanged(actions),
+    label: const TextLocale(LocaleKeys.common_sort_by),
+    isEnabled: !data.isBulkDeleting,
+    semanticLabel: LocaleKeys.common_sort_by.tr(context: context),
+  );
+}
+
+ValueChanged<_WorkspaceSort?> _workspaceSortChanged(
+  _WorkspaceListActions actions,
+) => (value) {
+  if (value != null) actions.onSortChanged(value);
+};
+
+class const _WorkspaceSelectAllButton({
+  required final _WorkspaceListData data,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: TextLocale(
+      data.allVisibleSelected
+          ? LocaleKeys.common_deselect_all
+          : LocaleKeys.common_select_all,
+    ),
+    key: const ValueKey('workspace-select-all'),
+    size: .small,
+    disabled: data.selectableCount == 0 || data.isBulkDeleting,
+  );
+}
+
+const _workspaceSortOptions = <AuraDropdownOption<_WorkspaceSort>>[
+  AuraDropdownOption(
+    value: _WorkspaceSort.nameAscending,
+    child: TextLocale(LocaleKeys.common_sort_name_ascending),
+  ),
+  AuraDropdownOption(
+    value: _WorkspaceSort.nameDescending,
+    child: TextLocale(LocaleKeys.common_sort_name_descending),
+  ),
+];
+
+class const _WorkspaceSelectionActions({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: _WorkspaceSelectionActionRow(data: data, actions: actions),
+  );
+}
+
+class const _WorkspaceSelectionActionRow({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: _WorkspaceSelectedCount(count: data.selectedCount)),
+      _WorkspaceDeleteSelectedButton(data: data, actions: actions),
+      const SizedBox(width: 8),
+      _WorkspaceClearSelectionButton(data: data, actions: actions),
+    ],
+  );
+}
+
+class const _WorkspaceSelectedCount({required final int count})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(context.plural(LocaleKeys.common_selected_count, count)),
+    style: .bodySmall,
+  );
+}
+
+class const _WorkspaceDeleteSelectedButton({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: actions.onDeleteSelected,
+    child: const TextLocale(LocaleKeys.common_delete_selected),
+    key: const ValueKey('workspace-delete-selected'),
+    size: .small,
+    isLoading: data.isBulkDeleting,
+  );
+}
+
+class const _WorkspaceClearSelectionButton({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.close,
+    onPressed: data.isBulkDeleting ? null : actions.onClearSelection,
+    size: .small,
+    tooltip: LocaleKeys.common_clear_selection.tr(context: context),
+  );
+}
+
 class const _WorkspaceListActions({
   required final BuildContext context,
   required final WidgetRef ref,
   required final String activeWorkspaceId,
+  required final _WorkspaceSort sort,
+  required final ValueChanged<_WorkspaceSort> onSortChanged,
+  required final VoidCallback onSelectAll,
+  required final VoidCallback onClearSelection,
+  required final VoidCallback onDeleteSelected,
+  required final void Function(
+    WorkspaceEntity workspace,
+    ({bool isSelected}) change,
+  )
+  onSelectionChanged,
 });
 
 extension on _WorkspaceListActions {
+  Future<void> copyId(String workspaceId) async {
+    try {
+      await Clipboard.setData(.new(text: workspaceId));
+      if (!context.mounted) return;
+      _showWorkspaceIdCopied(context);
+    } on Object catch (error, stackTrace) {
+      _logger.warning('Failed to copy workspace ID', error, stackTrace);
+      if (!context.mounted) return;
+      _showWorkspaceIdCopyError(context);
+    }
+  }
+
   Future<void> switchWorkspace(WorkspaceEntity workspace) async {
     if (workspace.id == activeWorkspaceId) return;
 
@@ -485,7 +902,54 @@ extension on _WorkspaceListActions {
   };
 }
 
+void _showWorkspaceIdCopied(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.workspace_management_id_copied),
+    variant: .success,
+  );
+}
+
+void _showWorkspaceIdCopyError(BuildContext context) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.workspace_management_copy_id_error),
+    variant: .error,
+  );
+}
+
 extension on _WorkspaceListActions {
+  Future<List<WorkspaceEntity>> deleteSelected(
+    List<WorkspaceEntity> workspaces,
+  ) async {
+    final failed = <WorkspaceEntity>[];
+    var removedActive = false;
+    for (final workspace in workspaces) {
+      final attempt = await _deleteWorkspaceTarget(this, workspace);
+      if (!attempt.succeeded) failed.add(workspace);
+      removedActive |= attempt.removedActive;
+    }
+    await _finishWorkspaceBulkDeletion(this, removedActive);
+
+    return failed;
+  }
+
+  Future<void> _deleteWithoutConfirmation(WorkspaceEntity workspace) async {
+    final accountId = workspace.cloudAccountId;
+    if (workspace.cloudWorkspaceId != null) {
+      if (accountId == null) {
+        throw StateError('Connected workspace is missing its account ID.');
+      }
+      await _detach(workspace, accountId);
+
+      return;
+    }
+
+    await ref
+        .read(deleteWorkspaceUseCaseProvider)
+        .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
+  }
+
   Future<void> edit(String id, String name) async {
     final _ = await WorkspaceManagementMutations.edit.run(ref, (_) {
       return ref.read(editWorkspaceUseCaseProvider).call(id: id, name: name);
@@ -604,6 +1068,46 @@ extension on _WorkspaceListActions {
   }
 }
 
+typedef _WorkspaceDeleteAttempt = ({bool succeeded, bool removedActive});
+
+Future<_WorkspaceDeleteAttempt> _deleteWorkspaceTarget(
+  _WorkspaceListActions actions,
+  WorkspaceEntity workspace,
+) async {
+  try {
+    await actions._deleteWithoutConfirmation(workspace);
+
+    return (
+      succeeded: true,
+      removedActive: workspace.id == actions.activeWorkspaceId,
+    );
+  } on Object catch (error, stackTrace) {
+    _logger.warning(
+      'Failed to remove workspace ${workspace.id}',
+      error,
+      stackTrace,
+    );
+
+    return (succeeded: false, removedActive: false);
+  }
+}
+
+Future<void> _finishWorkspaceBulkDeletion(
+  _WorkspaceListActions actions,
+  bool removedActive,
+) async {
+  actions.ref.invalidate(allWorkspacesProvider);
+  if (!removedActive || !actions.context.mounted) return;
+
+  try {
+    await actions.switchAfterActiveWorkspaceRemoval();
+  } on Object catch (error, stackTrace) {
+    if (actions.context.mounted) {
+      _showError(actions.context, error, stackTrace);
+    }
+  }
+}
+
 extension on _WorkspaceListActions {
   Future<void> confirmRemove(WorkspaceEntity workspace) async {
     final accountId = await _confirmedRemovalAccountId(workspace);
@@ -710,7 +1214,10 @@ class _LocalWorkspaceItems extends StatelessWidget {
              workspace: workspace,
              activeWorkspaceId: data.activeWorkspaceId,
              editingWorkspace: data.editingWorkspace,
+             isSelected: data.selectedIds.contains(workspace.id),
+             isDeleting: data.isBulkDeleting,
              actions: actions,
+             key: ValueKey('workspace-row-${workspace.id}'),
            ),
        ];
 
@@ -725,7 +1232,10 @@ class const _LocalWorkspaceItem({
   required final WorkspaceEntity workspace,
   required final String activeWorkspaceId,
   required final WorkspaceEntity? editingWorkspace,
+  required final bool isSelected,
+  required final bool isDeleting,
   required final _WorkspaceListActions actions,
+  super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -736,6 +1246,8 @@ class const _LocalWorkspaceItem({
     return _LocalWorkspaceTile(
       workspace: workspace,
       isActive: workspace.id == activeWorkspaceId,
+      isSelected: isSelected,
+      isDeleting: isDeleting,
       actions: actions,
     );
   }
@@ -804,6 +1316,8 @@ class _ConnectedWorkspaceItems extends StatelessWidget {
                data.accounts,
                workspace.cloudAccountId,
              ),
+             isSelected: data.selectedIds.contains(workspace.id),
+             isDeleting: data.isBulkDeleting,
              actions: actions,
            ),
        ];
@@ -818,6 +1332,8 @@ class const _ConnectedWorkspaceItem({
   required final WorkspaceEntity workspace,
   required final String activeWorkspaceId,
   required final String? accountEmail,
+  required final bool isSelected,
+  required final bool isDeleting,
   required final _WorkspaceListActions actions,
 }) extends StatelessWidget {
   @override
@@ -826,6 +1342,8 @@ class const _ConnectedWorkspaceItem({
       workspace: workspace,
       accountEmail: accountEmail,
       isActive: workspace.id == activeWorkspaceId,
+      isSelected: isSelected,
+      isDeleting: isDeleting,
       actions: actions,
     );
   }
@@ -1123,10 +1641,9 @@ class const _AvailableCloudWorkspaceList({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final matching = _matchingCloudWorkspaces(workspaces, searchQuery);
-    final available = _availableCloudWorkspaces(
-      matching,
-      account,
-      localWorkspaces,
+    final available = _sortCloudWorkspaces(
+      _availableCloudWorkspaces(matching, account, localWorkspaces),
+      actions.sort,
     );
     if (available.isEmpty) {
       return _AvailableCloudWorkspaceEmptyState(
@@ -1244,6 +1761,8 @@ bool _isConnectedElsewhere(
 class const _LocalWorkspaceTile({
   required final WorkspaceEntity workspace,
   required final bool isActive,
+  required final bool isSelected,
+  required final bool isDeleting,
   required final _WorkspaceListActions actions,
 }) extends StatelessWidget {
   @override
@@ -1252,15 +1771,94 @@ class const _LocalWorkspaceTile({
 
     return StableUiSelector(
       identifier: selectorId,
-      child: AuraTile(
-        child: _WorkspaceName(name: workspace.name, isActive: isActive),
-        onTap: () => actions.switchWorkspace(workspace),
-        variant: .ghost,
-        trailing: _LocalWorkspaceMenu(workspace: workspace, actions: actions),
-      ),
+      child: _LocalWorkspaceTileContent(tile: this),
     );
   }
 }
+
+class const _LocalWorkspaceTileContent({
+  required final _LocalWorkspaceTile tile,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SelectableWorkspaceTile(
+    workspace: tile.workspace,
+    content: _WorkspaceName(name: tile.workspace.name, isActive: tile.isActive),
+    menu: _LocalWorkspaceMenu(workspace: tile.workspace, actions: tile.actions),
+    selection: _workspaceTileSelection(
+      tile.isSelected,
+      tile.isDeleting,
+      tile.actions,
+    ),
+  );
+}
+
+typedef _WorkspaceTileSelection = ({
+  bool isSelected,
+  bool isDeleting,
+  _WorkspaceListActions actions,
+});
+
+_WorkspaceTileSelection _workspaceTileSelection(
+  bool isSelected,
+  bool isDeleting,
+  _WorkspaceListActions actions,
+) => (isSelected: isSelected, isDeleting: isDeleting, actions: actions);
+
+class const _SelectableWorkspaceTile({
+  required final WorkspaceEntity workspace,
+  required final Widget content,
+  required final Widget menu,
+  required final _WorkspaceTileSelection selection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final (:actions, :isDeleting, :isSelected) = selection;
+
+    return AuraTile(
+      child: content,
+      onTap: _workspaceTileTap(actions, workspace, isDeleting),
+      variant: .ghost,
+      leading: _WorkspaceSelectionCheckbox(
+        workspace: workspace,
+        isSelected: isSelected,
+        isDeleting: isDeleting,
+        actions: actions,
+      ),
+      trailing: isDeleting ? null : menu,
+      enabled: !isDeleting,
+    );
+  }
+}
+
+VoidCallback? _workspaceTileTap(
+  _WorkspaceListActions actions,
+  WorkspaceEntity workspace,
+  bool isDeleting,
+) => isDeleting ? null : () => actions.switchWorkspace(workspace);
+
+class const _WorkspaceSelectionCheckbox({
+  required final WorkspaceEntity workspace,
+  required final bool isSelected,
+  required final bool isDeleting,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckbox(
+    value: isSelected,
+    onChanged: isDeleting
+        ? null
+        : (value) => actions.onSelectionChanged(workspace, (isSelected: value)),
+    key: ValueKey('workspace-selection-${workspace.id}'),
+    disabled: isDeleting,
+    semanticLabel: _workspaceSelectionLabel(workspace, isSelected),
+  );
+}
+
+String _workspaceSelectionLabel(WorkspaceEntity workspace, bool isSelected) =>
+    (isSelected
+            ? LocaleKeys.workspace_management_deselect_workspace
+            : LocaleKeys.workspace_management_select_workspace)
+        .tr(args: [workspace.name]);
 
 class const _LocalWorkspaceMenu({
   required final WorkspaceEntity workspace,
@@ -1273,7 +1871,7 @@ class const _LocalWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_editItem(), _duplicateItem(), _deleteItem()],
+        items: [_editItem(), _duplicateItem(), _copyIdItem(), _deleteItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1301,12 +1899,21 @@ class const _LocalWorkspaceMenu({
       onTap: () => actions.duplicate(workspace),
     );
   }
+
+  AuraPopupMenuItem _copyIdItem() {
+    return AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.workspace_management_copy_id),
+      onTap: () => actions.copyId(workspace.id),
+    );
+  }
 }
 
 class const _ConnectedWorkspaceTile({
   required final WorkspaceEntity workspace,
   required final String? accountEmail,
   required final bool isActive,
+  required final bool isSelected,
+  required final bool isDeleting,
   required final _WorkspaceListActions actions,
 }) extends StatelessWidget {
   @override
@@ -1315,21 +1922,32 @@ class const _ConnectedWorkspaceTile({
 
     return StableUiSelector(
       identifier: selectorId,
-      child: AuraTile(
-        child: _ConnectedWorkspaceDetails(
-          workspace: workspace,
-          accountEmail: accountEmail,
-          isActive: isActive,
-        ),
-        onTap: () => actions.switchWorkspace(workspace),
-        variant: .ghost,
-        trailing: _ConnectedWorkspaceMenu(
-          workspace: workspace,
-          actions: actions,
-        ),
-      ),
+      child: _ConnectedWorkspaceTileContent(tile: this),
     );
   }
+}
+
+class const _ConnectedWorkspaceTileContent({
+  required final _ConnectedWorkspaceTile tile,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SelectableWorkspaceTile(
+    workspace: tile.workspace,
+    content: _ConnectedWorkspaceDetails(
+      workspace: tile.workspace,
+      accountEmail: tile.accountEmail,
+      isActive: tile.isActive,
+    ),
+    menu: _ConnectedWorkspaceMenu(
+      workspace: tile.workspace,
+      actions: tile.actions,
+    ),
+    selection: _workspaceTileSelection(
+      tile.isSelected,
+      tile.isDeleting,
+      tile.actions,
+    ),
+  );
 }
 
 class const _ConnectedWorkspaceDetails({
@@ -1364,7 +1982,7 @@ class const _ConnectedWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_detailsItem(), _removeItem()],
+        items: [_detailsItem(), _copyIdItem(), _removeItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1386,6 +2004,13 @@ class const _ConnectedWorkspaceMenu({
       title: const TextLocale(LocaleKeys.workspace_management_cloud_detach),
       onTap: () => actions.confirmRemove(workspace),
       variant: .error,
+    );
+  }
+
+  AuraPopupMenuItem _copyIdItem() {
+    return AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.workspace_management_copy_id),
+      onTap: () => actions.copyId(workspace.id),
     );
   }
 }
@@ -1451,7 +2076,7 @@ class const _AvailableWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_detailsItem(), _connectItem()],
+        items: [_detailsItem(), _copyIdItem(), _connectItem()],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1472,6 +2097,13 @@ class const _AvailableWorkspaceMenu({
     return AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_management_cloud_attach),
       onTap: canConnect ? () => actions.connect(workspace, accountId) : null,
+    );
+  }
+
+  AuraPopupMenuItem _copyIdItem() {
+    return AuraPopupMenuItem(
+      title: const TextLocale(LocaleKeys.workspace_management_copy_id),
+      onTap: () => actions.copyId(workspace.id.toString()),
     );
   }
 }

@@ -268,7 +268,11 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        final reconnectButton = find.byType(AuraButton);
+        final reconnectButton = find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraButton &&
+              widget.semanticLabel == 'Reconnect all failed MCPs',
+        );
         expect(find.text('Reconnect all failed MCPs'), findsOneWidget);
         expect(reconnectButton, findsOneWidget);
 

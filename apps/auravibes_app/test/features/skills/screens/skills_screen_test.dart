@@ -275,4 +275,87 @@ void main() {
     expect(find.text('No skills match these filters'), findsOneWidget);
     expect(find.text('Native Helper'), findsNothing);
   });
+
+  testWidgets('sorts skills by localized name and enabled status', (
+    tester,
+  ) async {
+    final fixture = await createFixture(includeAppSkill: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Native Helper')).dy,
+      lessThan(tester.getTopLeft(find.text('Write Summary')).dy),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled first').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Write Summary')).dy,
+      lessThan(tester.getTopLeft(find.text('Native Helper')).dy),
+    );
+  });
+
+  testWidgets('selects filtered user skills and confirms bulk deletion', (
+    tester,
+  ) async {
+    final fixture = await createFixture(includeAppSkill: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(EditableText), 'summary');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('skills-select-all')));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(ValueKey('skill-selection-${fixture.skill.id}')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      find.byKey(const ValueKey('skill-selection-app-skill')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Delete selected skills?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(AuraButton, 'Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+      isA<SkillEntity>(),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+      null,
+    );
+  });
 }
