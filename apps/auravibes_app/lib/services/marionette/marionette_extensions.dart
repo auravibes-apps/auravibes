@@ -70,6 +70,10 @@ class const MarionetteExtensions(final MarionetteExtensionActions _actions) {
     );
   });
 
+  Future<MarionetteExtensionResult> stopSubAgentSmokeFixtureParent(
+    Map<String, String> params,
+  ) => _invoke(params, const {}, _actions.finishSubAgentSmokeFixture);
+
   Future<MarionetteExtensionResult> clearDevelopmentState(
     Map<String, String> params,
   ) => _invoke(params, const {}, _actions.clearDevelopmentState);
@@ -188,6 +192,10 @@ final class MarionetteExtensionBootstrap {
     title: 'Finish Sub-Agent Smoke Fixture Child',
     description: 'Completes one active local smoke-fixture child.',
   );
+  static const _stopSubAgentSmokeFixtureParentSchema = ExtensionInputSchema(
+    title: 'Stop Sub-Agent Smoke Fixture Parent',
+    description: 'Stops every active local smoke-fixture child.',
+  );
   static const _clearDevelopmentStateSchema = ExtensionInputSchema(
     title: 'AuraVibes Development State Clear',
     description:
@@ -277,6 +285,7 @@ final class MarionetteExtensionRegistration {
     _registerSelectModel(dispatcher);
     _registerStartSubAgentSmokeFixture(dispatcher);
     _registerFinishSubAgentSmokeFixture(dispatcher);
+    _registerStopSubAgentSmokeFixtureParent(dispatcher);
     _registerSeedDemoData(dispatcher);
     _registerClearDevelopmentState(dispatcher);
     _registerSetDevelopmentFeatureFlag(dispatcher);
@@ -332,6 +341,18 @@ final class MarionetteExtensionRegistration {
       inputSchema:
           MarionetteExtensionBootstrap._finishSubAgentSmokeFixtureSchema,
       callback: dispatcher.finishSubAgentSmokeFixture,
+    );
+  }
+
+  static void _registerStopSubAgentSmokeFixtureParent(
+    MarionetteExtensions dispatcher,
+  ) {
+    registerMarionetteExtension(
+      name: 'auravibes.stopSubAgentSmokeFixtureParent',
+      description: 'Stop every active deterministic local child conversation.',
+      inputSchema:
+          MarionetteExtensionBootstrap._stopSubAgentSmokeFixtureParentSchema,
+      callback: dispatcher.stopSubAgentSmokeFixtureParent,
     );
   }
 

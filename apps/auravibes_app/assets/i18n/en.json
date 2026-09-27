@@ -425,6 +425,7 @@
       },
 
       "active_sub_agents_accessible_label": "{count}. View active sub-agents",
+      "active_sub_agents_chat_accessible_label": "{count} in {conversation}. View active sub-agents",
       "active_sub_agents_title": "Active sub-agents",
       "sub_agent_error_detail": "Error: {error}",
       "sub_agent_status_awaiting_approval": "Awaiting approval",
