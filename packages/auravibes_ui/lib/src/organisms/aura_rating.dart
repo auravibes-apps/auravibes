@@ -96,7 +96,10 @@ class const _AuraRatingStar({
       _ => null,
     };
 
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
     return IconButton(
+      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
       onPressed: onPressed,
       tooltip: '$index',
       icon: Icon(selected ? Icons.star : Icons.star_border, color: color),

@@ -257,21 +257,26 @@ class const _AuraTabBar({
   Widget _buildTab(BuildContext context, int index) {
     final isSelected = index == selectedIndex;
     final auraColors = context.auraColors;
-    final borderRadius = context.auraTheme.fromBorderRadius(.md);
+    final auraTheme = context.auraTheme;
+    final targetSize = auraTheme.interactionSizes.minimumTargetSize;
+    final borderRadius = auraTheme.fromBorderRadius(.md);
     final title = titles[index];
 
     return Semantics(
       child: IntrinsicWidth(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          constraints: BoxConstraints(
+            minWidth: targetSize,
+            minHeight: targetSize,
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               AuraPressable(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 48),
-                  child: AuraSizedBox(
-                    height: .xl2,
+                  constraints: BoxConstraints(minWidth: targetSize),
+                  child: SizedBox(
+                    height: targetSize,
                     child: AuraPadding(
                       child: Center(
                         child: AuraText(

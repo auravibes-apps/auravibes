@@ -84,10 +84,21 @@ class const _AuraLinkGesture({
   required final VoidCallback? onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _AuraLinkLabel(label: label),
-    onTap: enabled ? onPressed : null,
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return GestureDetector(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: targetSize,
+          minHeight: targetSize,
+        ),
+        child: _AuraLinkLabel(label: label),
+      ),
+      onTap: enabled ? onPressed : null,
+      behavior: HitTestBehavior.opaque,
+    );
+  }
 }
 
 class const _AuraLinkLabel({required final String label})

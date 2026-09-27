@@ -12,8 +12,6 @@ typedef _AuraIconButtonValues = ({
   AuraBorderRadius borderRadius,
 });
 
-const _minimumButtonSize = 48.0;
-
 /// A specialized icon button component following the Aura design system.
 class AuraIconButton extends StatelessWidget {
   static const _extraSmallButtonSize = 24.0;
@@ -191,16 +189,19 @@ class const _AuraIconButtonControl({
   required final AuraIconButton button,
   required final AuraColorScheme colors,
 }) extends StatelessWidget {
-  double get _buttonSize =>
-      AuraIconButton.buttonSizeFor(button.size)
-          .clamp(_minimumButtonSize, double.infinity);
-
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: _buttonSize,
-    height: _buttonSize,
-    child: _AuraIconButtonButton(button: button, colors: colors),
-  );
+  Widget build(BuildContext context) {
+    final minimumTargetSize =
+        context.auraTheme.interactionSizes.minimumTargetSize;
+    final buttonSize = AuraIconButton.buttonSizeFor(button.size)
+        .clamp(minimumTargetSize, double.infinity);
+
+    return SizedBox(
+      width: buttonSize,
+      height: buttonSize,
+      child: _AuraIconButtonButton(button: button, colors: colors),
+    );
+  }
 }
 
 class const _AuraIconButtonButton({

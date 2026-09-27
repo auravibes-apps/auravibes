@@ -301,10 +301,14 @@ class const _AuraSwitchGesture({
 class const _AuraSwitchTrack(final _AuraSwitchTrackData data)
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ConstrainedBox(
-    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-    child: Center(child: _AuraSwitchTrackSurface(data)),
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      child: Center(child: _AuraSwitchTrackSurface(data)),
+    );
+  }
 }
 
 class const _AuraSwitchTrackSurface(final _AuraSwitchTrackData data)

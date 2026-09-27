@@ -134,7 +134,10 @@ class _AuraFabThemeData {
     required AuraTheme theme,
   }) : _widget = _AuraFabLayout(
          child: ConstrainedBox(
-           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+           constraints: BoxConstraints(
+             minWidth: theme.interactionSizes.minimumTargetSize,
+             minHeight: theme.interactionSizes.minimumTargetSize,
+           ),
            child: Semantics(
              child: button.size == AuraFABSize.extended && button.text != null
                  ? _AuraFabExtended(

@@ -93,11 +93,22 @@ class const _AuraMessageBubbleGesture({
   required final AuraMessageBubble message,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _AuraMessageBubbleFrame(message: message),
-    onTap: message.onTap,
-    onLongPress: message.onLongPress,
-  );
+  Widget build(BuildContext context) {
+    final bubble = _AuraMessageBubbleFrame(message: message);
+    if (message.onTap == null && message.onLongPress == null) return bubble;
+
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      child: GestureDetector(
+        child: bubble,
+        onTap: message.onTap,
+        onLongPress: message.onLongPress,
+        behavior: HitTestBehavior.opaque,
+      ),
+    );
+  }
 }
 
 class const _AuraMessageBubbleFrame({required final AuraMessageBubble message})

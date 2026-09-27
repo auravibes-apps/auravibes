@@ -186,10 +186,11 @@ typedef _ChromeLerpValues = ({
 
 /// Immutable Aura theme value providing theme-aware design tokens.
 ///
-/// Colors, spacing, border radius, and typography all live here so a subtree
-/// `Theme` override can rescale them. Call sites select values via the
-/// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type), resolved
-/// at build time through [fromSpacing] / [fromBorderRadius] / [typography].
+/// Colors, spacing, border radius, typography, and interaction sizes live here
+/// so a subtree `Theme` override can rescale them. Call sites select values
+/// via the AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type),
+/// resolved at build time through [fromSpacing] / [fromBorderRadius] /
+/// [typography].
 @immutable
 class AuraTheme {
   static const _standardAnimation = AuraAnimationTheme._standard();
@@ -305,6 +306,7 @@ class AuraTheme {
     this.spacing = const AuraSpacingScale._standard(),
     this.borderRadius = const AuraBorderRadiusScale._standard(),
     this.typography = const AuraTypographyScale._standard(),
+    this.interactionSizes = const AuraInteractionSizeScale(),
   });
 
   /// Color scheme for the theme.
@@ -322,6 +324,9 @@ class AuraTheme {
   /// Theme-owned typography scale (rethemeable, lerp-able).
   final AuraTypographyScale typography;
 
+  /// Theme-owned minimum size for interactive targets.
+  final AuraInteractionSizeScale interactionSizes;
+
   /// Returns a copy with selected theme values replaced.
   AuraTheme copyWith({
     AuraColorScheme? colors,
@@ -329,6 +334,7 @@ class AuraTheme {
     AuraSpacingScale? spacing,
     AuraBorderRadiusScale? borderRadius,
     AuraTypographyScale? typography,
+    AuraInteractionSizeScale? interactionSizes,
   }) {
     return AuraTheme(
       colors: colors ?? this.colors,
@@ -336,6 +342,7 @@ class AuraTheme {
       spacing: spacing ?? this.spacing,
       borderRadius: borderRadius ?? this.borderRadius,
       typography: typography ?? this.typography,
+      interactionSizes: interactionSizes ?? this.interactionSizes,
     );
   }
 
@@ -349,6 +356,7 @@ class AuraTheme {
       spacing: spacing.lerp(other.spacing, t),
       borderRadius: borderRadius.lerp(other.borderRadius, t),
       typography: typography.lerp(other.typography, t),
+      interactionSizes: interactionSizes.lerp(other.interactionSizes, t),
     );
   }
 
@@ -358,6 +366,33 @@ class AuraTheme {
   /// Resolve an [AuraBorderRadius] enum to its concrete pixel value.
   double fromBorderRadius(AuraBorderRadius value) =>
       borderRadius.resolve(value);
+}
+
+/// Theme-owned minimum size for interactive targets.
+@immutable
+class AuraInteractionSizeScale {
+  static const _minimumAllowedTargetSize = 48.0;
+
+  /// Creates an interaction size scale.
+  const new({this.minimumTargetSize = _minimumAllowedTargetSize})
+    : assert(
+        minimumTargetSize >= _minimumAllowedTargetSize,
+        'minimumTargetSize cannot be smaller than 48 logical pixels',
+      );
+
+  /// Smallest permitted width and height for an interactive target.
+  final double minimumTargetSize;
+
+  /// Linearly interpolate between two interaction size scales.
+  AuraInteractionSizeScale lerp(AuraInteractionSizeScale other, double t) {
+    if (t <= 0) return this;
+    if (t >= 1) return other;
+
+    return AuraInteractionSizeScale(
+      minimumTargetSize:
+          minimumTargetSize + (other.minimumTargetSize - minimumTargetSize) * t,
+    );
+  }
 }
 
 /// Theme-owned spacing scale. It contains one [double] per [AuraSpacing] step.

@@ -515,19 +515,31 @@ class const _AuraSnackBarAction({
   required final VoidCallback onDismiss,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: .min,
-    children: [
-      const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
-      GestureDetector(
-        child: _AuraSnackBarActionContent.fromValues(
-          label: label,
-          foregroundColor: foregroundColor,
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
+        GestureDetector(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: targetSize,
+              minHeight: targetSize,
+            ),
+            child: Center(
+              child: _AuraSnackBarActionContent.fromValues(
+                label: label,
+                foregroundColor: foregroundColor,
+              ),
+            ),
+          ),
+          onTap: _handleTap,
         ),
-        onTap: _handleTap,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   void _handleTap() {
     onAction?.call();

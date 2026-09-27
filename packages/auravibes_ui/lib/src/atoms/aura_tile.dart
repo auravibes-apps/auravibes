@@ -166,16 +166,26 @@ class _AuraTileLayout extends StatelessWidget {
 class const _AuraTileSurface({required final _AuraTileAppearance appearance})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    padding: _tilePadding(appearance),
-    decoration: _tileDecoration(appearance),
-    child: _AuraTileContent(
-      appearance: appearance,
-      loadingColor: _tileTextColor(appearance),
-      textStyle: _tileTextStyle(appearance),
-    ),
-    duration: appearance.theme.animation.normal,
-  );
+  Widget build(BuildContext context) {
+    final tile = AnimatedContainer(
+      padding: _tilePadding(appearance),
+      decoration: _tileDecoration(appearance),
+      child: _AuraTileContent(
+        appearance: appearance,
+        loadingColor: _tileTextColor(appearance),
+        textStyle: _tileTextStyle(appearance),
+      ),
+      duration: appearance.theme.animation.normal,
+    );
+    if (appearance.tile.onTap == null) return tile;
+
+    final targetSize = appearance.theme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      child: tile,
+    );
+  }
 }
 
 class _AuraTileContent extends StatelessWidget {
