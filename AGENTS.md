@@ -18,7 +18,7 @@
 
 ## Workspace source of truth
 
-- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.2`); Melos: `^8.6.0`.
+- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.6.0`.
 - Commands and package membership live in root `pubspec.yaml`.
 - Diagnostics and scoped exceptions live in `analysis_options.yaml`.
 - Required CI gates live in `.github/workflows/ci.yml`.

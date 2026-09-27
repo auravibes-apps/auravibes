@@ -52,7 +52,7 @@ void main() {
         groupedToolsProvider(_workspace.id).notifier,
       )..state = const AsyncLoading();
 
-      await notifier.deleteMcpGroup('group-1');
+      expect(await notifier.deleteMcpGroup('group-1'), isTrue);
 
       expect(mcpNotifier.deletedServerIds, ['server-1']);
     });
@@ -131,7 +131,7 @@ void main() {
         groupedToolsProvider(_workspace.id).notifier,
       )..state = const AsyncLoading();
 
-      await notifier.deleteMcpGroup('group-non-mcp');
+      expect(await notifier.deleteMcpGroup('group-non-mcp'), isFalse);
 
       expect(mcpNotifier.deletedServerIds, isEmpty);
     });
@@ -231,7 +231,7 @@ void main() {
         groupedToolsProvider(_workspace.id).notifier,
       )..state = const AsyncLoading();
 
-      await notifier.deleteMcpGroup('group-empty-mcp');
+      expect(await notifier.deleteMcpGroup('group-empty-mcp'), isFalse);
 
       expect(mcpNotifier.deletedServerIds, isEmpty);
     });

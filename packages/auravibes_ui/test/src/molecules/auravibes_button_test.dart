@@ -67,6 +67,48 @@ void main() {
       expect(tester.getSize(find.byType(AuraButton)).height, lessThan(100));
     });
 
+    testWidgets('keeps enabled and disabled buttons the same size', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                AuraButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  child: const Text('Select all visible'),
+                  key: const ValueKey('enabled-button'),
+                  size: .small,
+                ),
+                AuraButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  child: const Text('Select all visible'),
+                  key: const ValueKey('disabled-button'),
+                  size: .small,
+                  disabled: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final enabledSize = tester.getSize(
+        find.byKey(const ValueKey('enabled-button')),
+      );
+      final disabledSize = tester.getSize(
+        find.byKey(const ValueKey('disabled-button')),
+      );
+
+      expect(disabledSize, enabledSize);
+      expect(disabledSize.height, greaterThanOrEqualTo(48));
+    });
+
     testWidgets('centers content in a tight parent', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
