@@ -20,6 +20,7 @@ final class ModelCapabilities {
     this.isCanonical = true,
     this.supportsPriorityMode = false,
     this.supportsToolCalls = false,
+    this.supportsStrictToolSampling = false,
   }) : inputModalities = UnmodifiableListView(
          inputModalities.map((value) => value.toLowerCase()),
        ),
@@ -61,6 +62,8 @@ final class ModelCapabilities {
           canonicalModelIds.contains('$providerId/$id'),
       supportsPriorityMode: _supportsPriorityMode(json),
       supportsToolCalls: _optionalBool(json, 'tool_call') ?? false,
+      supportsStrictToolSampling:
+          _optionalBool(json, 'structured_output') ?? false,
     );
   }
 
@@ -80,6 +83,7 @@ final class ModelCapabilities {
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
+  final bool supportsStrictToolSampling;
 
   bool get isTextGenerationModel =>
       isCanonical &&

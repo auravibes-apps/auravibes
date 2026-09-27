@@ -11,6 +11,7 @@ void main() {
         'family': 'gpt-5.5',
         'reasoning': true,
         'tool_call': true,
+        'structured_output': true,
         'open_weights': false,
         'cost': {'input': 30, 'cache_read': 15, 'output': 60},
         'limit': {'context': 400000, 'output': 128000},
@@ -36,6 +37,7 @@ void main() {
     expect(model.costInput, 30.0);
     expect(model.supportsReasoning, isTrue);
     expect(model.supportsToolCalls, isTrue);
+    expect(model.supportsStrictToolSampling, isTrue);
     expect(model.supportsPriorityMode, isTrue);
     expect(model.isTextGenerationModel, isTrue);
     expect(model.isCodexRuntimeModel, isTrue);
@@ -149,6 +151,22 @@ void main() {
     );
   });
 
+  test('rejects malformed strict tool sampling capability clearly', () {
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'structured_output': 'yes',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('requires priority mode for Codex runtime eligibility', () {
     final model = ModelCapabilities(
       id: 'gpt-5.5',
@@ -160,6 +178,7 @@ void main() {
     );
 
     expect(model.isCodexRuntimeModel, isFalse);
+    expect(model.supportsStrictToolSampling, isFalse);
   });
 
   test('Codex eligibility is capability-based', () {
