@@ -13,9 +13,11 @@ import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -24,6 +26,77 @@ import '../../../helpers/test_app.dart';
 const _workspaceId = 'test-workspace';
 
 void main() {
+  testWidgets('provider options show auth modes in compact layouts', (
+    tester,
+  ) async {
+    svg.cache.clear();
+    addTearDown(svg.cache.clear);
+    tester.view.physicalSize = const Size(320, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const apiKeyProviderName =
+        'Anthropic provider with a deliberately long name';
+
+    await tester.runAsync(() async {
+      final _ = await rootBundle.loadString('assets/i18n/en.json');
+      await _cacheModelLogos([
+        ModelProviderOAuthProfiles.providerId,
+        'anthropic',
+      ]);
+      await tester.pumpWidget(
+        TestableApp(
+          child: const Scaffold(
+            body: AddModelProviderWidget(
+              workspaceId: _workspaceId,
+              showHeader: false,
+            ),
+          ),
+          overrides: [
+            apiModelProvidersProvider.overrideWith(
+              (_, _) async => const [
+                ApiModelProviderEntity(
+                  id: ModelProviderOAuthProfiles.providerId,
+                  name: ModelProviderOAuthProfiles.displayName,
+                  type: .openai,
+                ),
+                ApiModelProviderEntity(
+                  id: 'anthropic',
+                  name: apiKeyProviderName,
+                  type: .anthropic,
+                ),
+              ],
+            ),
+          ],
+          key: UniqueKey(),
+        ),
+      );
+    });
+    await tester.pump();
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('OAuth'), findsOneWidget);
+    expect(find.text('API key'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.text('OAuth')).label,
+      allOf(
+        contains(ModelProviderOAuthProfiles.displayName),
+        contains('OAuth'),
+      ),
+    );
+    expect(
+      tester.getSemantics(find.text('API key')).label,
+      allOf(contains(apiKeyProviderName), contains('API key')),
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text(apiKeyProviderName));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Verify connection'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('add form requires verification and shows model count', (
     tester,
   ) async {
@@ -298,4 +371,19 @@ class _PresetAddModelProviderState extends AddModelProviderState {
       key: 'valid-key',
     );
   }
+}
+
+Future<void> _cacheModelLogos(List<String> modelIds) async {
+  final bytes = await const SvgStringLoader(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">'
+    ' <circle cx="10" cy="10" r="8"/></svg>',
+  ).loadBytes(null);
+
+  final _ = await Future.wait(
+    modelIds.map((modelId) {
+      final loader = SvgNetworkLoader('https://models.dev/logos/$modelId.svg');
+
+      return svg.cache.putIfAbsent(loader.cacheKey(null), () async => bytes);
+    }),
+  );
 }
