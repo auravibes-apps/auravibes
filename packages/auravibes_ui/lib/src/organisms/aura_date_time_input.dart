@@ -26,7 +26,6 @@ class AuraDateTimeInput extends StatelessWidget {
   static const _twoDigitWidth = 2;
   static const _pickerMaxWidth = 360.0;
   static const _pickerPadding = 16.0;
-  static const _pickerControlHeight = 48.0;
   static const _pickerActionWidth = 80.0;
   static const _pickerButtonSpacing = 8.0;
   static const _pickerActionFontSize = 14.0;

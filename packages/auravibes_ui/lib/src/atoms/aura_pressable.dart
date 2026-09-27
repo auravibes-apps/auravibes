@@ -87,6 +87,7 @@ class AuraPressableState extends State<AuraPressable> {
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
+    final minimumTargetSize = auraTheme.interactionSizes.minimumTargetSize;
     final auraColors = context.auraColors;
     final policy = AuraInteractionScope.of(context);
     final isAllowed = switch (widget.interaction) {
@@ -96,17 +97,30 @@ class AuraPressableState extends State<AuraPressable> {
     final onPressed = isAllowed ? widget.onPressed : null;
     final onLongPress = isAllowed ? widget.onLongPress : null;
     if (onPressed == null) {
-      return _buildDisabled(policy);
+      return _buildDisabled(policy, minimumTargetSize);
     }
 
     final alpha = _stateLayerAlpha(_pressDown, _hovering || _focused);
-    return _buildEnabled(auraTheme, auraColors, alpha, onPressed, onLongPress);
+    return _buildEnabled(
+      auraTheme,
+      auraColors,
+      alpha,
+      onPressed,
+      onLongPress,
+      minimumTargetSize,
+    );
   }
 
-  Widget _buildDisabled(AuraInteractionPolicy policy) {
+  Widget _buildDisabled(
+    AuraInteractionPolicy policy,
+    double minimumTargetSize,
+  ) {
     final identifier = widget.identifier;
     final content = ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      constraints: BoxConstraints(
+        minWidth: minimumTargetSize,
+        minHeight: minimumTargetSize,
+      ),
       child: Container(
         decoration: widget.decoration,
         child: widget.child,
@@ -137,6 +151,7 @@ class AuraPressableState extends State<AuraPressable> {
     double alpha,
     void Function() onPressed,
     void Function()? onLongPress,
+    double minimumTargetSize,
   ) {
     final identifier = widget.identifier;
 
@@ -165,7 +180,10 @@ class AuraPressableState extends State<AuraPressable> {
               : null,
           child: GestureDetector(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: BoxConstraints(
+                minWidth: minimumTargetSize,
+                minHeight: minimumTargetSize,
+              ),
               child: AuraPadding(
                 child: Container(
                   decoration: widget.decoration,

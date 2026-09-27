@@ -260,6 +260,37 @@ void main() {
       expect(tapped, true);
     });
 
+    testWidgets('sizes actionable text from the active interaction theme', (
+      tester,
+    ) async {
+      var minimumTargetSize = 48.0;
+      var tapped = false;
+
+      Widget buildApp() => AuraThemeScope(
+        theme: AuraTheme.light.copyWith(
+          interactionSizes: .new(minimumTargetSize: minimumTargetSize),
+        ),
+        child: MaterialApp(
+          home: Scaffold(
+            body: AuraSelectableText('Tap me', onTap: () => tapped = true),
+          ),
+          theme: ThemeData.light().copyWith(),
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      final selectableText = find.byType(SelectableText);
+      expect(tester.getSize(selectableText).height, 48);
+
+      minimumTargetSize = 64;
+      await tester.pumpWidget(buildApp());
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getSize(selectableText).height, 64);
+      await tester.tap(selectableText);
+      expect(tapped, isTrue);
+    });
+
     testWidgets('uses default cursor color from theme', (tester) async {
       await tester.pumpWidget(
         AuraThemeScope(

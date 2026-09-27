@@ -31,6 +31,7 @@ void main() {
       expect(theme.spacing, AuraTheme.light.spacing);
       expect(theme.borderRadius, AuraTheme.light.borderRadius);
       expect(theme.typography, AuraTheme.light.typography);
+      expect(theme.interactionSizes, AuraTheme.light.interactionSizes);
     });
 
     test('lerp returns this when other is null', () {
@@ -44,6 +45,16 @@ void main() {
       expect(result.colors, isA<AuraColorScheme>());
     });
 
+    test('copyWith replaces interaction sizes and lerp interpolates them', () {
+      final largerTargets = AuraTheme.light.copyWith(
+        interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 64),
+      );
+      final middleTheme = AuraTheme.light.lerp(largerTargets, 0.5);
+
+      expect(largerTargets.interactionSizes.minimumTargetSize, 64);
+      expect(middleTheme.interactionSizes.minimumTargetSize, 56);
+    });
+
     test('fromSpacing returns correct values', () {
       final theme = AuraTheme.light;
       expect(theme.fromSpacing(.none), 0);
@@ -55,6 +66,27 @@ void main() {
       expect(theme.fromSpacing(.xl), 32);
       expect(theme.fromSpacing(.xl2), 48);
       expect(theme.fromSpacing(.xl3), 64);
+    });
+  });
+
+  group('AuraInteractionSizeScale', () {
+    test('defaults to 48 logical pixels', () {
+      expect(const AuraInteractionSizeScale().minimumTargetSize, 48);
+      expect(AuraTheme.light.interactionSizes.minimumTargetSize, 48);
+    });
+
+    test('rejects a target size below 48 logical pixels', () {
+      expect(
+        () => AuraInteractionSizeScale(minimumTargetSize: 47),
+        throwsAssertionError,
+      );
+    });
+
+    test('lerp interpolates minimum target size', () {
+      const compact = AuraInteractionSizeScale();
+      const spacious = AuraInteractionSizeScale(minimumTargetSize: 64);
+
+      expect(compact.lerp(spacious, 0.5).minimumTargetSize, 56);
     });
   });
 

@@ -141,10 +141,17 @@ class const _AccordionHeaderButton({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => InkWell(
-    child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
-    onTap: navigable ? onTap : null,
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: .new(minHeight: targetSize),
+      child: InkWell(
+        child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
+        onTap: navigable ? onTap : null,
+      ),
+    );
+  }
 }
 
 class const _AccordionHeaderContent({

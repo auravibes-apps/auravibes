@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/molecules/aura_dropdown_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_dropdown_selector.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -473,6 +474,57 @@ void main() {
       await tester.pump();
 
       expect(find.text('Custom: Option 1'), findsOneWidget);
+    });
+
+    testWidgets('sizes custom options from the active interaction theme', (
+      tester,
+    ) async {
+      var minimumTargetSize = 48.0;
+      var optionWasTapped = false;
+
+      Widget buildApp() => AuraThemeScope(
+        theme: AuraTheme.light.copyWith(
+          interactionSizes: .new(minimumTargetSize: minimumTargetSize),
+        ),
+        child: MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraDropdownSelector<String>(
+                options: [
+                  AuraDropdownOption(
+                    value: 'Option 1',
+                    child: const Text('Option 1'),
+                    onTap: () => optionWasTapped = true,
+                  ),
+                ],
+                onChanged: (_) => fail('Unexpected selection'),
+                placeholder: const Text('Select'),
+                optionBuilder: (_, option) => GestureDetector(
+                  key: const ValueKey('custom-option-target'),
+                  child: Text('Custom: ${option.value}'),
+                  onTap: option.onTap,
+                  behavior: .opaque,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.tap(find.text('Select'));
+      final _ = await tester.pumpAndSettle();
+
+      const customTarget = ValueKey('custom-option-target');
+      expect(tester.getSize(find.byKey(customTarget)).height, 48);
+
+      minimumTargetSize = 64;
+      await tester.pumpWidget(buildApp());
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getSize(find.byKey(customTarget)).height, 64);
+      await tester.tap(find.byKey(customTarget));
+      expect(optionWasTapped, isTrue);
     });
 
     testWidgets('renders with leading icon in dropdown', (tester) async {

@@ -464,13 +464,10 @@ class _AuraPopupMenuItemButton extends StatelessWidget {
         ? interactionColor
         : colors.onSurfaceVariant.withValues(alpha: 0.6);
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 48),
-      child: _AuraPopupMenuPressable(
-        item: item,
-        interactionColor: interactionColor,
-        contentColor: contentColor,
-      ),
+    return _AuraPopupMenuPressable(
+      item: item,
+      interactionColor: interactionColor,
+      contentColor: contentColor,
     );
   }
 }

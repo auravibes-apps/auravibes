@@ -11,8 +11,6 @@ export 'aura_radio_list_tile.dart';
 
 /// A container managing mutually exclusive radio selections.
 class AuraRadioGroup<T> extends StatelessWidget {
-  static const double _kRadioTapTargetSize = 48;
-
   /// Creates an AuraRadioGroup widget.
   const new({
     required this.value,
@@ -438,7 +436,7 @@ class const _AuraRadioOptionSubtitle({required final Widget child})
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsetsDirectional.only(
       start:
-          AuraRadioGroup._kRadioTapTargetSize +
+          context.auraTheme.interactionSizes.minimumTargetSize +
           context.auraTheme.fromSpacing(.sm),
     ),
     child: DefaultTextStyle.merge(

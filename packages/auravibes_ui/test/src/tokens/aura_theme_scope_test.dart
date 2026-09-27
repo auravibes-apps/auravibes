@@ -1,5 +1,5 @@
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -46,4 +46,52 @@ void main() {
     expect(observedTheme, same(secondTheme));
     expect(builds, 2);
   });
+
+  testWidgets('interaction targets update with the inherited theme', (
+    tester,
+  ) async {
+    const iconButtonKey = ValueKey('icon-button-target');
+    const linkKey = ValueKey('link-target');
+    const child = MaterialApp(
+      home: Scaffold(
+        body: Row(
+          mainAxisSize: .min,
+          children: [
+            AuraIconButton(
+              icon: Icons.close,
+              onPressed: _noop,
+              key: iconButtonKey,
+            ),
+            AuraLink(label: 'Open', onPressed: _noop, key: linkKey),
+            AuraRating(value: 0, onChanged: null),
+          ],
+        ),
+      ),
+    );
+    final ratingStarFinder = find
+        .descendant(
+          of: find.byType(AuraRating),
+          matching: find.byType(IconButton),
+        )
+        .first;
+
+    Widget buildApp(double minimumTargetSize) => AuraThemeScope(
+      theme: AuraTheme.light.copyWith(
+        interactionSizes: .new(minimumTargetSize: minimumTargetSize),
+      ),
+      child: child,
+    );
+
+    await tester.pumpWidget(buildApp(48));
+    expect(tester.getSize(find.byKey(iconButtonKey)), const Size(48, 48));
+    expect(tester.getSize(find.byKey(linkKey)).height, 48);
+    expect(tester.getSize(ratingStarFinder), const Size(48, 48));
+
+    await tester.pumpWidget(buildApp(64));
+    expect(tester.getSize(find.byKey(iconButtonKey)), const Size(64, 64));
+    expect(tester.getSize(find.byKey(linkKey)).height, 64);
+    expect(tester.getSize(ratingStarFinder), const Size(64, 64));
+  });
 }
+
+void _noop() => throw StateError('Unexpected interaction');
