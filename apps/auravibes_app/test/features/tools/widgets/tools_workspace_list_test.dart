@@ -168,6 +168,22 @@ void main() {
     expect(find.byType(ToolsGroupCard), findsNWidgets(2));
   });
 
+  testWidgets('aligns disabled select-all with the sort field', (tester) async {
+    final groups = <ToolsGroupWithTools>[];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    final selectAll = find.byKey(const ValueKey('tools-select-all'));
+    expect(tester.widget<AuraButton>(selectAll).disabled, isTrue);
+    expect(
+      tester.getRect(selectAll).bottom,
+      tester.getRect(find.byKey(const ValueKey('tools-sort'))).bottom,
+    );
+  });
+
   testWidgets('filters tools by name or description', (tester) async {
     final groups = [
       _defaultGroup([

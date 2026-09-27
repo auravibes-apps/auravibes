@@ -376,6 +376,7 @@ class const _ToolsManagementControls({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .end,
     children: [
       Expanded(
         child: _ToolsSortSelector(

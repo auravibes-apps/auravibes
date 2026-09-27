@@ -938,6 +938,7 @@ class const _SkillsManagementRow({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .end,
     children: [
       Expanded(child: _SkillsSortSelector(state: state)),
       const SizedBox(width: _skillScreenSpacing),

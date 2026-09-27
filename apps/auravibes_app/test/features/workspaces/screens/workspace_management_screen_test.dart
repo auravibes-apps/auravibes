@@ -916,6 +916,22 @@ void main() {
       );
     });
 
+    testWidgets('aligns select-all with the sort field', (tester) async {
+      final workspace = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: workspace.id));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .getRect(find.byKey(const ValueKey('workspace-select-all')))
+            .bottom,
+        tester.getRect(find.byKey(const ValueKey('workspace-sort'))).bottom,
+      );
+    });
+
     testWidgets('selects filtered workspaces and confirms bulk deletion', (
       tester,
     ) async {

@@ -675,6 +675,7 @@ class const _WorkspaceManagementControls({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .end,
     children: [
       Expanded(
         child: _WorkspaceSortSelector(data: data, actions: actions),

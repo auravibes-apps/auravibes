@@ -306,6 +306,24 @@ void main() {
     );
   });
 
+  testWidgets('aligns select-all with the sort field', (tester) async {
+    final fixture = await createFixture();
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byKey(const ValueKey('skills-select-all'))).bottom,
+      tester.getRect(find.byKey(const ValueKey('skills-sort'))).bottom,
+    );
+  });
+
   testWidgets('selects filtered user skills and confirms bulk deletion', (
     tester,
   ) async {
