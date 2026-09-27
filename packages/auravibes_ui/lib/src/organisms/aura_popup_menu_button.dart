@@ -9,11 +9,15 @@ class AuraPopupMenuButton extends StatefulWidget {
     required this.items,
     super.key,
     this.icon = Icons.more_vert,
+    this.identifier,
     this.tooltip,
   });
 
   /// The icon shown in the trigger button.
   final IconData icon;
+
+  /// An optional stable identifier for the trigger button.
+  final String? identifier;
 
   /// Tooltip shown for the trigger button.
   final String? tooltip;
@@ -34,6 +38,7 @@ class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
       child: AuraIconButton(
         icon: widget.icon,
         onPressed: _controller.toggle,
+        identifier: widget.identifier,
         tooltip: widget.tooltip,
       ),
       items: widget.items,

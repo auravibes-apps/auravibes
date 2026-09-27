@@ -27,6 +27,7 @@ class AuraFieldWrapper extends StatefulWidget {
     this.isFocused = false,
     this.onTap,
     this.onFocusChange,
+    this.identifier,
     this.semanticLabel,
     this.semanticDescription,
   });
@@ -63,6 +64,9 @@ class AuraFieldWrapper extends StatefulWidget {
 
   /// Called when keyboard focus changes.
   final ValueChanged<bool>? onFocusChange;
+
+  /// An optional stable identifier for the interactive field surface.
+  final String? identifier;
 
   /// A semantic label for the field for accessibility.
   final String? semanticLabel;
@@ -169,6 +173,7 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
     required this.child,
     required this.color,
     required this.decoration,
+    required this.identifier,
     required this.onPressed,
     required this.onFocusChange,
   });
@@ -192,6 +197,7 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
            _fieldBackgroundColor(field, colors),
            _fieldBorderRadius(context),
          ),
+         identifier: field.identifier,
          onPressed: field.isEnabled ? field.onTap : null,
          onFocusChange: field.onFocusChange,
        );
@@ -199,6 +205,7 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
   final Widget child;
   final Color color;
   final BoxDecoration decoration;
+  final String? identifier;
   final VoidCallback? onPressed;
   final ValueChanged<bool>? onFocusChange;
 
@@ -209,6 +216,7 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
     decoration: decoration,
     onPressed: onPressed,
     onFocusChange: onFocusChange,
+    identifier: identifier,
   );
 }
 

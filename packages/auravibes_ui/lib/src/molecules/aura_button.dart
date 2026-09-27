@@ -37,6 +37,7 @@ class AuraButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = false,
     this.disabled = false,
+    this.identifier,
     this.semanticLabel,
   });
 
@@ -63,6 +64,9 @@ class AuraButton extends StatelessWidget {
 
   /// The tint of the button.
   final AuraTint? tint;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   /// A semantic label for the button.
   final String? semanticLabel;
@@ -119,6 +123,7 @@ class _AuraButtonSurface extends StatelessWidget {
            disabled: disabled,
          )),
          onPressed: _buttonOnPressed(button, disabled),
+         identifier: button.identifier,
          semanticLabel: button.semanticLabel,
          isButtonSemantics: true,
        );

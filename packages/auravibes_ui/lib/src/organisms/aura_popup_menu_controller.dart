@@ -426,6 +426,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
     this.leading,
     this.trailing,
     this.variant = .ghost,
+    this.identifier,
   });
 
   /// The main content of the menu item.
@@ -442,6 +443,9 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
 
   /// The visual variant of the menu item.
   final AuraTileVariant variant;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   @override
   Widget build(BuildContext context) => _AuraPopupMenuItemButton(item: this);
@@ -495,6 +499,7 @@ class _AuraPopupMenuPressable extends StatelessWidget {
     ),
     color: interactionColor,
     onPressed: _onPressed(context),
+    identifier: item.identifier,
     isButtonSemantics: true,
   );
 
