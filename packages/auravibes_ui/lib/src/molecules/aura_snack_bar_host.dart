@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -516,15 +517,12 @@ class const _AuraSnackBarAction({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
-
     return Row(
       mainAxisSize: .min,
       children: [
         const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
         GestureDetector(
-          child: ConstrainedBox(
-            constraints: .new(minWidth: targetSize, minHeight: targetSize),
+          child: AuraInteractionTarget(
             child: Center(
               child: _AuraSnackBarActionContent.fromValues(
                 label: label,

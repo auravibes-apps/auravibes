@@ -63,10 +63,17 @@ void main() {
               key: iconButtonKey,
             ),
             AuraLink(label: 'Open', onPressed: _noop, key: linkKey),
+            AuraRating(value: 0, onChanged: null),
           ],
         ),
       ),
     );
+    final ratingStarFinder = find
+        .descendant(
+          of: find.byType(AuraRating),
+          matching: find.byType(IconButton),
+        )
+        .first;
 
     Widget buildApp(double minimumTargetSize) => AuraThemeScope(
       theme: AuraTheme.light.copyWith(
@@ -78,10 +85,12 @@ void main() {
     await tester.pumpWidget(buildApp(48));
     expect(tester.getSize(find.byKey(iconButtonKey)), const Size(48, 48));
     expect(tester.getSize(find.byKey(linkKey)).height, 48);
+    expect(tester.getSize(ratingStarFinder), const Size(48, 48));
 
     await tester.pumpWidget(buildApp(64));
     expect(tester.getSize(find.byKey(iconButtonKey)), const Size(64, 64));
     expect(tester.getSize(find.byKey(linkKey)).height, 64);
+    expect(tester.getSize(ratingStarFinder), const Size(64, 64));
   });
 }
 

@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -179,12 +180,7 @@ class const _AuraTileSurface({required final _AuraTileAppearance appearance})
     );
     if (appearance.tile.onTap == null) return tile;
 
-    final targetSize = appearance.theme.interactionSizes.minimumTargetSize;
-
-    return ConstrainedBox(
-      constraints: .new(minWidth: targetSize, minHeight: targetSize),
-      child: tile,
-    );
+    return AuraInteractionTarget(child: tile);
   }
 }
 

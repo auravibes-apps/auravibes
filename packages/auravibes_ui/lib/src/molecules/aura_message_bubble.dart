@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -97,10 +98,7 @@ class const _AuraMessageBubbleGesture({
     final bubble = _AuraMessageBubbleFrame(message: message);
     if (message.onTap == null && message.onLongPress == null) return bubble;
 
-    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
-
-    return ConstrainedBox(
-      constraints: .new(minWidth: targetSize, minHeight: targetSize),
+    return AuraInteractionTarget(
       child: GestureDetector(
         child: bubble,
         onTap: message.onTap,

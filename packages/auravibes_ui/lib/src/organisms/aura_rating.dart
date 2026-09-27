@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -89,20 +90,18 @@ class const _AuraRatingStar({
   required final ValueChanged<int>? callback,
   required final Color color,
 }) extends StatelessWidget {
+  VoidCallback? get _onPressed =>
+      switch ((enabled: enabled, callback: callback)) {
+        (enabled: true, callback: final callback?) => () => callback(index),
+        _ => null,
+      };
+
   @override
-  Widget build(BuildContext context) {
-    final onPressed = switch ((enabled: enabled, callback: callback)) {
-      (enabled: true, callback: final callback?) => () => callback(index),
-      _ => null,
-    };
-
-    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
-
-    return IconButton(
-      onPressed: onPressed,
+  Widget build(BuildContext context) => AuraInteractionTarget(
+    child: IconButton(
+      onPressed: _onPressed,
       tooltip: '$index',
-      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       icon: Icon(selected ? Icons.star : Icons.star_border, color: color),
-    );
-  }
+    ),
+  );
 }
