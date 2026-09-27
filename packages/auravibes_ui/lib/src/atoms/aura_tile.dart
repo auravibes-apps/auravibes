@@ -47,6 +47,7 @@ class AuraTile extends StatefulWidget {
     this.trailing,
     this.enabled = true,
     this.expand = true,
+    this.identifier,
     this.semanticLabel,
   });
 
@@ -76,6 +77,9 @@ class AuraTile extends StatefulWidget {
 
   /// Whether the tile expands to the available width.
   final bool expand;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   /// A semantic label for interactive tiles.
   final String? semanticLabel;
@@ -154,6 +158,7 @@ class _AuraTileLayout extends StatelessWidget {
          ),
          enabled: appearance.canInteract,
          expand: appearance.tile.expand,
+         identifier: appearance.tile.identifier,
          semanticLabel: appearance.tile.semanticLabel,
          onTap: appearance.tile.onTap,
        );
@@ -331,26 +336,68 @@ class const _AuraTileSemantics({
   required final Widget tile,
   required final bool enabled,
   required final bool expand,
+  required final String? identifier,
   required final String? semanticLabel,
   required final VoidCallback? onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sizedTile = expand ? SizedBox(width: .infinity, child: tile) : tile;
+    if (!enabled) {
+      return _AuraTileDisabledSemantics(
+        tile: sizedTile,
+        identifier: identifier,
+      );
+    }
 
-    if (!enabled) return sizedTile;
-
-    return Semantics(
-      child: sizedTile,
-      container: true,
-      excludeSemantics: true,
-      enabled: true,
-      button: true,
-      label: semanticLabel ?? 'Tile',
+    return _AuraTileEnabledSemantics(
+      tile: sizedTile,
+      identifier: identifier,
+      semanticLabel: semanticLabel,
       onTap: onTap,
     );
   }
 }
+
+class const _AuraTileDisabledSemantics({
+  required final Widget tile,
+  required final String? identifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final semanticIdentifier = identifier;
+    if (semanticIdentifier == null) return tile;
+
+    return Semantics(
+      key: ValueKey<String>(semanticIdentifier),
+      child: tile,
+      identifier: semanticIdentifier,
+    );
+  }
+}
+
+class const _AuraTileEnabledSemantics({
+  required final Widget tile,
+  required final String? identifier,
+  required final String? semanticLabel,
+  required final VoidCallback? onTap,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: _tileIdentifierKey(identifier),
+    child: tile,
+    container: true,
+    excludeSemantics: true,
+    enabled: true,
+    button: true,
+    identifier: identifier,
+    label: semanticLabel ?? 'Tile',
+    onTap: onTap,
+  );
+}
+
+Key? _tileIdentifierKey(String? identifier) =>
+    identifier == null ? null : ValueKey<String>(identifier);
 
 BoxDecoration _tileDecoration(_AuraTileAppearance appearance) => BoxDecoration(
   color: _tileBackgroundColor(appearance),

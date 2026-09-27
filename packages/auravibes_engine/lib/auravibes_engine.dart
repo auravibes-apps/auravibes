@@ -30,7 +30,10 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ChatCompletionsCodec,
         ChatCompletionsModelDefinition,
         ProviderTransport,
-        ProviderTransportResponse;
+        ProviderTransportResponse,
+        ToolSamplingPolicy,
+        ToolSamplingValidationException,
+        ToolSamplingValidationReason;
 export 'src/genkit_providers/openai_codex.dart'
     show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';

@@ -827,8 +827,16 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.heading';
   static const markdown_editor_toolbar_bullets =
       'markdown_editor.toolbar.bullets';
+  static const markdown_editor_toolbar_numbered_list =
+      'markdown_editor.toolbar.numbered_list';
+  static const markdown_editor_toolbar_link = 'markdown_editor.toolbar.link';
+  static const markdown_editor_toolbar_link_text_placeholder =
+      'markdown_editor.toolbar.link_text_placeholder';
+  static const markdown_editor_toolbar_link_url_placeholder =
+      'markdown_editor.toolbar.link_url_placeholder';
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
+  static const markdown_editor_toolbar_undo = 'markdown_editor.toolbar.undo';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';
@@ -964,6 +972,10 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.edit_title';
   static const skill_credentials_definitions_empty =
       'skill_credentials_definitions.empty';
+  static const skill_credentials_definitions_search =
+      'skill_credentials_definitions.search';
+  static const skill_credentials_definitions_search_empty =
+      'skill_credentials_definitions.search_empty';
   static const skill_credentials_definitions_error =
       'skill_credentials_definitions.error';
   static const skill_credentials_definitions_not_found =
@@ -972,6 +984,16 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.save';
   static const skill_credentials_definitions_save_error =
       'skill_credentials_definitions.save_error';
+  static const skill_credentials_definitions_duplicate =
+      'skill_credentials_definitions.duplicate';
+  static const skill_credentials_definitions_duplicate_success =
+      'skill_credentials_definitions.duplicate_success';
+  static const skill_credentials_definitions_duplicate_error =
+      'skill_credentials_definitions.duplicate_error';
+  static const skill_credentials_definitions_copy_slug =
+      'skill_credentials_definitions.copy_slug';
+  static const skill_credentials_definitions_slug_copied =
+      'skill_credentials_definitions.slug_copied';
   static const skill_credentials_definitions_delete_title =
       'skill_credentials_definitions.delete_title';
   static const skill_credentials_definitions_delete_confirm =
@@ -980,6 +1002,10 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.attributes_label';
   static const skill_credentials_definitions_attribute_variable_label =
       'skill_credentials_definitions.attribute_variable_label';
+  static const skill_credentials_definitions_attribute_variable_required =
+      'skill_credentials_definitions.attribute_variable_required';
+  static const skill_credentials_definitions_attribute_variable_duplicate =
+      'skill_credentials_definitions.attribute_variable_duplicate';
   static const skill_credentials_definitions_attribute_description_label =
       'skill_credentials_definitions.attribute_description_label';
   static const skill_credentials_definitions_attribute_optional =
@@ -988,6 +1014,10 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.attribute_secret';
   static const skill_credentials_definitions_add_attribute =
       'skill_credentials_definitions.add_attribute';
+  static const skill_credentials_definitions_move_attribute_up =
+      'skill_credentials_definitions.move_attribute_up';
+  static const skill_credentials_definitions_move_attribute_down =
+      'skill_credentials_definitions.move_attribute_down';
   static const skill_credentials_definitions_delete_attribute =
       'skill_credentials_definitions.delete_attribute';
   static const skill_credentials_definitions_hint =

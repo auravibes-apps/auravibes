@@ -15,6 +15,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -70,9 +71,9 @@ class _SkillCredentialDefinitionEditScreenState
     );
   }
 
-  void _updateState([VoidCallback? callback]) {
+  void _updateState(VoidCallback callback) {
     setState(() {
-      callback?.call();
+      callback();
       if (_initialized) {
         _isDirty = _currentSnapshot() != _savedSnapshot;
       }
@@ -118,7 +119,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
   List<Map<String, Object>> _attributeSnapshots() => [
     for (final row in _attributeRows)
       if (!_isEmptyPlaceholder(row)) _attributeSnapshot(row),
-  ]..sort((left, right) => jsonEncode(left).compareTo(jsonEncode(right)));
+  ];
 
   Map<String, Object> _attributeSnapshot(_AttributeFormRow row) => {
     'variable': row.variableController.text.trim(),
@@ -150,6 +151,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _save(BuildContext context) async {
+    if (!_validateAttributeRows()) return;
     _updateState(() => _isSaving = true);
     try {
       await _saveDefinition();
@@ -229,16 +231,86 @@ extension on _SkillCredentialDefinitionEditScreenState {
 
   void _onFormChanged() {
     if (!_initialized || !mounted) return;
-    _updateState();
+    _updateState(_revalidateAttributeRows);
   }
 
   void _deleteAttributeRow(_AttributeFormRow row) {
     _updateState(() {
-      final removed = _attributeRows.remove(row);
-      if (removed) row.dispose();
-      if (_attributeRows.isEmpty) _attributeRows.add(_AttributeFormRow());
+      _removeAttributeRow(row);
+      _ensureAttributeRow();
+      _revalidateAttributeRows();
     });
   }
+
+  void _removeAttributeRow(_AttributeFormRow row) {
+    if (_attributeRows.remove(row)) row.dispose();
+  }
+
+  void _ensureAttributeRow() {
+    if (_attributeRows.isEmpty) _attributeRows.add(_AttributeFormRow());
+  }
+
+  void _revalidateAttributeRows() {
+    if (_attributeRows.any((row) => row.variableErrorKey != null)) {
+      final _ = _setAttributeErrors();
+    }
+  }
+
+  void _moveAttributeRow(_AttributeFormRow row, int offset) {
+    final source = _attributeRows.indexOf(row);
+    final target = source + offset;
+    if (!_canMoveAttribute(source, target)) return;
+
+    _updateState(() {
+      final moved = _attributeRows.removeAt(source);
+      _attributeRows.insert(target, moved);
+    });
+  }
+
+  bool _canMoveAttribute(int source, int target) =>
+      source >= 0 && target >= 0 && target < _attributeRows.length;
+
+  bool _validateAttributeRows() {
+    var isValid = false;
+    _updateState(() => isValid = _setAttributeErrors());
+
+    return isValid;
+  }
+
+  bool _setAttributeErrors() {
+    final counts = _attributeVariableCounts();
+    for (final row in _attributeRows) {
+      row.variableErrorKey = _attributeVariableError(row, counts);
+    }
+
+    return !_attributeRows.any((row) => row.variableErrorKey != null);
+  }
+
+  Map<String, int> _attributeVariableCounts() {
+    final counts = <String, int>{};
+    for (final row in _attributeRows) {
+      final variable = row.variableController.text.trim();
+      if (variable.isNotEmpty) {
+        final _ = counts.update(
+          variable,
+          (count) => count + 1,
+          ifAbsent: () => 1,
+        );
+      }
+    }
+
+    return counts;
+  }
+
+  String? _attributeVariableError(
+    _AttributeFormRow row,
+    Map<String, int> counts,
+  ) => switch (row.variableController.text.trim()) {
+    '' => LocaleKeys.skill_credentials_definitions_attribute_variable_required,
+    final variable when (counts[variable] ?? 0) > 1 =>
+      LocaleKeys.skill_credentials_definitions_attribute_variable_duplicate,
+    _ => null,
+  };
 
   String _buildAttributesJson() {
     final attributes = <String, Map<String, Object>>{};
@@ -267,6 +339,23 @@ extension on _SkillCredentialDefinitionEditScreenState {
       if (row.optional) 'optional': true,
       if (!row.secret) 'secret': false,
     };
+  }
+}
+
+extension on _SkillCredentialDefinitionEditScreenState {
+  Future<void> _copySlug(BuildContext context, String slug) async {
+    await Clipboard.setData(.new(text: slug));
+    if (!context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        LocaleKeys.skill_credentials_definitions_slug_copied.tr(
+          context: context,
+        ),
+      ),
+      variant: .success,
+    );
   }
 }
 
@@ -589,13 +678,36 @@ class const _CredentialDefinitionFormHeader({
       children: [
         _CredentialDefinitionHint(),
         if (definition case final definition?)
-          AuraSelectableText(definition.slug),
+          _CredentialDefinitionSlug(
+            slug: definition.slug,
+            onCopy: () => state._copySlug(context, definition.slug),
+          ),
         _CredentialDefinitionTitleField(controller: state._titleController),
       ],
       spacing: .sm,
       crossAxisAlignment: .start,
     );
   }
+}
+
+class const _CredentialDefinitionSlug({
+  required final String slug,
+  required final VoidCallback onCopy,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      Expanded(child: AuraSelectableText(slug)),
+      AuraIconButton(
+        icon: Icons.copy_outlined,
+        onPressed: onCopy,
+        tooltip: LocaleKeys.skill_credentials_definitions_copy_slug.tr(
+          context: context,
+        ),
+      ),
+    ],
+    spacing: .xs,
+  );
 }
 
 class _CredentialDefinitionHint extends StatelessWidget {
@@ -672,9 +784,7 @@ class const _CredentialDefinitionAttributeRow({
   @override
   Widget build(BuildContext context) => _AttributeRowEditor(
     row: row,
-    canDelete: state._attributeRows.length > 1,
-    onChanged: state._onFormChanged,
-    onDelete: () => state._deleteAttributeRow(row),
+    controls: .new(state: state, row: row),
     key: ValueKey(row),
   );
 }
@@ -717,35 +827,41 @@ class _AttributeFormRow({
 }) {
   final TextEditingController variableController = .new(text: variable);
   final TextEditingController descriptionController = .new(text: description);
+  String? variableErrorKey;
   void dispose() {
     variableController.dispose();
     descriptionController.dispose();
   }
 }
 
+class const _AttributeRowControls({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final _AttributeFormRow row,
+}) {
+  bool get canDelete => state._attributeRows.length > 1;
+  bool get canMoveUp => _index > 0;
+  bool get canMoveDown => _index < state._attributeRows.length - 1;
+  int get _index => state._attributeRows.indexOf(row);
+  void onChanged() => state._onFormChanged();
+  void onDelete() => state._deleteAttributeRow(row);
+  void onMoveUp() => state._moveAttributeRow(row, -1);
+  void onMoveDown() => state._moveAttributeRow(row, 1);
+}
+
 class const _AttributeRowEditor({
   required final _AttributeFormRow row,
-  required final bool canDelete,
-  required final VoidCallback onChanged,
-  required final VoidCallback onDelete,
+  required final _AttributeRowControls controls,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _AttributeRowCard(
-      row: row,
-      canDelete: canDelete,
-      onChanged: onChanged,
-      onDelete: onDelete,
-    );
+    return _AttributeRowCard(row: row, controls: controls);
   }
 }
 
 class const _AttributeRowCard({
   required final _AttributeFormRow row,
-  required final bool canDelete,
-  required final VoidCallback onChanged,
-  required final VoidCallback onDelete,
+  required final _AttributeRowControls controls,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -753,12 +869,7 @@ class const _AttributeRowCard({
       decoration: _attributeRowDecoration(context),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: _AttributeRowContent(
-          row: row,
-          canDelete: canDelete,
-          onChanged: onChanged,
-          onDelete: onDelete,
-        ),
+        child: _AttributeRowContent(row: row, controls: controls),
       ),
     );
   }
@@ -770,24 +881,15 @@ BoxDecoration _attributeRowDecoration(BuildContext context) => BoxDecoration(
 );
 
 class _AttributeRowContent extends StatelessWidget {
-  new({
-    required _AttributeFormRow row,
-    required bool canDelete,
-    required VoidCallback onChanged,
-    required VoidCallback onDelete,
-  }) : _child = AuraColumn(
-         children: [
-           _AttributeRowFields(
-             row: row,
-             canDelete: canDelete,
-             onChanged: onChanged,
-             onDelete: onDelete,
-           ),
-           _AttributeRowToggles(row: row, onChanged: onChanged),
-         ],
-         spacing: .sm,
-         crossAxisAlignment: .start,
-       );
+  new({required _AttributeFormRow row, required _AttributeRowControls controls})
+    : _child = AuraColumn(
+        children: [
+          _AttributeRowFields(row: row, controls: controls),
+          _AttributeRowToggles(row: row, onChanged: controls.onChanged),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: .start,
+      );
 
   final Widget _child;
 
@@ -843,25 +945,16 @@ class const _AttributeSecretToggle({
 }
 
 class _AttributeRowFields extends StatelessWidget {
-  new({
-    required _AttributeFormRow row,
-    required bool canDelete,
-    required VoidCallback onChanged,
-    required VoidCallback onDelete,
-  }) : _child = AuraColumn(
-         children: [
-           _AttributeRowFieldLine(
-             row: row,
-             canDelete: canDelete,
-             onChanged: onChanged,
-             onDelete: onDelete,
-           ),
-           _AttributeDescriptionField(
-             controller: row.descriptionController,
-             onChanged: onChanged,
-           ),
-         ],
-       );
+  new({required _AttributeFormRow row, required _AttributeRowControls controls})
+    : _child = AuraColumn(
+        children: [
+          _AttributeRowFieldLine(row: row, controls: controls),
+          _AttributeDescriptionField(
+            controller: row.descriptionController,
+            onChanged: controls.onChanged,
+          ),
+        ],
+      );
 
   final Widget _child;
 
@@ -871,9 +964,7 @@ class _AttributeRowFields extends StatelessWidget {
 
 class const _AttributeRowFieldLine({
   required final _AttributeFormRow row,
-  required final bool canDelete,
-  required final VoidCallback onChanged,
-  required final VoidCallback onDelete,
+  required final _AttributeRowControls controls,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
@@ -882,17 +973,23 @@ class const _AttributeRowFieldLine({
       Expanded(
         child: _AttributeVariableField(
           controller: row.variableController,
-          onChanged: onChanged,
+          errorKey: row.variableErrorKey,
+          onChanged: controls.onChanged,
         ),
       ),
       const SizedBox(width: 8),
-      _AttributeDeleteButton(canDelete: canDelete, onPressed: onDelete),
+      _AttributeOrderButtons(controls: controls),
+      _AttributeDeleteButton(
+        canDelete: controls.canDelete,
+        onPressed: controls.onDelete,
+      ),
     ],
   );
 }
 
 class const _AttributeVariableField({
   required final TextEditingController controller,
+  required final String? errorKey,
   required final VoidCallback onChanged,
 }) extends StatelessWidget {
   @override
@@ -900,13 +997,55 @@ class const _AttributeVariableField({
     final label = LocaleKeys
         .skill_credentials_definitions_attribute_variable_label
         .tr(context: context);
+    final errorKey = this.errorKey;
 
     return AuraInput(
       controller: controller,
       label: Text(label),
+      error: errorKey == null ? null : TextLocale(errorKey),
+      state: errorKey == null ? .normal : .error,
       onChanged: (_) => onChanged(),
     );
   }
+}
+
+class const _AttributeOrderButtons({
+  required final _AttributeRowControls controls,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      _AttributeOrderButton(
+        icon: Icons.arrow_upward,
+        enabled: controls.canMoveUp,
+        onPressed: controls.onMoveUp,
+        tooltipKey: LocaleKeys.skill_credentials_definitions_move_attribute_up,
+      ),
+      _AttributeOrderButton(
+        icon: Icons.arrow_downward,
+        enabled: controls.canMoveDown,
+        onPressed: controls.onMoveDown,
+        tooltipKey:
+            LocaleKeys.skill_credentials_definitions_move_attribute_down,
+      ),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
+  );
+}
+
+class const _AttributeOrderButton({
+  required final IconData icon,
+  required final bool enabled,
+  required final VoidCallback onPressed,
+  required final String tooltipKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: enabled ? onPressed : null,
+    tooltip: tooltipKey.tr(context: context),
+  );
 }
 
 class const _AttributeDeleteButton({

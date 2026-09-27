@@ -20,6 +20,7 @@ class AuraPressable extends StatefulWidget {
     this.interaction = AuraPressableInteraction.action,
     this.clipBehavior = Clip.hardEdge,
     this.padding,
+    this.identifier,
     this.semanticLabel,
     this.isButtonSemantics = false,
   });
@@ -53,6 +54,9 @@ class AuraPressable extends StatefulWidget {
 
   /// Optional padding to apply around the pressable widget.
   final AuraEdgeInsetsGeometry? padding;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   /// A semantic label announced by assistive technologies.
   final String? semanticLabel;
@@ -111,6 +115,7 @@ class AuraPressableState extends State<AuraPressable> {
     AuraInteractionPolicy policy,
     double minimumTargetSize,
   ) {
+    final identifier = widget.identifier;
     final content = ConstrainedBox(
       constraints: BoxConstraints(
         minWidth: minimumTargetSize,
@@ -125,14 +130,17 @@ class AuraPressableState extends State<AuraPressable> {
 
     if (!widget.isButtonSemantics &&
         policy.mode == AuraInteractionMode.interactive &&
-        widget.semanticLabel == null) {
+        widget.semanticLabel == null &&
+        identifier == null) {
       return content;
     }
 
     return Semantics(
+      key: identifier == null ? null : ValueKey<String>(identifier),
       label: widget.semanticLabel,
       button: widget.isButtonSemantics || widget.semanticLabel != null,
       enabled: false,
+      identifier: identifier,
       child: content,
     );
   }
@@ -145,7 +153,10 @@ class AuraPressableState extends State<AuraPressable> {
     void Function()? onLongPress,
     double minimumTargetSize,
   ) {
+    final identifier = widget.identifier;
+
     return Semantics(
+      key: identifier == null ? null : ValueKey<String>(identifier),
       child: FocusableActionDetector(
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
@@ -201,6 +212,7 @@ class AuraPressableState extends State<AuraPressable> {
       ),
       enabled: true,
       button: true,
+      identifier: identifier,
       label: widget.semanticLabel,
       onTap: onPressed,
     );
