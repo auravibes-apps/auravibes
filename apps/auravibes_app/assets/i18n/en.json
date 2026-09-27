@@ -593,8 +593,13 @@
       "italic": "Italic",
       "heading": "Heading",
       "bullets": "Bullets",
+      "numbered_list": "Numbered list",
+      "link": "Link",
+      "link_text_placeholder": "Link text",
+      "link_url_placeholder": "https://example.com",
       "code": "Code",
-      "quote": "Quote"
+      "quote": "Quote",
+      "undo": "Undo"
     }
   },
   "skills_resource": {

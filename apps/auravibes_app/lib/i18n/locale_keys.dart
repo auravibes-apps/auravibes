@@ -827,8 +827,16 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.heading';
   static const markdown_editor_toolbar_bullets =
       'markdown_editor.toolbar.bullets';
+  static const markdown_editor_toolbar_numbered_list =
+      'markdown_editor.toolbar.numbered_list';
+  static const markdown_editor_toolbar_link = 'markdown_editor.toolbar.link';
+  static const markdown_editor_toolbar_link_text_placeholder =
+      'markdown_editor.toolbar.link_text_placeholder';
+  static const markdown_editor_toolbar_link_url_placeholder =
+      'markdown_editor.toolbar.link_url_placeholder';
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
+  static const markdown_editor_toolbar_undo = 'markdown_editor.toolbar.undo';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';
