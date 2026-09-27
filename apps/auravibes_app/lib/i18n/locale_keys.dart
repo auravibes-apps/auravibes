@@ -605,6 +605,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.active_sub_agents_count';
   static const chats_screens_chat_conversation_active_sub_agents_accessible_label =
       'chats_screens.chat_conversation.active_sub_agents_accessible_label';
+  static const chats_screens_chat_conversation_active_sub_agents_chat_accessible_label =
+      'chats_screens.chat_conversation.active_sub_agents_chat_accessible_label';
   static const chats_screens_chat_conversation_active_sub_agents_title =
       'chats_screens.chat_conversation.active_sub_agents_title';
   static const chats_screens_chat_conversation_sub_agent_error_detail =

@@ -183,7 +183,35 @@ server, credentials, or user data.
    configured `http://localhost:8080/` server is not running; report it as an
    environment limitation, not as proof that chat sending passed.
 
-7. On any failed action, immediately call `get_logs` and
+7. For active sub-agent status changes, seed and navigate to the chat list,
+   then use only the deterministic local fixture extensions:
+
+   ```text
+   auravibes.navigate {"route":"chats","workspaceId":"marionette-demo-workspace"}
+   auravibes.startSubAgentSmokeFixture {"count":"1"}
+   auravibes.startSubAgentSmokeFixture {"count":"1"}
+   auravibes.finishSubAgentSmokeFixture {"childId":"<first-child-id>"}
+   tap {"key":"chat_list_active_sub_agents_marionette-demo-conversation"}
+   auravibes.navigate {"route":"chats","workspaceId":"marionette-demo-workspace"}
+   auravibes.finishSubAgentSmokeFixture {"childId":"<second-child-id>"}
+   auravibes.startSubAgentSmokeFixture {"count":"2"}
+   auravibes.stopSubAgentSmokeFixtureParent {}
+   auravibes.clearDevelopmentState {}
+   ```
+
+   Inspect the stable key
+   `chat_list_active_sub_agents_marionette-demo-conversation` after every
+   action. Verify hidden, 1, 2, 1, and hidden states; verify its localized
+   semantics names the parent conversation. From the one-child state, tap the
+   key and verify the child conversation route, then navigate back to the chat
+   list before continuing. Finish the second child and verify hidden. Start two
+   children again, stop the parent fixture, and verify the status disappears.
+   Clear the demo state after capturing evidence so repeated runs do not retain
+   fixture rows. Call `get_logs` after every extension or tap and capture
+   screenshots of the one-child and multi-child states. Do not report this
+   smoke as passed without a live run.
+
+8. On any failed action, immediately call `get_logs` and
    `take_screenshots`. With the CLI fallback, save the image under
    `.dart_tool/marionette/` with the instance ID. Record the failed stable key,
    current route/state, first relevant redacted log, and screenshot path.
@@ -191,7 +219,7 @@ server, credentials, or user data.
    `pkill`, a broad Flutter kill, or another agent's manifest. On clean exit,
    disconnect the bridge and confirm the manifest was removed.
 
-8. If the process crashed and the manifest remains, verify that its exact PID
+9. If the process crashed and the manifest remains, verify that its exact PID
    is no longer the matching runner before removing the stale manifest or
    choosing another ID. A stale manifest is not permission to connect by
    scanning for another VM service.

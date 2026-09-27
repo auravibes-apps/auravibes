@@ -206,26 +206,35 @@ void main() {
     },
   );
 
-  test('fixture runner completes after parent stops its child', () async {
+  test('fixture parent stop finishes every active child as stopped', () async {
     final seededData = await state.seedDemoData();
     expect(
       seededData['conversationId'],
       MarionetteDevelopmentState.demoConversationId,
     );
-    final result = await state.startSubAgentSmokeFixture(count: 1);
-    final childId = (result['childIds'] as List<String>).single;
+    final result = await state.startSubAgentSmokeFixture(count: 2);
+    final childIds = result['childIds'] as List<String>;
+    final activeSubAgents = container.read(
+      activeSubAgentRuntimeProvider.notifier,
+    );
 
-    container.read(activeSubAgentRuntimeProvider.notifier).finish((
-      parentId: MarionetteDevelopmentState.demoConversationId,
-      childId: childId,
-      status: .stopped,
-      error: null,
-      stackTrace: null,
-    ));
+    final stopResult = await state.finishSubAgentSmokeFixture();
 
-    await smokeMessageStore
-        .waitForAssistantRead(childId)
-        .timeout(const Duration(seconds: 2));
+    expect(stopResult['parentConversationId'], seededData['conversationId']);
+    expect(stopResult['childIds'], childIds);
+    expect(
+      activeSubAgents.childrenOf(MarionetteDevelopmentState.demoConversationId),
+      isEmpty,
+    );
+    expect(
+      childIds.map(activeSubAgents.statusOf),
+      everyElement(ActiveSubAgentStatus.stopped),
+    );
+    for (final childId in childIds) {
+      await smokeMessageStore
+          .waitForAssistantRead(childId)
+          .timeout(const Duration(seconds: 2));
+    }
   });
 
   test(
