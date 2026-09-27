@@ -49,7 +49,6 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
     required String userId,
   }) async {
     final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
-    await deleteRemoteAccount(serverUrl: origin, userId: userId);
     try {
       final _ = await _workspaceRepository
           .deleteCloudWorkspaceMirrorsForAccount(userId, serverUrl: origin);
@@ -60,6 +59,15 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
         invalidateAccount(origin, userId);
       }
     }
+  }
+
+  Future<void> deleteAccount({
+    required String serverUrl,
+    required String userId,
+  }) async {
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
+    await deleteRemoteAccount(serverUrl: origin, userId: userId);
+    await remove(serverUrl: origin, userId: userId);
   }
 
   Future<CloudAccountSession> _saveSignedInAccount(

@@ -1221,10 +1221,14 @@
     "status_needs_sign_in": "Needs sign in",
     "session_expired": "Session expired. Sign in again.",
     "sign_in_again": "Sign in again",
-    "remove": "Delete account",
-    "remove_title": "Permanently delete cloud account?",
-    "remove_message": "Permanently delete {email} and its sign-in credentials? Your access to shared cloud workspaces will end, but their content will remain. Delete or transfer any cloud workspaces you own first. This cannot be undone.",
+    "remove": "Remove from app",
+    "remove_title": "Remove cloud account from this app?",
+    "remove_message": "Remove {email} from this app? Cloud data stays in the cloud.",
     "remove_local_mirrors_warning": "Local shortcuts for cloud workspaces connected through this account will be removed from this app.",
+    "remove_failed": "Could not remove this account from this app. Try again.",
+    "delete": "Delete account",
+    "delete_title": "Permanently delete cloud account?",
+    "delete_message": "Permanently delete {email} and its sign-in credentials? Your access to shared cloud workspaces will end, but their content will remain. Delete or transfer any cloud workspaces you own first. This cannot be undone.",
     "delete_owned_workspaces_error": "Delete or transfer the cloud workspaces you own before deleting this account.",
     "delete_failed": "Could not finish deleting this account. Check your connection and try again."
   }
