@@ -301,8 +301,12 @@ void main() {
     expect(find.byType(AuraCard), findsOneWidget);
   });
 
-  testWidgets('MCP group with error shows reconnect', (tester) async {
-    final mcpGroup = _group(id: 'mcp-g1', name: 'MCP Server');
+  testWidgets('shows MCP group error details action', (tester) async {
+    final mcpGroup = _group(
+      id: 'mcp-g1',
+      name: 'MCP Server',
+      mcpServerId: 'srv-1',
+    );
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],
@@ -333,12 +337,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraCard), findsOneWidget);
-    expect(
-      tester
-          .widget<ToolsGroupHeader>(find.byType(ToolsGroupHeader))
-          .onViewError,
-      isNotNull,
-    );
+    expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
   });
 
   testWidgets('renders multiple tools in expanded state', (tester) async {
