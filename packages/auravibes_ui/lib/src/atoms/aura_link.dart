@@ -89,14 +89,11 @@ class const _AuraLinkGesture({
 
     return GestureDetector(
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: targetSize,
-          minHeight: targetSize,
-        ),
+        constraints: .new(minWidth: targetSize, minHeight: targetSize),
         child: _AuraLinkLabel(label: label),
       ),
       onTap: enabled ? onPressed : null,
-      behavior: HitTestBehavior.opaque,
+      behavior: .opaque,
     );
   }
 }

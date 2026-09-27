@@ -578,7 +578,7 @@ class const _AuraButtonGroupItemGesture<T>({
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       child: _AuraButtonGroupGestureDetector(data: data),
     );
   }

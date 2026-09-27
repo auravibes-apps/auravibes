@@ -510,14 +510,11 @@ class const _AuraTableCellInteraction({
     return Semantics(
       child: GestureDetector(
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: targetSize,
-            minHeight: targetSize,
-          ),
+          constraints: .new(minWidth: targetSize, minHeight: targetSize),
           child: content,
         ),
         onTap: callback,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
       ),
       button: true,
     );

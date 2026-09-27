@@ -145,7 +145,7 @@ class const _AccordionHeaderButton({
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: targetSize),
+      constraints: .new(minHeight: targetSize),
       child: InkWell(
         child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
         onTap: navigable ? onTap : null,

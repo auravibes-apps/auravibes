@@ -305,7 +305,7 @@ class const _AuraSwitchTrack(final _AuraSwitchTrackData data)
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       child: Center(child: _AuraSwitchTrackSurface(data)),
     );
   }

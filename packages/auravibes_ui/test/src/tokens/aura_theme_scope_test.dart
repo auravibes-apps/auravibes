@@ -52,17 +52,17 @@ void main() {
   ) async {
     const iconButtonKey = ValueKey('icon-button-target');
     const linkKey = ValueKey('link-target');
-    final child = MaterialApp(
+    const child = MaterialApp(
       home: Scaffold(
         body: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AuraIconButton(
-              key: iconButtonKey,
               icon: Icons.close,
               onPressed: _noop,
+              key: iconButtonKey,
             ),
-            AuraLink(key: linkKey, label: 'Open', onPressed: _noop),
+            AuraLink(label: 'Open', onPressed: _noop, key: linkKey),
           ],
         ),
       ),
@@ -70,9 +70,7 @@ void main() {
 
     Widget buildApp(double minimumTargetSize) => AuraThemeScope(
       theme: AuraTheme.light.copyWith(
-        interactionSizes: AuraInteractionSizeScale(
-          minimumTargetSize: minimumTargetSize,
-        ),
+        interactionSizes: .new(minimumTargetSize: minimumTargetSize),
       ),
       child: child,
     );
@@ -87,4 +85,4 @@ void main() {
   });
 }
 
-void _noop() {}
+void _noop() => throw StateError('Unexpected interaction');

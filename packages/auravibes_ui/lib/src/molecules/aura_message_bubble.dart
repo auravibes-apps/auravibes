@@ -100,12 +100,12 @@ class const _AuraMessageBubbleGesture({
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       child: GestureDetector(
         child: bubble,
         onTap: message.onTap,
         onLongPress: message.onLongPress,
-        behavior: HitTestBehavior.opaque,
+        behavior: .opaque,
       ),
     );
   }

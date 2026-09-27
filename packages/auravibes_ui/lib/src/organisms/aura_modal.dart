@@ -232,10 +232,7 @@ class const _AuraModalEntrySemantics({
 
     return Semantics(
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: targetSize,
-          minHeight: targetSize,
-        ),
+        constraints: .new(minWidth: targetSize, minHeight: targetSize),
         child: widget.entryPointChild,
       ),
       container: true,

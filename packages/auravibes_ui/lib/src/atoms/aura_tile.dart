@@ -182,7 +182,7 @@ class const _AuraTileSurface({required final _AuraTileAppearance appearance})
     final targetSize = appearance.theme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       child: tile,
     );
   }

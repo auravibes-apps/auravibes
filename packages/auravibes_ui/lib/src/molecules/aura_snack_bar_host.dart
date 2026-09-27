@@ -524,10 +524,7 @@ class const _AuraSnackBarAction({
         const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
         GestureDetector(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minWidth: targetSize,
-              minHeight: targetSize,
-            ),
+            constraints: .new(minWidth: targetSize, minHeight: targetSize),
             child: Center(
               child: _AuraSnackBarActionContent.fromValues(
                 label: label,

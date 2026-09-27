@@ -195,9 +195,9 @@ class const _AuraTagRemoveButton({
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return IconButton(
-      constraints: BoxConstraints(minWidth: targetSize, minHeight: targetSize),
       onPressed: enabled ? onRemove : null,
       tooltip: removeLabel,
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
       icon: const Icon(Icons.close, size: 16),
     );
   }

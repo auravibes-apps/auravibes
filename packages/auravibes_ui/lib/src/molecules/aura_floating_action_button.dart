@@ -134,7 +134,7 @@ class _AuraFabThemeData {
     required AuraTheme theme,
   }) : _widget = _AuraFabLayout(
          child: ConstrainedBox(
-           constraints: BoxConstraints(
+           constraints: .new(
              minWidth: theme.interactionSizes.minimumTargetSize,
              minHeight: theme.interactionSizes.minimumTargetSize,
            ),

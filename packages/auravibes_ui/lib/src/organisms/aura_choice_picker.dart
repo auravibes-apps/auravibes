@@ -375,7 +375,7 @@ class const _AuraChoicePickerChipContent<T>({
 class _AuraChoicePickerChipPadding<T> extends StatelessWidget {
   new(AuraTheme theme, _AuraChoicePickerOption<T> source)
     : _child = ConstrainedBox(
-        constraints: BoxConstraints(
+        constraints: .new(
           minWidth: theme.interactionSizes.minimumTargetSize,
           minHeight: theme.interactionSizes.minimumTargetSize,
         ),
@@ -563,7 +563,7 @@ class const _AuraChoicePickerListLabelContent<T>({
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: targetSize),
+      constraints: .new(minHeight: targetSize),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: Opacity(
