@@ -105,10 +105,13 @@ class AuraPressableState extends State<AuraPressable> {
 
   Widget _buildDisabled(AuraInteractionPolicy policy) {
     final identifier = widget.identifier;
-    final content = Container(
-      decoration: widget.decoration,
-      child: widget.child,
-      clipBehavior: _clipBehavior,
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: Container(
+        decoration: widget.decoration,
+        child: widget.child,
+        clipBehavior: _clipBehavior,
+      ),
     );
 
     if (!widget.isButtonSemantics &&

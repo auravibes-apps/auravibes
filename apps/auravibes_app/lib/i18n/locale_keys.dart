@@ -605,6 +605,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.active_sub_agents_count';
   static const chats_screens_chat_conversation_active_sub_agents_accessible_label =
       'chats_screens.chat_conversation.active_sub_agents_accessible_label';
+  static const chats_screens_chat_conversation_active_sub_agents_chat_accessible_label =
+      'chats_screens.chat_conversation.active_sub_agents_chat_accessible_label';
   static const chats_screens_chat_conversation_active_sub_agents_title =
       'chats_screens.chat_conversation.active_sub_agents_title';
   static const chats_screens_chat_conversation_sub_agent_error_detail =
@@ -700,6 +702,16 @@ abstract class LocaleKeys {
       'tools_screen.remove_tool_confirm';
   static const tools_screen_remove_tool_tooltip =
       'tools_screen.remove_tool_tooltip';
+  static const tools_screen_select_group = 'tools_screen.select_group';
+  static const tools_screen_deselect_group = 'tools_screen.deselect_group';
+  static const tools_screen_select_tool = 'tools_screen.select_tool';
+  static const tools_screen_deselect_tool = 'tools_screen.deselect_tool';
+  static const tools_screen_bulk_delete_title =
+      'tools_screen.bulk_delete_title';
+  static const tools_screen_bulk_delete_confirm =
+      'tools_screen.bulk_delete_confirm';
+  static const tools_screen_bulk_delete_failures =
+      'tools_screen.bulk_delete_failures';
   static const tools_screen_permission_always_ask =
       'tools_screen.permission_always_ask';
   static const tools_screen_permission_always_allow =
@@ -748,6 +760,14 @@ abstract class LocaleKeys {
   static const skills_screen_delete = 'skills_screen.delete';
   static const skills_screen_duplicate = 'skills_screen.duplicate';
   static const skills_screen_delete_confirm = 'skills_screen.delete_confirm';
+  static const skills_screen_select_skill = 'skills_screen.select_skill';
+  static const skills_screen_deselect_skill = 'skills_screen.deselect_skill';
+  static const skills_screen_bulk_delete_title =
+      'skills_screen.bulk_delete_title';
+  static const skills_screen_bulk_delete_confirm =
+      'skills_screen.bulk_delete_confirm';
+  static const skills_screen_bulk_delete_failures =
+      'skills_screen.bulk_delete_failures';
   static const skills_screen_save_error = 'skills_screen.save_error';
   static const skills_screen_unsaved_changes_title =
       'skills_screen.unsaved_changes_title';
@@ -1066,6 +1086,15 @@ abstract class LocaleKeys {
   static const common_close_dialog = 'common.close_dialog';
   static const common_reload = 'common.reload';
   static const common_details = 'common.details';
+  static const common_sort_by = 'common.sort_by';
+  static const common_sort_name_ascending = 'common.sort_name_ascending';
+  static const common_sort_name_descending = 'common.sort_name_descending';
+  static const common_sort_enabled_first = 'common.sort_enabled_first';
+  static const common_select_all = 'common.select_all';
+  static const common_deselect_all = 'common.deselect_all';
+  static const common_clear_selection = 'common.clear_selection';
+  static const common_delete_selected = 'common.delete_selected';
+  static const common_selected_count = 'common.selected_count';
   static const common_show_more = 'common.show_more';
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
@@ -1318,6 +1347,21 @@ abstract class LocaleKeys {
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
   static const workspace_management_title = 'workspace_management.title';
+  static const workspace_management_copy_id = 'workspace_management.copy_id';
+  static const workspace_management_id_copied =
+      'workspace_management.id_copied';
+  static const workspace_management_copy_id_error =
+      'workspace_management.copy_id_error';
+  static const workspace_management_select_workspace =
+      'workspace_management.select_workspace';
+  static const workspace_management_deselect_workspace =
+      'workspace_management.deselect_workspace';
+  static const workspace_management_bulk_delete_title =
+      'workspace_management.bulk_delete_title';
+  static const workspace_management_bulk_delete_confirm =
+      'workspace_management.bulk_delete_confirm';
+  static const workspace_management_bulk_delete_failures =
+      'workspace_management.bulk_delete_failures';
   static const workspace_management_create_button =
       'workspace_management.create_button';
   static const workspace_management_duplicate =

@@ -18,6 +18,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -840,6 +841,147 @@ void main() {
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
       await tester.tap(find.byIcon(Icons.arrow_back));
       final _ = await tester.pumpAndSettle();
+    });
+
+    testWidgets('copies the exact workspace ID from the row menu', (
+      tester,
+    ) async {
+      final workspace = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copiedText =
+                (call.arguments as Map<Object?, Object?>)['text'] as String?;
+          }
+
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: workspace.id));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(ValueKey<String>('workspace_menu_${workspace.id}')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Copy ID'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(copiedText, workspace.id);
+      expect(find.text('Workspace ID copied'), findsOneWidget);
+    });
+
+    testWidgets('sorts workspace names while preserving the active marker', (
+      tester,
+    ) async {
+      final zeta = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Zeta Workspace', type: .local),
+      );
+      final alpha = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Alpha Workspace', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: zeta.id));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(find.text(alpha.name)).dy,
+        lessThan(tester.getTopLeft(find.text(zeta.name)).dy),
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey<String>('workspace_select_${zeta.id}')),
+          matching: find.text('Active'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('workspace-sort')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Name (Z-A)').last);
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester.getTopLeft(find.text(zeta.name)).dy,
+        lessThan(tester.getTopLeft(find.text(alpha.name)).dy),
+      );
+    });
+
+    testWidgets('aligns select-all with the sort field', (tester) async {
+      final workspace = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: workspace.id));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .getRect(find.byKey(const ValueKey('workspace-select-all')))
+            .bottom,
+        tester.getRect(find.byKey(const ValueKey('workspace-sort'))).bottom,
+      );
+    });
+
+    testWidgets('selects filtered workspaces and confirms bulk deletion', (
+      tester,
+    ) async {
+      final alpha = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Alpha Workspace', type: .local),
+      );
+      final beta = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Beta Workspace', type: .local),
+      );
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: beta.id));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'Alpha');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), '');
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(ValueKey('workspace-selection-${alpha.id}')),
+            )
+            .value,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(ValueKey('workspace-selection-${beta.id}')),
+            )
+            .value,
+        isFalse,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Delete selected workspaces?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(await repository.getWorkspaceById(alpha.id), isNotNull);
+
+      await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(await repository.getWorkspaceById(alpha.id), isNull);
+      expect(await repository.getWorkspaceById(beta.id), isNotNull);
     });
   });
 }

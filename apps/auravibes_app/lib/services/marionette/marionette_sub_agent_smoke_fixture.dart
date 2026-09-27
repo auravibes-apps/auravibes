@@ -170,6 +170,23 @@ final class MarionetteSubAgentSmokeFixture({
   }
 }
 
+extension MarionetteSubAgentSmokeFixtureParentStop
+    on MarionetteSubAgentSmokeFixture {
+  Future<List<String>> stopParent() async {
+    final children = _children.entries.toList();
+    for (final child in children) {
+      child.value.request.finish(
+        status: agent.SubAgentCompletionStatus.stopped,
+      );
+    }
+    final _ = await Future.wait([
+      for (final child in children) child.value.execution,
+    ]);
+
+    return [for (final child in children) child.key];
+  }
+}
+
 agent.StartSubAgentRequest _startRequestCallback(
   MarionetteSubAgentSmokeFixture fixture,
   Completer<agent.SubAgentRequestHandle> requestStarted,
