@@ -580,8 +580,13 @@
       "italic": "Cursiva",
       "heading": "Encabezado",
       "bullets": "Viñetas",
+      "numbered_list": "Lista numerada",
+      "link": "Enlace",
+      "link_text_placeholder": "Texto del enlace",
+      "link_url_placeholder": "https://example.com",
       "code": "Código",
-      "quote": "Cita"
+      "quote": "Cita",
+      "undo": "Deshacer"
     }
   },
   "skills_resource": {
