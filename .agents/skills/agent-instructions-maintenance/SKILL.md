@@ -71,7 +71,11 @@ Make references conditional and descriptive (for example, “Read the migration 
 
 ## Make the smallest useful edit
 
-- State a clear trigger and action. Include the boundary or exception that prevents over-application.
+- Write reusable guidance in generic terms: state a clear trigger and action,
+  plus the boundary or exception. Keep issue numbers, branch names,
+  feature-only fixture IDs or keys, and one-off action sequences in tests, task
+  documents, or PR evidence unless they are stable inputs to a repeated
+  workflow.
 - Prefer changing or deleting an existing rule over adding a parallel version.
 - Verify repo-specific facts against their owner: package manifests, CI workflows, analyzer configuration, or architecture documents. Do not infer commands, versions, or policy from memory when the source is available.
 - For unusual rules whose rationale is not obvious, preserve a short evidence pointer or reason so a future maintainer can decide whether it still applies. Keep history out of always-on instructions.
