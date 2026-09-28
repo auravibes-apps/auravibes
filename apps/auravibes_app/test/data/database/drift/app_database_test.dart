@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 16);
+      expect(fixture.database.schemaVersion, 17);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -82,6 +82,32 @@ void main() {
       final _ = await fixture.database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
     });
+
+    test(
+      'migration adds MCP output schema without changing existing tools',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 16
+          ..execute(
+            'CREATE TABLE tools (id TEXT PRIMARY KEY, input_schema TEXT)',
+          )
+          ..execute(
+            'INSERT INTO tools VALUES (\'tool-1\', \'{"type":"object"}\')',
+          );
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final row = await fixture.database
+            .customSelect(
+              'SELECT input_schema, output_schema FROM tools WHERE id = ?',
+              variables: [const Variable<String>('tool-1')],
+            )
+            .getSingle();
+
+        expect(row.read<String>('input_schema'), '{"type":"object"}');
+        expect(row.read<String?>('output_schema'), isNull);
+      },
+    );
 
     test('workspace deletion cascades to sensitive child records', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(

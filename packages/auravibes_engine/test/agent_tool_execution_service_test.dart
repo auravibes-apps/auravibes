@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_tool_execution_service.dart';
@@ -152,6 +153,35 @@ void main() {
     expect(result, AgentIterationDecision.continueIteration);
     expect(provider.updateBatches, hasLength(2));
     expect(provider.updateBatches.last.single.toolCallId, 'slow-id');
+  });
+
+  test('applies per-tool output policy in the execution service', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(tool: 'large', id: 'large-id', argumentsRaw: '{}'),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {'large-id': AgentToolPermissionResult.granted},
+      results: {'large': 'x' * defaultToolOutputBytes},
+    );
+
+    await AgentToolExecutionService<String>(
+      provider: provider,
+      outputPolicyForTool: (_) => const AgentToolOutputPolicy(maxBytes: 512),
+    )(conversationId: 'conversation-1', workspaceId: 'workspace-1');
+
+    final update = provider.updates.single;
+    final response = update.responseContextRaw!;
+    expect(update.responseRaw, 'x' * defaultToolOutputBytes);
+    expect(utf8.encode(response).length, lessThanOrEqualTo(512));
+    expect(response, contains('[tool output truncated]'));
+    expect(update.outputTruncated, isTrue);
+    expect(update.originalResponseBytes, defaultToolOutputBytes);
   });
 
   test('waits for approvals after storing execution error', () async {

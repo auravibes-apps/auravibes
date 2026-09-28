@@ -10,17 +10,19 @@ abstract final class LogRedaction {
     ),
     RegExp(r'\b(bearer\s+)[^\s,;]+', caseSensitive: false),
     RegExp(
-      r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)\s*[:=]\s*)[^\s,;&]+',
+      r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)\s*[:=]\s*)[^\s,;&]+',
       caseSensitive: false,
     ),
     RegExp(
       '(["\'](?:api[_-]?key|access[_-]?token|refresh[_-]?token|'
-      'client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)["\']\\s*:\\s*["\'])'
+      'auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|'
+      'id[_-]?token|code[_-]?verifier|authorization[_-]?code|'
+      'verification[_-]?code|token|secret|password|code|state|nonce)["\']\\s*:\\s*["\'])'
       '[^"\']+',
       caseSensitive: false,
     ),
     RegExp(
-      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)=)[^&#\s]+',
+      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)=)[^&#\s]+',
       caseSensitive: false,
     ),
   ];

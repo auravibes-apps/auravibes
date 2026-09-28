@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision;
@@ -76,6 +77,46 @@ void main() {
           ),
         ).called(1),
         returnsNormally,
+      );
+    });
+
+    test(
+      'distinguishes a continuation failure after message persistence',
+      () async {
+        when(
+          () => fixture.runAgentIterationUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            context: any(named: 'context'),
+          ),
+        ).thenThrow(StateError('continuation failed'));
+
+        await expectLater(
+          fixture.usecase.call(
+            conversationId: 'conversation-1',
+            draft: const ChatDraft(text: 'Hello'),
+          ),
+          throwsA(isA<MessagePersistedException>()),
+        );
+        verify(() => fixture.messageRepository.createMessage(any())).called(1);
+      },
+    );
+
+    test('keeps persistence failures eligible for draft restoration', () async {
+      when(() => fixture.messageRepository.createMessage(any()))
+          .thenThrow(StateError('persistence failed'));
+
+      await expectLater(
+        fixture.usecase.call(
+          conversationId: 'conversation-1',
+          draft: const ChatDraft(text: 'Hello'),
+        ),
+        throwsA(isA<StateError>()),
+      );
+      final _ = verifyNever(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
       );
     });
 

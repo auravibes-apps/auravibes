@@ -7,7 +7,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         a2uiChatFormSubmitActionName,
         a2uiChatFormSubmitComponentId,
         ReasoningConfiguration,
-        ReasoningOption;
+        ReasoningOption,
+        projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -2737,6 +2738,9 @@ class ConversationUseCases {
       lockMode: LockMode.forUpdate,
     );
     for (final call in calls) {
+      final projection = projectToolOutput(
+        _cancelledSubAgentResult(call.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         call.copyWith(
@@ -2744,7 +2748,7 @@ class ConversationUseCases {
           decisionByUserId: call.decisionByUserId ?? userId,
           decisionAt: call.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledSubAgentResult(call.resultJson),
+          resultJson: projection.persistedText,
           revision: call.revision + 1,
           updatedAt: now,
         ),
@@ -2853,6 +2857,9 @@ class ConversationUseCases {
       lockMode: LockMode.forUpdate,
     );
     for (final toolCall in activeToolCalls) {
+      final projection = projectToolOutput(
+        _cancelledSubAgentResult(toolCall.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         toolCall.copyWith(
@@ -2860,7 +2867,7 @@ class ConversationUseCases {
           decisionByUserId: toolCall.decisionByUserId ?? turn.initiatorUserId,
           decisionAt: toolCall.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledSubAgentResult(toolCall.resultJson),
+          resultJson: projection.persistedText,
           revision: toolCall.revision + 1,
           updatedAt: now,
         ),
@@ -4694,26 +4701,37 @@ class ConversationUseCases {
     ConversationToolCall call,
     ConversationTurn turn,
     List<ConversationMessage> messages,
-  ) => ConversationToolCallView(
-    id: call.stableId,
-    turnId: turn.requestId,
-    messageId:
-        messages
-            .where((message) => message.id == call.messageId)
-            .firstOrNull
-            ?.stableId ??
-        '',
-    name: call.name,
-    argumentsJson: call.argumentsJson,
-    argumentsDigest: call.argumentsDigest,
-    userFacingDescription: call.userFacingDescription,
-    status: call.status,
-    decision: call.decision,
-    resultJson: call.resultJson,
-    revision: call.revision,
-    createdAt: call.createdAt,
-    updatedAt: call.updatedAt,
-  );
+  ) {
+    final result = call.resultJson;
+    final projection = result == null ? null : projectToolOutput(result);
+    final truncated = projection?.truncated ?? false;
+
+    return ConversationToolCallView(
+      id: call.stableId,
+      turnId: turn.requestId,
+      messageId:
+          messages
+              .where((message) => message.id == call.messageId)
+              .firstOrNull
+              ?.stableId ??
+          '',
+      name: call.name,
+      argumentsJson: call.argumentsJson,
+      argumentsDigest: call.argumentsDigest,
+      userFacingDescription: call.userFacingDescription,
+      status: call.status,
+      decision: call.decision,
+      resultJson: result,
+      resultContextJson: projection == null || projection.text == result
+          ? null
+          : projection.text,
+      resultOutputTruncated: truncated,
+      resultOriginalBytes: truncated ? projection!.originalBytes : null,
+      revision: call.revision,
+      createdAt: call.createdAt,
+      updatedAt: call.updatedAt,
+    );
+  }
 
   void _validateMetadata(
     String? title,

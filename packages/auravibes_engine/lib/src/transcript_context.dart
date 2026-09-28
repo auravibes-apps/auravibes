@@ -13,6 +13,8 @@ class const AgentTranscriptToolCallSnapshot({
   required final AgentToolCallLifecycle lifecycle,
   required final int argumentCharacterCount,
   required final int resultCharacterCount,
+  final bool resultTruncated = false,
+  final int? originalResultBytes,
 });
 
 class AgentTranscriptMessageSnapshot({

@@ -24,6 +24,7 @@ final urlToolSpec = ToolSpec(
       },
     },
     'required': ['input'],
+    'additionalProperties': false,
   },
 );
 

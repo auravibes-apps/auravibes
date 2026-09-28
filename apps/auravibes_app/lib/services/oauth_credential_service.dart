@@ -29,18 +29,12 @@ class OAuthCredentialService {
 
   Future<McpAuthenticationType> resolveMcpAuthentication(
     String? serviceConnectionId,
-  ) async {
-    if (serviceConnectionId == null || serviceConnectionId.isEmpty) {
-      return const McpAuthenticationType.none();
-    }
+  ) => _resolveMcpAuthentication(serviceConnectionId, refresh: true);
 
-    final row = await _serviceConnectionRepository.getById(serviceConnectionId);
-    if (row == null || !row.isEnabled) {
-      return const McpAuthenticationType.none();
-    }
-
-    return await _resolveRowAuthentication(row, serviceConnectionId);
-  }
+  /// Reads a saved MCP credential without refreshing or persisting it.
+  Future<McpAuthenticationType> resolveMcpAuthenticationForTest(
+    String? serviceConnectionId,
+  ) => _resolveMcpAuthentication(serviceConnectionId, refresh: false);
 
   Future<String> getValidAccessToken(String serviceConnectionId) async {
     final token = await refreshIfNeeded(serviceConnectionId);
@@ -89,6 +83,26 @@ class OAuthCredentialService {
       error: error.isEmpty ? null : error,
     );
   }
+
+  Future<McpAuthenticationType> _resolveMcpAuthentication(
+    String? serviceConnectionId, {
+    required bool refresh,
+  }) async {
+    if (serviceConnectionId == null || serviceConnectionId.isEmpty) {
+      return const McpAuthenticationType.none();
+    }
+
+    final row = await _serviceConnectionRepository.getById(serviceConnectionId);
+    if (row == null || !row.isEnabled) {
+      return const McpAuthenticationType.none();
+    }
+
+    return await _resolveRowAuthentication(
+      row,
+      serviceConnectionId,
+      refresh: refresh,
+    );
+  }
 }
 
 typedef _OAuthRefreshContext = ({
@@ -116,11 +130,12 @@ typedef _OAuthCachedTokenContext = ({
 extension _OAuthCredentialAuthentication on OAuthCredentialService {
   Future<McpAuthenticationType> _resolveRowAuthentication(
     ServiceConnectionEntity row,
-    String serviceConnectionId,
-  ) => switch (row.authenticationType) {
+    String serviceConnectionId, {
+    required bool refresh,
+  }) => switch (row.authenticationType) {
     .none || .apiKey => Future.value(const McpAuthenticationType.none()),
     .bearerToken => _bearerAuthentication(row.id),
-    .oauth2 => _oauthAuthentication(row, serviceConnectionId),
+    .oauth2 => _oauthAuthentication(row, serviceConnectionId, refresh: refresh),
   };
 
   Future<McpAuthenticationType> _bearerAuthentication(String id) async {
@@ -134,9 +149,20 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
 
   Future<McpAuthenticationType> _oauthAuthentication(
     ServiceConnectionEntity row,
-    String serviceConnectionId,
-  ) async {
-    final token = await refreshIfNeeded(serviceConnectionId);
+    String serviceConnectionId, {
+    required bool refresh,
+  }) async {
+    final token = refresh
+        ? await refreshIfNeeded(serviceConnectionId)
+        : await _cachedTokenWithoutRefresh(row);
+
+    return _oauthAuthenticationFromToken(row, token);
+  }
+
+  McpAuthenticationType _oauthAuthenticationFromToken(
+    ServiceConnectionEntity row,
+    OAuthTokenEntity token,
+  ) {
     final metadata = ServiceConnectionAuthCodec.decodeMetadata(
       row.metadataJson,
     );
@@ -150,6 +176,22 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
       tokenEndpoint: _requiredMetadataValue(metadata.tokenEndpoint),
       resource: metadata.resource,
     );
+  }
+
+  Future<OAuthTokenEntity> _cachedTokenWithoutRefresh(
+    ServiceConnectionEntity row,
+  ) async {
+    if (!_tokenStillValid(row.expiresAt)) {
+      throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_expired);
+    }
+    final secret = await _serviceConnectionRepository.readSecret(row.id);
+    if (secret is! ServiceConnectionSecretOAuth2) {
+      throw const FormatException('Credential is not OAuth2.');
+    }
+    final scopes = ServiceConnectionAuthCodec.decodeMetadata(row.metadataJson)
+        .scopes;
+
+    return _cachedToken(row, secret, scopes);
   }
 
   String _requiredMetadataValue(String? value) {

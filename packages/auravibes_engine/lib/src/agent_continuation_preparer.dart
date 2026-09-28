@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/agent_transcript_context.dart';
 import 'package:auravibes_engine/src/reasoning_configuration.dart';
 
 class const AgentConversationReference({
@@ -9,9 +10,17 @@ class const AgentConversationReference({
 class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
   required final TModel model,
   required final List<TChatMessage> chatHistory,
+  required final List<TChatMessage> requestedContextMessages,
   required final List<TTool> enabledTools,
   required final int messagesCount,
+  required final List<AgentTranscriptContextEntry> transcriptContextEntries,
   final ReasoningConfiguration? reasoningConfiguration,
+});
+
+class const PreparedAgentTranscriptContext<TChatMessage, TTool>({
+  required final List<TChatMessage> contextMessages,
+  required final List<TTool> tools,
+  required final List<AgentTranscriptContextEntry> entries,
 });
 
 class const SelectedModelNotFoundException() implements Exception {
@@ -41,6 +50,14 @@ abstract interface class AgentContinuationProvider<
   Future<List<TTool>> loadTools({
     required String conversationId,
     required String workspaceId,
+  });
+
+  Future<PreparedAgentTranscriptContext<TChatMessage, TTool>>
+  reconcileTranscriptContext({
+    required String conversationId,
+    required String workspaceId,
+    required List<TChatMessage> contextMessages,
+    required List<TTool> tools,
   });
 
   Future<List<TChatMessage>> buildChatHistory({
@@ -93,10 +110,16 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
     );
+    final transcriptContext = await provider.reconcileTranscriptContext(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+      contextMessages: skillContextMessages,
+      tools: provider.shouldDisableTools(projectedModel) ? const [] : tools,
+    );
     final chatHistory = await provider.buildChatHistory(
       model: projectedModel,
       messages: messages,
-      skillContextMessages: skillContextMessages,
+      skillContextMessages: transcriptContext.contextMessages,
     );
     assert(
       _startsWithUserMessage(chatHistory),
@@ -106,10 +129,10 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
     return PreparedContinueAgentInput(
       model: projectedModel,
       chatHistory: chatHistory,
-      enabledTools: provider.shouldDisableTools(projectedModel)
-          ? const []
-          : tools,
+      requestedContextMessages: skillContextMessages,
+      enabledTools: transcriptContext.tools,
       messagesCount: messages.length,
+      transcriptContextEntries: transcriptContext.entries,
       reasoningConfiguration: conversation.reasoningConfiguration,
     );
   }

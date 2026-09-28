@@ -45,6 +45,10 @@ typedef AgentToolCallResultUpdateRequest = ({
   String conversationId,
   AgentToolResultStatus resultStatus,
   String? responseRaw,
+  String? responseContextRaw,
+  bool outputTruncated,
+  int? originalResponseBytes,
+  bool fullOutputForContext,
 });
 
 class const AgentApprovableToolCall({
@@ -117,6 +121,7 @@ abstract interface class StopPendingToolCallsProvider {
 
 class const ApproveToolCallService<TTool extends Object>({
   required final ApproveToolCallProvider<TTool> provider,
+  final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<void> call({
     required String toolCallId,
@@ -157,6 +162,10 @@ class const ApproveToolCallService<TTool extends Object>({
             : .toolNotFound,
         conversationId: conversationId,
         responseRaw: null,
+        responseContextRaw: null,
+        outputTruncated: false,
+        originalResponseBytes: null,
+        fullOutputForContext: false,
       ));
       await provider.resumeConversationIfReady(
         messageId: messageId,
@@ -192,6 +201,10 @@ class const ApproveToolCallService<TTool extends Object>({
       conversationId: conversationId,
       resultStatus: executionResult.resultStatus,
       responseRaw: executionResult.responseRaw,
+      responseContextRaw: executionResult.responseContextRaw,
+      outputTruncated: executionResult.outputTruncated,
+      originalResponseBytes: executionResult.originalResponseBytes,
+      fullOutputForContext: executionResult.fullOutputForContext,
     ));
 
     if (provider.isCancellationRequested(toolCall.conversationId)) return;
@@ -212,6 +225,7 @@ class const ApproveToolCallService<TTool extends Object>({
       runResolvedTool: provider.runResolvedTool,
       isCancellationRequested: provider.isCancellationRequested,
       logToolExecutionError: provider.logToolExecutionError,
+      outputPolicyForTool: outputPolicyForTool,
     ).call(
       conversationId: conversationId,
       toolCallId: toolCallId,

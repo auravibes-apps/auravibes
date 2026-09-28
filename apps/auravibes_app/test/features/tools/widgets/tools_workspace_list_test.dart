@@ -100,9 +100,10 @@ class _ErrorNotifier extends GroupedToolsNotifier {
 }
 
 class _WorkspaceToolsDataNotifier extends WorkspaceToolsNotifier {
-  new(this.tools);
+  new(this.tools, {this.failRemoval = false});
 
   final List<WorkspaceToolEntity> tools;
+  final bool failRemoval;
   final removedIds = <String>[];
 
   @override
@@ -112,7 +113,7 @@ class _WorkspaceToolsDataNotifier extends WorkspaceToolsNotifier {
   Future<bool> removeToolById(String id) async {
     removedIds.add(id);
 
-    return true;
+    return !failRemoval;
   }
 }
 
@@ -423,4 +424,96 @@ void main() {
     ]);
     expect(groupedToolsNotifier.deleteInvalidations, [false, false]);
   });
+
+  testWidgets('shows hidden tool selections in row and confirmation', (
+    tester,
+  ) async {
+    final tools = [
+      _tool(id: 'alpha-id', toolId: 'alpha_tool'),
+      _tool(id: 'beta-id', toolId: 'beta_tool'),
+    ];
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier([_defaultGroup(tools)])),
+    ]);
+
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(AuraInput), 'alpha');
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsOneWidget);
+    expect(find.textContaining('1 hidden by filters'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsWidgets);
+    expect(find.textContaining('1 hidden by filters'), findsWidgets);
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton && widget.tooltip == 'Clear selection',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('selected'), findsNothing);
+    await tester.enterText(find.byType(AuraInput), '');
+    final _ = await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('tools-delete-selected')), findsNothing);
+  });
+
+  for (final names in <List<String>>[
+    ['fail_one'],
+    ['fail_one', 'fail_two'],
+    [
+      'fail_very_long_tool_name_beyond_preview',
+      'fail_two',
+      'fail_three',
+      'fail_four',
+    ],
+  ]) {
+    testWidgets('bounds tool failure feedback for ${names.length} items', (
+      tester,
+    ) async {
+      final tools = [
+        for (var index = 0; index < names.length; index++)
+          _tool(id: 'fail-$index', toolId: names[index]),
+      ];
+      final notifier = _WorkspaceToolsDataNotifier(tools, failRemoval: true);
+      await _pumpListApp(tester, [
+        groupedToolsProvider(_workspaceId)
+            .overrideWith(() => _DataNotifier([_defaultGroup(tools)])),
+        workspaceToolsProvider(_workspaceId).overrideWith(() => notifier),
+      ]);
+
+      await tester.enterText(find.byType(AuraInput), 'fail');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      final feedback =
+          tester
+              .widget<Text>(
+                find.textContaining('Could not remove ${names.length} tool'),
+              )
+              .data ??
+          fail('Expected failure feedback');
+      expect(
+        feedback,
+        contains(names.length == 4 ? 'Fail Very Long' : 'Fail One'),
+      );
+      expect(feedback, isNot(contains('Fail Three')));
+      if (names.length == 4) {
+        expect(feedback, contains('2 more failures'));
+        expect(feedback, isNot(contains('Beyond Preview')));
+      }
+      expect(find.textContaining('${names.length} selected'), findsOneWidget);
+    });
+  }
 }

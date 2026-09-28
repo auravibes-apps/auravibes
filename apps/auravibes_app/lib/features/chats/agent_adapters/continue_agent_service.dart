@@ -903,7 +903,9 @@ void _recordPreparedSkillContext(
   runtime.ready(
     conversationId,
     generation,
-    selectedRevisions: _selectedSkillRevisions(prepared.chatHistory),
+    selectedRevisions: _selectedSkillRevisions(
+      prepared.requestedContextMessages,
+    ),
     canActivate: prepared.enabledTools.any(
       (tool) => tool.name == activateSkillToolName,
     ),

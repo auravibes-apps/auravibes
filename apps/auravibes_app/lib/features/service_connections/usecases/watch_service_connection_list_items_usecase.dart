@@ -159,6 +159,7 @@ class _McpCredentialItem {
          name: request.server.name,
          url: request.server.url,
          mcpServerId: request.server.id,
+         transport: request.server.transport,
          authenticationType: request.credential.authenticationType.value,
          isEnabled: request.credential.isEnabled,
          authStatus: request.credential.authStatus,

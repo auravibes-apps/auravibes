@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_formatter.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
@@ -271,6 +272,7 @@ class const _MarkdownTextField({
       style: textStyle,
       maxLines: null,
       minLines: _minimumEditorLines,
+      inputFormatters: const [MarkdownListInputFormatter()],
     );
   }
 }

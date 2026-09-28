@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/misc.dart';
@@ -40,9 +41,7 @@ class const CreateSkillCredentialDefinitionUsecase(
 
   void _validateDefinition(SkillCredentialDefinitionToCreate definition) {
     ValidateSkillTitleUsecase.call(definition.title);
-    final _ = SkillCredentialAttributeDefinition.parseMap(
-      definition.attributesJson,
-    );
+    final _ = CredentialDefinitionSchema.validate(definition.attributesJson);
   }
 
   Future<SkillCredentialDefinitionEntity?> _existingDefinition(
