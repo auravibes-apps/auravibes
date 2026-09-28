@@ -59,6 +59,7 @@ void main() {
   test('local removal preserves login when mirror cleanup fails', () async {
     final store = _MockAuthStore();
     final repository = _MockWorkspaceRepository();
+    var accountInvalidated = false;
     when(
       () => repository.deleteCloudWorkspaceMirrorsForAccount(
         'account',
@@ -70,7 +71,9 @@ void main() {
       workspaceRepository: repository,
       deleteRemoteAccount: ({required serverUrl, required userId}) =>
           Future<void>.value(),
-      invalidateAccount: (serverUrl, userId) {},
+      invalidateAccount: (serverUrl, userId) {
+        accountInvalidated = true;
+      },
     );
 
     await expectLater(
@@ -81,12 +84,13 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    verifyNever(
+    final _ = verifyNever(
       () => store.removeAccount(
         serverUrl: 'https://server.example',
         userId: 'account',
       ),
     );
+    expect(accountInvalidated, isFalse);
   });
 
   test('account deletion clears login after mirror cleanup failure', () async {
