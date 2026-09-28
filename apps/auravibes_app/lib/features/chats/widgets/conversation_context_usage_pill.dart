@@ -85,7 +85,7 @@ class const _ConversationContextUsageRow({required final ContextUsageData data})
     return AuraRow(
       children: [
         _ConversationContextUsageIcon(data: data),
-        _ConversationContextUsageProgress(data: data),
+        if (data.hasLimit) _ConversationContextUsageProgress(data: data),
         _ConversationContextUsageLabels(data: data),
       ],
       spacing: .xs,
@@ -120,18 +120,31 @@ class const _ConversationContextUsageLabels({
   required final ContextUsageData data,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraRow(
-    children: [
-      AuraText(child: Text(data.usageLabel), style: .caption),
-      AuraBadge.text(
-        child: Text(data.percentLabel),
-        variant: data.level.badgeVariant,
-        size: .small,
-      ),
-    ],
-    spacing: .xs,
-    mainAxisSize: .min,
-  );
+  Widget build(BuildContext context) {
+    if (!data.hasLimit) {
+      return AuraText(
+        child: Text(
+          LocaleKeys
+              .chats_screens_chat_conversation_context_usage_label_limit_unavailable
+              .tr(namedArgs: {'used': data.usageLabel}),
+        ),
+        style: .caption,
+      );
+    }
+
+    return AuraRow(
+      children: [
+        AuraText(child: Text(data.usageLabel), style: .caption),
+        AuraBadge.text(
+          child: Text(data.percentLabel),
+          variant: data.level.badgeVariant,
+          size: .small,
+        ),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
+    );
+  }
 }
 
 String _tooltip(ContextUsageData data) {

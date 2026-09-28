@@ -88,8 +88,8 @@ void main() {
         expect(data.percent, 0);
         expect(data.progress, 0);
         expect(data.overflowTokens, 0);
-        expect(data.usageLabel, '500/--');
-        expect(data.percentLabel, '--');
+        expect(data.usageLabel, '500');
+        expect(data.percentLabel, isEmpty);
       });
 
       test('returns unknown level when limit is 0', () {

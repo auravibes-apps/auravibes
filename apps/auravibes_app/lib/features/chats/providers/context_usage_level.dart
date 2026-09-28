@@ -119,8 +119,8 @@ ContextUsageData _withoutLimit(int usedTokens, int normalizedLimit) =>
       progress: 0,
       level: .unknown,
       overflowTokens: 0,
-      usageLabel: '${_compactFormat.format(usedTokens)}/--',
-      percentLabel: '--',
+      usageLabel: _compactFormat.format(usedTokens),
+      percentLabel: '',
     );
 
 ContextUsageData _withLimit(int usedTokens, int normalizedLimit) {
