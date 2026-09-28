@@ -58,3 +58,12 @@ final class const ChatAttachmentTooLargeException() implements Exception {
   @override
   String toString() => localizationKey;
 }
+
+final class const ChatMicrophonePermissionDeniedException()
+    implements Exception {
+  String get localizationKey =>
+      LocaleKeys.chats_screens_chat_conversation_microphone_permission_denied;
+
+  @override
+  String toString() => localizationKey;
+}
