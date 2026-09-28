@@ -1833,7 +1833,7 @@ void main() {
       );
       expect(
         label.textSpan?.toPlainText(),
-        contains('Research Assistant · Search the web'),
+        contains('Research Assistant / Search the web'),
       );
       expect(find.text('Call Skill Tool'), findsNothing);
       final status = tester.widget<Text>(
@@ -1845,7 +1845,7 @@ void main() {
         tester
             .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
             .label,
-        contains('Research Assistant · Search the web Disabled in workspace'),
+        contains('Research Assistant / Search the web Disabled in workspace'),
       );
       expect(tester.takeException(), isNull);
       semantics.dispose();
@@ -1988,7 +1988,7 @@ void main() {
       );
       expect(
         missingToolLabel.textSpan?.toPlainText(),
-        contains('Research Assistant · Missing Tool'),
+        contains('Research Assistant / Missing Tool'),
       );
       final malformedToolLabel = tester.widget<Text>(
         find.byKey(const ValueKey('activity_tool_label_tc-malformed-skill')),

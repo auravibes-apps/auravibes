@@ -89,6 +89,7 @@ Future<WorkspaceSkill?> _workspaceSkillBySlug(
   String skillSlug,
 ) async {
   final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
+
   return skills.where((skill) => skill.slug == skillSlug).firstOrNull;
 }
 
@@ -119,6 +120,7 @@ _SkillToolTitles _appSkillToolTitles(
   final tool = appSkill?.tools
       .where((tool) => tool.slug == toolSlug)
       .firstOrNull;
+
   return (title: tool?.title, titleKey: tool?.titleKey);
 }
 
@@ -132,6 +134,7 @@ Future<_SkillToolTitles> _templateSkillToolTitles(
     skillTemplateToolsProvider(workspaceId, skillId).future,
   );
   final tool = tools.where((tool) => tool.slug == toolSlug).firstOrNull;
+
   return (title: tool?.title, titleKey: null);
 }
 

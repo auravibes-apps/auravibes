@@ -13,6 +13,7 @@ typedef SkillToolCallTarget = ({String skillSlug, String toolSlug});
 abstract final class SkillToolCallDisplay {
   static SkillToolCallTarget? parseTarget(MessageToolCallEntity toolCall) {
     if (toolCall.name != callSkillToolName) return null;
+
     return _targetFromArguments(toolCall.argumentsRaw);
   }
 
@@ -32,7 +33,7 @@ abstract final class SkillToolCallDisplay {
       titles?.toolTitle ?? target.toolSlug.toHumanReadable(),
     );
 
-    return '$skillTitle · $toolTitle';
+    return '$skillTitle / $toolTitle';
   }
 
   static SkillToolCallTarget? _targetFromArguments(String argumentsRaw) {
@@ -47,6 +48,7 @@ abstract final class SkillToolCallDisplay {
     } on FormatException {
       return null;
     }
+
     return null;
   }
 
