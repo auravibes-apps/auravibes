@@ -5,13 +5,15 @@ const agentsSkillTitle = 'Agents';
 const agentsSkillContent =
     'Use list_agents to find configured agents; filter by type=sub_agent '
     'when selecting a specialist. A general sub-agent needs no configured '
-    'agent: call run_sub_agent with title and prompt and omit agentId. '
+    'agent: call run_sub_agent with title and prompt and set agentId to null '
+    '(older calls may omit agentId). '
     'run_sub_agent is available without loading this skill.';
 const listAgentsToolName = 'list_agents';
 const runSubAgentToolName = 'run_sub_agent';
 const generalSubAgentHint =
     'Configured agents are optional. Call run_sub_agent with title and prompt '
-    'and omit agentId to run a general sub-agent, even when agents is empty.';
+    'and set agentId to null to run a general sub-agent, even when agents is '
+    'empty. Older calls may omit agentId.';
 
 final listAgentsToolSpec = ToolSpec(
   name: listAgentsToolName,
@@ -24,28 +26,28 @@ final listAgentsToolSpec = ToolSpec(
     'type': 'object',
     'properties': {
       'query': {
-        'type': 'string',
+        'type': ['string', 'null'],
         'maxLength': 200,
         'description': 'Optional name or description search.',
       },
       'type': {
-        'type': 'string',
-        'enum': ['main', 'sub_agent'],
+        'type': ['string', 'null'],
+        'enum': ['main', 'sub_agent', null],
         'description': 'Optional agent type filter.',
       },
       'limit': {
-        'type': 'integer',
+        'type': ['integer', 'null'],
         'minimum': 1,
         'maximum': 100,
         'description': 'Results per page. Defaults to 20.',
       },
       'cursor': {
-        'type': 'string',
+        'type': ['string', 'null'],
         'maxLength': 2048,
         'description': 'Opaque nextCursor from a previous call.',
       },
     },
-    'required': <String>[],
+    'required': ['query', 'type', 'limit', 'cursor'],
     'additionalProperties': false,
   },
 );
@@ -53,8 +55,9 @@ final listAgentsToolSpec = ToolSpec(
 final runSubAgentToolSpec = ToolSpec(
   name: runSubAgentToolName,
   description:
-      'Run a sub-agent in an isolated child conversation. Omit agentId to run '
-      'a general sub-agent, including when list_agents returns no agents. '
+      'Run a sub-agent in an isolated child conversation. Set agentId to null '
+      'to run a general sub-agent; older calls may omit agentId. '
+      'This works when list_agents returns no agents. '
       'Use list_agents with type=sub_agent to choose a configured specialist.',
   inputJsonSchema: {
     'type': 'object',
@@ -68,13 +71,13 @@ final runSubAgentToolSpec = ToolSpec(
         'description': 'Task prompt for the sub-agent.',
       },
       'agentId': {
-        'type': 'string',
+        'type': ['string', 'null'],
         'description':
-            'Optional id from list_agents with type=sub_agent. Omit for a '
-            'general sub-agent.',
+            'Optional id from list_agents with type=sub_agent. Set null for '
+            'a general sub-agent.',
       },
     },
-    'required': ['title', 'prompt'],
+    'required': ['title', 'prompt', 'agentId'],
     'additionalProperties': false,
   },
 );

@@ -8,6 +8,87 @@ import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('cloud tool body uses shared strict policy per tool', () {
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'OpenAI',
+      supportsStrictToolSampling: true,
+      customize: (model, _) => (model: model, extraBody: {}),
+    );
+    const compatibleSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    };
+    const incompatibleSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+    };
+    ServerResolvedTool tool(String name, Map<String, Object?> schema) {
+      final descriptor = AgentResolvedToolName.skillTemplate(
+        tableId: name,
+        skillSlug: 'fixture',
+        toolIdentifier: name,
+      );
+      return ServerResolvedTool(
+        descriptor: descriptor,
+        spec: ToolSpec(
+          name: descriptor.fullName,
+          description: 'Fixture.',
+          inputJsonSchema: schema,
+        ),
+      );
+    }
+
+    final tools = [
+      tool('compatible', compatibleSchema),
+      tool('incompatible', incompatibleSchema),
+    ];
+    final result = evaluateCloudToolSampling(
+      codec,
+      tools,
+      policy: ToolSamplingPolicy.prefer,
+      modelSupportsStrict: true,
+    );
+    expect(result.definitions, [
+      {
+        'type': 'function',
+        'function': {
+          'name': tools.first.spec.name,
+          'description': 'Fixture.',
+          'parameters': compatibleSchema,
+          'strict': true,
+        },
+      },
+      {
+        'type': 'function',
+        'function': {
+          'name': tools.last.spec.name,
+          'description': 'Fixture.',
+          'parameters': incompatibleSchema,
+        },
+      },
+    ]);
+    expect(result.decisions.map((decision) => decision.reason), [
+      null,
+      ToolSamplingValidationReason.incompatibleSchema,
+    ]);
+    final required = evaluateCloudToolSampling(
+      codec,
+      tools,
+      policy: ToolSamplingPolicy.require,
+      modelSupportsStrict: true,
+    );
+    expect(
+      required.requireStrict,
+      throwsA(isA<ToolSamplingValidationException>()),
+    );
+  });
+
   test('maps OpenAI reasoning config for Chat Completions', () {
     expect(
       reasoningRequestBody(
