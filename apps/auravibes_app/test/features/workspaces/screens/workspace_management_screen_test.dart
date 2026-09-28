@@ -248,6 +248,8 @@ void main() {
       CloudWorkspaceViewState? cloudWorkspaceState,
       Map<String, CloudWorkspaceViewState> cloudWorkspaceStatesByAccount =
           const {},
+      Map<String, Future<CloudWorkspaceViewState?> Function()> cloudLoaders =
+          const {},
       bool cloudAuthenticationRequired = false,
       WorkspaceSelectionRepository? selectionRepository,
     }) {
@@ -294,8 +296,17 @@ void main() {
               }
             }
             if (cloudWorkspaceState != null ||
-                cloudWorkspaceStatesByAccount.isNotEmpty) {
+                cloudWorkspaceStatesByAccount.isNotEmpty ||
+                cloudLoaders.isNotEmpty) {
               for (final account in accounts) {
+                final loader = cloudLoaders[account.userId];
+                if (loader != null) {
+                  overrides.add(
+                    cloudWorkspaceStateProvider(account.userId)
+                        .overrideWith((ref) => loader()),
+                  );
+                  continue;
+                }
                 final state =
                     cloudWorkspaceStatesByAccount[account.userId] ??
                     cloudWorkspaceState;
@@ -308,6 +319,7 @@ void main() {
 
             return ProviderScope(
               overrides: overrides.cast(),
+              retry: (retryCount, error) => null,
               child: MaterialApp(
                 home: AuraSnackBarHost(
                   child: WorkspaceManagementScreen(workspaceId: workspaceId),
@@ -536,6 +548,217 @@ void main() {
       expect(find.text('Cloud Beta'), findsNothing);
       expect(find.text('first@example.com'), findsNothing);
       expect(find.text('second@example.com'), findsNothing);
+    });
+
+    testWidgets('clear search restores every workspace source and semantics', (
+      tester,
+    ) async {
+      final local = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Local Studio', type: .local),
+      );
+      final _ = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'connected-1',
+        cloudAccountId: 'account-1',
+        name: 'Connected Studio',
+        serverUrl: 'http://localhost:8080',
+      );
+      const account = CloudAccountSession(
+        serverUrl: 'http://localhost:8080',
+        userId: 'account-1',
+        email: 'first@example.com',
+      );
+      final cloudState = CloudWorkspaceViewState(
+        workspaces: [
+          CloudWorkspaceSummary(
+            id: 2,
+            name: 'Cloud Studio',
+            role: 'owner',
+            revision: 1,
+            sequence: 1,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+        ],
+        pendingInvites: const [],
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: local.id,
+          accounts: [account],
+          cloudWorkspaceState: cloudState,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('workspace-search-clear')),
+        findsNothing,
+      );
+
+      await tester.enterText(find.byType(AuraInput), 'missing');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('No workspaces match your search.'), findsOneWidget);
+      expect(find.bySemanticsLabel('Clear search'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('workspace-search-clear')),
+        findsOneWidget,
+      );
+
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.enter);
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        '',
+      );
+      expect(find.text('Local Studio'), findsOneWidget);
+      expect(find.text('Connected Studio'), findsOneWidget);
+      expect(find.text('Cloud Studio'), findsOneWidget);
+      expect(find.text('No workspaces match your search.'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('workspace-search-clear')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('search folds accents across workspace sources', (
+      tester,
+    ) async {
+      final acuteE = String.fromCharCode(0x00e9);
+      final graveE = String.fromCharCode(0x00e8);
+      final combiningAcute = String.fromCharCode(0x0301);
+      final precomposedCafe = 'Caf$acuteE';
+      final decomposedCafe = 'Cafe$combiningAcute';
+      final local = await repository.createWorkspace(
+        .new(name: '$precomposedCafe Local', type: .local),
+      );
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Other Local', type: .local),
+      );
+      final _ = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'connected-1',
+        cloudAccountId: 'account-1',
+        name: '$decomposedCafe Connected',
+        serverUrl: 'http://localhost:8080',
+      );
+      const account = CloudAccountSession(
+        serverUrl: 'http://localhost:8080',
+        userId: 'account-1',
+        email: 'first@example.com',
+      );
+      final cloudState = CloudWorkspaceViewState(
+        workspaces: [
+          CloudWorkspaceSummary(
+            id: 2,
+            name: 'Caf$graveE Cloud',
+            role: 'owner',
+            revision: 1,
+            sequence: 1,
+            createdAt: .new(2026),
+            updatedAt: .new(2026),
+          ),
+        ],
+        pendingInvites: const [],
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: local.id,
+          accounts: [account],
+          cloudWorkspaceState: cloudState,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(AuraInput), '  CAFE  ');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('$precomposedCafe Local'), findsOneWidget);
+      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('Caf$graveE Cloud'), findsOneWidget);
+      expect(find.text('Other Local'), findsNothing);
+
+      await tester.enterText(find.byType(AuraInput), precomposedCafe);
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('Caf$graveE Cloud'), findsOneWidget);
+    });
+
+    testWidgets('retry reloads only the failed cloud account', (tester) async {
+      const accounts = [
+        CloudAccountSession(
+          serverUrl: 'http://localhost:8080',
+          userId: 'account-1',
+          email: 'first@example.com',
+        ),
+        CloudAccountSession(
+          serverUrl: 'http://localhost:8080',
+          userId: 'account-2',
+          email: 'second@example.com',
+        ),
+      ];
+      CloudWorkspaceViewState state(String name, int id) =>
+          CloudWorkspaceViewState(
+            workspaces: [
+              CloudWorkspaceSummary(
+                id: id,
+                name: name,
+                role: 'owner',
+                revision: 1,
+                sequence: id,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
+              ),
+            ],
+            pendingInvites: const [],
+          );
+      var firstLoads = 0;
+      var secondLoads = 0;
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          accounts: accounts,
+          cloudLoaders: {
+            'account-1': () async {
+              firstLoads++;
+              if (firstLoads == 1) throw StateError('temporary failure');
+
+              return state('Cloud One', 1);
+            },
+            'account-2': () async {
+              secondLoads++;
+
+              return state('Cloud Two', 2);
+            },
+          },
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'Cloud');
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Failed to load cloud workspaces.'), findsOneWidget);
+      expect(find.text('Cloud Two'), findsOneWidget);
+      expect(firstLoads, 1);
+      expect(secondLoads, 1);
+
+      await tester.tap(
+        find.byKey(const ValueKey('workspace_cloud_retry_account-1')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Cloud One'), findsOneWidget);
+      expect(find.text('Cloud Two'), findsOneWidget);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        'Cloud',
+      );
+      expect(firstLoads, 2);
+      expect(secondLoads, 1);
     });
 
     testWidgets('confirms before switching workspace from a tile', (
@@ -1000,5 +1223,115 @@ void main() {
       expect(await repository.getWorkspaceById(alpha.id), isNull);
       expect(await repository.getWorkspaceById(beta.id), isNotNull);
     });
+
+    testWidgets('shows hidden workspace selections before deleting', (
+      tester,
+    ) async {
+      final alpha = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Alpha Workspace', type: .local),
+      );
+      final beta = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Beta Workspace', type: .local),
+      );
+      await _pumpAndInit(tester, _buildScreen(workspaceId: beta.id));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'Alpha');
+      final _ = await tester.pumpAndSettle();
+      expect(find.textContaining('2 selected'), findsOneWidget);
+      expect(find.textContaining('1 hidden by filters'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      expect(find.textContaining('2 selected'), findsWidgets);
+      expect(find.textContaining('1 hidden by filters'), findsWidgets);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraIconButton && widget.tooltip == 'Clear selection',
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.textContaining('hidden by filters'), findsNothing);
+      await tester.enterText(find.byType(AuraInput), '');
+      final _ = await tester.pumpAndSettle();
+      for (final workspace in [alpha, beta]) {
+        expect(
+          tester
+              .widget<AuraCheckbox>(
+                find.byKey(ValueKey('workspace-selection-${workspace.id}')),
+              )
+              .value,
+          isFalse,
+        );
+      }
+    });
+
+    for (final names in <List<String>>[
+      ['Fail One'],
+      ['Fail One', 'Fail Two'],
+      [
+        'Fail Very long workspace name beyond the preview limit',
+        'Fail Two',
+        'Fail Three',
+        'Fail Four',
+      ],
+    ]) {
+      testWidgets(
+        'bounds workspace failure feedback for ${names.length} items',
+        (tester) async {
+          final active = await repository.createWorkspace(
+            const WorkspaceToCreate(name: 'Home', type: .local),
+          );
+          for (final name in names) {
+            final _ = await repository.createWorkspace(
+              .new(name: name, type: .local),
+            );
+          }
+          repository.deleteError = .new('delete failed');
+
+          await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
+          final _ = await tester.pumpAndSettle();
+          await tester.enterText(find.byType(AuraInput), 'Fail');
+          final _ = await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
+          final _ = await tester.pumpAndSettle();
+          await tester.tap(
+            find.byKey(const ValueKey('workspace-delete-selected')),
+          );
+          final _ = await tester.pumpAndSettle();
+          await tester.tap(find.text('Delete'));
+          final _ = await tester.pumpAndSettle();
+
+          final feedback =
+              tester
+                  .widget<Text>(
+                    find.textContaining(
+                      'Could not delete or remove ${names.length} workspace',
+                    ),
+                  )
+                  .data ??
+              fail('Expected failure feedback');
+          expect(
+            feedback,
+            contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),
+          );
+          expect(feedback, isNot(contains('Fail Three')));
+          if (names.length == 4) {
+            expect(feedback, contains('2 more failures'));
+            expect(feedback, isNot(contains('preview limit')));
+          }
+          expect(
+            find.textContaining('${names.length} selected'),
+            findsOneWidget,
+          );
+        },
+      );
+    }
   });
 }
