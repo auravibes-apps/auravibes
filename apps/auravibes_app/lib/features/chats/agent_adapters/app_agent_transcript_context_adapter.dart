@@ -17,23 +17,35 @@ class const AppAgentTranscriptContextAdapter(
     final transcript = await _messages.getTranscriptMessagesByConversation(
       conversationId,
     );
-    final updates = _transcriptContextUpdates(transcript);
-    final delta = _diffTranscriptContext(
-      updates,
-      _currentTranscriptContext(contextMessages, tools, approvalStates),
+    final current = _currentTranscriptContext(
+      contextMessages,
+      tools,
+      approvalStates,
     );
+    final delta = _pendingTranscriptUpdate(transcript, current);
     final entries = _activeEntries(transcript);
-    final entry = await _persistUpdate(
+    await _appendUpdate(
       conversationId: conversationId,
       transcript: transcript,
       update: delta,
+      entries: entries,
     );
-    if (entry != null) {
-      updates.add(entry.update);
-      entries.add(entry);
-    }
 
-    return _preparedTranscriptContext(updates, entries);
+    return _preparedTranscriptContext(entries);
+  }
+
+  Future<void> _appendUpdate({
+    required String conversationId,
+    required List<MessageEntity> transcript,
+    required AgentTranscriptContextUpdate? update,
+    required List<AgentTranscriptContextEntry> entries,
+  }) async {
+    final entry = await _persistUpdate(
+      conversationId: conversationId,
+      transcript: transcript,
+      update: update,
+    );
+    if (entry != null) entries.add(entry);
   }
 
   Future<AgentTranscriptContextEntry?> _persistUpdate({
@@ -68,6 +80,11 @@ AgentTranscriptContextUpdate? _diffTranscriptContext(
   AgentTranscriptContextState current,
 ) => diffAgentTranscriptContext(foldAgentTranscriptContext(updates), current);
 
+AgentTranscriptContextUpdate? _pendingTranscriptUpdate(
+  List<MessageEntity> transcript,
+  AgentTranscriptContextState current,
+) => _diffTranscriptContext(_transcriptContextUpdates(transcript), current);
+
 List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
   List<MessageEntity> transcript,
 ) => [
@@ -78,10 +95,11 @@ List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
 
 PreparedAgentTranscriptContext<ChatMessage, ToolSpec>
 _preparedTranscriptContext(
-  List<AgentTranscriptContextUpdate> updates,
   List<AgentTranscriptContextEntry> entries,
 ) {
-  final effective = foldAgentTranscriptContext(updates);
+  final effective = foldAgentTranscriptContext(
+    entries.map((entry) => entry.update),
+  );
 
   return PreparedAgentTranscriptContext(
     contextMessages: effective.contextMessages.map(_chatMessage).toList(),
@@ -147,17 +165,20 @@ DateTime _contextUpdateCreatedAt(List<MessageEntity> transcript) {
 List<AgentTranscriptContextEntry> _activeEntries(
   List<MessageEntity> transcript,
 ) {
-  final summaryIndex = transcript.lastIndexWhere(
-    (message) =>
-        message.metadata?.isCompactionSummary == true &&
-        message.status == .sent,
-  );
+  final summaryIndex = _lastSummaryIndex(transcript);
   final entries = _entriesAfterSummary(transcript, summaryIndex);
   final snapshot = _snapshotBeforeSummary(transcript, summaryIndex);
   if (snapshot == null) return entries;
 
   return [snapshot, ...entries];
 }
+
+int _lastSummaryIndex(List<MessageEntity> transcript) =>
+    transcript.lastIndexWhere(
+      (message) =>
+          message.metadata?.isCompactionSummary == true &&
+          message.status == .sent,
+    );
 
 AgentTranscriptContextEntry? _snapshotBeforeSummary(
   List<MessageEntity> transcript,
@@ -189,16 +210,43 @@ List<AgentTranscriptContextEntry> _entriesAfterSummary(
   final entries = <AgentTranscriptContextEntry>[];
   String? previousMessageId;
   for (var index = 0; index < transcript.length; index++) {
-    final message = transcript[index];
-    if (!message.isAgentTranscriptContextUpdate) {
-      previousMessageId = message.id;
-      continue;
-    }
-    if (index < summaryIndex) continue;
-    entries.add(_transcriptContextEntry(message, previousMessageId));
+    final progress = _transcriptEntryProgress(
+      transcript[index],
+      index,
+      summaryIndex,
+      previousMessageId,
+    );
+    previousMessageId = progress.previousMessageId;
+    final entry = progress.entry;
+    if (entry == null) continue;
+    entries.add(entry);
   }
 
   return entries;
+}
+
+typedef _TranscriptEntryProgress = ({
+  AgentTranscriptContextEntry? entry,
+  String? previousMessageId,
+});
+
+_TranscriptEntryProgress _transcriptEntryProgress(
+  MessageEntity message,
+  int index,
+  int summaryIndex,
+  String? previousMessageId,
+) {
+  if (!message.isAgentTranscriptContextUpdate) {
+    return (entry: null, previousMessageId: message.id);
+  }
+  if (index < summaryIndex) {
+    return (entry: null, previousMessageId: previousMessageId);
+  }
+
+  return (
+    entry: _transcriptContextEntry(message, previousMessageId),
+    previousMessageId: previousMessageId,
+  );
 }
 
 AgentTranscriptContextEntry _transcriptContextEntry(
