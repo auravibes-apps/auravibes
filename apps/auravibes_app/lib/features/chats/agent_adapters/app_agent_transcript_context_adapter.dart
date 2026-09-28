@@ -94,9 +94,7 @@ List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
 ];
 
 PreparedAgentTranscriptContext<ChatMessage, ToolSpec>
-_preparedTranscriptContext(
-  List<AgentTranscriptContextEntry> entries,
-) {
+_preparedTranscriptContext(List<AgentTranscriptContextEntry> entries) {
   final effective = foldAgentTranscriptContext(
     entries.map((entry) => entry.update),
   );
@@ -190,9 +188,7 @@ AgentTranscriptContextEntry? _snapshotBeforeSummary(
 
   return AgentTranscriptContextEntry(
     afterMessageId: null,
-    update: snapshotAgentTranscriptContext(
-      foldAgentTranscriptContext(updates),
-    ),
+    update: snapshotAgentTranscriptContext(foldAgentTranscriptContext(updates)),
   );
 }
 
