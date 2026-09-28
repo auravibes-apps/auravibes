@@ -6,12 +6,14 @@ import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -816,6 +818,46 @@ class const _WorkspaceListActions({
 });
 
 extension on _WorkspaceListActions {
+  Future<void> exportConfiguration(WorkspaceEntity workspace) async {
+    try {
+      final saved = await ref
+          .read(workspaceConfigurationArchiveUsecaseProvider)
+          .exportArchive(workspace);
+      if (saved && context.mounted) {
+        _showArchiveSuccess(context, LocaleKeys.workspace_archive_exported);
+      }
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) {
+        _showError(
+          context,
+          error,
+          stackTrace,
+          LocaleKeys.workspace_archive_error,
+        );
+      }
+    }
+  }
+
+  Future<void> importConfiguration([WorkspaceEntity? workspace]) async {
+    try {
+      final imported = await ref
+          .read(workspaceConfigurationArchiveUsecaseProvider)
+          .importArchive(workspace);
+      if (!imported || !context.mounted) return;
+      ref.invalidate(allWorkspacesProvider);
+      _showArchiveSuccess(context, LocaleKeys.workspace_archive_imported);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) {
+        _showError(
+          context,
+          error,
+          stackTrace,
+          LocaleKeys.workspace_archive_error,
+        );
+      }
+    }
+  }
+
   Future<void> copyId(String workspaceId) async {
     try {
       await Clipboard.setData(.new(text: workspaceId));
@@ -901,6 +943,14 @@ extension on _WorkspaceListActions {
       value.firstWhereOrNull((account) => account.userId == accountId)?.email,
     AsyncLoading() || AsyncError() => null,
   };
+}
+
+void _showArchiveSuccess(BuildContext context, String localizationKey) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(localizationKey),
+    variant: .success,
+  );
 }
 
 void _showWorkspaceIdCopied(BuildContext context) {
@@ -1193,6 +1243,11 @@ class const _LocalWorkspaceSection({
         const _SectionTitle(LocaleKeys.cloud_workspaces_local_section),
         _LocalWorkspaceItems(data: data, actions: actions),
         _CreateWorkspaceButton(onPressed: actions.createWorkspace),
+        AuraButton(
+          onPressed: () => unawaited(actions.importConfiguration()),
+          child: const TextLocale(LocaleKeys.workspace_archive_import_new),
+          key: const ValueKey('workspace-archive-import-new'),
+        ),
       ],
     );
   }
@@ -1872,7 +1927,14 @@ class const _LocalWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_editItem(), _duplicateItem(), _copyIdItem(), _deleteItem()],
+        items: [
+          _editItem(),
+          _duplicateItem(),
+          _exportItem(),
+          _importItem(),
+          _copyIdItem(),
+          _deleteItem(),
+        ],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -1900,6 +1962,16 @@ class const _LocalWorkspaceMenu({
       onTap: () => actions.duplicate(workspace),
     );
   }
+
+  AuraPopupMenuItem _exportItem() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_archive_export),
+    onTap: () => actions.exportConfiguration(workspace),
+  );
+
+  AuraPopupMenuItem _importItem() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_archive_import_into),
+    onTap: () => actions.importConfiguration(workspace),
+  );
 
   AuraPopupMenuItem _copyIdItem() {
     return AuraPopupMenuItem(
@@ -1983,7 +2055,13 @@ class const _ConnectedWorkspaceMenu({
     return Semantics(
       key: ValueKey<String>(selectorId),
       child: AuraPopupMenuButton(
-        items: [_detailsItem(), _copyIdItem(), _removeItem()],
+        items: [
+          _detailsItem(),
+          _exportItem(),
+          _importItem(),
+          _copyIdItem(),
+          _removeItem(),
+        ],
         tooltip: LocaleKeys.common_show_more.tr(),
       ),
       identifier: selectorId,
@@ -2007,6 +2085,16 @@ class const _ConnectedWorkspaceMenu({
       variant: .error,
     );
   }
+
+  AuraPopupMenuItem _exportItem() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_archive_export),
+    onTap: () => actions.exportConfiguration(workspace),
+  );
+
+  AuraPopupMenuItem _importItem() => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.workspace_archive_import_into),
+    onTap: () => actions.importConfiguration(workspace),
+  );
 
   AuraPopupMenuItem _copyIdItem() {
     return AuraPopupMenuItem(
@@ -2357,6 +2445,8 @@ void _showError(
 
 String _errorMessage(Object error, [String? fallbackKey]) {
   return switch (error) {
+    WorkspaceConfigurationArchiveException(:final localizationKey) =>
+      localizationKey.tr(),
     WorkspaceException(:final localizationKey, :final message) =>
       localizationKey?.tr() ?? message,
     AppCloudWorkspaceException(:final localizationKey) => localizationKey.tr(),

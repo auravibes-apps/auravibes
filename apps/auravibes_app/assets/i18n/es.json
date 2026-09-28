@@ -1087,6 +1087,18 @@
       "settings_invalid": "Configuración de compresión inválida. Verifica tus valores."
     }
   },
+  "workspace_archive": {
+    "export": "Exportar configuración",
+    "import_into": "Importar configuración aquí",
+    "import_new": "Importar como espacio nuevo",
+    "exported": "Configuración guardada. No se incluyen credenciales ni conexiones a servidores MCP.",
+    "imported": "Configuración importada. Vuelve a añadir las credenciales para usar los servicios conectados.",
+    "invalid": "Este archivo de configuración no es válido o está dañado.",
+    "unsupported_version": "Este archivo de configuración usa una versión no compatible.",
+    "invalid_target": "Este espacio no puede recibir el archivo de configuración.",
+    "unsupported_configuration": "Esta configuración hace referencia a una habilidad de la aplicación no disponible en el espacio de destino.",
+    "error": "No se pudo exportar o importar la configuración del espacio de trabajo."
+  },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
     "copy_id": "Copiar ID",
