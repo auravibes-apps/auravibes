@@ -81,6 +81,36 @@ void main() {
     expect(fork.reasoningConfiguration?.encode(), configuration.encode());
   });
 
+  test('fork preserves selected conversation skills', () async {
+    await insertSource();
+    final now = DateTime.utc(2026);
+    final _ = await insertMessage(
+      id: 'user-1',
+      createdAt: now,
+      isUser: true,
+      status: .sent,
+    );
+    final _ = await insertMessage(
+      id: 'assistant-1',
+      createdAt: now.add(const Duration(seconds: 1)),
+      isUser: false,
+      status: .sent,
+    );
+    final _ = await database.conversationSkillsDao.setAppSkillLoaded(
+      'source',
+      'research',
+      isLoaded: true,
+    );
+
+    final fork = await repository.forkConversation('source');
+    final selected = await database.conversationSkillsDao.getConversationSkills(
+      fork.id,
+    );
+
+    expect(selected.single.appSkillIdentifier, 'research');
+    expect(selected.single.isLoaded, isTrue);
+  });
+
   test('sidebar fork stops before an active approval turn', () async {
     final _ = await insertSource();
     final base = DateTime.utc(2026);

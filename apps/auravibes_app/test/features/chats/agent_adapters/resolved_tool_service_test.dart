@@ -1036,7 +1036,12 @@ void main() {
       buildAppSkillNativeToolSpecsUsecase: specs,
       runSkillsManagerToolUsecase: (_) => nativeTool,
       onSkillsManagerToolSuccess:
-          ({required workspaceId, required toolSlug, required result}) {
+          ({
+            required conversationId,
+            required workspaceId,
+            required toolSlug,
+            required result,
+          }) {
             nativeSuccesses.add((workspaceId: workspaceId, toolSlug: toolSlug));
           },
     );

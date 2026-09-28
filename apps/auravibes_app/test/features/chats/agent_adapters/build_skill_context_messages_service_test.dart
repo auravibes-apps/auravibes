@@ -11,6 +11,103 @@ import 'package:mocktail/mocktail.dart';
 
 void main() {
   group('BuildSkillContextMessagesService', () {
+    test('next continuation rebuilds selected catalog revision', () async {
+      final listSkills = _MockListAvailableSkillsUsecase();
+      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+      var revision = 'r1';
+      var title = 'Original';
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .catalog,
+        ),
+      ).thenAnswer(
+        (_) async => [
+          AvailableSkill(
+            source: SkillSource.user,
+            id: 'skill',
+            slug: 'research',
+            title: title,
+            description: '',
+            content: '',
+            kind: .template,
+          ),
+        ],
+      );
+      when(
+        () => listSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          filter: .loaded,
+        ),
+      ).thenAnswer(
+        (_) async => [
+          AvailableSkill(
+            source: SkillSource.user,
+            id: 'skill',
+            slug: 'research',
+            title: title,
+            description: '',
+            content: '',
+            kind: .template,
+          ),
+        ],
+      );
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => null);
+      when(
+        () => listAgentSkills.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => buildManifests.call(
+          conversationId: 'conversation',
+          workspaceId: 'workspace',
+          extraSkills: any(named: 'extraSkills'),
+        ),
+      ).thenAnswer(
+        (_) async => [
+          SkillManifest(
+            slug: 'research',
+            title: title,
+            description: '',
+            revision: revision,
+            tools: const [],
+          ),
+        ],
+      );
+      final service = BuildSkillContextMessagesService(
+        listSkills.call,
+        listAgentSkills,
+        buildManifests,
+      );
+
+      final first = await service.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+      );
+      title = 'Updated';
+      revision = 'r2';
+      final second = await service.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+      );
+
+      expect(first.single.content, contains('Original'));
+      expect(second.single.content, contains('Updated'));
+      expect(second.single.metadata[skillCatalogSelectedRevisionsMetadataKey], {
+        'research': 'r2',
+      });
+    });
+
     test('builds catalog metadata without conversation skill bodies', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();

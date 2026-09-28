@@ -50,6 +50,9 @@ void main() {
 
     expect(messages.single.role, AgentChatMessageRole.system);
     expect(messages.single.metadata['kind'], skillCatalogMetadataKind);
+    expect(messages.single.metadata[skillCatalogSelectedRevisionsMetadataKey], {
+      'research': 'r1',
+    });
     expect(messages.single.content, contains('"slug":"research"'));
     expect(
       messages.single.content.indexOf('research'),
