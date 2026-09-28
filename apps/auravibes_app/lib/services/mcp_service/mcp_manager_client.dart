@@ -42,12 +42,7 @@ class McpManagerService {
     );
 
     final clientResult = mcp.McpClient.createClient(config);
-    await clientResult.connect(
-      await _createTransportConfig(
-        serverInfo,
-        oauthCredentialService: oauthCredentialService,
-      ),
-    );
+    await _connectClient(clientResult, serverInfo);
 
     return McpManagerClient._(
       clientResult,
@@ -62,6 +57,23 @@ class McpManagerService {
     final tools = await client._client.listTools();
 
     return _convertTools(tools);
+  }
+
+  Future<void> _connectClient(
+    mcp.Client client,
+    McpServerToCreate serverInfo,
+  ) async {
+    try {
+      await client.connect(
+        await _createTransportConfig(
+          serverInfo,
+          oauthCredentialService: oauthCredentialService,
+        ),
+      );
+    } on Object {
+      client.disconnect();
+      rethrow;
+    }
   }
 }
 

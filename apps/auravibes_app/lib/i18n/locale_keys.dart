@@ -258,6 +258,8 @@ abstract class LocaleKeys {
       'service_connections.action.reconnect';
   static const service_connections_action_refresh_token =
       'service_connections.action.refresh_token';
+  static const service_connections_action_test_connection =
+      'service_connections.action.test_connection';
   static const service_connections_action_reconnect_success =
       'service_connections.action.reconnect_success';
   static const service_connections_action_reconnect_error =
@@ -266,6 +268,40 @@ abstract class LocaleKeys {
       'service_connections.action.refresh_success';
   static const service_connections_action_refresh_error =
       'service_connections.action.refresh_error';
+  static const service_connections_test_success =
+      'service_connections.test.success';
+  static const service_connections_test_authentication =
+      'service_connections.test.authentication';
+  static const service_connections_test_network =
+      'service_connections.test.network';
+  static const service_connections_test_protocol =
+      'service_connections.test.protocol';
+  static const service_connections_test_unknown =
+      'service_connections.test.unknown';
+  static const service_connections_test_attempted_at =
+      'service_connections.test.attempted_at';
+  static const service_connections_test_recovery_auth =
+      'service_connections.test.recovery_auth';
+  static const service_connections_test_recovery_network =
+      'service_connections.test.recovery_network';
+  static const service_connections_test_recovery_protocol =
+      'service_connections.test.recovery_protocol';
+  static const service_connections_test_retry =
+      'service_connections.test.retry';
+  static const service_connections_test_open_tools =
+      'service_connections.test.open_tools';
+  static const service_connections_diagnostics_transport =
+      'service_connections.diagnostics.transport';
+  static const service_connections_diagnostics_category =
+      'service_connections.diagnostics.category';
+  static const service_connections_diagnostics_attempted_at =
+      'service_connections.diagnostics.attempted_at';
+  static const service_connections_diagnostics_app_version =
+      'service_connections.diagnostics.app_version';
+  static const service_connections_diagnostics_summary =
+      'service_connections.diagnostics.summary';
+  static const service_connections_diagnostics_unavailable =
+      'service_connections.diagnostics.unavailable';
   static const service_connections_create_type_label =
       'service_connections.create.type_label';
   static const service_connections_create_app_skill_label =
