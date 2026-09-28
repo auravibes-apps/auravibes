@@ -590,6 +590,36 @@ void main() {
       );
     });
 
+    testWidgets('aligns user copy action with the user bubble', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(content: 'Hello AI'),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final bubbleRight = tester
+          .getTopRight(find.byType(AuraMessageBubble))
+          .dx;
+      final copyActionRight = tester
+          .getTopRight(find.byTooltip('Copy message'))
+          .dx;
+
+      expect(copyActionRight, closeTo(bubbleRight, 1));
+    });
+
     testWidgets('uses a visible selection color for user messages', (
       tester,
     ) async {
@@ -1711,6 +1741,51 @@ void main() {
         find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
         findsNothing,
       );
+    });
+
+    testWidgets('hides pending tool arguments from the activity details', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-pending',
+        name: 'notion_update_page',
+        argumentsRaw:
+            '{"page":"Launch Plan",'
+            '"change":"Add a task checklist"}',
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: true,
+              ),
+            ),
+          ],
+          pendingToolCalls: const [
+            PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('activity_tool_tc-pending')),
+        findsOneWidget,
+      );
+      expect(find.text('Arguments'), findsNothing);
+      expect(find.textContaining('Launch Plan'), findsNothing);
+      expect(find.textContaining('Add a task checklist'), findsNothing);
     });
 
     testWidgets('shows a tool-call description beside its title', (
