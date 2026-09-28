@@ -54,35 +54,85 @@ Future<SkillToolCallDisplayTitles?> skillToolCallDisplayTitles(
   String workspaceId,
   String skillSlug,
   String toolSlug,
+) =>
+    _resolveSkillToolCallDisplayTitles(ref, workspaceId, skillSlug, toolSlug);
+
+typedef _SkillToolTitles = ({String? title, String? titleKey});
+
+Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
+  Ref ref,
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
 ) async {
-  final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
-  final skill = skills.where((skill) => skill.slug == skillSlug).firstOrNull;
+  final skill = await _workspaceSkillBySlug(ref, workspaceId, skillSlug);
   if (skill == null) return null;
 
-  String? toolTitle;
-  String? toolTitleKey;
-  if (skill.source == SkillSource.app) {
-    final appSkill = ref
-        .watch(appSkillRegistryProvider)
-        .getByIdentifier(skill.id);
-    final tool = appSkill?.tools
-        .where((tool) => tool.slug == toolSlug)
-        .firstOrNull;
-    toolTitle = tool?.title;
-    toolTitleKey = tool?.titleKey;
-  } else if (skill.kind == SkillKind.template) {
-    final tools = await ref.watch(
-      skillTemplateToolsProvider(workspaceId, skill.id).future,
-    );
-    toolTitle = tools.where((tool) => tool.slug == toolSlug).firstOrNull?.title;
-  }
+  final toolTitles = await _toolTitlesForSkill(
+    ref,
+    workspaceId,
+    skill,
+    toolSlug,
+  );
 
   return (
     skillTitle: skill.title,
     skillTitleKey: skill.titleKey,
-    toolTitle: toolTitle,
-    toolTitleKey: toolTitleKey,
+    toolTitle: toolTitles.title,
+    toolTitleKey: toolTitles.titleKey,
   );
+}
+
+Future<SkillEntity?> _workspaceSkillBySlug(
+  Ref ref,
+  String workspaceId,
+  String skillSlug,
+) async {
+  final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
+  return skills.where((skill) => skill.slug == skillSlug).firstOrNull;
+}
+
+Future<_SkillToolTitles> _toolTitlesForSkill(
+  Ref ref,
+  String workspaceId,
+  SkillEntity skill,
+  String toolSlug,
+) async {
+  if (skill.source == SkillSource.app) {
+    return _appSkillToolTitles(ref, skill, toolSlug);
+  }
+  if (skill.kind != SkillKind.template) {
+    return (title: null, titleKey: null);
+  }
+
+  return _templateSkillToolTitles(ref, workspaceId, skill.id, toolSlug);
+}
+
+_SkillToolTitles _appSkillToolTitles(
+  Ref ref,
+  SkillEntity skill,
+  String toolSlug,
+) {
+  final appSkill = ref
+      .watch(appSkillRegistryProvider)
+      .getByIdentifier(skill.id);
+  final tool = appSkill?.tools
+      .where((tool) => tool.slug == toolSlug)
+      .firstOrNull;
+  return (title: tool?.title, titleKey: tool?.titleKey);
+}
+
+Future<_SkillToolTitles> _templateSkillToolTitles(
+  Ref ref,
+  String workspaceId,
+  String skillId,
+  String toolSlug,
+) async {
+  final tools = await ref.watch(
+    skillTemplateToolsProvider(workspaceId, skillId).future,
+  );
+  final tool = tools.where((tool) => tool.slug == toolSlug).firstOrNull;
+  return (title: tool?.title, titleKey: null);
 }
 
 /// Provides the name of an MCP server by its ID.

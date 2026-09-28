@@ -728,11 +728,23 @@ String _approvalDisplayName(
 ) {
   final toolCall = request.current.toolCall;
   final workspaceId = request.source.workspaceId;
-  final target = parseSkillToolCallTarget(toolCall);
+  final target = SkillToolCallDisplay.parseTarget(toolCall);
   if (target == null) {
     return _toolDisplayName(ref, workspaceId, toolCall.name);
   }
 
+  return SkillToolCallDisplay.displayName(
+    context: context,
+    titles: _skillToolCallDisplayTitles(ref, workspaceId, target),
+    target: target,
+  );
+}
+
+SkillToolCallDisplayTitles? _skillToolCallDisplayTitles(
+  WidgetRef ref,
+  String workspaceId,
+  SkillToolCallTarget target,
+) {
   final titlesAsync = ref.watch(
     skillToolCallDisplayTitlesProvider(
       workspaceId,
@@ -741,11 +753,7 @@ String _approvalDisplayName(
     ),
   );
 
-  return skillToolCallDisplayName(
-    context: context,
-    titles: titlesAsync.maybeWhen(data: (titles) => titles, orElse: () => null),
-    target: target,
-  );
+  return titlesAsync.maybeWhen(data: (titles) => titles, orElse: () => null);
 }
 
 String _toolDisplayName(WidgetRef ref, String workspaceId, String rawToolName) {

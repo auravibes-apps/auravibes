@@ -10,56 +10,71 @@ import 'package:flutter/widgets.dart';
 
 typedef SkillToolCallTarget = ({String skillSlug, String toolSlug});
 
-final _titleSeparator = ' ${String.fromCharCode(0xB7)} ';
+abstract final class SkillToolCallDisplay {
+  static SkillToolCallTarget? parseTarget(MessageToolCallEntity toolCall) {
+    if (toolCall.name != callSkillToolName) return null;
+    return _targetFromArguments(toolCall.argumentsRaw);
+  }
 
-SkillToolCallTarget? parseSkillToolCallTarget(MessageToolCallEntity toolCall) {
-  if (toolCall.name != callSkillToolName) return null;
+  static String displayName({
+    required BuildContext context,
+    required SkillToolCallDisplayTitles? titles,
+    required SkillToolCallTarget target,
+  }) {
+    final skillTitle = _localizedTitle(
+      context,
+      titles?.skillTitleKey,
+      titles?.skillTitle ?? target.skillSlug.toHumanReadable(),
+    );
+    final toolTitle = _localizedTitle(
+      context,
+      titles?.toolTitleKey,
+      titles?.toolTitle ?? target.toolSlug.toHumanReadable(),
+    );
 
-  try {
-    final decoded = jsonDecode(toolCall.argumentsRaw);
-    if (decoded case {
-      'skill': final String skillSlug,
-      'tool': final String toolSlug,
-    }) {
-      final normalizedSkillSlug = skillSlug.trim();
-      final normalizedToolSlug = toolSlug.trim();
-      if (normalizedSkillSlug.isEmpty || normalizedToolSlug.isEmpty) {
-        return null;
+    return '$skillTitle · $toolTitle';
+  }
+
+  static SkillToolCallTarget? _targetFromArguments(String argumentsRaw) {
+    try {
+      final decoded = jsonDecode(argumentsRaw);
+      if (decoded case {
+        'skill': final String skillSlug,
+        'tool': final String toolSlug,
+      }) {
+        return _validatedTarget(skillSlug, toolSlug);
       }
-
-      final compositeToolName = [
-        'skill',
-        'app',
-        normalizedSkillSlug,
-        normalizedToolSlug,
-      ].join('__');
-      if (ToolNameFormatter.parse(compositeToolName) == null) return null;
-
-      return (skillSlug: normalizedSkillSlug, toolSlug: normalizedToolSlug);
+    } on FormatException {
+      return null;
     }
-  } on FormatException {
     return null;
   }
 
-  return null;
-}
+  static SkillToolCallTarget? _validatedTarget(
+    String skillSlug,
+    String toolSlug,
+  ) {
+    final normalizedSkillSlug = skillSlug.trim();
+    final normalizedToolSlug = toolSlug.trim();
+    if (normalizedSkillSlug.isEmpty || normalizedToolSlug.isEmpty) {
+      return null;
+    }
 
-String skillToolCallDisplayName({
-  required BuildContext context,
-  required SkillToolCallDisplayTitles? titles,
-  required SkillToolCallTarget target,
-}) {
-  if (titles == null) {
-    return '${target.skillSlug.toHumanReadable()}$_titleSeparator'
-        '${target.toolSlug.toHumanReadable()}';
+    final compositeToolName = [
+      'skill',
+      'app',
+      normalizedSkillSlug,
+      normalizedToolSlug,
+    ].join('__');
+    if (ToolNameFormatter.parse(compositeToolName) == null) return null;
+
+    return (skillSlug: normalizedSkillSlug, toolSlug: normalizedToolSlug);
   }
 
-  final skillTitle =
-      titles.skillTitleKey?.tr(context: context) ?? titles.skillTitle;
-  final toolTitle =
-      titles.toolTitleKey?.tr(context: context) ??
-      titles.toolTitle ??
-      target.toolSlug.toHumanReadable();
-
-  return '$skillTitle$_titleSeparator$toolTitle';
+  static String _localizedTitle(
+    BuildContext context,
+    String? titleKey,
+    String fallback,
+  ) =>
+      titleKey?.tr(context: context) ?? fallback;
 }

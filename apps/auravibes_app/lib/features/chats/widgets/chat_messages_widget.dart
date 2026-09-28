@@ -1864,7 +1864,7 @@ String _activityToolCallDisplayName({
   required String workspaceId,
   required MessageToolCallEntity toolCall,
 }) {
-  final target = parseSkillToolCallTarget(toolCall);
+  final target = SkillToolCallDisplay.parseTarget(toolCall);
   if (target != null) {
     final titlesAsync = ref.watch(
       skillToolCallDisplayTitlesProvider(
@@ -1874,7 +1874,7 @@ String _activityToolCallDisplayName({
       ),
     );
 
-    return skillToolCallDisplayName(
+    return SkillToolCallDisplay.displayName(
       context: context,
       titles: titlesAsync.maybeWhen(
         data: (titles) => titles,
