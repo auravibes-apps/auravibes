@@ -1,6 +1,9 @@
 // Required: Existing code repeats lookups where extraction adds noise.
+
+// Dart imports:
 import 'dart:async';
 
+// Project imports:
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
@@ -15,6 +18,7 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+// Package imports:
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';

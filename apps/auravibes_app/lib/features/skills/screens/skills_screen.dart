@@ -1,9 +1,12 @@
 // Required: Existing UI spacing uses small numeric values.
 // Required: Local builders keep this small screen readable.
 // Required: Feature widgets keep closely related private widgets together.
+
+// Dart imports:
 import 'dart:async';
 import 'dart:math' as math;
 
+// Project imports:
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -14,6 +17,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+// Package imports:
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
