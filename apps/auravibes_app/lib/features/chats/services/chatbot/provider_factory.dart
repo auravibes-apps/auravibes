@@ -293,6 +293,7 @@ extension _ProviderFactoryPlugins on ProviderFactory {
         onToolSamplingDecision: _logToolSamplingDecision,
       );
     }
+
     return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
   }
 }
@@ -442,6 +443,7 @@ extension _ProviderFactoryCredentials on ProviderFactory {
     if (config.modelsProvider.type != ModelProvidersType.openai) return false;
 
     final providerUrl = _blankToNull(config.modelsProvider.url);
+
     return providerUrl != null &&
         providerUrl.replaceFirst(RegExp(r'/$'), '') !=
             providerProfile('openai').defaultUrl;

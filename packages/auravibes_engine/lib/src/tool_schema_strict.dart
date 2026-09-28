@@ -40,6 +40,7 @@ const _allowedKeywords = {
   'title',
   'type',
 };
+const _supportedSchemaDialect = 'http://json-schema.org/draft-07/schema#';
 
 final class _StrictSchemaCheck {
   new(this.schema);
@@ -75,7 +76,11 @@ final class _StrictSchemaCheck {
     bool countValues,
   ) {
     for (final key in node.schema.keys) {
-      if (!_allowedKeywords.contains(key)) {
+      final isSupportedDialect =
+          node.path == r'$' &&
+          key == r'$schema' &&
+          node.schema[key] == _supportedSchemaDialect;
+      if (!_allowedKeywords.contains(key) && !isSupportedDialect) {
         return ToolSchemaIssue(
           reason: .unsupportedKeyword,
           path: '${node.path}.$key',

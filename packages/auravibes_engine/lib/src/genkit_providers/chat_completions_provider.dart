@@ -549,17 +549,18 @@ ToolSamplingResult _evaluateTools(
 }
 
 Map<String, dynamic> _toolToJson(ToolDefinition tool, {bool strict = false}) {
+  var parameters =
+      tool.inputSchema ??
+      <String, dynamic>{'type': 'object', 'properties': <String, dynamic>{}};
+  if (strict && parameters.containsKey(r'$schema')) {
+    parameters = Map<String, dynamic>.from(parameters)..remove(r'$schema');
+  }
   return {
     'type': 'function',
     'function': {
       'name': tool.name,
       'description': tool.description,
-      'parameters':
-          tool.inputSchema ??
-          <String, dynamic>{
-            'type': 'object',
-            'properties': <String, dynamic>{},
-          },
+      'parameters': parameters,
       if (strict) 'strict': true,
     },
   };

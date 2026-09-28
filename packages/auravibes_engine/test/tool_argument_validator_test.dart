@@ -376,6 +376,45 @@ void main() {
     );
   });
 
+  test('strict mode strips supported schema dialect metadata', () {
+    const schemanticSchema = <String, dynamic>{
+      r'$schema': 'http://json-schema.org/draft-07/schema#',
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    };
+    final request = strictRequest(schemanticSchema);
+    final function =
+        ((request['tools'] as List<dynamic>).single
+                as Map<String, dynamic>)['function']
+            as Map<String, dynamic>;
+
+    expect(function['strict'], isTrue);
+    expect(function['parameters'], {
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    });
+    expect(schemanticSchema.containsKey(r'$schema'), isTrue);
+    expect(
+      strictToolSchemaIssue({
+        ...schemanticSchema,
+        r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+      }),
+      isA<ToolSchemaIssue>().having(
+        (issue) => issue.reason,
+        'reason',
+        ToolSchemaIssueReason.unsupportedKeyword,
+      ),
+    );
+  });
+
   test('nullable type accepts null and declared value', () {
     const nullableSchema = <String, dynamic>{
       'type': 'object',

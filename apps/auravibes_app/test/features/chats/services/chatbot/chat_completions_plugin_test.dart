@@ -16,6 +16,7 @@ void main() {
       capturedBody = jsonDecode(
         await request.finalize().bytesToString(),
       ) as Map<String, dynamic>;
+
       return _jsonResponse({
         'choices': [
           {
@@ -31,15 +32,15 @@ void main() {
           name: 'strict-test',
           baseUrl: 'https://api.openai.com/v1',
           apiKey: 'key',
-          codec: ChatCompletionsCodec(
+          codec: .new(
             errorLabel: 'OpenAI',
-            supportsStrictToolSampling: true,
             customize: (model, _) => (model: model, extraBody: {}),
+            supportsStrictToolSampling: true,
           ),
           models: const [ChatCompletionsModelDefinition(name: 'gpt-4o')],
           httpClient: client,
           modelSupportsStrictToolSampling: true,
-          defaultToolSamplingPolicy: ToolSamplingPolicy.prefer,
+          defaultToolSamplingPolicy: .prefer,
           onToolSamplingDecision: (value) => decisions = value,
         ),
       ],
@@ -62,13 +63,14 @@ void main() {
       fn: (_, _) async => const ToolResponseResult<Object?>(null),
     );
 
-    await ai.generate<Object?, Object?>(
+    final response = await ai.generate<Object?, Object?>(
       model: modelRef<Object?>('strict-test/gpt-4o'),
       messages: const [],
       tools: [tool],
       returnToolRequests: true,
     );
 
+    expect(response.text, 'ok.');
     expect(capturedBody?['tools'], [
       {
         'type': 'function',

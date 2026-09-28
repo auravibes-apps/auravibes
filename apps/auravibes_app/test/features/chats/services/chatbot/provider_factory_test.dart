@@ -101,13 +101,14 @@ void main() {
           fn: (_, _) async => const ToolResponseResult<Object?>(null),
         );
 
-        await ai.generate<Object?, Object?>(
+        final response = await ai.generate<Object?, Object?>(
           model: strictFactory.getModelReference(config),
           prompt: 'Hi',
           tools: [tool],
           returnToolRequests: true,
         );
 
+        expect(response.text, 'ok.');
         final tools = client.body?['tools'] as List<dynamic>?;
         final function =
             (tools?.single as Map<String, dynamic>?)?['function']
