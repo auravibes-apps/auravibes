@@ -11,7 +11,6 @@ part 'aura_choice_option.dart';
 part 'aura_choice_picker_variant.dart';
 part 'aura_choice_picker_presentation.dart';
 
-const _choicePickerTapTarget = 48.0;
 const _disabledOpacity = 0.6;
 
 /// A controlled list of labeled choices supporting single or multiple values.
@@ -277,21 +276,25 @@ class const _AuraChoicePickerOption<T>({
   }
 }
 
-class const _AuraChoicePickerChip<T>({
-  required final _AuraChoicePickerOption<T> source,
-}) extends StatelessWidget {
+class _AuraChoicePickerChip<T> extends StatelessWidget {
+  new({required _AuraChoicePickerOption<T> source})
+    : _child = MergeSemantics(
+        child: Semantics(
+          key: _identifierKey(source.option.identifier),
+          child: _AuraChoicePickerChipPressable<T>(source: source),
+          enabled: source._isInteractive,
+          checked: source._isSelected,
+          inMutuallyExclusiveGroup:
+              source.picker.variant ==
+              AuraChoicePickerVariant.mutuallyExclusive,
+          identifier: source.option.identifier,
+        ),
+      );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) {
-    return MergeSemantics(
-      child: Semantics(
-        child: _AuraChoicePickerChipPressable<T>(source: source),
-        enabled: source._isInteractive,
-        checked: source._isSelected,
-        inMutuallyExclusiveGroup:
-            source.picker.variant == AuraChoicePickerVariant.mutuallyExclusive,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _child;
 }
 
 class const _AuraChoicePickerChipPressable<T>({
@@ -376,9 +379,9 @@ class const _AuraChoicePickerChipContent<T>({
 class _AuraChoicePickerChipPadding<T> extends StatelessWidget {
   new(AuraTheme theme, _AuraChoicePickerOption<T> source)
     : _child = ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: _choicePickerTapTarget,
-          minHeight: _choicePickerTapTarget,
+        constraints: .new(
+          minWidth: theme.interactionSizes.minimumTargetSize,
+          minHeight: theme.interactionSizes.minimumTargetSize,
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -425,6 +428,7 @@ typedef _ListOptionSemanticsData<T> = ({
   bool enabled,
   bool checked,
   bool inMutuallyExclusiveGroup,
+  String? identifier,
   String? label,
   VoidCallback? onTap,
 });
@@ -437,23 +441,32 @@ _ListOptionSemanticsData<T> _listOptionSemanticsData<T>(
   checked: source._isSelected,
   inMutuallyExclusiveGroup:
       source.picker.variant == AuraChoicePickerVariant.mutuallyExclusive,
+  identifier: source.option.identifier,
   label: source.option.semanticLabel,
   onTap: source._isInteractive ? source._handleChange : null,
 );
 
-class const _AuraChoicePickerListSemantics<T>({
-  required final _ListOptionSemanticsData<T> data,
-}) extends StatelessWidget {
+class _AuraChoicePickerListSemantics<T> extends StatelessWidget {
+  new({required _ListOptionSemanticsData<T> data})
+    : _child = Semantics(
+        key: _identifierKey(data.identifier),
+        child: _AuraChoicePickerListRow<T>(source: data.source),
+        enabled: data.enabled,
+        checked: data.checked,
+        inMutuallyExclusiveGroup: data.inMutuallyExclusiveGroup,
+        identifier: data.identifier,
+        label: data.label,
+        onTap: data.onTap,
+      );
+
+  final Widget _child;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: _AuraChoicePickerListRow<T>(source: data.source),
-    enabled: data.enabled,
-    checked: data.checked,
-    inMutuallyExclusiveGroup: data.inMutuallyExclusiveGroup,
-    label: data.label,
-    onTap: data.onTap,
-  );
+  Widget build(BuildContext context) => _child;
 }
+
+Key? _identifierKey(String? identifier) =>
+    identifier == null ? null : ValueKey<String>(identifier);
 
 class const _AuraChoicePickerListRow<T>({
   required final _AuraChoicePickerOption<T> source,
@@ -486,15 +499,19 @@ class const _AuraChoicePickerControlTarget<T>({
   required final _AuraChoicePickerOption<T> source,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: _choicePickerTapTarget,
-    height: _choicePickerTapTarget,
-    child: Center(
-      child: ExcludeSemantics(
-        child: _AuraChoicePickerControl<T>(source: source),
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return SizedBox(
+      width: targetSize,
+      height: targetSize,
+      child: Center(
+        child: ExcludeSemantics(
+          child: _AuraChoicePickerControl<T>(source: source),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class const _AuraChoicePickerControl<T>({
@@ -557,8 +574,10 @@ class const _AuraChoicePickerListLabelContent<T>({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _choicePickerTapTarget),
+      constraints: .new(minHeight: targetSize),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: Opacity(

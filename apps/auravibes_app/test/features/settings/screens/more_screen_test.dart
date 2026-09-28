@@ -45,7 +45,9 @@ void main() {
   }
 
   testWidgets('renders title, tiles, and icons', (tester) async {
-    await tester.pumpWidget(_buildScreen(workspaceId: 'ws-1'));
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(_buildScreen(workspaceId: 'ws-1')),
+    );
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('More'), findsOneWidget);

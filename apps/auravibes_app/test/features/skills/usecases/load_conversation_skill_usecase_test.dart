@@ -12,6 +12,73 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('LoadConversationSkillUsecase', () {
+    test('loads top-level content-only skills without credentials', () async {
+      final conversationSkills = _FakeConversationSkillsRepository();
+      final usecase = LoadConversationSkillUsecase(
+        const _FakeSkillsRepository(),
+        conversationSkills,
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        null,
+        (conversationId) async => true,
+      );
+
+      await usecase.call(
+        conversationId: 'top-level',
+        workspaceId: 'workspace-1',
+        slug: 'a2ui',
+      );
+
+      expect(conversationSkills.loadedAppSkillIdentifier, 'a2ui');
+    });
+
+    test('rejects content-only skills in child conversations', () async {
+      final usecase = LoadConversationSkillUsecase(
+        const _FakeSkillsRepository(),
+        _FakeConversationSkillsRepository(),
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        null,
+        (conversationId) async => false,
+      );
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'child',
+          workspaceId: 'workspace-1',
+          slug: 'a2ui',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test(
+      'fails closed when top-level conversation lookup is unavailable',
+      () async {
+        final usecase = LoadConversationSkillUsecase(
+          const _FakeSkillsRepository(),
+          _FakeConversationSkillsRepository(),
+          const _FakeAppSkillWorkspaceSettingsRepository(),
+          const AppSkillRegistry(),
+          null,
+          const _FakeAppSkillCandidates(),
+        );
+
+        await expectLater(
+          usecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            slug: 'a2ui',
+          ),
+          throwsStateError,
+        );
+      },
+    );
+
     test('rejects disabled app skill', () async {
       final conversationSkills = _FakeConversationSkillsRepository();
       final usecase = LoadConversationSkillUsecase(

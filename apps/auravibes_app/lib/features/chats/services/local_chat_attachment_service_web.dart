@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:riverpod/riverpod.dart';
 
 class LocalChatAttachmentServiceWeb({
@@ -17,6 +20,16 @@ class LocalChatAttachmentServiceWeb({
     throw UnsupportedError(
       'Local attachment files are unsupported on web. $displayName',
     );
+  }
+
+  Future<Uint8List> readAttachmentBytes(String _) {
+    throw UnsupportedError('Local attachment files are unsupported on web.');
+  }
+
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment _,
+  ) {
+    throw UnsupportedError('Local attachment files are unsupported on web.');
   }
 
   Future<void> startVoiceRecording() {

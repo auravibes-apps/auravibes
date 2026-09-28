@@ -63,6 +63,7 @@ void main() {
           'limit_context',
           'limit_output',
           'supports_reasoning',
+          'reasoning_options_json',
           'is_canonical',
           'supports_priority_mode',
           'supports_tool_calls',
@@ -70,8 +71,8 @@ void main() {
       );
     });
 
-    test('has 16 columns', () {
-      expect(columns.length, 16);
+    test('has 17 columns', () {
+      expect(columns.length, 17);
     });
 
     test('composite primary key on id and model_provider', () {
@@ -131,6 +132,13 @@ void main() {
       );
       expect(col.read<int>('notnull'), 1);
       expect(col.read<String>('dflt_value'), '0');
+    });
+
+    test('reasoning_options_json is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'reasoning_options_json',
+      );
+      expect(col.read<int>('notnull'), 0);
     });
   });
 }

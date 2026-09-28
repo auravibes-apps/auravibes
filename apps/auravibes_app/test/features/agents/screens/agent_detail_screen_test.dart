@@ -89,35 +89,32 @@ void main() {
     expect(find.text('*'), findsNWidgets(3));
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(find.byType(TextFormField).at(0), '   ');
-    await tester.enterText(find.byType(TextFormField).at(1), '   ');
+    await tester.enterText(find.byType(AuraInput).at(0), '   ');
+    await tester.enterText(find.byType(AuraInput).at(1), '   ');
     await tester.pump();
     expect(find.text('0 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Summarizer');
+    await tester.enterText(find.byType(AuraInput).at(0), 'Summarizer');
     await tester.pump();
     expect(find.text('1 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'Summarize requests.',
-    );
+    await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
     await tester.pump();
     expect(find.text('2 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
 
-    await tester.tap(find.byType(TextFormField).at(1));
-    final descriptionField = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(1),
+    await tester.tap(find.byType(AuraInput).at(1));
+    final descriptionField = tester.widget<AuraInput>(
+      find.byType(AuraInput).at(1),
     );
     final descriptionController = descriptionField.controller;
     if (descriptionController == null) {
       throw StateError('Description field must expose its controller.');
     }
     descriptionController.text = 'x' * (AgentLimits.descriptionMaxLength + 1);
-    await tester.tap(find.byType(TextFormField).at(0));
+    await tester.tap(find.byType(AuraInput).at(0));
     await tester.pump();
     expect(find.text('1 of 3 required fields complete'), findsOneWidget);
     expect(_isSaveButtonDisabled(tester, 'Create agent'), isTrue);
@@ -126,10 +123,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(
-      find.byType(TextFormField).at(1),
-      'Summarize requests.',
-    );
+    await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
     await tester.pump();
     expect(find.text('2 of 3 required fields complete'), findsOneWidget);
 
@@ -221,43 +215,45 @@ Future<void> _pumpAgentScreen(
   final tools = await WorkspaceToolsRepository(fixture.database)
       .getWorkspaceTools(fixture.workspace.id);
 
-  await tester.pumpWidget(
-    TestableApp(
-      child: AgentDetailScreen(
+  final _ = await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        child: AgentDetailScreen(
+          workspaceId: fixture.workspace.id,
+          agentId: agentId,
+        ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(fixture.database),
+          agentRepositoryProvider(fixture.workspace.id).overrideWithValue(
+            agentRepository ?? AgentsRepository(fixture.database),
+          ),
+          agentToolsRepositoryProvider(fixture.workspace.id)
+              .overrideWithValue(AgentToolsRepository(fixture.database)),
+          cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+          workspaceSkillsProvider(fixture.workspace.id).overrideWith(
+            (_) async => const [
+              WorkspaceSkill(
+                source: SkillSource.user,
+                id: 'summarizer',
+                slug: 'summarizer',
+                title: 'Summarizer',
+                description: 'Summarize things.',
+                kind: .template,
+                isEnabled: true,
+              ),
+            ],
+          ),
+          workspaceToolsProvider(fixture.workspace.id)
+              .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
+        ],
         workspaceId: fixture.workspace.id,
-        agentId: agentId,
+        workspaceSession: session,
+        key: UniqueKey(),
       ),
-      overrides: [
-        appDatabaseProvider.overrideWithValue(fixture.database),
-        agentRepositoryProvider(fixture.workspace.id).overrideWithValue(
-          agentRepository ?? AgentsRepository(fixture.database),
-        ),
-        agentToolsRepositoryProvider(fixture.workspace.id)
-            .overrideWithValue(AgentToolsRepository(fixture.database)),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        workspaceSkillsProvider(fixture.workspace.id).overrideWith(
-          (_) async => const [
-            WorkspaceSkill(
-              source: SkillSource.user,
-              id: 'summarizer',
-              slug: 'summarizer',
-              title: 'Summarizer',
-              description: 'Summarize things.',
-              kind: .template,
-              isEnabled: true,
-            ),
-          ],
-        ),
-        workspaceToolsProvider(fixture.workspace.id)
-            .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
-      ],
-      workspaceId: fixture.workspace.id,
-      workspaceSession: session,
-      key: UniqueKey(),
     ),
   );
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 bool _isSaveButtonDisabled(WidgetTester tester, String label) {
@@ -275,11 +271,8 @@ Future<void> _openPromptEditor(WidgetTester tester) async {
 }
 
 Future<void> _enterValidDraft(WidgetTester tester) async {
-  await tester.enterText(find.byType(TextFormField).at(0), 'Summarizer');
-  await tester.enterText(
-    find.byType(TextFormField).at(1),
-    'Summarize requests.',
-  );
+  await tester.enterText(find.byType(AuraInput).at(0), 'Summarizer');
+  await tester.enterText(find.byType(AuraInput).at(1), 'Summarize requests.');
   await _openPromptEditor(tester);
   await tester.enterText(find.byType(TextFormField), 'Summarize clearly.');
   await tester.tap(find.byIcon(Icons.save_outlined));
@@ -329,6 +322,12 @@ class _BlockingAgentRepository({
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) {
     return delegate.updateAgent(agentId, agent);
   }
+
+  @override
+  Future<AgentEntity> updateAgentVisibility(
+    String agentId,
+    AgentVisibility visibility,
+  ) => delegate.updateAgentVisibility(agentId, visibility);
 
   @override
   Future<bool> deleteAgent(String agentId) {

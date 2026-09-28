@@ -30,7 +30,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/framework.dart' show Override;
 
-ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
+ProviderContainer _pendingToolContainer({
+  List<Override> overrides = const [],
+  ConversationRepository? conversationRepository,
+}) {
   return ProviderContainer(
     overrides: [
       workspaceSessionForRouteProvider.overrideWith(
@@ -40,9 +43,24 @@ ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
       loadConversationToolSpecsUsecaseProvider.overrideWith(
         (_, _) => const _FakeLoadConversationToolSpecsUsecase(),
       ),
+      conversationRepositoryProvider.overrideWithValue(
+        conversationRepository ?? _PendingConversationRepository(),
+      ),
       ...overrides,
     ],
   );
+}
+
+class _PendingConversationRepository({
+  final Map<String, List<ConversationEntity>> childrenByParent = const {},
+}) implements ConversationRepository {
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async => childrenByParent[parentConversationId] ?? const [];
+
+  @override
+  Null noSuchMethod(Invocation invocation) => null;
 }
 
 class const _FakeLoadConversationToolSpecsUsecase({
@@ -64,42 +82,55 @@ class const _FakeLoadConversationToolSpecsUsecase({
   Future<ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
-  }) async {
-    return buildToolCatalog([
-      if (includeSkillCommand)
-        ToolCatalogCandidate.reserved(
-          spec: .new(
-            name: callSkillToolName,
-            description: 'Call a loaded skill tool.',
-            inputJsonSchema: const {'type': 'object'},
-          ),
-          target: ResolvedTool.skillCommand(commandName: callSkillToolName),
-        ),
-      ToolCatalogCandidate.external(
-        spec: .new(
-          name: 'built_in_calc_calculator',
-          description: 'Calculator',
-          inputJsonSchema: {},
-        ),
-        target: ResolvedTool.builtIn(
-          tableId: 'calc',
-          toolIdentifier: 'calculator',
-          tooltype: .calculator,
-        ),
-        sourceId: 'calc',
-      ),
-      ToolCatalogCandidate.external(
-        spec: .new(
-          name: 'native_ws-tool-url_url',
-          description: 'URL',
-          inputJsonSchema: {},
-        ),
-        target: ResolvedTool.native(tableId: 'url', nativeToolType: .url),
-        sourceId: 'url',
-      ),
-    ]);
-  }
+  }) async => includeSkillCommand
+      ? _buildPendingToolCatalog(includeSkillCommand: true)
+      : _pendingToolCatalog;
 }
+
+final ToolCatalog<ResolvedTool> _pendingToolCatalog =
+    _buildPendingToolCatalog();
+final String _calculatorToolName =
+    _pendingToolCatalog.specs.firstOrNull?.name ??
+    (throw StateError('Expected a calculator tool spec.'));
+final String _urlToolName =
+    _pendingToolCatalog.specs.skip(1).firstOrNull?.name ??
+    (throw StateError('Expected a URL tool spec.'));
+
+ToolCatalog<ResolvedTool> _buildPendingToolCatalog({
+  bool includeSkillCommand = false,
+}) => buildToolCatalog<ResolvedTool>([
+  if (includeSkillCommand)
+    ToolCatalogCandidate.reserved(
+      spec: .new(
+        name: callSkillToolName,
+        description: 'Call a loaded skill tool.',
+        inputJsonSchema: const {'type': 'object'},
+      ),
+      target: ResolvedTool.skillCommand(commandName: callSkillToolName),
+    ),
+  ToolCatalogCandidate.external(
+    spec: .new(
+      name: 'built_in_calc_calculator',
+      description: 'Calculator',
+      inputJsonSchema: {},
+    ),
+    target: ResolvedTool.builtIn(
+      tableId: 'calc',
+      toolIdentifier: 'calculator',
+      tooltype: .calculator,
+    ),
+    sourceId: 'calc',
+  ),
+  ToolCatalogCandidate.external(
+    spec: .new(
+      name: 'native_ws-tool-url_url',
+      description: 'URL',
+      inputJsonSchema: {},
+    ),
+    target: ResolvedTool.native(tableId: 'url', nativeToolType: .url),
+    sourceId: 'url',
+  ),
+]);
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -448,14 +479,8 @@ void main() {
           id: 'msg-2',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'tc-granted',
-              name: 'built_in_calc_calculator',
-            ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
-            ),
+            _pendingToolCall(id: 'tc-granted', name: _calculatorToolName),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -522,13 +547,10 @@ void main() {
           id: 'msg-1',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'tc-needs-confirm-1',
-              name: 'native_ws-tool-url_url',
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm-1', name: _urlToolName),
             _pendingToolCall(
               id: 'tc-needs-confirm-2',
-              name: 'built_in_calc_calculator',
+              name: _calculatorToolName,
             ),
           ],
         ),
@@ -687,10 +709,7 @@ void main() {
           id: 'child-msg-1',
           conversationId: 'child-1',
           toolCalls: [
-            _pendingToolCall(
-              id: 'child-tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
-            ),
+            _pendingToolCall(id: 'child-tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -757,6 +776,92 @@ void main() {
       expect(result.single.sourceLabel, 'Child agent');
     });
 
+    test('includes nested child conversation pending tool calls', () async {
+      final nestedMessages = [
+        _assistantMessage(
+          id: 'nested-msg-1',
+          conversationId: 'nested-child-1',
+          toolCalls: [
+            _pendingToolCall(id: 'nested-tc-needs-confirm', name: _urlToolName),
+          ],
+        ),
+      ];
+      final childConversation = ConversationEntity(
+        id: 'child-1',
+        title: 'Child agent',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        parentConversationId: 'conv-1',
+      );
+      final nestedConversation = ConversationEntity(
+        id: 'nested-child-1',
+        title: 'Nested agent',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        parentConversationId: 'child-1',
+      );
+
+      container = _pendingToolContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            'ws-1',
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(.data([childConversation])),
+          chatMessagesProvider(
+            'ws-1',
+            'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
+          conversationByIdStreamProvider(
+            'ws-1',
+            conversationId: 'conv-1',
+          ).overrideWithValue(
+            .data(
+              ConversationEntity(
+                id: 'conv-1',
+                title: 'Root',
+                workspaceId: 'ws-1',
+                isPinned: false,
+                createdAt: .new(2026),
+                updatedAt: .new(2026),
+              ),
+            ),
+          ),
+          messageRepositoryProvider.overrideWithValue(
+            _StaticMessageRepository({'nested-child-1': nestedMessages}),
+          ),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
+            _FakeResolveToolApprovalDecisionUsecase({
+              'nested-tc-needs-confirm': const ToolApprovalDecision(
+                toolCallId: 'nested-tc-needs-confirm',
+                permissionResult: .needsConfirmation,
+                permissionTableId: 'url',
+              ),
+            }),
+          ),
+        ],
+        conversationRepository: _PendingConversationRepository(
+          childrenByParent: {
+            'conv-1': [childConversation],
+            'child-1': [nestedConversation],
+          },
+        ),
+      );
+
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
+
+      expect(result, hasLength(1));
+      expect(result.single.toolCall.id, 'nested-tc-needs-confirm');
+      expect(result.single.sourceConversationId, 'nested-child-1');
+      expect(result.single.sourceLabel, 'Nested agent');
+    });
+
     test('excludes skipped tools from approval UI', () async {
       final messages = [
         _assistantMessage(
@@ -769,10 +874,7 @@ void main() {
               argumentsRaw: '{}',
               resultStatus: .skippedByUser,
             ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -829,8 +931,8 @@ void main() {
           id: 'msg-2',
           conversationId: 'conv-1',
           toolCalls: [
-            _pendingToolCall(id: 'tc-1', name: 'built_in_calc_calculator'),
-            _pendingToolCall(id: 'tc-2', name: 'native_ws-tool-url_url'),
+            _pendingToolCall(id: 'tc-1', name: _calculatorToolName),
+            _pendingToolCall(id: 'tc-2', name: _urlToolName),
           ],
         ),
       ];
@@ -890,9 +992,7 @@ void main() {
         _assistantMessage(
           id: 'msg-1',
           conversationId: 'conv-1',
-          toolCalls: [
-            _pendingToolCall(id: 'tc-1', name: 'native_ws-tool-url_url'),
-          ],
+          toolCalls: [_pendingToolCall(id: 'tc-1', name: _urlToolName)],
         ),
       ];
 
@@ -991,7 +1091,7 @@ void main() {
     test('T026: handles 20 approved-tool updates', () async {
       final toolCalls = List.generate(
         20,
-        (i) => _pendingToolCall(id: 'tc-$i', name: 'built_in_calc_calculator'),
+        (i) => _pendingToolCall(id: 'tc-$i', name: _calculatorToolName),
       );
 
       final messages = [
@@ -1078,10 +1178,7 @@ void main() {
               argumentsRaw: '{}',
               resultStatus: .stoppedByUser,
             ),
-            _pendingToolCall(
-              id: 'tc-needs-confirm',
-              name: 'native_ws-tool-url_url',
-            ),
+            _pendingToolCall(id: 'tc-needs-confirm', name: _urlToolName),
           ],
         ),
       ];
@@ -1155,9 +1252,9 @@ void main() {
           id: 'msg-1',
           conversationId: 'conv-1',
           toolCalls: [
-            const MessageToolCallEntity(
+            MessageToolCallEntity(
               id: 'tc-secret',
-              name: 'native_ws-tool-url_url',
+              name: _urlToolName,
               argumentsRaw: rawArguments,
             ),
           ],

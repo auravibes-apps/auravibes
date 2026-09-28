@@ -19,7 +19,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@devqxi/pubdev-mcp-server"
+        "@devqxi/pubdev-mcp-server@1.0.1"
       ],
       "lifecycle": "lazy",
       "directTools": true

@@ -10,5 +10,7 @@ fields:
   clearModel: bool
   agentId: String?
   clearAgent: bool
+  reasoningConfigJson: String?
+  clearReasoningConfig: bool
   parentConversationId: String?
   clearParent: bool

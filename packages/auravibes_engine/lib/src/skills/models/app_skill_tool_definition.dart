@@ -4,6 +4,7 @@ import 'package:auravibes_engine/src/skills/models/skill_template_definition.dar
 const Map<String, dynamic> defaultAppSkillToolInputJsonSchema = {
   'type': 'object',
   'properties': <String, Object?>{},
+  'required': <String>[],
   'additionalProperties': false,
 };
 

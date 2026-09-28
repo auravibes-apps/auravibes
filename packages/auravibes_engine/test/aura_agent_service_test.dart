@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
@@ -35,6 +37,11 @@ void main() {
       toolCallId: 'tool-1',
       conversationId: 'conversation-1',
       level: .conversation,
+      approvalDigest: toolCallApprovalDigest(
+        messageId: 'message-1',
+        toolName: 'calculator',
+        argumentsRaw: '{}',
+      ),
     );
     await service.tools.skip(
       messageId: 'message-1',
@@ -59,11 +66,54 @@ void main() {
       'resume-reference:message-1',
     ]);
   });
+
+  test('keeps approved tool execution in a cancellation scope', () async {
+    final cancellationEffects = FakeCancellationEffects();
+    final executionStarted = Completer<void>();
+    final executionRelease = Completer<void>();
+    var cleanupCalled = false;
+    final tools = _FakeToolProvider(
+      cancellationEffects: cancellationEffects,
+      onRunResolvedTool: () async {
+        cancellationEffects.current('conversation-1')?.registerCleanup(() {
+          cleanupCalled = true;
+          executionRelease.complete();
+        });
+        executionStarted.complete();
+        await executionRelease.future;
+      },
+    );
+    final service = _service(
+      .new(),
+      tools: tools,
+      cancellationEffects: cancellationEffects,
+    );
+
+    final approval = service.tools.approve(
+      messageId: 'message-1',
+      toolCallId: 'tool-1',
+      conversationId: 'conversation-1',
+      level: .once,
+      approvalDigest: toolCallApprovalDigest(
+        messageId: 'message-1',
+        toolName: 'calculator',
+        argumentsRaw: '{}',
+      ),
+    );
+    await executionStarted.future;
+    cancellationEffects.requestStop('conversation-1');
+    await approval;
+
+    expect(cleanupCalled, isTrue);
+    expect(tools.calls, isNot(contains('resume:message-1')));
+    expect(cancellationEffects.current('conversation-1'), isNull);
+  });
 }
 
 AuraAgentService<String> _service(
   _FakeAgentProvider provider, {
   _FakeToolProvider? tools,
+  FakeCancellationEffects? cancellationEffects,
 }) {
   return AuraAgentService<String>(
     data: provider,
@@ -74,7 +124,7 @@ AuraAgentService<String> _service(
     stopPending: tools ?? _FakeToolProvider(),
     resume: tools ?? _FakeToolProvider(),
     sendQueueRuntime: const _EmptySendQueueRuntime(),
-    cancellationEffects: FakeCancellationEffects(),
+    cancellationEffects: cancellationEffects ?? FakeCancellationEffects(),
     rateLimitRetryRuntime: .new(start: (_, _) {}, clear: (_) {}),
   );
 }
@@ -147,7 +197,11 @@ class _FakeToolProvider
         SkipToolCallProvider,
         StopPendingToolCallsProvider,
         AgentToolResumeProvider {
+  new({this.cancellationEffects, this.onRunResolvedTool});
+
   final calls = <String>[];
+  final FakeCancellationEffects? cancellationEffects;
+  final Future<void> Function()? onRunResolvedTool;
 
   Future<List<AgentToolMessage>> loadMessages(String conversationId) async {
     return const [AgentToolMessage(id: 'message-1', isUser: false)];
@@ -185,6 +239,7 @@ class _FakeToolProvider
     required Map<String, dynamic> arguments,
   }) async {
     calls.add('run:$conversationId:$tool');
+    await onRunResolvedTool?.call();
 
     return 'ok';
   }
@@ -221,7 +276,8 @@ class _FakeToolProvider
   }
 
   @override
-  bool isCancellationRequested(String conversationId) => false;
+  bool isCancellationRequested(String conversationId) =>
+      cancellationEffects?.isCancellationRequested(conversationId) ?? false;
 
   Future<void> stopPendingTools({required String messageId}) async {}
 

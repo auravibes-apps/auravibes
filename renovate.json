@@ -10,6 +10,12 @@
       "enabled": false
     },
     {
+      "description": "Skip Flutter's locally included Gradle plugin loader marker",
+      "matchManagers": ["gradle"],
+      "matchPackageNames": ["dev.flutter.flutter-plugin-loader:dev.flutter.flutter-plugin-loader.gradle.plugin"],
+      "enabled": false
+    },
+    {
       "description": "Update coupled Riverpod packages across the workspace together",
       "matchManagers": ["pub"],
       "matchPackageNames": ["riverpod", "flutter_riverpod", "hooks_riverpod", "riverpod_annotation", "riverpod_generator", "riverpod_lint", "riverpod_analyzer_utils"],

@@ -166,7 +166,7 @@ exists.
 ## UI Package Rules
 
 - Components are reusable and domain-agnostic.
-- Use existing tokens and variants such as `AuraColorVariant`.
+- Use existing design tokens; use `AuraTint` for components that expose a tint parameter.
 - No hardcoded app copy or feature names.
 - Add Widgetbook stories/previews when useful for reusable components.
 - Prefer const constructors and const-compatible parameters.

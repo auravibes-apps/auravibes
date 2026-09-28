@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'conversation_entity.freezed.dart';
@@ -39,6 +40,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
     /// ID of the selected agent used for this conversation.
     String? agentId,
 
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
+
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
 
@@ -53,6 +57,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// When inherited history was materialized into owned rows.
     DateTime? forkMaterializedAt,
+
+    /// Active compaction checkpoint; null selects latest sent summary.
+    String? activeCompactionCheckpointId,
   }) = _ConversationEntity;
 
   /// Returns true if the conversation has a valid title.
@@ -84,12 +91,17 @@ abstract class const ConversationToCreate._() with _$ConversationToCreate {
 
     /// ID of the workspace this conversation belongs to.
     required String workspaceId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
 
     /// ID of the AI model used for this conversation.
     String? modelId,
 
     /// ID of the selected agent used for this conversation.
     String? agentId,
+
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
 
     /// Parent conversation id for hidden child/sub-agent conversations.
     String? parentConversationId,
@@ -133,8 +145,18 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
     /// ID of the selected agent used for this conversation.
     String? agentId,
 
+    /// Conversation-scoped reasoning override. Null uses provider defaults.
+    ReasoningConfiguration? reasoningConfiguration,
+
+    /// Active compaction checkpoint, if one was restored.
+    String? activeCompactionCheckpointId,
+    @Default(false) bool clearActiveCompactionCheckpointId,
+
     /// Clears [agentId]. Nullable Freezed fields cannot express null set.
     @Default(false) bool clearAgent,
+
+    /// Clears [reasoningConfiguration] and restores provider defaults.
+    @Default(false) bool clearReasoningConfiguration,
 
     /// Whether this conversation is pinned.
     bool? isPinned,
@@ -145,14 +167,21 @@ abstract class const ConversationPatch._() with _$ConversationPatch {
       _isNullOrNonEmpty(title) &&
       _isNullOrNonEmpty(modelId) &&
       _isNullOrNonEmpty(agentId) &&
-      (!clearAgent || agentId == null);
+      (!clearAgent || agentId == null) &&
+      (!clearActiveCompactionCheckpointId ||
+          activeCompactionCheckpointId == null) &&
+      _isNullOrNonEmpty(activeCompactionCheckpointId);
 
   bool get _hasChanges =>
       title != null ||
       modelId != null ||
       agentId != null ||
       clearAgent ||
-      isPinned != null;
+      reasoningConfiguration != null ||
+      clearReasoningConfiguration ||
+      isPinned != null ||
+      clearActiveCompactionCheckpointId ||
+      activeCompactionCheckpointId != null;
 
   bool hasChanges() => _hasChanges;
 

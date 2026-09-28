@@ -1,8 +1,8 @@
 // Required: Tests use fixed widget dimensions.
 
 import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraFieldWrapper', () {

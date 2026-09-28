@@ -3,6 +3,7 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/widgets/compaction_checkpoint_history_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -12,6 +13,7 @@ import 'package:material_ui/material_ui.dart';
 
 class const CompactedMessageDetails({
   required final MessageEntity message,
+  required final String workspaceId,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -22,6 +24,10 @@ class const CompactedMessageDetails({
           const _CompactedDetailsTitle(),
           _CompactedDetailsMetadata(metadata: message.metadata),
           _CompactedDetailsContent(content: message.content),
+          CompactionCheckpointHistoryDialog(
+            workspaceId: workspaceId,
+            conversationId: message.conversationId,
+          ),
         ],
         crossAxisAlignment: .start,
       ),
@@ -52,6 +58,7 @@ class const _CompactedDetailsMetadata({
           _CompactionRangeRow(metadata: metadata),
         _CompactionCreatedRow(metadata: metadata),
         _CompactionMessagesRow(metadata: metadata),
+        _CompactionModelRow(metadata: metadata),
       ],
       crossAxisAlignment: .start,
     );
@@ -106,6 +113,24 @@ class const _CompactionMessagesRow({
     label: LocaleKeys.compaction_compacted_details_messages.tr(),
     value: '${metadata?.compactedMessageIds.length ?? 0}',
   );
+}
+
+class const _CompactionModelRow({
+  required final MessageMetadataEntity? metadata,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final provider = metadata?.compactionProviderId;
+    final model = metadata?.compactionModelId;
+    final value = provider == null || model == null
+        ? LocaleKeys.compaction_compacted_details_unknown.tr()
+        : '$provider/$model';
+
+    return _DetailRow(
+      label: LocaleKeys.compaction_compacted_details_model.tr(),
+      value: value,
+    );
+  }
 }
 
 class const _CompactedDetailsContent({required final String content})

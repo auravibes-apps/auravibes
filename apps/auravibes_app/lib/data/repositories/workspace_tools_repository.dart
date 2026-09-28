@@ -38,9 +38,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
     String toolId,
   ) async {
     await _ensureNativeTools(workspaceId);
-    final result =
-        await _dao.getWorkspaceToolByToolId(workspaceId, toolId) ??
-        await _dao.getWorkspaceTool(workspaceId, toolId);
+    final result = await _dao.getWorkspaceTool(workspaceId, toolId);
     if (result == null) return null;
 
     return _tableToEntity(result);
@@ -248,6 +246,16 @@ extension on WorkspaceToolsRepository {
   }
 
   WorkspaceToolEntity _tableToEntity(ToolsTable table) {
+    return _tableIdentity(table).copyWith(
+      config: table.config,
+      description: table.description,
+      inputSchema: table.inputSchema,
+      outputSchemaJson: table.outputSchema,
+      workspaceToolsGroupId: table.workspaceToolsGroupId,
+    );
+  }
+
+  WorkspaceToolEntity _tableIdentity(ToolsTable table) {
     return WorkspaceToolEntity(
       id: table.id,
       workspaceId: table.workspaceId,
@@ -256,10 +264,6 @@ extension on WorkspaceToolsRepository {
       permissionMode: _mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
-      config: table.config,
-      description: table.description,
-      inputSchema: table.inputSchema,
-      workspaceToolsGroupId: table.workspaceToolsGroupId,
     );
   }
 

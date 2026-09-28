@@ -13,6 +13,11 @@ void main() {
         toolCallId: 'tool-1',
         conversationId: 'conversation-1',
         level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
       );
 
       expect(provider.updates, [AgentToolResultStatus.toolNotFound]);
@@ -31,6 +36,11 @@ void main() {
         toolCallId: 'tool-1',
         conversationId: 'conversation-1',
         level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: callSkillToolName,
+          argumentsRaw: '{"input": "1+1"}',
+        ),
       );
 
       expect(provider.updates, [AgentToolResultStatus.notConfigured]);
@@ -49,6 +59,11 @@ void main() {
         toolCallId: 'tool-1',
         conversationId: 'conversation-1',
         level: .conversation,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
       );
 
       expect(provider.calls, [
@@ -74,9 +89,54 @@ void main() {
         toolCallId: 'tool-1',
         conversationId: 'conversation-1',
         level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
       );
 
       expect(provider.didResume, isFalse);
+    });
+
+    test('rejects an approval when the displayed call changed', () async {
+      final provider = _FakeApproveToolCallProvider(
+        resolvedTool: 'calculator',
+        runResult: '2',
+      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
+
+      await expectLater(
+        usecase.call(
+          messageId: 'message-1',
+          toolCallId: 'tool-1',
+          conversationId: 'conversation-1',
+          level: .once,
+          approvalDigest: toolCallApprovalDigest(
+            messageId: 'message-1',
+            toolName: 'calculator',
+            argumentsRaw: '{"input":"2+2"}',
+          ),
+        ),
+        throwsStateError,
+      );
+
+      expect(provider.calls, isEmpty);
+    });
+
+    test('canonicalizes arguments when binding an approval', () {
+      expect(
+        toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"b":2,"a":{"d":4,"c":3}}',
+        ),
+        toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"a":{"c":3,"d":4},"b":2}',
+        ),
+      );
     });
 
     test('resumes after execution error', () async {
@@ -91,6 +151,11 @@ void main() {
         toolCallId: 'tool-1',
         conversationId: 'conversation-1',
         level: .once,
+        approvalDigest: toolCallApprovalDigest(
+          messageId: 'message-1',
+          toolName: 'calculator',
+          argumentsRaw: '{"input": "1+1"}',
+        ),
       );
 
       expect(provider.updates, [AgentToolResultStatus.executionError]);

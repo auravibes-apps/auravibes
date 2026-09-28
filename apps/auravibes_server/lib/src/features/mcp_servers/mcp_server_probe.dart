@@ -57,34 +57,19 @@ class McpServerProbe {
         sessionId: initialized.sessionId,
         notification: true,
       );
-      final toolsResult = await _rpc(
-        client,
-        uri,
-        bearerToken,
-        2,
-        'tools/list',
-        const <String, Object?>{},
-        sessionId: initialized.sessionId,
-      );
-      final discovered = parseMcpToolsList(toolsResult.result);
-      if (discovered.length > McpServerPolicy.maxTools) {
-        throw const FormatException('Invalid MCP tools response.');
-      }
-      final tools = discovered
-          .map((tool) {
-            if (tool.name.length > 200 ||
-                (tool.description?.length ?? 0) > 4000) {
-              throw const FormatException('Invalid MCP tool.');
-            }
-            return DiscoveredMcpTool(
-              name: tool.name,
-              description: tool.description,
-              inputSchemaJson: McpServerPolicy.boundedSchema(
-                tool.inputSchema,
-              ),
-            );
-          })
-          .toList(growable: false);
+      var requestId = 2;
+      final tools = await collectCloudMcpTools((cursor) async {
+        final page = await _rpc(
+          client,
+          uri,
+          bearerToken,
+          requestId++,
+          'tools/list',
+          {'cursor': ?cursor},
+          sessionId: initialized.sessionId,
+        );
+        return page.result;
+      }).timeout(const Duration(seconds: 30));
       final serverInfo = initialized.result['serverInfo'];
       final info = serverInfo is Map<Object?, Object?> ? serverInfo : null;
       return DiscoverMcpServerResult(
@@ -169,4 +154,28 @@ class McpServerProbe {
       }
     }
   }
+}
+
+Future<List<DiscoveredMcpTool>> collectCloudMcpTools(
+  Future<Map<String, Object?>> Function(String? cursor) fetchPage,
+) async {
+  final rawTools = await collectMcpToolsCatalog(fetchPage);
+  final discovered = parseMcpToolsList(
+    {'tools': rawTools},
+    maxTools: McpServerPolicy.maxTools,
+    validateInputSchema: (schema) {
+      McpServerPolicy.boundedSchema(schema);
+    },
+  );
+  return [
+    for (final tool in discovered)
+      DiscoveredMcpTool(
+        name: tool.name,
+        description: tool.description,
+        inputSchemaJson: McpServerPolicy.boundedSchema(tool.inputSchema),
+        outputSchemaJson: tool.outputSchema == null
+            ? null
+            : McpServerPolicy.boundedSchema(tool.outputSchema),
+      ),
+  ];
 }

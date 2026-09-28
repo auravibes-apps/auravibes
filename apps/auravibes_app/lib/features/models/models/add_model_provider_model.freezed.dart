@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AddModelProviderModel {
 
- String? get name; String? get modelId; String? get key; String? get url; ModelProviderAuthMode get authMode;
+ String? get name; String? get modelId; String? get key; String? get url; ModelProviderAuthMode get authMode; bool get isTestingConnection; bool get isConnectionVerified; int get verifiedModelCount;
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,14 +27,14 @@ $AddModelProviderModelCopyWith<AddModelProviderModel> get copyWith => _$AddModel
 @override
 bool operator ==(Object other) {
   final _this = this as AddModelProviderModel;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.isTestingConnection, _this.isTestingConnection) || other.isTestingConnection == _this.isTestingConnection)&&(identical(other.isConnectionVerified, _this.isConnectionVerified) || other.isConnectionVerified == _this.isConnectionVerified)&&(identical(other.verifiedModelCount, _this.verifiedModelCount) || other.verifiedModelCount == _this.verifiedModelCount));
 }
 
 
 @override
 int get hashCode {
   final _this = this as AddModelProviderModel;
-  return Object.hash(runtimeType,_this.name,_this.modelId,_this.key,_this.url,_this.authMode);
+  return Object.hash(runtimeType,_this.name,_this.modelId,_this.key,_this.url,_this.authMode,_this.isTestingConnection,_this.isConnectionVerified,_this.verifiedModelCount);
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $AddModelProviderModelCopyWith<$Res>  {
   factory $AddModelProviderModelCopyWith(AddModelProviderModel value, $Res Function(AddModelProviderModel) _then) = _$AddModelProviderModelCopyWithImpl;
 @useResult
 $Res call({
- String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode
+ String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode, bool isTestingConnection, bool isConnectionVerified, int verifiedModelCount
 });
 
 
@@ -63,14 +63,17 @@ class _$AddModelProviderModelCopyWithImpl<$Res>
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,Object? isTestingConnection = null,Object? isConnectionVerified = null,Object? verifiedModelCount = null,}) {
   return _then(AddModelProviderModel(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
-as ModelProviderAuthMode,
+as ModelProviderAuthMode,isTestingConnection: null == isTestingConnection ? _self.isTestingConnection : isTestingConnection // ignore: cast_nullable_to_non_nullable
+as bool,isConnectionVerified: null == isConnectionVerified ? _self.isConnectionVerified : isConnectionVerified // ignore: cast_nullable_to_non_nullable
+as bool,verifiedModelCount: null == verifiedModelCount ? _self.verifiedModelCount : verifiedModelCount // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -155,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedModelCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel() when $default != null:
-return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedModelCount);case _:
   return orElse();
 
 }
@@ -176,10 +179,10 @@ return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedModelCount)  $default,) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel():
-return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedModelCount);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +199,10 @@ return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? modelId,  String? key,  String? url,  ModelProviderAuthMode authMode,  bool isTestingConnection,  bool isConnectionVerified,  int verifiedModelCount)?  $default,) {final _that = this;
 switch (_that) {
 case _AddModelProviderModel() when $default != null:
-return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);case _:
+return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode,_that.isTestingConnection,_that.isConnectionVerified,_that.verifiedModelCount);case _:
   return null;
 
 }
@@ -211,7 +214,7 @@ return $default(_that.name,_that.modelId,_that.key,_that.url,_that.authMode);cas
 
 
 class _AddModelProviderModel extends AddModelProviderModel {
-  const _AddModelProviderModel({this.name, this.modelId, this.key, this.url, this.authMode = ModelProviderAuthMode.apiKey}): super._();
+  const _AddModelProviderModel({this.name, this.modelId, this.key, this.url, this.authMode = ModelProviderAuthMode.apiKey, this.isTestingConnection = false, this.isConnectionVerified = false, this.verifiedModelCount = 0}): super._();
   
 
 @override final  String? name;
@@ -219,6 +222,9 @@ class _AddModelProviderModel extends AddModelProviderModel {
 @override final  String? key;
 @override final  String? url;
 @override@JsonKey() final  ModelProviderAuthMode authMode;
+@override@JsonKey() final  bool isTestingConnection;
+@override@JsonKey() final  bool isConnectionVerified;
+@override@JsonKey() final  int verifiedModelCount;
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
@@ -230,13 +236,13 @@ _$AddModelProviderModelCopyWith<_AddModelProviderModel> get copyWith => __$AddMo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.isTestingConnection, isTestingConnection) || other.isTestingConnection == isTestingConnection)&&(identical(other.isConnectionVerified, isConnectionVerified) || other.isConnectionVerified == isConnectionVerified)&&(identical(other.verifiedModelCount, verifiedModelCount) || other.verifiedModelCount == verifiedModelCount));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,modelId,key,url,authMode);
+    return Object.hash(runtimeType,name,modelId,key,url,authMode,isTestingConnection,isConnectionVerified,verifiedModelCount);
 }
 
 
@@ -248,7 +254,7 @@ abstract mixin class _$AddModelProviderModelCopyWith<$Res> implements $AddModelP
   factory _$AddModelProviderModelCopyWith(_AddModelProviderModel value, $Res Function(_AddModelProviderModel) _then) = __$AddModelProviderModelCopyWithImpl;
 @override @useResult
 $Res call({
- String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode
+ String? name, String? modelId, String? key, String? url, ModelProviderAuthMode authMode, bool isTestingConnection, bool isConnectionVerified, int verifiedModelCount
 });
 
 
@@ -265,14 +271,17 @@ class __$AddModelProviderModelCopyWithImpl<$Res>
 
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,Object? isTestingConnection = null,Object? isConnectionVerified = null,Object? verifiedModelCount = null,}) {
   return _then(_AddModelProviderModel(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
-as ModelProviderAuthMode,
+as ModelProviderAuthMode,isTestingConnection: null == isTestingConnection ? _self.isTestingConnection : isTestingConnection // ignore: cast_nullable_to_non_nullable
+as bool,isConnectionVerified: null == isConnectionVerified ? _self.isConnectionVerified : isConnectionVerified // ignore: cast_nullable_to_non_nullable
+as bool,verifiedModelCount: null == verifiedModelCount ? _self.verifiedModelCount : verifiedModelCount // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

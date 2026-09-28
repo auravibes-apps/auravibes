@@ -4,15 +4,19 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -20,8 +24,10 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
@@ -46,14 +52,18 @@ class const _NewChatContent({required final String workspaceId})
       return _NewChatUnavailable(workspaceId: workspaceId);
     }
 
-    return _NewChatAvailable(workspaceId: workspaceId);
+    return _NewChatAvailable(
+      workspaceId: workspaceId,
+      key: ValueKey<String>(workspaceId),
+    );
   }
 }
 
-class const _NewChatAvailable({required final String workspaceId})
-    extends ConsumerWidget {
+class const _NewChatAvailable({required final String workspaceId, super.key})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final draftStatus = useState(false);
     final state = ref.watch(newChatProvider(workspaceId));
     final hasNoProviders = _hasNoModelProviders(ref, workspaceId);
     final actions = _NewChatActions(
@@ -67,6 +77,7 @@ class const _NewChatAvailable({required final String workspaceId})
         workspaceId: workspaceId,
         state: state,
         hasNoProviders: hasNoProviders,
+        draftStatus: draftStatus,
         actions: actions,
       ),
     );
@@ -98,11 +109,26 @@ class const _NewChatActions({
   }
 
   void setModelId(String? modelId) {
+    if (modelId == null) {
+      ref.read(newChatProvider(workspaceId).notifier)
+        ..setModelId(null)
+        ..setReasoningConfiguration(null);
+
+      return;
+    }
+
     ref.read(newChatProvider(workspaceId).notifier).setModelId(modelId);
+    unawaited(_clearInvalidReasoningConfiguration(modelId));
   }
 
   void setAgentId(String? agentId) {
     ref.read(newChatProvider(workspaceId).notifier).setAgentId(agentId);
+  }
+
+  void setReasoningConfiguration(ReasoningConfiguration? value) {
+    ref
+        .read(newChatProvider(workspaceId).notifier)
+        .setReasoningConfiguration(value);
   }
 
   Future<void> handleSendMessage(ChatDraft draft) async {
@@ -118,6 +144,42 @@ class const _NewChatActions({
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
+
+  Future<void> _clearInvalidReasoningConfiguration(String modelId) async {
+    try {
+      final selectedModel = await ref.read(
+        workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
+      );
+      _clearInvalidReasoningConfigurationFor(modelId, selectedModel);
+    } on Object {
+      // Keep explicit configuration when catalog is temporarily unavailable.
+    }
+  }
+
+  void _clearInvalidReasoningConfigurationFor(
+    String modelId,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) {
+    final state = ref.read(newChatProvider(workspaceId));
+    final configuration = state.reasoningConfiguration;
+    if (state.modelId != modelId || configuration == null) return;
+    if (_isInvalidReasoningConfiguration(configuration, selectedModel)) {
+      _resetReasoningConfiguration();
+    }
+  }
+
+  bool _isInvalidReasoningConfiguration(
+    ReasoningConfiguration configuration,
+    WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+  ) =>
+      selectedModel == null ||
+      !configuration.isValidFor(
+        selectedModel.workspaceModelSelection.reasoningOptions,
+      );
+
+  void _resetReasoningConfiguration() => ref
+      .read(newChatProvider(workspaceId).notifier)
+      .setReasoningConfiguration(null);
 
   Future<void> _openNewConversation(ChatDraft draft) async {
     final conversation = await _startNewConversation(ref, workspaceId, draft);
@@ -166,33 +228,49 @@ void _showNewChatSendError(_NewChatSendError request) {
   );
 }
 
-class const _NewChatBodyData({
+class _NewChatBodyData({
   required final String workspaceId,
   required final NewChatState state,
   required final bool hasNoProviders,
+  required final ValueNotifier<bool> draftStatus,
   required final _NewChatActions actions,
 });
 
 class const _NewChatBody({required final _NewChatBodyData data})
-    extends StatelessWidget {
+    extends HookWidget {
   @override
-  Widget build(BuildContext context) => AuraScreen(
-    child: AuraLoadingOverlay(
-      isLoading: data.state.isLoading,
-      child: _NewChatInputArea(data: data),
-      message: LocaleKeys.chats_screens_new_chat_starting.tr(),
-    ),
-    appBar: AuraAppBarWithDrawer(
-      title: _WorkspaceSelector(workspaceId: data.workspaceId),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final switchPending = useState(false);
+
+    return AuraScreen(
+      child: AuraLoadingOverlay(
+        isLoading: data.state.isLoading,
+        child: _NewChatInputArea(data: data, switchPending: switchPending),
+        message: LocaleKeys.chats_screens_new_chat_starting.tr(),
+      ),
+      appBar: AuraAppBarWithDrawer(
+        title: _WorkspaceSelector(
+          workspaceId: data.workspaceId,
+          draftStatus: data.draftStatus,
+          switchPending: switchPending,
+        ),
+      ),
+    );
+  }
 }
 
-class const _NewChatInputArea({required final _NewChatBodyData data})
-    extends ConsumerWidget {
+class const _NewChatInputArea({
+  required final _NewChatBodyData data,
+  required final ValueNotifier<bool> switchPending,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modalitiesInput = _watchNewChatModalities(
+      ref,
+      data.workspaceId,
+      data.state.modelId,
+    );
+    final reasoningOptions = _watchNewChatReasoningOptions(
       ref,
       data.workspaceId,
       data.state.modelId,
@@ -201,6 +279,8 @@ class const _NewChatInputArea({required final _NewChatBodyData data})
     return _NewChatInputAreaContent(
       data: data,
       modalitiesInput: modalitiesInput,
+      reasoningOptions: reasoningOptions,
+      switchPending: switchPending,
     );
   }
 }
@@ -208,6 +288,8 @@ class const _NewChatInputArea({required final _NewChatBodyData data})
 class const _NewChatInputAreaContent({
   required final _NewChatBodyData data,
   required final List<String> modalitiesInput,
+  required final List<ReasoningOption> reasoningOptions,
+  required final ValueNotifier<bool> switchPending,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -217,9 +299,29 @@ class const _NewChatInputAreaContent({
             ? _NoModelProviderPrompt(workspaceId: data.workspaceId)
             : const SizedBox.shrink(),
       ),
-      _NewChatInput.fromData(data, modalitiesInput),
+      _NewChatInput.fromData(
+        data,
+        modalitiesInput,
+        reasoningOptions,
+        switchPending,
+      ),
     ],
   );
+}
+
+List<ReasoningOption> _watchNewChatReasoningOptions(
+  WidgetRef ref,
+  String workspaceId,
+  String? modelId,
+) {
+  if (modelId == null) return const [];
+
+  return ref
+          .watch(workspaceModelSelectionByIdProvider(workspaceId, modelId))
+          .value
+          ?.workspaceModelSelection
+          .reasoningOptions ??
+      const <ReasoningOption>[];
 }
 
 List<String> _watchNewChatModalities(
@@ -237,10 +339,16 @@ List<String> _watchNewChatModalities(
       const <String>[];
 }
 
-class const _NewChatInput({required final Widget child})
-    extends StatelessWidget {
-  new fromData(_NewChatBodyData data, List<String> modalitiesInput)
-    : this(
+class const _NewChatInput({
+  required final Widget child,
+  required final ValueNotifier<bool> switchPending,
+}) extends HookWidget {
+  new fromData(
+    _NewChatBodyData data,
+    List<String> modalitiesInput,
+    List<ReasoningOption> reasoningOptions,
+    ValueNotifier<bool> switchPending,
+  ) : this(
         child: ChatInputWidget(
           workspaceId: data.workspaceId,
           onSendMessage: data.actions.handleSendMessage,
@@ -249,6 +357,18 @@ class const _NewChatInput({required final Widget child})
           agentSheetControl: _NewChatAgentSheetControl(data: data),
           modelCompactControl: _NewChatModelCompactControl(data: data),
           agentCompactControl: _NewChatAgentCompactControl(data: data),
+          onDraftStatusChanged: (hasDraft) => data.draftStatus.value = hasDraft,
+          autofocus: true,
+          reasoningControl:
+              ChatReasoningControls.hasSupportedReasoningOptions(
+                reasoningOptions,
+              )
+              ? ChatReasoningControl(
+                  options: reasoningOptions,
+                  value: data.state.reasoningConfiguration,
+                  onChanged: data.actions.setReasoningConfiguration,
+                )
+              : null,
           modalitiesInput: modalitiesInput,
           disabledHint: data.state.modelId == null
               ? const TextLocale(
@@ -257,10 +377,18 @@ class const _NewChatInput({required final Widget child})
               : null,
           disabled: data.state.isLoading || data.state.modelId == null,
         ),
+        switchPending: switchPending,
       );
 
   @override
-  Widget build(BuildContext context) => child;
+  Widget build(BuildContext context) {
+    final isSwitchPending = useListenableSelector(
+      switchPending,
+      () => switchPending.value,
+    );
+
+    return IgnorePointer(ignoring: isSwitchPending, child: child);
+  }
 }
 
 class const _NewChatModelSheetControl({required final _NewChatBodyData data})
@@ -313,7 +441,10 @@ class const _NewChatUnavailable({required final String workspaceId})
   Widget build(BuildContext context) => AuraScreen(
     child: _NewChatUnavailableBody(workspaceId: workspaceId),
     appBar: AuraAppBarWithDrawer(
-      title: _WorkspaceSelector(workspaceId: workspaceId),
+      title: _WorkspaceSelector(
+        workspaceId: workspaceId,
+        draftStatus: .new(false),
+      ),
     ),
   );
 }
@@ -362,34 +493,313 @@ class const _UnavailableChatInput({required final String workspaceId})
   );
 }
 
-class const _WorkspaceSelector({required final String workspaceId})
-    extends ConsumerWidget {
+class const _WorkspaceSelector({
+  required final String workspaceId,
+  required final ValueNotifier<bool> draftStatus,
+  final ValueNotifier<bool>? switchPending,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localSwitchPending = useState(false);
+
+    return _WorkspaceSelectorActions(
+      selector: this,
+      switchPending: switchPending ?? localSwitchPending,
+      focusNode: useFocusNode(),
+    );
+  }
+}
+
+class const _WorkspaceSelectorActions({
+  required final _WorkspaceSelector selector,
+  required final ValueNotifier<bool> switchPending,
+  required final FocusNode focusNode,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = _WorkspaceSwitchRequest(
+      context,
+      ref,
+      selector,
+      switchPending,
+      focusNode,
+    );
+    final switchWorkspace = _workspaceSwitchAction(request);
+
+    return _WorkspaceSelectorState(
+      switchPending: switchPending,
+      focusNode: focusNode,
+      workspaceId: selector.workspaceId,
+      onChanged: (value) => unawaited(switchWorkspace(value)),
+    );
+  }
+}
+
+Future<void> Function(String?) _workspaceSwitchAction(
+  _WorkspaceSwitchRequest request,
+) {
+  Future<void> switchWorkspace(String? targetWorkspaceId) =>
+      _switchNewChatWorkspace(request, targetWorkspaceId);
+  _listenForWorkspaceSwitchErrors(request);
+
+  return switchWorkspace;
+}
+
+class const _WorkspaceSelectorState({
+  required final ValueNotifier<bool> switchPending,
+  required final FocusNode focusNode,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
+    final switchState = ref.watch(workspaceSwitcherProvider);
+    final isSwitchPending = useListenableSelector(
+      switchPending,
+      () => switchPending.value,
+    );
 
-    return Semantics(
-      key: const ValueKey<String>('workspace_selector'),
-      child: SizedBox(
-        width: 240,
-        child: _WorkspaceSelectorValue(
-          workspaces: workspaces,
-          workspaceId: workspaceId,
-          onChanged: (value) => _switchWorkspace(ref, value),
-        ),
-      ),
-      identifier: 'workspace_selector',
+    return _WorkspaceSelectorView(
+      switchState: switchState,
+      switchPending: isSwitchPending,
+      focusNode: focusNode,
+      workspaces: workspaces,
+      workspaceId: workspaceId,
+      onChanged: onChanged,
     );
   }
+}
 
-  void _switchWorkspace(WidgetRef ref, String? value) {
-    if (value == null || value == workspaceId) return;
-    ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(value);
+class const _WorkspaceSelectorView({
+  required final WorkspaceSwitchState switchState,
+  required final bool switchPending,
+  required final FocusNode focusNode,
+  required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  bool get _isSwitching => switchState.status == .loading || switchPending;
+
+  String? get _retryTargetWorkspaceId =>
+      switchState.status == .error ? switchState.targetWorkspaceId : null;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('workspace_selector'),
+    child: SizedBox(
+      width: 240,
+      child: _WorkspaceSelectorControl(
+        isSwitching: _isSwitching,
+        retryTargetWorkspaceId: _retryTargetWorkspaceId,
+        focusNode: focusNode,
+        workspaces: workspaces,
+        workspaceId: workspaceId,
+        onChanged: onChanged,
+      ),
+    ),
+    identifier: 'workspace_selector',
+  );
+}
+
+class const _WorkspaceSelectorControl({
+  required final bool isSwitching,
+  required final String? retryTargetWorkspaceId,
+  required final FocusNode focusNode,
+  required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => isSwitching
+      ? const _WorkspaceSwitchingIndicator()
+      : _WorkspaceSelectorRow(
+          retryTargetWorkspaceId: retryTargetWorkspaceId,
+          focusNode: focusNode,
+          workspaces: workspaces,
+          workspaceId: workspaceId,
+          onChanged: onChanged,
+        );
+}
+
+class const _WorkspaceSelectorRow({
+  required final String? retryTargetWorkspaceId,
+  required final FocusNode focusNode,
+  required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: _WorkspaceSelectorValue(
+          workspaces: workspaces,
+          focusNode: focusNode,
+          workspaceId: workspaceId,
+          onChanged: onChanged,
+        ),
+      ),
+      _WorkspaceRetryButton(
+        targetWorkspaceId: retryTargetWorkspaceId,
+        onChanged: onChanged,
+      ),
+    ],
+  );
+}
+
+class const _WorkspaceRetryButton({
+  required final String? targetWorkspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (targetWorkspaceId) {
+    final targetWorkspaceId? => AuraIconButton(
+      icon: Icons.refresh,
+      onPressed: () => onChanged(targetWorkspaceId),
+      key: const ValueKey<String>('workspace_switch_retry'),
+      semanticLabel: LocaleKeys.workspace_management_switch_retry.tr(),
+      tooltip: LocaleKeys.workspace_management_switch_retry.tr(),
+    ),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class const _WorkspaceSwitchingIndicator() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: const Row(
+      children: [
+        AuraSpinner(size: .small),
+        SizedBox(width: 8),
+        Flexible(
+          child: TextLocale(LocaleKeys.workspace_management_switch_loading),
+        ),
+      ],
+    ),
+    container: true,
+    excludeSemantics: true,
+    label: LocaleKeys.workspace_management_switch_loading.tr(),
+    role: .status,
+  );
+}
+
+class const _WorkspaceSwitchRequest(
+  final BuildContext context,
+  final WidgetRef ref,
+  final _WorkspaceSelector selector,
+  final ValueNotifier<bool> switchPending,
+  final FocusNode selectorFocusNode,
+);
+
+Future<void> _switchNewChatWorkspace(
+  _WorkspaceSwitchRequest request,
+  String? targetWorkspaceId,
+) async {
+  final switchTargetId = _workspaceSwitchTarget(request, targetWorkspaceId);
+  if (switchTargetId == null) return;
+  if (!await _confirmWorkspaceSwitch(request)) {
+    _restoreWorkspaceSelectorFocus(request);
+
+    return;
   }
+  _startWorkspaceSwitch(request, switchTargetId);
+}
+
+String? _workspaceSwitchTarget(
+  _WorkspaceSwitchRequest request,
+  String? targetWorkspaceId,
+) => targetWorkspaceId == request.selector.workspaceId
+    ? null
+    : targetWorkspaceId;
+
+void _startWorkspaceSwitch(
+  _WorkspaceSwitchRequest request,
+  String targetWorkspaceId,
+) {
+  FocusManager.instance.primaryFocus?.unfocus();
+  request.switchPending.value = true;
+  request.ref.read(workspaceSwitcherProvider.notifier)
+    ..clearError()
+    ..switchToWorkspace(targetWorkspaceId);
+}
+
+Future<bool> _confirmWorkspaceSwitch(_WorkspaceSwitchRequest request) async {
+  if (!request.selector.draftStatus.value) return true;
+  if (!await _confirmNewChatWorkspaceDiscard(request.context) ||
+      !request.context.mounted) {
+    return false;
+  }
+
+  return true;
+}
+
+Future<bool> _confirmNewChatWorkspaceDiscard(BuildContext context) async {
+  final shouldDiscard = await AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(
+      LocaleKeys.workspace_management_unsaved_changes_title,
+    ),
+    message: const TextLocale(
+      LocaleKeys.workspace_management_unsaved_changes_message,
+    ),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(LocaleKeys.workspace_management_discard_changes),
+      cancelLabel: TextLocale(LocaleKeys.workspace_management_keep_editing),
+    ),
+  );
+
+  return shouldDiscard == true;
+}
+
+void _listenForWorkspaceSwitchErrors(_WorkspaceSwitchRequest request) {
+  request.ref.listen(workspaceSwitcherProvider, (previous, next) {
+    _clearSwitchPendingAfterCompletion(previous, next, request.switchPending);
+    _showWorkspaceSwitchErrorForState(request, next);
+  });
+}
+
+void _clearSwitchPendingAfterCompletion(
+  WorkspaceSwitchState? previous,
+  WorkspaceSwitchState next,
+  ValueNotifier<bool> switchPending,
+) {
+  if (previous?.status != .loading || next.status != .idle) return;
+  switchPending.value = false;
+}
+
+void _showWorkspaceSwitchErrorForState(
+  _WorkspaceSwitchRequest request,
+  WorkspaceSwitchState next,
+) {
+  if (next case WorkspaceSwitchState(
+    status: .error,
+    errorLocalizationKey: final String errorKey,
+  )) {
+    request.switchPending.value = false;
+    _restoreWorkspaceSelectorFocus(request);
+    _showWorkspaceSwitchError(request.context, errorKey);
+  }
+}
+
+void _restoreWorkspaceSelectorFocus(_WorkspaceSwitchRequest request) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!request.context.mounted) return;
+    request.selectorFocusNode.requestFocus();
+  });
+}
+
+void _showWorkspaceSwitchError(BuildContext context, String errorKey) {
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: TextLocale(errorKey),
+    variant: .error,
+  );
 }
 
 class const _WorkspaceSelectorValue({
   required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final FocusNode focusNode,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
@@ -397,6 +807,7 @@ class const _WorkspaceSelectorValue({
   Widget build(BuildContext context) => switch (workspaces) {
     AsyncData(:final value) => _WorkspaceOptions(
       workspaces: value,
+      focusNode: focusNode,
       workspaceId: workspaceId,
       onChanged: onChanged,
     ),
@@ -426,6 +837,7 @@ class const _WorkspaceSelectorError({required final String workspaceId})
 
 class const _WorkspaceOptions({
   required final List<WorkspaceEntity> workspaces,
+  required final FocusNode focusNode,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
@@ -438,6 +850,7 @@ class const _WorkspaceOptions({
     key: const Key('new_chat_workspace_selector'),
     value: workspaceId,
     onChanged: onChanged,
+    focusNode: focusNode,
     semanticLabel: LocaleKeys.workspace_management_title.tr(),
   );
 }

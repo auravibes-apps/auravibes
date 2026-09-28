@@ -3,7 +3,7 @@ version = 1
 name = "AuraVibes Flutter"
 
 [setup]
-script = "fvm use && fvm dart run tool/clone_database.dart"
+script = "fvm use"
 
 [[actions]]
 name = "Bootstrap"

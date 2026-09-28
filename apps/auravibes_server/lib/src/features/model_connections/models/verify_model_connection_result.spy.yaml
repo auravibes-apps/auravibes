@@ -1,0 +1,6 @@
+class: VerifyModelConnectionResult
+fields:
+  providerId: String
+  modelIds: List<String>
+  verificationReceipt: String
+  expiresAt: DateTime

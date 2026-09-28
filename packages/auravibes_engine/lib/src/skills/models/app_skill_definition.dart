@@ -20,6 +20,7 @@ class const AppSkillDefinition({
   final AppSkillDefinitionKind kind = AppSkillDefinitionKind.native,
   final List<AppSkillToolDefinition> tools = const [],
   final List<AppSkillResourceDefinition> resources = const [],
+  final bool contentOnly = false,
   final bool requiresCredential = false,
   final List<String> compatibleModelProviderIds = const [],
   final String? titleKey,

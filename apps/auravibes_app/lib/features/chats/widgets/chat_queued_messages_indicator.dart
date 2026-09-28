@@ -33,27 +33,31 @@ class const _QueuedMessagesContent({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(conversationSendQueueProvider.notifier);
-    void remove(String draftId) =>
-        notifier.remove(conversationId: conversationId, draftId: draftId);
 
     return _QueuedMessagesLayout(
       queuedDrafts: queuedDrafts,
       onClear: () => notifier.clear(conversationId),
-      onRemove: remove,
-      onEditDraft: _createEditDraftCallback(onEditDraft, remove),
+      onRemove: (draftId) =>
+          notifier.remove(conversationId: conversationId, draftId: draftId),
+      onEditDraft: _createEditDraftCallback(
+        onEditDraft,
+        notifier,
+        conversationId,
+      ),
     );
   }
 }
 
 ValueChanged<ConversationQueuedDraft>? _createEditDraftCallback(
   ValueChanged<ChatDraft>? onEditDraft,
-  void Function(String draftId) onRemove,
+  ConversationSendQueue notifier,
+  String conversationId,
 ) {
   if (onEditDraft == null) return null;
 
   return (draft) {
     onEditDraft(draft.draft);
-    onRemove(draft.id);
+    final _ = notifier.take(conversationId: conversationId, draftId: draft.id);
   };
 }
 

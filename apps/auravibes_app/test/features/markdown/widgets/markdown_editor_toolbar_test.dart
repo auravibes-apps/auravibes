@@ -13,17 +13,20 @@ void main() {
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: Column(
-                  children: [
-                    TextField(controller: controller, focusNode: focusNode),
-                    MarkdownEditorToolbar(
-                      controller: controller,
-                      focusNode: focusNode,
-                    ),
-                  ],
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: Scaffold(
+                  body: Column(
+                    children: [
+                      TextField(controller: controller, focusNode: focusNode),
+                      MarkdownEditorToolbar(
+                        controller: controller,
+                        focusNode: focusNode,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -83,6 +86,7 @@ void main() {
     for (final action in [
       (icon: Icons.title, prefix: '# '),
       (icon: Icons.format_list_bulleted, prefix: '- '),
+      (icon: Icons.format_list_numbered, prefix: '1. '),
       (icon: Icons.format_quote, prefix: '> '),
     ]) {
       testWidgets('${action.prefix}prefixes empty content', (tester) async {
@@ -104,5 +108,409 @@ void main() {
         expect(controller.selection.baseOffset, action.prefix.length);
       });
     }
+
+    testWidgets('link dialog prefills selected text and inserts destination', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'Documentation');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 13,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        'Documentation',
+      );
+      expect(controller.text, 'Documentation');
+      await tester.enterText(fields.last, 'https://docs.example.com');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.text, '[Documentation](https://docs.example.com)');
+      expect(controller.selection.isCollapsed, isTrue);
+      expect(controller.selection.baseOffset, controller.text.length);
+      expect(focusNode.hasFocus, isTrue);
+      expect(find.bySemanticsLabel('Link'), findsOneWidget);
+    });
+
+    testWidgets('link dialog uses localized placeholder for empty selection', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, isEmpty);
+      expect(
+        tester.widget<TextField>(fields.at(1)).decoration?.hintText,
+        'Link text',
+      );
+      await tester.enterText(fields.last, 'https://example.com');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.text, '[Link text](https://example.com)');
+      expect(controller.selection.textInside(controller.text), 'Link text');
+    });
+
+    testWidgets('link dialog rejects blank destination and cancel is inert', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'read more');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+      final initialValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+      await tester.tap(find.text('Confirm'));
+      await tester.pump();
+
+      expect(find.text('Enter a destination URL'), findsOneWidget);
+      expect(controller.value, initialValue);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.value, initialValue);
+      expect(find.bySemanticsLabel('Link'), findsOneWidget);
+    });
+
+    testWidgets('task action preserves indentation and multiline selection', (
+      tester,
+    ) async {
+      final controller = TextEditingController(
+        text: '  first\n\tsecond\nthird',
+      );
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 2,
+        extentOffset: 15,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.pump();
+
+      expect(controller.text, '  - [ ] first\n\t- [ ] second\nthird');
+      expect(
+        controller.selection.textInside(controller.text),
+        'first\n\t- [ ] second',
+      );
+      expect(find.bySemanticsLabel('Task list'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.text, '  first\n\tsecond\nthird');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 2, extentOffset: 15),
+      );
+    });
+
+    testWidgets('task action inserts at caret and skips existing markers', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.pump();
+      expect(controller.text, '- [ ] ');
+      expect(controller.selection, const TextSelection.collapsed(offset: 6));
+
+      controller
+        ..text = 'a line'
+        ..selection = const TextSelection.collapsed(offset: 2);
+      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.pump();
+      expect(controller.text, '- [ ] a line');
+      expect(controller.selection, const TextSelection.collapsed(offset: 8));
+
+      controller
+        ..text = '- [x] done\n- [ ] next'
+        ..selection = const TextSelection(baseOffset: 0, extentOffset: 20);
+      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.pump();
+      expect(controller.text, '- [x] done\n- [ ] next');
+    });
+
+    testWidgets('task action converts bullets and keeps backward selection', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: '- item\n- [x] done');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = .new(
+        baseOffset: controller.text.length,
+        extentOffset: 0,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.checklist));
+      await tester.pump();
+
+      expect(controller.text, '- [ ] item\n- [x] done');
+      expect(controller.selection.baseOffset, controller.text.length);
+      expect(controller.selection.extentOffset, 6);
+    });
+
+    testWidgets('numbers every selected line in order', (tester) async {
+      final controller = TextEditingController(text: 'one\ntwo\nthree');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 1,
+        extentOffset: 6,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_list_numbered));
+      await tester.pump();
+
+      expect(controller.text, '1. one\n2. two\nthree');
+      expect(controller.selection, const TextSelection.collapsed(offset: 13));
+    });
+
+    testWidgets('undo restores the last toolbar text and selection', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'bold');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 4,
+        extentOffset: 0,
+      );
+      final initialValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      final undoButton = find.byWidgetPredicate(
+        (widget) => widget is AuraIconButton && widget.icon == Icons.undo,
+      );
+      expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNull);
+
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNotNull);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+
+      expect(controller.value, initialValue);
+      expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNull);
+      expect(find.bySemanticsLabel('Undo'), findsOneWidget);
+    });
+
+    testWidgets('undo and redo restore multiple actions and selections', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+      final original = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      controller.selection = .new(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+      expect(controller.text, '***text***');
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+
+      expect(controller.text, '**text**');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 0, extentOffset: 8),
+      );
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      expect(controller.value, original);
+
+      final redoButton = find.byWidgetPredicate(
+        (widget) => widget is AuraIconButton && widget.icon == Icons.redo,
+      );
+      expect(tester.widget<AuraIconButton>(redoButton).onPressed, isNotNull);
+      await tester.tap(find.byIcon(Icons.redo));
+      await tester.pump();
+      expect(controller.text, '**text**');
+      await tester.tap(find.byIcon(Icons.redo));
+      await tester.pump();
+      expect(controller.text, '***text***');
+      expect(find.bySemanticsLabel('Redo'), findsOneWidget);
+      expect(tester.widget<AuraIconButton>(redoButton).onPressed, isNull);
+    });
+
+    testWidgets('new toolbar action after undo clears redo', (tester) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+
+      expect(controller.text, '*text*');
+      final redoButton = find.byWidgetPredicate(
+        (widget) => widget is AuraIconButton && widget.icon == Icons.redo,
+      );
+      expect(tester.widget<AuraIconButton>(redoButton).onPressed, isNull);
+    });
+
+    testWidgets('typing after undo discards stale redo', (tester) async {
+      final controller = TextEditingController(text: 'text');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), 'typed');
+      await tester.pump();
+
+      expect(controller.text, 'typed');
+      final redoButton = find.byWidgetPredicate(
+        (widget) => widget is AuraIconButton && widget.icon == Icons.redo,
+      );
+      expect(tester.widget<AuraIconButton>(redoButton).onPressed, isNull);
+    });
+
+    testWidgets('typing invalidates toolbar undo without changing typed text', (
+      tester,
+    ) async {
+      final controller = TextEditingController(text: 'bold');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 4,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+      await tester.enterText(find.byType(TextField), '**bold** typed');
+      await tester.pump();
+
+      final undoButton = find.byWidgetPredicate(
+        (widget) => widget is AuraIconButton && widget.icon == Icons.undo,
+      );
+      expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNull);
+      expect(controller.text, '**bold** typed');
+    });
+
+    testWidgets('keeps multiline code formatting fenced', (tester) async {
+      final controller = TextEditingController(text: 'first\nsecond');
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = const TextSelection(
+        baseOffset: 0,
+        extentOffset: 12,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.code));
+      await tester.pump();
+
+      expect(controller.text, '```\nfirst\nsecond\n```');
+      expect(controller.selection, const TextSelection.collapsed(offset: 20));
+    });
   });
 }

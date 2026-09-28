@@ -86,6 +86,11 @@ class ModelsDevCatalog._(
             costOutput: model.capabilities.costOutput ?? 0,
             openWeights: model.capabilities.openWeights ?? false,
             supportsReasoning: model.capabilities.supportsReasoning,
+            reasoningOptionsJson: jsonEncode(
+              model.capabilities.reasoningOptions
+                  .map((option) => option.toJson())
+                  .toList(),
+            ),
             supportsPriorityMode: model.capabilities.supportsPriorityMode,
             supportsToolCalls: model.capabilities.supportsToolCalls,
           ),
@@ -119,6 +124,7 @@ class const ModelsDevModel({
   required final double costOutput,
   required final bool openWeights,
   required final bool supportsReasoning,
+  required final String reasoningOptionsJson,
   required final bool supportsPriorityMode,
   required final bool supportsToolCalls,
 });

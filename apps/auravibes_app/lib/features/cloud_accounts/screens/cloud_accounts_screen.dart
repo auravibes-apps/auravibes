@@ -10,6 +10,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
@@ -82,14 +83,36 @@ class const _AccountList({
                   child: TextLocale(LocaleKeys.cloud_accounts_status_signed_in),
                   style: AuraTextStyle.bodySmall,
                 ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    AuraButton(
+                      onPressed: () => _confirmAccountAction(
+                        context,
+                        ref,
+                        account,
+                        deleteCloudAccount: false,
+                      ),
+                      child: const TextLocale(LocaleKeys.cloud_accounts_remove),
+                      variant: AuraButtonVariant.outlined,
+                    ),
+                    AuraButton(
+                      onPressed: () => _confirmAccountAction(
+                        context,
+                        ref,
+                        account,
+                        deleteCloudAccount: true,
+                      ),
+                      child: const TextLocale(LocaleKeys.cloud_accounts_delete),
+                      variant: AuraButtonVariant.outlined,
+                      tint: .error,
+                    ),
+                  ],
+                ),
               ],
             ),
             variant: AuraTileVariant.ghost,
-            trailing: AuraButton(
-              onPressed: () => _removeAccount(context, ref, account),
-              child: const TextLocale(LocaleKeys.cloud_accounts_remove),
-              variant: AuraButtonVariant.outlined,
-            ),
           ),
       ],
       spacing: .sm,
@@ -97,32 +120,38 @@ class const _AccountList({
     );
   }
 
-  Future<void> _removeAccount(
+  Future<void> _confirmAccountAction(
     BuildContext context,
     WidgetRef ref,
-    CloudAccountSession account,
-  ) async {
+    CloudAccountSession account, {
+    required bool deleteCloudAccount,
+  }) async {
+    final titleKey = deleteCloudAccount
+        ? LocaleKeys.cloud_accounts_delete_title
+        : LocaleKeys.cloud_accounts_remove_title;
+    final messageKey = deleteCloudAccount
+        ? LocaleKeys.cloud_accounts_delete_message
+        : LocaleKeys.cloud_accounts_remove_message;
+    final actionKey = deleteCloudAccount
+        ? LocaleKeys.cloud_accounts_delete
+        : LocaleKeys.cloud_accounts_remove;
     final confirmed = await AuraDialogs.confirm(
       context: context,
-      title: const TextLocale(LocaleKeys.cloud_accounts_remove_title),
+      title: TextLocale(titleKey),
       message: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            LocaleKeys.cloud_accounts_remove_message.tr(
-              namedArgs: {'email': account.email},
-            ),
-          ),
+          Text(messageKey.tr(namedArgs: {'email': account.email})),
           const SizedBox(height: 8),
           const TextLocale(
             LocaleKeys.cloud_accounts_remove_local_mirrors_warning,
           ),
         ],
       ),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.cloud_accounts_remove),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
+      actions: AuraConfirmDialogActions(
+        confirmLabel: TextLocale(actionKey),
+        cancelLabel: const TextLocale(LocaleKeys.common_cancel),
       ),
     );
     if (confirmed != true) return;
@@ -131,14 +160,50 @@ class const _AccountList({
         .read(workspaceRepositoryProvider)
         .getWorkspaceById(workspaceId);
 
-    await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
-      await ref
-          .read(cloudAccountUseCasesProvider)
-          .remove(serverUrl: account.serverUrl, userId: account.userId);
+    try {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
+        final useCases = ref.read(cloudAccountUseCasesProvider);
+        if (deleteCloudAccount) {
+          await useCases.deleteAccount(
+            serverUrl: account.serverUrl,
+            userId: account.userId,
+          );
+        } else {
+          await useCases.remove(
+            serverUrl: account.serverUrl,
+            userId: account.userId,
+          );
+        }
+        ref
+          ..invalidate(cloudAccountsProvider)
+          ..invalidate(allWorkspacesProvider);
+      });
+    } on Object catch (error) {
+      if (!context.mounted) return;
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(allWorkspacesProvider);
-    });
+      final errorKey = switch (error) {
+        CloudAccountDeletionException(:final localizationKey) =>
+          localizationKey,
+        CloudWorkspaceException(code: .ownershipTransferRequired) =>
+          LocaleKeys.cloud_accounts_delete_owned_workspaces_error,
+        CloudWorkspaceException(code: .authenticationRequired) =>
+          LocaleKeys.cloud_accounts_session_expired,
+        CloudWorkspaceException(code: .emailAccountRequired) =>
+          LocaleKeys.cloud_accounts_session_expired,
+        _ =>
+          deleteCloudAccount
+              ? LocaleKeys.cloud_accounts_delete_failed
+              : LocaleKeys.cloud_accounts_remove_failed,
+      };
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(errorKey),
+        variant: .error,
+      );
+      return;
+    }
     if (!context.mounted ||
         activeWorkspace?.cloudAccountId != account.userId ||
         ref.read(WorkspaceManagementMutations.cloudAccount) is MutationError) {

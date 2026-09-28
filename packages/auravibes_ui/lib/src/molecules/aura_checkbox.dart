@@ -3,7 +3,7 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraTint, DesignColors, DesignInputSizes;
+    show AuraTint, DesignColors;
 import 'package:flutter/widgets.dart';
 
 export 'aura_checkbox_list_tile.dart';
@@ -51,6 +51,7 @@ class AuraCheckbox extends StatelessWidget {
       isDisabled: isDisabled,
       onChanged: isDisabled ? null : onChanged,
       autofocus: autofocus,
+      semanticLabel: semanticLabel,
     );
   }
 }
@@ -62,6 +63,7 @@ class _CheckboxBuild extends StatelessWidget {
     required bool isDisabled,
     required ValueChanged<bool>? onChanged,
     required bool autofocus,
+    required String? semanticLabel,
   }) : _child = Semantics(
          child: _CheckboxInteraction(
            value: value,
@@ -76,6 +78,7 @@ class _CheckboxBuild extends StatelessWidget {
          ),
          enabled: !isDisabled,
          checked: value,
+         label: semanticLabel,
        );
 
   final Widget _child;
@@ -288,16 +291,20 @@ class const _CheckboxGestureTarget({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: DesignInputSizes.heightLg,
-    height: DesignInputSizes.heightLg,
-    child: Center(
-      child: Opacity(
-        opacity: isDisabled ? 0.6 : 1,
-        child: _CheckboxFocusState(isFocused: isFocused, child: child),
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return SizedBox(
+      width: targetSize,
+      height: targetSize,
+      child: Center(
+        child: Opacity(
+          opacity: isDisabled ? 0.6 : 1,
+          child: _CheckboxFocusState(isFocused: isFocused, child: child),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class const _CheckboxFocusState({

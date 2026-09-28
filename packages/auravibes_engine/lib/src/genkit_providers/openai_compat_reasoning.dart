@@ -12,8 +12,10 @@ class OpenAICompatReasoningOptions({
   super.frequencyPenalty,
   super.seed,
   super.user,
+  super.toolSamplingPolicy,
   final String? version,
   final String? reasoningType,
+  final String? reasoningEffort,
 }) extends OpenAICompatChatOptions {
   factory fromJson(Map<String, dynamic>? json) {
     final shared = OpenAICompatChatOptions.fromJson(json);
@@ -27,8 +29,10 @@ class OpenAICompatReasoningOptions({
       frequencyPenalty: shared.frequencyPenalty,
       seed: shared.seed,
       user: shared.user,
+      toolSamplingPolicy: shared.toolSamplingPolicy,
       version: json?['version'] as String?,
       reasoningType: json?['reasoningType'] as String?,
+      reasoningEffort: json?['reasoningEffort'] as String?,
     );
   }
 
@@ -37,5 +41,13 @@ class OpenAICompatReasoningOptions({
     ...super.toJson(),
     'version': ?version,
     'reasoningType': ?reasoningType,
+    'reasoningEffort': ?reasoningEffort,
+  };
+
+  Map<String, dynamic> toReasoningBody({bool enabled = true}) => {
+    if (!enabled)
+      'reasoning_effort': 'none'
+    else if (reasoningEffort != null)
+      'reasoning_effort': reasoningEffort,
   };
 }

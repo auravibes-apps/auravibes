@@ -618,7 +618,7 @@ $OAuthTokenEntityCopyWith<$Res>? get oauthToken {
 /// @nodoc
 mixin _$ModelConnectionForEdit {
 
- String get id; String get name; String get modelId; String get workspaceId; bool get hasKey; ModelProviderAuthMode get authMode; String? get url; String? get keySuffix;
+ String get id; String get name; String get modelId; String get workspaceId; bool get hasKey; ModelProviderAuthMode get authMode; int? get revision; String? get url; String? get keySuffix;
 /// Create a copy of ModelConnectionForEdit
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -630,20 +630,20 @@ $ModelConnectionForEditCopyWith<ModelConnectionForEdit> get copyWith => _$ModelC
 @override
 bool operator ==(Object other) {
   final _this = this as ModelConnectionForEdit;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionForEdit&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.hasKey, _this.hasKey) || other.hasKey == _this.hasKey)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionForEdit&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.hasKey, _this.hasKey) || other.hasKey == _this.hasKey)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ModelConnectionForEdit;
-  return Object.hash(runtimeType,_this.id,_this.name,_this.modelId,_this.workspaceId,_this.hasKey,_this.authMode,_this.url,_this.keySuffix);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.modelId,_this.workspaceId,_this.hasKey,_this.authMode,_this.revision,_this.url,_this.keySuffix);
 }
 
 @override
 String toString() {
   final _this = this as ModelConnectionForEdit;
-  return 'ModelConnectionForEdit(id: ${_this.id}, name: ${_this.name}, modelId: ${_this.modelId}, workspaceId: ${_this.workspaceId}, hasKey: ${_this.hasKey}, authMode: ${_this.authMode}, url: ${_this.url}, keySuffix: ${_this.keySuffix})';
+  return 'ModelConnectionForEdit(id: ${_this.id}, name: ${_this.name}, modelId: ${_this.modelId}, workspaceId: ${_this.workspaceId}, hasKey: ${_this.hasKey}, authMode: ${_this.authMode}, revision: ${_this.revision}, url: ${_this.url}, keySuffix: ${_this.keySuffix})';
 }
 
 
@@ -654,7 +654,7 @@ abstract mixin class $ModelConnectionForEditCopyWith<$Res>  {
   factory $ModelConnectionForEditCopyWith(ModelConnectionForEdit value, $Res Function(ModelConnectionForEdit) _then) = _$ModelConnectionForEditCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String modelId, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, String? url, String? keySuffix
+ String id, String name, String modelId, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, int? revision, String? url, String? keySuffix
 });
 
 
@@ -671,7 +671,7 @@ class _$ModelConnectionForEditCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionForEdit
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? revision = freezed,Object? url = freezed,Object? keySuffix = freezed,}) {
   return _then(ModelConnectionForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -679,7 +679,8 @@ as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nul
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
 as bool,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
-as ModelProviderAuthMode,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as ModelProviderAuthMode,revision: freezed == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
+as int?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -766,10 +767,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  int? revision,  String? url,  String? keySuffix)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ModelConnectionForEdit() when $default != null:
-return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.revision,_that.url,_that.keySuffix);case _:
   return orElse();
 
 }
@@ -787,10 +788,10 @@ return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  int? revision,  String? url,  String? keySuffix)  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionForEdit():
-return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.revision,_that.url,_that.keySuffix);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -807,10 +808,10 @@ return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String modelId,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  int? revision,  String? url,  String? keySuffix)?  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionForEdit() when $default != null:
-return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey,_that.authMode,_that.revision,_that.url,_that.keySuffix);case _:
   return null;
 
 }
@@ -822,7 +823,7 @@ return $default(_that.id,_that.name,_that.modelId,_that.workspaceId,_that.hasKey
 
 
 class _ModelConnectionForEdit implements ModelConnectionForEdit {
-  const _ModelConnectionForEdit({required this.id, required this.name, required this.modelId, required this.workspaceId, required this.hasKey, this.authMode = ModelProviderAuthMode.apiKey, this.url, this.keySuffix});
+  const _ModelConnectionForEdit({required this.id, required this.name, required this.modelId, required this.workspaceId, required this.hasKey, this.authMode = ModelProviderAuthMode.apiKey, this.revision, this.url, this.keySuffix});
   
 
 @override final  String id;
@@ -831,6 +832,7 @@ class _ModelConnectionForEdit implements ModelConnectionForEdit {
 @override final  String workspaceId;
 @override final  bool hasKey;
 @override@JsonKey() final  ModelProviderAuthMode authMode;
+@override final  int? revision;
 @override final  String? url;
 @override final  String? keySuffix;
 
@@ -844,18 +846,18 @@ _$ModelConnectionForEditCopyWith<_ModelConnectionForEdit> get copyWith => __$Mod
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,authMode,url,keySuffix);
+    return Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,authMode,revision,url,keySuffix);
 }
 
 @override
 String toString() {
-    return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix)';
+    return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, revision: $revision, url: $url, keySuffix: $keySuffix)';
 }
 
 
@@ -866,7 +868,7 @@ abstract mixin class _$ModelConnectionForEditCopyWith<$Res> implements $ModelCon
   factory _$ModelConnectionForEditCopyWith(_ModelConnectionForEdit value, $Res Function(_ModelConnectionForEdit) _then) = __$ModelConnectionForEditCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String modelId, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, String? url, String? keySuffix
+ String id, String name, String modelId, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, int? revision, String? url, String? keySuffix
 });
 
 
@@ -883,7 +885,7 @@ class __$ModelConnectionForEditCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionForEdit
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? revision = freezed,Object? url = freezed,Object? keySuffix = freezed,}) {
   return _then(_ModelConnectionForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -891,7 +893,8 @@ as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nul
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
 as bool,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
-as ModelProviderAuthMode,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as ModelProviderAuthMode,revision: freezed == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
+as int?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

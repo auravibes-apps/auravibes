@@ -3,7 +3,6 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -37,6 +36,7 @@ class ChatbotService({
     history: history,
     tools: options.tools,
     sessionId: options.sessionId,
+    reasoningConfiguration: options.reasoningConfiguration,
     a2uiRuntime: a2uiRuntime,
   ));
 
@@ -97,6 +97,7 @@ class ChatbotService({
 class const ChatbotMessageOptions({
   final List<ToolSpec>? tools,
   final String? sessionId,
+  final ReasoningConfiguration? reasoningConfiguration,
 });
 
 typedef _SendMessageRequest = ({
@@ -105,6 +106,7 @@ typedef _SendMessageRequest = ({
   List<ChatMessage> history,
   List<ToolSpec>? tools,
   String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
   ChatA2uiRuntime? a2uiRuntime,
 });
 
@@ -137,6 +139,7 @@ _createResponseStream(_SendMessageRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
     sessionId: request.sessionId,
+    reasoningConfiguration: request.reasoningConfiguration,
   );
 
   return _generationStream(request, ai);
@@ -158,11 +161,21 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
   responseStream,
 ) async* {
+  final finalResponse = await responseStream.onResult;
+  _throwFinalResponseError(finalResponse);
   request.a2uiRuntime?.commitCurrentMessage();
   yield request.service._withA2uiState(
-    request.service._finalChatResult(await responseStream.onResult),
+    request.service._finalChatResult(finalResponse),
     request.a2uiRuntime,
   );
+}
+
+void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
+  final responseError = finalResponse.error;
+  if (responseError == null) return;
+  final cause = finalResponse.cause;
+  if (cause is AgentRateLimitRetryException) throw cause;
+  throw GenkitException(responseError.message, underlyingException: cause);
 }
 
 Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(
@@ -195,7 +208,10 @@ _generateStream(Genkit ai, _SendMessageRequest request) {
   return _generateStreamRequest((
     ai: ai,
     model: factory.getModelReference(provider),
-    config: factory.getGenerationConfig<Object?>(provider),
+    config: factory.getGenerationConfig(
+      provider,
+      request.reasoningConfiguration,
+    ),
     messages: _genkitHistory(request),
     tools: request.service._defineGenkitTools(ai, request.tools),
   ));
@@ -212,8 +228,6 @@ _generateStreamRequest(_GenerationStreamRequest request) =>
     );
 
 List<Message> _genkitHistory(_SendMessageRequest request) => [
-  if (request.a2uiRuntime?.enabled == true)
-    ChatMessage.system(auraChatCatalogSystemPrompt()),
   ChatMessage.system(toolCallNarrationInstruction),
   ...request.history,
 ].map(request.service._toGenkitMessage).toList();

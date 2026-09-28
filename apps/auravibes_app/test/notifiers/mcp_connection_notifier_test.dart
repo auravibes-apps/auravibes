@@ -194,7 +194,7 @@ void main() {
       return testContainer;
     }
 
-    setUp(() {
+    setUp(() async {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
       final testDatabase = AppDatabase(
@@ -202,6 +202,13 @@ void main() {
       );
       database = testDatabase;
       addTearDown(testDatabase.close);
+      final _ = await testDatabase.workspaceDao.insertWorkspace(
+        .insert(
+          id: const Value('workspace-1'),
+          name: 'Test Workspace',
+          type: .local,
+        ),
+      );
       container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(getDatabase()),
@@ -847,7 +854,7 @@ void main() {
       expect(record.stackTrace, isNotNull);
     });
 
-    test('logs tool sync failures without failing connection', () async {
+    test('tool sync failure leaves connection unavailable', () async {
       final records = <LogRecord>[];
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
@@ -871,15 +878,181 @@ void main() {
 
       final state = testContainer.read(mcpConnectionProvider);
       expect(state, hasLength(1));
-      expect(state.firstOrNull?.status, McpConnectionStatus.connected);
+      expect(state.firstOrNull?.status, McpConnectionStatus.error);
       final record = records.firstWhere(
         (record) =>
             record.loggerName == 'McpConnectionNotifier' &&
             record.level == Level.WARNING &&
-            record.message == 'Failed to sync MCP tools to database',
+            record.message == 'MCP server connection failed: server=server-1',
       );
-      expect(record.error, same(expectedError));
+      expect(record.error, contains('sync failed'));
       expect(record.stackTrace, isNotNull);
+    });
+
+    test('list change refreshes updated, added, and removed tools', () async {
+      mcpServersRepository.serverById = _server2;
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = await createInitializedContainer(fakeService);
+      addTearDown(testContainer.dispose);
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      await notifier.reconnectMcpServer('server-2');
+      final client = fakeService._client;
+      expect(client.toolsListChanged, isNotNull);
+      expect(mcpServersRepository.syncedTools, hasLength(1));
+
+      const updated = McpToolInfo(
+        toolName: 'sum',
+        description: 'Updated',
+        inputSchema: {'type': 'object'},
+      );
+      const added = McpToolInfo(
+        toolName: 'new',
+        description: 'New',
+        inputSchema: {},
+      );
+      fakeService.discoveredTools = const [updated, added];
+      final refreshed = Completer<void>();
+      final subscription = testContainer.listen(mcpConnectionProvider, (
+        _,
+        next,
+      ) {
+        if (next.single.tools.length == 2 && !refreshed.isCompleted) {
+          refreshed.complete();
+        }
+      });
+      addTearDown(subscription.close);
+      final notifyRefresh = client.toolsListChanged;
+      if (notifyRefresh == null) fail('Notification handler missing.');
+      notifyRefresh();
+      await refreshed.future.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () =>
+            throw TimeoutException('Initial tool refresh timed out.'),
+      );
+      expect(testContainer.read(mcpConnectionProvider).single.tools, const [
+        updated,
+        added,
+      ]);
+      expect(mcpServersRepository.syncedTools.last, const [updated, added]);
+      expect(fakeService.calledToolIdentifiers, isEmpty);
+
+      fakeService.discoveredTools = const [added];
+      final removed = Completer<void>();
+      final removalSubscription = testContainer.listen(mcpConnectionProvider, (
+        _,
+        next,
+      ) {
+        if (next.single.tools.length == 1 &&
+            next.single.tools.single.toolName == 'new' &&
+            !removed.isCompleted) {
+          removed.complete();
+        }
+      });
+      addTearDown(removalSubscription.close);
+      final notifyRemoval = client.toolsListChanged;
+      if (notifyRemoval == null) fail('Notification handler missing.');
+      notifyRemoval();
+      await removed.future.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () =>
+            throw TimeoutException('Tool removal refresh timed out.'),
+      );
+      expect(testContainer.read(mcpConnectionProvider).single.tools, const [
+        added,
+      ]);
+      expect(mcpServersRepository.syncedTools.last, const [added]);
+    });
+
+    test('burst notifications queue only one follow-up', () async {
+      mcpServersRepository.serverById = _server2;
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = await createInitializedContainer(fakeService);
+      addTearDown(testContainer.dispose);
+      await testContainer
+          .read(mcpConnectionProvider.notifier)
+          .reconnectMcpServer('server-2');
+      final gate = Completer<List<McpToolInfo>>();
+      final followUp = Completer<void>();
+      fakeService
+        ..nextTools = gate.future
+        ..onGetTools = (count) {
+          if (count == 3 && !followUp.isCompleted) followUp.complete();
+        };
+      final notify = fakeService._client.toolsListChanged;
+      if (notify == null) fail('Notification handler missing.');
+      notify();
+      notify();
+      notify();
+      expect(fakeService.getToolsCount, 2);
+
+      gate.complete(const [_toolInfo]);
+      await followUp.future.timeout(const Duration(seconds: 1));
+      expect(fakeService.getToolsCount, 3);
+    });
+
+    test(
+      'refresh failure retains the complete catalog and reports error',
+      () async {
+        mcpServersRepository.serverById = _server2;
+        final fakeService = _SuccessfulMcpManagerService();
+        final testContainer = await createInitializedContainer(fakeService);
+        addTearDown(testContainer.dispose);
+        await testContainer
+            .read(mcpConnectionProvider.notifier)
+            .reconnectMcpServer('server-2');
+        final failed = Completer<void>();
+        final subscription = testContainer.listen(mcpConnectionProvider, (
+          _,
+          next,
+        ) {
+          if (next.single.status == McpConnectionStatus.error &&
+              !failed.isCompleted) {
+            failed.complete();
+          }
+        });
+        addTearDown(subscription.close);
+        fakeService.nextTools = .error(
+          const FormatException('Invalid catalog.'),
+        );
+        final notifyToolsListChanged = fakeService._client.toolsListChanged;
+        if (notifyToolsListChanged == null) {
+          fail('Notification handler missing.');
+        }
+        notifyToolsListChanged();
+        await failed.future.timeout(const Duration(seconds: 1));
+
+        final connection = testContainer.read(mcpConnectionProvider).single;
+        expect(connection.tools, const [_toolInfo]);
+        expect(connection.isReady, isFalse);
+        expect(mcpServersRepository.syncedTools, hasLength(1));
+        expect(fakeService.disconnectCount, 1);
+      },
+    );
+
+    test('disconnected and superseded sessions ignore notifications', () async {
+      mcpServersRepository.serverById = _server2;
+      final fakeService = _SuccessfulMcpManagerService();
+      final testContainer = await createInitializedContainer(fakeService);
+      addTearDown(testContainer.dispose);
+      final notifier = testContainer.read(mcpConnectionProvider.notifier);
+      await notifier.reconnectMcpServer('server-2');
+      final oldClient = fakeService._client;
+      final notify = oldClient.toolsListChanged;
+      if (notify == null) fail('Notification handler missing.');
+
+      notifier.state = [
+        McpConnectionState(
+          server: _server2,
+          status: .connected,
+          client: _FakeMcpManagerClient(),
+          tools: const [_toolInfo],
+        ),
+      ];
+      notify();
+      expect(fakeService.getToolsCount, 1);
+      notifier.disconnectMcpServer('server-2');
+      notify();
+      expect(fakeService.getToolsCount, 1);
     });
 
     test('callTool returns service result for connected server tool', () async {
@@ -955,6 +1128,7 @@ void main() {
 class _FakeMcpServersRepository implements McpServersRepository {
   List<String> deletedIds = [];
   List<McpServerToCreate> addedServers = [];
+  List<List<McpToolInfo>> syncedTools = [];
   Exception? addServerError;
   Exception? enabledServersError;
   Exception? syncToolsError;
@@ -1021,6 +1195,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
     if (syncToolsError case final error?) {
       throw error;
     }
+    syncedTools.add(currentTools);
   }
 }
 
@@ -1049,6 +1224,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   final calledToolIdentifiers = <String>[];
   int disconnectCount = 0;
   int getToolsCount = 0;
+  List<McpToolInfo> discoveredTools = const [_toolInfo];
+  Future<List<McpToolInfo>>? nextTools;
+  void Function(int)? onGetTools;
   final _FakeMcpManagerClient _client;
 
   @override
@@ -1066,8 +1244,11 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   @override
   Future<List<McpToolInfo>> getTools(McpManagerClient client) async {
     getToolsCount++;
+    onGetTools?.call(getToolsCount);
+    final pending = nextTools;
+    nextTools = null;
 
-    return const [_toolInfo];
+    return pending == null ? discoveredTools : await pending;
   }
 
   @override
@@ -1086,11 +1267,22 @@ class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
     implements McpManagerClient {
   new({Stream<OAuthTokenEntity>? tokenUpdates}) : this._(tokenUpdates);
 
+  void Function()? toolsListChanged;
+  bool connected = true;
+
+  @override
+  bool get isConnected => connected;
+
   @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;
 
   @override
+  void onToolsListChanged(void Function() handler) {
+    toolsListChanged = handler;
+  }
+
+  @override
   void disconnect() {
-    final _ = Object();
+    connected = false;
   }
 }

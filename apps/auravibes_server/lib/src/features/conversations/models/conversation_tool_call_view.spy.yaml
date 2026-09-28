@@ -10,6 +10,9 @@ fields:
   status: String
   decision: String?
   resultJson: String?
+  resultContextJson: String?
+  resultOutputTruncated: bool, default=false
+  resultOriginalBytes: int?
   revision: int
   createdAt: DateTime
   updatedAt: DateTime

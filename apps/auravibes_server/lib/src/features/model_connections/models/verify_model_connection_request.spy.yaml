@@ -1,0 +1,7 @@
+class: VerifyModelConnectionRequest
+fields:
+  workspaceId: int
+  requestId: String
+  connectionId: String
+  expectedRevision: int
+  url: String?

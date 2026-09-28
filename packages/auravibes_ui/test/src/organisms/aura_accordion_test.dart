@@ -1,19 +1,22 @@
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('toggles expanded content', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          body: AuraAccordion(
-            items: [
-              AuraAccordionItem(title: 'Details', child: Text('Content')),
-            ],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AuraAccordion(
+              items: [
+                AuraAccordionItem(title: 'Details', child: Text('Content')),
+              ],
+            ),
           ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

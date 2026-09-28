@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,14 +11,19 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: SingleChildScrollView(
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'invalid-bound-value',
-            payloads: _fixture(form: false, progress: {'path': '/missing'}),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: SingleChildScrollView(
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'invalid-bound-value',
+              payloads: _fixture(form: false, progress: {'path': '/missing'}),
+            ),
           ),
+          builder: (_, child) =>
+              AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
     await tester.pump();
@@ -110,23 +116,28 @@ void main() {
     }
     runtime.commitCurrentMessage();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Material(
-          child: SingleChildScrollView(
-            child: ChatA2uiSurfaceHost.message(
-              runtime: runtime,
-              messageId: 'answer',
-              payloads: runtime.messagesFor('answer'),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: Material(
+            child: SingleChildScrollView(
+              child: ChatA2uiSurfaceHost.message(
+                runtime: runtime,
+                messageId: 'answer',
+                payloads: runtime.messagesFor('answer'),
+              ),
             ),
           ),
+          builder: (_, child) =>
+              AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
     await tester.pump();
     expect(runtime.requiresUserAction, isTrue);
     await tester.tap(find.text('Beta'));
-    await tester.enterText(find.byType(TextField).first, 'release');
+    await tester.enterText(find.byType(AuraInput).first, 'release');
     await tester.tap(find.byType(AuraCheckbox));
     await tester.pump();
     final action = runtime.actions.first;
@@ -149,23 +160,26 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
           await tester.pumpWidget(
-            MaterialApp(
-              home: MediaQuery(
-                data: const MediaQueryData(
-                  textScaler: .linear(1.5),
-                  disableAnimations: true,
-                ),
-                child: Material(
-                  child: SingleChildScrollView(
-                    child: ChatA2uiSurfaceHost.historical(
-                      messageId: 'dashboard',
-                      payloads: _fixture(form: form),
+            AuraThemeScope(
+              theme: dark ? AuraTheme.dark : AuraTheme.light,
+              child: MaterialApp(
+                home: MediaQuery(
+                  data: const MediaQueryData(
+                    textScaler: .linear(1.5),
+                    disableAnimations: true,
+                  ),
+                  child: Material(
+                    child: SingleChildScrollView(
+                      child: ChatA2uiSurfaceHost.historical(
+                        messageId: 'dashboard',
+                        payloads: _fixture(form: form),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              theme: .new(
-                extensions: [if (dark) AuraTheme.dark else AuraTheme.light],
+                builder: (_, child) => AuraLegacyMaterialBridge(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           );

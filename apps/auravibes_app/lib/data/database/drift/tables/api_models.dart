@@ -38,6 +38,8 @@ class ApiModels extends Table {
   BoolColumn get supportsReasoning =>
       boolean().withDefault(const Constant(false))();
 
+  TextColumn get reasoningOptionsJson => text().nullable()();
+
   BoolColumn get isCanonical => boolean().withDefault(const Constant(true))();
 
   BoolColumn get supportsPriorityMode =>

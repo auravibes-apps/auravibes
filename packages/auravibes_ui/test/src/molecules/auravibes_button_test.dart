@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraButton', () {
@@ -65,6 +65,48 @@ void main() {
       );
 
       expect(tester.getSize(find.byType(AuraButton)).height, lessThan(100));
+    });
+
+    testWidgets('keeps enabled and disabled buttons the same size', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                AuraButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  child: const Text('Select all visible'),
+                  key: const ValueKey('enabled-button'),
+                  size: .small,
+                ),
+                AuraButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  child: const Text('Select all visible'),
+                  key: const ValueKey('disabled-button'),
+                  size: .small,
+                  disabled: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final enabledSize = tester.getSize(
+        find.byKey(const ValueKey('enabled-button')),
+      );
+      final disabledSize = tester.getSize(
+        find.byKey(const ValueKey('disabled-button')),
+      );
+
+      expect(disabledSize, enabledSize);
+      expect(disabledSize.height, greaterThanOrEqualTo(48));
     });
 
     testWidgets('centers content in a tight parent', (tester) async {

@@ -7,12 +7,14 @@ fields:
   isPinned: bool
   modelId: String?
   agentId: String?
+  reasoningConfigJson: String?
   parentConversationStableId: String?
   revision: int
   projectionRevision: int, default=1
   eventSequence: int, default=0
   executionState: String, default='idle'
   activeExecutionId: int?
+  activeCompactionCheckpointId: String?
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime?

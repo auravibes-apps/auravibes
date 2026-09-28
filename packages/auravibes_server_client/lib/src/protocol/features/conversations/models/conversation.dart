@@ -22,12 +22,14 @@ abstract class Conversation
     required this.isPinned,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationStableId,
     required this.revision,
     int? projectionRevision,
     int? eventSequence,
     String? executionState,
     this.activeExecutionId,
+    this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -47,12 +49,14 @@ abstract class Conversation
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -71,6 +75,7 @@ abstract class Conversation
       isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       parentConversationStableId:
           jsonSerialization['parentConversationStableId'] as String?,
       revision: jsonSerialization['revision'] as int,
@@ -78,6 +83,8 @@ abstract class Conversation
       eventSequence: jsonSerialization['eventSequence'] as int?,
       executionState: jsonSerialization['executionState'] as String?,
       activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -117,6 +124,8 @@ abstract class Conversation
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? parentConversationStableId;
 
   int revision;
@@ -128,6 +137,8 @@ abstract class Conversation
   String executionState;
 
   int? activeExecutionId;
+
+  String? activeCompactionCheckpointId;
 
   DateTime createdAt;
 
@@ -154,12 +165,14 @@ abstract class Conversation
     bool? isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     int? revision,
     int? projectionRevision,
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -179,6 +192,8 @@ abstract class Conversation
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -186,6 +201,8 @@ abstract class Conversation
       'eventSequence': eventSequence,
       'executionState': executionState,
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -210,6 +227,8 @@ abstract class Conversation
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
@@ -217,6 +236,8 @@ abstract class Conversation
       'eventSequence': eventSequence,
       'executionState': executionState,
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -247,12 +268,14 @@ class _ConversationImpl extends Conversation {
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationStableId,
     required int revision,
     int? projectionRevision,
     int? eventSequence,
     String? executionState,
     int? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -268,12 +291,14 @@ class _ConversationImpl extends Conversation {
          isPinned: isPinned,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          parentConversationStableId: parentConversationStableId,
          revision: revision,
          projectionRevision: projectionRevision,
          eventSequence: eventSequence,
          executionState: executionState,
          activeExecutionId: activeExecutionId,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -295,12 +320,14 @@ class _ConversationImpl extends Conversation {
     bool? isPinned,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? parentConversationStableId = _Undefined,
     int? revision,
     int? projectionRevision,
     int? eventSequence,
     String? executionState,
     Object? activeExecutionId = _Undefined,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -317,6 +344,9 @@ class _ConversationImpl extends Conversation {
       isPinned: isPinned ?? this.isPinned,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       parentConversationStableId: parentConversationStableId is String?
           ? parentConversationStableId
           : this.parentConversationStableId,
@@ -327,6 +357,9 @@ class _ConversationImpl extends Conversation {
       activeExecutionId: activeExecutionId is int?
           ? activeExecutionId
           : this.activeExecutionId,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,

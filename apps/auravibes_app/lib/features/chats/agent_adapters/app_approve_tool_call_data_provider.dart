@@ -56,6 +56,10 @@ typedef _ToolCallPatchRequest = ({
   String toolCallId,
   ToolCallResultStatus resultStatus,
   String? responseRaw,
+  String? responseContextRaw,
+  bool outputTruncated,
+  int? originalResponseBytes,
+  bool fullOutputForContext,
 });
 
 typedef _ToolCallPersistenceRequest = ({
@@ -114,6 +118,10 @@ class const AppApproveToolCallDataProvider({
     toolCallId: request.toolCallId,
     resultStatus: AgentToolStatusMapper.toResultStatus(request.resultStatus),
     responseRaw: request.responseRaw,
+    responseContextRaw: request.responseContextRaw,
+    outputTruncated: request.outputTruncated,
+    originalResponseBytes: request.originalResponseBytes,
+    fullOutputForContext: request.fullOutputForContext,
     conversationId: request.conversationId,
   ));
 
@@ -196,6 +204,10 @@ class const AppApproveToolCallDataProvider({
       toolCallId: toolCallId,
       resultStatus: .running,
       responseRaw: null,
+      responseContextRaw: null,
+      outputTruncated: false,
+      originalResponseBytes: null,
+      fullOutputForContext: false,
     ));
   }
 
@@ -243,7 +255,12 @@ void _logToolApprovalOwnershipMismatch(
 MessageToolCallEntity? _findToolCall(
   MessageMetadataEntity? metadata,
   String toolCallId,
-) => metadata?.toolCalls.where((tool) => tool.id == toolCallId).firstOrNull;
+) {
+  final matches = metadata?.toolCalls.where((tool) => tool.id == toolCallId);
+  if (matches == null || matches.length != 1) return null;
+
+  return matches.single;
+}
 
 agent.AgentApprovableToolCall _toApprovableToolCall(
   String conversationId,
@@ -461,12 +478,28 @@ List<MessageToolCallEntity> _updatedToolCalls(
     .map(
       (toolCall) => toolCall.id != request.toolCallId
           ? toolCall
-          : toolCall.copyWith(
-              resultStatus: request.resultStatus,
-              responseRaw: request.responseRaw,
-            ),
+          : _updatedToolCall(toolCall, request),
     )
     .toList();
+
+MessageToolCallEntity _updatedToolCall(
+  MessageToolCallEntity toolCall,
+  _ToolCallPatchRequest request,
+) => _applyToolCallPatch(
+  toolCall.copyWith(resultStatus: request.resultStatus),
+  request,
+);
+
+MessageToolCallEntity _applyToolCallPatch(
+  MessageToolCallEntity toolCall,
+  _ToolCallPatchRequest request,
+) => toolCall.copyWith(
+  responseRaw: request.responseRaw,
+  responseContextRaw: request.responseContextRaw,
+  outputTruncated: request.outputTruncated,
+  originalResponseBytes: request.originalResponseBytes,
+  fullOutputForContext: request.fullOutputForContext,
+);
 
 Future<void> _persistToolCallPatch(_ToolCallPersistenceRequest request) async {
   final _ = await request.messageRepository.patchMessage(

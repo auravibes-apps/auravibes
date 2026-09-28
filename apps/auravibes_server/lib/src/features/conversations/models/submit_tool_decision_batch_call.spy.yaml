@@ -1,0 +1,8 @@
+class: SubmitToolDecisionBatchCall
+fields:
+  conversationId: String
+  turnId: String
+  toolCallId: String
+  argumentsDigest: String
+  expectedTurnRevision: int
+  editedArgumentsJson: String?

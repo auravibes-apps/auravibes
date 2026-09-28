@@ -15,6 +15,7 @@ WorkspaceToolEntity _tool({
   required String id,
   required String toolId,
   String? groupId,
+  String? outputSchemaJson,
 }) => WorkspaceToolEntity(
   id: id,
   workspaceId: 'w1',
@@ -23,6 +24,7 @@ WorkspaceToolEntity _tool({
   permissionMode: .alwaysAsk,
   createdAt: .new(2025),
   updatedAt: .new(2025),
+  outputSchemaJson: outputSchemaJson,
   workspaceToolsGroupId: groupId,
 );
 
@@ -52,13 +54,19 @@ void main() {
     );
 
     final result = await usecase.call([
-      _tool(id: 't1', toolId: 'custom_tool', groupId: 'g1'),
+      _tool(
+        id: 't1',
+        toolId: 'custom_tool',
+        groupId: 'g1',
+        outputSchemaJson: '{"type":"object"}',
+      ),
     ]);
 
     expect(result, hasLength(1));
     expect(result.single.spec.name, 'mcp_custom_tool');
     expect(result.single.target.tableId, 't1');
     expect(result.single.target.mcpServerId, 'mcp-1');
+    expect(result.single.target.outputSchemaJson, '{"type":"object"}');
   });
 
   test('includes built-in tool specs for calculator tool', () async {
@@ -200,6 +208,32 @@ void main() {
         updatedAt: .new(2025),
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
+    );
+
+    final result = await usecase.call([
+      _tool(id: 't1', toolId: 'some_tool', groupId: 'g1'),
+    ]);
+
+    expect(result, isEmpty);
+  });
+
+  test('skips tool when its MCP group is disabled', () async {
+    final usecase = BuildCombinedToolSpecsUseCase(
+      getToolsGroupById: (groupId) async => ToolsGroupEntity(
+        id: groupId,
+        workspaceId: 'w1',
+        name: 'group',
+        isEnabled: false,
+        permissions: .ask,
+        createdAt: .new(2025),
+        updatedAt: .new(2025),
+        mcpServerId: 'mcp-1',
+      ),
+      getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
+        name: toolName,
+        description: 'disabled tool',
+        inputJsonSchema: const {},
+      ),
     );
 
     final result = await usecase.call([

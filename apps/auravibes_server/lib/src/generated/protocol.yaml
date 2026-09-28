@@ -11,6 +11,7 @@ jwtRefresh:
   - refreshAccessToken:
 account:
   - currentUser:
+  - deleteCurrentUser:
 agentCatalog:
   - list:
   - getResources:
@@ -39,8 +40,10 @@ conversation:
   - removePendingConversationMessage:
   - updateConversationSettings:
   - submitToolDecision:
+  - submitToolDecisionBatch:
   - cancelTurn:
   - compact:
+  - restoreCompactionCheckpoint:
 mcpServer:
   - verify:
   - create:
@@ -57,6 +60,7 @@ modelConnection:
   - listRecentSelections:
   - recordRecentSelection:
   - testAndSync:
+  - verifyDraft:
 object:
   - beginUpload:
   - completeUpload:

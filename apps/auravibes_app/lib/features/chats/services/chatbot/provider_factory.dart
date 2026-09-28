@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -6,12 +8,25 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_p
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:genkit/genkit.dart';
 import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
+import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 typedef UntypedModelRef = ModelRef<Object?>;
+typedef _ProviderToolSampling = ({
+  bool officialOpenAI,
+  bool strictToolSampling,
+});
+typedef _OpenAICompatPluginOptions = ({
+  String name,
+  ChatCompletionsCodec codec,
+  bool modelSupportsStrictToolSampling,
+  http.Client? httpClient,
+});
 typedef _ProviderRequest = ({
   WorkspaceModelSelectionWithConnectionEntity config,
   String apiKey,
@@ -19,6 +34,8 @@ typedef _ProviderRequest = ({
   ProviderRuntimeSelection runtime,
   String modelId,
   String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
+  _ProviderToolSampling toolSampling,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -32,14 +49,19 @@ typedef _RuntimeRequest = ({
 class const ProviderFactory({
   required final ServiceConnectionRepository serviceConnectionRepository,
   final Future<String> Function(String id)? resolveOAuthAccessToken,
+  final http.Client? httpClient,
 }) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
-  static const _thinkingBudgetTokens = 1024;
   Future<Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   }) async {
-    final request = await _providerRequest(config, sessionId);
+    final request = await _providerRequest(
+      config,
+      sessionId,
+      reasoningConfiguration,
+    );
 
     return _createGenkit(request);
   }
@@ -53,18 +75,96 @@ class const ProviderFactory({
   }
 
   T? getGenerationConfig<T>(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
+    WorkspaceModelSelectionWithConnectionEntity config, [
+    ReasoningConfiguration? reasoningConfiguration,
+  ]) {
     final runtime = _runtimeSelection(config, config.modelConnection.url);
-    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-      return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
-    }
-    if (runtime.runtime != ProviderRuntime.anthropic ||
-        !config.workspaceModelSelection.supportsReasoning) {
+    final selectedConfiguration = _validConfiguration(
+      config,
+      reasoningConfiguration,
+    );
+    if (selectedConfiguration == null) return null;
+
+    return _generationConfigFor<T>(config, runtime, selectedConfiguration);
+  }
+
+  @visibleForTesting
+  String? resolvedBaseUrl(WorkspaceModelSelectionWithConnectionEntity config) {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+    if (connectionUrl != null) return connectionUrl;
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
       return null;
     }
 
-    return _anthropicGenerationConfig(runtime);
+    return _blankToNull(config.modelsProvider.url);
+  }
+
+  /// Returns affinity headers for supported provider transports only.
+  @visibleForTesting
+  Map<String, String> sessionAffinityHeaders({
+    required ModelProvidersType? providerType,
+    required String? baseUrl,
+    required String? sessionId,
+  }) {
+    if (sessionId == null || sessionId.isEmpty) return const {};
+    if (_supportsOpenRouterSessionAffinity(providerType, baseUrl)) {
+      return {'x-session-id': sessionId};
+    }
+    if (_supportsAnthropicSessionAffinity(providerType, baseUrl)) {
+      return {'x-session-affinity': sessionId};
+    }
+
+    return const {};
+  }
+
+  ReasoningConfiguration? _validConfiguration(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ReasoningConfiguration? value,
+  ) {
+    if (value == null ||
+        !value.isValidFor(config.workspaceModelSelection.reasoningOptions)) {
+      return null;
+    }
+
+    return value;
+  }
+}
+
+bool _supportsOpenRouterSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) => providerType == .openrouter && baseUrl == null;
+
+bool _supportsAnthropicSessionAffinity(
+  ModelProvidersType? providerType,
+  String? baseUrl,
+) {
+  if (providerType != .anthropic) return false;
+  if (baseUrl == null) return true;
+  final uri = Uri.tryParse(baseUrl);
+
+  return uri?.scheme == 'https' &&
+      uri?.host == 'api.anthropic.com' &&
+      uri?.port == 443;
+}
+
+extension _ProviderFactoryGenerationConfig on ProviderFactory {
+  T? _generationConfigFor<T>(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ProviderRuntimeSelection runtime,
+    ReasoningConfiguration configuration,
+  ) {
+    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
+      return _openAIReasoningGenerationConfig<T>(configuration);
+    }
+    if (runtime.runtime == ProviderRuntime.anthropic) {
+      return _anthropicGenerationConfig<T>(configuration);
+    }
+    if (config.modelsProvider.type == ModelProvidersType.openrouter) {
+      return _openRouterGenerationConfig<T>(configuration);
+    }
+
+    return null;
   }
 }
 
@@ -72,17 +172,39 @@ extension _ProviderFactoryCreation on ProviderFactory {
   Future<_ProviderRequest> _providerRequest(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
+    final toolSampling = _providerToolSampling(config, connectionUrl);
 
     return (
       config: config,
       apiKey: await _resolveCredential(config),
-      baseUrl: connectionUrl ?? _blankToNull(config.modelsProvider.url),
+      baseUrl: resolvedBaseUrl(config),
       runtime: _runtimeSelection(config, connectionUrl),
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,
+      reasoningConfiguration: reasoningConfiguration,
+      toolSampling: toolSampling,
     );
+  }
+
+  _ProviderToolSampling _providerToolSampling(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? connectionUrl,
+  ) {
+    final officialOpenAI =
+        config.modelsProvider.type == ModelProvidersType.openai &&
+        !_hasCustomUrl(config, connectionUrl);
+    final supportsStrict =
+        officialOpenAI &&
+        config.workspaceModelSelection.supportsToolCalls &&
+        verifiedStrictToolSampling(
+          'openai',
+          config.workspaceModelSelection.modelId,
+        );
+
+    return (officialOpenAI: officialOpenAI, strictToolSampling: supportsStrict);
   }
 
   Genkit _createGenkit(_ProviderRequest request) {
@@ -108,7 +230,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     ProviderRuntime runtime,
   ) {
     if (runtime == ProviderRuntime.codexOAuth) return _codexPlugin(request);
-    if (runtime == ProviderRuntime.openAiReasoning && request.baseUrl != null) {
+    if (runtime == ProviderRuntime.openAiReasoning) {
       return _openAIReasoningPlugin(request);
     }
 
@@ -118,7 +240,15 @@ extension _ProviderFactoryCreation on ProviderFactory {
 
 extension _ProviderFactoryPlugins on ProviderFactory {
   GenkitPlugin _anthropicPlugin(_ProviderRequest request) {
-    return anthropic(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    return anthropic(
+      apiKey: request.apiKey,
+      headers: sessionAffinityHeaders(
+        providerType: request.config.modelsProvider.type,
+        baseUrl: request.baseUrl,
+        sessionId: request.sessionId,
+      ),
+      baseUrl: request.baseUrl,
+    );
   }
 
   GenkitPlugin _openRouterPlugin(_ProviderRequest request) {
@@ -128,11 +258,17 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       apiKey: request.apiKey,
       codec: _openRouterCodec(),
       models: [ChatCompletionsModelDefinition(name: request.modelId)],
-      headers: const {
+      headers: {
         'HTTP-Referer': 'https://auravibes.me',
         'X-OpenRouter-Title': 'AuraVibes',
         'X-OpenRouter-Categories': 'personal-agent',
+        ...sessionAffinityHeaders(
+          providerType: request.config.modelsProvider.type,
+          baseUrl: request.baseUrl,
+          sessionId: request.sessionId,
+        ),
       },
+      httpClient: httpClient,
     );
   }
 
@@ -142,25 +278,50 @@ extension _ProviderFactoryPlugins on ProviderFactory {
       accountId: request.config.modelConnection.oauthMetadata?.accountId,
       sessionId: request.sessionId,
       models: [request.modelId],
+      reasoningConfiguration: request.reasoningConfiguration,
     );
   }
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
-    final baseUrl = request.baseUrl;
-    if (baseUrl == null) return _openAIPlugin(request);
+    final toolSampling = request.toolSampling;
 
-    return AppChatCompletionsPlugin(
+    return _openAICompatPlugin(request, (
       name: ProviderFactory._openAIReasoningNamespace,
-      baseUrl: baseUrl,
-      apiKey: request.apiKey,
-      codec: _openAICompatReasoningCodec(),
-      models: [ChatCompletionsModelDefinition(name: request.modelId)],
-    );
+      codec: _openAICompatReasoningCodec(toolSampling.officialOpenAI),
+      modelSupportsStrictToolSampling: toolSampling.strictToolSampling,
+      httpClient: null,
+    ));
   }
 
   GenkitPlugin _openAIPlugin(_ProviderRequest request) {
-    return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    if (!request.toolSampling.strictToolSampling) {
+      return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    }
+
+    return _openAICompatPlugin(request, (
+      name: 'openai',
+      codec: _openAICodec(),
+      modelSupportsStrictToolSampling: true,
+      httpClient: httpClient,
+    ));
   }
+
+  AppChatCompletionsPlugin _openAICompatPlugin(
+    _ProviderRequest request,
+    _OpenAICompatPluginOptions options,
+  ) => AppChatCompletionsPlugin(
+    name: options.name,
+    baseUrl: request.baseUrl ?? providerProfile('openai').defaultUrl,
+    apiKey: request.apiKey,
+    codec: options.codec,
+    models: [ChatCompletionsModelDefinition(name: request.modelId)],
+    httpClient: options.httpClient,
+    modelSupportsStrictToolSampling: options.modelSupportsStrictToolSampling,
+    defaultToolSamplingPolicy: _strictToolSamplingPolicy(
+      options.modelSupportsStrictToolSampling,
+    ),
+    onToolSamplingDecision: _logToolSamplingDecision,
+  );
 }
 
 extension _ProviderFactoryResolution on ProviderFactory {
@@ -193,16 +354,47 @@ extension _ProviderFactoryResolution on ProviderFactory {
     return openAI.model(modelId);
   }
 
-  T _anthropicGenerationConfig<T>(ProviderRuntimeSelection runtime) {
-    final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
+  T? _anthropicGenerationConfig<T>(ReasoningConfiguration configuration) {
+    if (configuration.enabled == false) {
+      return AnthropicOptions(thinking: .new(type: 'disabled')) as T;
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return null;
+    }
 
-    return AnthropicOptions(
-      thinking: .new(
-        type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-        budgetTokens: usesAdaptiveThinking
+    return _anthropicOptions(configuration) as T;
+  }
+
+  AnthropicOptions _anthropicOptions(ReasoningConfiguration configuration) =>
+      AnthropicOptions(
+        thinking: configuration.budgetTokens == null
             ? null
-            : ProviderFactory._thinkingBudgetTokens,
-      ),
+            : .new(type: 'enabled', budgetTokens: configuration.budgetTokens),
+        outputConfig: configuration.effort == null
+            ? null
+            : .new(effort: configuration.effort),
+      );
+
+  T? _openAIReasoningGenerationConfig<T>(ReasoningConfiguration configuration) {
+    if (configuration.enabled == false) {
+      return OpenAICompatReasoningOptions(reasoningEffort: 'none') as T;
+    }
+
+    final effort = configuration.effort;
+    if (effort == null) return null;
+
+    return OpenAICompatReasoningOptions(reasoningEffort: effort) as T;
+  }
+
+  T? _openRouterGenerationConfig<T>(ReasoningConfiguration configuration) {
+    return OpenRouterOptions(
+      reasoningMaxTokens: configuration.enabled == false
+          ? null
+          : configuration.budgetTokens,
+      reasoningEffort: configuration.enabled == false
+          ? null
+          : configuration.effort,
+      reasoningEnabled: configuration.enabled == false ? false : null,
     ) as T;
   }
 }
@@ -272,10 +464,16 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   bool _hasCustomUrl(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
-  ) =>
-      connectionUrl != null ||
-      (config.modelsProvider.type == ModelProvidersType.openai &&
-          _blankToNull(config.modelsProvider.url) != null);
+  ) {
+    if (connectionUrl != null) return true;
+    if (config.modelsProvider.type != ModelProvidersType.openai) return false;
+
+    final providerUrl = _blankToNull(config.modelsProvider.url);
+
+    return providerUrl != null &&
+        providerUrl.replaceFirst(RegExp(r'/$'), '') !=
+            providerProfile('openai').defaultUrl;
+  }
 
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();
@@ -285,29 +483,74 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   }
 }
 
-ChatCompletionsCodec _openRouterCodec() {
-  return ChatCompletionsCodec(
-    errorLabel: 'OpenRouter',
-    customize: (modelName, config) {
-      final options = OpenRouterOptions.fromJson(config);
+ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
+  errorLabel: 'OpenRouter',
+  customize: _customizeOpenRouter,
+);
 
-      return (
-        model: modelName,
-        extraBody: {
-          ...options.toSamplingBody(),
-          if (options.reasoningMaxTokens != null)
-            'reasoning': {'max_tokens': options.reasoningMaxTokens},
-        },
-      );
-    },
-  );
+ChatCompletionsCodec _openAICodec() => const ChatCompletionsCodec(
+  errorLabel: 'OpenAI',
+  customize: _customizeOpenAI,
+  supportsStrictToolSampling: true,
+);
+
+({String model, Map<String, dynamic> extraBody}) _customizeOpenAI(
+  String modelName,
+  Map<String, dynamic>? config,
+) => (
+  model: modelName,
+  extraBody: OpenAICompatChatOptions.fromJson(config).toSamplingBody(),
+);
+
+({String model, Map<String, dynamic> extraBody}) _customizeOpenRouter(
+  String modelName,
+  Map<String, dynamic>? config,
+) {
+  final options = OpenRouterOptions.fromJson(config);
+
+  return (model: modelName, extraBody: _openRouterBody(options));
 }
 
-ChatCompletionsCodec _openAICompatReasoningCodec() =>
-    const ChatCompletionsCodec(
+Map<String, dynamic> _openRouterBody(OpenRouterOptions options) {
+  final reasoning = _openRouterReasoningBody(options);
+
+  return {...options.toSamplingBody(), 'reasoning': ?reasoning};
+}
+
+Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {
+  if (options.reasoningEnabled != false &&
+      options.reasoningEffort == null &&
+      options.reasoningMaxTokens == null) {
+    return null;
+  }
+
+  return {
+    if (options.reasoningEnabled == false) 'enabled': false,
+    'effort': ?options.reasoningEffort,
+    'max_tokens': ?options.reasoningMaxTokens,
+  };
+}
+
+ChatCompletionsCodec _openAICompatReasoningCodec(bool officialOpenAI) =>
+    ChatCompletionsCodec(
       errorLabel: 'OpenAI-compatible',
       customize: _customizeOpenAICompatReasoning,
+      supportsStrictToolSampling: officialOpenAI,
     );
+
+final _toolSamplingLogger = Logger('tool_sampling');
+
+void _logToolSamplingDecision(List<ToolSamplingDecision> decisions) {
+  for (final decision in decisions) {
+    if (decision.policy == ToolSamplingPolicy.off) continue;
+    _toolSamplingLogger.fine(
+      'Tool sampling: ${jsonEncode(decision.toDiagnostic())}',
+    );
+  }
+}
+
+ToolSamplingPolicy _strictToolSamplingPolicy(bool supportsStrict) =>
+    supportsStrict ? .prefer : .off;
 
 ({String model, Map<String, dynamic> extraBody})
 _customizeOpenAICompatReasoning(
@@ -318,10 +561,6 @@ _customizeOpenAICompatReasoning(
 
   return (
     model: options.version ?? modelName,
-    extraBody: {
-      ...options.toSamplingBody(),
-      if (options.reasoningType != null)
-        'thinking': {'type': options.reasoningType},
-    },
+    extraBody: {...options.toSamplingBody(), ...options.toReasoningBody()},
   );
 }

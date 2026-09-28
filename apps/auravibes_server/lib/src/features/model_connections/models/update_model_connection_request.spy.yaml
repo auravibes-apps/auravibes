@@ -6,3 +6,5 @@ fields:
   expectedRevision: int
   name: String
   url: String?
+  verificationReceipt: String?
+  hasSecretOverride: bool?

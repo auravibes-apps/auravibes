@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -102,9 +103,9 @@ class _FakeWorkspaceModelSelectionRepository([
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(String id) {
-    throw UnimplementedError();
-  }
+  getWorkspaceModelSelectionById(String id) async => selections
+      .where((selection) => selection.workspaceModelSelection.id == id)
+      .firstOrNull;
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
@@ -481,6 +482,79 @@ void main() {
         ]);
       },
     );
+  });
+
+  group('workspaceModelSelectionByIdProvider', () {
+    test('returns null for an ineligible saved Codex model', () async {
+      final selection = _makeSelection(
+        selectionId: 'sel-codex-old',
+        modelConnectionId: 'codex-connection',
+        modelConnectionName: 'OpenAI Codex',
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        modelId: 'gpt-3.5-turbo',
+        connectionProviderId: 'openai-codex',
+      );
+      const catalog = _FakeApiModelRepository(
+        providers: [
+          ApiModelProviderEntity(id: 'openai', name: 'OpenAI', type: null),
+        ],
+        models: [
+          ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-3.5-turbo',
+            name: 'GPT-3.5 Turbo',
+            limitContext: 16000,
+            limitOutput: 4096,
+            modalitiesInput: ['text'],
+            modalitiesOutput: ['text'],
+          ),
+        ],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => _FakeWorkspaceModelSelectionRepository([selection]),
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        workspaceModelSelectionByIdProvider('ws-1', 'sel-codex-old').future,
+      );
+
+      expect(result, isNull);
+    });
+
+    test('returns null for a missing Codex catalog model', () async {
+      final selection = _makeSelection(
+        selectionId: 'sel-codex-missing',
+        modelConnectionId: 'codex-connection',
+        modelConnectionName: 'OpenAI Codex',
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        modelId: 'gpt-5.5-removed',
+        connectionProviderId: 'openai-codex',
+      );
+      const catalog = _FakeApiModelRepository();
+      final container = ProviderContainer(
+        overrides: [
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => _FakeWorkspaceModelSelectionRepository([selection]),
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => catalog),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(
+        workspaceModelSelectionByIdProvider('ws-1', 'sel-codex-missing').future,
+      );
+
+      expect(result, isNull);
+    });
   });
 
   group('listModelsGroupedByProviderProvider', () {

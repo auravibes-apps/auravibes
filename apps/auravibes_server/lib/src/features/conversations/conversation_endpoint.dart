@@ -236,6 +236,18 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    Session session,
+    SubmitToolDecisionBatchRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.submitToolDecisionBatch(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<ConversationMutationResult> cancelTurn(
     Session session,
     CancelTurnRequest request,
@@ -254,5 +266,17 @@ class ConversationEndpoint extends Endpoint {
   ) async {
     final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.compact(session, userId: account.userId, request: request);
+  }
+
+  Future<ConversationSnapshot> restoreCompactionCheckpoint(
+    Session session,
+    RestoreConversationCheckpointRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.restoreCompactionCheckpoint(
+      session,
+      userId: account.userId,
+      request: request,
+    );
   }
 }

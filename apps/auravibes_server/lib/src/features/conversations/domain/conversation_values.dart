@@ -35,4 +35,6 @@ abstract final class ConversationJobStatuses {
 
 abstract final class ConversationLimits {
   static const maxPinnedPerWorkspace = 10;
+  static const maxPendingForksPerWorkspace = 32;
+  static const maxForkHistoryMessages = 1000;
 }

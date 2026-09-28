@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -76,29 +77,34 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return UncontrolledProviderScope(
-              container: container,
-              child: MaterialApp.router(
-                routerConfig: router,
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp.router(
+                  routerConfig: router,
+                  builder: (_, child) => AuraLegacyMaterialBridge(
+                    child: AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -108,7 +114,7 @@ void main() {
     final _ = await tester.pump();
     final _ = await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Write Summary');
+    await tester.enterText(find.byType(AuraInput).at(0), 'Write Summary');
     await tester.tap(find.text('Edit description'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).last, 'a' * 1025);

@@ -5,9 +5,9 @@ import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraPopupMenu', () {
@@ -704,6 +704,40 @@ void main() {
   });
 
   group('AuraPopupMenuController', () {
+    testWidgets('detaches when the popup controller changes', (tester) async {
+      final oldController = AuraPopupMenuController();
+      final newController = AuraPopupMenuController();
+
+      Future<void> pumpMenu(AuraPopupMenuController controller) =>
+          tester.pumpWidget(
+            MaterialApp(
+              home: Portal(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: const [AuraPopupMenuItem(title: Text('Item'))],
+                  controller: controller,
+                ),
+              ),
+            ),
+          );
+
+      await pumpMenu(oldController);
+      await pumpMenu(newController);
+
+      oldController.open();
+      await tester.pump();
+      expect(oldController.isShowing, isFalse);
+      expect(newController.isShowing, isFalse);
+
+      newController.open();
+      await tester.pump();
+      expect(newController.isShowing, isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      oldController.open();
+      expect(tester.takeException(), isNull);
+    });
+
     test('isShowing returns false when not attached', () {
       final controller = AuraPopupMenuController();
       expect(controller.isShowing, isFalse);

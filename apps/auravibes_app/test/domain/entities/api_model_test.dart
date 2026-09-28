@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -59,6 +60,7 @@ void main() {
           costOutput: 60,
           openWeights: false,
           supportsReasoning: true,
+          reasoningOptions: [ReasoningOption.toggle()],
           supportsPriorityMode: true,
           supportsToolCalls: true,
         ),
@@ -213,6 +215,145 @@ void main() {
       expect(canonical.isCodexRuntimeModel, isTrue);
       expect(alias.isCodexRuntimeModel, isFalse);
       expect(oldModel.isCodexRuntimeModel, isFalse);
+    });
+
+    test('Codex eligibility matches engine capability semantics', () {
+      const cases =
+          <
+            ({
+              String name,
+              String id,
+              bool canonical,
+              bool priority,
+              List<String> input,
+              List<String> output,
+              int outputLimit,
+              bool supportsTools,
+              bool expected,
+            })
+          >[
+            (
+              name: 'priority text model',
+              id: 'gpt-5.5',
+              canonical: true,
+              priority: true,
+              input: ['text'],
+              output: ['text'],
+              outputLimit: 128000,
+              supportsTools: false,
+              expected: true,
+            ),
+            (
+              name: 'different eligible runtime model',
+              id: 'gpt-5.5-spark',
+              canonical: false,
+              priority: true,
+              input: ['text'],
+              output: ['text'],
+              outputLimit: 128000,
+              supportsTools: true,
+              expected: true,
+            ),
+            (
+              name: 'priority noncanonical alias',
+              id: 'gpt-5.4-alias',
+              canonical: false,
+              priority: true,
+              input: ['text'],
+              output: ['text'],
+              outputLimit: 128000,
+              supportsTools: false,
+              expected: true,
+            ),
+            (
+              name: 'non-priority alias',
+              id: 'gpt-5.1-codex',
+              canonical: false,
+              priority: false,
+              input: ['text'],
+              output: ['text'],
+              outputLimit: 128000,
+              supportsTools: true,
+              expected: false,
+            ),
+            (
+              name: 'missing text input',
+              id: 'gpt-5.6-image',
+              canonical: false,
+              priority: true,
+              input: ['image'],
+              output: ['text'],
+              outputLimit: 128000,
+              supportsTools: true,
+              expected: false,
+            ),
+            (
+              name: 'no text output',
+              id: 'gpt-5.7-embedding',
+              canonical: false,
+              priority: true,
+              input: ['text'],
+              output: ['embedding'],
+              outputLimit: 128000,
+              supportsTools: true,
+              expected: false,
+            ),
+            (
+              name: 'zero output limit',
+              id: 'gpt-5.8-disabled',
+              canonical: false,
+              priority: true,
+              input: ['text'],
+              output: ['text'],
+              outputLimit: 0,
+              supportsTools: true,
+              expected: false,
+            ),
+          ];
+
+      for (final testCase in cases) {
+        final json = {
+          'id': testCase.id,
+          'name': testCase.id,
+          'limit': {'context': 1000, 'output': testCase.outputLimit},
+          'modalities': {'input': testCase.input, 'output': testCase.output},
+          'tool_call': testCase.supportsTools,
+          if (testCase.priority)
+            'experimental': {
+              'modes': {
+                'fast': {
+                  'provider': {
+                    'body': {'service_tier': 'priority'},
+                  },
+                },
+              },
+            },
+        };
+        final canonicalModelIds = testCase.canonical
+            ? {'openai/${testCase.id}'}
+            : {'openai/canonical-model'};
+        final engineModel = ModelCapabilities.fromJson(
+          'openai',
+          json,
+          canonicalModelIds,
+        );
+        final appModel = ApiModelEntity.fromJson(
+          'openai',
+          json,
+          canonicalModelIds,
+        );
+
+        expect(
+          appModel.isCodexRuntimeModel,
+          testCase.expected,
+          reason: testCase.name,
+        );
+        expect(
+          appModel.isCodexRuntimeModel,
+          engineModel.isCodexRuntimeModel,
+          reason: '${testCase.name} stays in parity with engine',
+        );
+      }
     });
 
     test('fromJson maps models.dev tool_call support', () {

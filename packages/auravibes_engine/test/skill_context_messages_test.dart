@@ -50,11 +50,37 @@ void main() {
 
     expect(messages.single.role, AgentChatMessageRole.system);
     expect(messages.single.metadata['kind'], skillCatalogMetadataKind);
+    expect(messages.single.metadata[skillCatalogSelectedRevisionsMetadataKey], {
+      'research': 'r1',
+    });
     expect(messages.single.content, contains('"slug":"research"'));
     expect(
       messages.single.content.indexOf('research'),
       lessThan(messages.single.content.indexOf('writer')),
     );
+  });
+
+  test('catalog context includes no resource bodies', () {
+    final messages = const BuildSkillContextMessages().compose(
+      conversationSkills: const [],
+      agentSkills: const [],
+      skillCatalog: const [
+        SkillCatalogEntry(
+          slug: 'a2ui',
+          title: 'A2UI',
+          description: 'Generate UI surfaces when needed.',
+          revision: 'a2ui-r1',
+          active: false,
+        ),
+      ],
+    );
+
+    expect(messages.single.content, contains('"slug":"a2ui"'));
+    expect(
+      messages.single.content,
+      isNot(contains('A2UI_CORE_INSTRUCTIONS_START')),
+    );
+    expect(messages.single.content, isNot(contains('CATALOG_SCHEMA_START')));
   });
 
   test('activation result keeps body outside metadata JSON', () {

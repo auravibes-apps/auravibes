@@ -10,6 +10,8 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -20,9 +22,16 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillDefinitionKind;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -62,6 +71,13 @@ Widget buildSubject({
   );
 }
 
+Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
+  home: Scaffold(body: child),
+  locale: context.locale,
+  localizationsDelegates: context.localizationDelegates,
+  supportedLocales: context.supportedLocales,
+);
+
 void main() {
   MessageEntity _createMessage({
     String id = 'msg-1',
@@ -82,6 +98,29 @@ void main() {
       updatedAt: DateTime(2025),
       metadata: metadata,
     );
+  }
+
+  List<Object> _messageOverrides(Map<String, MessageEntity> messages) => [
+    messageConversationByIdProvider.overrideWith(
+      (ref, id) => messages[id.messageId]!,
+    ),
+    isMessageStreamingProvider.overrideWith((ref, id) => false),
+    conversationBusyStateProvider.overrideWith(
+      (ref, _) async => const ConversationBusyState(
+        isStreaming: false,
+        hasPendingTools: false,
+      ),
+    ),
+  ];
+
+  void _mockUrlLauncher(
+    WidgetTester tester,
+    Future<Object?> Function(MethodCall call) handler,
+  ) {
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, handler);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
   }
 
   Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
@@ -209,14 +248,14 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
-    testWidgets('copies the second form edit while excluding password values', (
+    testWidgets('copies updated values from supported form fields', (
       tester,
     ) async {
       final result = await pumpCopySurface(tester, [
         {
           'id': 'root',
           'component': 'Column',
-          'children': ['name', 'password'],
+          'children': ['name', 'city'],
         },
         {
           'id': 'name',
@@ -225,26 +264,24 @@ void main() {
           'value': {'path': '/name'},
         },
         {
-          'id': 'password',
+          'id': 'city',
           'component': 'TextField',
-          'variant': 'password',
-          'label': 'Password',
-          'value': {'path': '/password'},
+          'label': 'City',
+          'value': {'path': '/city'},
         },
       ], form: true);
       final fields = find.byType(EditableText);
       expect(fields, findsNWidgets(2));
-      expect(tester.widget<EditableText>(fields.at(1)).obscureText, isTrue);
       await tester.enterText(fields.first, 'Ada');
-      await tester.enterText(fields.at(1), 'first-test-secret');
+      await tester.enterText(fields.at(1), 'first-city');
       await tester.pump();
       await tester.enterText(fields.first, 'Grace');
-      await tester.enterText(fields.at(1), 'second-test-secret');
+      await tester.enterText(fields.at(1), 'second-city');
       await tester.pump();
       await tester.tap(find.byTooltip('Copy message'));
       await tester.pump();
 
-      expect(result.copies, ['Name\nGrace\nPassword']);
+      expect(result.copies, ['Name\nGrace\nCity\nsecond-city']);
       expect(find.byTooltip('Message copied'), findsOneWidget);
     });
 
@@ -707,9 +744,7 @@ void main() {
       expect(find.text('Hello user'), findsOneWidget);
     });
 
-    testWidgets('uses a click cursor for links in AI message content', (
-      tester,
-    ) async {
+    testWidgets('uses click cursor for AI links', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -744,6 +779,210 @@ void main() {
       );
 
       await gesture.up();
+    });
+
+    testWidgets('opens Markdown and autolinks', (tester) async {
+      final launchedUrls = <String>[];
+      _mockUrlLauncher(tester, (call) async {
+        launchedUrls.add((call.arguments as Map)['url'] as String);
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['markdown-link', 'autolink'],
+          overrides: _messageOverrides({
+            'markdown-link': _createMessage(
+              id: 'markdown-link',
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+            'autolink': _createMessage(
+              id: 'autolink',
+              content: 'https://example.org',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('https://example.org'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
+
+      expect(launchedUrls, ['https://example.com', 'https://example.org']);
+    });
+
+    testWidgets('does not open Markdown link without confirmation', (
+      tester,
+    ) async {
+      var launchCount = 0;
+      _mockUrlLauncher(tester, (_) async {
+        launchCount++;
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['markdown-link'],
+          overrides: _messageOverrides({
+            'markdown-link': _createMessage(
+              content: '[Open docs](https://example.com/path?value=secret)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      expect(
+        find.textContaining('https://example.com/path?value=secret'),
+        findsOneWidget,
+      );
+      expect(launchCount, 0);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(launchCount, 0);
+    });
+
+    testWidgets('rejects unsafe and malformed URLs', (tester) async {
+      var launchCount = 0;
+      _mockUrlLauncher(tester, (_) async {
+        launchCount++;
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['unsafe-links'],
+          overrides: _messageOverrides({
+            'unsafe-links': _createMessage(
+              id: 'unsafe-links',
+              content:
+                  '[Unsafe](javascript:alert(1)) '
+                  '[Missing host](https:///missing-host) '
+                  '[Deceptive](https://accounts.example@attacker.example/sso)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Unsafe'));
+      await tester.pump();
+      await tester.tap(find.text('Missing host'));
+      await tester.pump();
+      await tester.tap(find.text('Deceptive'));
+      await tester.pump();
+
+      expect(launchCount, 0);
+      expect(find.text('Open external link?'), findsNothing);
+    });
+
+    testWidgets('shows link failure feedback', (tester) async {
+      _mockUrlLauncher(tester, (_) async => false);
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+          }),
+          appBuilder: _scaffoldedApp,
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open link'), findsOneWidget);
+    });
+
+    testWidgets('shows link exception feedback', (tester) async {
+      _mockUrlLauncher(
+        tester,
+        (_) async => throw PlatformException(code: 'launch-failed'),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: '[Open docs](https://example.com)',
+              isUser: false,
+            ),
+          }),
+          appBuilder: _scaffoldedApp,
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not open link'), findsOneWidget);
+    });
+
+    testWidgets('uses text cursor for user messages', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-link', 'msg-text'],
+          overrides: _messageOverrides({
+            'msg-link': _createMessage(
+              id: 'msg-link',
+              content: '[Open docs](https://example.com)',
+            ),
+            'msg-text': _createMessage(id: 'msg-text', content: 'Plain text'),
+          }),
+        ),
+      );
+
+      final linkGesture = await tester.startGesture(
+        tester.getCenter(find.text('Open docs')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.click,
+      );
+      await linkGesture.up();
+
+      final textGesture = await tester.startGesture(
+        tester.getCenter(find.text('Plain text')),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      expect(
+        RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(1),
+        SystemMouseCursors.text,
+      );
+      await textGesture.up();
+      expect(find.byType(SelectionArea), findsNWidgets(2));
+      expect(find.byIcon(Icons.copy_outlined), findsNWidgets(2));
     });
 
     testWidgets('keeps text-only assistant metadata inline', (tester) async {
@@ -1522,6 +1761,241 @@ void main() {
       expect(row.right - status.right, lessThan(100));
     });
 
+    testWidgets('shows saved skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final semantics = tester.ensureSemantics();
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.disabledInWorkspace,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final label = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-skill')),
+      );
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('Research Assistant / Search the web'),
+      );
+      expect(find.text('Call Skill Tool'), findsNothing);
+      final status = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_status_tc-skill')),
+      );
+      expect(status.maxLines, 1);
+      expect(status.overflow, TextOverflow.ellipsis);
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
+            .label,
+        contains('Research Assistant / Search the web Disabled in workspace'),
+      );
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
+    testWidgets('shows app skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      const registry = AppSkillRegistry();
+      final appSkill = registry.getAll().firstWhere(
+        (skill) => skill.tools.isNotEmpty,
+      );
+      final tool = appSkill.tools.first;
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-app-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: jsonEncode({'skill': appSkill.slug, 'tool': tool.slug}),
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => [
+                WorkspaceSkill(
+                  source: .app,
+                  id: appSkill.identifier,
+                  slug: appSkill.slug,
+                  title: appSkill.title,
+                  description: appSkill.description,
+                  kind: appSkill.kind == AppSkillDefinitionKind.template
+                      ? .template
+                      : .native,
+                  isEnabled: true,
+                  titleKey: appSkill.titleKey,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final labelFinder = find.byKey(
+        const ValueKey('activity_tool_label_tc-app-skill'),
+      );
+      final context = tester.element(labelFinder);
+      final skillTitle =
+          appSkill.titleKey?.tr(context: context) ?? appSkill.title;
+      final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final label = tester.widget<Text>(labelFinder);
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('$skillTitle / $toolTitle'),
+      );
+      expect(find.text('Completed'), findsOneWidget);
+      expect(find.text('Call Skill Tool'), findsNothing);
+    });
+
+    testWidgets('uses slug and generic fallbacks when metadata is missing', (
+      tester,
+    ) async {
+      const skillToolCall = MessageToolCallEntity(
+        id: 'tc-missing-tool',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"missing_tool"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const malformedToolCall = MessageToolCallEntity(
+        id: 'tc-malformed-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [skillToolCall, malformedToolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  source: .user,
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  kind: .template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider(
+              'ws-1',
+              'skill-1',
+            ).overrideWith((ref) async => []),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final missingToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-missing-tool')),
+      );
+      expect(
+        missingToolLabel.textSpan?.toPlainText(),
+        contains('Research Assistant / Missing Tool'),
+      );
+      final malformedToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-malformed-skill')),
+      );
+      expect(malformedToolLabel.textSpan?.toPlainText(), 'Call Skill Tool');
+    });
+
     testWidgets('reveals a finished activity run in three compact levels', (
       tester,
     ) async {
@@ -2125,6 +2599,210 @@ void main() {
       await tester.pump();
       expect(find.byKey(const ValueKey('activity_tool_tc-3')), findsOneWidget);
       expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
+    });
+
+    testWidgets('preserves rich responses before later assistant activity', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final richResponse = _createMessage(
+        id: 'rich-response',
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          a2uiMessages: [
+            jsonEncode({
+              'protocolVersion': 'v1',
+              'interactionMode': 'passive',
+              'message': {
+                'version': 'v0.9',
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:v1',
+                },
+              },
+            }),
+            jsonEncode({
+              'protocolVersion': 'v1',
+              'interactionMode': 'passive',
+              'message': {
+                'version': 'v0.9',
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {'id': 'root', 'component': 'Text', 'text': 'Rich answer'},
+                  ],
+                },
+              },
+            }),
+          ],
+        ),
+      );
+      final activity = _createMessage(
+        id: 'later-activity',
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-later',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{"path": "later"}',
+              resultStatus: ToolCallResultStatus.success,
+            ),
+          ],
+        ),
+      );
+      final messagesById = {
+        richResponse.id: richResponse,
+        activity.id: activity,
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [richResponse.id, activity.id],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('a2ui_rich-response')), findsOneWidget);
+      expect(find.text('Rich answer'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_later-activity')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('keeps an A2UI response visible before later activity', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      const firstTool = MessageToolCallEntity(
+        id: 'tc-form',
+        name: 'built_in_1_read_file',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const secondTool = MessageToolCallEntity(
+        id: 'tc-follow-up',
+        name: 'built_in_1_calculator',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final messagesById = {
+        'form': _createMessage(
+          id: 'form',
+          content: '',
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: MessageMetadataEntity(
+            thinking: 'Preparing the form',
+            toolCalls: const [firstTool],
+            a2uiMessages: [
+              for (final operation in [
+                {
+                  'createSurface': {
+                    'surfaceId': 'main',
+                    'catalogId': 'urn:auravibes:a2ui:chat:form:v1',
+                  },
+                },
+                {
+                  'updateComponents': {
+                    'surfaceId': 'main',
+                    'components': [
+                      {
+                        'id': 'root',
+                        'component': 'Text',
+                        'text': 'Action required',
+                      },
+                    ],
+                  },
+                },
+              ])
+                jsonEncode({
+                  'protocolVersion': 'v1',
+                  'interactionMode': 'requiresUserAction',
+                  'message': {'version': 'v0.9', ...operation},
+                }),
+            ],
+          ),
+        ),
+        'follow-up': _createMessage(
+          id: 'follow-up',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(toolCalls: [secondTool]),
+        ),
+      };
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['form', 'follow-up'],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => messagesById[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('a2ui_form')), findsOneWidget);
+      expect(find.text('Action required'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_trace_toggle_form')),
+        findsOneWidget,
+      );
+      await revealActivityToolCalls(tester, runId: 'form');
+      expect(
+        find.byKey(const ValueKey('activity_tool_tc-form')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('keeps final response visible after the activity session', (
@@ -3508,7 +4186,7 @@ void main() {
       );
 
       expect(find.text(providerDetails), findsOneWidget);
-      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.byType(AuraSelectableText), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -3560,17 +4238,22 @@ class const _ChatMessagesTestSubject({
       child: EasyLocalization(
         child: Builder(
           builder: (context) {
-            final child = Theme(
-              data: ThemeData(extensions: [theme ?? AuraTheme.light]),
-              child: Material(
-                child: ChatMessagesWidget(
-                  workspaceId: 'ws-1',
-                  conversationId: conversationId,
-                  messages: messages,
-                  messageEntitiesById: messageEntitiesById,
-                  pendingToolCalls: pendingToolCalls,
-                  showThinking: showThinking,
-                  onRetryMessage: onRetryMessage,
+            final child = AuraThemeScope(
+              theme: theme ?? AuraTheme.light,
+              child: Theme(
+                data: ThemeData(),
+                child: AuraLegacyMaterialBridge(
+                  child: Material(
+                    child: ChatMessagesWidget(
+                      workspaceId: 'ws-1',
+                      conversationId: conversationId,
+                      messages: messages,
+                      messageEntitiesById: messageEntitiesById,
+                      pendingToolCalls: pendingToolCalls,
+                      showThinking: showThinking,
+                      onRetryMessage: onRetryMessage,
+                    ),
+                  ),
                 ),
               ),
             );

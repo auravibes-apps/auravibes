@@ -69,10 +69,14 @@
     "catalog_sync_success": "Model catalog synced",
     "catalog_sync_error": "Could not sync model catalog",
     "add_provider": {
-      "open_button": "Add Provider",
+      "open_button": "Add provider",
       "title": "Add Model Provider",
+      "unsaved_changes_title": "Discard unsaved changes?",
+      "unsaved_changes_message": "You have unsaved changes. Do you want to discard them?",
+      "discard_changes": "Discard",
+      "keep_editing": "Keep editing",
       "back_to_selection": "Back to model selection",
-      "create_button": "Create Provider",
+      "create_button": "Create Provider", "save_changes": "Save changes",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
       "oauth_waiting": "Waiting for authorization...",
@@ -185,10 +189,32 @@
     "action": {
       "reconnect": "Reconnect",
       "refresh_token": "Refresh token",
+      "test_connection": "Test connection",
       "reconnect_success": "MCP server reconnected",
       "reconnect_error": "Unable to reconnect MCP server",
       "refresh_success": "OAuth token refreshed",
       "refresh_error": "Unable to refresh OAuth token"
+    },
+    "test": {
+      "success": "MCP connection check passed",
+      "authentication": "MCP authentication failed",
+      "network": "MCP network or timeout failure",
+      "protocol": "MCP server or configuration failure",
+      "unknown": "MCP connection check failed",
+      "attempted_at": "Tested {time}",
+      "recovery_auth": "Reconnect this MCP server to restore access.",
+      "recovery_network": "Check your network and try the connection test again.",
+      "recovery_protocol": "Review this MCP server in Tools. To change its URL or authentication, add a replacement connection.",
+      "retry": "Retry test",
+      "open_tools": "Open Tools"
+    },
+    "diagnostics": {
+      "transport": "Transport",
+      "category": "Status category",
+      "attempted_at": "Attempt time",
+      "app_version": "App version",
+      "summary": "Summary",
+      "unavailable": "Not recorded"
     },
     "create": {
       "type_label": "Connection type",
@@ -299,8 +325,24 @@
     "chats_list": {
       "title": "Chats",
       "add_chat": "Add Chat",
+      "archive_import": "Import archive",
       "search_placeholder": "Search conversations...",
-      "search_no_results": "No conversations match your search"
+      "search_no_results": "No conversations match your search",
+      "select_conversation": "Select {}",
+      "deselect_conversation": "Deselect {}",
+      "selected_count": {
+        "zero": "No conversations selected",
+        "one": "{} selected",
+        "other": "{} selected"
+      },
+      "clear_selection": "Clear selection",
+      "bulk_pin": "Pin selected",
+      "bulk_unpin": "Unpin selected",
+      "bulk_delete": "Delete selected",
+      "bulk_delete_title": "Delete selected conversations",
+      "bulk_delete_confirm": "Delete all selected conversations? This action cannot be undone.",
+      "bulk_pin_failures": "Could not update pin for: {}",
+      "bulk_delete_failures": "Could not delete: {}"
     },
     "new_chat": {
       "starting": "Starting conversation...",
@@ -309,7 +351,29 @@
     },
     "chat_conversation": {
       "select_model_selctor": "Select Model",
+      "archive_export": "Export archive",
+      "archive_exported": "Conversation archive saved.",
+      "archive_invalid": "This conversation archive is invalid or corrupted.",
+      "archive_unsupported_version": "This conversation archive uses an unsupported version.",
+      "archive_error": "Could not export or import this conversation.",
+      "reasoning": {
+        "title": "Reasoning",
+        "enabled": "Enable reasoning",
+        "effort": "Reasoning effort",
+        "budget_tokens": "Reasoning token budget",
+        "budget_hint": "Enter a value from {min} to {max}.",
+        "budget_invalid": "Enter a whole number from {min} to {max}.",
+        "default": "Provider default",
+        "effort_default": "Default",
+        "options_tooltip": "Reasoning options",
+        "trigger_label": "Reasoning options: {status}",
+        "status_default": "Provider default",
+        "status_off": "Off",
+        "status_custom": "Custom",
+        "restore_default": "Restore provider default"
+      },
       "message_placeholder": "Type your message...",
+      "discard_draft": "Discard draft",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",
       "attach_camera": "Take photo",
@@ -319,6 +383,17 @@
       "recording_status": "Recording",
       "voice_record_label": "Voice Record",
       "image_attachment_label": "Image",
+      "camera_attachment_error": "Couldn't open the camera. Check camera permissions and try again.",
+      "clear_all_attachments": "Clear all attachments",
+      "play_voice_attachment": "Play voice attachment",
+      "stop_voice_attachment": "Stop voice playback",
+      "microphone_permission_denied": "Microphone permission denied. Allow microphone access in system settings, then try again.",
+      "attachment_file_model_unsupported": "The selected model doesn't support file input. Switch to a model that accepts files.",
+      "attachment_file_local_unavailable": "File attachments are unavailable on this platform or in this workspace.",
+      "attachment_image_model_unsupported": "The selected model doesn't support image input. Switch to a model that accepts images.",
+      "attachment_image_local_unavailable": "Image attachments are unavailable on this platform or in this workspace.",
+      "attachment_audio_model_unsupported": "The selected model doesn't support audio input. Switch to a model that accepts audio.",
+      "attachment_audio_local_unavailable": "Audio attachments are unavailable on this platform or in this workspace.",
       "a2ui_image_loading": "Loading image…",
       "a2ui_image_error": "Image unavailable",
       "attachment_unsupported": "Current model does not support this input.",
@@ -331,6 +406,9 @@
       "switch_model_unsupported_body": "This model does not support {modalities}. Unsupported attachments will be skipped.",
       "switch_model_cancel": "Cancel",
       "switch_model_confirm": "Switch",
+      "external_link_title": "Open external link?",
+      "external_link_message": "This link came from chat content. Check the destination before opening it.\n\nHost: {host}\nURL: {url}",
+      "external_link_open": "Open link",
       "rename": "Rename",
       "rename_title": "Rename chat",
       "rename_field_label": "Chat title",
@@ -379,6 +457,16 @@
         "one": "1 sub-agent running",
         "other": "{} sub-agents running"
       },
+
+      "active_sub_agents_accessible_label": "{count}. View active sub-agents",
+      "active_sub_agents_chat_accessible_label": "{count} in {conversation}. View active sub-agents",
+      "active_sub_agents_title": "Active sub-agents",
+      "sub_agent_error_detail": "Error: {error}",
+      "sub_agent_status_awaiting_approval": "Awaiting approval",
+      "sub_agent_status_completed": "Completed",
+      "sub_agent_status_failed": "Failed",
+      "sub_agent_status_running": "Running",
+      "sub_agent_status_stopped": "Stopped",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
         "one": "1 queued message",
@@ -436,6 +524,16 @@
     "remove_tool_title": "Remove Tool",
     "remove_tool_confirm": "Are you sure you want to remove this tool from the workspace?",
     "remove_tool_tooltip": "Remove tool",
+    "select_group": "Select group {}",
+    "deselect_group": "Deselect group {}",
+    "select_tool": "Select tool {}",
+    "deselect_tool": "Deselect tool {}",
+    "bulk_delete_title": "Delete selected tools?",
+    "bulk_delete_confirm": "Selected custom tools will be removed. Selected MCP groups will remove their server and all of its tools.",
+    "bulk_delete_failures": {
+      "one": "Could not remove 1 tool: {names}",
+      "other": "Could not remove {} tools: {names}"
+    },
     "permission_always_ask": "Always Ask",
     "permission_always_allow": "Always Allow",
     "permission_label": "Permission",
@@ -477,6 +575,14 @@
     "delete": "Delete skill",
     "duplicate": "Duplicate skill",
     "delete_confirm": "Delete this skill? This also removes its conversation load state and template tools.",
+    "select_skill": "Select skill {}",
+    "deselect_skill": "Deselect skill {}",
+    "bulk_delete_title": "Delete selected skills?",
+    "bulk_delete_confirm": "Delete the selected user skills? Their conversation load state and template tools will also be removed.",
+    "bulk_delete_failures": {
+      "one": "Could not delete 1 skill: {names}",
+      "other": "Could not delete {} skills: {names}"
+    },
     "save_error": "Unable to save skill",
     "unsaved_changes_title": "Unsaved changes",
     "unsaved_changes_message": "You have unsaved changes. Discard them and leave?",
@@ -527,9 +633,20 @@
       "italic": "Italic",
       "heading": "Heading",
       "bullets": "Bullets",
+      "numbered_list": "Numbered list",
+      "task_list": "Task list",
+      "link": "Link",
+      "link_text_placeholder": "Link text",
+      "link_url_placeholder": "https://example.com",
       "code": "Code",
-      "quote": "Quote"
-    }
+      "quote": "Quote",
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "link_dialog_title": "Insert link",
+    "link_text_label": "Link text",
+    "link_destination_label": "Destination URL",
+    "link_destination_required": "Enter a destination URL"
   },
   "skills_resource": {
     "section_title": "Resources",
@@ -560,7 +677,11 @@
     "available_empty": "No skills available",
     "credentials_ready": "Ready",
     "credentials_missing": "Missing credentials",
-    "credentials_unknown": "Credential status unknown"
+    "credentials_unknown": "Credential status unknown",
+    "context_added": "Added",
+    "context_ready": "Ready in context",
+    "context_needs_context": "Needs context",
+    "context_error": "Context error"
   },
   "skills_tool": {
     "section_title": "Template tools",
@@ -634,18 +755,33 @@
     "create_title": "New Credential",
     "edit_title": "Edit Credential",
     "empty": "No credentials",
+    "search": "Search credentials",
+    "search_empty": "No matching credentials",
     "error": "Error loading credentials",
     "not_found": "Credential not found",
     "save": "Save",
     "save_error": "Unable to save credential",
+    "secret_required": "Add at least one secret field. Metadata-only definitions cannot be used as credentials.",
+    "schema_conflict": "Cannot change {fields}: {credentials} saved credentials use this definition. Edit or remove those credentials first.",
+    "delete_conflict": "Cannot delete: {credentials} linked credentials, {skills} skills, and {tools} template tools are affected. Remove the credentials first.",
+    "manage_credentials": "Manage credentials",
+    "duplicate": "Duplicate",
+    "duplicate_success": "Credential duplicated",
+    "duplicate_error": "Unable to duplicate credential",
+    "copy_slug": "Copy slug",
+    "slug_copied": "Slug copied",
     "delete_title": "Delete credential",
     "delete_confirm": "Delete this credential? Skills using it will no longer require these credentials.",
     "attributes_label": "Attributes",
     "attribute_variable_label": "Variable",
+    "attribute_variable_required": "Variable is required",
+    "attribute_variable_duplicate": "Variable must be unique",
     "attribute_description_label": "Description",
     "attribute_optional": "Optional",
     "attribute_secret": "Secret",
     "add_attribute": "Add attribute",
+    "move_attribute_up": "Move attribute up",
+    "move_attribute_down": "Move attribute down",
     "delete_attribute": "Delete attribute",
     "hint": "Define the credential fields that skills can use, such as api_key or user_id."
   },
@@ -698,12 +834,14 @@
     "agents": {
       "title": "Agents",
       "description": "Inspect enabled workspace agents.",
-      "content": "Use this skill to list enabled agents and filter them by type. Loading this skill adds only list_agents to the conversation. run_sub_agent is a harness tool and stays available without loading this skill."
+      "content": "Use list_agents to find configured agents; filter by type=sub_agent when selecting a specialist. A general sub-agent needs no configured agent: call run_sub_agent with title and prompt and omit agentId. Loading this skill adds only list_agents; run_sub_agent remains available without loading it."
     }
   },
   "tool_confirmation": {
     "allow_once": "Allow Once",
     "allow_conversation": "Allow for Conversation",
+    "allow_all": "Allow All",
+    "deny_all": "Deny All",
     "skip": "Skip",
     "stop_all": "Stop All"
   },
@@ -741,10 +879,35 @@
     "close_dialog": "Close dialog",
     "reload": "Reload",
     "details": "Details",
+    "sort_by": "Sort by",
+    "sort_name_ascending": "Name (A-Z)",
+    "sort_name_descending": "Name (Z-A)",
+    "sort_enabled_first": "Enabled first",
+    "select_all": "Select all visible",
+    "deselect_all": "Deselect all visible",
+    "clear_selection": "Clear selection",
+    "delete_selected": "Delete selected",
+    "clear_search": "Clear search",
+    "selected_count": {
+      "one": "1 selected",
+      "other": "{} selected"
+    },
+    "hidden_selected_count": {
+      "one": "1 hidden by filters",
+      "other": "{} hidden by filters"
+    },
+    "additional_failures": {
+      "one": "; 1 more failure",
+      "other": "; {} more failures"
+    },
     "show_more": "Show more",
     "show_less": "Show less",
     "error_title": "Something went wrong",
-    "error_message": "Try again or reopen this screen."
+    "error_message": "Try again or reopen this screen.",
+    "unsaved_changes_title": "Unsaved changes",
+    "unsaved_changes_message": "You have unsaved changes. Discard them?",
+    "discard_changes": "Discard changes",
+    "keep_editing": "Keep editing"
   },
   "workspace_capabilities": {
     "unsupported_error": "This feature is not available in this workspace."
@@ -816,7 +979,8 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "reset_defaults": "Reset to Defaults"
     }
   },
   "more_screen": {
@@ -933,6 +1097,14 @@
     "settings": {
       "title": "Conversation Compaction",
       "subtitle": "Configure automatic context compaction behavior",
+      "model_budgets_title": "Model-specific budgets",
+      "model_budgets_hint": "Enter nonnegative token counts; leave both fields blank to remove an override.",
+      "reserve_tokens": "Output reserve (tokens)",
+      "keep_recent_tokens": "Recent context to keep (tokens)",
+      "budget_optional": "Optional nonnegative integer",
+      "models_empty": "Select a model to configure a model-specific budget.",
+      "models_loading": "Loading workspace models…",
+      "models_unavailable": "Workspace models are unavailable. Existing budgets remain unchanged.",
       "auto_enabled": "Auto Compaction",
       "auto_enabled_hint": "Automatically compact older context when thresholds are met",
       "usage_threshold": "Usage Percentage Threshold",
@@ -948,7 +1120,7 @@
         "usage_range": "Usage threshold must be between 5 and 100",
         "remaining_positive": "Remaining token threshold must be greater than 0",
         "remaining_below_limit": "Remaining token threshold must be below the model context limit",
-        "settings_invalid": "Please enter valid numeric values for all fields"
+        "settings_invalid": "Enter valid numbers. Model budgets must be nonnegative integers."
       }
     },
     "compacting": {
@@ -964,7 +1136,15 @@
       "details_range": "Compacted Range",
       "details_created": "Created",
       "details_messages": "Messages compacted",
-      "details_content_label": "Summary Content"
+      "details_content_label": "Summary Content",
+      "details_model": "Model",
+      "details_unknown": "Unknown",
+      "history_action": "Checkpoint history",
+      "history_active": "Active checkpoint",
+      "history_restore": "Use this checkpoint",
+      "history_empty": "No checkpoints available.",
+      "history_loading": "Loading checkpoint history…",
+      "history_unavailable": "Checkpoint history is unavailable."
     },
     "manual": {
       "button_tooltip": "Compact conversation",
@@ -983,11 +1163,36 @@
       "model_missing": "Cannot compact because the selected model is missing. Select another model.",
       "context_overflow_retry_failed": "Context overflow occurred and recovery compaction failed. Please try compacting manually.",
       "auto_blocked": "Automatic compaction is required but failed. Assistant continuation is blocked. Try compacting manually.",
-      "settings_invalid": "Invalid compaction settings. Please check your values."
+      "settings_invalid": "Invalid compaction settings. Please check your values.",
+      "checkpoint_restore_unavailable": "Checkpoint is invalid or cannot be restored while conversation activity is pending."
     }
+  },
+  "workspace_archive": {
+    "export": "Export configuration",
+    "import_into": "Import configuration here",
+    "import_new": "Import as new workspace",
+    "exported": "Workspace configuration saved. Credentials and MCP server connections are not included.",
+    "imported": "Workspace configuration imported. Add credentials again to use connected services.",
+    "invalid": "This workspace configuration archive is invalid or damaged.",
+    "unsupported_version": "This workspace configuration archive uses an unsupported version.",
+    "invalid_target": "This workspace cannot receive the configuration archive.",
+    "unsupported_configuration": "This configuration references an app skill unavailable in the target workspace.",
+    "error": "Could not export or import the workspace configuration."
   },
   "workspace_management": {
     "title": "Manage Workspaces",
+    "copy_id": "Copy ID",
+    "id_copied": "Workspace ID copied",
+    "copy_id_error": "Could not copy workspace ID",
+    "select_workspace": "Select workspace {}",
+    "deselect_workspace": "Deselect workspace {}",
+    "bulk_delete_title": "Delete selected workspaces?",
+    "bulk_delete_confirm": "Local workspaces will be deleted from this device. Connected cloud workspaces will only be removed from this app.",
+    "bulk_delete_failures": {
+      "one": "Could not delete or remove 1 workspace: {names}",
+      "other": "Could not delete or remove {} workspaces: {names}"
+    },
+    "cloud_retry": "Retry",
     "create_button": "Create Workspace",
     "duplicate": "Duplicate Workspace",
     "create_title": "Create New Workspace",
@@ -1003,10 +1208,18 @@
     "name_required_error": "Workspace name is required",
     "name_too_short_error": "Workspace name must be at least {min} characters",
     "name_too_long_error": "Workspace name must be at most {max} characters",
+    "unsaved_changes_title": "Discard unsaved changes?",
+    "unsaved_changes_message": "You have unsaved changes. Do you want to discard them?",
+    "discard_changes": "Discard",
+    "keep_editing": "Keep editing",
     "no_workspaces": "No workspaces available",
+    "search_placeholder": "Search workspaces",
+    "no_search_results": "No workspaces match your search.",
     "switch_title": "Switch workspace?",
     "switch_confirm": "Switch to \"{name}\"?",
     "switch_error": "Failed to switch workspace. Please try again.",
+    "switch_loading": "Switching workspace...",
+    "switch_retry": "Retry",
     "loading": "Loading workspaces...",
     "load_error": "Failed to load workspaces. Please try again.",
     "dropdown_placeholder": "Select workspace",
@@ -1115,9 +1328,16 @@
     "status_needs_sign_in": "Needs sign in",
     "session_expired": "Session expired. Sign in again.",
     "sign_in_again": "Sign in again",
-    "remove": "Remove account",
-    "remove_title": "Remove cloud account?",
+    "remove": "Remove from app",
+    "remove_title": "Remove cloud account from this app?",
     "remove_message": "Remove {email} from this app? Cloud data stays in the cloud.",
-    "remove_local_mirrors_warning": "Local shortcuts for cloud workspaces connected through this account will be removed from this app."
+    "remove_local_mirrors_warning": "Local shortcuts for cloud workspaces connected through this account will be removed from this app.",
+    "remove_failed": "Could not remove this account from this app. Try again.",
+    "delete": "Delete account",
+    "delete_title": "Permanently delete cloud account?",
+    "delete_message": "Permanently delete {email} and its sign-in credentials? Your access to shared cloud workspaces will end, but their content will remain. Delete or transfer any cloud workspaces you own first. This cannot be undone.",
+    "delete_owned_workspaces_error": "Delete or transfer the cloud workspaces you own before deleting this account.",
+    "delete_local_cleanup_failed": "Account was deleted, but cleanup on this device did not finish. Some cloud workspace shortcuts may remain.",
+    "delete_failed": "Could not finish deleting this account. Check your connection and try again."
   }
 }

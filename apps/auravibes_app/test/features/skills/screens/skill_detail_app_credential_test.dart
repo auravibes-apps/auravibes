@@ -83,26 +83,28 @@ void main() {
       );
       addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        EasyLocalization(
-          key: UniqueKey(),
-          child: Builder(
-            builder: (context) => UncontrolledProviderScope(
-              container: container,
-              child: MaterialApp.router(
-                routerConfig: router,
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(
+          EasyLocalization(
+            key: UniqueKey(),
+            child: Builder(
+              builder: (context) => UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
               ),
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
           ),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
-          useFallbackTranslations: true,
         ),
       );
 

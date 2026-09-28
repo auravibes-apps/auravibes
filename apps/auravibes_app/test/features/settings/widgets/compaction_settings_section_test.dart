@@ -3,7 +3,10 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
@@ -57,17 +60,26 @@ void main() {
     }
   });
 
-  Widget buildSubject() {
+  Widget buildSubject({
+    List<WorkspaceModelSelectionWithConnectionEntity> models = const [],
+  }) {
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: const Scaffold(
-          body: Material(
-            child: CompactionSettingsSection(workspaceId: testWorkspaceId),
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: const Scaffold(
+            body: SingleChildScrollView(
+              child: Material(
+                child: CompactionSettingsSection(workspaceId: testWorkspaceId),
+              ),
+            ),
           ),
         ),
       ),
       overrides: [
+        listWorkspaceModelSelectionsProvider(workspaceId: testWorkspaceId)
+            .overrideWith((ref) => Stream.value(models)),
         compactionSettingsProvider(testWorkspaceId)
             .overrideWith((ref) => readSettingsController().stream),
         saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
@@ -86,9 +98,12 @@ void main() {
     );
   }
 
-  Future<void> pumpSubject(WidgetTester tester) async {
+  Future<void> pumpSubject(
+    WidgetTester tester, {
+    List<WorkspaceModelSelectionWithConnectionEntity> models = const [],
+  }) async {
     await tester.runAsync(() async {
-      await tester.pumpWidget(buildSubject());
+      await tester.pumpWidget(buildSubject(models: models));
     });
     await tester.pump();
     await tester.pump();
@@ -129,9 +144,82 @@ void main() {
       expect(toggle.value, isFalse);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
-      final remainingField = tester.widget<TextField>(find.byType(TextField));
+      final remainingField = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(slider.value, 45);
       expect(remainingField.controller?.text, '999');
+    });
+  });
+
+  group('model budgets', () {
+    testWidgets('edits and saves exact provider/model override', (
+      tester,
+    ) async {
+      final now = DateTime(2026);
+      final model = WorkspaceModelSelectionWithConnectionEntity(
+        workspaceModelSelection: .new(
+          id: 'selection',
+          modelId: 'model-a',
+          createdAt: now,
+          updatedAt: now,
+          modelConnectionId: 'connection',
+          modelName: 'Model A',
+        ),
+        modelConnection: .new(
+          id: 'connection',
+          name: 'Provider connection',
+          modelId: 'provider',
+          createdAt: now,
+          updatedAt: now,
+          workspaceId: testWorkspaceId,
+          hasKey: true,
+        ),
+        modelsProvider: const .new(
+          id: 'provider',
+          name: 'Provider',
+          type: ModelProvidersType.openai,
+        ),
+      );
+      when(
+        () => readMockSave()(
+          workspaceId: testWorkspaceId,
+          settings: any(named: 'settings'),
+        ),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
+      readSettingsController().add(CompactionSettings.defaults);
+      await pumpSubject(tester, models: [model]);
+
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Provider / Model A'), findsOneWidget);
+
+      final fields = find.byType(EditableText);
+      await tester.ensureVisible(fields.at(1));
+      await tester.enterText(fields.at(1), '256');
+      await tester.enterText(fields.at(2), '1024');
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(AuraButton),
+              matching: find.byType(Text),
+            )
+            .last,
+      );
+      await tester.pump();
+
+      verify(
+        () => readMockSave()(
+          workspaceId: testWorkspaceId,
+          settings: const CompactionSettings(
+            modelOverrides: {
+              'provider/model-a': CompactionModelOverride(
+                reserveTokens: 256,
+                keepRecentTokens: 1024,
+              ),
+            },
+          ),
+        ),
+      ).called(1);
     });
   });
 
@@ -149,7 +237,7 @@ void main() {
 
       tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
       await tester.pump();
-      await tester.enterText(find.byType(TextField), '3000');
+      await tester.enterText(find.byType(AuraInput), '3000');
 
       await tester.tap(
         find
@@ -192,7 +280,7 @@ void main() {
 
       tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
       await tester.pump();
-      await tester.enterText(find.byType(TextField), '2000');
+      await tester.enterText(find.byType(AuraInput), '2000');
 
       await tester.tap(
         find
@@ -263,7 +351,7 @@ void main() {
           .called(1);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
-      final remainingField = tester.widget<TextField>(find.byType(TextField));
+      final remainingField = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(
         slider.value,
         CompactionSettings.defaults.usagePercentageThreshold,

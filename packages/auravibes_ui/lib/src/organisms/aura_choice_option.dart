@@ -7,6 +7,7 @@ class AuraChoiceOption<T> {
     required this.value,
     required this.label,
     this.disabled = false,
+    this.identifier,
     this.semanticLabel,
   });
 
@@ -18,6 +19,9 @@ class AuraChoiceOption<T> {
 
   /// Whether the option cannot be selected.
   final bool disabled;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   /// An optional accessibility label for the option.
   final String? semanticLabel;

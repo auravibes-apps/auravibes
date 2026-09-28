@@ -7,8 +7,8 @@
 #   apps/auravibes_app/web/sqlite3.wasm
 #
 # Prerequisites:
-#   - fvm installed and configured
-#   - dependencies resolved (fvm dart run melos bs)
+#   - FVM configured or configured Dart SDK on PATH
+#   - dependencies resolved
 
 set -euo pipefail
 
@@ -37,12 +37,17 @@ if [ "$MODE" = "--debug" ]; then
   OPT_FLAG="--no-minify"
 fi
 
+DART_COMMAND=(dart)
+if command -v fvm >/dev/null 2>&1; then
+  DART_COMMAND=(fvm dart)
+fi
+
 echo "Compiling drift worker ($MODE)..."
-fvm dart compile js $OPT_FLAG "$WORKER_SRC" -o "$WORKER_OUT"
+"${DART_COMMAND[@]}" compile js "$OPT_FLAG" "$WORKER_SRC" -o "$WORKER_OUT"
 echo "  -> $WORKER_OUT ($(wc -l < "$WORKER_OUT") lines)"
 
 if [ -z "${SQLITE3_VER:-}" ]; then
-  SQLITE3_VER=$(fvm dart pub --directory "$APP_DIR" deps --json 2>/dev/null \
+  SQLITE3_VER=$("${DART_COMMAND[@]}" pub --directory "$APP_DIR" deps --json 2>/dev/null \
     | python3 -c "import sys,json; pkgs=json.load(sys.stdin)['packages']; print(next(p['version'] for p in pkgs if p['name']=='sqlite3'))" \
     2>/dev/null || true)
 fi
@@ -53,6 +58,17 @@ if [ -z "$SQLITE3_VER" ]; then
   echo "  https://github.com/simolus3/sqlite3.dart/releases" >&2
   exit 1
 fi
+
+case "$SQLITE3_VER" in
+  3.5.2)
+    SQLITE3_WASM_SHA256="13d3f11d05b39ba0618a7115fb41640a5d48b6300f5d3f325f554b42bd6688a4"
+    ;;
+  *)
+    echo "Error: no pinned sqlite3.wasm checksum for sqlite3 $SQLITE3_VER." >&2
+    echo "Add the verified release checksum to $0 before downloading." >&2
+    exit 1
+    ;;
+esac
 
 TAG="sqlite3-${SQLITE3_VER}"
 WASM_URL="https://github.com/simolus3/sqlite3.dart/releases/download/${TAG}/sqlite3.wasm"
@@ -69,23 +85,21 @@ HTTP_CODE=$(curl -fsSL \
   -o "$TMP_WASM" "$WASM_URL" || true)
 
 if [ "$HTTP_CODE" = "200" ]; then
-  if [ -n "${SQLITE3_WASM_SHA256:-}" ]; then
-    if command -v sha256sum >/dev/null 2>&1; then
-      ACTUAL_SHA=$(sha256sum "$TMP_WASM" | cut -d' ' -f1)
-    elif command -v shasum >/dev/null 2>&1; then
-      ACTUAL_SHA=$(shasum -a 256 "$TMP_WASM" | cut -d' ' -f1)
-    else
-      rm -f "$TMP_WASM"
-      echo "Error: no sha256 tool found (need sha256sum or shasum)" >&2
-      exit 1
-    fi
-    if [ "$ACTUAL_SHA" != "$SQLITE3_WASM_SHA256" ]; then
-      rm -f "$TMP_WASM"
-      echo "Error: checksum mismatch for $WASM_URL" >&2
-      echo "  expected: $SQLITE3_WASM_SHA256" >&2
-      echo "  actual:   $ACTUAL_SHA" >&2
-      exit 1
-    fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    ACTUAL_SHA=$(sha256sum "$TMP_WASM" | cut -d' ' -f1)
+  elif command -v shasum >/dev/null 2>&1; then
+    ACTUAL_SHA=$(shasum -a 256 "$TMP_WASM" | cut -d' ' -f1)
+  else
+    rm -f "$TMP_WASM"
+    echo "Error: no sha256 tool found (need sha256sum or shasum)" >&2
+    exit 1
+  fi
+  if [ "$ACTUAL_SHA" != "$SQLITE3_WASM_SHA256" ]; then
+    rm -f "$TMP_WASM"
+    echo "Error: checksum mismatch for $WASM_URL" >&2
+    echo "  expected: $SQLITE3_WASM_SHA256" >&2
+    echo "  actual:   $ACTUAL_SHA" >&2
+    exit 1
   fi
   mv "$TMP_WASM" "$WASM_OUT"
   echo "  -> $WASM_OUT ($(wc -c < "$WASM_OUT") bytes)"

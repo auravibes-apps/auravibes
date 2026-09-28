@@ -3,9 +3,9 @@ import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart' show AuraTileVariant;
 import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
-import 'package:material_ui/material_ui.dart';
 
 export 'aura_popup_menu_button.dart';
 
@@ -116,6 +116,9 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
     _updatePopupMenuFocusNode(this, oldWidget.focusNode, widget.focusNode);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller._state = null;
+    }
     widget.controller._state = this;
   }
 
@@ -423,6 +426,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
     this.leading,
     this.trailing,
     this.variant = .ghost,
+    this.identifier,
   });
 
   /// The main content of the menu item.
@@ -439,6 +443,9 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
 
   /// The visual variant of the menu item.
   final AuraTileVariant variant;
+
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
 
   @override
   Widget build(BuildContext context) => _AuraPopupMenuItemButton(item: this);
@@ -457,13 +464,10 @@ class _AuraPopupMenuItemButton extends StatelessWidget {
         ? interactionColor
         : colors.onSurfaceVariant.withValues(alpha: 0.6);
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 48),
-      child: _AuraPopupMenuPressable(
-        item: item,
-        interactionColor: interactionColor,
-        contentColor: contentColor,
-      ),
+    return _AuraPopupMenuPressable(
+      item: item,
+      interactionColor: interactionColor,
+      contentColor: contentColor,
     );
   }
 }
@@ -492,6 +496,7 @@ class _AuraPopupMenuPressable extends StatelessWidget {
     ),
     color: interactionColor,
     onPressed: _onPressed(context),
+    identifier: item.identifier,
     isButtonSemantics: true,
   );
 

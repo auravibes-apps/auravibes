@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/models/widgets/enhanced_model_input.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -82,18 +83,23 @@ void main() {
     });
 
     testWidgets('renders validation error and hint', (tester) async {
-      await tester.pumpWidget(
-        const TestableApp(
-          child: Scaffold(
-            body: EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name),
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          const TestableApp(
+            child: Scaffold(
+              body: EnhancedModelInput(workspaceId: 'ws-1', fieldType: .name),
+            ),
           ),
-        ),
-      );
+        );
+      });
       final pumpCount = await tester.pumpAndSettle();
       expect(pumpCount, isNonNegative);
 
       expect(find.text('Name is required'), findsOneWidget);
-      expect(find.byType(TextFormField), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget is AuraInput),
+        findsOneWidget,
+      );
     });
   });
 }

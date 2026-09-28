@@ -119,4 +119,16 @@ class ModelConnectionEndpoint extends Endpoint {
       request: request,
     );
   }
+
+  Future<VerifyModelConnectionResult> verifyDraft(
+    Session session,
+    VerifyModelConnectionRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.verifyDraft(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
 }

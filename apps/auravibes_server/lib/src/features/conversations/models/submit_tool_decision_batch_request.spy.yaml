@@ -1,0 +1,7 @@
+class: SubmitToolDecisionBatchRequest
+fields:
+  workspaceId: int
+  requestId: String
+  decision: String
+  calls: List<SubmitToolDecisionBatchCall>
+  a2uiSupportedComponents: List<String>?

@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
@@ -13,6 +14,13 @@ import 'package:riverpod/riverpod.dart';
 import '../../../test_mocks.dart';
 
 class _FakeModelConnectionRepository implements ModelConnectionRepository {
+  @override
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
+  ) {
+    throw UnimplementedError();
+  }
+
   @override
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
@@ -29,8 +37,9 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate modelConnection,
-  ) {
+    ModelConnectionToCreate modelConnection, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 
@@ -44,8 +53,9 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
-    ModelConnectionToUpdate modelConnection,
-  ) {
+    ModelConnectionToUpdate modelConnection, {
+    ModelProviderVerification? verification,
+  }) {
     throw UnimplementedError();
   }
 

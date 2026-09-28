@@ -2,10 +2,15 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_connection_diagnostic_report.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_result.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
+import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -18,10 +23,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/experimental/mutation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 final _logger = Logger('service_connections_screen');
-final _modelCatalogSyncMutation = Mutation<void>();
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 const _deleteConfirmationActions = AuraConfirmDialogActions(
@@ -166,20 +170,28 @@ Future<void> _syncModelCatalog(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final wasSuccessful = await _performModelCatalogSync(ref, workspaceId);
-  if (!context.mounted || wasSuccessful == null) return;
+  final wasSuccessful = await _performModelCatalogSync(
+    context,
+    ref,
+    workspaceId,
+  );
+  if (!context.mounted || wasSuccessful != true) return;
 
-  _showModelCatalogSyncResult(context, wasSuccessful);
+  _showModelCatalogSyncResult(context);
 }
 
 Future<bool?> _performModelCatalogSync(
+  BuildContext context,
   WidgetRef ref,
   String workspaceId,
 ) async {
-  if (ref.read(_modelCatalogSyncMutation).isPending) return null;
+  if (ref.read(modelCatalogSyncNotifierProvider).isSyncing) return null;
 
   try {
-    await _runModelCatalogSync(ref, workspaceId);
+    await ref.read(modelCatalogSyncNotifierProvider.notifier).retryManually();
+    if (context.mounted) {
+      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
+    }
 
     return true;
   } on Object catch (error, stackTrace) {
@@ -189,30 +201,11 @@ Future<bool?> _performModelCatalogSync(
   }
 }
 
-Future<void> _runModelCatalogSync(WidgetRef ref, String workspaceId) =>
-    _modelCatalogSyncMutation.run(ref, (_) async {
-      await ref.read(modelSyncServiceProvider).performManualSync();
-      ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId));
-    });
-
-void _showModelCatalogSyncResult(BuildContext context, bool wasSuccessful) =>
-    _showModelCatalogSyncSnackBar(
-      context,
-      wasSuccessful
-          ? LocaleKeys.models_screens_catalog_sync_success
-          : LocaleKeys.models_screens_catalog_sync_error,
-      wasSuccessful ? .success : .error,
-    );
-
-void _showModelCatalogSyncSnackBar(
-  BuildContext context,
-  String localeKey,
-  AuraSnackBarVariant variant,
-) {
+void _showModelCatalogSyncResult(BuildContext context) {
   final _ = AuraSnackBars.show(
     context: context,
-    content: TextLocale(localeKey),
-    variant: variant,
+    content: const TextLocale(LocaleKeys.models_screens_catalog_sync_success),
+    variant: .success,
   );
 }
 
@@ -269,16 +262,97 @@ class const _ServiceConnectionsBody({
   @override
   Widget build(BuildContext context) {
     final connections = _connectionsValue(connectionsAsync);
-    if (connections != null) {
-      return _ConnectionsList(
-        connections: connections,
-        onAddConnection: onAddConnection,
-      );
-    }
+    final content = connections == null
+        ? _ConnectionsLoadState(isLoading: connectionsAsync.isLoading)
+        : _ConnectionsList(
+            connections: connections,
+            onAddConnection: onAddConnection,
+          );
 
-    return connectionsAsync.isLoading
-        ? const Center(child: AuraSpinner())
-        : const Center(child: _ConnectionsLoadError());
+    return Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        const _ModelCatalogSyncStatus(),
+        Expanded(child: content),
+      ],
+    );
+  }
+}
+
+class const _ConnectionsLoadState({required final bool isLoading})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Center(
+    child: isLoading ? const AuraSpinner() : const _ConnectionsLoadError(),
+  );
+}
+
+class const _ModelCatalogSyncStatus() extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(modelCatalogSyncNotifierProvider);
+    final lastAttemptAt = state.lastAttemptAt;
+    if (lastAttemptAt == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: _ModelCatalogSyncStatusRows(
+        isSyncing: state.isSyncing,
+        hasFailure: state.failure != null,
+        lastAttemptAt: lastAttemptAt,
+        lastSuccessfulSyncAt: state.lastSuccessfulSyncAt,
+      ),
+    );
+  }
+}
+
+class const _ModelCatalogSyncStatusRows({
+  required final bool isSyncing,
+  required final bool hasFailure,
+  required final DateTime lastAttemptAt,
+  required final DateTime? lastSuccessfulSyncAt,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    crossAxisAlignment: .start,
+    children: [
+      if (isSyncing)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_tooltip,
+          timestamp: lastAttemptAt,
+        ),
+      if (hasFailure)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.models_screens_catalog_sync_error,
+          timestamp: lastAttemptAt,
+        ),
+      if (lastSuccessfulSyncAt case final timestamp?)
+        _ModelCatalogSyncStatusRow(
+          labelKey: LocaleKeys.service_connections_metadata_last_refreshed_at,
+          timestamp: timestamp,
+        ),
+    ],
+  );
+}
+
+class const _ModelCatalogSyncStatusRow({
+  required final String labelKey,
+  required final DateTime timestamp,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    final formattedTimestamp =
+        '${localizations.formatMediumDate(timestamp)} '
+        '${localizations.formatTimeOfDay(.fromDateTime(timestamp))}';
+
+    return Row(
+      children: [
+        Expanded(child: TextLocale(labelKey)),
+        const SizedBox(width: 8),
+        Text(formattedTimestamp),
+      ],
+    );
   }
 }
 
@@ -334,7 +408,7 @@ class const _SyncModelCatalogControl({required final String workspaceId})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isSyncing = ref.watch(_modelCatalogSyncMutation).isPending;
+    final isSyncing = ref.watch(modelCatalogSyncNotifierProvider).isSyncing;
 
     return _ModelCatalogSyncIconButton(
       onPressed: () => unawaited(_syncModelCatalog(context, ref, workspaceId)),
@@ -804,6 +878,8 @@ class const _ConnectionTileDetails({
     children: [
       if (connection.kind == ServiceConnectionListItemKind.mcpServer)
         _ConnectionStatusBadge(status: connection.displayStatus),
+      if (connection.kind == ServiceConnectionListItemKind.mcpServer)
+        _McpConnectionTestControl(connection: connection),
       if (connection.metadataValues.isNotEmpty)
         _ConnectionMetadata(values: connection.metadataValues),
     ],
@@ -811,6 +887,334 @@ class const _ConnectionTileDetails({
     crossAxisAlignment: .start,
     mainAxisSize: .min,
   );
+}
+
+class _McpConnectionTestControl extends ConsumerStatefulWidget {
+  const new({required this.connection});
+
+  final ServiceConnectionListItem connection;
+
+  @override
+  ConsumerState<_McpConnectionTestControl> createState() =>
+      _McpConnectionTestControlState();
+}
+
+typedef _McpTestControlStateData = ({
+  ServiceConnectionListItem connection,
+  McpConnectionTestResult? result,
+  bool isTesting,
+  VoidCallback onTest,
+  void Function(McpConnectionTestResult) onViewDetails,
+});
+
+class _McpConnectionTestControlState
+    extends ConsumerState<_McpConnectionTestControl> {
+  McpConnectionTestResult? _result;
+  bool _testing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return _McpTestControlContents(
+      state: (
+        connection: widget.connection,
+        result: _result,
+        isTesting: _testing,
+        onTest: () => unawaited(_test()),
+        onViewDetails: (result) => unawaited(_showDetails(result)),
+      ),
+    );
+  }
+
+  Future<void> _test() async {
+    final serverId = widget.connection.mcpServerId;
+    if (_testing || serverId == null) return;
+    setState(() => _testing = true);
+    try {
+      _setResult(await _runTest(serverId));
+    } on Object catch (error) {
+      _setUnexpectedResult(error);
+    } finally {
+      if (mounted) setState(() => _testing = false);
+    }
+  }
+
+  Future<McpConnectionTestResult> _runTest(String serverId) async {
+    final usecase = await ref.read(
+      testMcpConnectionUsecaseProvider(widget.connection.workspaceId).future,
+    );
+
+    return await usecase(serverId);
+  }
+
+  void _setResult(McpConnectionTestResult result) {
+    if (mounted) setState(() => _result = result);
+  }
+
+  void _setUnexpectedResult(Object error) {
+    _setResult((
+      status: .unknown,
+      testedAt: .now(),
+      transport: widget.connection.transport,
+      errorDetails: error.runtimeType.toString(),
+    ));
+  }
+
+  Future<void> _showDetails(McpConnectionTestResult result) =>
+      McpErrorDetails.show(
+        context,
+        groupName: widget.connection.name,
+        errorMessage: result.errorDetails,
+        copyText: () => _mcpDiagnosticReportText(context, .fromTest(result)),
+      );
+}
+
+class const _McpTestControlContents({
+  required final _McpTestControlStateData state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        _McpTestActionButton(
+          connectionId: state.connection.id,
+          isTesting: state.isTesting,
+          onPressed: state.onTest,
+        ),
+        _McpTestResultView(state: state),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
+    );
+  }
+}
+
+class const _McpTestResultView({required final _McpTestControlStateData state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return switch (state.result) {
+      final result? => _McpTestResultContent(state: state, result: result),
+      null => const SizedBox.shrink(),
+    };
+  }
+}
+
+class const _McpTestResultContent({
+  required final _McpTestControlStateData state,
+  required final McpConnectionTestResult result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _McpTestResultSummary(result: result),
+      _McpTestFailureActions(
+        connection: state.connection,
+        result: result,
+        onRetry: state.onTest,
+        onViewDetails: () => state.onViewDetails(result),
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+    mainAxisSize: .min,
+  );
+}
+
+class const _McpTestActionButton({
+  required final String connectionId,
+  required final bool isTesting,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(
+      LocaleKeys.service_connections_action_test_connection,
+    ),
+    variant: .outlined,
+    size: .small,
+    isLoading: isTesting,
+    disabled: isTesting,
+    identifier: 'service_connection_test_$connectionId',
+  );
+}
+
+class const _McpTestResultSummary({
+  required final McpConnectionTestResult result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      TextLocale(_mcpTestSummaryKey(result.status)),
+      Text(
+        LocaleKeys.service_connections_test_attempted_at.tr(
+          namedArgs: {'time': _localTestTime(context, result.testedAt)},
+          context: context,
+        ),
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+    mainAxisSize: .min,
+  );
+}
+
+class const _McpTestFailureActions({
+  required final ServiceConnectionListItem connection,
+  required final McpConnectionTestResult result,
+  required final VoidCallback onRetry,
+  required final VoidCallback onViewDetails,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      result.status == McpConnectionTestStatus.success
+      ? const SizedBox.shrink()
+      : _McpTestFailureActionContent(
+          connection: connection,
+          result: result,
+          onRetry: onRetry,
+          onViewDetails: onViewDetails,
+        );
+}
+
+class const _McpTestFailureActionContent({
+  required final ServiceConnectionListItem connection,
+  required final McpConnectionTestResult result,
+  required final VoidCallback onRetry,
+  required final VoidCallback onViewDetails,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _McpTestRecovery(
+        connection: connection,
+        status: result.status,
+        onRetry: onRetry,
+      ),
+      AuraButton(
+        onPressed: onViewDetails,
+        child: const TextLocale(LocaleKeys.tools_screen_mcp_view_error),
+        variant: .text,
+        size: .small,
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+    mainAxisSize: .min,
+  );
+}
+
+class const _McpTestRecovery({
+  required final ServiceConnectionListItem connection,
+  required final McpConnectionTestStatus status,
+  required final VoidCallback onRetry,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guidanceKey = _guidanceKey();
+    if (guidanceKey == null) return const SizedBox.shrink();
+
+    return AuraColumn(
+      children: [
+        TextLocale(guidanceKey),
+        AuraButton(
+          onPressed: _recoveryAction(context, ref),
+          child: TextLocale(_recoveryLabelKey()),
+          variant: .text,
+          size: .small,
+        ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
+    );
+  }
+
+  String? _guidanceKey() => switch (status) {
+    .authentication => LocaleKeys.service_connections_test_recovery_auth,
+    .network => LocaleKeys.service_connections_test_recovery_network,
+    .protocol => LocaleKeys.service_connections_test_recovery_protocol,
+    .success || .unknown => null,
+  };
+
+  String _recoveryLabelKey() => switch (status) {
+    .authentication => LocaleKeys.service_connections_action_reconnect,
+    .network => LocaleKeys.service_connections_test_retry,
+    .protocol => LocaleKeys.service_connections_test_open_tools,
+    .success || .unknown => LocaleKeys.common_close,
+  };
+
+  VoidCallback _recoveryAction(BuildContext context, WidgetRef ref) =>
+      switch (status) {
+        .authentication => () => unawaited(
+          _reconnectMcpServer(context, ref, connection),
+        ),
+        .network || .success || .unknown => onRetry,
+        .protocol => () => context.push<void>(
+          '/workspaces/${connection.workspaceId}/more/tools',
+        ),
+      };
+}
+
+String _localTestTime(BuildContext context, DateTime attemptedAt) {
+  final date = attemptedAt.toLocal();
+  final localizations = MaterialLocalizations.of(context);
+
+  return '${localizations.formatMediumDate(date)} '
+      '${localizations.formatTimeOfDay(.fromDateTime(date))}';
+}
+
+String _mcpTestSummaryKey(McpConnectionTestStatus status) => switch (status) {
+  .success => LocaleKeys.service_connections_test_success,
+  .authentication => LocaleKeys.service_connections_test_authentication,
+  .network => LocaleKeys.service_connections_test_network,
+  .protocol => LocaleKeys.service_connections_test_protocol,
+  .unknown => LocaleKeys.service_connections_test_unknown,
+};
+
+Future<String> _mcpDiagnosticReportText(
+  BuildContext context,
+  McpConnectionDiagnosticReport report,
+) async {
+  final labels = _mcpDiagnosticLabels(context);
+  final summary = _mcpTestSummaryKey(report.status).tr(context: context);
+  final version = await _appVersion(labels.unavailable);
+
+  return report.format(
+    appVersion: version,
+    localizedSummary: summary,
+    labels: labels,
+  );
+}
+
+McpDiagnosticLabels _mcpDiagnosticLabels(BuildContext context) => (
+  transport: LocaleKeys.service_connections_diagnostics_transport.tr(
+    context: context,
+  ),
+  category: LocaleKeys.service_connections_diagnostics_category.tr(
+    context: context,
+  ),
+  attemptedAt: LocaleKeys.service_connections_diagnostics_attempted_at.tr(
+    context: context,
+  ),
+  appVersion: LocaleKeys.service_connections_diagnostics_app_version.tr(
+    context: context,
+  ),
+  summary: LocaleKeys.service_connections_diagnostics_summary.tr(
+    context: context,
+  ),
+  unavailable: LocaleKeys.service_connections_diagnostics_unavailable.tr(
+    context: context,
+  ),
+);
+
+Future<String> _appVersion(String unavailable) async {
+  try {
+    return (await PackageInfo.fromPlatform()).version;
+  } on Object {
+    return unavailable;
+  }
 }
 
 typedef _ConnectionWarningData = ({String titleKey, AuraTint tint});
@@ -1052,6 +1456,8 @@ List<AuraPopupMenuItem> _connectionMenuItems(
   ServiceConnectionListItem connection,
 ) {
   return [
+    if (_hasConnectionErrorDetails(connection))
+      _viewErrorMenuItem(context, connection),
     if (connection.canReconnect) _reconnectMenuItem(context, ref, connection),
     if (connection.canRefresh) _refreshMenuItem(context, ref, connection),
     if (_canEditConnection(connection)) _editMenuItem(context, connection),
@@ -1059,6 +1465,32 @@ List<AuraPopupMenuItem> _connectionMenuItems(
       _deleteMenuItem(context, ref, connection),
   ];
 }
+
+bool _hasConnectionErrorDetails(ServiceConnectionListItem connection) =>
+    connection.kind == .mcpServer &&
+    (connection.displayStatus == .failed ||
+        connection.displayStatus == .needsReauth);
+
+AuraPopupMenuItem _viewErrorMenuItem(
+  BuildContext context,
+  ServiceConnectionListItem connection,
+) {
+  return AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.tools_screen_mcp_view_error),
+    onTap: () => unawaited(_showStoredMcpErrorDetails(context, connection)),
+    leading: const AuraIcon(Icons.visibility_outlined),
+  );
+}
+
+Future<void> _showStoredMcpErrorDetails(
+  BuildContext context,
+  ServiceConnectionListItem connection,
+) => McpErrorDetails.show(
+  context,
+  groupName: connection.name,
+  errorMessage: connection.lastAuthError,
+  copyText: () => _mcpDiagnosticReportText(context, .fromStored(connection)),
+);
 
 bool _canEditConnection(ServiceConnectionListItem connection) {
   return connection.kind == ServiceConnectionListItemKind.modelProvider ||

@@ -128,6 +128,36 @@ void main() {
       expect(result?.argumentsRaw, '{"input":"1+1"}');
     });
 
+    test('rejects ambiguous duplicate tool-call IDs', () async {
+      final duplicateMessage = message.copyWith(
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"1000*1000"}',
+            ),
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"2+2"}',
+            ),
+          ],
+        ),
+      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => duplicateMessage);
+
+      expect(
+        await provider.loadToolCall(
+          messageId: messageId,
+          toolCallId: 'tool-1',
+          conversationId: conversationId,
+        ),
+        isNull,
+      );
+    });
+
     test(
       'rejects tool call when message belongs to another conversation',
       () async {
@@ -149,8 +179,11 @@ void main() {
       final target = ResolvedTool.mcp(
         tableId: 'github-row',
         toolIdentifier: 'search',
-        mcpServerId: 'github-server',
-        mcpSlug: 'github',
+        mcp: (
+          mcpServerId: 'github-server',
+          mcpSlug: 'github',
+          outputSchemaJson: null,
+        ),
       );
       final catalog = agent.buildToolCatalog<ResolvedTool>([
         agent.ToolCatalogCandidate.external(
@@ -411,6 +444,10 @@ void main() {
           conversationId: conversationId,
           resultStatus: entry.key,
           responseRaw: 'response',
+          responseContextRaw: null,
+          outputTruncated: false,
+          originalResponseBytes: null,
+          fullOutputForContext: false,
         ));
       }
 

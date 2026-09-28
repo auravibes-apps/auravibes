@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
@@ -84,10 +85,13 @@ class const _AuraLinkGesture({
   required final VoidCallback? onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _AuraLinkLabel(label: label),
-    onTap: enabled ? onPressed : null,
-  );
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: AuraInteractionTarget(child: _AuraLinkLabel(label: label)),
+      onTap: enabled ? onPressed : null,
+      behavior: .opaque,
+    );
+  }
 }
 
 class const _AuraLinkLabel({required final String label})

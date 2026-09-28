@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Icon button that opens an [AuraPopupMenu].
 class AuraPopupMenuButton extends StatefulWidget {
@@ -9,11 +9,15 @@ class AuraPopupMenuButton extends StatefulWidget {
     required this.items,
     super.key,
     this.icon = Icons.more_vert,
+    this.identifier,
     this.tooltip,
   });
 
   /// The icon shown in the trigger button.
   final IconData icon;
+
+  /// An optional stable identifier for the trigger button.
+  final String? identifier;
 
   /// Tooltip shown for the trigger button.
   final String? tooltip;
@@ -34,6 +38,7 @@ class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
       child: AuraIconButton(
         icon: widget.icon,
         onPressed: _controller.toggle,
+        identifier: widget.identifier,
         tooltip: widget.tooltip,
       ),
       items: widget.items,

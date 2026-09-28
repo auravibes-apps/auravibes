@@ -38,16 +38,38 @@ bool _isCodexSelection(WorkspaceModelSelectionWithConnectionEntity selection) =>
 Future<WorkspaceModelSelectionWithConnectionEntity?> _resolveSelectedModel(
   WorkspaceModelSelectionWithConnectionEntity? selectedModel,
   ModelCatalogStore catalog,
-) {
-  if (selectedModel == null || !_isCodexSelection(selectedModel)) {
-    return Future.value(selectedModel);
-  }
+) async {
+  if (selectedModel == null) return null;
 
-  return WorkspaceModelSelectionProviders.resolve(selectedModel, catalog);
+  final resolvedSelection = _isCodexSelection(selectedModel)
+      ? await WorkspaceModelSelectionProviders.resolve(selectedModel, catalog)
+      : selectedModel;
+  if (resolvedSelection == null) return null;
+
+  return await _resolveCatalogCapabilities(.value(resolvedSelection), catalog);
+}
+
+Future<WorkspaceModelSelectionWithConnectionEntity> _resolveCatalogCapabilities(
+  Future<WorkspaceModelSelectionWithConnectionEntity> selectionFuture,
+  ModelCatalogStore catalog,
+) async {
+  final selection = await selectionFuture;
+  final model = await catalog.getModelByProviderAndModelId(
+    selection.modelsProvider.id,
+    selection.workspaceModelSelection.modelId,
+  );
+  if (model == null) return selection;
+
+  return selection.copyWith(
+    workspaceModelSelection: WorkspaceModelSelectionProviders._withRuntimeModel(
+      selection.workspaceModelSelection,
+      model,
+    ),
+  );
 }
 
 class WorkspaceModelSelectionProviders {
-  static Future<WorkspaceModelSelectionWithConnectionEntity> resolve(
+  static Future<WorkspaceModelSelectionWithConnectionEntity?> resolve(
     WorkspaceModelSelectionWithConnectionEntity selectedModel,
     ModelCatalogStore modelCatalogStore,
   ) async {
@@ -57,12 +79,12 @@ class WorkspaceModelSelectionProviders {
     return _resolveRuntimeModel(selectedModel, openAIModel);
   }
 
-  static WorkspaceModelSelectionWithConnectionEntity _resolveRuntimeModel(
+  static WorkspaceModelSelectionWithConnectionEntity? _resolveRuntimeModel(
     WorkspaceModelSelectionWithConnectionEntity selectedModel,
     ApiModelEntity? openAIModel,
   ) {
     if (openAIModel == null || !openAIModel.isCodexRuntimeModel) {
-      return selectedModel;
+      return null;
     }
 
     return selectedModel.copyWith(
@@ -81,6 +103,7 @@ class WorkspaceModelSelectionProviders {
     modalitiesInput: model.modalitiesInput,
     modalitiesOutput: model.modalitiesOutput,
     supportsReasoning: model.supportsReasoning,
+    reasoningOptions: model.reasoningOptions,
     supportsToolCalls: model.supportsToolCalls,
   );
 

@@ -337,7 +337,13 @@ SelectionResult selectChangedTests({
     for (final entry in packageRoots.entries) {
       roots[entry.key] = _normalizePath(entry.value);
     }
-    if (paths.every((path) => !_isSupportedDartPath(path, roots.values))) {
+    final unsupportedPaths = paths.where(
+      (path) => !_isSupportedDartPath(path, roots.values),
+    );
+    if (unsupportedPaths.any((path) => !_isNonExecutablePath(path))) {
+      return _full('Unsupported test input.');
+    }
+    if (unsupportedPaths.length == paths.length) {
       return SelectionResult(
         mode: .none,
         packages: const {},
@@ -561,6 +567,7 @@ Future<int> runSelectedTests(
   SelectionResult selection, {
   required String rootPath,
   ProcessLauncher? launcher,
+  void Function(String message)? onDiagnostic,
   bool dryRun = false,
   String? packageRoot,
   int? totalShards,
@@ -570,6 +577,7 @@ Future<int> runSelectedTests(
   String? timingsDir,
 }) async {
   if (selection.mode == SelectionMode.none) return 0;
+  final reportDiagnostic = onDiagnostic ?? (message) => stderr.writeln(message);
   try {
     final groups = await _testGroups(selection, rootPath: rootPath);
     var selectedGroups = packageRoot == null
@@ -621,6 +629,11 @@ Future<int> runSelectedTests(
                     selectedGroups.indexOf(group),
                   ),
           );
+          var activeCommand = command;
+          reportDiagnostic(
+            'changed-test-selector: '
+            '${_commandDiagnostic(group, activeCommand)}',
+          );
           if (dryRun) {
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
@@ -639,12 +652,24 @@ Future<int> runSelectedTests(
             final coverageCommand = _coverageCommand(group, rootPath: rootPath);
             if (coverageCommand == null) return 0;
 
+            activeCommand = coverageCommand;
+            reportDiagnostic(
+              'changed-test-selector: '
+              '${_commandDiagnostic(group, activeCommand)}',
+            );
+
             return await launch(
-              executable: coverageCommand.executable,
-              arguments: coverageCommand.arguments,
+              executable: activeCommand.executable,
+              arguments: activeCommand.arguments,
               workingDirectory: group.package.absoluteRoot,
             );
-          } on Object catch (_) {
+          } on Object catch (error, stackTrace) {
+            reportDiagnostic(
+              'changed-test-selector: launch failed '
+              '${_commandDiagnostic(group, activeCommand)} error=$error\n'
+              'stackTrace: $stackTrace',
+            );
+
             return 1;
           }
         }),
@@ -656,7 +681,7 @@ Future<int> runSelectedTests(
 
     return firstFailure;
   } on Object catch (error) {
-    stderr.writeln('changed-test-selector: $error');
+    reportDiagnostic('changed-test-selector: $error');
 
     return 2;
   }
@@ -958,6 +983,12 @@ class _Command {
   final List<String> arguments;
 }
 
+String _commandDiagnostic(_TestGroup group, _Command command) =>
+    'packageRoot=${group.package.relativeRoot} '
+    'workingDirectory=${group.package.absoluteRoot} '
+    'executable=${command.executable} '
+    'arguments=${jsonEncode(command.arguments)}';
+
 Future<List<_Package>> _loadPackages(String rootPath) async {
   final root = Directory(rootPath).absolute;
   final lines = await File('${root.path}/pubspec.yaml').readAsLines();
@@ -1096,12 +1127,12 @@ _Command _command(
   _workspaceExecutable(rootPath, group.package.flutter ? 'flutter' : 'dart'),
   [
     'test',
-    '--exclude-tags=integration',
+    '--exclude-tags=integration,golden',
     if (coverage && group.package.flutter) '--coverage',
     if (coverage && !group.package.flutter) '--coverage=coverage',
     '--concurrency=${group.package.flutter ? 1 : 2}',
     '--timeout=30s',
-    '--reporter=expanded',
+    '--reporter=compact',
     if (timingFile != null) '--file-reporter=json:$timingFile',
     if (shard.total > 1) '--total-shards=${shard.total}',
     if (shard.total > 1) '--shard-index=${shard.index}',
@@ -1690,6 +1721,11 @@ bool _isDocumentation(String path) {
       file == 'license' ||
       file == 'license.md';
 }
+
+bool _isNonExecutablePath(String path) =>
+    _isDocumentation(path) ||
+    path.startsWith('.pi/') ||
+    path == 'sonar-project.properties';
 
 bool _isGlobal(String path) {
   final normalized = path.replaceAll(r'\', '/');

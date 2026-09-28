@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_plugin.dart';
@@ -5,8 +6,85 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
+import 'package:schemantic/schemantic.dart';
 
 void main() {
+  test('verified local model sends strict tool definition', () async {
+    Map<String, dynamic>? capturedBody;
+    List<ToolSamplingDecision>? decisions;
+    final client = _FakeClient((request) async {
+      capturedBody = jsonDecode(
+        await request.finalize().bytesToString(),
+      ) as Map<String, dynamic>;
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = Genkit(
+      plugins: [
+        AppChatCompletionsPlugin(
+          name: 'strict-test',
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'key',
+          codec: .new(
+            errorLabel: 'OpenAI',
+            customize: (model, _) => (model: model, extraBody: {}),
+            supportsStrictToolSampling: true,
+          ),
+          models: const [ChatCompletionsModelDefinition(name: 'gpt-4o')],
+          httpClient: client,
+          modelSupportsStrictToolSampling: true,
+          defaultToolSamplingPolicy: .prefer,
+          onToolSamplingDecision: (value) => decisions = value,
+        ),
+      ],
+    );
+    const schema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    };
+    final tool = ai.defineTool<Map<String, Object?>, Object?>(
+      name: 'search',
+      description: 'Search.',
+      inputSchema: SchemanticType.from<Map<String, Object?>>(
+        jsonSchema: schema,
+        parse: (value) => value as Map<String, Object?>,
+      ),
+      fn: (_, _) async => const ToolResponseResult<Object?>(null),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('strict-test/gpt-4o'),
+      messages: const [],
+      tools: [tool],
+      returnToolRequests: true,
+    );
+
+    expect(response.text, 'ok.');
+    expect(capturedBody?['tools'], [
+      {
+        'type': 'function',
+        'function': {
+          'name': 'search',
+          'description': 'Search.',
+          'parameters': schema,
+          'strict': true,
+        },
+      },
+    ]);
+    expect(decisions?.single.outcome, ToolSamplingOutcome.strict);
+  });
+
   test('resolves only model actions', () {
     final plugin = AppChatCompletionsPlugin(
       name: 'resolve-test',
@@ -81,13 +159,271 @@ void main() {
       expect(capturedUri, Uri.parse(testCase.expected));
     });
   }
+
+  test('rejects a response with an oversized content length', () async {
+    final client = _FakeClient(
+      (_) async => http.StreamedResponse(
+        const Stream.empty(),
+        200,
+        contentLength: 4 * 1024 * 1024 + 1,
+      ),
+    );
+    final ai = _genkitWithClient(client);
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(response.finishMessage, contains('safe processing limit'));
+  });
+
+  test('applies an overall response deadline', () async {
+    final client = _FakeClient(
+      (_) async => http.StreamedResponse(
+        .periodic(const Duration(milliseconds: 1), (_) => const [32]),
+        200,
+      ),
+    );
+    final ai = _genkitWithClient(
+      client,
+      requestTimeout: const Duration(milliseconds: 30),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(response.finishMessage, contains('Provider request timed out'));
+  });
+
+  test('retries selected server errors once and caps Retry-After', () async {
+    var attempts = 0;
+    final retryDelays = <Duration>[];
+    final client = _FakeClient((_) async {
+      attempts++;
+      if (attempts == 1) {
+        return _jsonResponse(
+          {
+            'error': {'message': 'temporarily unavailable'},
+          },
+          statusCode: 503,
+          headers: {'content-type': 'application/json', 'retry-after': '120'},
+        );
+      }
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (delay) {
+        retryDelays.add(delay);
+
+        return Future<void>.value();
+      },
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.text, 'ok.');
+    expect(attempts, 2);
+    expect(retryDelays, [const Duration(seconds: 60)]);
+  });
+
+  test('retries transport failures before output once', () async {
+    var attempts = 0;
+    final client = _FakeClient((_) async {
+      attempts++;
+      if (attempts == 1) throw http.ClientException('connection reset');
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) => Future<void>.value(),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+    );
+
+    expect(response.text, 'ok.');
+    expect(attempts, 2);
+  });
+
+  test(
+    'forwards rate-limit Retry-After without retrying in provider plugin',
+    () async {
+      var attempts = 0;
+      final client = _FakeClient((_) async {
+        attempts++;
+
+        return _jsonResponse(
+          {
+            'error': {'message': 'rate limited'},
+          },
+          statusCode: 429,
+          headers: {'content-type': 'application/json', 'retry-after': '120'},
+        );
+      });
+      final ai = _genkitWithClient(
+        client,
+        retryWait: (_) => Future<void>.value(),
+      );
+
+      final response = await ai.generate<Object?, Object?>(
+        model: modelRef<Object?>('transport-test/m'),
+        messages: const [],
+      );
+
+      expect(response.finishReason, FinishReason.failed);
+      expect(
+        response.cause,
+        isA<AgentRateLimitRetryException>()
+            .having(
+              (error) => error.retryAfter,
+              'retryAfter',
+              const Duration(seconds: 120),
+            )
+            .having(
+              (error) => error.providerException.details,
+              'provider details',
+              'rate limited',
+            ),
+      );
+      expect(attempts, 1);
+    },
+  );
+
+  test('does not retry after streaming output is emitted', () async {
+    var attempts = 0;
+    final client = _FakeClient((_) async {
+      attempts++;
+      final body = Stream<List<int>>.multi((controller) {
+        controller
+          ..add(
+            utf8.encode(
+              'data: {"choices":[{"delta":{"content":"partial"}, '
+              '"finish_reason":null}]}\n',
+            ),
+          )
+          ..addError(http.ClientException('stream reset'));
+        unawaited(controller.close());
+      });
+
+      return http.StreamedResponse(body, 200);
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) => Future<void>.value(),
+    );
+    final chunks = <Object?>[];
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+      onChunk: chunks.add,
+    );
+
+    expect(response.finishReason, FinishReason.failed);
+    expect(chunks, hasLength(1));
+    expect(attempts, 1);
+  });
+
+  test('cancellation during retry wait prevents another request', () async {
+    final cancellation = CancellationController();
+    final retryStarted = Completer<void>();
+    var attempts = 0;
+    var requestSupportsAbort = false;
+    final client = _FakeClient((request) async {
+      attempts++;
+      requestSupportsAbort = request is http.Abortable;
+
+      return _jsonResponse(
+        {
+          'error': {'message': 'temporarily unavailable'},
+        },
+        statusCode: 503,
+        headers: {'content-type': 'application/json', 'retry-after': '1'},
+      );
+    });
+    final ai = _genkitWithClient(
+      client,
+      retryWait: (_) {
+        retryStarted.complete();
+
+        return Completer<void>().future;
+      },
+    );
+
+    final generation = ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('transport-test/m'),
+      messages: const [],
+      cancel: cancellation.token,
+    );
+    await retryStarted.future;
+    cancellation.cancel();
+    final response = await generation;
+
+    expect(response.finishReason, FinishReason.aborted);
+    expect(requestSupportsAbort, isTrue);
+    expect(attempts, 1);
+  });
 }
 
-http.StreamedResponse _jsonResponse(Map<String, Object?> body) {
+Genkit _genkitWithClient(
+  http.Client client, {
+  Duration requestTimeout = const Duration(seconds: 30),
+  Future<void> Function(Duration)? retryWait,
+}) => Genkit(
+  plugins: [
+    AppChatCompletionsPlugin(
+      name: 'transport-test',
+      baseUrl: 'https://example.test',
+      apiKey: 'key',
+      codec: .new(
+        errorLabel: 'TransportTest',
+        customize: (modelName, config) =>
+            (model: modelName, extraBody: const <String, dynamic>{}),
+      ),
+      models: const [ChatCompletionsModelDefinition(name: 'm')],
+      httpClient: client,
+      requestTimeout: requestTimeout,
+      retryWait: retryWait,
+    ),
+  ],
+);
+
+http.StreamedResponse _jsonResponse(
+  Map<String, Object?> body, {
+  int statusCode = 200,
+  Map<String, String> headers = const {'content-type': 'application/json'},
+}) {
   return http.StreamedResponse(
     .value(utf8.encode(jsonEncode(body))),
-    200,
-    headers: {'content-type': 'application/json'},
+    statusCode,
+    headers: headers,
   );
 }
 

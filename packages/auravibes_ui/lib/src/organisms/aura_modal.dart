@@ -227,15 +227,22 @@ class const _AuraModalEntrySemantics({
   required final VoidCallback onShow,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: widget.entryPointChild,
-    container: true,
-    excludeSemantics: true,
-    enabled: true,
-    button: true,
-    label: 'Open modal',
-    onTap: onShow,
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return Semantics(
+      child: ConstrainedBox(
+        constraints: .new(minWidth: targetSize, minHeight: targetSize),
+        child: widget.entryPointChild,
+      ),
+      container: true,
+      excludeSemantics: true,
+      enabled: true,
+      button: true,
+      label: 'Open modal',
+      onTap: onShow,
+    );
+  }
 }
 
 class const _AuraModalSurface({

@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -15,6 +16,7 @@ typedef _NewMessageRequest = ({
   ChatDraft draft,
   String workspaceModelSelectionId,
   String? agentId,
+  ReasoningConfiguration? reasoningConfiguration,
 });
 
 void main() {

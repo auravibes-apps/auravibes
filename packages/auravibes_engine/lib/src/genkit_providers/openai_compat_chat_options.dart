@@ -18,6 +18,7 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
     this.frequencyPenalty,
     this.seed,
     this.user,
+    this.toolSamplingPolicy = ToolSamplingPolicy.off,
   });
 
   factory fromJson(Map<String, dynamic>? json) {
@@ -32,6 +33,9 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
       frequencyPenalty: (json['frequencyPenalty'] as num?)?.toDouble(),
       seed: json['seed'] as int?,
       user: json['user'] as String?,
+      toolSamplingPolicy: ToolSamplingPolicy.fromJson(
+        json['toolSamplingPolicy'],
+      ),
     );
   }
 
@@ -51,6 +55,7 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
   final int? seed;
   @override
   final String? user;
+  final ToolSamplingPolicy toolSamplingPolicy;
 
   Map<String, dynamic> toJson() => {
     'temperature': ?temperature,
@@ -61,5 +66,7 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
     'frequencyPenalty': ?frequencyPenalty,
     'seed': ?seed,
     'user': ?user,
+    if (toolSamplingPolicy != ToolSamplingPolicy.off)
+      'toolSamplingPolicy': toolSamplingPolicy.name,
   };
 }

@@ -52,34 +52,36 @@ void main() {
           ),
         );
 
-    await tester.pumpWidget(
-      EasyLocalization(
-        key: UniqueKey(),
-        child: Builder(
-          builder: (context) {
-            return UncontrolledProviderScope(
-              container: container,
-              child: MaterialApp(
-                home: ServiceConnectionCreateScreen(
-                  workspaceId: workspace.id,
-                  initialType: .skillCredential,
-                  initialCredentialDefinitionId: definition.id,
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          key: UniqueKey(),
+          child: Builder(
+            builder: (context) {
+              return UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp(
+                  home: ServiceConnectionCreateScreen(
+                    workspaceId: workspace.id,
+                    initialType: .skillCredential,
+                    initialCredentialDefinitionId: definition.id,
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      ),
-    );
+      );
+    });
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Skill Credential'), findsOneWidget);

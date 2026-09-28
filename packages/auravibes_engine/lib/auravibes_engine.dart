@@ -2,19 +2,23 @@ export 'src/a2ui/a2ui_action.dart';
 export 'src/a2ui/a2ui_catalog.dart';
 export 'src/a2ui/a2ui_chat_contract.dart';
 export 'src/a2ui/a2ui_form_validation.dart';
+export 'src/a2ui/a2ui_skill_definition.dart';
 export 'src/a2ui/a2ui_stream_decoder.dart';
 export 'src/a2ui/a2ui_validation.dart';
 export 'src/a2ui/a2ui_wire_codec.dart';
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
+export 'src/agent_rate_limit_retry_exception.dart';
 export 'src/agent_runners.dart';
 export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
 export 'src/agent_stop_service.dart' hide AgentStopService;
 export 'src/agent_stream_service.dart' hide AgentStreamService;
+export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
+export 'src/agent_transcript_context.dart';
 export 'src/attachment_modality.dart';
 export 'src/aura_agent_service.dart';
 export 'src/chat_result.dart';
@@ -27,7 +31,13 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ChatCompletionsCodec,
         ChatCompletionsModelDefinition,
         ProviderTransport,
-        ProviderTransportResponse;
+        ProviderTransportResponse,
+        ToolSamplingDecision,
+        ToolSamplingOutcome,
+        ToolSamplingPolicy,
+        ToolSamplingResult,
+        ToolSamplingValidationException,
+        ToolSamplingValidationReason;
 export 'src/genkit_providers/openai_codex.dart'
     show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';
@@ -46,6 +56,7 @@ export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';
 export 'src/providers/agent_model_provider.dart';
 export 'src/public_url_classifier.dart';
+export 'src/reasoning_configuration.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
 export 'src/skills/execution/app_skill_executor.dart';
@@ -82,7 +93,9 @@ export 'src/tool_catalog.dart';
 export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';
+export 'src/tool_output_policy.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
+export 'src/tool_schema_strict.dart' show ToolSchemaIssueReason;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';
 export 'src/transcript_selection.dart';

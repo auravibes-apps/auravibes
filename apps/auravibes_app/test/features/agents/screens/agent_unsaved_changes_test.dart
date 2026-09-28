@@ -41,7 +41,7 @@ void main() {
     );
     await _pumpAgentScreen(tester, fixture, agent.id);
 
-    await tester.enterText(find.byType(TextFormField).first, 'Changed agent');
+    await tester.enterText(find.byType(AuraInput).first, 'Changed agent');
     await tester.pump();
     final didPop = await Navigator.of(
       tester.element(find.byType(AgentDetailScreen)),
@@ -80,7 +80,7 @@ void main() {
 
     await _pushAgentScreen(tester, fixture, agent.id);
 
-    await tester.enterText(find.byType(TextFormField).first, 'Saved agent');
+    await tester.enterText(find.byType(AuraInput).first, 'Saved agent');
     await tester.pump();
     await tester.tap(find.widgetWithText(AuraButton, 'Save'));
     final _ = await tester.pumpAndSettle();
@@ -142,56 +142,58 @@ Future<void> _pumpAgentScreen(
   final tools = await WorkspaceToolsRepository(fixture.database)
       .getWorkspaceTools(fixture.workspace.id);
 
-  await tester.pumpWidget(
-    TestableApp(
-      child: Navigator(
-        onGenerateInitialRoutes: (_, _) => [
-          MaterialPageRoute<void>(builder: (_) => const Text('Previous')),
-          MaterialPageRoute<void>(
+  final _ = await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        child: Navigator(
+          onGenerateInitialRoutes: (_, _) => [
+            MaterialPageRoute<void>(builder: (_) => const Text('Previous')),
+            MaterialPageRoute<void>(
+              builder: (_) => AgentDetailScreen(
+                workspaceId: fixture.workspace.id,
+                agentId: agentId,
+              ),
+            ),
+          ],
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
             builder: (_) => AgentDetailScreen(
               workspaceId: fixture.workspace.id,
               agentId: agentId,
             ),
           ),
-        ],
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => AgentDetailScreen(
-            workspaceId: fixture.workspace.id,
-            agentId: agentId,
+        ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(fixture.database),
+          agentRepositoryProvider(fixture.workspace.id)
+              .overrideWithValue(AgentsRepository(fixture.database)),
+          agentToolsRepositoryProvider(fixture.workspace.id)
+              .overrideWithValue(AgentToolsRepository(fixture.database)),
+          cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+          workspaceSkillsProvider(fixture.workspace.id).overrideWith(
+            (_) async => const [
+              WorkspaceSkill(
+                source: SkillSource.user,
+                id: 'summarizer',
+                slug: 'summarizer',
+                title: 'Summarizer',
+                description: 'Summarize things.',
+                kind: .template,
+                isEnabled: true,
+              ),
+            ],
           ),
-        ),
+          workspaceToolsProvider(fixture.workspace.id)
+              .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
+        ],
+        workspaceId: fixture.workspace.id,
+        workspaceSession: session,
+        key: UniqueKey(),
       ),
-      overrides: [
-        appDatabaseProvider.overrideWithValue(fixture.database),
-        agentRepositoryProvider(fixture.workspace.id)
-            .overrideWithValue(AgentsRepository(fixture.database)),
-        agentToolsRepositoryProvider(fixture.workspace.id)
-            .overrideWithValue(AgentToolsRepository(fixture.database)),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        workspaceSkillsProvider(fixture.workspace.id).overrideWith(
-          (_) async => const [
-            WorkspaceSkill(
-              source: SkillSource.user,
-              id: 'summarizer',
-              slug: 'summarizer',
-              title: 'Summarizer',
-              description: 'Summarize things.',
-              kind: .template,
-              isEnabled: true,
-            ),
-          ],
-        ),
-        workspaceToolsProvider(fixture.workspace.id)
-            .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),
-      ],
-      workspaceId: fixture.workspace.id,
-      workspaceSession: session,
-      key: UniqueKey(),
     ),
   );
   await tester.pump();
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 Future<void> _pushAgentScreen(
@@ -210,7 +212,7 @@ Future<void> _pushAgentScreen(
   );
   await tester.pump();
   await _pumpUntilFound(tester, find.text('Agent details'));
-  await _pumpUntilFound(tester, find.byType(TextFormField));
+  await _pumpUntilFound(tester, find.byType(AuraInput));
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {

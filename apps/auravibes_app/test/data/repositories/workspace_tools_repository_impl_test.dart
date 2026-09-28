@@ -31,6 +31,7 @@ void main() {
       String? config,
       String? description,
       String? inputSchema,
+      String? outputSchema,
       String? workspaceToolsGroupId,
     }) {
       return ToolsTable(
@@ -43,6 +44,7 @@ void main() {
         description: description,
         config: config,
         inputSchema: inputSchema,
+        outputSchema: outputSchema,
         isEnabled: isEnabled,
         permissions: permissions,
       );
@@ -52,7 +54,11 @@ void main() {
       test('returns mapped entities after ensuring native tools', () async {
         when(() => fixture.mockToolsDao.getWorkspaceTools('ws-1')).thenAnswer(
           (_) async => [
-            createToolRow(id: 't1', toolId: 'url'),
+            createToolRow(
+              id: 't1',
+              toolId: 'url',
+              outputSchema: '{"type":"object"}',
+            ),
             createToolRow(id: 't2'),
           ],
         );
@@ -62,6 +68,7 @@ void main() {
         expect(result, hasLength(2));
         expect(result.firstOrNull?.id, 't1');
         expect(result.firstOrNull?.toolId, 'url');
+        expect(result.firstOrNull?.outputSchemaJson, '{"type":"object"}');
         expect(result[1].toolId, 'calculator');
       });
     });
@@ -81,17 +88,13 @@ void main() {
     });
 
     group('getWorkspaceTool', () {
-      test('returns entity when found', () async {
-        when(
-          () => fixture.mockToolsDao.getWorkspaceToolByToolId(
-            'ws-1',
-            'calculator',
-          ),
-        ).thenAnswer((_) async => createToolRow());
+      test('returns entity by workspace tool row id', () async {
+        when(() => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'tool-1'))
+            .thenAnswer((_) async => createToolRow());
 
         final result = await fixture.repository.getWorkspaceTool(
           'ws-1',
-          'calculator',
+          'tool-1',
         );
 
         expect(result, isNotNull);
@@ -102,10 +105,6 @@ void main() {
       });
 
       test('returns null when not found', () async {
-        when(
-          () =>
-              fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'unknown'),
-        ).thenAnswer((_) async => null);
         when(() => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'unknown'))
             .thenAnswer((_) async => null);
 
@@ -117,13 +116,7 @@ void main() {
         expect(result, isNull);
       });
 
-      test('falls back to row id for grouped tools', () async {
-        when(
-          () => fixture.mockToolsDao.getWorkspaceToolByToolId(
-            'ws-1',
-            'workspace-tool-id',
-          ),
-        ).thenAnswer((_) async => null);
+      test('returns grouped tools by row id', () async {
         when(
           () => fixture.mockToolsDao.getWorkspaceTool(
             'ws-1',
@@ -533,9 +526,8 @@ void main() {
         'maps PermissionAccess.ask to ToolPermissionMode.alwaysAsk',
         () async {
           final row = createToolRow();
-          when(
-            () => fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'tool'),
-          ).thenAnswer((_) async => row);
+          when(() => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'tool'))
+              .thenAnswer((_) async => row);
 
           final result = await fixture.repository.getWorkspaceTool(
             'ws-1',
@@ -553,9 +545,8 @@ void main() {
         'maps PermissionAccess.granted to ToolPermissionMode.alwaysAllow',
         () async {
           final row = createToolRow(permissions: .granted);
-          when(
-            () => fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'tool'),
-          ).thenAnswer((_) async => row);
+          when(() => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'tool'))
+              .thenAnswer((_) async => row);
 
           final result = await fixture.repository.getWorkspaceTool(
             'ws-1',

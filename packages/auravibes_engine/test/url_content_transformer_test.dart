@@ -67,6 +67,18 @@ void main() {
         expect(result.body, isNot(contains('Title\n# Title')));
       });
 
+      test('prunes large skipped subtrees when finding rendered h1', () {
+        final skippedHeadings = List.filled(2000, '<h1>Title</h1>').join();
+        final response = _htmlResponse(
+          '<html><head><title>Title</title></head>'
+          '<body><nav>$skippedHeadings</nav><main><h1>Title</h1></main></body>'
+          '</html>',
+        );
+        final result = transformer.transform(response);
+
+        expect(result.body, '# Title');
+      });
+
       test('strips script and style tags', () {
         final response = _htmlResponse(
           '<html><head><script>alert("xss")</script><style>body { color: red; }</style></head><body><p>Safe content</p></body></html>',
@@ -122,6 +134,15 @@ void main() {
         expect(result.body, contains('2. Second'));
       });
 
+      test('bounds work for oversized HTML element trees', () {
+        final items = List.filled(10001, '<li>Item</li>').join();
+        final result = transformer.transform(_htmlResponse('<ol>$items</ol>'));
+
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.truncated, isTrue);
+        expect(result.body, '... [truncated]');
+      });
+
       test('converts blockquotes', () {
         final response = _htmlResponse(
           '<blockquote><p>Quoted text</p></blockquote>',
@@ -164,14 +185,17 @@ void main() {
         expect(result.body, contains('# Page Title'));
       });
 
-      test('handles images with alt text', () {
+      test('renders image alt text without activating the source URL', () {
         final response = _htmlResponse(
-          '<p>Here is an image: <img src="photo.jpg" alt="A photo"></p>',
+          '<p>Here is an image: '
+          '<img src="http://127.0.0.1:8080/action" alt="A [photo]"></p>',
         );
         final result = transformer.transform(response);
 
         expect(result.format, UrlContentFormat.markdown);
-        expect(result.body, contains('![A photo](photo.jpg)'));
+        expect(result.body, contains(r'A \[photo\]'));
+        expect(result.body, isNot(contains('127.0.0.1')));
+        expect(result.body, isNot(contains('![')));
       });
 
       test('handles horizontal rules', () {

@@ -20,12 +20,14 @@ abstract class ConversationSummary
     required this.isPinned,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     required this.revision,
+    this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,12 +38,14 @@ abstract class ConversationSummary
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     required int revision,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _ConversationSummaryImpl;
@@ -53,6 +57,7 @@ abstract class ConversationSummary
       isPinned: _isc.BoolJsonExtension.fromJson(jsonSerialization['isPinned']),
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       parentConversationId:
           jsonSerialization['parentConversationId'] as String?,
       forkSourceConversationId:
@@ -66,6 +71,8 @@ abstract class ConversationSummary
               jsonSerialization['forkMaterializedAt'],
             ),
       revision: jsonSerialization['revision'] as int,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -85,6 +92,8 @@ abstract class ConversationSummary
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? parentConversationId;
 
   String? forkSourceConversationId;
@@ -96,6 +105,8 @@ abstract class ConversationSummary
   DateTime? forkMaterializedAt;
 
   int revision;
+
+  String? activeCompactionCheckpointId;
 
   DateTime createdAt;
 
@@ -110,12 +121,14 @@ abstract class ConversationSummary
     bool? isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     int? revision,
+    String? activeCompactionCheckpointId,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -128,6 +141,8 @@ abstract class ConversationSummary
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -138,6 +153,8 @@ abstract class ConversationSummary
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -152,6 +169,8 @@ abstract class ConversationSummary
       'isPinned': isPinned,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (parentConversationId != null)
         'parentConversationId': parentConversationId,
       if (forkSourceConversationId != null)
@@ -162,6 +181,8 @@ abstract class ConversationSummary
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       'revision': revision,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -182,12 +203,14 @@ class _ConversationSummaryImpl extends ConversationSummary {
     required bool isPinned,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? parentConversationId,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     required int revision,
+    String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
@@ -196,12 +219,14 @@ class _ConversationSummaryImpl extends ConversationSummary {
          isPinned: isPinned,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          parentConversationId: parentConversationId,
          forkSourceConversationId: forkSourceConversationId,
          forkSourceTitle: forkSourceTitle,
          forkThroughMessageId: forkThroughMessageId,
          forkMaterializedAt: forkMaterializedAt,
          revision: revision,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -216,12 +241,14 @@ class _ConversationSummaryImpl extends ConversationSummary {
     bool? isPinned,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? parentConversationId = _Undefined,
     Object? forkSourceConversationId = _Undefined,
     Object? forkSourceTitle = _Undefined,
     Object? forkThroughMessageId = _Undefined,
     Object? forkMaterializedAt = _Undefined,
     int? revision,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -231,6 +258,9 @@ class _ConversationSummaryImpl extends ConversationSummary {
       isPinned: isPinned ?? this.isPinned,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       parentConversationId: parentConversationId is String?
           ? parentConversationId
           : this.parentConversationId,
@@ -247,6 +277,9 @@ class _ConversationSummaryImpl extends ConversationSummary {
           ? forkMaterializedAt
           : this.forkMaterializedAt,
       revision: revision ?? this.revision,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

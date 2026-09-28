@@ -25,7 +25,7 @@ void main() {
     final fixture = _IntroFixture();
     addTearDown(fixture.dispose);
 
-    await tester.pumpWidget(fixture.buildApp());
+    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
     await _pumpUntilFound(tester, find.byKey(_continueKey));
 
     expect(find.text('Welcome to AuraVibes'), findsOneWidget);
@@ -37,21 +37,21 @@ void main() {
     await _tapVisible(tester, find.byKey(_continueKey));
     await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
-    await tester.enterText(find.byType(TextField), 'ab');
+    await tester.enterText(find.byType(AuraInput), 'ab');
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at least 3 characters'),
     );
 
-    await tester.enterText(find.byType(TextField), 'a' * 21);
+    await tester.enterText(find.byType(AuraInput), 'a' * 21);
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at most 20 characters'),
     );
 
-    await tester.enterText(find.byType(TextField), 'Project');
+    await tester.enterText(find.byType(AuraInput), 'Project');
     await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(tester, find.text('Ready to start'));
 
@@ -64,7 +64,7 @@ void main() {
     final connectFixture = _IntroFixture();
     addTearDown(connectFixture.dispose);
 
-    await tester.pumpWidget(connectFixture.buildApp());
+    await tester.runAsync(() => tester.pumpWidget(connectFixture.buildApp()));
     await _createWorkspace(tester, 'Connect');
     await _tapVisible(tester, find.byKey(_connectAiKey));
     await _pumpUntilFound(
@@ -121,7 +121,7 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
   await _tapVisible(tester, find.byKey(_continueKey));
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
-  await tester.enterText(find.byType(TextField), name);
+  await tester.enterText(find.byType(AuraInput), name);
   await _tapVisible(tester, find.byKey(_createWorkspaceKey));
   await _pumpUntilFound(tester, find.text('Ready to start'));
 }

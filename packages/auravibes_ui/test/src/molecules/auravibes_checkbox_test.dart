@@ -2,23 +2,26 @@
 
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraCheckbox', () {
     testWidgets('does not use Material Checkbox widget', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: false,
-              onChanged: (_) {
-                return;
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (_) {
+                  return;
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -27,20 +30,66 @@ void main() {
       expect(find.byType(GestureDetector), findsOneWidget);
     });
 
+    testWidgets('exposes its semantic label', (tester) async {
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (_) {
+                  return;
+                },
+                semanticLabel: 'Accept terms',
+              ),
+            ),
+            theme: .new(),
+          ),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Accept terms'), findsOneWidget);
+    });
+
+    testWidgets('exposes its default semantic label', (tester) async {
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (_) {
+                  return;
+                },
+              ),
+            ),
+            theme: .new(),
+          ),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Checkbox'), findsOneWidget);
+    });
+
     testWidgets('calls onChanged with toggled value when tapped', (
       tester,
     ) async {
       bool? selectedValue;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: false,
-              onChanged: (value) => selectedValue = value,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (value) => selectedValue = value,
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -54,16 +103,19 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: true,
-              onChanged: (_) {
-                return;
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: true,
+                onChanged: (_) {
+                  return;
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -83,14 +135,17 @@ void main() {
         bool? selectedValue;
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraCheckbox(
-                value: false,
-                onChanged: (value) => selectedValue = value,
+          AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              home: Scaffold(
+                body: AuraCheckbox(
+                  value: false,
+                  onChanged: (value) => selectedValue = value,
+                ),
               ),
+              theme: .new(),
             ),
-            theme: .new(extensions: [AuraTheme.light]),
           ),
         );
 
@@ -107,15 +162,18 @@ void main() {
       bool? selectedValue;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: false,
-              onChanged: (value) => selectedValue = value,
-              disabled: true,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckbox(
+                value: false,
+                onChanged: (value) => selectedValue = value,
+                disabled: true,
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -129,18 +187,21 @@ void main() {
   group('AuraCheckboxListTile', () {
     testWidgets('renders title and subtitle', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckboxListTile(
-              value: false,
-              onChanged: (_) {
-                final _ = Object();
-              },
-              title: const Text('Optional'),
-              subtitle: const Text('Can be omitted'),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckboxListTile(
+                value: false,
+                onChanged: (_) {
+                  final _ = Object();
+                },
+                title: const Text('Optional'),
+                subtitle: const Text('Can be omitted'),
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -153,15 +214,18 @@ void main() {
       bool? selectedValue;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckboxListTile(
-              value: false,
-              onChanged: (value) => selectedValue = value,
-              title: const Text('Optional'),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckboxListTile(
+                value: false,
+                onChanged: (value) => selectedValue = value,
+                title: const Text('Optional'),
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -177,15 +241,18 @@ void main() {
       bool? selectedValue;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraCheckboxListTile(
-              value: false,
-              onChanged: (value) => selectedValue = value,
-              title: const Text('Optional'),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraCheckboxListTile(
+                value: false,
+                onChanged: (value) => selectedValue = value,
+                title: const Text('Optional'),
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

@@ -75,12 +75,18 @@ import 'package:auravibes_server/src/generated/features/conversations/models/rem
     as _irlsykk6;
 import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _ilmuzuyl;
+import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
+    as _if7qtxue;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
     as _i43ad401;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _ii20rgdx;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _i6vuisoi;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_batch_result.dart'
+    as _inw8tf3y;
 import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _ii7vetdc;
 import 'package:auravibes_server/src/generated/features/conversations/models/turn_snapshot.dart'
@@ -127,6 +133,10 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
+    as _ij84b3fp;
+import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_result.dart'
+    as _i8327bru;
 import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
     as _ipmnqqs6;
 import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
@@ -246,6 +256,9 @@ export 'package:serverpod_test/serverpod_test_public_exports.dart';
 ///
 /// [enableSessionLogging] Whether session logging should be enabled. Defaults to `false`
 ///
+/// [ephemeralDatabase] Whether this group gets its own empty database, created when the group starts and dropped when it finishes. Defaults to `true`.
+/// Set this to `false` to use the database configured for [runMode], including a previously seeded database. [configOverride] can still replace that database. The configured database is not created or dropped, so groups that share it cannot run in parallel. [rollbackDatabase] still controls whether writes inside the group are rolled back.
+///
 /// [rollbackDatabase] Options for when to rollback the database during the test lifecycle.
 /// By default `withServerpod` does all database operations inside a transaction that is rolled back after each `test` case.
 /// Just like the following enum describes, the behavior of the automatic rollbacks can be configured:
@@ -315,6 +328,7 @@ void withServerpod(
   _is.ServerpodConfig Function(_is.ServerpodConfig)? configOverride,
   _is.DatabaseInterceptor? databaseInterceptor,
   bool? enableSessionLogging,
+  bool? ephemeralDatabase,
   _is.ExperimentalFeatures? experimentalFeatures,
   _ist.RollbackDatabase? rollbackDatabase,
   String? runMode,
@@ -333,6 +347,7 @@ void withServerpod(
       serializationManager: Protocol(),
       runMode: runMode,
       applyMigrations: applyMigrations,
+      ephemeralDatabase: ephemeralDatabase,
       isDatabaseEnabled: true,
       serverpodLoggingMode: serverpodLoggingMode,
       testServerOutputMode: testServerOutputMode,
@@ -777,6 +792,34 @@ class _AccountEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_iq1nzpg1.AccountSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> deleteCurrentUser(
+    _ist.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'account',
+            method: 'deleteCurrentUser',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'account',
+          methodName: 'deleteCurrentUser',
+          parameters: _ist.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1550,6 +1593,35 @@ class _ConversationEndpoint {
     });
   }
 
+  _ida.Future<_inw8tf3y.SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i6vuisoi.SubmitToolDecisionBatchRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'submitToolDecisionBatch',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'submitToolDecisionBatch',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_inw8tf3y.SubmitToolDecisionBatchResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _ida.Future<_ittwor8c.ConversationMutationResult> cancelTurn(
     _ist.TestSessionBuilder sessionBuilder,
     _i4j5a2zc.CancelTurnRequest request,
@@ -1601,6 +1673,35 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ittwor8c.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_ih1nup0c.ConversationSnapshot> restoreCompactionCheckpoint(
+    _ist.TestSessionBuilder sessionBuilder,
+    _if7qtxue.RestoreConversationCheckpointRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'restoreCompactionCheckpoint',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'restoreCompactionCheckpoint',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2028,6 +2129,35 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_is6egp24.ModelSyncResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i8327bru.VerifyModelConnectionResult> verifyDraft(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ij84b3fp.VerifyModelConnectionRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'verifyDraft',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'verifyDraft',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_i8327bru.VerifyModelConnectionResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

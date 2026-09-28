@@ -1,8 +1,10 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_transcript_context_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
@@ -10,6 +12,7 @@ import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_use
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -18,12 +21,18 @@ import 'package:riverpod/riverpod.dart';
 
 class AppAgentContinuationAdapter({
   required final ConversationRepository conversationRepository,
+  required final MessageRepository messageRepository,
   required final Future<ModelSelectionStore> Function(String workspaceId)
   modelSelectionStore,
   required final ApiModelRepository apiModelRepository,
   required final SelectPromptMessagesUsecase selectPromptMessagesUsecase,
   required final BuildSkillContextMessagesService
   buildSkillContextMessagesUsecase,
+  required final Future<Map<String, String>> Function({
+    required String conversationId,
+    required String workspaceId,
+  })
+  loadApprovalStates,
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace,
@@ -60,6 +69,7 @@ class AppAgentContinuationAdapter({
     return AgentConversationReference(
       workspaceId: conversation.workspaceId,
       modelId: conversation.modelId,
+      reasoningConfiguration: conversation.reasoningConfiguration,
     );
   }
 
@@ -109,6 +119,27 @@ class AppAgentContinuationAdapter({
     return usecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
+    );
+  }
+
+  @override
+  Future<PreparedAgentTranscriptContext<ChatMessage, ToolSpec>>
+  reconcileTranscriptContext({
+    required String conversationId,
+    required String workspaceId,
+    required List<ChatMessage> contextMessages,
+    required List<ToolSpec> tools,
+  }) async {
+    final approvalStates = await loadApprovalStates(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+
+    return await AppAgentTranscriptContextAdapter(messageRepository).reconcile(
+      conversationId: conversationId,
+      contextMessages: contextMessages,
+      tools: tools,
+      approvalStates: approvalStates,
     );
   }
 
@@ -164,11 +195,8 @@ Future<WorkspaceModelSelectionWithConnectionEntity> _projectSelectedModel(
 }
 
 ApiModelEntity _ensureCodexModel(ApiModelEntity? model) {
-  if (model == null) {
-    throw Exception('OpenAI model catalog is unavailable');
-  }
-  if (!model.isCodexRuntimeModel) {
-    throw Exception('Selected Codex model is not supported');
+  if (model == null || !model.isCodexRuntimeModel) {
+    throw const SelectedModelNotFoundException();
   }
 
   return model;
@@ -192,6 +220,7 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
 ) {
   return AppAgentContinuationAdapter(
     conversationRepository: ref.watch(conversationRepositoryProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
     modelSelectionStore: (workspaceId) =>
         ref.read(modelSelectionStoreProvider(workspaceId).future),
     apiModelRepository: ref.watch(apiModelRepositoryProvider),
@@ -199,6 +228,28 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
     buildSkillContextMessagesUsecase: ref.watch(
       buildSkillContextMessagesServiceProvider,
     ),
+    loadApprovalStates:
+        ({required conversationId, required workspaceId}) async {
+          final repository = ref.read(
+            conversationToolsRepositoryProvider(workspaceId),
+          );
+          final available = await repository
+              .getAvailableToolEntitiesForConversation(
+                conversationId,
+                workspaceId,
+              );
+          final states = <String, String>{};
+          for (final tool in available) {
+            final decision = await repository.checkToolPermission(
+              conversationId: conversationId,
+              workspaceId: workspaceId,
+              toolId: tool.id,
+            );
+            states[tool.id] = decision.name;
+          }
+
+          return states;
+        },
     loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
         ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
   );

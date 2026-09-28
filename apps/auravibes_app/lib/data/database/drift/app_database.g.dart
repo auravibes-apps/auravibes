@@ -2433,6 +2433,17 @@ class $ApiModelsTable extends ApiModels
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _reasoningOptionsJsonMeta =
+      const VerificationMeta('reasoningOptionsJson');
+  @override
+  late final GeneratedColumn<String> reasoningOptionsJson =
+      GeneratedColumn<String>(
+        'reasoning_options_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isCanonicalMeta = const VerificationMeta(
     'isCanonical',
   );
@@ -2542,6 +2553,7 @@ class $ApiModelsTable extends ApiModels
     modalitiesOutput,
     openWeights,
     supportsReasoning,
+    reasoningOptionsJson,
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
@@ -2608,6 +2620,15 @@ class $ApiModelsTable extends ApiModels
         supportsReasoning.isAcceptableOrUnknown(
           data['supports_reasoning']!,
           _supportsReasoningMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reasoning_options_json')) {
+      context.handle(
+        _reasoningOptionsJsonMeta,
+        reasoningOptionsJson.isAcceptableOrUnknown(
+          data['reasoning_options_json']!,
+          _reasoningOptionsJsonMeta,
         ),
       );
     }
@@ -2726,6 +2747,10 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.bool,
         data['${effectivePrefix}supports_reasoning'],
       )!,
+      reasoningOptionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reasoning_options_json'],
+      ),
       isCanonical: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_canonical'],
@@ -2794,6 +2819,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final List<String>? modalitiesOutput;
   final bool? openWeights;
   final bool supportsReasoning;
+  final String? reasoningOptionsJson;
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
@@ -2811,6 +2837,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     this.modalitiesOutput,
     this.openWeights,
     required this.supportsReasoning,
+    this.reasoningOptionsJson,
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
@@ -2843,6 +2870,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       map['open_weights'] = Variable<bool>(openWeights);
     }
     map['supports_reasoning'] = Variable<bool>(supportsReasoning);
+    if (!nullToAbsent || reasoningOptionsJson != null) {
+      map['reasoning_options_json'] = Variable<String>(reasoningOptionsJson);
+    }
     map['is_canonical'] = Variable<bool>(isCanonical);
     map['supports_priority_mode'] = Variable<bool>(supportsPriorityMode);
     map['supports_tool_calls'] = Variable<bool>(supportsToolCalls);
@@ -2878,6 +2908,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ? const Value.absent()
           : Value(openWeights),
       supportsReasoning: Value(supportsReasoning),
+      reasoningOptionsJson: reasoningOptionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reasoningOptionsJson),
       isCanonical: Value(isCanonical),
       supportsPriorityMode: Value(supportsPriorityMode),
       supportsToolCalls: Value(supportsToolCalls),
@@ -2913,6 +2946,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       openWeights: serializer.fromJson<bool?>(json['openWeights']),
       supportsReasoning: serializer.fromJson<bool>(json['supportsReasoning']),
+      reasoningOptionsJson: serializer.fromJson<String?>(
+        json['reasoningOptionsJson'],
+      ),
       isCanonical: serializer.fromJson<bool>(json['isCanonical']),
       supportsPriorityMode: serializer.fromJson<bool>(
         json['supportsPriorityMode'],
@@ -2941,6 +2977,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       ),
       'openWeights': serializer.toJson<bool?>(openWeights),
       'supportsReasoning': serializer.toJson<bool>(supportsReasoning),
+      'reasoningOptionsJson': serializer.toJson<String?>(reasoningOptionsJson),
       'isCanonical': serializer.toJson<bool>(isCanonical),
       'supportsPriorityMode': serializer.toJson<bool>(supportsPriorityMode),
       'supportsToolCalls': serializer.toJson<bool>(supportsToolCalls),
@@ -2961,6 +2998,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     Value<List<String>?> modalitiesOutput = const Value.absent(),
     Value<bool?> openWeights = const Value.absent(),
     bool? supportsReasoning,
+    Value<String?> reasoningOptionsJson = const Value.absent(),
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -2982,6 +3020,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         : this.modalitiesOutput,
     openWeights: openWeights.present ? openWeights.value : this.openWeights,
     supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+    reasoningOptionsJson: reasoningOptionsJson.present
+        ? reasoningOptionsJson.value
+        : this.reasoningOptionsJson,
     isCanonical: isCanonical ?? this.isCanonical,
     supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
     supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
@@ -3013,6 +3054,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       supportsReasoning: data.supportsReasoning.present
           ? data.supportsReasoning.value
           : this.supportsReasoning,
+      reasoningOptionsJson: data.reasoningOptionsJson.present
+          ? data.reasoningOptionsJson.value
+          : this.reasoningOptionsJson,
       isCanonical: data.isCanonical.present
           ? data.isCanonical.value
           : this.isCanonical,
@@ -3049,6 +3093,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('reasoningOptionsJson: $reasoningOptionsJson, ')
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
@@ -3071,6 +3116,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modalitiesOutput,
     openWeights,
     supportsReasoning,
+    reasoningOptionsJson,
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
@@ -3092,6 +3138,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.modalitiesOutput == this.modalitiesOutput &&
           other.openWeights == this.openWeights &&
           other.supportsReasoning == this.supportsReasoning &&
+          other.reasoningOptionsJson == this.reasoningOptionsJson &&
           other.isCanonical == this.isCanonical &&
           other.supportsPriorityMode == this.supportsPriorityMode &&
           other.supportsToolCalls == this.supportsToolCalls &&
@@ -3111,6 +3158,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<List<String>?> modalitiesOutput;
   final Value<bool?> openWeights;
   final Value<bool> supportsReasoning;
+  final Value<String?> reasoningOptionsJson;
   final Value<bool> isCanonical;
   final Value<bool> supportsPriorityMode;
   final Value<bool> supportsToolCalls;
@@ -3129,6 +3177,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.reasoningOptionsJson = const Value.absent(),
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
@@ -3148,6 +3197,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
+    this.reasoningOptionsJson = const Value.absent(),
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
@@ -3171,6 +3221,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<String>? modalitiesOutput,
     Expression<bool>? openWeights,
     Expression<bool>? supportsReasoning,
+    Expression<String>? reasoningOptionsJson,
     Expression<bool>? isCanonical,
     Expression<bool>? supportsPriorityMode,
     Expression<bool>? supportsToolCalls,
@@ -3190,6 +3241,8 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (modalitiesOutput != null) 'modalities_output': modalitiesOutput,
       if (openWeights != null) 'open_weights': openWeights,
       if (supportsReasoning != null) 'supports_reasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoning_options_json': reasoningOptionsJson,
       if (isCanonical != null) 'is_canonical': isCanonical,
       if (supportsPriorityMode != null)
         'supports_priority_mode': supportsPriorityMode,
@@ -3212,6 +3265,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<List<String>?>? modalitiesOutput,
     Value<bool?>? openWeights,
     Value<bool>? supportsReasoning,
+    Value<String?>? reasoningOptionsJson,
     Value<bool>? isCanonical,
     Value<bool>? supportsPriorityMode,
     Value<bool>? supportsToolCalls,
@@ -3231,6 +3285,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       modalitiesOutput: modalitiesOutput ?? this.modalitiesOutput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+      reasoningOptionsJson: reasoningOptionsJson ?? this.reasoningOptionsJson,
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
@@ -3276,6 +3331,11 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (supportsReasoning.present) {
       map['supports_reasoning'] = Variable<bool>(supportsReasoning.value);
     }
+    if (reasoningOptionsJson.present) {
+      map['reasoning_options_json'] = Variable<String>(
+        reasoningOptionsJson.value,
+      );
+    }
     if (isCanonical.present) {
       map['is_canonical'] = Variable<bool>(isCanonical.value);
     }
@@ -3319,6 +3379,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
+          ..write('reasoningOptionsJson: $reasoningOptionsJson, ')
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
@@ -3992,6 +4053,17 @@ class $ConversationsTable extends Conversations
       'REFERENCES agents (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _reasoningConfigJsonMeta =
+      const VerificationMeta('reasoningConfigJson');
+  @override
+  late final GeneratedColumn<String> reasoningConfigJson =
+      GeneratedColumn<String>(
+        'reasoning_config_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _parentConversationIdMeta =
       const VerificationMeta('parentConversationId');
   @override
@@ -4050,6 +4122,17 @@ class $ConversationsTable extends Conversations
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _activeCompactionCheckpointIdMeta =
+      const VerificationMeta('activeCompactionCheckpointId');
+  @override
+  late final GeneratedColumn<String> activeCompactionCheckpointId =
+      GeneratedColumn<String>(
+        'active_compaction_checkpoint_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -4074,11 +4157,13 @@ class $ConversationsTable extends Conversations
     title,
     modelId,
     agentId,
+    reasoningConfigJson,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
     forkThroughMessageId,
     forkMaterializedAt,
+    activeCompactionCheckpointId,
     isPinned,
   ];
   @override
@@ -4139,6 +4224,15 @@ class $ConversationsTable extends Conversations
         agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
       );
     }
+    if (data.containsKey('reasoning_config_json')) {
+      context.handle(
+        _reasoningConfigJsonMeta,
+        reasoningConfigJson.isAcceptableOrUnknown(
+          data['reasoning_config_json']!,
+          _reasoningConfigJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('parent_conversation_id')) {
       context.handle(
         _parentConversationIdMeta,
@@ -4181,6 +4275,15 @@ class $ConversationsTable extends Conversations
         forkMaterializedAt.isAcceptableOrUnknown(
           data['fork_materialized_at']!,
           _forkMaterializedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('active_compaction_checkpoint_id')) {
+      context.handle(
+        _activeCompactionCheckpointIdMeta,
+        activeCompactionCheckpointId.isAcceptableOrUnknown(
+          data['active_compaction_checkpoint_id']!,
+          _activeCompactionCheckpointIdMeta,
         ),
       );
     }
@@ -4227,6 +4330,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}agent_id'],
       ),
+      reasoningConfigJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reasoning_config_json'],
+      ),
       parentConversationId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}parent_conversation_id'],
@@ -4246,6 +4353,10 @@ class $ConversationsTable extends Conversations
       forkMaterializedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}fork_materialized_at'],
+      ),
+      activeCompactionCheckpointId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}active_compaction_checkpoint_id'],
       ),
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -4274,6 +4385,9 @@ class ConversationsTable extends DataClass
   final String title;
   final String? modelId;
   final String? agentId;
+
+  /// JSON-encoded conversation-scoped reasoning override.
+  final String? reasoningConfigJson;
   final String? parentConversationId;
 
   /// Stable id of the conversation this fork snapshots.
@@ -4291,6 +4405,7 @@ class ConversationsTable extends DataClass
 
   /// Non-null after the source history has been materialized into this fork.
   final DateTime? forkMaterializedAt;
+  final String? activeCompactionCheckpointId;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -4300,11 +4415,13 @@ class ConversationsTable extends DataClass
     required this.title,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.parentConversationId,
     this.forkSourceConversationId,
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
+    this.activeCompactionCheckpointId,
     required this.isPinned,
   });
   @override
@@ -4320,6 +4437,9 @@ class ConversationsTable extends DataClass
     }
     if (!nullToAbsent || agentId != null) {
       map['agent_id'] = Variable<String>(agentId);
+    }
+    if (!nullToAbsent || reasoningConfigJson != null) {
+      map['reasoning_config_json'] = Variable<String>(reasoningConfigJson);
     }
     if (!nullToAbsent || parentConversationId != null) {
       map['parent_conversation_id'] = Variable<String>(parentConversationId);
@@ -4338,6 +4458,11 @@ class ConversationsTable extends DataClass
     if (!nullToAbsent || forkMaterializedAt != null) {
       map['fork_materialized_at'] = Variable<DateTime>(forkMaterializedAt);
     }
+    if (!nullToAbsent || activeCompactionCheckpointId != null) {
+      map['active_compaction_checkpoint_id'] = Variable<String>(
+        activeCompactionCheckpointId,
+      );
+    }
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
   }
@@ -4355,6 +4480,9 @@ class ConversationsTable extends DataClass
       agentId: agentId == null && nullToAbsent
           ? const Value.absent()
           : Value(agentId),
+      reasoningConfigJson: reasoningConfigJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reasoningConfigJson),
       parentConversationId: parentConversationId == null && nullToAbsent
           ? const Value.absent()
           : Value(parentConversationId),
@@ -4370,6 +4498,10 @@ class ConversationsTable extends DataClass
       forkMaterializedAt: forkMaterializedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(forkMaterializedAt),
+      activeCompactionCheckpointId:
+          activeCompactionCheckpointId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activeCompactionCheckpointId),
       isPinned: Value(isPinned),
     );
   }
@@ -4387,6 +4519,9 @@ class ConversationsTable extends DataClass
       title: serializer.fromJson<String>(json['title']),
       modelId: serializer.fromJson<String?>(json['modelId']),
       agentId: serializer.fromJson<String?>(json['agentId']),
+      reasoningConfigJson: serializer.fromJson<String?>(
+        json['reasoningConfigJson'],
+      ),
       parentConversationId: serializer.fromJson<String?>(
         json['parentConversationId'],
       ),
@@ -4399,6 +4534,9 @@ class ConversationsTable extends DataClass
       ),
       forkMaterializedAt: serializer.fromJson<DateTime?>(
         json['forkMaterializedAt'],
+      ),
+      activeCompactionCheckpointId: serializer.fromJson<String?>(
+        json['activeCompactionCheckpointId'],
       ),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
@@ -4414,6 +4552,7 @@ class ConversationsTable extends DataClass
       'title': serializer.toJson<String>(title),
       'modelId': serializer.toJson<String?>(modelId),
       'agentId': serializer.toJson<String?>(agentId),
+      'reasoningConfigJson': serializer.toJson<String?>(reasoningConfigJson),
       'parentConversationId': serializer.toJson<String?>(parentConversationId),
       'forkSourceConversationId': serializer.toJson<String?>(
         forkSourceConversationId,
@@ -4421,6 +4560,9 @@ class ConversationsTable extends DataClass
       'forkSourceTitle': serializer.toJson<String?>(forkSourceTitle),
       'forkThroughMessageId': serializer.toJson<String?>(forkThroughMessageId),
       'forkMaterializedAt': serializer.toJson<DateTime?>(forkMaterializedAt),
+      'activeCompactionCheckpointId': serializer.toJson<String?>(
+        activeCompactionCheckpointId,
+      ),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -4433,11 +4575,13 @@ class ConversationsTable extends DataClass
     String? title,
     Value<String?> modelId = const Value.absent(),
     Value<String?> agentId = const Value.absent(),
+    Value<String?> reasoningConfigJson = const Value.absent(),
     Value<String?> parentConversationId = const Value.absent(),
     Value<String?> forkSourceConversationId = const Value.absent(),
     Value<String?> forkSourceTitle = const Value.absent(),
     Value<String?> forkThroughMessageId = const Value.absent(),
     Value<DateTime?> forkMaterializedAt = const Value.absent(),
+    Value<String?> activeCompactionCheckpointId = const Value.absent(),
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -4447,6 +4591,9 @@ class ConversationsTable extends DataClass
     title: title ?? this.title,
     modelId: modelId.present ? modelId.value : this.modelId,
     agentId: agentId.present ? agentId.value : this.agentId,
+    reasoningConfigJson: reasoningConfigJson.present
+        ? reasoningConfigJson.value
+        : this.reasoningConfigJson,
     parentConversationId: parentConversationId.present
         ? parentConversationId.value
         : this.parentConversationId,
@@ -4462,6 +4609,9 @@ class ConversationsTable extends DataClass
     forkMaterializedAt: forkMaterializedAt.present
         ? forkMaterializedAt.value
         : this.forkMaterializedAt,
+    activeCompactionCheckpointId: activeCompactionCheckpointId.present
+        ? activeCompactionCheckpointId.value
+        : this.activeCompactionCheckpointId,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -4475,6 +4625,9 @@ class ConversationsTable extends DataClass
       title: data.title.present ? data.title.value : this.title,
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
       agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      reasoningConfigJson: data.reasoningConfigJson.present
+          ? data.reasoningConfigJson.value
+          : this.reasoningConfigJson,
       parentConversationId: data.parentConversationId.present
           ? data.parentConversationId.value
           : this.parentConversationId,
@@ -4490,6 +4643,9 @@ class ConversationsTable extends DataClass
       forkMaterializedAt: data.forkMaterializedAt.present
           ? data.forkMaterializedAt.value
           : this.forkMaterializedAt,
+      activeCompactionCheckpointId: data.activeCompactionCheckpointId.present
+          ? data.activeCompactionCheckpointId.value
+          : this.activeCompactionCheckpointId,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -4504,11 +4660,15 @@ class ConversationsTable extends DataClass
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('reasoningConfigJson: $reasoningConfigJson, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
           ..write('forkThroughMessageId: $forkThroughMessageId, ')
           ..write('forkMaterializedAt: $forkMaterializedAt, ')
+          ..write(
+            'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
+          )
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -4523,11 +4683,13 @@ class ConversationsTable extends DataClass
     title,
     modelId,
     agentId,
+    reasoningConfigJson,
     parentConversationId,
     forkSourceConversationId,
     forkSourceTitle,
     forkThroughMessageId,
     forkMaterializedAt,
+    activeCompactionCheckpointId,
     isPinned,
   );
   @override
@@ -4541,11 +4703,14 @@ class ConversationsTable extends DataClass
           other.title == this.title &&
           other.modelId == this.modelId &&
           other.agentId == this.agentId &&
+          other.reasoningConfigJson == this.reasoningConfigJson &&
           other.parentConversationId == this.parentConversationId &&
           other.forkSourceConversationId == this.forkSourceConversationId &&
           other.forkSourceTitle == this.forkSourceTitle &&
           other.forkThroughMessageId == this.forkThroughMessageId &&
           other.forkMaterializedAt == this.forkMaterializedAt &&
+          other.activeCompactionCheckpointId ==
+              this.activeCompactionCheckpointId &&
           other.isPinned == this.isPinned);
 }
 
@@ -4557,11 +4722,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String> title;
   final Value<String?> modelId;
   final Value<String?> agentId;
+  final Value<String?> reasoningConfigJson;
   final Value<String?> parentConversationId;
   final Value<String?> forkSourceConversationId;
   final Value<String?> forkSourceTitle;
   final Value<String?> forkThroughMessageId;
   final Value<DateTime?> forkMaterializedAt;
+  final Value<String?> activeCompactionCheckpointId;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -4572,11 +4739,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.title = const Value.absent(),
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.reasoningConfigJson = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
+    this.activeCompactionCheckpointId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4588,11 +4757,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     required String title,
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.reasoningConfigJson = const Value.absent(),
     this.parentConversationId = const Value.absent(),
     this.forkSourceConversationId = const Value.absent(),
     this.forkSourceTitle = const Value.absent(),
     this.forkThroughMessageId = const Value.absent(),
     this.forkMaterializedAt = const Value.absent(),
+    this.activeCompactionCheckpointId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -4605,11 +4776,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? title,
     Expression<String>? modelId,
     Expression<String>? agentId,
+    Expression<String>? reasoningConfigJson,
     Expression<String>? parentConversationId,
     Expression<String>? forkSourceConversationId,
     Expression<String>? forkSourceTitle,
     Expression<String>? forkThroughMessageId,
     Expression<DateTime>? forkMaterializedAt,
+    Expression<String>? activeCompactionCheckpointId,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -4621,6 +4794,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (title != null) 'title': title,
       if (modelId != null) 'model_id': modelId,
       if (agentId != null) 'agent_id': agentId,
+      if (reasoningConfigJson != null)
+        'reasoning_config_json': reasoningConfigJson,
       if (parentConversationId != null)
         'parent_conversation_id': parentConversationId,
       if (forkSourceConversationId != null)
@@ -4630,6 +4805,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         'fork_through_message_id': forkThroughMessageId,
       if (forkMaterializedAt != null)
         'fork_materialized_at': forkMaterializedAt,
+      if (activeCompactionCheckpointId != null)
+        'active_compaction_checkpoint_id': activeCompactionCheckpointId,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4643,11 +4820,13 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String>? title,
     Value<String?>? modelId,
     Value<String?>? agentId,
+    Value<String?>? reasoningConfigJson,
     Value<String?>? parentConversationId,
     Value<String?>? forkSourceConversationId,
     Value<String?>? forkSourceTitle,
     Value<String?>? forkThroughMessageId,
     Value<DateTime?>? forkMaterializedAt,
+    Value<String?>? activeCompactionCheckpointId,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -4659,12 +4838,15 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       title: title ?? this.title,
       modelId: modelId ?? this.modelId,
       agentId: agentId ?? this.agentId,
+      reasoningConfigJson: reasoningConfigJson ?? this.reasoningConfigJson,
       parentConversationId: parentConversationId ?? this.parentConversationId,
       forkSourceConversationId:
           forkSourceConversationId ?? this.forkSourceConversationId,
       forkSourceTitle: forkSourceTitle ?? this.forkSourceTitle,
       forkThroughMessageId: forkThroughMessageId ?? this.forkThroughMessageId,
       forkMaterializedAt: forkMaterializedAt ?? this.forkMaterializedAt,
+      activeCompactionCheckpointId:
+          activeCompactionCheckpointId ?? this.activeCompactionCheckpointId,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -4694,6 +4876,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     if (agentId.present) {
       map['agent_id'] = Variable<String>(agentId.value);
     }
+    if (reasoningConfigJson.present) {
+      map['reasoning_config_json'] = Variable<String>(
+        reasoningConfigJson.value,
+      );
+    }
     if (parentConversationId.present) {
       map['parent_conversation_id'] = Variable<String>(
         parentConversationId.value,
@@ -4717,6 +4904,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
         forkMaterializedAt.value,
       );
     }
+    if (activeCompactionCheckpointId.present) {
+      map['active_compaction_checkpoint_id'] = Variable<String>(
+        activeCompactionCheckpointId.value,
+      );
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -4736,11 +4928,15 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('reasoningConfigJson: $reasoningConfigJson, ')
           ..write('parentConversationId: $parentConversationId, ')
           ..write('forkSourceConversationId: $forkSourceConversationId, ')
           ..write('forkSourceTitle: $forkSourceTitle, ')
           ..write('forkThroughMessageId: $forkThroughMessageId, ')
           ..write('forkMaterializedAt: $forkMaterializedAt, ')
+          ..write(
+            'activeCompactionCheckpointId: $activeCompactionCheckpointId, ',
+          )
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -7784,6 +7980,17 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _outputSchemaMeta = const VerificationMeta(
+    'outputSchema',
+  );
+  @override
+  late final GeneratedColumn<String> outputSchema = GeneratedColumn<String>(
+    'output_schema',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -7820,6 +8027,7 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     description,
     config,
     inputSchema,
+    outputSchema,
     isEnabled,
     permissions,
   ];
@@ -7902,6 +8110,15 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         ),
       );
     }
+    if (data.containsKey('output_schema')) {
+      context.handle(
+        _outputSchemaMeta,
+        outputSchema.isAcceptableOrUnknown(
+          data['output_schema']!,
+          _outputSchemaMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_enabled')) {
       context.handle(
         _isEnabledMeta,
@@ -7953,6 +8170,10 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}input_schema'],
       ),
+      outputSchema: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}output_schema'],
+      ),
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
@@ -8003,6 +8224,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
   /// JSON schema for the tool's input parameters (for MCP tools).
   final String? inputSchema;
 
+  /// Optional MCP result schema.
+  final String? outputSchema;
+
   /// Whether the tool is enabled for this workspace.
   final bool isEnabled;
   final PermissionAccess permissions;
@@ -8016,6 +8240,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     this.description,
     this.config,
     this.inputSchema,
+    this.outputSchema,
     required this.isEnabled,
     required this.permissions,
   });
@@ -8038,6 +8263,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     }
     if (!nullToAbsent || inputSchema != null) {
       map['input_schema'] = Variable<String>(inputSchema);
+    }
+    if (!nullToAbsent || outputSchema != null) {
+      map['output_schema'] = Variable<String>(outputSchema);
     }
     map['is_enabled'] = Variable<bool>(isEnabled);
     {
@@ -8067,6 +8295,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       inputSchema: inputSchema == null && nullToAbsent
           ? const Value.absent()
           : Value(inputSchema),
+      outputSchema: outputSchema == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputSchema),
       isEnabled: Value(isEnabled),
       permissions: Value(permissions),
     );
@@ -8089,6 +8320,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       description: serializer.fromJson<String?>(json['description']),
       config: serializer.fromJson<String?>(json['config']),
       inputSchema: serializer.fromJson<String?>(json['inputSchema']),
+      outputSchema: serializer.fromJson<String?>(json['outputSchema']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       permissions: $ToolsTable.$converterpermissions.fromJson(
         serializer.fromJson<String>(json['permissions']),
@@ -8110,6 +8342,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       'description': serializer.toJson<String?>(description),
       'config': serializer.toJson<String?>(config),
       'inputSchema': serializer.toJson<String?>(inputSchema),
+      'outputSchema': serializer.toJson<String?>(outputSchema),
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'permissions': serializer.toJson<String>(
         $ToolsTable.$converterpermissions.toJson(permissions),
@@ -8127,6 +8360,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     Value<String?> description = const Value.absent(),
     Value<String?> config = const Value.absent(),
     Value<String?> inputSchema = const Value.absent(),
+    Value<String?> outputSchema = const Value.absent(),
     bool? isEnabled,
     PermissionAccess? permissions,
   }) => ToolsTable(
@@ -8141,6 +8375,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     description: description.present ? description.value : this.description,
     config: config.present ? config.value : this.config,
     inputSchema: inputSchema.present ? inputSchema.value : this.inputSchema,
+    outputSchema: outputSchema.present ? outputSchema.value : this.outputSchema,
     isEnabled: isEnabled ?? this.isEnabled,
     permissions: permissions ?? this.permissions,
   );
@@ -8163,6 +8398,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       inputSchema: data.inputSchema.present
           ? data.inputSchema.value
           : this.inputSchema,
+      outputSchema: data.outputSchema.present
+          ? data.outputSchema.value
+          : this.outputSchema,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
       permissions: data.permissions.present
           ? data.permissions.value
@@ -8182,6 +8420,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ..write('description: $description, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
+          ..write('outputSchema: $outputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions')
           ..write(')'))
@@ -8199,6 +8438,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     description,
     config,
     inputSchema,
+    outputSchema,
     isEnabled,
     permissions,
   );
@@ -8215,6 +8455,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           other.description == this.description &&
           other.config == this.config &&
           other.inputSchema == this.inputSchema &&
+          other.outputSchema == this.outputSchema &&
           other.isEnabled == this.isEnabled &&
           other.permissions == this.permissions);
 }
@@ -8229,6 +8470,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   final Value<String?> description;
   final Value<String?> config;
   final Value<String?> inputSchema;
+  final Value<String?> outputSchema;
   final Value<bool> isEnabled;
   final Value<PermissionAccess> permissions;
   final Value<int> rowid;
@@ -8242,6 +8484,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.description = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
+    this.outputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8256,6 +8499,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.description = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
+    this.outputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8271,6 +8515,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Expression<String>? description,
     Expression<String>? config,
     Expression<String>? inputSchema,
+    Expression<String>? outputSchema,
     Expression<bool>? isEnabled,
     Expression<String>? permissions,
     Expression<int>? rowid,
@@ -8286,6 +8531,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       if (description != null) 'description': description,
       if (config != null) 'config': config,
       if (inputSchema != null) 'input_schema': inputSchema,
+      if (outputSchema != null) 'output_schema': outputSchema,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (permissions != null) 'permissions': permissions,
       if (rowid != null) 'rowid': rowid,
@@ -8302,6 +8548,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Value<String?>? description,
     Value<String?>? config,
     Value<String?>? inputSchema,
+    Value<String?>? outputSchema,
     Value<bool>? isEnabled,
     Value<PermissionAccess>? permissions,
     Value<int>? rowid,
@@ -8317,6 +8564,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       description: description ?? this.description,
       config: config ?? this.config,
       inputSchema: inputSchema ?? this.inputSchema,
+      outputSchema: outputSchema ?? this.outputSchema,
       isEnabled: isEnabled ?? this.isEnabled,
       permissions: permissions ?? this.permissions,
       rowid: rowid ?? this.rowid,
@@ -8355,6 +8603,9 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     if (inputSchema.present) {
       map['input_schema'] = Variable<String>(inputSchema.value);
     }
+    if (outputSchema.present) {
+      map['output_schema'] = Variable<String>(outputSchema.value);
+    }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
@@ -8381,6 +8632,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           ..write('description: $description, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
+          ..write('outputSchema: $outputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions, ')
           ..write('rowid: $rowid')
@@ -10599,6 +10851,17 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         type: DriftSqlType.int,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _modelOverridesJsonMeta =
+      const VerificationMeta('modelOverridesJson');
+  @override
+  late final GeneratedColumn<String> modelOverridesJson =
+      GeneratedColumn<String>(
+        'model_overrides_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -10608,6 +10871,7 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
     autoCompactEnabled,
     usagePercentageThreshold,
     remainingTokenThreshold,
+    modelOverridesJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -10674,6 +10938,15 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         ),
       );
     }
+    if (data.containsKey('model_overrides_json')) {
+      context.handle(
+        _modelOverridesJsonMeta,
+        modelOverridesJson.isAcceptableOrUnknown(
+          data['model_overrides_json']!,
+          _modelOverridesJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -10714,6 +10987,10 @@ class $WorkspaceCompactionSettingsTable extends WorkspaceCompactionSettings
         DriftSqlType.int,
         data['${effectivePrefix}remaining_token_threshold'],
       ),
+      modelOverridesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_overrides_json'],
+      ),
     );
   }
 
@@ -10737,6 +11014,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
   final bool? autoCompactEnabled;
   final int? usagePercentageThreshold;
   final int? remainingTokenThreshold;
+  final String? modelOverridesJson;
   const WorkspaceCompactionSettingsTable({
     required this.id,
     required this.createdAt,
@@ -10745,6 +11023,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     this.autoCompactEnabled,
     this.usagePercentageThreshold,
     this.remainingTokenThreshold,
+    this.modelOverridesJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -10764,6 +11043,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
     if (!nullToAbsent || remainingTokenThreshold != null) {
       map['remaining_token_threshold'] = Variable<int>(remainingTokenThreshold);
     }
+    if (!nullToAbsent || modelOverridesJson != null) {
+      map['model_overrides_json'] = Variable<String>(modelOverridesJson);
+    }
     return map;
   }
 
@@ -10782,6 +11064,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: remainingTokenThreshold == null && nullToAbsent
           ? const Value.absent()
           : Value(remainingTokenThreshold),
+      modelOverridesJson: modelOverridesJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(modelOverridesJson),
     );
   }
 
@@ -10804,6 +11089,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: serializer.fromJson<int?>(
         json['remainingTokenThreshold'],
       ),
+      modelOverridesJson: serializer.fromJson<String?>(
+        json['modelOverridesJson'],
+      ),
     );
   }
   @override
@@ -10821,6 +11109,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
       'remainingTokenThreshold': serializer.toJson<int?>(
         remainingTokenThreshold,
       ),
+      'modelOverridesJson': serializer.toJson<String?>(modelOverridesJson),
     };
   }
 
@@ -10832,6 +11121,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     Value<bool?> autoCompactEnabled = const Value.absent(),
     Value<int?> usagePercentageThreshold = const Value.absent(),
     Value<int?> remainingTokenThreshold = const Value.absent(),
+    Value<String?> modelOverridesJson = const Value.absent(),
   }) => WorkspaceCompactionSettingsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -10846,6 +11136,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
     remainingTokenThreshold: remainingTokenThreshold.present
         ? remainingTokenThreshold.value
         : this.remainingTokenThreshold,
+    modelOverridesJson: modelOverridesJson.present
+        ? modelOverridesJson.value
+        : this.modelOverridesJson,
   );
   WorkspaceCompactionSettingsTable copyWithCompanion(
     WorkspaceCompactionSettingsCompanion data,
@@ -10866,6 +11159,9 @@ class WorkspaceCompactionSettingsTable extends DataClass
       remainingTokenThreshold: data.remainingTokenThreshold.present
           ? data.remainingTokenThreshold.value
           : this.remainingTokenThreshold,
+      modelOverridesJson: data.modelOverridesJson.present
+          ? data.modelOverridesJson.value
+          : this.modelOverridesJson,
     );
   }
 
@@ -10878,7 +11174,8 @@ class WorkspaceCompactionSettingsTable extends DataClass
           ..write('workspaceId: $workspaceId, ')
           ..write('autoCompactEnabled: $autoCompactEnabled, ')
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
-          ..write('remainingTokenThreshold: $remainingTokenThreshold')
+          ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
+          ..write('modelOverridesJson: $modelOverridesJson')
           ..write(')'))
         .toString();
   }
@@ -10892,6 +11189,7 @@ class WorkspaceCompactionSettingsTable extends DataClass
     autoCompactEnabled,
     usagePercentageThreshold,
     remainingTokenThreshold,
+    modelOverridesJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -10903,7 +11201,8 @@ class WorkspaceCompactionSettingsTable extends DataClass
           other.workspaceId == this.workspaceId &&
           other.autoCompactEnabled == this.autoCompactEnabled &&
           other.usagePercentageThreshold == this.usagePercentageThreshold &&
-          other.remainingTokenThreshold == this.remainingTokenThreshold);
+          other.remainingTokenThreshold == this.remainingTokenThreshold &&
+          other.modelOverridesJson == this.modelOverridesJson);
 }
 
 class WorkspaceCompactionSettingsCompanion
@@ -10915,6 +11214,7 @@ class WorkspaceCompactionSettingsCompanion
   final Value<bool?> autoCompactEnabled;
   final Value<int?> usagePercentageThreshold;
   final Value<int?> remainingTokenThreshold;
+  final Value<String?> modelOverridesJson;
   final Value<int> rowid;
   const WorkspaceCompactionSettingsCompanion({
     this.id = const Value.absent(),
@@ -10924,6 +11224,7 @@ class WorkspaceCompactionSettingsCompanion
     this.autoCompactEnabled = const Value.absent(),
     this.usagePercentageThreshold = const Value.absent(),
     this.remainingTokenThreshold = const Value.absent(),
+    this.modelOverridesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceCompactionSettingsCompanion.insert({
@@ -10934,6 +11235,7 @@ class WorkspaceCompactionSettingsCompanion
     this.autoCompactEnabled = const Value.absent(),
     this.usagePercentageThreshold = const Value.absent(),
     this.remainingTokenThreshold = const Value.absent(),
+    this.modelOverridesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId);
   static Insertable<WorkspaceCompactionSettingsTable> custom({
@@ -10944,6 +11246,7 @@ class WorkspaceCompactionSettingsCompanion
     Expression<bool>? autoCompactEnabled,
     Expression<int>? usagePercentageThreshold,
     Expression<int>? remainingTokenThreshold,
+    Expression<String>? modelOverridesJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10957,6 +11260,8 @@ class WorkspaceCompactionSettingsCompanion
         'usage_percentage_threshold': usagePercentageThreshold,
       if (remainingTokenThreshold != null)
         'remaining_token_threshold': remainingTokenThreshold,
+      if (modelOverridesJson != null)
+        'model_overrides_json': modelOverridesJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10969,6 +11274,7 @@ class WorkspaceCompactionSettingsCompanion
     Value<bool?>? autoCompactEnabled,
     Value<int?>? usagePercentageThreshold,
     Value<int?>? remainingTokenThreshold,
+    Value<String?>? modelOverridesJson,
     Value<int>? rowid,
   }) {
     return WorkspaceCompactionSettingsCompanion(
@@ -10981,6 +11287,7 @@ class WorkspaceCompactionSettingsCompanion
           usagePercentageThreshold ?? this.usagePercentageThreshold,
       remainingTokenThreshold:
           remainingTokenThreshold ?? this.remainingTokenThreshold,
+      modelOverridesJson: modelOverridesJson ?? this.modelOverridesJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -11013,6 +11320,9 @@ class WorkspaceCompactionSettingsCompanion
         remainingTokenThreshold.value,
       );
     }
+    if (modelOverridesJson.present) {
+      map['model_overrides_json'] = Variable<String>(modelOverridesJson.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -11029,6 +11339,7 @@ class WorkspaceCompactionSettingsCompanion
           ..write('autoCompactEnabled: $autoCompactEnabled, ')
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
           ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
+          ..write('modelOverridesJson: $modelOverridesJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16909,6 +17220,7 @@ typedef $$ApiModelsTableCreateCompanionBuilder = ApiModelsCompanion Function({
   Value<List<String>?> modalitiesOutput,
   Value<bool?> openWeights,
   Value<bool> supportsReasoning,
+  Value<String?> reasoningOptionsJson,
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
@@ -16928,6 +17240,7 @@ typedef $$ApiModelsTableUpdateCompanionBuilder = ApiModelsCompanion Function({
   Value<List<String>?> modalitiesOutput,
   Value<bool?> openWeights,
   Value<bool> supportsReasoning,
+  Value<String?> reasoningOptionsJson,
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
@@ -17005,6 +17318,11 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<bool> get supportsReasoning => $composableBuilder(
     column: $table.supportsReasoning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17116,6 +17434,11 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isCanonical => $composableBuilder(
     column: $table.isCanonical,
     builder: (column) => ColumnOrderings(column),
@@ -17220,6 +17543,11 @@ class $$ApiModelsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get reasoningOptionsJson => $composableBuilder(
+    column: $table.reasoningOptionsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isCanonical => $composableBuilder(
     column: $table.isCanonical,
     builder: (column) => column,
@@ -17319,6 +17647,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<String?> reasoningOptionsJson = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
@@ -17337,6 +17666,7 @@ class $$ApiModelsTableTableManager
                 modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                reasoningOptionsJson: reasoningOptionsJson,
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
@@ -17357,6 +17687,7 @@ class $$ApiModelsTableTableManager
                 Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
+                Value<String?> reasoningOptionsJson = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
@@ -17375,6 +17706,7 @@ class $$ApiModelsTableTableManager
                 modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
+                reasoningOptionsJson: reasoningOptionsJson,
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
@@ -18140,11 +18472,13 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       required String title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> reasoningConfigJson,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
+      Value<String?> activeCompactionCheckpointId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -18157,11 +18491,13 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> reasoningConfigJson,
       Value<String?> parentConversationId,
       Value<String?> forkSourceConversationId,
       Value<String?> forkSourceTitle,
       Value<String?> forkThroughMessageId,
       Value<DateTime?> forkMaterializedAt,
+      Value<String?> activeCompactionCheckpointId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -18343,6 +18679,11 @@ class $$ConversationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
     builder: (column) => ColumnFilters(column),
@@ -18360,6 +18701,11 @@ class $$ConversationsTableFilterComposer
 
   ColumnFilters<DateTime> get forkMaterializedAt => $composableBuilder(
     column: $table.forkMaterializedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activeCompactionCheckpointId => $composableBuilder(
+    column: $table.activeCompactionCheckpointId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18566,6 +18912,11 @@ class $$ConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
     builder: (column) => ColumnOrderings(column),
@@ -18585,6 +18936,12 @@ class $$ConversationsTableOrderingComposer
     column: $table.forkMaterializedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get activeCompactionCheckpointId =>
+      $composableBuilder(
+        column: $table.activeCompactionCheckpointId,
+        builder: (column) => ColumnOrderings(column),
+      );
 
   ColumnOrderings<bool> get isPinned => $composableBuilder(
     column: $table.isPinned,
@@ -18706,6 +19063,11 @@ class $$ConversationsTableAnnotationComposer
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
 
+  GeneratedColumn<String> get reasoningConfigJson => $composableBuilder(
+    column: $table.reasoningConfigJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get forkSourceConversationId => $composableBuilder(
     column: $table.forkSourceConversationId,
     builder: (column) => column,
@@ -18725,6 +19087,12 @@ class $$ConversationsTableAnnotationComposer
     column: $table.forkMaterializedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get activeCompactionCheckpointId =>
+      $composableBuilder(
+        column: $table.activeCompactionCheckpointId,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
@@ -18943,11 +19311,14 @@ class $$ConversationsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> reasoningConfigJson = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
                 Value<String?> forkThroughMessageId = const Value.absent(),
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
+                Value<String?> activeCompactionCheckpointId =
+                    const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -18958,11 +19329,13 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                reasoningConfigJson: reasoningConfigJson,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
+                activeCompactionCheckpointId: activeCompactionCheckpointId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -18975,11 +19348,14 @@ class $$ConversationsTableTableManager
                 required String title,
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> reasoningConfigJson = const Value.absent(),
                 Value<String?> parentConversationId = const Value.absent(),
                 Value<String?> forkSourceConversationId = const Value.absent(),
                 Value<String?> forkSourceTitle = const Value.absent(),
                 Value<String?> forkThroughMessageId = const Value.absent(),
                 Value<DateTime?> forkMaterializedAt = const Value.absent(),
+                Value<String?> activeCompactionCheckpointId =
+                    const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -18990,11 +19366,13 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                reasoningConfigJson: reasoningConfigJson,
                 parentConversationId: parentConversationId,
                 forkSourceConversationId: forkSourceConversationId,
                 forkSourceTitle: forkSourceTitle,
                 forkThroughMessageId: forkThroughMessageId,
                 forkMaterializedAt: forkMaterializedAt,
+                activeCompactionCheckpointId: activeCompactionCheckpointId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -22337,6 +22715,7 @@ typedef $$ToolsTableCreateCompanionBuilder = ToolsCompanion Function({
   Value<String?> description,
   Value<String?> config,
   Value<String?> inputSchema,
+  Value<String?> outputSchema,
   Value<bool> isEnabled,
   Value<PermissionAccess> permissions,
   Value<int> rowid,
@@ -22351,6 +22730,7 @@ typedef $$ToolsTableUpdateCompanionBuilder = ToolsCompanion Function({
   Value<String?> description,
   Value<String?> config,
   Value<String?> inputSchema,
+  Value<String?> outputSchema,
   Value<bool> isEnabled,
   Value<PermissionAccess> permissions,
   Value<int> rowid,
@@ -22480,6 +22860,11 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
 
   ColumnFilters<String> get inputSchema => $composableBuilder(
     column: $table.inputSchema,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22635,6 +23020,11 @@ class $$ToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -22723,6 +23113,11 @@ class $$ToolsTableAnnotationComposer
 
   GeneratedColumn<String> get inputSchema => $composableBuilder(
     column: $table.inputSchema,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
     builder: (column) => column,
   );
 
@@ -22875,6 +23270,7 @@ class $$ToolsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
+                Value<String?> outputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -22888,6 +23284,7 @@ class $$ToolsTableTableManager
                 description: description,
                 config: config,
                 inputSchema: inputSchema,
+                outputSchema: outputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,
@@ -22903,6 +23300,7 @@ class $$ToolsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
+                Value<String?> outputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -22916,6 +23314,7 @@ class $$ToolsTableTableManager
                 description: description,
                 config: config,
                 inputSchema: inputSchema,
+                outputSchema: outputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,
@@ -24867,6 +25266,7 @@ typedef $$WorkspaceCompactionSettingsTableCreateCompanionBuilder =
       Value<bool?> autoCompactEnabled,
       Value<int?> usagePercentageThreshold,
       Value<int?> remainingTokenThreshold,
+      Value<String?> modelOverridesJson,
       Value<int> rowid,
     });
 typedef $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder =
@@ -24878,6 +25278,7 @@ typedef $$WorkspaceCompactionSettingsTableUpdateCompanionBuilder =
       Value<bool?> autoCompactEnabled,
       Value<int?> usagePercentageThreshold,
       Value<int?> remainingTokenThreshold,
+      Value<String?> modelOverridesJson,
       Value<int> rowid,
     });
 
@@ -24953,6 +25354,11 @@ class $$WorkspaceCompactionSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$WorkspacesTableFilterComposer get workspaceId {
     final $$WorkspacesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -25016,6 +25422,11 @@ class $$WorkspaceCompactionSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$WorkspacesTableOrderingComposer get workspaceId {
     final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -25070,6 +25481,11 @@ class $$WorkspaceCompactionSettingsTableAnnotationComposer
 
   GeneratedColumn<int> get remainingTokenThreshold => $composableBuilder(
     column: $table.remainingTokenThreshold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelOverridesJson => $composableBuilder(
+    column: $table.modelOverridesJson,
     builder: (column) => column,
   );
 
@@ -25146,6 +25562,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 Value<bool?> autoCompactEnabled = const Value.absent(),
                 Value<int?> usagePercentageThreshold = const Value.absent(),
                 Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<String?> modelOverridesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceCompactionSettingsCompanion(
                 id: id,
@@ -25155,6 +25572,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 autoCompactEnabled: autoCompactEnabled,
                 usagePercentageThreshold: usagePercentageThreshold,
                 remainingTokenThreshold: remainingTokenThreshold,
+                modelOverridesJson: modelOverridesJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -25166,6 +25584,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 Value<bool?> autoCompactEnabled = const Value.absent(),
                 Value<int?> usagePercentageThreshold = const Value.absent(),
                 Value<int?> remainingTokenThreshold = const Value.absent(),
+                Value<String?> modelOverridesJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceCompactionSettingsCompanion.insert(
                 id: id,
@@ -25175,6 +25594,7 @@ class $$WorkspaceCompactionSettingsTableTableManager
                 autoCompactEnabled: autoCompactEnabled,
                 usagePercentageThreshold: usagePercentageThreshold,
                 remainingTokenThreshold: remainingTokenThreshold,
+                modelOverridesJson: modelOverridesJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

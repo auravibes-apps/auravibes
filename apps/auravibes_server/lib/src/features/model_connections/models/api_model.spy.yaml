@@ -14,6 +14,7 @@ fields:
   costOutput: double
   openWeights: bool
   supportsReasoning: bool
+  reasoningOptionsJson: String?
   isCanonical: bool
   supportsPriorityMode: bool
   supportsToolCalls: bool

@@ -10,6 +10,7 @@ import 'package:auravibes_server/src/features/conversations/workers/conversation
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_worker.dart';
 import 'package:auravibes_server/src/features/conversations/usecases/conversation_usecases.dart';
+import 'package:auravibes_server/src/features/workspaces/domain/workspace_roles.dart';
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart'
     as conversation_repo;
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
@@ -179,6 +180,53 @@ void main() {
         onError: (error, stackTrace) => fail('$error\n$stackTrace'),
         recoveryInterval: const Duration(milliseconds: 1),
       );
+
+      test('cancel hides turn existence from non-members', () async {
+        final fixture = await prepareExecution();
+        final attackerId = const Uuid().v4().toString();
+        final attackerSession = sessionBuilder.copyWith(
+          authentication: AuthenticationOverride.authenticationInfo(
+            attackerId,
+            const {},
+          ),
+        );
+        await AuthUser.db.insertRow(
+          fixture.database,
+          AuthUser(
+            id: UuidValue.fromString(attackerId),
+            scopeNames: const {},
+          ),
+        );
+        await EmailAccount.db.insertRow(
+          fixture.database,
+          EmailAccount(
+            authUserId: UuidValue.fromString(attackerId),
+            email: 'cancel-attacker@example.com',
+            passwordHash: 'unused',
+          ),
+        );
+
+        for (final turnId in ['continue-1', 'missing-turn']) {
+          await expectLater(
+            endpoints.conversation.cancelTurn(
+              attackerSession,
+              CancelTurnRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-cancel-$turnId',
+                turnId: turnId,
+                expectedTurnRevision: 1,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+        }
+      });
 
       Future<({ConversationTurn turn, List<String> toolCallIds})>
       stageAwaitingApproval(
@@ -540,6 +588,133 @@ void main() {
       });
 
       test(
+        'batch decision handles all pending calls and queues one continuation',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+          final request = SubmitToolDecisionBatchRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'approve-all',
+            decision: 'approve',
+            calls: [
+              for (var index = 0; index < staged.toolCallIds.length; index++)
+                SubmitToolDecisionBatchCall(
+                  conversationId: fixture.conversationId,
+                  turnId: staged.turn.requestId,
+                  toolCallId: staged.toolCallIds[index],
+                  argumentsDigest: 'digest-${index + 1}',
+                  expectedTurnRevision: 2,
+                ),
+            ],
+          );
+
+          final result = await decisionUseCases().submitToolDecisionBatch(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          );
+
+          expect(result.accepted, hasLength(2));
+          expect(result.alreadyHandled, isEmpty);
+          expect(result.conflicted, isEmpty);
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          );
+          expect(calls.map((call) => call.status), everyElement('approved'));
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+          final jobs = await ConversationJob.db.find(
+            fixture.database,
+            where: (table) => table.requestId.like('approve-all:%'),
+          );
+          expect(jobs, hasLength(1));
+        },
+      );
+
+      test(
+        'batch decision rejects a member acting on another user turn',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'batch-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.submitToolDecisionBatch(
+              memberSession,
+              SubmitToolDecisionBatchRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-approve-all',
+                decision: 'approve',
+                calls: [
+                  SubmitToolDecisionBatchCall(
+                    conversationId: fixture.conversationId,
+                    turnId: staged.turn.requestId,
+                    toolCallId: staged.toolCallIds.single,
+                    argumentsDigest: 'digest-1',
+                    expectedTurnRevision: 2,
+                    editedArgumentsJson: '{"value":"attacker-controlled"}',
+                  ),
+                ],
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final toolCall = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          expect(toolCall.status, 'pending');
+          expect(toolCall.decision, isNull);
+          expect(toolCall.argumentsJson, '{}');
+          expect(toolCall.decisionByUserId, isNull);
+        },
+      );
+
+      test(
         'reports stale revision for a second pending decision from one snapshot',
         () async {
           final fixture = await prepareExecution();
@@ -882,6 +1057,44 @@ void main() {
         expect(host.calls, 1);
         expect(turn.status, ConversationStatuses.completed);
       });
+
+      test(
+        'worker cancels a queued turn after membership is revoked',
+        () async {
+          final fixture = await prepareExecution();
+          final member = (await WorkspaceMember.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.userId.equals(fixture.userId),
+          ))!;
+          await WorkspaceMember.db.updateRow(
+            fixture.database,
+            member.copyWith(removedAt: DateTime.now().toUtc()),
+          );
+          final host = _CountingCompletingHost();
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: ConversationWorker(host: host),
+          );
+
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          ))!;
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(turn.id),
+          ))!;
+          expect(host.calls, 0);
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(job.status, ConversationJobStatuses.completed);
+        },
+      );
 
       test(
         'queued Continue retains claims while running and approval states reject',
@@ -1250,6 +1463,85 @@ void main() {
           await _waitForIdle(fixture, endpoints);
 
           expect(host.calls, 1);
+        },
+      );
+
+      test(
+        'stop rejects a member acting on another user execution',
+        () async {
+          final fixture = await prepareExecution();
+          final memberId = const Uuid().v4().toString();
+          final now = DateTime.now().toUtc();
+          final memberSession = sessionBuilder.copyWith(
+            authentication: AuthenticationOverride.authenticationInfo(
+              memberId,
+              const {},
+            ),
+          );
+          await AuthUser.db.insertRow(
+            fixture.database,
+            AuthUser(
+              id: UuidValue.fromString(memberId),
+              scopeNames: const {},
+            ),
+          );
+          await EmailAccount.db.insertRow(
+            fixture.database,
+            EmailAccount(
+              authUserId: UuidValue.fromString(memberId),
+              email: 'stop-attacker@example.com',
+              passwordHash: 'unused',
+            ),
+          );
+          await WorkspaceMember.db.insertRow(
+            fixture.database,
+            WorkspaceMember(
+              workspaceId: fixture.workspaceId,
+              userId: memberId,
+              role: WorkspaceRoles.member,
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            memberSession,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+
+          await expectLater(
+            endpoints.conversation.stopConversation(
+              memberSession,
+              StopConversationRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'unauthorized-stop',
+                conversationId: fixture.conversationId,
+                expectedProjectionRevision:
+                    snapshot.conversation.projectionRevision,
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.permissionDenied,
+              ),
+            ),
+          );
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findById(
+            fixture.database,
+            conversation.activeExecutionId!,
+          ))!;
+          expect(conversation.executionState, ConversationStatuses.running);
+          expect(execution.status, ConversationStatuses.running);
         },
       );
 
@@ -1940,6 +2232,8 @@ class _CountingCompletingHost({
     }
     return ConversationCompactionResult(
       summary: 'Compacted',
+      providerId: 'test-provider',
+      modelId: 'test-model',
       range: AgentCompactionRangeSelected(
         fromMessageId: '$messageId',
         throughMessageId: '$messageId',

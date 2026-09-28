@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart' show projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -222,6 +223,14 @@ class const ConversationWorker({
     );
     if (turn == null) {
       throw const ConversationEngineConfigurationException('turn');
+    }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: turn.workspaceId,
+      userId: turn.initiatorUserId,
+    )) {
+      await _cancel(session, job, leaseToken);
+      return;
     }
     final conversation = await Conversation.db.findById(
       session,
@@ -759,11 +768,12 @@ class const ConversationWorker({
     required DateTime now,
     required Transaction transaction,
   }) async {
+    final projection = projectToolOutput(jsonEncode(result));
     await ConversationToolCall.db.updateRow(
       session,
       call.copyWith(
         status: status,
-        resultJson: jsonEncode(result),
+        resultJson: projection.persistedText,
         revision: call.revision + 1,
         updatedAt: now,
       ),
@@ -1590,6 +1600,9 @@ class const ConversationWorker({
       lockMode: LockMode.forUpdate,
     );
     for (final toolCall in activeToolCalls) {
+      final projection = projectToolOutput(
+        _cancelledToolResult(toolCall.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         toolCall.copyWith(
@@ -1597,7 +1610,7 @@ class const ConversationWorker({
           decisionByUserId: toolCall.decisionByUserId ?? turn.initiatorUserId,
           decisionAt: toolCall.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledToolResult(toolCall.resultJson),
+          resultJson: projection.persistedText,
           revision: toolCall.revision + 1,
           updatedAt: now,
         ),
@@ -1805,6 +1818,8 @@ class const ConversationWorker({
               .map(int.parse)
               .toList(),
           'compactionCreatedAt': now.toIso8601String(),
+          'compactionProviderId': result.providerId,
+          'compactionModelId': result.modelId,
         }),
         compactedThroughMessageId: int.parse(result.range.throughMessageId),
         revision: 1,
@@ -1841,6 +1856,7 @@ class const ConversationWorker({
       session,
       conversation.copyWith(
         revision: conversation.revision + 1,
+        activeCompactionCheckpointId: summary.stableId,
         updatedAt: now,
       ),
       transaction: transaction,

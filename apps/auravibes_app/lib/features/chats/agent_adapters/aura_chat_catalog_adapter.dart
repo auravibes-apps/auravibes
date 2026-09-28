@@ -111,18 +111,6 @@ const _implementedProperties = <String, Set<String>>{
   },
 };
 
-String auraChatCatalogSystemPrompt() => [
-  PromptBuilder.custom(
-    catalog: auraChatResponseCatalog(),
-    allowedOperations: SurfaceOperations.createAndUpdate(dataModel: true),
-  ).systemPromptJoined(),
-  PromptBuilder.custom(
-    catalog: auraChatFormCatalog(),
-    allowedOperations: SurfaceOperations.createAndUpdate(dataModel: true),
-  ).systemPromptJoined(),
-  A2uiChatContract.systemPrompt,
-].join('\n');
-
 Catalog auraChatResponseCatalog() =>
     _buildCatalog(catalogId: auraChatCatalogId, rules: _responseA2uiRules);
 

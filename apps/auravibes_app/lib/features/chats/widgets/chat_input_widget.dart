@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
@@ -26,8 +27,6 @@ import 'package:path/path.dart' as p;
 
 final _logger = Logger('chat_input_widget');
 
-const String _attachmentUnsupportedKey =
-    LocaleKeys.chats_screens_chat_conversation_attachment_unsupported;
 const String _attachFileKey =
     LocaleKeys.chats_screens_chat_conversation_attach_file;
 const String _attachPhotoKey =
@@ -46,6 +45,11 @@ const String _voiceRecordLabelKey =
     LocaleKeys.chats_screens_chat_conversation_voice_record_label;
 const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
+const String _cameraAttachmentErrorKey =
+    LocaleKeys.chats_screens_chat_conversation_camera_attachment_error;
+const String _clearAllAttachmentsKey =
+    LocaleKeys.chats_screens_chat_conversation_clear_all_attachments;
+const Duration _maxVoiceRecordingDuration = .new(minutes: 2);
 
 typedef _ChatInputActionsRequest = ({
   WidgetRef ref,
@@ -69,6 +73,10 @@ class const ChatInputWidget({
   required final Widget agentSheetControl,
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
+  final ValueChanged<bool>? onDraftStatusChanged,
+  final String? conversationId,
+  final bool autofocus = false,
+  final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
@@ -87,8 +95,12 @@ class const ChatInputWidget({
 }) extends HookConsumerWidget {
   static const _maxInputLines = 2;
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _ChatInputLayout(state: _ChatInputHooksFactory.state(ref, this));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _ChatInputHooksFactory.state(ref, this);
+    _reportDraftStatus(context, this, state);
+
+    return _ChatInputLayout(state: state);
+  }
 }
 
 class const _ChatInputDraftHooks({
@@ -104,6 +116,7 @@ class const _ChatInputRecordingHooks({
   required final ValueNotifier<Duration> recordingElapsed,
   required final ObjectRef<Timer?> recordingTimer,
   required final ObjectRef<Future<void>?> recordingStart,
+  required final ObjectRef<Future<MessageAttachmentToCreate?>?> recordingStop,
 });
 
 class const _ChatInputHooks({
@@ -121,12 +134,15 @@ typedef _ChatInputStateRequest = ({
 });
 
 abstract final class _ChatInputHooksFactory {
-  static _ChatInputDraftHooks draft() => _ChatInputDraftHooks(
-    controller: useTextEditingController(),
-    focusNode: useFocusNode(),
-    attachments: useState(<MessageAttachmentToCreate>[]),
-    isSending: useState(false),
-  );
+  static _ChatInputDraftHooks draft(ChatDraft? initialDraft) =>
+      _ChatInputDraftHooks(
+        controller: useTextEditingController(text: initialDraft?.text),
+        focusNode: useFocusNode(),
+        attachments: useState(
+          initialDraft?.attachments ?? <MessageAttachmentToCreate>[],
+        ),
+        isSending: useState(false),
+      );
 
   static _ChatInputRecordingHooks recording() => _ChatInputRecordingHooks(
     isRecording: useState(false),
@@ -134,24 +150,24 @@ abstract final class _ChatInputHooksFactory {
     recordingElapsed: useState(Duration.zero),
     recordingTimer: useRef<Timer?>(null),
     recordingStart: useRef<Future<void>?>(null),
+    recordingStop: useRef<Future<MessageAttachmentToCreate?>?>(null),
   );
 
-  static _ChatInputHooks hooks() => _ChatInputHooks(
-    draft: draft(),
+  static _ChatInputHooks hooks(ChatDraft? initialDraft) => _ChatInputHooks(
+    draft: draft(initialDraft),
     recording: recording(),
     attachmentUsecase: useRef<LocalChatAttachmentUsecase?>(null),
   );
 
   static _ChatInputState state(WidgetRef ref, ChatInputWidget input) {
-    final hooks = _ChatInputHooksFactory.hooks();
+    final initialDraft = _initialConversationDraft(ref, input);
+    final hooks = _ChatInputHooksFactory.hooks(initialDraft);
     final actions = _createAndRegisterActions(
       ref: ref,
       hooks: hooks,
       input: input,
     );
-    useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
-      input.draftToLoad,
-    ]);
+    _registerDraftEffects(ref, input, actions, hooks.draft);
 
     return _assembleChatInputState((
       ref: ref,
@@ -180,6 +196,19 @@ abstract final class _ChatInputHooksFactory {
     return isTextEmpty && areAttachmentsEmpty;
   }
 
+  static bool hasDraft(_ChatInputHooks hooks, {required bool isEmpty}) {
+    final isRecording = useListenableSelector(
+      hooks.recording.isRecording,
+      () => hooks.recording.isRecording.value,
+    );
+    final isStartingRecording = useListenableSelector(
+      hooks.recording.isStartingRecording,
+      () => hooks.recording.isStartingRecording.value,
+    );
+
+    return !isEmpty || isRecording || isStartingRecording;
+  }
+
   static _ChatInputActions _createAndRegisterActions({
     required WidgetRef ref,
     required _ChatInputHooks hooks,
@@ -195,6 +224,98 @@ abstract final class _ChatInputHooksFactory {
 
     return actions;
   }
+}
+
+ChatDraft? _initialConversationDraft(WidgetRef ref, ChatInputWidget input) {
+  final conversationId = input.conversationId;
+  if (conversationId == null) return null;
+
+  return ref.read(conversationDraftProvider(input.workspaceId, conversationId));
+}
+
+void _registerDraftEffects(
+  WidgetRef ref,
+  ChatInputWidget input,
+  _ChatInputActions actions,
+  _ChatInputDraftHooks draft,
+) {
+  useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
+    input.draftToLoad,
+  ]);
+  useEffect(() => _saveConversationDraft(ref, input, draft), [
+    input.workspaceId,
+    input.conversationId,
+  ]);
+}
+
+Dispose? _saveConversationDraft(
+  WidgetRef ref,
+  ChatInputWidget input,
+  _ChatInputDraftHooks draft,
+) {
+  final conversationId = input.conversationId;
+  if (conversationId == null) return null;
+
+  final draftNotifier = ref.read(
+    conversationDraftProvider(input.workspaceId, conversationId).notifier,
+  );
+
+  return _listenForConversationDraftChanges(draftNotifier, draft);
+}
+
+Dispose _listenForConversationDraftChanges(
+  ConversationDraft draftNotifier,
+  _ChatInputDraftHooks draft,
+) {
+  void save() => _saveCurrentConversationDraft(draftNotifier, draft);
+  draft.controller.addListener(save);
+  draft.attachments.addListener(save);
+
+  return () {
+    draft.controller.removeListener(save);
+    draft.attachments.removeListener(save);
+  };
+}
+
+void _saveCurrentConversationDraft(
+  ConversationDraft draftNotifier,
+  _ChatInputDraftHooks draft,
+) {
+  final current = ChatDraft(
+    text: draft.controller.text,
+    attachments: draft.attachments.value,
+  );
+  if (draft.isSending.value && current.isEmpty) return;
+
+  draftNotifier.save(current);
+}
+
+void _reportDraftStatus(
+  BuildContext context,
+  ChatInputWidget input,
+  _ChatInputState state,
+) {
+  final hasDraft = _ChatInputHooksFactory.hasDraft(
+    state.hooks,
+    isEmpty: state.isEmpty,
+  );
+  useEffect(() => _scheduleDraftStatusUpdate(context, input, hasDraft), [
+    hasDraft,
+    input.onDraftStatusChanged,
+  ]);
+}
+
+VoidCallback? _scheduleDraftStatusUpdate(
+  BuildContext context,
+  ChatInputWidget input,
+  bool hasDraft,
+) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    input.onDraftStatusChanged?.call(hasDraft);
+  });
+
+  return null;
 }
 
 Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
@@ -421,6 +542,7 @@ class const _ChatInputField({
       actions: state.actions,
       controller: state.hooks.draft.controller,
       focusNode: state.hooks.draft.focusNode,
+      autofocus: state.input.autofocus,
       footer: footer,
       header: header,
       isRecording: state.hooks.recording.isRecording.value,
@@ -433,6 +555,7 @@ class _ChatInputFieldView extends StatelessWidget {
     required _ChatInputActions actions,
     required TextEditingController controller,
     required FocusNode focusNode,
+    required bool autofocus,
     required Widget footer,
     required Widget header,
     required bool isRecording,
@@ -443,6 +566,7 @@ class _ChatInputFieldView extends StatelessWidget {
          ),
          textInputAction: .send,
          readOnly: isRecording,
+         autofocus: autofocus,
          maxLines: ChatInputWidget._maxInputLines,
          onSubmitted: (_) => unawaited(actions.sendMessage()),
          onTapOutside: (_) => focusNode.unfocus(),
@@ -541,11 +665,32 @@ extension _ChatInputDraftActions on _ChatInputActions {
   }
 
   void disposeDraft() {
-    if (_recording.isRecording.value || _recording.isStartingRecording.value) {
+    if ((_recording.isRecording.value ||
+            _recording.isStartingRecording.value) &&
+        _recording.recordingStop.value == null) {
       unawaited(_attachmentUsecase.cancelVoiceRecording());
     }
-    _draft.attachments.value.forEach(deleteUnsentAttachment);
+    if (input.conversationId == null) {
+      _draft.attachments.value.forEach(deleteUnsentAttachment);
+    }
     _recording.recordingTimer.value?.cancel();
+  }
+
+  void discardDraft() {
+    _draft.attachments.value.forEach(deleteUnsentAttachment);
+    _draft.controller.clear();
+    _draft.attachments.value = const [];
+    final conversationId = input.conversationId;
+    if (conversationId != null) {
+      ref
+          .read(
+            conversationDraftProvider(
+              input.workspaceId,
+              conversationId,
+            ).notifier,
+          )
+          .clear();
+    }
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
@@ -590,7 +735,7 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
       final attachment = await _copyAttachment(path, displayName);
       if (!_supportsAttachment(attachment)) {
         deleteUnsentAttachment(attachment);
-        _showAttachmentError(_attachmentUnsupportedKey);
+        _showAttachmentError(_modelAttachmentReasonKey(attachment.modality));
         _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
 
         return;
@@ -630,12 +775,27 @@ extension _ChatInputRecordingActions on _ChatInputActions {
 
       return;
     }
+    if (!_canAddStoppedRecording(attachment)) return;
 
+    final attachments = _draft.attachments.value;
     _draft.attachments.value = [
-      ..._draft.attachments.value,
-      _withVoiceDisplayName(attachment, _draft.attachments.value),
+      ...attachments,
+      _withVoiceDisplayName(attachment, attachments),
     ];
     _logger.fine('Added voice attachment to draft');
+  }
+
+  bool _canAddStoppedRecording(MessageAttachmentToCreate attachment) {
+    if (_draft.isSending.value) return false;
+    if (!ref.context.mounted) {
+      deleteUnsentAttachment(attachment);
+
+      return false;
+    }
+
+    return !_draft.attachments.value.any(
+      (existing) => existing.localPath == attachment.localPath,
+    );
   }
 
   void cancelRecording() {
@@ -643,10 +803,18 @@ extension _ChatInputRecordingActions on _ChatInputActions {
   }
 
   Future<void> _cancelRecording() async {
-    if (_recording.isStartingRecording.value) return;
+    if (_recording.isStartingRecording.value ||
+        _recording.recordingStop.value != null) {
+      return;
+    }
 
-    await _attachmentUsecase.cancelVoiceRecording();
-    clearRecordingState();
+    _recording.recordingTimer.value?.cancel();
+    _recording.recordingTimer.value = null;
+    try {
+      await _attachmentUsecase.cancelVoiceRecording();
+    } finally {
+      clearRecordingState();
+    }
   }
 }
 
@@ -712,6 +880,9 @@ extension _ChatInputFilePickerActions on _ChatInputActions {
       await _pickAndAddImage(source);
     } on Object catch (error, stackTrace) {
       _logger.warning('Failed to attach image', error, stackTrace);
+      if (source == ImageSource.camera) {
+        _showAttachmentError(_cameraAttachmentErrorKey);
+      }
     }
   }
 
@@ -732,6 +903,9 @@ extension _ChatInputRecordingLifecycleActions on _ChatInputActions {
     try {
       await _startVoiceRecording();
       _finishStartingRecording();
+    } on ChatMicrophonePermissionDeniedException catch (error) {
+      clearRecordingState();
+      _showAttachmentError(error.localizationKey);
     } on Object catch (_) {
       clearRecordingState();
     }
@@ -740,9 +914,11 @@ extension _ChatInputRecordingLifecycleActions on _ChatInputActions {
   bool get _canStartRecording =>
       !input.disabled &&
       !_recording.isRecording.value &&
-      !_recording.isStartingRecording.value;
+      !_recording.isStartingRecording.value &&
+      _recording.recordingStop.value == null;
 
   void _prepareRecording() {
+    _recording.recordingStop.value = null;
     _recording.isRecording.value = true;
     _recording.isStartingRecording.value = true;
     _recording.recordingElapsed.value = Duration.zero;
@@ -756,19 +932,22 @@ extension _ChatInputRecordingLifecycleActions on _ChatInputActions {
   }
 
   void _finishStartingRecording() {
-    final startedAt = DateTime.now();
     _recording.isStartingRecording.value = false;
     _recording.recordingTimer.value?.cancel();
     _recording.recordingTimer.value = Timer.periodic(
       const Duration(seconds: 1),
-      (_) {
-        _updateRecordingElapsed(startedAt);
+      (timer) {
+        _updateRecordingElapsed(timer.tick);
       },
     );
   }
 
-  void _updateRecordingElapsed(DateTime startedAt) {
-    _recording.recordingElapsed.value = DateTime.now().difference(startedAt);
+  void _updateRecordingElapsed(int tick) {
+    final elapsed = Duration(seconds: tick);
+    _recording.recordingElapsed.value = elapsed < _maxVoiceRecordingDuration
+        ? elapsed
+        : _maxVoiceRecordingDuration;
+    if (tick >= _maxVoiceRecordingDuration.inSeconds) stopRecording();
   }
 }
 
@@ -795,21 +974,48 @@ extension _ChatInputMessageActions on _ChatInputActions {
   }
 
   Future<void> _sendDraftToConversation(ChatDraft draft) async {
+    final savedDraft = _readSavedConversationDraft();
     final sendResult = input.onSendMessage(draft);
     _draft.controller.clear();
     _draft.attachments.value = const [];
-    await _awaitSendResult(sendResult, draft);
+    if (await _awaitSendResult(sendResult, draft)) {
+      _clearSavedConversationDraft(savedDraft);
+    }
   }
 
-  Future<void> _awaitSendResult(
+  ChatDraft? _readSavedConversationDraft() {
+    final conversationId = input.conversationId;
+    if (conversationId == null) return null;
+
+    return ref.read(
+      conversationDraftProvider(input.workspaceId, conversationId),
+    );
+  }
+
+  void _clearSavedConversationDraft(ChatDraft? savedDraft) {
+    final conversationId = input.conversationId;
+    if (conversationId == null) return;
+
+    ref
+        .read(
+          conversationDraftProvider(input.workspaceId, conversationId).notifier,
+        )
+        .clearIfSame(savedDraft);
+  }
+
+  Future<bool> _awaitSendResult(
     FutureOr<void> sendResult,
     ChatDraft draft,
   ) async {
     try {
       await sendResult;
+
+      return true;
     } on Object catch (error, stackTrace) {
       _logger.warning('Failed to send draft', error, stackTrace);
       _restoreDraftAfterSendFailure(draft);
+
+      return false;
     }
   }
 
@@ -827,7 +1033,48 @@ extension _ChatInputMessageActions on _ChatInputActions {
 }
 
 extension _ChatInputRecordingResultActions on _ChatInputActions {
-  Future<MessageAttachmentToCreate?> _stopRecordingAttachment() async {
+  Future<MessageAttachmentToCreate?> _stopRecordingAttachment() {
+    final activeStop = _recording.recordingStop.value;
+    if (activeStop != null) return activeStop;
+
+    _recording.recordingTimer.value?.cancel();
+    _recording.recordingTimer.value = null;
+
+    return _shareRecordingStop(_stopRecordingOnce());
+  }
+
+  Future<MessageAttachmentToCreate?> _shareRecordingStop(
+    Future<MessageAttachmentToCreate?> stop,
+  ) {
+    final completer = Completer<MessageAttachmentToCreate?>();
+    final sharedStop = completer.future;
+    _recording.recordingStop.value = sharedStop;
+    unawaited(_completeRecordingStop(stop, completer, sharedStop));
+
+    return sharedStop;
+  }
+
+  Future<void> _completeRecordingStop(
+    Future<MessageAttachmentToCreate?> stop,
+    Completer<MessageAttachmentToCreate?> completer,
+    Future<MessageAttachmentToCreate?> sharedStop,
+  ) async {
+    try {
+      completer.complete(await stop);
+    } on Object catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
+    } finally {
+      _clearRecordingStop(sharedStop);
+    }
+  }
+
+  void _clearRecordingStop(Future<MessageAttachmentToCreate?> sharedStop) {
+    if (identical(_recording.recordingStop.value, sharedStop)) {
+      _recording.recordingStop.value = null;
+    }
+  }
+
+  Future<MessageAttachmentToCreate?> _stopRecordingOnce() async {
     if (!await _finishRecordingStart()) return null;
 
     return await _stopVoiceRecording();
@@ -1014,15 +1261,18 @@ abstract final class _ChatInputAttachmentMenuFactory {
         title: TextLocale(request.titleKey),
         onTap: request.enabled ? request.onTap : null,
         leading: AuraIcon(request.icon),
-        trailing: request.enabled ? null : const _AttachmentUnsupportedHint(),
+        trailing: request.enabled
+            ? null
+            : _AttachmentUnsupportedHint(messageKey: request.reasonKey),
       );
 }
 
-class const _AttachmentUnsupportedHint() extends StatelessWidget {
+class const _AttachmentUnsupportedHint({required final String messageKey})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTooltip(
-      message: _attachmentUnsupportedKey.tr(),
+      message: messageKey.tr(),
       child: const AuraIcon(Icons.info_outline),
     );
   }
@@ -1032,6 +1282,7 @@ typedef _AttachmentMenuItemRequest = ({
   String titleKey,
   IconData icon,
   bool enabled,
+  String reasonKey,
   VoidCallback onTap,
 });
 
@@ -1051,6 +1302,7 @@ AuraPopupMenuItem _fileMenuItem(_ChatInputState state) =>
       titleKey: _attachFileKey,
       icon: Icons.attach_file,
       enabled: state.capabilities.attachments.supportsFile,
+      reasonKey: _fileAttachmentReasonKey(state),
       onTap: state.actions.pickFiles,
     ));
 
@@ -1065,6 +1317,7 @@ AuraPopupMenuItem _photoMenuItem(_ChatInputState state) =>
       titleKey: _attachPhotoKey,
       icon: Icons.photo_outlined,
       enabled: _supportsImageAttachments(state),
+      reasonKey: _imageAttachmentReasonKey(state),
       onTap: () => state.actions.pickImage(.gallery),
     ));
 
@@ -1079,8 +1332,52 @@ AuraPopupMenuItem _cameraMenuItem(_ChatInputState state) =>
       titleKey: _attachCameraKey,
       icon: Icons.photo_camera_outlined,
       enabled: _supportsImageAttachments(state),
+      reasonKey: _imageAttachmentReasonKey(state),
       onTap: () => state.actions.pickImage(.camera),
     ));
+
+String _fileAttachmentReasonKey(_ChatInputState state) =>
+    _attachmentReasonKey(state, .file);
+
+String _imageAttachmentReasonKey(_ChatInputState state) =>
+    _attachmentReasonKey(state, .image);
+
+String _audioAttachmentReasonKey(_ChatInputState state) =>
+    _attachmentReasonKey(state, .audio);
+
+String _attachmentReasonKey(
+  _ChatInputState state,
+  MessageAttachmentModality modality,
+) => !state.capabilities.attachments.supportsLocalAttachments
+    ? _localAttachmentUnavailableReasonKey(modality)
+    : _modelAttachmentReasonKey(modality);
+
+String _localAttachmentUnavailableReasonKey(
+  MessageAttachmentModality modality,
+) => switch (modality) {
+  .file =>
+    LocaleKeys
+        .chats_screens_chat_conversation_attachment_file_local_unavailable,
+  .image =>
+    LocaleKeys
+        .chats_screens_chat_conversation_attachment_image_local_unavailable,
+  .audio =>
+    LocaleKeys
+        .chats_screens_chat_conversation_attachment_audio_local_unavailable,
+};
+
+String _modelAttachmentReasonKey(MessageAttachmentModality modality) =>
+    switch (modality) {
+      .file =>
+        LocaleKeys
+            .chats_screens_chat_conversation_attachment_file_model_unsupported,
+      .image =>
+        LocaleKeys
+            .chats_screens_chat_conversation_attachment_image_model_unsupported,
+      .audio =>
+        LocaleKeys
+            .chats_screens_chat_conversation_attachment_audio_model_unsupported,
+    };
 
 bool _supportsImageAttachments(_ChatInputState state) =>
     state.capabilities.attachments.supportsLocalAttachments &&
@@ -1092,12 +1389,23 @@ bool get _isMobilePlatform =>
 
 List<AuraPopupMenuItem> _conversationMenuItems(_ChatInputState state) => [
   _toolsMenuItem(state),
+  if (state.input.conversationId != null && !state.isEmpty)
+    _discardDraftMenuItem(state),
   if (state.input.onSkillsPress case final onSkillsPress?)
     _skillsMenuItem(onSkillsPress),
   ?_continueMenuItem(state),
   if (state.input.onCompact case final onCompact?)
     _compactMenuItem(state, onCompact),
 ];
+
+AuraPopupMenuItem _discardDraftMenuItem(_ChatInputState state) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_discard_draft,
+      ),
+      onTap: state.actions.discardDraft,
+      leading: const AuraIcon(Icons.delete_outline),
+    );
 
 AuraPopupMenuItem _toolsMenuItem(_ChatInputState state) => AuraPopupMenuItem(
   title: const TextLocale(LocaleKeys.menu_tools),
@@ -1192,6 +1500,7 @@ class const _ChatInputAttachments({required final _ChatInputState state})
     return _ChatInputAttachmentVisibility(
       attachments: attachments,
       onRemove: _removeAttachment,
+      onClearAll: _clearAllAttachments,
       enabled: !state.hooks.recording.isRecording.value,
       visible: attachments.isNotEmpty,
     );
@@ -1205,11 +1514,18 @@ class const _ChatInputAttachments({required final _ChatInputState state})
         if (item != attachment) item,
     ];
   }
+
+  void _clearAllAttachments() {
+    final attachments = state.hooks.draft.attachments.value;
+    state.hooks.draft.attachments.value = const [];
+    attachments.forEach(state.actions.deleteUnsentAttachment);
+  }
 }
 
 class const _ChatInputAttachmentVisibility({
   required final List<MessageAttachmentToCreate> attachments,
   required final ValueChanged<MessageAttachmentToCreate> onRemove,
+  required final VoidCallback onClearAll,
   required final bool enabled,
   required final bool visible,
 }) extends StatelessWidget {
@@ -1221,6 +1537,7 @@ class const _ChatInputAttachmentVisibility({
           _AttachmentChips(
             attachments: attachments,
             onRemove: onRemove,
+            onClearAll: onClearAll,
             enabled: enabled,
           ),
           const AuraSizedBox(height: .xs),
@@ -1304,8 +1621,7 @@ class const _ChatInputModeControls({required final _ChatInputState state})
       child: Row(
         children: [
           Expanded(child: _ChatInputBrowseControls(state: state)),
-          if (state.capabilities.attachments.supportsAudio)
-            _ChatInputAudioControl(state: state),
+          if (!kIsWeb) _ChatInputAudioControl(state: state),
         ],
       ),
     );
@@ -1321,6 +1637,10 @@ class const _ChatInputBrowseControls({required final _ChatInputState state})
         _AttachmentMenu(state: state),
         const AuraSizedBox(width: .xs),
         Expanded(child: _ModelSelectorButton(state: state)),
+        if (state.input.reasoningControl case final reasoning?) ...[
+          const AuraSizedBox(width: .xs),
+          reasoning,
+        ],
         const AuraSizedBox(width: .xs),
       ],
     );
@@ -1387,8 +1707,10 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
         _RecordingButton(
           icon: Icons.mic_none_outlined,
           onPressed: state.actions.startRecording,
-          disabled: state.input.disabled,
-          tooltip: _recordVoiceKey.tr(),
+          disabled:
+              state.input.disabled ||
+              !state.capabilities.attachments.supportsAudio,
+          tooltip: _audioRecordingTooltip(state),
           selectorId: 'chat_voice_button',
         ),
         const AuraSizedBox(width: .xs),
@@ -1396,6 +1718,11 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
     );
   }
 }
+
+String _audioRecordingTooltip(_ChatInputState state) =>
+    state.capabilities.attachments.supportsAudio
+    ? _recordVoiceKey.tr()
+    : _audioAttachmentReasonKey(state).tr();
 
 class const _ChatInputStopControls({
   required final _ChatInputState state,
@@ -1487,7 +1814,9 @@ class const _RecordingCancelButton({required final _ChatInputState state})
     return _RecordingButton(
       icon: Icons.close_rounded,
       onPressed: state.actions.cancelRecording,
-      disabled: state.hooks.recording.isStartingRecording.value,
+      disabled:
+          state.hooks.recording.isStartingRecording.value ||
+          state.hooks.recording.recordingStop.value != null,
       tooltip: _cancelRecordingKey.tr(),
       selectorId: 'chat_voice_cancel_button',
     );
@@ -1501,7 +1830,9 @@ class const _RecordingStopButton({required final _ChatInputState state})
     return _RecordingButton(
       icon: Icons.stop_rounded,
       onPressed: state.actions.stopRecording,
-      disabled: state.hooks.recording.isStartingRecording.value,
+      disabled:
+          state.hooks.recording.isStartingRecording.value ||
+          state.hooks.recording.recordingStop.value != null,
       tooltip: _stopRecordingKey.tr(),
       tint: .error,
       selectorId: 'chat_voice_stop_button',
@@ -1585,6 +1916,7 @@ bool _isSendButtonDisabled(_ChatInputState state) {
 class const _AttachmentChips({
   required final List<MessageAttachmentToCreate> attachments,
   required final ValueChanged<MessageAttachmentToCreate> onRemove,
+  required final VoidCallback onClearAll,
   final bool enabled = true,
 }) extends StatelessWidget {
   @override
@@ -1599,7 +1931,28 @@ class const _AttachmentChips({
             onRemove: onRemove,
             enabled: enabled,
           ),
+        if (attachments.length > 1)
+          _ClearAllAttachmentsButton(enabled: enabled, onPressed: onClearAll),
       ],
+    );
+  }
+}
+
+class const _ClearAllAttachmentsButton({
+  required final bool enabled,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label = _clearAllAttachmentsKey.tr();
+
+    return AuraIconButton(
+      icon: Icons.clear_all,
+      onPressed: enabled ? onPressed : null,
+      disabled: !enabled,
+      identifier: 'chat_clear_all_attachments',
+      semanticLabel: label,
+      tooltip: label,
     );
   }
 }
@@ -1623,7 +1976,7 @@ class const _RecordingIndicatorRow({required final Duration elapsed})
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            '${_recordingStatusKey.tr()} ${_formatElapsed(elapsed)}',
+            '${_recordingStatusKey.tr()} ${_formatElapsed(elapsed)} / ${_formatElapsed(_maxVoiceRecordingDuration)}',
             overflow: .ellipsis,
           ),
         ),

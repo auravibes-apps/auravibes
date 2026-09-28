@@ -139,6 +139,7 @@ ApiModelEntity _modelFlags(
   ModelCapabilities capabilities,
 ) => model.copyWith(
   supportsReasoning: capabilities.supportsReasoning,
+  reasoningOptions: capabilities.reasoningOptions,
   isCanonical: capabilities.isCanonical,
   supportsPriorityMode: capabilities.supportsPriorityMode,
   supportsToolCalls: capabilities.supportsToolCalls,

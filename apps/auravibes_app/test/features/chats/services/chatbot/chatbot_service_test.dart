@@ -132,6 +132,34 @@ void main() {
       expect(capturedRequest?.messages[3].text, 'model part');
     });
 
+    test(
+      'does not inject A2UI prompt when runtime only enables rendering',
+      () async {
+        genkit.ModelRequest? capturedRequest;
+        final runtime = ChatA2uiRuntime(
+          conversationId: 'conversation-1',
+          enabled: true,
+        );
+        final service = _createService(
+          providerFactory: _FakeProviderFactory(
+            onRequest: (request) => capturedRequest = request,
+          ),
+        );
+
+        await service
+            .sendMessage(_makeConfig(), [], a2uiRuntime: runtime)
+            .toList();
+
+        final prompt = capturedRequest!.messages
+            .map((message) => message.text)
+            .join('\n');
+        expect(prompt, isNot(contains(a2uiChatCatalogId)));
+        expect(prompt, isNot(contains(a2uiChatFormCatalogId)));
+        expect(prompt, isNot(contains('CATALOG_SCHEMA_START')));
+        runtime.dispose();
+      },
+    );
+
     test('preserves reasoning emitted before a text chunk', () async {
       final service = _createService(
         providerFactory: _FakeProviderFactory(
@@ -339,8 +367,12 @@ void main() {
           _makeConfig(
             type: ModelProvidersType.anthropic,
             supportsReasoning: true,
+            reasoningOptions: [ReasoningOption.budgetTokens(1024, 32768)],
           ),
           [ChatMessage.user('hello')],
+          options: const ChatbotMessageOptions(
+            reasoningConfiguration: .new(budgetTokens: 1024),
+          ),
         ).toList();
         expect(chunks, isNotEmpty);
 
@@ -418,6 +450,48 @@ void main() {
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
       expect(results.single.finishReason, ChatFinishReason.other);
+    });
+
+    test('surfaces an error from the final response', () async {
+      final responseError = genkit.RuntimeError(message: 'failed');
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          response: genkit.ModelResponse(
+            finishReason: genkit.FinishReason.failed,
+            error: responseError,
+          ),
+        ),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(
+          isA<genkit.GenkitException>().having(
+            (error) => error.message,
+            'message',
+            responseError.message,
+          ),
+        ),
+      );
+    });
+
+    test('preserves provider rate-limit retry errors', () async {
+      final providerException = genkit.GenkitException(
+        'Provider API request failed (HTTP 429).',
+        details: 'rate limited',
+      );
+      final retryError = AgentRateLimitRetryException(
+        providerException: providerException,
+        retryAfter: const Duration(seconds: 2),
+      );
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(generateError: retryError),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(same(retryError)),
+      );
     });
   });
 
@@ -700,6 +774,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeConfig({
   ModelProvidersType type = ModelProvidersType.openai,
   String modelId = 'model',
   bool supportsReasoning = false,
+  List<ReasoningOption> reasoningOptions = const [],
 }) {
   return WorkspaceModelSelectionWithConnectionEntity(
     workspaceModelSelection: WorkspaceModelSelectionEntity(
@@ -709,6 +784,7 @@ WorkspaceModelSelectionWithConnectionEntity _makeConfig({
       updatedAt: DateTime(2025),
       modelConnectionId: 'connection-1',
       supportsReasoning: supportsReasoning,
+      reasoningOptions: reasoningOptions,
     ),
     modelConnection: ModelConnectionEntity(
       id: 'connection-1',
@@ -740,6 +816,7 @@ class _FakeProviderFactory extends ProviderFactory {
     genkit.ModelResponse? response,
     this.onRequest,
     this.throwsOnGenerate = false,
+    this.generateError,
     this.throwsOnCreateGenkit = false,
   }) : response = response ?? _modelResponse(genkit.FinishReason.stop),
        super(
@@ -750,18 +827,22 @@ class _FakeProviderFactory extends ProviderFactory {
   final genkit.ModelResponse response;
   final void Function(genkit.ModelRequest request)? onRequest;
   final bool throwsOnGenerate;
+  final Object? generateError;
   final bool throwsOnCreateGenkit;
 
   @override
   Future<genkit.Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
+    ReasoningConfiguration? reasoningConfiguration,
   }) async {
     if (throwsOnCreateGenkit) throw Exception('failed to create Genkit');
     return genkit.Genkit(isDevEnv: false)..defineModel(
       name: 'test/model',
       fn: (input, context) async {
         onRequest?.call(input);
+        final error = generateError;
+        if (error != null) throw error;
         if (throwsOnGenerate) {
           throw Exception('failed');
         }

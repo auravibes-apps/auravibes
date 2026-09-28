@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/services/cloud_conversation_creator.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
@@ -23,6 +24,7 @@ Future<ConversationEntity> _send(
   draft: draft,
   workspaceModelSelectionId: workspaceModelSelectionId,
   agentId: agentId,
+  reasoningConfiguration: null,
 ));
 
 class _CloudConversationUsecase extends Mock
@@ -63,6 +65,8 @@ class _SendNewMessageUsecaseFixture {
     final conversationRepo = MockConversationRepository();
     final workspaceModelSelectionRepo = MockWorkspaceModelSelectionRepository();
     final sendMessageUsecase = MockSendMessageUsecase();
+    when(() => sendMessageUsecase.conversationActivityGate)
+        .thenReturn(ConversationActivityGate());
     final generateTitleUsecase = MockGenerateTitleUsecase();
     final monitoringService = MockMonitoringService();
 
@@ -308,6 +312,7 @@ void main() {
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
         agentId: null,
+        reasoningConfiguration: null,
       ));
 
       expect(result.id, 'cloud-conversation');

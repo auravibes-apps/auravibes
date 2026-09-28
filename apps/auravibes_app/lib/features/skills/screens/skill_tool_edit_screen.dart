@@ -1,5 +1,6 @@
 // Required: Existing UI spacing uses small numeric values.
 // Required: Private form row widgets keep this screen self-contained.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -14,6 +15,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_template_too
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         SkillTemplateDefinition,
@@ -89,6 +91,7 @@ class const SkillToolEditScreen({
   required final String workspaceId,
   required final String skillId,
   final String? toolId,
+  final SkillToolEditRouteGuard? routeExitGuard,
   super.key,
 }) extends ConsumerStatefulWidget {
   static const _maxToolBodyLines = 12;
@@ -100,7 +103,32 @@ class const SkillToolEditScreen({
       _SkillToolEditScreenState();
 }
 
+/// Guards route replacements that bypass the screen's PopScope.
+class SkillToolEditRouteGuard {
+  var _isDirty = false;
+  var _isSaving = false;
+
+  void update({required bool isDirty, required bool isSaving}) {
+    _isDirty = isDirty;
+    _isSaving = isSaving;
+  }
+
+  Future<bool> canExit(BuildContext context) async {
+    if (_isSaving || !context.mounted) return false;
+    if (!_isDirty) return true;
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return false;
+
+    _isDirty = false;
+
+    return true;
+  }
+}
+
 class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
+  SkillToolEditRouteGuard? _routeExitGuard;
+
   final _titleController = TextEditingController();
   final _descriptionController = TextfEditingController();
   final _urlController = TextEditingController();
@@ -117,26 +145,38 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   bool _editRawDefinition = false;
   bool _initialized = false;
   bool _isSaving = false;
+  bool _isDirty = false;
+  bool _allowPop = false;
+  bool _isUpdating = false;
+  String _savedSnapshot = '';
+
+  SkillToolEditRouteGuard get _exitGuard =>
+      _routeExitGuard ??= widget.routeExitGuard ?? SkillToolEditRouteGuard();
 
   bool get _isCreate => widget.toolId == null;
 
   @override
+  void initState() {
+    super.initState();
+    _syncRouteExitGuard();
+    _titleController.addListener(_onFormChanged);
+    _descriptionController.addListener(_onFormChanged);
+    _urlController.addListener(_onFormChanged);
+    _bodyController.addListener(_onFormChanged);
+    _definitionController.addListener(_onFormChanged);
+    _credentialDefinitionIdController.addListener(_onFormChanged);
+  }
+
+  @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _urlController.dispose();
-    _bodyController.dispose();
-    _definitionController.dispose();
-    _credentialDefinitionIdController.dispose();
-    for (final field in _headerFields) {
-      field.dispose();
-    }
-    for (final field in _queryFields) {
-      field.dispose();
-    }
-    for (final field in _inputFields) {
-      field.dispose();
-    }
+    _titleController.removeListener(_onFormChanged);
+    _descriptionController.removeListener(_onFormChanged);
+    _urlController.removeListener(_onFormChanged);
+    _bodyController.removeListener(_onFormChanged);
+    _definitionController.removeListener(_onFormChanged);
+    _credentialDefinitionIdController.removeListener(_onFormChanged);
+    _disposeFormControllers();
+    _disposeDynamicFields();
     super.dispose();
   }
 
@@ -145,10 +185,207 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     final data = _watchData();
     _initializeForView(data);
 
-    return _SkillToolEditView(data: _viewData(context, data));
+    return PopScope<Object?>(
+      child: _SkillToolEditView(data: _viewData(context, data)),
+      canPop: _canPop,
+      onPopInvokedWithResult: _onPopInvoked,
+    );
   }
 
-  void _setState(VoidCallback callback) => setState(callback);
+  void _setState([VoidCallback? callback]) {
+    _isUpdating = true;
+    try {
+      setState(() {
+        callback?.call();
+        _updateDirtyState();
+        _syncRouteExitGuard();
+      });
+    } finally {
+      _isUpdating = false;
+    }
+  }
+
+  void _syncRouteExitGuard() =>
+      _exitGuard.update(isDirty: _isDirty, isSaving: _isSaving);
+}
+
+extension SkillToolControllerCleanup on _SkillToolEditScreenState {
+  void _disposeFormControllers() {
+    for (final controller in [
+      _titleController,
+      _descriptionController,
+      _urlController,
+      _bodyController,
+      _definitionController,
+      _credentialDefinitionIdController,
+    ]) {
+      controller.dispose();
+    }
+  }
+
+  void _disposeDynamicFields() {
+    for (final fields in [_headerFields, _queryFields]) {
+      fields.forEach(_disposeKeyValueField);
+    }
+    _inputFields.forEach(_disposeInputField);
+  }
+}
+
+extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
+  void _listenToKeyValueField(_KeyValueField field) {
+    field.keyController.addListener(_onFormChanged);
+    field.valueController.addListener(_onFormChanged);
+  }
+
+  void _disposeKeyValueField(_KeyValueField field) {
+    field.keyController.removeListener(_onFormChanged);
+    field.valueController.removeListener(_onFormChanged);
+    field.dispose();
+  }
+
+  List<TextEditingController> _inputControllers(_InputField field) => [
+    field.nameController,
+    field.descriptionController,
+    field.defaultController,
+    field.enumController,
+    field.minimumController,
+    field.maximumController,
+    field.nestedPropertiesController,
+  ];
+
+  void _listenToInputField(_InputField field) {
+    for (final controller in _inputControllers(field)) {
+      controller.addListener(_onFormChanged);
+    }
+  }
+
+  void _disposeInputField(_InputField field) {
+    for (final controller in _inputControllers(field)) {
+      controller.removeListener(_onFormChanged);
+    }
+    field.dispose();
+  }
+
+  void _addKeyValueField(List<_KeyValueField> fields) {
+    _setState(() {
+      final field = _KeyValueField();
+      _listenToKeyValueField(field);
+      fields.add(field);
+    });
+  }
+
+  void _addInputField() {
+    _setState(() {
+      final field = _InputField();
+      _listenToInputField(field);
+      _inputFields.add(field);
+    });
+  }
+
+  void _onFormChanged() {
+    if (!mounted || !_initialized || _isUpdating) return;
+    _setState();
+  }
+
+  void _updateDirtyState() {
+    if (!_initialized) return;
+    _isDirty = _currentSnapshot() != _savedSnapshot;
+  }
+}
+
+extension _SkillToolEditScreenStateNavigation on _SkillToolEditScreenState {
+  bool get _canPop => _allowPop || (!_isDirty && !_isSaving);
+
+  void _onPopInvoked(bool didPop, Object? _) {
+    if (!didPop) unawaited(_handleBack(context));
+  }
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (!await _exitGuard.canExit(context) || !context.mounted) return;
+    _popEditor(context);
+  }
+
+  void _popEditor(BuildContext context, {bool? saved}) {
+    _savedSnapshot = _currentSnapshot();
+    _setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop<bool>(saved);
+    });
+  }
+}
+
+extension _SkillToolEditScreenStateSnapshots on _SkillToolEditScreenState {
+  String _currentSnapshot() {
+    try {
+      return jsonEncode(_payloadSnapshot(_savePayload()));
+    } on Object {
+      return jsonEncode(_formSnapshot());
+    }
+  }
+
+  Map<String, Object?> _payloadSnapshot(_SkillToolSavePayload payload) => {
+    'title': payload.title,
+    'description': payload.description,
+    'template': _canonicalJsonValue(jsonDecode(payload.templateJson)),
+    'inputs': _canonicalJsonValue(jsonDecode(payload.inputsJson)),
+    'definition': _canonicalJsonValue(jsonDecode(payload.definitionJson)),
+    'credentialDefinitionId': payload.credentialDefinitionId,
+    'clearCredentialDefinition': payload.clearCredentialDefinition,
+    'requiresCredential': payload.requiresCredential,
+    'isEnabled': payload.isEnabled,
+  };
+
+  Map<String, Object?> _formSnapshot() => {
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'url': _urlController.text,
+    'method': _method.value,
+    'body': _bodyController.text,
+    'bodyFormat': _bodyFormat.value,
+    'headers': _keyValueSnapshots(_headerFields),
+    'query': _keyValueSnapshots(_queryFields),
+    'inputs': _inputSnapshots(),
+    'definition': _definitionController.text,
+    'editRawDefinition': _editRawDefinition,
+    'credentialDefinitionId': _credentialDefinitionIdController.text,
+    'requiresCredential': _requiresCredential,
+    'isEnabled': _isEnabled,
+  };
+
+  List<List<String>> _keyValueSnapshots(List<_KeyValueField> fields) => [
+    for (final field in fields)
+      [field.keyController.text, field.valueController.text],
+  ];
+
+  List<List<Object?>> _inputSnapshots() => [
+    for (final field in _inputFields)
+      [
+        field.nameController.text,
+        field.type,
+        field.descriptionController.text,
+        field.optional,
+        field.defaultController.text,
+        field.enumController.text,
+        field.minimumController.text,
+        field.maximumController.text,
+        field.itemType,
+        field.nestedPropertiesController.text,
+      ],
+  ];
+}
+
+Object? _canonicalJsonValue(Object? value) {
+  if (value is Map) {
+    final keys = value.keys.cast<String>().toList()..sort();
+
+    return {for (final key in keys) key: _canonicalJsonValue(value[key])};
+  }
+  if (value is List) {
+    return [for (final item in value) _canonicalJsonValue(item)];
+  }
+
+  return value;
 }
 
 extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
@@ -178,8 +415,13 @@ extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
     final currentTool = data.currentTool;
     if (currentTool != null) _initializeFromTool(currentTool);
     if (data.toolAsync == null && !_initialized) {
-      _inputFields.add(_InputField());
+      final field = _InputField();
+      _listenToInputField(field);
+      _inputFields.add(field);
       _initialized = true;
+      _savedSnapshot = _currentSnapshot();
+      _isDirty = false;
+      _syncRouteExitGuard();
     }
   }
 
@@ -197,6 +439,7 @@ extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
     isSaving: _isSaving,
     onSave: () => _save(context),
     onPreview: () => _preview(context),
+    onBack: () => _handleBack(context),
   );
 
   _SkillToolFormData _formData(
@@ -238,12 +481,12 @@ extension _SkillToolEditScreenStateFormActions on _SkillToolEditScreenState {
       );
 
   _SkillToolQueryActions _queryActions() => _SkillToolQueryActions(
-    onAdd: () => _setState(() => _queryFields.add(_KeyValueField())),
+    onAdd: () => _addKeyValueField(_queryFields),
     onRemove: _removeQueryField,
   );
 
   _SkillToolHeaderActions _headerActions() => _SkillToolHeaderActions(
-    onAdd: () => _setState(() => _headerFields.add(_KeyValueField())),
+    onAdd: () => _addKeyValueField(_headerFields),
     onRemove: _removeHeaderField,
   );
 
@@ -257,7 +500,7 @@ extension _SkillToolEditScreenStateFormActions on _SkillToolEditScreenState {
   );
 
   _SkillToolInputActions _inputActions() => _SkillToolInputActions(
-    onAdd: () => _setState(() => _inputFields.add(_InputField())),
+    onAdd: _addInputField,
     onRemove: _removeInputField,
     onChanged: () => _setState(() {
       final _ = Object();
@@ -329,21 +572,21 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   void _removeQueryField(_KeyValueField field) {
     _setState(() {
       final _ = _queryFields.remove(field);
-      field.dispose();
+      _disposeKeyValueField(field);
     });
   }
 
   void _removeInputField(_InputField field) {
     _setState(() {
       final _ = _inputFields.remove(field);
-      field.dispose();
+      _disposeInputField(field);
     });
   }
 
   void _removeHeaderField(_KeyValueField field) {
     _setState(() {
       final _ = _headerFields.remove(field);
-      field.dispose();
+      _disposeKeyValueField(field);
     });
   }
 
@@ -365,6 +608,18 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
 
     _applyToolMetadata(tool);
     final definition = _parseSkillTemplateDefinition(tool);
+    _applyToolDefinition(tool, definition);
+    _listenToExistingFields();
+    _initialized = true;
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
+    _syncRouteExitGuard();
+  }
+
+  void _applyToolDefinition(
+    SkillTemplateToolEntity tool,
+    SkillTemplateDefinition? definition,
+  ) {
     _definitionController.text = definition?.toJsonString() ?? '';
     _applyTemplate(
       definition == null
@@ -372,7 +627,12 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
           : tool.copyWith(templateJson: definition.legacyTemplateJson),
     );
     _applyInputFields(definition?.legacyInputsJson ?? tool.inputsJson);
-    _initialized = true;
+  }
+
+  void _listenToExistingFields() {
+    _headerFields.forEach(_listenToKeyValueField);
+    _queryFields.forEach(_listenToKeyValueField);
+    _inputFields.forEach(_listenToInputField);
   }
 
   void _applyToolMetadata(SkillTemplateToolEntity tool) {
@@ -446,7 +706,8 @@ extension _SkillToolEditScreenStateSave on _SkillToolEditScreenState {
 
   void _closeAfterSave(BuildContext context) {
     if (!context.mounted) return;
-    Navigator.of(context).pop(true);
+    _savedSnapshot = _currentSnapshot();
+    _popEditor(context, saved: true);
   }
 
   void _showSaveError(BuildContext context) {
@@ -944,6 +1205,7 @@ class const _SkillToolEditViewData({
   required final bool isSaving,
   required final VoidCallback onSave,
   required final VoidCallback onPreview,
+  required final VoidCallback onBack,
 });
 
 class const _SkillToolEditView({required final _SkillToolEditViewData data})
@@ -960,6 +1222,7 @@ class const _SkillToolEditView({required final _SkillToolEditViewData data})
       isSaving: data.isSaving,
       onSave: data.onSave,
       onPreview: data.onPreview,
+      onBack: data.onBack,
     ),
   );
 }
@@ -1006,6 +1269,7 @@ class const _SkillToolEditAppBar({
   required final bool isSaving,
   required final VoidCallback onSave,
   required final VoidCallback onPreview,
+  required final VoidCallback onBack,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -1017,7 +1281,7 @@ class const _SkillToolEditAppBar({
       _SkillToolAppBarPreview(onPressed: onPreview),
       _SkillToolAppBarSave(isSaving: isSaving, onSave: onSave),
     ],
-    leading: _SkillToolAppBarBack(onPressed: () => Navigator.of(context).pop()),
+    leading: _SkillToolAppBarBack(onPressed: onBack),
   );
 }
 

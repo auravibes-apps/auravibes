@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
@@ -18,21 +19,31 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 const _wavFormatChunkOffset = 16;
+const _mimeHeaderLength = 12;
 
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
 }) {
-  final AudioRecorder _recorder = recorder ?? AudioRecorder();
+  // Defer platform-channel setup until voice recording is requested.
+  AudioRecorder? _recorder = recorder;
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
   StreamSubscription<Uint8List>? _recordingStreamSubscription;
+  AudioRecorder get _recorderOrCreate => _recorder ??= .new();
 
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
     String sourcePath, {
     String? displayName,
   }) => _copyIntoAppStorage(this, sourcePath, displayName);
+
+  Future<Uint8List> readAttachmentBytes(String localPath) =>
+      File(localPath).readAsBytes();
+
+  Future<MessageAttachmentToCreate> createArchiveAttachment(
+    ConversationArchiveAttachment attachment,
+  ) => _createArchiveAttachment(this, attachment);
 
   Future<void> startVoiceRecording() => _startVoiceRecording(this);
 
@@ -72,6 +83,69 @@ Future<MessageAttachmentToCreate> _copyIntoAppStorage(
   return _newAttachment(copied, source, displayName);
 }
 
+Future<MessageAttachmentToCreate> _createArchiveAttachment(
+  LocalChatAttachmentServiceIo service,
+  ConversationArchiveAttachment attachment,
+) async {
+  final fileName = _archiveAttachmentFileName(attachment.fileName);
+  _ensureAttachmentSize(attachment.bytes.length);
+  final localPath = await _newAttachmentPath(service, fileName);
+  await _writeArchiveAttachment(.new(localPath), attachment.bytes);
+  final mimeType = _archiveAttachmentMimeType(fileName, attachment);
+
+  return _archiveAttachmentToCreate(attachment, localPath, fileName, mimeType);
+}
+
+MessageAttachmentToCreate _archiveAttachmentToCreate(
+  ConversationArchiveAttachment attachment,
+  String localPath,
+  String fileName,
+  String mimeType,
+) => MessageAttachmentToCreate(
+  localPath: localPath,
+  fileName: fileName,
+  displayName: attachment.displayName,
+  mimeType: mimeType,
+  modality: ChatAttachmentModality.forMimeType(mimeType),
+  sizeBytes: attachment.bytes.length,
+);
+
+String _archiveAttachmentFileName(String value) {
+  final fileName = p.posix.basename(value.replaceAll(r'\', '/'));
+  if (fileName.isEmpty || fileName != value) {
+    throw ArgumentError.value(value, 'fileName');
+  }
+
+  return fileName;
+}
+
+Future<void> _writeArchiveAttachment(File file, Uint8List bytes) async {
+  try {
+    final _ = await file.writeAsBytes(bytes, flush: true);
+  } on Object {
+    await _deletePartialArchiveAttachment(file);
+    rethrow;
+  }
+}
+
+Future<void> _deletePartialArchiveAttachment(File file) async {
+  try {
+    final _ = await file.delete();
+  } on FileSystemException {
+    // Preserve original write error when partial-file cleanup fails.
+  }
+}
+
+String _archiveAttachmentMimeType(
+  String fileName,
+  ConversationArchiveAttachment attachment,
+) =>
+    lookupMimeType(
+      fileName,
+      headerBytes: attachment.bytes.take(_mimeHeaderLength).toList(),
+    ) ??
+    attachment.mimeType;
+
 void _ensureAttachmentSize(int sizeBytes) {
   if (sizeBytes > ChatAttachmentModality.maxChatAttachmentBytes) {
     throw const ChatAttachmentTooLargeException();
@@ -108,7 +182,7 @@ Future<_AttachmentSource> _readAttachmentSource(String sourcePath) async {
   final file = File(sourcePath);
   final sizeBytes = await file.length();
   final headerBytes = await file
-      .openRead(0, 12)
+      .openRead(0, _mimeHeaderLength)
       .expand((bytes) => bytes)
       .toList();
 
@@ -123,10 +197,10 @@ Future<_AttachmentSource> _readAttachmentSource(String sourcePath) async {
 }
 
 Future<void> _startVoiceRecording(LocalChatAttachmentServiceIo service) async {
-  if (await service._recorder.isRecording()) return;
+  if (await service._recorderOrCreate.isRecording()) return;
 
-  await _ensureRecordingPermission(service._recorder);
-  final device = await _recordingInputDevice(service._recorder);
+  await _ensureRecordingPermission(service._recorderOrCreate);
+  final device = await _recordingInputDevice(service._recorderOrCreate);
   final path = await _newRecordingPath(service);
   service._recordingPath = path;
   if (Platform.isMacOS) {
@@ -135,7 +209,7 @@ Future<void> _startVoiceRecording(LocalChatAttachmentServiceIo service) async {
     return;
   }
 
-  await _startStandardVoiceRecording(service._recorder, device, path);
+  await _startStandardVoiceRecording(service._recorderOrCreate, device, path);
 }
 
 Future<InputDevice?> _recordingInputDevice(AudioRecorder recorder) async {
@@ -161,7 +235,7 @@ Future<void> _ensureRecordingPermission(AudioRecorder recorder) async {
   if (await recorder.hasPermission()) return;
 
   _logger.warning('Microphone permission was denied');
-  throw StateError('Microphone permission was denied.');
+  throw const ChatMicrophonePermissionDeniedException();
 }
 
 InputDevice? _preferredInputDevice(List<InputDevice> devices) {
@@ -185,7 +259,7 @@ Future<MessageAttachmentToCreate?> _stopVoiceRecording(
   LocalChatAttachmentServiceIo service,
 ) async {
   final path = service._recordingStreamSubscription == null
-      ? await service._recorder.stop() ?? service._recordingPath
+      ? await service._recorderOrCreate.stop() ?? service._recordingPath
       : await service._stopMacVoiceRecording();
   service._recordingPath = null;
   if (path == null) {
@@ -220,7 +294,7 @@ Future<MessageAttachmentToCreate?> _createStoppedVoiceAttachment(
 
 Future<void> _cancelVoiceRecording(LocalChatAttachmentServiceIo service) async {
   final path = service._recordingStreamSubscription == null
-      ? await service._recorder.stop() ?? service._recordingPath
+      ? await service._recorderOrCreate.stop() ?? service._recordingPath
       : await service._cancelMacVoiceRecording();
   service._recordingPath = null;
   if (path == null) return;
@@ -244,7 +318,7 @@ extension on LocalChatAttachmentServiceIo {
   }
 
   Future<void> _startMacVoiceRecording(InputDevice? device) async {
-    final stream = await _recorder.startStream(
+    final stream = await _recorderOrCreate.startStream(
       .new(
         encoder: AudioEncoder.pcm16bits,
         numChannels: _macRecordingChannels,
@@ -312,7 +386,7 @@ extension on LocalChatAttachmentServiceIo {
   }
 
   Future<Uint8List?> _stopMacVoiceStream() async {
-    final _ = await _recorder.stop();
+    final _ = await _recorderOrCreate.stop();
     await _recordingStreamDone?.future.timeout(
       const Duration(milliseconds: 500),
       onTimeout: () => _logger.warning('Voice stream stop timed out'),

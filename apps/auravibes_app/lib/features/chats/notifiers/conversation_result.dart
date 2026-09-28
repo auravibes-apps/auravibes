@@ -3,6 +3,8 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_provid
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_conversation_usecase.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -50,13 +52,35 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   }
 
   Future<void> setModel(String? modelId) async {
-    if (modelId == null) return;
+    final result = state.value;
+    if (modelId == null || result is! ConversationFound) return;
+    final conversation = result.conversation;
 
+    final patch = await _modelUpdatePatch(
+      _workspaceId,
+      modelId,
+      conversation.reasoningConfiguration,
+    );
+    if (!ref.mounted) return;
+    await _saveConversationPatch(conversation, patch);
+  }
+
+  Future<void> setReasoningConfiguration(
+    ReasoningConfiguration? reasoningConfiguration,
+  ) async {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    state = AsyncData(
-      ConversationFound(await _updateModel(result.conversation, modelId)),
+    final validatedConfiguration = await _validatedReasoningConfiguration(
+      ref,
+      _workspaceId,
+      result.conversation.modelId,
+      reasoningConfiguration,
+    );
+    if (!ref.mounted) return;
+    await _saveConversationPatch(
+      result.conversation,
+      _reasoningConfigurationPatch(validatedConfiguration),
     );
   }
 
@@ -64,9 +88,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    state = AsyncData(
-      ConversationFound(await _updateAgent(result.conversation, agentId)),
-    );
+    await _saveConversationPatch(result.conversation, _agentPatch(agentId));
   }
 
   Future<void> rename(ConversationEntity conversation, String title) async {
@@ -99,38 +121,36 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     state = AsyncData(updatedResult);
   }
 
-  Future<ConversationEntity> _updateModel(
-    ConversationEntity conversation,
+  Future<ConversationPatch> _modelUpdatePatch(
+    String workspaceId,
     String modelId,
+    ReasoningConfiguration? reasoningConfiguration,
   ) async {
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(_workspaceId).future,
+    final validatedConfiguration = await _validatedReasoningConfiguration(
+      ref,
+      workspaceId,
+      modelId,
+      reasoningConfiguration,
     );
-    if (cloud != null) {
-      return _updatedModelConversation(
-        conversation,
-        await cloud.updateModel(conversation, modelId),
-      );
-    }
 
-    return await ref
-        .read(conversationRepositoryProvider)
-        .patchConversation(conversation.id, .new(modelId: modelId));
+    return ConversationPatch(
+      modelId: modelId,
+      clearReasoningConfiguration:
+          reasoningConfiguration != null && validatedConfiguration == null,
+    );
   }
 
-  Future<ConversationEntity> _updateAgent(
+  Future<ConversationEntity> _updateConversation(
     ConversationEntity conversation,
-    String? agentId,
+    ConversationPatch patch,
   ) async {
-    final patch = _agentPatch(agentId);
     final cloud = await ref.read(
       cloudConversationUsecaseProvider(_workspaceId).future,
     );
     if (cloud != null) {
-      return _updatedAgentConversation(
-        conversation,
-        await cloud.update(conversation, patch),
-      );
+      final updated = await cloud.update(conversation, patch);
+
+      return _updatedConversation(conversation, updated);
     }
 
     return await ref
@@ -138,24 +158,55 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
         .patchConversation(conversation.id, patch);
   }
 
-  ConversationEntity _updatedAgentConversation(
+  Future<void> _saveConversationPatch(
     ConversationEntity conversation,
-    ConversationSummary updated,
-  ) => conversation.copyWith(
-    agentId: updated.agentId,
-    revision: updated.revision,
-    updatedAt: updated.updatedAt,
-  );
+    ConversationPatch patch,
+  ) async {
+    final updated = await _updateConversation(conversation, patch);
+    if (!ref.mounted) return;
 
-  ConversationEntity _updatedModelConversation(
-    ConversationEntity conversation,
-    ConversationSummary updated,
-  ) => conversation.copyWith(
-    modelId: updated.modelId,
-    revision: updated.revision,
-    updatedAt: updated.updatedAt,
-  );
+    state = AsyncData(ConversationFound(updated));
+  }
 }
+
+Future<ReasoningConfiguration?> _validatedReasoningConfiguration(
+  Ref ref,
+  String workspaceId,
+  String? modelId,
+  ReasoningConfiguration? configuration,
+) async {
+  if (configuration == null || modelId == null) return null;
+
+  final selectedModel = await ref.read(
+    workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
+  );
+  if (selectedModel == null) return null;
+
+  final reasoningOptions =
+      selectedModel.workspaceModelSelection.reasoningOptions;
+  if (!configuration.isValidFor(reasoningOptions)) return null;
+
+  return configuration;
+}
+
+ConversationPatch _reasoningConfigurationPatch(
+  ReasoningConfiguration? configuration,
+) => configuration == null
+    ? const ConversationPatch(clearReasoningConfiguration: true)
+    : ConversationPatch(reasoningConfiguration: configuration);
+
+ConversationEntity _updatedConversation(
+  ConversationEntity conversation,
+  ConversationSummary updated,
+) => conversation.copyWith(
+  modelId: updated.modelId,
+  agentId: updated.agentId,
+  reasoningConfiguration: ReasoningConfiguration.decode(
+    updated.reasoningConfigJson,
+  ),
+  revision: updated.revision,
+  updatedAt: updated.updatedAt,
+);
 
 ConversationEntity _updatedTitleConversation(
   ConversationEntity conversation,

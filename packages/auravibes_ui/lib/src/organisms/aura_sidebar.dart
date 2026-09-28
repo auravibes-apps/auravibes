@@ -4,7 +4,7 @@
 
 import 'package:auravibes_ui/src/atoms/atoms.dart';
 import 'package:auravibes_ui/src/tokens/tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A generic sidebar organism component that provides navigation functionality.
 ///
@@ -307,10 +307,13 @@ class _AuraSidebarItemButton extends StatelessWidget {
     required AuraColorScheme colors,
     required double borderRadius,
   }) : _child = AuraPressable(
-         child: _AuraSidebarItemContent(
-           icon: item.icon,
-           label: isExpanded ? item.label : const SizedBox.shrink(),
-           selected: selected,
+         child: ExcludeSemantics(
+           excluding: item.semanticLabel != null,
+           child: _AuraSidebarItemContent(
+             icon: item.icon,
+             label: isExpanded ? item.label : const SizedBox.shrink(),
+             selected: selected,
+           ),
          ),
          color: colors.primary,
          decoration: BoxDecoration(
@@ -340,7 +343,13 @@ class const _AuraSidebarItemContent({
   Widget build(BuildContext context) {
     return AuraPadding(
       child: AuraText(
-        child: AuraRow(children: [icon, label], spacing: .sm),
+        child: AuraRow(
+          children: [
+            icon,
+            AuraFlexItem(child: label),
+          ],
+          spacing: .sm,
+        ),
         tint: selected ? AuraTint.primary : null,
       ),
       padding: .small,

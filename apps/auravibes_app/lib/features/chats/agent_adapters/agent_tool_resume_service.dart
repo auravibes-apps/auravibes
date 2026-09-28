@@ -117,6 +117,7 @@ class AppAgentToolResumeProvider({
     required agent.AgentIterationContext context,
   }) async {
     try {
+      activeSubAgents?.markRunning(conversationId);
       final decision = await agentLoop(
         conversationId: conversationId,
         context: context,
@@ -139,7 +140,11 @@ class AppAgentToolResumeProvider({
     String conversationId,
     agent.AgentIterationDecision decision,
   ) {
-    if (decision == agent.AgentIterationDecision.waitForToolApproval) return;
+    if (decision == agent.AgentIterationDecision.waitForToolApproval) {
+      activeSubAgents?.markAwaitingApproval(conversationId);
+
+      return;
+    }
 
     _finishChildIfNeeded(activeSubAgents, (
       conversationId: conversationId,

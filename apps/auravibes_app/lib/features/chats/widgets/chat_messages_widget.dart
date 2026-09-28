@@ -27,9 +27,11 @@ import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
@@ -610,12 +612,24 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
       index,
     );
     final hasToolCalls = message.metadata?.toolCalls.isNotEmpty == true;
+    final requiresMessageItem = _requiresMessageTimelineItem(
+      message,
+      replayPayloadsByMessageId,
+    );
     final hasActivity =
         !_isTimelineBoundary(message) &&
         (_hasAssistantActivity(message) ||
             (hasVisibleResponse && hasFollowingAssistantActivity));
 
     if (hasActivity) {
+      if (requiresMessageItem) {
+        activitySources.add(source);
+        addActivityRun();
+        items.add(
+          _MessageTimelineItem(source, activityRenderedInSession: true),
+        );
+        continue;
+      }
       final isFinalResponse =
           hasVisibleResponse && !hasFollowingAssistantActivity && !hasToolCalls;
       activitySources.add(source);
@@ -662,6 +676,12 @@ bool _hasVisibleAssistantResponse(
   Map<String, List<String>> replayPayloadsByMessageId,
 ) =>
     message.content.trim().isNotEmpty ||
+    _requiresMessageTimelineItem(message, replayPayloadsByMessageId);
+
+bool _requiresMessageTimelineItem(
+  MessageEntity message,
+  Map<String, List<String>> replayPayloadsByMessageId,
+) =>
     message.attachments.isNotEmpty ||
     _hasA2uiMessageState(message) ||
     replayPayloadsByMessageId[message.id]?.isNotEmpty == true ||
@@ -719,6 +739,7 @@ class const _ChatMessageTimelineItem({
     if (message.metadata?.isCompactionSummary == true) {
       return _CompactedMessageWidget(
         message: message,
+        workspaceId: workspaceId,
         key: ValueKey(message.id),
       );
     }
@@ -1165,20 +1186,22 @@ class const _MessageActions({
     final resolve = resolveContent;
     final retry = onRetryMessage;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (resolve != null)
-          _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
-        if (retry != null)
-          _MessageRetryAction(message: message, onRetryMessage: retry),
-        if (_canForkMessage(message))
-          _MessageForkAction(
-            message: message,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          ),
-      ],
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (resolve != null) _MessageCopyAction(resolveContent: resolve),
+          if (retry != null)
+            _MessageRetryAction(message: message, onRetryMessage: retry),
+          if (_canForkMessage(message))
+            _MessageForkAction(
+              message: message,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -1314,10 +1337,9 @@ class const _ForkBoundaryDivider({
 }
 
 class _MessageCopyAction extends StatefulWidget {
-  const new({required this.resolveContent, required this.isUser, super.key});
+  const new({required this.resolveContent, super.key});
 
   final String? Function() resolveContent;
-  final bool isUser;
 
   @override
   State<_MessageCopyAction> createState() => _MessageCopyActionState();
@@ -1327,17 +1349,14 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   var _copied = false;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: widget.isUser ? Alignment.centerRight : Alignment.centerLeft,
-    child: AuraIconButton(
-      icon: _copied ? Icons.check : Icons.copy_outlined,
-      onPressed: () => unawaited(_copy()),
-      tooltip:
-          (_copied
-                  ? LocaleKeys.chats_screens_chat_conversation_message_copied
-                  : LocaleKeys.chats_screens_chat_conversation_copy_message)
-              .tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: _copied ? Icons.check : Icons.copy_outlined,
+    onPressed: () => unawaited(_copy()),
+    tooltip:
+        (_copied
+                ? LocaleKeys.chats_screens_chat_conversation_message_copied
+                : LocaleKeys.chats_screens_chat_conversation_copy_message)
+            .tr(),
   );
 
   Future<void> _copy() async {
@@ -1354,14 +1373,65 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   }
 }
 
-Widget _chatMarkdown({required String content, required TextStyle style}) =>
-    MouseRegion(
-      cursor: SystemMouseCursors.text,
-      child: DefaultSelectionStyle(
-        mouseCursor: MouseCursor.defer,
-        child: GptMarkdown(content, style: style),
+Widget _chatMarkdown({
+  required BuildContext context,
+  required String content,
+  required TextStyle style,
+}) => MouseRegion(
+  cursor: SystemMouseCursors.text,
+  child: DefaultSelectionStyle(
+    mouseCursor: MouseCursor.defer,
+    child: GptMarkdown(
+      content,
+      style: style,
+      onLinkTap: (url, _) => unawaited(_openChatMarkdownLink(context, url)),
+    ),
+  ),
+);
+
+Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null ||
+      !uri.isAbsolute ||
+      !uri.hasAuthority ||
+      (uri.scheme != 'http' && uri.scheme != 'https') ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty) {
+    return;
+  }
+
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: Text(
+      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
+    ),
+    message: AuraSelectableText(
+      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+        namedArgs: {'host': uri.host, 'url': uri.toString()},
+      ),
+    ),
+    actions: AuraConfirmDialogActions(
+      confirmLabel: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+      ),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  try {
+    await OpenSystemBrowser.call(uri);
+  } on Object {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: TextLocale(
+          LocaleKeys.models_screens_add_provider_device_code_open_link_failed,
+        ),
       ),
     );
+  }
+}
 
 class const _AiMessageContent({
   required final String content,
@@ -1379,6 +1449,7 @@ class const _AiMessageContent({
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _chatMarkdown(
+          context: context,
           content: content,
           style: TextStyle(
             color: auraColors.onSurface,
@@ -1531,11 +1602,11 @@ class const _AssistantActivityRun({
             messageId: item.messageId,
             toolCall: item.toolCall,
             isForkReference: item.isForkReference,
-            displayName: _toolCallDisplayName(
-              ref.watch(
-                toolDisplayNameProvider(workspaceId, item.toolCall.name),
-              ),
-              item.toolCall.name,
+            displayName: _activityToolCallDisplayName(
+              context: context,
+              ref: ref,
+              workspaceId: workspaceId,
+              toolCall: item.toolCall,
             ),
             openSubAgent: _openSubAgent(
               context: context,
@@ -1711,6 +1782,7 @@ class const _ActivityNarrative({required final String content, super.key})
 
     return SelectionArea(
       child: _chatMarkdown(
+        context: context,
         content: content,
         style: TextStyle(
           color: colors.onSurfaceVariant,
@@ -1760,6 +1832,7 @@ class const _ActivityThinkingCard({required final String content, super.key})
           const AuraSizedBox(height: .xs),
           SelectionArea(
             child: _chatMarkdown(
+              context: context,
               content: content,
               style: TextStyle(
                 color: colors.onSurfaceVariant,
@@ -1785,6 +1858,38 @@ String _toolCallDisplayName(
     rawName: toolName,
   ),
 );
+
+String _activityToolCallDisplayName({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required MessageToolCallEntity toolCall,
+}) {
+  final target = SkillToolCallDisplay.parseTarget(toolCall);
+  if (target != null) {
+    final titlesAsync = ref.watch(
+      skillToolCallDisplayTitlesProvider(
+        workspaceId,
+        target.skillSlug,
+        target.toolSlug,
+      ),
+    );
+
+    return SkillToolCallDisplay.displayName(
+      context: context,
+      titles: titlesAsync.maybeWhen(
+        data: (titles) => titles,
+        orElse: () => null,
+      ),
+      target: target,
+    );
+  }
+
+  return _toolCallDisplayName(
+    ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+    toolCall.name,
+  );
+}
 
 String _toolCallsSummary(Iterable<String> displayNames) {
   const maximumNames = 2;
@@ -2110,17 +2215,30 @@ class const _ActivityToolCallRow({
                       ),
                     ),
                     const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text(
-                        statusKey.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: context.auraTheme.typography.fontSizeXs,
-                          fontFamily:
-                              context.auraTheme.typography.bodyFontFamily,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 120),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.auraTheme.fromSpacing(.xs),
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(
+                            context.auraTheme.fromBorderRadius(.sm),
+                          ),
+                        ),
+                        child: Text(
+                          statusKey.tr(),
+                          key: ValueKey('activity_tool_status_${toolCall.id}'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: context.auraTheme.typography.fontSizeXs,
+                            fontFamily:
+                                context.auraTheme.typography.bodyFontFamily,
+                          ),
                         ),
                       ),
                     ),
@@ -2368,6 +2486,7 @@ String? _subAgentTitle(MessageToolCallEntity toolCall) {
 
 class const _CompactedMessageWidget({
   required final MessageEntity message,
+  required final String workspaceId,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2434,7 +2553,12 @@ class const _CompactedMessageWidget({
         builder: (modalContext) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(child: CompactedMessageDetails(message: message)),
+            Flexible(
+              child: CompactedMessageDetails(
+                message: message,
+                workspaceId: workspaceId,
+              ),
+            ),
             AuraButton(
               onPressed: () =>
                   Navigator.of(modalContext, rootNavigator: true).pop(),
@@ -2479,10 +2603,7 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(
-            resolveContent: () => visibleContent,
-            isUser: false,
-          ),
+          _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,

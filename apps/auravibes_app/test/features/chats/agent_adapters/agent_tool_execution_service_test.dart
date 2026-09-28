@@ -115,8 +115,11 @@ void main() {
       final tool = ResolvedTool.mcp(
         tableId: 'tool-1',
         toolIdentifier: 'sum',
-        mcpServerId: 'server-1',
-        mcpSlug: 'server-1',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
       );
       when(
         () => workspaceResolver(
@@ -189,8 +192,11 @@ void main() {
             resolvedTool: .mcp(
               tableId: 'tool-1',
               toolIdentifier: 'sum',
-              mcpServerId: 'server-1',
-              mcpSlug: 'server-1',
+              mcp: (
+                mcpServerId: 'server-1',
+                mcpSlug: 'server-1',
+                outputSchemaJson: null,
+              ),
             ),
             argumentsRaw: '{}',
           )),
@@ -419,8 +425,11 @@ void main() {
         tool: ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
-          mcpServerId: 'server-1',
-          mcpSlug: 'server-1',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
         ),
         id: 'tool-1',
         argumentsRaw: '{"a": 1, "b": 2}',

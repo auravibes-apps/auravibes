@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CompactionSettings {
 
- bool get autoCompactionEnabled; int get usagePercentageThreshold; int get remainingTokenThreshold; DateTime? get updatedAt;
+ bool get autoCompactionEnabled; int get usagePercentageThreshold; int get remainingTokenThreshold; DateTime? get updatedAt;@JsonKey(toJson: _serializeModelOverrides) Map<String, CompactionModelOverride> get modelOverrides;
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $CompactionSettingsCopyWith<CompactionSettings> get copyWith => _$CompactionSett
 @override
 bool operator ==(Object other) {
   final _this = this as CompactionSettings;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionSettings&&(identical(other.autoCompactionEnabled, _this.autoCompactionEnabled) || other.autoCompactionEnabled == _this.autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, _this.usagePercentageThreshold) || other.usagePercentageThreshold == _this.usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, _this.remainingTokenThreshold) || other.remainingTokenThreshold == _this.remainingTokenThreshold)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionSettings&&(identical(other.autoCompactionEnabled, _this.autoCompactionEnabled) || other.autoCompactionEnabled == _this.autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, _this.usagePercentageThreshold) || other.usagePercentageThreshold == _this.usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, _this.remainingTokenThreshold) || other.remainingTokenThreshold == _this.remainingTokenThreshold)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.modelOverrides, _this.modelOverrides));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as CompactionSettings;
-  return Object.hash(runtimeType,_this.autoCompactionEnabled,_this.usagePercentageThreshold,_this.remainingTokenThreshold,_this.updatedAt);
+  return Object.hash(runtimeType,_this.autoCompactionEnabled,_this.usagePercentageThreshold,_this.remainingTokenThreshold,_this.updatedAt,const DeepCollectionEquality().hash(_this.modelOverrides));
 }
 
 @override
 String toString() {
   final _this = this as CompactionSettings;
-  return 'CompactionSettings(autoCompactionEnabled: ${_this.autoCompactionEnabled}, usagePercentageThreshold: ${_this.usagePercentageThreshold}, remainingTokenThreshold: ${_this.remainingTokenThreshold}, updatedAt: ${_this.updatedAt})';
+  return 'CompactionSettings(autoCompactionEnabled: ${_this.autoCompactionEnabled}, usagePercentageThreshold: ${_this.usagePercentageThreshold}, remainingTokenThreshold: ${_this.remainingTokenThreshold}, updatedAt: ${_this.updatedAt}, modelOverrides: ${_this.modelOverrides})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $CompactionSettingsCopyWith<$Res>  {
   factory $CompactionSettingsCopyWith(CompactionSettings value, $Res Function(CompactionSettings) _then) = _$CompactionSettingsCopyWithImpl;
 @useResult
 $Res call({
- bool autoCompactionEnabled, int usagePercentageThreshold, int remainingTokenThreshold, DateTime? updatedAt
+ bool autoCompactionEnabled, int usagePercentageThreshold, int remainingTokenThreshold, DateTime? updatedAt,@JsonKey(toJson: _serializeModelOverrides) Map<String, CompactionModelOverride> modelOverrides
 });
 
 
@@ -71,13 +71,14 @@ class _$CompactionSettingsCopyWithImpl<$Res>
 
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,Object? modelOverrides = null,}) {
   return _then(CompactionSettings(
 autoCompactionEnabled: null == autoCompactionEnabled ? _self.autoCompactionEnabled : autoCompactionEnabled // ignore: cast_nullable_to_non_nullable
 as bool,usagePercentageThreshold: null == usagePercentageThreshold ? _self.usagePercentageThreshold : usagePercentageThreshold // ignore: cast_nullable_to_non_nullable
 as int,remainingTokenThreshold: null == remainingTokenThreshold ? _self.remainingTokenThreshold : remainingTokenThreshold // ignore: cast_nullable_to_non_nullable
 as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,modelOverrides: null == modelOverrides ? _self.modelOverrides : modelOverrides // ignore: cast_nullable_to_non_nullable
+as Map<String, CompactionModelOverride>,
   ));
 }
 
@@ -162,10 +163,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt, @JsonKey(toJson: _serializeModelOverrides)  Map<String, CompactionModelOverride> modelOverrides)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CompactionSettings() when $default != null:
-return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt);case _:
+return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt,_that.modelOverrides);case _:
   return orElse();
 
 }
@@ -183,10 +184,10 @@ return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt, @JsonKey(toJson: _serializeModelOverrides)  Map<String, CompactionModelOverride> modelOverrides)  $default,) {final _that = this;
 switch (_that) {
 case _CompactionSettings():
-return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt);case _:
+return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt,_that.modelOverrides);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +204,10 @@ return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( bool autoCompactionEnabled,  int usagePercentageThreshold,  int remainingTokenThreshold,  DateTime? updatedAt, @JsonKey(toJson: _serializeModelOverrides)  Map<String, CompactionModelOverride> modelOverrides)?  $default,) {final _that = this;
 switch (_that) {
 case _CompactionSettings() when $default != null:
-return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt);case _:
+return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that.remainingTokenThreshold,_that.updatedAt,_that.modelOverrides);case _:
   return null;
 
 }
@@ -218,13 +219,20 @@ return $default(_that.autoCompactionEnabled,_that.usagePercentageThreshold,_that
 @JsonSerializable()
 
 class _CompactionSettings extends CompactionSettings {
-  const _CompactionSettings({this.autoCompactionEnabled = true, this.usagePercentageThreshold = 80, this.remainingTokenThreshold = 2000, this.updatedAt}): super._();
+  const _CompactionSettings({this.autoCompactionEnabled = true, this.usagePercentageThreshold = 80, this.remainingTokenThreshold = 2000, this.updatedAt, @JsonKey(toJson: _serializeModelOverrides)  Map<String, CompactionModelOverride> modelOverrides = const <String, CompactionModelOverride>{}}): _modelOverrides = modelOverrides,super._();
   factory _CompactionSettings.fromJson(Map<String, dynamic> json) => _$CompactionSettingsFromJson(json);
 
 @override@JsonKey() final  bool autoCompactionEnabled;
 @override@JsonKey() final  int usagePercentageThreshold;
 @override@JsonKey() final  int remainingTokenThreshold;
 @override final  DateTime? updatedAt;
+ final  Map<String, CompactionModelOverride> _modelOverrides;
+@override@JsonKey(toJson: _serializeModelOverrides) Map<String, CompactionModelOverride> get modelOverrides {
+  if (_modelOverrides is EqualUnmodifiableMapView) return _modelOverrides;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_modelOverrides);
+}
+
 
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
@@ -239,18 +247,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionSettings&&(identical(other.autoCompactionEnabled, autoCompactionEnabled) || other.autoCompactionEnabled == autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, usagePercentageThreshold) || other.usagePercentageThreshold == usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, remainingTokenThreshold) || other.remainingTokenThreshold == remainingTokenThreshold)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionSettings&&(identical(other.autoCompactionEnabled, autoCompactionEnabled) || other.autoCompactionEnabled == autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, usagePercentageThreshold) || other.usagePercentageThreshold == usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, remainingTokenThreshold) || other.remainingTokenThreshold == remainingTokenThreshold)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.modelOverrides, _modelOverrides));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,autoCompactionEnabled,usagePercentageThreshold,remainingTokenThreshold,updatedAt);
+    return Object.hash(runtimeType,autoCompactionEnabled,usagePercentageThreshold,remainingTokenThreshold,updatedAt,const DeepCollectionEquality().hash(_modelOverrides));
 }
 
 @override
 String toString() {
-    return 'CompactionSettings(autoCompactionEnabled: $autoCompactionEnabled, usagePercentageThreshold: $usagePercentageThreshold, remainingTokenThreshold: $remainingTokenThreshold, updatedAt: $updatedAt)';
+    return 'CompactionSettings(autoCompactionEnabled: $autoCompactionEnabled, usagePercentageThreshold: $usagePercentageThreshold, remainingTokenThreshold: $remainingTokenThreshold, updatedAt: $updatedAt, modelOverrides: $modelOverrides)';
 }
 
 
@@ -261,7 +269,7 @@ abstract mixin class _$CompactionSettingsCopyWith<$Res> implements $CompactionSe
   factory _$CompactionSettingsCopyWith(_CompactionSettings value, $Res Function(_CompactionSettings) _then) = __$CompactionSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- bool autoCompactionEnabled, int usagePercentageThreshold, int remainingTokenThreshold, DateTime? updatedAt
+ bool autoCompactionEnabled, int usagePercentageThreshold, int remainingTokenThreshold, DateTime? updatedAt,@JsonKey(toJson: _serializeModelOverrides) Map<String, CompactionModelOverride> modelOverrides
 });
 
 
@@ -278,13 +286,287 @@ class __$CompactionSettingsCopyWithImpl<$Res>
 
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,Object? modelOverrides = null,}) {
   return _then(_CompactionSettings(
 autoCompactionEnabled: null == autoCompactionEnabled ? _self.autoCompactionEnabled : autoCompactionEnabled // ignore: cast_nullable_to_non_nullable
 as bool,usagePercentageThreshold: null == usagePercentageThreshold ? _self.usagePercentageThreshold : usagePercentageThreshold // ignore: cast_nullable_to_non_nullable
 as int,remainingTokenThreshold: null == remainingTokenThreshold ? _self.remainingTokenThreshold : remainingTokenThreshold // ignore: cast_nullable_to_non_nullable
 as int,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,modelOverrides: null == modelOverrides ? _self._modelOverrides : modelOverrides // ignore: cast_nullable_to_non_nullable
+as Map<String, CompactionModelOverride>,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$CompactionModelOverride {
+
+ int? get reserveTokens; int? get keepRecentTokens;
+/// Create a copy of CompactionModelOverride
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CompactionModelOverrideCopyWith<CompactionModelOverride> get copyWith => _$CompactionModelOverrideCopyWithImpl<CompactionModelOverride>(this as CompactionModelOverride, _$identity);
+
+  /// Serializes this CompactionModelOverride to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as CompactionModelOverride;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionModelOverride&&(identical(other.reserveTokens, _this.reserveTokens) || other.reserveTokens == _this.reserveTokens)&&(identical(other.keepRecentTokens, _this.keepRecentTokens) || other.keepRecentTokens == _this.keepRecentTokens));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as CompactionModelOverride;
+  return Object.hash(runtimeType,_this.reserveTokens,_this.keepRecentTokens);
+}
+
+@override
+String toString() {
+  final _this = this as CompactionModelOverride;
+  return 'CompactionModelOverride(reserveTokens: ${_this.reserveTokens}, keepRecentTokens: ${_this.keepRecentTokens})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CompactionModelOverrideCopyWith<$Res>  {
+  factory $CompactionModelOverrideCopyWith(CompactionModelOverride value, $Res Function(CompactionModelOverride) _then) = _$CompactionModelOverrideCopyWithImpl;
+@useResult
+$Res call({
+ int? reserveTokens, int? keepRecentTokens
+});
+
+
+
+
+}
+/// @nodoc
+class _$CompactionModelOverrideCopyWithImpl<$Res>
+    implements $CompactionModelOverrideCopyWith<$Res> {
+  _$CompactionModelOverrideCopyWithImpl(this._self, this._then);
+
+  final CompactionModelOverride _self;
+  final $Res Function(CompactionModelOverride) _then;
+
+/// Create a copy of CompactionModelOverride
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? reserveTokens = freezed,Object? keepRecentTokens = freezed,}) {
+  return _then(CompactionModelOverride(
+reserveTokens: freezed == reserveTokens ? _self.reserveTokens : reserveTokens // ignore: cast_nullable_to_non_nullable
+as int?,keepRecentTokens: freezed == keepRecentTokens ? _self.keepRecentTokens : keepRecentTokens // ignore: cast_nullable_to_non_nullable
+as int?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CompactionModelOverride].
+extension CompactionModelOverridePatterns on CompactionModelOverride {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CompactionModelOverride value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CompactionModelOverride() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CompactionModelOverride value)  $default,){
+final _that = this;
+switch (_that) {
+case _CompactionModelOverride():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CompactionModelOverride value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CompactionModelOverride() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? reserveTokens,  int? keepRecentTokens)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CompactionModelOverride() when $default != null:
+return $default(_that.reserveTokens,_that.keepRecentTokens);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? reserveTokens,  int? keepRecentTokens)  $default,) {final _that = this;
+switch (_that) {
+case _CompactionModelOverride():
+return $default(_that.reserveTokens,_that.keepRecentTokens);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? reserveTokens,  int? keepRecentTokens)?  $default,) {final _that = this;
+switch (_that) {
+case _CompactionModelOverride() when $default != null:
+return $default(_that.reserveTokens,_that.keepRecentTokens);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CompactionModelOverride implements CompactionModelOverride {
+  const _CompactionModelOverride({this.reserveTokens, this.keepRecentTokens});
+  factory _CompactionModelOverride.fromJson(Map<String, dynamic> json) => _$CompactionModelOverrideFromJson(json);
+
+@override final  int? reserveTokens;
+@override final  int? keepRecentTokens;
+
+/// Create a copy of CompactionModelOverride
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CompactionModelOverrideCopyWith<_CompactionModelOverride> get copyWith => __$CompactionModelOverrideCopyWithImpl<_CompactionModelOverride>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CompactionModelOverrideToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionModelOverride&&(identical(other.reserveTokens, reserveTokens) || other.reserveTokens == reserveTokens)&&(identical(other.keepRecentTokens, keepRecentTokens) || other.keepRecentTokens == keepRecentTokens));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,reserveTokens,keepRecentTokens);
+}
+
+@override
+String toString() {
+    return 'CompactionModelOverride(reserveTokens: $reserveTokens, keepRecentTokens: $keepRecentTokens)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CompactionModelOverrideCopyWith<$Res> implements $CompactionModelOverrideCopyWith<$Res> {
+  factory _$CompactionModelOverrideCopyWith(_CompactionModelOverride value, $Res Function(_CompactionModelOverride) _then) = __$CompactionModelOverrideCopyWithImpl;
+@override @useResult
+$Res call({
+ int? reserveTokens, int? keepRecentTokens
+});
+
+
+
+
+}
+/// @nodoc
+class __$CompactionModelOverrideCopyWithImpl<$Res>
+    implements _$CompactionModelOverrideCopyWith<$Res> {
+  __$CompactionModelOverrideCopyWithImpl(this._self, this._then);
+
+  final _CompactionModelOverride _self;
+  final $Res Function(_CompactionModelOverride) _then;
+
+/// Create a copy of CompactionModelOverride
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? reserveTokens = freezed,Object? keepRecentTokens = freezed,}) {
+  return _then(_CompactionModelOverride(
+reserveTokens: freezed == reserveTokens ? _self.reserveTokens : reserveTokens // ignore: cast_nullable_to_non_nullable
+as int?,keepRecentTokens: freezed == keepRecentTokens ? _self.keepRecentTokens : keepRecentTokens // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

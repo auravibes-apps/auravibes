@@ -52,6 +52,7 @@ class WorkspaceStateRepository {
     Session session, {
     required int workspaceId,
     required WorkspaceResourceKind kind,
+    required int limit,
     required Transaction transaction,
   }) => WorkspaceResource.db.find(
     session,
@@ -59,6 +60,7 @@ class WorkspaceStateRepository {
         t.workspaceId.equals(workspaceId) &
         t.resourceKind.equals(kind) &
         t.deletedAt.equals(null),
+    limit: limit,
     transaction: transaction,
   );
 

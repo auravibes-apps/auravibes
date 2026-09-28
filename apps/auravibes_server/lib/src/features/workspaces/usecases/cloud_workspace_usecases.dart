@@ -99,6 +99,19 @@ class CloudWorkspaceUseCases(
     return session.db.transaction((transaction) async {
       const endpoint = 'cloudWorkspace.createWorkspace';
       final requestHash = jsonEncode({'name': name});
+      await _repository.lockWorkspaceCreation(
+        session,
+        ownerUserId: userId,
+        transaction: transaction,
+      );
+      final authUser = await AuthUser.db.findById(
+        session,
+        UuidValue.fromString(userId),
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(CloudWorkspaceErrorCode.authenticationRequired);
+      }
       final receipt = await _repository.findReceipt(
         session,
         actorUserId: userId,
@@ -114,6 +127,15 @@ class CloudWorkspaceUseCases(
         return CloudWorkspaceSummary.fromJson(
           jsonDecode(receipt.responseJson) as Map<String, dynamic>,
         );
+      }
+      final ownedWorkspaceCount = await _repository.countOwnedWorkspaces(
+        session,
+        ownerUserId: userId,
+        transaction: transaction,
+      );
+      if (ownedWorkspaceCount >=
+          workspace_repo.CloudWorkspaceRepository.maxOwnedWorkspaces) {
+        _fail(CloudWorkspaceErrorCode.conflict);
       }
       final workspace = await _repository.createWorkspace(
         session,

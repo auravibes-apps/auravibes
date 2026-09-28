@@ -1,8 +1,13 @@
 // Required: Feature widgets keep closely related private widgets together.
 
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -11,6 +16,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_operati
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -38,10 +44,42 @@ class _ServiceConnectionEditScreenState
   final _clearedSecrets = <String>{};
   Future<_ConnectionEditState>? _futureValue;
   bool _initialized = false;
+  bool _isDirty = false;
+  String _savedSnapshot = '';
+  _ConnectionEditState? _editState;
   bool _isSaving = false;
+  bool _isTestingModelProvider = false;
+  ModelProviderVerification? _modelProviderVerification;
+  Timer? _modelProviderVerificationExpiryTimer;
+  Exception? _modelProviderVerificationError;
+  var _modelProviderVerificationVersion = 0;
 
   Future<_ConnectionEditState> get _future =>
       _futureValue ?? (throw StateError('Edit state is not initialized'));
+
+  String? get _replacementModelProviderKey {
+    final key = _modelKeyController.text.trim();
+
+    return key.isEmpty ? null : key;
+  }
+
+  String? get _modelProviderVerificationErrorMessage {
+    final error = _modelProviderVerificationError;
+    if (error == null) return null;
+    if (error case ModelConnectionException(:final message)
+        when message.trim().isNotEmpty) {
+      return message;
+    }
+
+    return switch (error) {
+      ProviderVerificationExpiredException() =>
+        LocaleKeys.mcp_modal_verification_expired.tr(),
+      ProviderVerificationRequiredException() ||
+      ProviderVerificationMismatchException() =>
+        LocaleKeys.mcp_modal_verification_required.tr(),
+      _ => LocaleKeys.models_screens_add_provider_errors_unknown.tr(),
+    };
+  }
 
   @override
   void initState() {
@@ -64,16 +102,24 @@ class _ServiceConnectionEditScreenState
     for (final controller in _secretControllers.values) {
       controller.dispose();
     }
+    _modelProviderVerificationExpiryTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _ConnectionEditScreenView(owner: this);
+    return PopScope(
+      child: _ConnectionEditScreenView(owner: this),
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_handleBack(context));
+      },
+    );
   }
 
   void _initialize(_ConnectionEditState state) {
     if (_initialized) return;
+    _editState = state;
     _initializeEditControllers(
       state,
       .new(
@@ -84,9 +130,18 @@ class _ServiceConnectionEditScreenState
       ),
     );
     _initialized = true;
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
   }
 
-  void _refreshForm() => setState(() => _initialized = true);
+  void _refreshForm([VoidCallback? update]) {
+    setState(() {
+      update?.call();
+      _initialized = true;
+      final state = _editState;
+      if (state != null) _isDirty = _currentSnapshot() != _savedSnapshot;
+    });
+  }
 
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
@@ -98,20 +153,7 @@ class _ServiceConnectionEditScreenState
         _skillCredentialUpdateData(this, widget.connectionId),
       ),
       LocaleKeys.skill_credentials_save_error,
-    );
-    if (mounted) setState(() => _isSaving = false);
-  }
-
-  Future<void> _saveModelProvider(BuildContext context) async {
-    setState(() => _isSaving = true);
-    await _runEditSave(
-      context,
-      () => _updateModelProvider(
-        ref,
-        widget.workspaceId,
-        _modelProviderUpdateData(this, widget.connectionId),
-      ),
-      LocaleKeys.service_connections_save_error,
+      onSaved: _markSaved,
     );
     if (mounted) setState(() => _isSaving = false);
   }
@@ -129,8 +171,295 @@ class _ServiceConnectionEditScreenState
         _genericConnectionUpdateData(state, this),
       ),
       LocaleKeys.service_connections_save_error,
+      onSaved: _markSaved,
     );
     if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+extension ServiceConnectionEditUnsavedChanges
+    on _ServiceConnectionEditScreenState {
+  String _currentSnapshot() {
+    final state = _editState;
+    if (state == null) return '';
+
+    final name = _nameController.text.trim();
+
+    return switch (state) {
+      final _SkillCredentialEditState skillState => _skillCredentialSnapshot(
+        skillState,
+        name,
+      ),
+      final _ModelProviderEditState modelState => _modelProviderSnapshot(
+        modelState,
+        name,
+      ),
+      final _GenericServiceConnectionEditState genericState =>
+        _genericConnectionSnapshot(genericState, name),
+    };
+  }
+
+  String _skillCredentialSnapshot(
+    _SkillCredentialEditState state,
+    String name,
+  ) {
+    final nonSecretNames = _nonSecretControllers.keys.toList()..sort();
+    final secretNames = _secretControllers.keys.toList()..sort();
+
+    return jsonEncode({
+      'type': 'skillCredential',
+      'connectionId': state.credential.id,
+      'name': name,
+      'nonSecretAttributes': _nonSecretAttributeSnapshots(nonSecretNames),
+      'secretIntents': _secretIntentSnapshots(secretNames),
+    });
+  }
+
+  List<List<String>> _nonSecretAttributeSnapshots(List<String> names) => [
+    for (final name in names) [name, _nonSecretControllers[name]!.text],
+  ];
+
+  List<List<String>> _secretIntentSnapshots(List<String> names) => [
+    for (final name in names)
+      [
+        name,
+        _secretEditFor(
+          _secretControllers[name]!.text,
+          _clearedSecrets.contains(name),
+        ).name,
+      ],
+  ];
+
+  String _modelProviderSnapshot(_ModelProviderEditState state, String name) =>
+      jsonEncode({
+        'type': 'modelProvider',
+        'connectionId': state.connection.id,
+        'name': name,
+        'url': _modelUrlController.text.trim(),
+        'keyIntent': _secretEditFor(
+          _modelKeyController.text.trim(),
+          false,
+        ).name,
+      });
+
+  String _genericConnectionSnapshot(
+    _GenericServiceConnectionEditState state,
+    String name,
+  ) => jsonEncode({
+    'type': 'genericConnection',
+    'connectionId': state.connection.id,
+    'name': name,
+    'secretIntent': _secretEditFor(
+      _modelKeyController.text.trim(),
+      _clearedSecrets.contains('secret'),
+    ).name,
+  });
+
+  void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (_isSaving || !context.mounted) return;
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+
+      return;
+    }
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return;
+
+    _refreshForm(() => _savedSnapshot = _currentSnapshot());
+    Navigator.of(context).pop();
+  }
+}
+
+extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
+  void _invalidateModelProviderVerification() {
+    _modelProviderVerificationVersion++;
+    _modelProviderVerificationExpiryTimer?.cancel();
+    _modelProviderVerificationExpiryTimer = null;
+    _modelProviderVerification = null;
+    _modelProviderVerificationError = null;
+    _isTestingModelProvider = false;
+    _refreshForm();
+  }
+
+  Future<void> _verifyModelProvider(
+    BuildContext context,
+    _ModelProviderEditState state,
+  ) => _runModelProviderVerification(context, state);
+
+  ModelProviderVerificationRequest _modelProviderVerificationRequest(
+    ModelConnectionForEdit connection,
+  ) => ModelProviderVerificationRequest(
+    workspaceId: widget.workspaceId,
+    providerId: connection.modelId,
+    connectionId: connection.id,
+    expectedRevision: connection.revision,
+    url: _normalizedModelProviderUrl(_modelUrlController.text),
+    key: _replacementModelProviderKey,
+  );
+
+  String? _normalizedModelProviderUrl(String value) {
+    final url = value.trim();
+
+    return url.isEmpty ? null : url;
+  }
+
+  bool _modelProviderRequiresVerification(_ModelProviderEditState state) {
+    final urlChanged =
+        _normalizedModelProviderUrl(_modelUrlController.text) !=
+        state.connection.url;
+
+    return urlChanged || _replacementModelProviderKey != null;
+  }
+
+  bool _modelProviderVerificationIsCurrent(_ModelProviderEditState state) {
+    final verification = _modelProviderVerification;
+
+    return verification != null &&
+        verification.matches(
+          _modelProviderVerificationRequest(state.connection),
+        );
+  }
+
+  bool _modelProviderCanSave(_ModelProviderEditState state) {
+    if (_nameController.text.trim().isEmpty || _isSaving) return false;
+    if (!_modelProviderRequiresVerification(state)) return true;
+
+    return !_isTestingModelProvider &&
+        _modelProviderVerificationIsCurrent(state);
+  }
+
+  Future<void> _saveModelProvider(BuildContext context) async {
+    _refreshForm(() {
+      _isSaving = true;
+    });
+    await _runEditSave(
+      context,
+      () => _updateModelProvider(
+        ref,
+        widget.workspaceId,
+        _modelProviderUpdateData(this, widget.connectionId),
+      ),
+      LocaleKeys.service_connections_save_error,
+      onSaved: _markSaved,
+    );
+    if (mounted) {
+      _refreshForm(() {
+        _isSaving = false;
+      });
+    }
+  }
+}
+
+extension _ModelProviderVerificationActions
+    on _ServiceConnectionEditScreenState {
+  void _scheduleModelProviderVerificationExpiry(
+    ModelProviderVerification verification,
+  ) {
+    final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
+    _modelProviderVerificationExpiryTimer = .new(
+      remaining.isNegative ? Duration.zero : remaining,
+      () => _expireModelProviderVerification(verification),
+    );
+  }
+
+  void _expireModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    if (!identical(_modelProviderVerification, verification) || !mounted) {
+      return;
+    }
+
+    _refreshForm(() {
+      _modelProviderVerification = null;
+      _modelProviderVerificationExpiryTimer = null;
+      _modelProviderVerificationError =
+          const ProviderVerificationExpiredException();
+    });
+  }
+
+  Future<void> _runModelProviderVerification(
+    BuildContext context,
+    _ModelProviderEditState state,
+  ) async {
+    if (_isSaving || _isTestingModelProvider) return;
+
+    final version = _startModelProviderVerification();
+    try {
+      final verification = await _requestModelProviderVerification(state);
+      if (!_isCurrentModelProviderVerification(version)) return;
+
+      _acceptModelProviderVerification(verification);
+      if (context.mounted) {
+        _showModelProviderVerificationSuccess(context, verification);
+      }
+    } on Exception catch (error) {
+      if (!_isCurrentModelProviderVerification(version)) return;
+
+      _setModelProviderVerificationError(error);
+    }
+  }
+
+  int _startModelProviderVerification() {
+    final version = ++_modelProviderVerificationVersion;
+    _modelProviderVerificationExpiryTimer?.cancel();
+    _modelProviderVerificationExpiryTimer = null;
+    _modelProviderVerification = null;
+    _modelProviderVerificationError = null;
+    _refreshForm(() {
+      _isTestingModelProvider = true;
+    });
+
+    return version;
+  }
+
+  Future<ModelProviderVerification> _requestModelProviderVerification(
+    _ModelProviderEditState state,
+  ) async {
+    final store = await ref.read(
+      modelConnectionStoreProvider(widget.workspaceId).future,
+    );
+
+    return await store.verifyModelConnection(
+      _modelProviderVerificationRequest(state.connection),
+    );
+  }
+
+  bool _isCurrentModelProviderVerification(int version) =>
+      mounted && version == _modelProviderVerificationVersion;
+
+  void _acceptModelProviderVerification(
+    ModelProviderVerification verification,
+  ) {
+    _refreshForm(() {
+      _modelProviderVerification = verification;
+      _isTestingModelProvider = false;
+    });
+    _scheduleModelProviderVerificationExpiry(verification);
+  }
+
+  void _setModelProviderVerificationError(Exception error) {
+    _refreshForm(() {
+      _isTestingModelProvider = false;
+      _modelProviderVerificationError = error;
+    });
+  }
+
+  void _showModelProviderVerificationSuccess(
+    BuildContext context,
+    ModelProviderVerification verification,
+  ) {
+    final connectedLabel = LocaleKeys.service_connections_status_connected.tr();
+    final modelCountLabel = LocaleKeys.status_bar_models_available.plural(
+      verification.modelCount,
+    );
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text('$connectedLabel - $modelCountLabel'),
+      variant: .success,
+    );
   }
 }
 
@@ -365,6 +694,7 @@ class const _ModelProviderUpdateData({
   required final String name,
   required final String? key,
   required final String url,
+  required final ModelProviderVerification? verification,
 });
 
 _ModelProviderUpdateData _modelProviderUpdateData(
@@ -378,6 +708,7 @@ _ModelProviderUpdateData _modelProviderUpdateData(
     name: state._nameController.text.trim(),
     key: key.isEmpty ? null : key,
     url: state._modelUrlController.text.trim(),
+    verification: state._modelProviderVerification,
   );
 }
 
@@ -392,6 +723,7 @@ Future<void> _updateModelProvider(
   final _ = await store.updateModelConnection(
     data.connectionId,
     .new(name: data.name, key: data.key, url: data.url),
+    verification: data.verification,
   );
 }
 
@@ -460,11 +792,13 @@ Future<void> _updateGenericConnection(
 Future<void> _runEditSave(
   BuildContext context,
   Future<void> Function() operation,
-  String errorKey,
-) async {
+  String errorKey, {
+  required VoidCallback onSaved,
+}) async {
   try {
     await operation();
     if (!context.mounted) return;
+    onSaved();
     Navigator.of(context).pop(true);
   } on Object {
     if (!context.mounted) return;
@@ -487,14 +821,14 @@ class const _ConnectionEditScreenView({
   Widget build(BuildContext context) {
     return AuraScreen(
       child: _ConnectionEditBody(owner: owner),
-      appBar: const _ConnectionEditAppBar(),
+      appBar: _ConnectionEditAppBar(owner: owner),
     );
   }
 }
 
-class const _ConnectionEditAppBar()
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _ConnectionEditAppBar({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
@@ -504,7 +838,7 @@ class const _ConnectionEditAppBar()
       title: const TextLocale(LocaleKeys.service_connections_edit_title),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => owner._handleBack(context),
       ),
     );
   }
@@ -617,6 +951,7 @@ class const _ConnectionEditSaveButton({
   required final VoidCallback onPressed,
   required final bool isSaving,
   required final bool canSave,
+  final String label = LocaleKeys.common_save,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -624,7 +959,7 @@ class const _ConnectionEditSaveButton({
       alignment: Alignment.centerRight,
       child: AuraButton(
         onPressed: onPressed,
-        child: const TextLocale(LocaleKeys.common_save),
+        child: TextLocale(label),
         isLoading: isSaving,
         disabled: isSaving || !canSave,
       ),
@@ -861,7 +1196,9 @@ class const _ModelProviderEditForm({
       children: [
         _ConnectionEditHeader(text: connection.modelId),
         _ModelProviderEditFields(owner: owner, suffix: connection.keySuffix),
-        _ModelProviderEditSaveButton(owner: owner),
+        _ModelProviderVerificationError(owner: owner),
+        _ModelProviderVerifyButton(state: state, owner: owner),
+        _ModelProviderEditSaveButton(state: state, owner: owner),
       ],
     );
   }
@@ -886,6 +1223,7 @@ class const _ModelProviderEditFields({
 }
 
 class const _ModelProviderEditSaveButton({
+  required final _ModelProviderEditState state,
   required final _ServiceConnectionEditScreenState owner,
 }) extends StatelessWidget {
   @override
@@ -893,7 +1231,39 @@ class const _ModelProviderEditSaveButton({
     return _ConnectionEditSaveButton(
       onPressed: () => owner._saveModelProvider(context),
       isSaving: owner._isSaving,
-      canSave: owner._nameController.text.trim().isNotEmpty,
+      canSave: owner._modelProviderCanSave(state),
+      label: LocaleKeys.models_screens_add_provider_save_changes,
+    );
+  }
+}
+
+class const _ModelProviderVerifyButton({
+  required final _ModelProviderEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => owner._verifyModelProvider(context, state),
+    child: const TextLocale(LocaleKeys.mcp_modal_test_connection),
+    variant: .outlined,
+    isLoading: owner._isTestingModelProvider,
+    isFullWidth: true,
+    disabled: owner._isSaving || owner._isTestingModelProvider,
+  );
+}
+
+class const _ModelProviderVerificationError({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final message = owner._modelProviderVerificationErrorMessage;
+    if (message == null) return const SizedBox.shrink();
+
+    return Text(
+      message,
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(color: context.auraColors.error),
     );
   }
 }
@@ -932,7 +1302,7 @@ class _ModelProviderKeyAuraInput extends AuraInput {
         ),
         keyboardType: .visiblePassword,
         obscureText: true,
-        onChanged: (_) => input.owner._refreshForm(),
+        onChanged: (_) => input.owner._invalidateModelProviderVerification(),
       );
 }
 
@@ -947,7 +1317,7 @@ class const _ModelProviderUrlInput({
         LocaleKeys.models_screens_add_provider_fields_url_label,
       ),
       keyboardType: .url,
-      onChanged: (_) => owner._refreshForm(),
+      onChanged: (_) => owner._invalidateModelProviderVerification(),
     );
   }
 }
@@ -1028,7 +1398,10 @@ class const _GenericServiceConnectionSecretInput({
     owner._refreshForm();
   }
 
-  void _onChanged(String _) => owner._refreshForm();
+  void _onChanged(String _) {
+    final _ = owner._clearedSecrets.remove('secret');
+    owner._refreshForm();
+  }
 }
 
 class _GenericServiceConnectionSecretAuraInput extends AuraInput {

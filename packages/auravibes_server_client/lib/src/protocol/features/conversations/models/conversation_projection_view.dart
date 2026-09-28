@@ -22,11 +22,13 @@ abstract class ConversationProjectionView
     required this.sequence,
     this.modelId,
     this.agentId,
+    this.reasoningConfigJson,
     this.forkSourceConversationId,
     this.forkSourceTitle,
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     this.activeExecutionId,
+    this.activeCompactionCheckpointId,
     required this.updatedAt,
   });
 
@@ -38,11 +40,13 @@ abstract class ConversationProjectionView
     required int sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime updatedAt,
   }) = _ConversationProjectionViewImpl;
 
@@ -57,6 +61,7 @@ abstract class ConversationProjectionView
       sequence: jsonSerialization['sequence'] as int,
       modelId: jsonSerialization['modelId'] as String?,
       agentId: jsonSerialization['agentId'] as String?,
+      reasoningConfigJson: jsonSerialization['reasoningConfigJson'] as String?,
       forkSourceConversationId:
           jsonSerialization['forkSourceConversationId'] as String?,
       forkSourceTitle: jsonSerialization['forkSourceTitle'] as String?,
@@ -68,6 +73,8 @@ abstract class ConversationProjectionView
               jsonSerialization['forkMaterializedAt'],
             ),
       activeExecutionId: jsonSerialization['activeExecutionId'] as String?,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       updatedAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
@@ -88,6 +95,8 @@ abstract class ConversationProjectionView
 
   String? agentId;
 
+  String? reasoningConfigJson;
+
   String? forkSourceConversationId;
 
   String? forkSourceTitle;
@@ -97,6 +106,8 @@ abstract class ConversationProjectionView
   DateTime? forkMaterializedAt;
 
   String? activeExecutionId;
+
+  String? activeCompactionCheckpointId;
 
   DateTime updatedAt;
 
@@ -111,11 +122,13 @@ abstract class ConversationProjectionView
     int? sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     DateTime? updatedAt,
   });
   @override
@@ -129,6 +142,8 @@ abstract class ConversationProjectionView
       'sequence': sequence,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (forkSourceConversationId != null)
         'forkSourceConversationId': forkSourceConversationId,
       if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
@@ -137,6 +152,8 @@ abstract class ConversationProjectionView
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -152,6 +169,8 @@ abstract class ConversationProjectionView
       'sequence': sequence,
       if (modelId != null) 'modelId': modelId,
       if (agentId != null) 'agentId': agentId,
+      if (reasoningConfigJson != null)
+        'reasoningConfigJson': reasoningConfigJson,
       if (forkSourceConversationId != null)
         'forkSourceConversationId': forkSourceConversationId,
       if (forkSourceTitle != null) 'forkSourceTitle': forkSourceTitle,
@@ -160,6 +179,8 @@ abstract class ConversationProjectionView
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -181,11 +202,13 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     required int sequence,
     String? modelId,
     String? agentId,
+    String? reasoningConfigJson,
     String? forkSourceConversationId,
     String? forkSourceTitle,
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime updatedAt,
   }) : super._(
          id: id,
@@ -195,11 +218,13 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
          sequence: sequence,
          modelId: modelId,
          agentId: agentId,
+         reasoningConfigJson: reasoningConfigJson,
          forkSourceConversationId: forkSourceConversationId,
          forkSourceTitle: forkSourceTitle,
          forkThroughMessageId: forkThroughMessageId,
          forkMaterializedAt: forkMaterializedAt,
          activeExecutionId: activeExecutionId,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          updatedAt: updatedAt,
        );
 
@@ -215,11 +240,13 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     int? sequence,
     Object? modelId = _Undefined,
     Object? agentId = _Undefined,
+    Object? reasoningConfigJson = _Undefined,
     Object? forkSourceConversationId = _Undefined,
     Object? forkSourceTitle = _Undefined,
     Object? forkThroughMessageId = _Undefined,
     Object? forkMaterializedAt = _Undefined,
     Object? activeExecutionId = _Undefined,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? updatedAt,
   }) {
     return ConversationProjectionView(
@@ -230,6 +257,9 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       sequence: sequence ?? this.sequence,
       modelId: modelId is String? ? modelId : this.modelId,
       agentId: agentId is String? ? agentId : this.agentId,
+      reasoningConfigJson: reasoningConfigJson is String?
+          ? reasoningConfigJson
+          : this.reasoningConfigJson,
       forkSourceConversationId: forkSourceConversationId is String?
           ? forkSourceConversationId
           : this.forkSourceConversationId,
@@ -245,6 +275,9 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       activeExecutionId: activeExecutionId is String?
           ? activeExecutionId
           : this.activeExecutionId,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

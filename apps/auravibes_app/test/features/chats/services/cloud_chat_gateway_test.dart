@@ -84,20 +84,36 @@ void main() {
       'getTurn': () => gateway.getTurn(turnId: 'turn'),
       'getConversationSnapshot': () =>
           gateway.getConversationSnapshot('conversation'),
+      'restoreCompactionCheckpoint': () => gateway.restoreCompactionCheckpoint(
+        requestId: 'restore',
+        conversationId: 'conversation',
+        checkpointMessageId: 'checkpoint',
+        expectedConversationRevision: 7,
+      ),
       'listMessages': () => gateway.listConversationMessages('conversation'),
     };
     for (final entry in operations.entries) {
       await expectLater(entry.value(), throwsA(anything));
       expect(requests, contains(entry.key));
-      expect(
-        requests[entry.key]!['a2uiSupportedComponents'],
-        unorderedEquals(supportedA2uiChatComponents),
-        reason: entry.key,
-      );
+      if (entry.key != 'restoreCompactionCheckpoint') {
+        expect(
+          requests[entry.key]!['a2uiSupportedComponents'],
+          unorderedEquals(supportedA2uiChatComponents),
+          reason: entry.key,
+        );
+      }
     }
     expect(
       requests['queueConversationMessage']!['metadataJson'],
       '{"action":"unchanged"}',
+    );
+    expect(
+      requests['restoreCompactionCheckpoint'],
+      containsPair('expectedConversationRevision', 7),
+    );
+    expect(
+      requests['restoreCompactionCheckpoint'],
+      containsPair('checkpointMessageId', 'checkpoint'),
     );
   });
 

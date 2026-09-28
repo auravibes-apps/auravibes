@@ -11,6 +11,7 @@ void main() {
         'family': 'gpt-5.5',
         'reasoning': true,
         'tool_call': true,
+        'structured_output': true,
         'open_weights': false,
         'cost': {'input': 30, 'cache_read': 15, 'output': 60},
         'limit': {'context': 400000, 'output': 128000},
@@ -36,11 +37,79 @@ void main() {
     expect(model.costInput, 30.0);
     expect(model.supportsReasoning, isTrue);
     expect(model.supportsToolCalls, isTrue);
+    expect(model.supportsStructuredOutput, isTrue);
+    expect(model.supportsStrictToolSampling, isFalse);
     expect(model.supportsPriorityMode, isTrue);
     expect(model.isTextGenerationModel, isTrue);
     expect(model.isCodexRuntimeModel, isTrue);
     expect(() => model.inputModalities.add('audio'), throwsUnsupportedError);
   });
+
+  test('parses reasoning options and derives legacy toggle', () {
+    final model = ModelCapabilities.fromJson('openai', {
+      'id': 'gpt-5',
+      'name': 'GPT-5',
+      'reasoning_options': [
+        {'type': 'toggle'},
+        {
+          'type': 'effort',
+          'values': ['low', 'medium', 'high'],
+        },
+        {'type': 'budget_tokens', 'min': 1024, 'max': 32768},
+        {'type': 'future_mode', 'value': 'preserve'},
+      ],
+      'limit': {'context': 1000, 'output': 100},
+      'modalities': {
+        'input': ['text'],
+        'output': ['text'],
+      },
+    });
+
+    expect(model.supportsReasoning, isTrue);
+    expect(model.reasoningOptions.map((option) => option.type), [
+      'toggle',
+      'effort',
+      'budget_tokens',
+      'future_mode',
+    ]);
+    expect(model.reasoningOptions[1].values, ['low', 'medium', 'high']);
+    expect(model.reasoningOptions[2].min, 1024);
+    expect(model.reasoningOptions[2].max, 32768);
+
+    final legacy = ModelCapabilities.fromJson('openai', {
+      'id': 'legacy',
+      'name': 'Legacy',
+      'reasoning': true,
+      'limit': {'context': 1000, 'output': 100},
+      'modalities': {
+        'input': ['text'],
+        'output': ['text'],
+      },
+    });
+    expect(legacy.reasoningOptions.single.isToggle, isTrue);
+  });
+
+  test(
+    'ignores malformed reasoning options while preserving unknown types',
+    () {
+      final model = ModelCapabilities.fromJson('openai', {
+        'id': 'gpt',
+        'name': 'GPT',
+        'reasoning_options': [
+          {'type': 'effort'},
+          {'type': 'budget_tokens', 'min': 4, 'max': 2},
+          {'type': 'future_mode'},
+        ],
+        'limit': {'context': 1000, 'output': 100},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      });
+
+      expect(model.reasoningOptions.single.type, 'future_mode');
+    },
+  );
 
   test('rejects malformed required catalog fields clearly', () {
     expect(
@@ -83,6 +152,82 @@ void main() {
     );
   });
 
+  test(
+    'strict tool support requires a verified provider, model, and tools',
+    () {
+      for (final testCase in [
+        (
+          provider: 'openai',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: true,
+        ),
+        (
+          provider: 'openai',
+          model: 'gpt-4o-2024-08-06',
+          tools: false,
+          strict: false,
+        ),
+        (provider: 'openai', model: 'unknown', tools: true, strict: false),
+        (
+          provider: 'openrouter',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: false,
+        ),
+        (
+          provider: 'custom',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: false,
+        ),
+      ]) {
+        final model = ModelCapabilities.fromJson(testCase.provider, {
+          'id': testCase.model,
+          'name': testCase.model,
+          'tool_call': testCase.tools,
+          'structured_output': true,
+          'limit': {'context': 1000, 'output': 100},
+          'modalities': {
+            'input': ['text'],
+            'output': ['text'],
+          },
+        });
+        expect(model.supportsStructuredOutput, isTrue);
+        expect(model.supportsStrictToolSampling, testCase.strict);
+      }
+    },
+  );
+
+  test('rejects malformed structured output capability clearly', () {
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'structured_output': 'yes',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-4o-2024-08-06',
+        'name': 'GPT-4o',
+        'tool_call': 'yes',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('requires priority mode for Codex runtime eligibility', () {
     final model = ModelCapabilities(
       id: 'gpt-5.5',
@@ -94,5 +239,121 @@ void main() {
     );
 
     expect(model.isCodexRuntimeModel, isFalse);
+    expect(model.supportsStrictToolSampling, isFalse);
+  });
+
+  test('Codex eligibility is capability-based', () {
+    const cases =
+        <
+          ({
+            String name,
+            String id,
+            bool canonical,
+            bool priority,
+            List<String> input,
+            List<String> output,
+            int outputLimit,
+            bool supportsTools,
+            bool expected,
+          })
+        >[
+          (
+            name: 'priority text model',
+            id: 'gpt-5.5',
+            canonical: true,
+            priority: true,
+            input: ['text'],
+            output: ['text'],
+            outputLimit: 128000,
+            supportsTools: false,
+            expected: true,
+          ),
+          (
+            name: 'different eligible runtime model',
+            id: 'gpt-5.5-spark',
+            canonical: false,
+            priority: true,
+            input: ['text'],
+            output: ['text'],
+            outputLimit: 128000,
+            supportsTools: true,
+            expected: true,
+          ),
+          (
+            name: 'priority noncanonical alias',
+            id: 'gpt-5.4-alias',
+            canonical: false,
+            priority: true,
+            input: ['text'],
+            output: ['text'],
+            outputLimit: 128000,
+            supportsTools: false,
+            expected: true,
+          ),
+          (
+            name: 'non-priority alias',
+            id: 'gpt-5.1-codex',
+            canonical: false,
+            priority: false,
+            input: ['text'],
+            output: ['text'],
+            outputLimit: 128000,
+            supportsTools: true,
+            expected: false,
+          ),
+          (
+            name: 'missing text input',
+            id: 'gpt-5.6-image',
+            canonical: false,
+            priority: true,
+            input: ['image'],
+            output: ['text'],
+            outputLimit: 128000,
+            supportsTools: true,
+            expected: false,
+          ),
+          (
+            name: 'no text output',
+            id: 'gpt-5.7-embedding',
+            canonical: false,
+            priority: true,
+            input: ['text'],
+            output: ['embedding'],
+            outputLimit: 128000,
+            supportsTools: true,
+            expected: false,
+          ),
+          (
+            name: 'zero output limit',
+            id: 'gpt-5.8-disabled',
+            canonical: false,
+            priority: true,
+            input: ['text'],
+            output: ['text'],
+            outputLimit: 0,
+            supportsTools: true,
+            expected: false,
+          ),
+        ];
+
+    for (final testCase in cases) {
+      final model = ModelCapabilities(
+        id: testCase.id,
+        name: testCase.id,
+        limitContext: 1000,
+        limitOutput: testCase.outputLimit,
+        inputModalities: testCase.input,
+        outputModalities: testCase.output,
+        isCanonical: testCase.canonical,
+        supportsPriorityMode: testCase.priority,
+        supportsToolCalls: testCase.supportsTools,
+      );
+
+      expect(
+        model.isCodexRuntimeModel,
+        testCase.expected,
+        reason: testCase.name,
+      );
+    }
   });
 }

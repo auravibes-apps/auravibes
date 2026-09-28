@@ -54,6 +54,9 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
     /// Whether the provider reports reasoning/thinking support for this model.
     @Default(false) bool supportsReasoning,
 
+    /// Provider/model reasoning controls from the catalog.
+    @Default([]) List<ReasoningOption> reasoningOptions,
+
     /// Whether this row maps to a canonical models.dev model.
     @Default(true) bool isCanonical,
 
@@ -133,6 +136,7 @@ ApiModelEntity _applyModelFlags(
 ) => model.copyWith(
   openWeights: capabilities.openWeights,
   supportsReasoning: capabilities.supportsReasoning,
+  reasoningOptions: capabilities.reasoningOptions,
   isCanonical: capabilities.isCanonical,
   supportsPriorityMode: capabilities.supportsPriorityMode,
   supportsToolCalls: capabilities.supportsToolCalls,

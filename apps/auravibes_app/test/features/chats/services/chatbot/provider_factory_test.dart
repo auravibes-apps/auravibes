@@ -1,5 +1,7 @@
 // Required: Tests repeat generation config lookups for readability.
 // Required: Tests keep helper functions top-level.
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -10,6 +12,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
+import 'package:http/http.dart' as http;
+import 'package:schemantic/schemantic.dart';
 
 void main() {
   group('ProviderFactory', () {
@@ -27,6 +31,7 @@ void main() {
       String? connectionModelId,
       ModelProviderAuthMode authMode = ModelProviderAuthMode.apiKey,
       bool supportsReasoning = false,
+      List<ReasoningOption> reasoningOptions = const [],
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
         workspaceModelSelection: .new(
@@ -36,6 +41,7 @@ void main() {
           updatedAt: DateTime(2025),
           modelConnectionId: 'mc1',
           supportsReasoning: supportsReasoning,
+          reasoningOptions: reasoningOptions,
         ),
         modelConnection: .new(
           id: 'mc1',
@@ -63,6 +69,54 @@ void main() {
 
       expect(ai, isA<Genkit>());
     });
+
+    test(
+      'official catalog URL enables strict tools for verified model',
+      () async {
+        final client = _FakeHttpClient();
+        final strictFactory = ProviderFactory(
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+          httpClient: client,
+        );
+        final config = makeConfig(
+          type: .openai,
+          providerUrl: 'https://api.openai.com/v1',
+        );
+        final ai = await strictFactory.createGenkit(config);
+        const schema = <String, Object?>{
+          'type': 'object',
+          'properties': {
+            'query': {'type': 'string'},
+          },
+          'required': ['query'],
+          'additionalProperties': false,
+        };
+        final tool = ai.defineTool<Map<String, Object?>, Object?>(
+          name: 'search',
+          description: 'Search.',
+          inputSchema: SchemanticType.from<Map<String, Object?>>(
+            jsonSchema: schema,
+            parse: (value) => value as Map<String, Object?>,
+          ),
+          fn: (_, _) async => const ToolResponseResult<Object?>(null),
+        );
+
+        final response = await ai.generate<Object?, Object?>(
+          model: strictFactory.getModelReference(config),
+          prompt: 'Hi',
+          tools: [tool],
+          returnToolRequests: true,
+        );
+
+        expect(response.text, 'ok.');
+        final tools = client.body?['tools'] as List<dynamic>?;
+        final function =
+            (tools?.single as Map<String, dynamic>?)?['function']
+                as Map<String, dynamic>?;
+        expect(function?['strict'], isTrue);
+        expect(function?['parameters'], schema);
+      },
+    );
 
     test('creates Genkit for Codex OAuth without model discovery', () async {
       final oauthFactory = ProviderFactory(
@@ -112,17 +166,26 @@ void main() {
       expect(ai, isA<Genkit>());
     });
 
-    test('creates Genkit for openrouter provider', () async {
+    test('ignores the catalog URL for openrouter requests', () {
       final config = makeConfig(
         type: .openrouter,
         modelId: 'anthropic/claude-sonnet-4',
         providerId: 'openrouter',
         providerName: 'OpenRouter',
-        providerUrl: 'https://openrouter.ai/api/v1',
+        providerUrl: 'https://attacker.example/api/v1',
       );
-      final ai = await factory.createGenkit(config);
 
-      expect(ai, isA<Genkit>());
+      expect(factory.resolvedBaseUrl(config), isNull);
+    });
+
+    test('uses an explicitly entered URL for openrouter requests', () {
+      final config = makeConfig(
+        type: .openrouter,
+        connectionUrl: 'https://proxy.example.com/v1',
+        providerUrl: 'https://attacker.example/api/v1',
+      );
+
+      expect(factory.resolvedBaseUrl(config), 'https://proxy.example.com/v1');
     });
 
     test('resolves model reference for openai provider', () {
@@ -193,15 +256,14 @@ void main() {
       expect(ref.name, 'openai_reasoning/glm-4.5');
     });
 
-    test('enables thinking config for reasoning-capable anthropic models', () {
-      final config = makeConfig(type: .anthropic, supportsReasoning: true);
-
-      expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-        {
-          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
-        },
+    test('uses anthropic provider defaults when configuration is null', () {
+      final config = makeConfig(
+        type: .anthropic,
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
       );
+
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
     test('does not infer anthropic reasoning from known model ids', () {
@@ -210,39 +272,47 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
-    test('uses adaptive thinking for anthropic models that support it', () {
-      for (final modelId in [
-        'claude-mythos-preview',
-        'claude-opus-4-7',
-        'claude-opus-4-6',
-        'claude-sonnet-4-6',
-      ]) {
-        final config = makeConfig(
-          type: .anthropic,
-          modelId: modelId,
-          supportsReasoning: true,
-        );
-
-        expect(
-          _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-          {
-            'thinking': {'type': 'adaptive'},
-          },
-        );
-      }
-    });
-
-    test('uses manual thinking for older anthropic reasoning models', () {
+    test('maps explicit anthropic effort and budget configuration', () {
       final config = makeConfig(
         type: .anthropic,
-        modelId: 'claude-sonnet-4-5',
         supportsReasoning: true,
+        reasoningOptions: [
+          const ReasoningOption.toggle(),
+          ReasoningOption.effort(['low', 'medium', 'high']),
+          ReasoningOption.budgetTokens(1024, 32768),
+        ],
       );
 
       expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(effort: 'high', budgetTokens: 8192),
+          ),
+        ),
         {
-          'thinking': {'type': 'enabled', 'budgetTokens': 1024},
+          'thinking': {'type': 'enabled', 'budgetTokens': 8192},
+          'outputConfig': {'effort': 'high'},
+        },
+      );
+    });
+
+    test('maps explicit anthropic disable configuration', () {
+      final config = makeConfig(
+        type: .anthropic,
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
+      );
+
+      expect(
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(enabled: false),
+          ),
+        ),
+        {
+          'thinking': {'type': 'disabled'},
         },
       );
     });
@@ -263,34 +333,177 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
-    test('enables thinking config for OpenAI-compatible reasoning models', () {
+    test('maps explicit effort for OpenAI-compatible reasoning models', () {
       final config = makeConfig(
         type: .openai,
         modelId: 'glm-4.5',
         providerUrl: 'https://openai-compatible.example.com/v1',
         supportsReasoning: true,
+        reasoningOptions: [
+          ReasoningOption.effort(['low', 'high']),
+        ],
       );
 
       expect(
-        _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-        {'reasoningType': 'enabled'},
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(effort: 'high'),
+          ),
+        ),
+        {'reasoningEffort': 'high'},
       );
     });
 
-    test(
-      'falls back to OpenAI namespace when reasoning model has no base URL',
-      () {
-        final config = makeConfig(
-          type: .openai,
-          modelId: 'glm-4.5',
-          supportsReasoning: true,
-        );
-        final ref = factory.getModelReference(config);
+    test('maps explicit OpenAI-compatible disable to none effort', () {
+      final config = makeConfig(
+        type: .openai,
+        modelId: 'glm-4.5',
+        providerUrl: 'https://openai-compatible.example.com/v1',
+        supportsReasoning: true,
+        reasoningOptions: const [ReasoningOption.toggle()],
+      );
 
-        expect(ref.name, 'openai/glm-4.5');
-        expect(factory.getGenerationConfig<Object?>(config), isNull);
-      },
-    );
+      expect(
+        _generationConfigJson(
+          factory.getGenerationConfig<Object?>(
+            config,
+            const ReasoningConfiguration(enabled: false),
+          ),
+        ),
+        {'reasoningEffort': 'none'},
+      );
+    });
+
+    test('uses reasoning namespace for OpenAI reasoning models', () {
+      final config = makeConfig(
+        type: .openai,
+        modelId: 'glm-4.5',
+        supportsReasoning: true,
+      );
+      final ref = factory.getModelReference(config);
+
+      expect(ref.name, 'openai_reasoning/glm-4.5');
+      expect(factory.getGenerationConfig<Object?>(config), isNull);
+    });
+
+    test('selects affinity headers only for supported transports', () {
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        {'x-session-id': 'stable-session'},
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: 'https://api.anthropic.com/v1',
+          sessionId: 'stable-session',
+        ),
+        {'x-session-affinity': 'stable-session'},
+      );
+
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        {'x-session-affinity': 'stable-session'},
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .anthropic,
+          baseUrl: 'https://proxy.example.com/v1',
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: 'https://proxy.example.com/v1',
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openrouter,
+          baseUrl: null,
+          sessionId: '',
+        ),
+        isEmpty,
+      );
+      expect(
+        factory.sessionAffinityHeaders(
+          providerType: .openai,
+          baseUrl: null,
+          sessionId: 'stable-session',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('adds x-session-id to default OpenRouter requests', () async {
+      final client = _FakeHttpClient();
+      final openRouterFactory = ProviderFactory(
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+        httpClient: client,
+      );
+      final config = makeConfig(
+        type: .openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+      );
+      final ai = await openRouterFactory.createGenkit(
+        config,
+        sessionId: 'stable-session',
+      );
+      final model = openRouterFactory.getModelReference(config);
+
+      for (var attempt = 0; attempt < 2; attempt++) {
+        final response = await ai.generate<Object?, Object?>(
+          model: model,
+          prompt: 'Hi',
+        );
+        expect(response.text, 'ok.');
+      }
+
+      expect(client.requests, hasLength(2));
+      for (final request in client.requests) {
+        expect(request.headers['x-session-id'], 'stable-session');
+        expect(request.headers['http-referer'], 'https://auravibes.me');
+        expect(request.headers['x-openrouter-title'], 'AuraVibes');
+        expect(request.headers['x-openrouter-categories'], 'personal-agent');
+      }
+    });
+
+    test('omits x-session-id for custom OpenRouter endpoints', () async {
+      final client = _FakeHttpClient();
+      final openRouterFactory = ProviderFactory(
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+        httpClient: client,
+      );
+      final config = makeConfig(
+        type: .openrouter,
+        modelId: 'anthropic/claude-sonnet-4',
+        connectionUrl: 'https://proxy.example.com/v1',
+      );
+      final ai = await openRouterFactory.createGenkit(
+        config,
+        sessionId: 'stable-session',
+      );
+
+      final response = await ai.generate<Object?, Object?>(
+        model: openRouterFactory.getModelReference(config),
+        prompt: 'Hi',
+      );
+
+      expect(response.text, 'ok.');
+      expect(client.request?.headers.containsKey('x-session-id'), isFalse);
+    });
   });
 }
 
@@ -321,4 +534,36 @@ class const _FakeServiceConnectionRepository({
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+final class _FakeHttpClient extends http.BaseClient {
+  http.BaseRequest? request;
+  Map<String, dynamic>? body;
+  final requests = <http.BaseRequest>[];
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    this.request = request;
+    requests.add(request);
+    body = jsonDecode(
+      await request.finalize().bytesToString(),
+    ) as Map<String, dynamic>;
+
+    return http.StreamedResponse(
+      .value(
+        utf8.encode(
+          jsonEncode({
+            'choices': [
+              {
+                'finish_reason': 'stop',
+                'message': {'role': 'assistant', 'content': 'ok.'},
+              },
+            ],
+          }),
+        ),
+      ),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+  }
 }

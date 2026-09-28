@@ -122,6 +122,32 @@ void main() {
     expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
   });
 
+  testWidgets('marks an unknown selected id unavailable automatically', (
+    tester,
+  ) async {
+    await _pumpSubject(
+      tester,
+      _SubjectBuilder.build(
+        groupedModels: {
+          'openai-work': [
+            _makeSelection(
+              'sel-2',
+              connectionId: 'openai-work',
+              modelId: 'gpt-5.5',
+              providerName: 'OpenAI',
+              modelName: 'GPT 5.5',
+            ),
+          ],
+        },
+        selectedId: 'deleted-selection',
+        compactMode: true,
+      ),
+    );
+
+    expect(find.text('Model unavailable'), findsOneWidget);
+    expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+  });
+
   testWidgets('shows empty provider placeholder', (tester) async {
     await _pumpSubject(tester, _SubjectBuilder.build(groupedModels: {}));
 
@@ -198,7 +224,7 @@ void main() {
             ),
           ],
         },
-        selectedId: 'sel-1',
+        selectedId: 'deleted-selection',
         onChanged: (value) => selected = value,
         sheetMode: true,
       ),
@@ -213,7 +239,7 @@ void main() {
     expect(find.text('GPT 5.5'), findsOneWidget);
     expect(find.text('gpt-5.5'), findsOneWidget);
     expect(find.text('OpenAI - Test'), findsOneWidget);
-    expect(find.text('Claude Sonnet 4'), findsOneWidget);
+    expect(find.text('Claude Sonnet 4'), findsNothing);
 
     await tester.tap(find.text('GPT 5.5'));
     await tester.pump();
@@ -357,17 +383,20 @@ abstract final class _SubjectBuilder {
     addTearDown(appDatabase.close);
 
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: Scaffold(
-          body: Portal(
-            child: CompactWorkspaceModelSelector(
-              workspaceId: 'ws-1',
-              workspaceModelSelectionId: selectedId,
-              onChanged: onChanged ?? (_) => fail('Unexpected model change'),
-              compactMode: compactMode,
-              sheetMode: sheetMode,
-              modelUnavailable: modelUnavailable,
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: Scaffold(
+            body: Portal(
+              child: CompactWorkspaceModelSelector(
+                workspaceId: 'ws-1',
+                workspaceModelSelectionId: selectedId,
+                onChanged: onChanged ?? (_) => fail('Unexpected model change'),
+                compactMode: compactMode,
+                sheetMode: sheetMode,
+                modelUnavailable: modelUnavailable,
+              ),
             ),
           ),
         ),

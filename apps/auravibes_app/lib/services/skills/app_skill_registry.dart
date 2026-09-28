@@ -22,6 +22,11 @@ class const AppSkillRegistry() {
     ...serviceSkillDefinitions,
   ];
 
+  List<AppSkillDefinition> getRuntimeAll() => [
+    ...getAll(),
+    ...internalAppSkillDefinitions,
+  ];
+
   AppSkillDefinition? getBySlug(String slug) {
     for (final skill in getAll()) {
       if (skill.slug == slug) return skill;
@@ -33,6 +38,14 @@ class const AppSkillRegistry() {
   AppSkillDefinition? getByIdentifier(String identifier) {
     for (final skill in getAll()) {
       if (skill.identifier == identifier) return skill;
+    }
+
+    return null;
+  }
+
+  AppSkillDefinition? getRuntimeBySlug(String slug) {
+    for (final skill in getRuntimeAll()) {
+      if (skill.slug == slug) return skill;
     }
 
     return null;
@@ -77,6 +90,7 @@ AppSkillDefinition _localizedDefinitionWithTools(
   content: definition.content,
   tools: tools,
   resources: definition.resources,
+  contentOnly: definition.contentOnly,
   titleKey: LocaleKeys.app_skills_skills_manager_title,
   descriptionKey: LocaleKeys.app_skills_skills_manager_description,
   contentKey: LocaleKeys.app_skills_skills_manager_content,

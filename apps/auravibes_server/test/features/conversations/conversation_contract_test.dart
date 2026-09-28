@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_server/src/features/conversations/repositories/conversation_repository.dart';
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
@@ -60,6 +62,31 @@ void main() {
     expect(
       conversationTurnJobPayload('user-1'),
       '{"actorUserId":"user-1"}',
+    );
+  });
+
+  test('turn job payload snapshots provider default explicitly', () {
+    expect(
+      jsonDecode(
+        conversationTurnJobPayload(
+          'user-1',
+          includeReasoningConfigSnapshot: true,
+        ),
+      ),
+      {'actorUserId': 'user-1', 'reasoningConfigJson': null},
+    );
+    expect(
+      jsonDecode(
+        conversationTurnJobPayload(
+          'user-1',
+          reasoningConfigJson: '{"effort":"high"}',
+          includeReasoningConfigSnapshot: true,
+        ),
+      ),
+      {
+        'actorUserId': 'user-1',
+        'reasoningConfigJson': '{"effort":"high"}',
+      },
     );
   });
 
@@ -155,6 +182,7 @@ void main() {
       expectedRevision: 1,
       clearModel: false,
       clearAgent: false,
+      clearReasoningConfig: false,
       clearParent: false,
     );
     final delete = DeleteConversationRequest(
@@ -168,6 +196,67 @@ void main() {
     expect(update.toJson()['requestId'], 'update-1');
     expect(delete.toJson()['requestId'], 'delete-1');
   });
+
+  test(
+    'reasoning configuration survives cloud protocol round trips and reset',
+    () {
+      const reasoningConfigJson = '{"effort":"high"}';
+      final create = CreateConversationRequest(
+        workspaceId: 1,
+        requestId: 'create-reasoning',
+        conversationId: 'conversation-reasoning',
+        title: 'Reasoning',
+        isPinned: false,
+        reasoningConfigJson: reasoningConfigJson,
+      );
+      final summary = ConversationSummary(
+        id: create.conversationId,
+        title: create.title,
+        isPinned: create.isPinned,
+        reasoningConfigJson: reasoningConfigJson,
+        revision: 1,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+      );
+      final update = UpdateConversationRequest(
+        workspaceId: 1,
+        requestId: 'update-reasoning',
+        conversationId: summary.id,
+        expectedRevision: summary.revision,
+        reasoningConfigJson: reasoningConfigJson,
+        clearModel: false,
+        clearAgent: false,
+        clearReasoningConfig: false,
+        clearParent: false,
+      );
+      final reset = UpdateConversationRequest(
+        workspaceId: 1,
+        requestId: 'reset-reasoning',
+        conversationId: summary.id,
+        expectedRevision: summary.revision,
+        clearModel: false,
+        clearAgent: false,
+        clearReasoningConfig: true,
+        clearParent: false,
+      );
+
+      expect(
+        CreateConversationRequest.fromJson(create.toJson()).reasoningConfigJson,
+        reasoningConfigJson,
+      );
+      expect(
+        ConversationSummary.fromJson(summary.toJson()).reasoningConfigJson,
+        reasoningConfigJson,
+      );
+      expect(
+        UpdateConversationRequest.fromJson(update.toJson()).reasoningConfigJson,
+        reasoningConfigJson,
+      );
+      final decodedReset = UpdateConversationRequest.fromJson(reset.toJson());
+      expect(decodedReset.reasoningConfigJson, isNull);
+      expect(decodedReset.clearReasoningConfig, isTrue);
+    },
+  );
 
   test('tool decision carries client-observed arguments digest', () {
     final request = SubmitToolDecisionRequest(

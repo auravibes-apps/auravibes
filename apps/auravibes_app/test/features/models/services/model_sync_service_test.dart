@@ -21,48 +21,33 @@ void main() {
       service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
     });
 
-    test('performFullSync delegates sync orchestration', () async {
+    test('sync delegates to the use case', () async {
       when(() => syncApiModelsUseCase())
           .thenAnswer((_) => Future<void>.value());
 
-      await expectLater(service.performFullSync(), completes);
+      await expectLater(service.sync(), completes);
 
       verify(() => syncApiModelsUseCase()).called(1);
     });
 
-    test('performFullSync swallows sync errors', () async {
-      when(() => syncApiModelsUseCase()).thenThrow(Exception('Network error'));
+    test('sync forwards errors and permits a later retry', () async {
+      var attempts = 0;
+      when(() => syncApiModelsUseCase()).thenAnswer((_) async {
+        if (attempts++ == 0) throw Exception('Network error');
+      });
 
-      await expectLater(service.performFullSync(), completes);
+      await expectLater(service.sync(), throwsA(isA<Exception>()));
+      await expectLater(service.sync(), completes);
 
-      verify(() => syncApiModelsUseCase()).called(1);
+      verify(() => syncApiModelsUseCase()).called(2);
     });
 
-    test(
-      'performManualSync forwards sync errors and permits a retry',
-      () async {
-        when(() => syncApiModelsUseCase())
-            .thenThrow(Exception('Network error'));
-
-        await expectLater(
-          service.performManualSync(),
-          throwsA(isA<Exception>()),
-        );
-        await expectLater(
-          service.performManualSync(),
-          throwsA(isA<Exception>()),
-        );
-
-        verify(() => syncApiModelsUseCase()).called(2);
-      },
-    );
-
-    test('performManualSync shares an in-flight request', () async {
+    test('sync shares an in-flight request', () async {
       final completer = Completer<void>();
       when(() => syncApiModelsUseCase()).thenAnswer((_) => completer.future);
 
-      final first = service.performManualSync();
-      final second = service.performManualSync();
+      final first = service.sync();
+      final second = service.sync();
 
       await Future<void>.delayed(.zero);
       verify(() => syncApiModelsUseCase()).called(1);

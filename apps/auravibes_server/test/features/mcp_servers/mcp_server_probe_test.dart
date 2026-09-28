@@ -51,4 +51,61 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test(
+    'cloud discovery collects ordered pages and keeps schema JSON',
+    () async {
+      final cursors = <String?>[];
+      final tools = await collectCloudMcpTools((cursor) async {
+        cursors.add(cursor);
+        return switch (cursor) {
+          null => {
+            'tools': [
+              {
+                'name': 'first',
+                'inputSchema': {'type': 'object'},
+                'outputSchema': {'type': 'object'},
+              },
+            ],
+            'nextCursor': 'opaque',
+          },
+          _ => {
+            'tools': [
+              {'name': 'last'},
+            ],
+          },
+        };
+      });
+
+      expect(cursors, [null, 'opaque']);
+      expect(tools.map((tool) => tool.name), ['first', 'last']);
+      expect(tools.first.inputSchemaJson, '{"type":"object"}');
+      expect(tools.first.outputSchemaJson, '{"type":"object"}');
+      expect(tools.last.inputSchemaJson, '{}');
+      expect(tools.last.outputSchemaJson, isNull);
+    },
+  );
+
+  test('cloud discovery rejects a later-page invalid catalog', () async {
+    await expectLater(
+      collectCloudMcpTools(
+        (cursor) async => cursor == null
+            ? {
+                'tools': [
+                  {'name': 'first'},
+                ],
+                'nextCursor': 'second',
+              }
+            : {
+                'tools': [
+                  {
+                    'name': 'invalid',
+                    'inputSchema': <Object?, Object?>{1: 'x'},
+                  },
+                ],
+              },
+      ),
+      throwsFormatException,
+    );
+  });
 }

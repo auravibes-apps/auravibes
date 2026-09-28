@@ -31,6 +31,7 @@ abstract class ApiModel
     required this.costOutput,
     required this.openWeights,
     required this.supportsReasoning,
+    this.reasoningOptionsJson,
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
@@ -53,6 +54,7 @@ abstract class ApiModel
     required double costOutput,
     required bool openWeights,
     required bool supportsReasoning,
+    String? reasoningOptionsJson,
     required bool isCanonical,
     required bool supportsPriorityMode,
     required bool supportsToolCalls,
@@ -84,6 +86,8 @@ abstract class ApiModel
       supportsReasoning: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['supportsReasoning'],
       ),
+      reasoningOptionsJson:
+          jsonSerialization['reasoningOptionsJson'] as String?,
       isCanonical: _isc.BoolJsonExtension.fromJson(
         jsonSerialization['isCanonical'],
       ),
@@ -133,6 +137,8 @@ abstract class ApiModel
 
   bool supportsReasoning;
 
+  String? reasoningOptionsJson;
+
   bool isCanonical;
 
   bool supportsPriorityMode;
@@ -161,6 +167,7 @@ abstract class ApiModel
     double? costOutput,
     bool? openWeights,
     bool? supportsReasoning,
+    String? reasoningOptionsJson,
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -185,6 +192,8 @@ abstract class ApiModel
       'costOutput': costOutput,
       'openWeights': openWeights,
       'supportsReasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoningOptionsJson': reasoningOptionsJson,
       'isCanonical': isCanonical,
       'supportsPriorityMode': supportsPriorityMode,
       'supportsToolCalls': supportsToolCalls,
@@ -211,6 +220,8 @@ abstract class ApiModel
       'costOutput': costOutput,
       'openWeights': openWeights,
       'supportsReasoning': supportsReasoning,
+      if (reasoningOptionsJson != null)
+        'reasoningOptionsJson': reasoningOptionsJson,
       'isCanonical': isCanonical,
       'supportsPriorityMode': supportsPriorityMode,
       'supportsToolCalls': supportsToolCalls,
@@ -243,6 +254,7 @@ class _ApiModelImpl extends ApiModel {
     required double costOutput,
     required bool openWeights,
     required bool supportsReasoning,
+    String? reasoningOptionsJson,
     required bool isCanonical,
     required bool supportsPriorityMode,
     required bool supportsToolCalls,
@@ -263,6 +275,7 @@ class _ApiModelImpl extends ApiModel {
          costOutput: costOutput,
          openWeights: openWeights,
          supportsReasoning: supportsReasoning,
+         reasoningOptionsJson: reasoningOptionsJson,
          isCanonical: isCanonical,
          supportsPriorityMode: supportsPriorityMode,
          supportsToolCalls: supportsToolCalls,
@@ -289,6 +302,7 @@ class _ApiModelImpl extends ApiModel {
     double? costOutput,
     bool? openWeights,
     bool? supportsReasoning,
+    Object? reasoningOptionsJson = _Undefined,
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
@@ -312,6 +326,9 @@ class _ApiModelImpl extends ApiModel {
       costOutput: costOutput ?? this.costOutput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
+      reasoningOptionsJson: reasoningOptionsJson is String?
+          ? reasoningOptionsJson
+          : this.reasoningOptionsJson,
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,

@@ -88,6 +88,80 @@ void main() {
     expect(duplicate.skills, const [AgentSkillRef.user('skill-1')]);
   });
 
+  test(
+    'visibility update uses values and revision from the same read',
+    () async {
+      final now = DateTime.utc(2026);
+      var readCalls = 0;
+      final capturedOperations = <WorkspacePatchOperation>[];
+      final current = _resource(
+        now: now,
+        kind: .agent,
+        id: 'agent-1',
+        data: {
+          'name': 'Concurrent name',
+          'description': 'Concurrent description',
+          'content': 'Concurrent prompt',
+          'isEnabled': false,
+          'visibility': 'both',
+        },
+        revision: 7,
+      );
+      final repository = CloudAgentRepository(
+        patch: ({required requestId, required operations}) async {
+          final operation = operations.single;
+          capturedOperations.add(operation);
+
+          return PatchWorkspaceStateResponse(
+            resources: [
+              _resource(
+                now: now,
+                kind: .agent,
+                id: 'agent-1',
+                data: jsonDecode(
+                  operation.data ?? fail('Expected agent data'),
+                ) as Map<String, dynamic>,
+                revision: 8,
+              ),
+            ],
+            sequence: 8,
+          );
+        },
+        workspaceId: 'workspace',
+        read: () async => const [],
+        watch: (_) => const Stream.empty(),
+        readAgent: (_) async {
+          readCalls++;
+
+          return [current];
+        },
+        list: (_) async => const AgentListPage(agents: []),
+        duplicate: (_) async => fail('Unexpected duplicate'),
+      );
+
+      final updated = await repository.updateAgentVisibility(
+        'agent-1',
+        .chatSelector,
+      );
+      final updateOperation = capturedOperations.single;
+      final payload = jsonDecode(
+        updateOperation.data ?? fail('Expected agent data'),
+      ) as Map<String, dynamic>;
+
+      expect(readCalls, 1);
+      expect(updateOperation.expectedRevision, 7);
+      expect(payload, {
+        'id': 'agent-1',
+        'name': 'Concurrent name',
+        'description': 'Concurrent description',
+        'content': 'Concurrent prompt',
+        'isEnabled': false,
+        'visibility': 'chatSelector',
+      });
+      expect(updated.visibility, AgentVisibility.chatSelector);
+    },
+  );
+
   test('cloud CRUD uses only workspace resource operations', () async {
     final capturedOperations = <WorkspacePatchOperation>[];
     final now = DateTime.utc(2026);

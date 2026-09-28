@@ -25,10 +25,13 @@ abstract class ConversationToolCallView
     required this.status,
     this.decision,
     this.resultJson,
+    this.resultContextJson,
+    bool? resultOutputTruncated,
+    this.resultOriginalBytes,
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
-  });
+  }) : resultOutputTruncated = resultOutputTruncated ?? false;
 
   factory ConversationToolCallView({
     required String id,
@@ -41,6 +44,9 @@ abstract class ConversationToolCallView
     required String status,
     String? decision,
     String? resultJson,
+    String? resultContextJson,
+    bool? resultOutputTruncated,
+    int? resultOriginalBytes,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -61,6 +67,13 @@ abstract class ConversationToolCallView
       status: jsonSerialization['status'] as String,
       decision: jsonSerialization['decision'] as String?,
       resultJson: jsonSerialization['resultJson'] as String?,
+      resultContextJson: jsonSerialization['resultContextJson'] as String?,
+      resultOutputTruncated: jsonSerialization['resultOutputTruncated'] == null
+          ? null
+          : _is.BoolJsonExtension.fromJson(
+              jsonSerialization['resultOutputTruncated'],
+            ),
+      resultOriginalBytes: jsonSerialization['resultOriginalBytes'] as int?,
       revision: jsonSerialization['revision'] as int,
       createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -91,6 +104,12 @@ abstract class ConversationToolCallView
 
   String? resultJson;
 
+  String? resultContextJson;
+
+  bool resultOutputTruncated;
+
+  int? resultOriginalBytes;
+
   int revision;
 
   DateTime createdAt;
@@ -111,6 +130,9 @@ abstract class ConversationToolCallView
     String? status,
     String? decision,
     String? resultJson,
+    String? resultContextJson,
+    bool? resultOutputTruncated,
+    int? resultOriginalBytes,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -130,6 +152,10 @@ abstract class ConversationToolCallView
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
+      if (resultContextJson != null) 'resultContextJson': resultContextJson,
+      'resultOutputTruncated': resultOutputTruncated,
+      if (resultOriginalBytes != null)
+        'resultOriginalBytes': resultOriginalBytes,
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -151,6 +177,10 @@ abstract class ConversationToolCallView
       'status': status,
       if (decision != null) 'decision': decision,
       if (resultJson != null) 'resultJson': resultJson,
+      if (resultContextJson != null) 'resultContextJson': resultContextJson,
+      'resultOutputTruncated': resultOutputTruncated,
+      if (resultOriginalBytes != null)
+        'resultOriginalBytes': resultOriginalBytes,
       'revision': revision,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
@@ -177,6 +207,9 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     required String status,
     String? decision,
     String? resultJson,
+    String? resultContextJson,
+    bool? resultOutputTruncated,
+    int? resultOriginalBytes,
     required int revision,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -191,6 +224,9 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
          status: status,
          decision: decision,
          resultJson: resultJson,
+         resultContextJson: resultContextJson,
+         resultOutputTruncated: resultOutputTruncated,
+         resultOriginalBytes: resultOriginalBytes,
          revision: revision,
          createdAt: createdAt,
          updatedAt: updatedAt,
@@ -211,6 +247,9 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
     String? status,
     Object? decision = _Undefined,
     Object? resultJson = _Undefined,
+    Object? resultContextJson = _Undefined,
+    bool? resultOutputTruncated,
+    Object? resultOriginalBytes = _Undefined,
     int? revision,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -228,6 +267,14 @@ class _ConversationToolCallViewImpl extends ConversationToolCallView {
       status: status ?? this.status,
       decision: decision is String? ? decision : this.decision,
       resultJson: resultJson is String? ? resultJson : this.resultJson,
+      resultContextJson: resultContextJson is String?
+          ? resultContextJson
+          : this.resultContextJson,
+      resultOutputTruncated:
+          resultOutputTruncated ?? this.resultOutputTruncated,
+      resultOriginalBytes: resultOriginalBytes is int?
+          ? resultOriginalBytes
+          : this.resultOriginalBytes,
       revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

@@ -1,12 +1,19 @@
 // Required: Widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
@@ -17,6 +24,35 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
+class _FakeBatchToolApprovalActions implements BatchToolApprovalActions {
+  final approveCompleter = Completer<BatchToolApprovalResult>();
+  final skipCompleter = Completer<BatchToolApprovalResult>();
+  List<PendingToolCall>? approvedCalls;
+  List<PendingToolCall>? skippedCalls;
+
+  @override
+  Future<BatchToolApprovalResult> approveOnce({
+    required String rootConversationId,
+    required String workspaceId,
+    required List<PendingToolCall> pendingCalls,
+  }) {
+    approvedCalls = pendingCalls;
+
+    return approveCompleter.future;
+  }
+
+  @override
+  Future<BatchToolApprovalResult> skip({
+    required String rootConversationId,
+    required String workspaceId,
+    required List<PendingToolCall> pendingCalls,
+  }) {
+    skippedCalls = pendingCalls;
+
+    return skipCompleter.future;
+  }
+}
+
 void main() {
   Widget buildSubject({required List<Object> overrides}) {
     return EasyLocalization(
@@ -25,12 +61,15 @@ void main() {
         child: Builder(
           builder: (context) {
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const Material(
-                  child: ChatToolApprovalCard(
-                    workspaceId: 'ws-1',
-                    conversationId: 'conv-1',
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const Material(
+                    child: ChatToolApprovalCard(
+                      workspaceId: 'ws-1',
+                      conversationId: 'conv-1',
+                    ),
                   ),
                 ),
               ),
@@ -75,6 +114,38 @@ void main() {
       sourceConversationId: sourceConversationId,
     );
   }
+
+  List<Object> _skillTitleOverrides() => [
+    workspaceSkillsProvider('ws-1').overrideWith(
+      (ref) async => const [
+        WorkspaceSkill(
+          source: .user,
+          id: 'skill-1',
+          slug: 'research',
+          title: 'Research Assistant',
+          description: '',
+          kind: .template,
+          isEnabled: true,
+        ),
+      ],
+    ),
+    skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+      (ref) async => [
+        SkillTemplateToolEntity(
+          id: 'tool-1',
+          skillId: 'skill-1',
+          templateType: .url,
+          title: 'Search the web',
+          description: 'Searches the web.',
+          slug: 'search_web',
+          isEnabled: true,
+          requiresCredential: false,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+        ),
+      ],
+    ),
+  ];
 
   Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
     await tester.runAsync(() async {
@@ -124,6 +195,126 @@ void main() {
       ]) {
         expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
       }
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('shows batch actions only when multiple calls are pending', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(),
+                _createPendingToolCall(toolCallId: 'tc-2'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('allow all closes immediately and submits one batch', (
+      tester,
+    ) async {
+      final actions = _FakeBatchToolApprovalActions();
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsNothing,
+      );
+      final approvedCalls = actions.approvedCalls;
+      expect(approvedCalls, hasLength(2));
+      if (approvedCalls case final calls?) {
+        expect(
+          calls.map((call) => call.toolCall.id),
+          containsAll(<String>['tc-1', 'tc-2']),
+        );
+      }
+
+      actions.approveCompleter.complete(
+        const BatchToolApprovalResult(
+          claimed: [],
+          alreadyHandled: [],
+          conflicted: [],
+        ),
+      );
+      await tester.pump();
+    });
+
+    testWidgets('deny all closes immediately and submits one batch', (
+      tester,
+    ) async {
+      final actions = _FakeBatchToolApprovalActions();
+      final pendingCalls = [
+        _createPendingToolCall(),
+        _createPendingToolCall(toolCallId: 'tc-2'),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsNothing,
+      );
+      expect(actions.skippedCalls, hasLength(2));
+
+      actions.skipCompleter.complete(
+        const BatchToolApprovalResult(
+          claimed: [],
+          alreadyHandled: [],
+          conflicted: [],
+        ),
+      );
+      await tester.pump();
     });
 
     testWidgets('approves a child conversation tool call in its source', (
@@ -131,6 +322,9 @@ void main() {
     ) async {
       final approvalProvider = _MockApproveToolCallProvider();
       final agentService = _MockAuraAgentService();
+      final cancellationEffects = _MockAgentCancellationEffects();
+      when(() => cancellationEffects.start('child-1'))
+          .thenReturn(agent.AgentCancellationScope());
       when(
         () => approvalProvider.loadToolCall(
           messageId: 'child-message-1',
@@ -144,6 +338,7 @@ void main() {
           skips: _MockSkipToolCallProvider(),
           stopPending: _MockStopPendingToolCallsProvider(),
           resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: cancellationEffects,
         ),
       );
 
@@ -221,44 +416,41 @@ void main() {
       expect(find.text('Read File'), findsOneWidget);
     });
 
-    testWidgets(
-      'shows the model action description separately from arguments',
-      (tester) async {
-        final pendingCalls = [
-          _createPendingToolCall(
-            userFacingDescription: 'I will search for the requested item.',
-            argumentsRaw: '{"arg1":"search","arg2":"item"}',
-          ),
-        ];
-        await pumpAndInit(
-          tester,
-          buildSubject(
-            overrides: [
-              pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
-            ],
-          ),
-        );
+    testWidgets('does not trust the model action description in an approval', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          userFacingDescription: 'I will search for the requested item.',
+          argumentsRaw: '{"arg1":"search","arg2":"item"}',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
 
-        expect(
-          find.text('I will search for the requested item.'),
-          findsOneWidget,
-        );
-        expect(find.textContaining('arg1: search'), findsOneWidget);
-        expect(find.textContaining('arg2: item'), findsOneWidget);
+      expect(find.text('I will search for the requested item.'), findsNothing);
+      expect(find.text('Review the arguments for Read File'), findsOneWidget);
+      expect(find.textContaining('arg1: search'), findsOneWidget);
+      expect(find.textContaining('arg2: item'), findsOneWidget);
 
-        final argumentColumn = tester.widget<Column>(
-          find
-              .ancestor(
-                of: find.textContaining('arg1: search'),
-                matching: find.byType(Column),
-              )
-              .first,
-        );
-        expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
-      },
-    );
+      final argumentColumn = tester.widget<Column>(
+        find
+            .ancestor(
+              of: find.textContaining('arg1: search'),
+              matching: find.byType(Column),
+            )
+            .first,
+      );
+      expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
+    });
 
-    testWidgets('clamps long argument values while collapsed', (tester) async {
+    testWidgets('shows complete argument values', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -275,8 +467,8 @@ void main() {
       );
 
       final argument = tester.widget<Text>(find.textContaining('query:'));
-      expect(argument.maxLines, 1);
-      expect(argument.overflow, TextOverflow.ellipsis);
+      expect(argument.maxLines, isNull);
+      expect(argument.overflow, TextOverflow.clip);
     });
 
     testWidgets('uses deterministic fallback when description is absent', (
@@ -296,7 +488,7 @@ void main() {
       expect(find.text('Review the arguments for Read File'), findsOneWidget);
     });
 
-    testWidgets('shows a batch description once while paging calls', (
+    testWidgets('never shows a model batch description while paging calls', (
       tester,
     ) async {
       const description = 'I will search and then open the result.';
@@ -316,7 +508,7 @@ void main() {
         ),
       );
 
-      expect(find.text(description), findsOneWidget);
+      expect(find.text(description), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('tool_approval_next')),
       );
@@ -331,7 +523,7 @@ void main() {
         _createPendingToolCall(
           toolName: 'call_skill_tool',
           argumentsRaw:
-              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"skill":"research","tool":"search_web","args":'
               '{"api_key":"secret-key","query":"visible"}}',
         ),
       ];
@@ -340,13 +532,13 @@ void main() {
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
           ],
         ),
       );
 
-      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
-      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
       expect(find.textContaining('secret-key'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });
@@ -358,7 +550,7 @@ void main() {
         _createPendingToolCall(
           toolName: 'call_skill_tool',
           argumentsRaw:
-              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"skill":"research","tool":"search_web","args":'
               '{"credential":"secret-value"}}',
           argumentsDigest: 'digest-1',
           turnId: 'turn-1',
@@ -370,13 +562,13 @@ void main() {
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
           ],
         ),
       );
 
-      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
-      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
       expect(find.textContaining('secret-value'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });
@@ -470,7 +662,9 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('flattens arguments and expands long input', (tester) async {
+    testWidgets('flattens and exposes all arguments by default', (
+      tester,
+    ) async {
       final pendingCalls = [
         _createPendingToolCall(
           argumentsRaw: jsonEncode({
@@ -496,15 +690,9 @@ void main() {
 
       expect(find.textContaining('arg1: search'), findsOneWidget);
       expect(find.textContaining('arg3.something: my search'), findsOneWidget);
-      expect(find.textContaining('arg4: last'), findsNothing);
-      expect(find.text('Show more'), findsOneWidget);
-
-      await tester.tap(find.text('Show more'));
-      await tester.pump();
-
       expect(find.textContaining('arg4: last'), findsOneWidget);
       expect(find.textContaining('arg3.items[0]: first'), findsOneWidget);
-      expect(find.text('Show less'), findsOneWidget);
+      expect(find.text('Show more'), findsNothing);
     });
 
     testWidgets('flattens nested URL input', (tester) async {
@@ -730,3 +918,6 @@ class _MockStopPendingToolCallsProvider extends Mock
 
 class _MockAgentToolResumeProvider extends Mock
     implements agent.AgentToolResumeProvider;
+
+class _MockAgentCancellationEffects extends Mock
+    implements agent.AgentCancellationEffects;

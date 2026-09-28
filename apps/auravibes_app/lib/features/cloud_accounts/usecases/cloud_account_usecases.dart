@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
@@ -10,6 +11,11 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 class const CloudAccountUseCases({
   required final ServerpodAuthStore _store,
   required final WorkspaceRepository _workspaceRepository,
+  required final Future<void> Function({
+    required String serverUrl,
+    required String userId,
+  })
+  deleteRemoteAccount,
   required final void Function(String serverUrl, String userId)
   invalidateAccount,
 });
@@ -47,8 +53,51 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
       userId,
       serverUrl: origin,
     );
-    await _store.removeAccount(serverUrl: origin, userId: userId);
-    invalidateAccount(origin, userId);
+    await _removeLocalAccount(origin, userId);
+  }
+
+  Future<void> deleteAccount({
+    required String serverUrl,
+    required String userId,
+  }) async {
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
+    await deleteRemoteAccount(serverUrl: origin, userId: userId);
+    final mirrorsRemoved = await _tryDeleteWorkspaceMirrors(origin, userId);
+    final accountRemoved = await _tryRemoveLocalAccount(origin, userId);
+    if (!mirrorsRemoved || !accountRemoved) {
+      throw const CloudAccountDeletionException(
+        LocaleKeys.cloud_accounts_delete_local_cleanup_failed,
+      );
+    }
+  }
+
+  Future<bool> _tryDeleteWorkspaceMirrors(String origin, String userId) async {
+    try {
+      final _ = await _workspaceRepository
+          .deleteCloudWorkspaceMirrorsForAccount(userId, serverUrl: origin);
+
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<bool> _tryRemoveLocalAccount(String origin, String userId) async {
+    try {
+      await _removeLocalAccount(origin, userId);
+
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> _removeLocalAccount(String origin, String userId) async {
+    try {
+      await _store.removeAccount(serverUrl: origin, userId: userId);
+    } finally {
+      invalidateAccount(origin, userId);
+    }
   }
 
   Future<CloudAccountSession> _saveSignedInAccount(
@@ -154,10 +203,27 @@ class const CloudAccountException(final String message) implements Exception {
   String toString() => message;
 }
 
+class const CloudAccountDeletionException(final String localizationKey)
+    implements Exception;
+
 final cloudAccountUseCasesProvider = Provider<CloudAccountUseCases>((ref) {
   return CloudAccountUseCases(
     store: ref.watch(serverpodAuthStoreProvider),
     workspaceRepository: ref.watch(workspaceRepositoryProvider),
+    deleteRemoteAccount: ({required serverUrl, required userId}) async {
+      final client = await ref.read(
+        serverpodClientForAccountProvider((
+          accountId: userId,
+          serverUrl: serverUrl,
+        )).future,
+      );
+      if (client == null) {
+        throw const CloudAccountDeletionException(
+          LocaleKeys.cloud_accounts_not_configured,
+        );
+      }
+      await client.account.deleteCurrentUser();
+    },
     invalidateAccount: (serverUrl, userId) {
       final key = (serverUrl: serverUrl, accountId: userId);
       ref

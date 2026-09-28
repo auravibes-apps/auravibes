@@ -9,6 +9,7 @@ import 'package:toon_dart/toon_dart.dart';
 const _xmlAttributeEscape = HtmlEscape(HtmlEscapeMode.attribute);
 const _xmlTextEscape = HtmlEscape(HtmlEscapeMode.element);
 const skillCatalogMetadataKind = 'skill_catalog';
+const skillCatalogSelectedRevisionsMetadataKey = 'selectedRevisions';
 
 class const SkillCatalogEntry({
   required final String slug,
@@ -187,6 +188,7 @@ class const BuildSkillContextMessages() {
     String? agentContent,
   }) {
     final seen = <String>{};
+    final catalog = skillCatalog.toList(growable: false);
     final skills = [...conversationSkills, ...agentSkills]
         .where(
           (skill) => seen.add(
@@ -197,11 +199,17 @@ class const BuildSkillContextMessages() {
     return [
       if (agentContent != null)
         AgentChatMessage(role: .system, content: agentContent),
-      if (skillCatalog.isNotEmpty)
+      if (catalog.isNotEmpty)
         AgentChatMessage(
           role: .system,
-          content: _skillCatalogXml(skillCatalog, catalogRevision),
-          metadata: const {'kind': skillCatalogMetadataKind},
+          content: _skillCatalogXml(catalog, catalogRevision),
+          metadata: {
+            'kind': skillCatalogMetadataKind,
+            skillCatalogSelectedRevisionsMetadataKey: {
+              for (final entry in catalog)
+                if (entry.active) entry.slug: entry.revision,
+            },
+          },
         ),
       ...call(skills),
     ];

@@ -88,10 +88,12 @@ mixin _WorkspaceToolsDaoMetadataApi {
     required String id,
     required String description,
     required String inputSchema,
+    Value<String?> outputSchema = const Value.absent(),
   }) => WorkspaceToolsDaoMetadata(this as WorkspaceToolsDao).updateToolMetadata(
     id: id,
     description: description,
     inputSchema: inputSchema,
+    outputSchema: outputSchema,
   );
 
   Future<bool> isWorkspaceToolEnabled(String workspaceId, String id) =>
@@ -273,11 +275,13 @@ extension WorkspaceToolsDaoMetadata on WorkspaceToolsDao {
     required String id,
     required String description,
     required String inputSchema,
+    Value<String?> outputSchema = const Value.absent(),
   }) async {
     final companion = ToolsCompanion(
       updatedAt: .new(DateTime.now()),
       description: .new(description),
       inputSchema: .new(inputSchema),
+      outputSchema: outputSchema,
     );
     final updatedCount = await _updateTool(id, companion);
     if (updatedCount != 1) {

@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -101,6 +102,11 @@ class _FakeMessageRepository implements MessageRepository {
   ) async => const [];
 
   @override
+  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
+    String conversationId,
+  ) async => const [];
+
+  @override
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
     String conversationId,
     int limit,
@@ -157,6 +163,21 @@ class _FakeMessageRepository implements MessageRepository {
   @override
   Future<MessageEntity?> getLatestCompactionSummary(String conversationId) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ToolCallApprovalBatchClaim>> claimToolCallBatch(
+    Iterable<ToolCallApprovalBatchItem> items, {
+    required bool approve,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<void> persistToolCallBatchResults(
+    Iterable<ToolCallExecutionBatchUpdate> updates,
+  ) async {
+    final _ = updates;
   }
 }
 

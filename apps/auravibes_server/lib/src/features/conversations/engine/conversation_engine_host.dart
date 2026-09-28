@@ -36,6 +36,8 @@ class const ConversationEngineResult({
 class const ConversationCompactionResult({
   required final String summary,
   required final AgentCompactionRangeSelected range,
+  required final String providerId,
+  required final String modelId,
 });
 
 String appendDurableSkillActivations(
@@ -53,12 +55,24 @@ String appendDurableSkillActivations(
       '</durable_skill_activations>';
 }
 
+String _toolResultForContext(ConversationToolCall call) {
+  final result = call.resultJson ?? call.status;
+  return projectToolOutput(result).text;
+}
+
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
 typedef ConversationHostLookup = Future<List<InternetAddress>> Function(
   String host,
 );
+
+typedef _CloudSkillCatalogCandidate = ({
+  String id,
+  String slug,
+  String title,
+  String description,
+});
 
 String providerCredential(String providerId, String secret) {
   if (providerId != 'openai-codex') return secret;
@@ -90,6 +104,7 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   required int workspaceId,
   required Iterable<String> activeSkillIds,
   required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
 }) async {
   final resources = await WorkspaceResource.db.find(
     session,
@@ -140,53 +155,14 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
         },
       )
       .toList(growable: false);
-  final candidates =
-      <
-        ({
-          String id,
-          String slug,
-          String title,
-          String description,
-        })
-      >[];
-  for (final skill in userSkills) {
-    final id = skill['id'];
-    final slug = skill['slug'];
-    final title = skill['title'];
-    if (id is! String ||
-        slug is! String ||
-        title is! String ||
-        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: id,
-      slug: slug,
-      title: title,
-      description: skill['description'] as String? ?? '',
-    ));
-  }
-  if (!isChildConversation &&
-      cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings)) {
-    candidates.add((
-      id: agentsSkillSlug,
-      slug: agentsSkillSlug,
-      title: agentsSkillTitle,
-      description: '',
-    ));
-  }
-  for (final skill in serviceSkillDefinitions) {
-    if (!cloudAppSkillEnabled(skill.identifier, appSkillSettings) ||
-        !cloudServiceSkillReady(skill, serviceConnections)) {
-      continue;
-    }
-    candidates.add((
-      id: skill.identifier,
-      slug: skill.slug,
-      title: skill.title,
-      description: skill.description,
-    ));
-  }
+  final candidates = _cloudSkillCatalogCandidates(
+    userSkills: userSkills,
+    templateTools: templateTools,
+    serviceConnections: serviceConnections,
+    appSkillSettings: appSkillSettings,
+    isChildConversation: isChildConversation,
+    a2uiSupportedComponents: a2uiSupportedComponents,
+  );
   final candidateIds = candidates.map((candidate) => candidate.id).toSet();
   final tools = materializeCloudSkillTools(
     selectedSkillIds: candidateIds,
@@ -218,6 +194,93 @@ Future<List<SkillCatalogEntry>> buildCloudSkillCatalog(
   }
   return entries..sort((left, right) => left.slug.compareTo(right.slug));
 }
+
+List<_CloudSkillCatalogCandidate> _cloudSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required bool isChildConversation,
+  Set<String>? a2uiSupportedComponents,
+}) {
+  final candidates = <_CloudSkillCatalogCandidate>[
+    ..._cloudUserSkillCatalogCandidates(
+      userSkills: userSkills,
+      templateTools: templateTools,
+      serviceConnections: serviceConnections,
+    ),
+    if (!isChildConversation &&
+        cloudAppSkillEnabled(agentsSkillSlug, appSkillSettings))
+      (
+        id: agentsSkillSlug,
+        slug: agentsSkillSlug,
+        title: agentsSkillTitle,
+        description: '',
+      ),
+    ..._cloudServiceSkillCatalogCandidates(
+      appSkillSettings: appSkillSettings,
+      serviceConnections: serviceConnections,
+    ),
+  ];
+  if (!isChildConversation &&
+      (a2uiSupportedComponents == null || a2uiSupportedComponents.isNotEmpty)) {
+    candidates.addAll(
+      internalAppSkillDefinitions
+          .where((skill) => skill.contentOnly)
+          .map(
+            (skill) => (
+              id: skill.identifier,
+              slug: skill.slug,
+              title: skill.title,
+              description: skill.description,
+            ),
+          ),
+    );
+  }
+  return candidates;
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudUserSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<Map<String, dynamic>> templateTools,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) sync* {
+  for (final skill in userSkills) {
+    final id = skill['id'];
+    final slug = skill['slug'];
+    final title = skill['title'];
+    if (id is! String ||
+        slug is! String ||
+        title is! String ||
+        !cloudUserSkillReady(skill, templateTools, serviceConnections)) {
+      continue;
+    }
+    yield (
+      id: id,
+      slug: slug,
+      title: title,
+      description: skill['description'] as String? ?? '',
+    );
+  }
+}
+
+Iterable<_CloudSkillCatalogCandidate> _cloudServiceSkillCatalogCandidates({
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  required Iterable<Map<String, dynamic>> serviceConnections,
+}) => serviceSkillDefinitions
+    .where(
+      (skill) =>
+          cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
+          cloudServiceSkillReady(skill, serviceConnections),
+    )
+    .map(
+      (skill) => (
+        id: skill.identifier,
+        slug: skill.slug,
+        title: skill.title,
+        description: skill.description,
+      ),
+    );
 
 List<Map<String, dynamic>> cloudRequestMessagesWithToolExchanges({
   required Iterable<Map<String, dynamic>> baseMessages,
@@ -309,7 +372,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
           assistantContent: assistant['content'] as String?,
           resultsByCallId: {
             for (final call in batchCalls)
-              call.stableId: call.resultJson ?? call.status,
+              call.stableId: _toolResultForContext(call),
           },
         ).map((message) => Map<String, dynamic>.from(message)),
       );
@@ -337,7 +400,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
         ],
         resultsByCallId: {
           for (final call in unbatchedCalls)
-            call.stableId: call.resultJson ?? call.status,
+            call.stableId: _toolResultForContext(call),
         },
       ).map((message) => Map<String, dynamic>.from(message)),
     );
@@ -435,11 +498,25 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversation.stableId,
       a2uiSupportedComponents: a2uiComponents,
     );
-    requestMessages.insertAll(0, await _agentContextMessages(session, job));
+    requestMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiComponents,
+      ),
+    );
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
-      customize: (modelName, _) => (model: modelName, extraBody: const {}),
+      supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
+      customize: (modelName, _) => (
+        model: modelName,
+        extraBody: reasoningRequestBody(
+          config.providerId,
+          config.reasoningConfiguration,
+        ),
+      ),
     );
     final response = ConversationResponseAccumulator(
       publisher: liveTurns,
@@ -448,7 +525,11 @@ final class const ServerConversationEngineHost({
     final a2uiDecoder = A2uiTextDecoder();
     final runtime =
         toolRuntime ??
-        ServerToolRuntime(executor: const ServerToolExecutorService().call);
+        ServerToolRuntime(
+          executor: ServerToolExecutorService(
+            a2uiSupportedComponents: a2uiComponents,
+          ).call,
+        );
     final assistantStableId = turn.assistantMessageId == null
         ? null
         : (await ConversationMessage.db.findById(
@@ -491,26 +572,32 @@ final class const ServerConversationEngineHost({
         )
         .toList(growable: false);
     if (resumedCalls.isNotEmpty) {
-      final awaitingSubAgentToolCallIds = <String>[];
-      var awaitingApproval = false;
-      for (final call in replayableCalls) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: ServerToolRequest(
-            id: call.stableId,
-            name: call.name,
-            arguments: _jsonObject(call.argumentsJson),
-            userFacingDescription: call.userFacingDescription,
+      final dispositions = await Future.wait(
+        replayableCalls.map(
+          (call) async => (
+            call: call,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: ServerToolRequest(
+                id: call.stableId,
+                name: call.name,
+                arguments: _jsonObject(call.argumentsJson),
+                userFacingDescription: call.userFacingDescription,
+              ),
+            ),
           ),
-        );
-        if (disposition == ServerToolDisposition.awaitingApproval) {
-          awaitingApproval = true;
-        } else if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(call.stableId);
-        }
-      }
+        ),
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.call.stableId,
+      ];
+      final awaitingApproval = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         return ConversationEngineResult(
           content: '',
@@ -594,6 +681,21 @@ final class const ServerConversationEngineHost({
       if (iteration >= 20) {
         throw const ConversationEngineConfigurationException('tool_loop_limit');
       }
+      final toolSampling = evaluateCloudToolSampling(
+        codec,
+        tools,
+        policy: config.toolSamplingPolicy,
+        modelSupportsStrict: config.modelSupportsStrictToolSampling,
+      );
+      if (debugA2ui) {
+        for (final decision in toolSampling.decisions) {
+          if (decision.policy == ToolSamplingPolicy.off) continue;
+          session.log(
+            'Tool sampling: ${jsonEncode(decision.toDiagnostic())}',
+          );
+        }
+      }
+      toolSampling.requireStrict();
       providerResponse = await admissionGate
           .run(
             session,
@@ -612,8 +714,7 @@ final class const ServerConversationEngineHost({
               {
                 'model': config.modelId,
                 'messages': requestMessages,
-                if (tools.isNotEmpty)
-                  'tools': tools.map(_providerTool).toList(growable: false),
+                if (tools.isNotEmpty) 'tools': toolSampling.definitions,
                 'stream': true,
                 'stream_options': {'include_usage': true},
               },
@@ -726,20 +827,27 @@ final class const ServerConversationEngineHost({
         requests: describedRequests,
       );
 
-      var paused = false;
-      final awaitingSubAgentToolCallIds = <String>[];
-      for (final request in describedRequests) {
-        final disposition = await runtime.handle(
-          session,
-          turn: turn,
-          messageId: turn.assistantMessageId!,
-          request: request,
-        );
-        paused |= disposition == ServerToolDisposition.awaitingApproval;
-        if (disposition == ServerToolDisposition.awaitingSubAgents) {
-          awaitingSubAgentToolCallIds.add(request.id);
-        }
-      }
+      final dispositions = await Future.wait(
+        describedRequests.map(
+          (request) async => (
+            request: request,
+            disposition: await runtime.handle(
+              session,
+              turn: turn,
+              messageId: turn.assistantMessageId!,
+              request: request,
+            ),
+          ),
+        ),
+      );
+      final paused = dispositions.any(
+        (entry) => entry.disposition == ServerToolDisposition.awaitingApproval,
+      );
+      final awaitingSubAgentToolCallIds = [
+        for (final entry in dispositions)
+          if (entry.disposition == ServerToolDisposition.awaitingSubAgents)
+            entry.request.id,
+      ];
       if (awaitingSubAgentToolCallIds.isNotEmpty) {
         await response.close();
         return ConversationEngineResult(
@@ -783,7 +891,7 @@ final class const ServerConversationEngineHost({
         toolResults.add({
           'role': 'tool',
           'tool_call_id': request.id,
-          'content': call.resultJson ?? call.status,
+          'content': _toolResultForContext(call),
         });
       }
       toolExchanges
@@ -835,9 +943,26 @@ final class const ServerConversationEngineHost({
     required String conversationStableId,
     required Set<String> a2uiSupportedComponents,
   }) async {
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.stableId.equals(conversationStableId),
+    );
+    final activeCheckpointTranscriptId =
+        conversationPromptCheckpointTranscriptId(
+          messages: messages,
+          activeCheckpointStableId: conversation?.activeCompactionCheckpointId,
+        );
+    final selectedMessageIds = selectAgentPromptHistory(
+      AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+      activeCompactionCheckpointId: activeCheckpointTranscriptId,
+    ).messageIds.toSet();
     final result = <Map<String, dynamic>>[];
     for (final message in messages.where(
-      (message) => message.status != 'queued',
+      (message) =>
+          message.status != 'queued' &&
+          selectedMessageIds.contains('${message.id}'),
     )) {
       final metadata = message.metadataJson == null
           ? const <String, dynamic>{}
@@ -904,7 +1029,14 @@ final class const ServerConversationEngineHost({
       conversationStableId: conversationStableId,
       a2uiSupportedComponents: a2uiSupportedComponents,
     );
-    baseMessages.insertAll(0, await _agentContextMessages(session, job));
+    baseMessages.insertAll(
+      0,
+      await _agentContextMessages(
+        session,
+        job,
+        a2uiSupportedComponents: a2uiSupportedComponents,
+      ),
+    );
     return cloudRequestMessagesWithToolExchanges(
       baseMessages: baseMessages,
       toolExchanges: toolExchanges,
@@ -913,8 +1045,9 @@ final class const ServerConversationEngineHost({
 
   Future<List<Map<String, dynamic>>> _agentContextMessages(
     Session session,
-    ConversationJob job,
-  ) async {
+    ConversationJob job, {
+    Set<String>? a2uiSupportedComponents,
+  }) async {
     final conversation = await Conversation.db.findById(
       session,
       job.conversationId,
@@ -945,6 +1078,7 @@ final class const ServerConversationEngineHost({
       workspaceId: job.workspaceId,
       activeSkillIds: {...conversationSkillIds, ...agentContext.skillIds},
       isChildConversation: conversation.parentConversationStableId != null,
+      a2uiSupportedComponents: a2uiSupportedComponents,
     );
     final messages = [
       {'role': 'system', 'content': toolCallNarrationInstruction},
@@ -959,16 +1093,6 @@ final class const ServerConversationEngineHost({
         ),
       ),
     ];
-    final a2uiComponents = cloudA2uiSupportedComponents(
-      job.payloadJson,
-      isChildConversation: conversation.parentConversationStableId != null,
-    );
-    if (a2uiComponents.isNotEmpty) {
-      messages.insert(0, {
-        'role': 'system',
-        'content': A2uiChatContract.systemPromptForComponents(a2uiComponents),
-      });
-    }
     return messages;
   }
 
@@ -1163,7 +1287,27 @@ final class const ServerConversationEngineHost({
     required List<ConversationMessage> messages,
     Future<void>? leaseLost,
   }) async {
-    final range = selectConversationCompactionRange(messages);
+    final config = await _loadConfig(session, job, messages);
+    final toolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.messageId.inSet(
+            messages.map((message) => message.id).whereType<int>().toSet(),
+          ),
+    );
+    final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
+    for (final toolCall in toolCalls) {
+      (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
+    }
+    final range = selectConversationCompactionRange(
+      messages,
+      toolCallsByMessageId: toolCallsByMessageId,
+      limitContext: config.limitContext,
+      limitOutput: config.limitOutput,
+      reserveTokens: config.reserveTokens,
+      keepRecentTokens: config.keepRecentTokens,
+    );
     if (range is! AgentCompactionRangeSelected) {
       throw const ConversationEngineConfigurationException(
         'compaction_range',
@@ -1173,7 +1317,6 @@ final class const ServerConversationEngineHost({
     final compactable = messages
         .where((message) => compactableIds.contains('${message.id}'))
         .toList();
-    final config = await _loadConfig(session, job, messages);
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       customize: (modelName, _) => (model: modelName, extraBody: const {}),
@@ -1214,6 +1357,8 @@ final class const ServerConversationEngineHost({
         await _durableSkillActivations(session, job.workspaceId, range),
       ),
       range: range,
+      providerId: config.providerId,
+      modelId: config.modelId,
     );
   }
 
@@ -1248,11 +1393,19 @@ final class const ServerConversationEngineHost({
     List<ConversationMessage> messages,
   ) async {
     final payload = job.payloadJson;
-    final actorUserId = payload == null
-        ? null
-        : _jsonObject(payload)['actorUserId'];
+    final payloadObject = payload == null
+        ? const <String, dynamic>{}
+        : _jsonObject(payload);
+    final actorUserId = payloadObject['actorUserId'];
     if (actorUserId is! String) {
       throw const ConversationEngineConfigurationException('initiator');
+    }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
+    )) {
+      throw const ConversationCancelledException();
     }
     final metadata = messages.reversed
         .where((message) => message.role == 'user')
@@ -1264,6 +1417,13 @@ final class const ServerConversationEngineHost({
     if (selectionId is! String || selectionId.isEmpty) {
       throw const ConversationEngineConfigurationException('model_selection');
     }
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
     final selection = await const VirtualWorkspaceModelSelectionResolver()
         .resolve(
           session,
@@ -1273,6 +1433,24 @@ final class const ServerConversationEngineHost({
     if (selection == null) {
       throw const ConversationEngineConfigurationException('model');
     }
+    final reasoningOptions = _reasoningOptions(
+      selection.model.reasoningOptionsJson,
+      selection.model.supportsReasoning,
+    );
+    final persistedReasoning = payloadObject['reasoningConfigJson'];
+    final reasoningJson = payloadObject.containsKey('reasoningConfigJson')
+        ? persistedReasoning is String
+              ? persistedReasoning
+              : null
+        : conversation.reasoningConfigJson;
+    final configuredReasoning = ReasoningConfiguration.decode(
+      reasoningJson,
+    );
+    final reasoningConfiguration =
+        configuredReasoning != null &&
+            configuredReasoning.isValidFor(reasoningOptions)
+        ? configuredReasoning
+        : null;
     final connection = selection.connection;
     final validated = await validatePublicHttpsUri(
       connection.url ?? defaultProviderUrl(connection.providerId),
@@ -1289,14 +1467,64 @@ final class const ServerConversationEngineHost({
     if (secret == null) {
       throw const ConversationEngineConfigurationException('provider_secret');
     }
+    if (!await hasActiveConversationAccess(
+      session,
+      workspaceId: job.workspaceId,
+      userId: actorUserId,
+    )) {
+      throw const ConversationCancelledException();
+    }
     final uri = providerRequestUri(connection.providerId, validated.uri);
+    final compactionResource = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.compactionSetting) &
+          table.resourceId.equals('workspace') &
+          table.deletedAt.equals(null),
+    );
+    Map<String, dynamic> compactionSettings = const {};
+    if (compactionResource != null) {
+      try {
+        final decoded = jsonDecode(compactionResource.data);
+        if (decoded is Map<String, dynamic>) compactionSettings = decoded;
+      } on FormatException {
+        // Invalid optional budgets preserve legacy compaction selection.
+      }
+    }
+    final overrides = compactionSettings['modelOverrides'];
+    final modelOverride = overrides is Map
+        ? overrides['${connection.providerId}/${selection.model.modelId}']
+        : null;
+    final override = modelOverride is Map ? modelOverride : const {};
+    int? nonNegativeInt(String key) {
+      final value = override[key];
+      return value is int && value >= 0 ? value : null;
+    }
+
     session.log(
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
+    final providerSupportsStrict =
+        connection.providerId == 'openai' && connection.url == null;
+    final modelSupportsStrict =
+        providerSupportsStrict &&
+        selection.model.supportsToolCalls &&
+        verifiedStrictToolSampling(
+          connection.providerId,
+          selection.model.modelId,
+        );
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
+      providerSupportsStrictToolSampling: providerSupportsStrict,
+      modelSupportsStrictToolSampling: modelSupportsStrict,
+      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
+          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+          : modelSupportsStrict
+          ? ToolSamplingPolicy.prefer
+          : ToolSamplingPolicy.off,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(
@@ -1306,6 +1534,11 @@ final class const ServerConversationEngineHost({
           await const WorkspaceSecretCipher().decrypt(session, secret),
         ),
       ),
+      reasoningConfiguration: reasoningConfiguration,
+      limitContext: selection.model.limitContext,
+      limitOutput: selection.model.limitOutput,
+      reserveTokens: nonNegativeInt('reserveTokens'),
+      keepRecentTokens: nonNegativeInt('keepRecentTokens'),
     );
   }
 
@@ -1369,14 +1602,23 @@ String _activationSkillKey(ConversationToolCall call) {
   return call.stableId;
 }
 
-Map<String, Object?> _providerTool(ServerResolvedTool tool) => {
-  'type': 'function',
-  'function': {
-    'name': tool.spec.name,
-    'description': tool.spec.description,
-    'parameters': tool.spec.inputJsonSchema,
-  },
-};
+ToolSamplingResult evaluateCloudToolSampling(
+  ChatCompletionsCodec codec,
+  Iterable<ServerResolvedTool> tools, {
+  required ToolSamplingPolicy policy,
+  required bool modelSupportsStrict,
+}) => codec.evaluateTools(
+  tools: [
+    for (final tool in tools)
+      ToolDefinition(
+        name: tool.spec.name,
+        description: tool.spec.description,
+        inputSchema: tool.spec.inputJsonSchema,
+      ),
+  ],
+  policy: policy,
+  modelSupportsStrict: modelSupportsStrict,
+);
 
 Uri providerRequestUri(String providerId, Uri baseUri) {
   final endpoint = switch (providerId) {
@@ -1476,12 +1718,43 @@ Future<void> _waitForCancellation(Session session, int turnId) async {
 }
 
 AgentCompactionRangeSelection selectConversationCompactionRange(
-  List<ConversationMessage> messages,
-) => selectAgentCompactionRange(
-  AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+  List<ConversationMessage> messages, {
+  Map<int, List<ConversationToolCall>> toolCallsByMessageId = const {},
+  int? limitContext,
+  int? limitOutput,
+  int? reserveTokens,
+  int? keepRecentTokens,
+}) => selectAgentCompactionRange(
+  AgentContextSnapshot(
+    messages
+        .map(
+          (message) => _messageSnapshot(
+            message,
+            toolCalls: toolCallsByMessageId[message.id] ?? const [],
+          ),
+        )
+        .toList(),
+  ),
+  limitContext: limitContext,
+  limitOutput: limitOutput,
+  reserveTokens: reserveTokens,
+  keepRecentTokens: keepRecentTokens,
 );
+String? conversationPromptCheckpointTranscriptId({
+  required Iterable<ConversationMessage> messages,
+  required String? activeCheckpointStableId,
+}) {
+  if (activeCheckpointStableId == null) return null;
+  for (final message in messages) {
+    if (message.stableId == activeCheckpointStableId) return '${message.id}';
+  }
+  return null;
+}
 
-AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
+AgentTranscriptMessageSnapshot _messageSnapshot(
+  ConversationMessage message, {
+  List<ConversationToolCall> toolCalls = const [],
+}) {
   final metadata = switch (message.metadataJson) {
     final String source => _jsonObject(source),
     null => const <String, dynamic>{},
@@ -1503,7 +1776,27 @@ AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
       _ => AgentTranscriptStatus.error,
     },
     textCharacterCount: message.content.length,
-    toolCalls: const [],
+    toolCalls: [
+      for (final call in toolCalls)
+        AgentTranscriptToolCallSnapshot(
+          id: call.stableId,
+          lifecycle: switch (call.status) {
+            'pending' ||
+            'running' ||
+            'needsConfirmation' ||
+            'approved' ||
+            'granted' ||
+            'awaitingSubAgents' => AgentToolCallLifecycle.pending,
+            'success' => AgentToolCallLifecycle.success,
+            'skippedByUser' => AgentToolCallLifecycle.skippedByUser,
+            'stoppedByUser' ||
+            'cancelled' => AgentToolCallLifecycle.stoppedByUser,
+            _ => AgentToolCallLifecycle.failed,
+          },
+          argumentCharacterCount: call.argumentsJson.length,
+          resultCharacterCount: call.resultJson?.length ?? 0,
+        ),
+    ],
     latestCumulativeTokenCount: null,
     isCompactionSummary: metadata['isCompactionSummary'] == true,
     compactedThroughMessageId: switch (message.compactedThroughMessageId) {
@@ -1531,7 +1824,95 @@ Map<String, dynamic> _jsonObject(String source) {
 class const _ProviderConfig({
   required final String providerId,
   required final String modelId,
+  required final bool providerSupportsStrictToolSampling,
+  required final bool modelSupportsStrictToolSampling,
+  required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,
   required final Map<String, String> headers,
+  final ReasoningConfiguration? reasoningConfiguration,
+  final int? limitContext,
+  final int? limitOutput,
+  final int? reserveTokens,
+  final int? keepRecentTokens,
 });
+
+List<ReasoningOption> _reasoningOptions(
+  String? value,
+  bool supportsReasoning,
+) {
+  if (value == null) {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+
+  try {
+    final decoded = jsonDecode(value);
+    if (decoded is! List) {
+      return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+    }
+    final options = [
+      for (final item in decoded) ?ReasoningOption.fromJson(item),
+    ];
+    return options.isEmpty && supportsReasoning
+        ? const [ReasoningOption.toggle()]
+        : options;
+  } on FormatException {
+    return supportsReasoning ? const [ReasoningOption.toggle()] : const [];
+  }
+}
+
+Map<String, dynamic> reasoningRequestBody(
+  String providerId,
+  ReasoningConfiguration? configuration,
+) {
+  if (configuration == null) return const {};
+
+  if (providerId == 'openrouter') {
+    if (configuration.enabled == false) {
+      return const {
+        'reasoning': {'enabled': false},
+      };
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return const {};
+    }
+
+    return {
+      'reasoning': {
+        'effort': ?configuration.effort,
+        'max_tokens': ?configuration.budgetTokens,
+      },
+    };
+  }
+
+  if (providerId == 'anthropic') {
+    if (configuration.enabled == false) {
+      return const {
+        'thinking': {'type': 'disabled'},
+      };
+    }
+    if (configuration.effort == null && configuration.budgetTokens == null) {
+      return const {};
+    }
+
+    return {
+      'thinking': configuration.budgetTokens == null
+          ? null
+          : {
+              'type': 'enabled',
+              'budget_tokens': configuration.budgetTokens,
+            },
+      'output_config': configuration.effort == null
+          ? null
+          : {'effort': configuration.effort},
+    }..removeWhere((key, value) => value == null);
+  }
+
+  if (providerId == 'openai' || providerId == 'openai-codex') {
+    return OpenAICompatReasoningOptions(
+      reasoningEffort: configuration.effort,
+    ).toReasoningBody(enabled: configuration.enabled != false);
+  }
+
+  return const {};
+}

@@ -97,15 +97,19 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   ///
   /// This disconnects from the MCP server and deletes it, cascading to its
   /// tools group and tools.
-  Future<void> deleteMcpGroup(String groupId) async {
+  Future<bool> deleteMcpGroup(String groupId, {bool invalidate = true}) async {
     final operation = await _groupOperation(groupId);
-    if (operation == null) return;
+    if (operation == null) return false;
     final didDelete = await _deleteMcpGroup(operation);
-    if (!didDelete) return;
+    if (!didDelete) return false;
 
-    ref
-      ..invalidateSelf()
-      ..invalidate(workspaceToolsProvider(_workspaceId));
+    if (invalidate) {
+      ref
+        ..invalidateSelf()
+        ..invalidate(workspaceToolsProvider(_workspaceId));
+    }
+
+    return true;
   }
 
   /// Reconnect to an MCP server.
@@ -123,6 +127,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     final failedMcpServerIds = <String>[];
 
     for (final mcpServerId in mcpServerIds) {
+      if (!_isEnabledMcpServer(state.value ?? const [], mcpServerId)) continue;
       final didReconnectFail = await _didMcpReconnectFail(mcpServerId);
       if (didReconnectFail == null) return failedMcpServerIds;
       if (didReconnectFail) {
@@ -306,7 +311,8 @@ List<String> _failedMcpServerIds(List<ToolsGroupWithTools> groups) {
   final mcpServerIds = <String>{};
   for (final group in groups) {
     final mcpServerId = group.mcpServerId;
-    if (group.isMcpGroup &&
+    if (group.isEnabled &&
+        group.isMcpGroup &&
         group.needsAttention &&
         mcpServerId != null &&
         mcpServerId.isNotEmpty) {
@@ -316,6 +322,11 @@ List<String> _failedMcpServerIds(List<ToolsGroupWithTools> groups) {
 
   return mcpServerIds.toList();
 }
+
+bool _isEnabledMcpServer(
+  List<ToolsGroupWithTools> groups,
+  String mcpServerId,
+) => groups.any((group) => group.isEnabled && group.mcpServerId == mcpServerId);
 
 bool _mcpReconnectFailed(
   List<McpConnectionState> connections,

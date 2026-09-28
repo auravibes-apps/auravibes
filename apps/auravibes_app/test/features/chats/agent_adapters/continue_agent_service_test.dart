@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuati
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -50,6 +52,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -104,6 +107,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -139,6 +143,11 @@ void main() {
           .thenAnswer((_) async => _conversation);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => messageRepository.getTranscriptMessagesByConversation(
+          'conversation-1',
+        ),
+      ).thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages('conversation-1'))
           .thenAnswer((_) async => []);
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
@@ -163,6 +172,7 @@ void main() {
     test('disables tools for unsupported non-Codex models', () {
       final adapter = _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -250,6 +260,7 @@ void main() {
           messageRepository: messageRepository,
           agentContinuationProvider: _appAgentContinuationAdapter(
             conversationRepository: conversationRepository,
+            messageRepository: messageRepository,
             workspaceModelSelectionsRepository:
                 workspaceModelSelectionsRepository,
             apiModelRepository: apiModelRepository,
@@ -320,22 +331,37 @@ void main() {
     test(
       'keeps fixed skill tools while refreshed context adds manifest',
       () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final skillContext = container.read(
+          conversationSkillContextRuntimeProvider.notifier,
+        );
         final tools = buildSkillCommandToolSpecs();
         final contexts = _QueuedBuildSkillContextMessagesService([
           const [],
           const [
+            ChatMessage(
+              role: .system,
+              content: '<skill_catalog />',
+              metadata: {
+                'kind': skillCatalogMetadataKind,
+                skillCatalogSelectedRevisionsMetadataKey: {'research': 'r1'},
+              },
+            ),
             ChatMessage(
               role: .user,
               content: '<skill><name>Research</name><skill_tools>{&quot;tools&quot;:[]}</skill_tools></skill>',
               metadata: {'kind': skillContextMetadataKind},
             ),
           ],
+          const [],
         ]);
         usecase = ContinueAgentService(
           chatbotService: chatbotService,
           messageRepository: messageRepository,
           agentContinuationProvider: _appAgentContinuationAdapter(
             conversationRepository: conversationRepository,
+            messageRepository: messageRepository,
             workspaceModelSelectionsRepository:
                 workspaceModelSelectionsRepository,
             apiModelRepository: apiModelRepository,
@@ -360,6 +386,7 @@ void main() {
           ),
           agentCancellationRuntime: agentCancellationRuntime,
           monitoringService: monitoringService,
+          skillContextRuntime: skillContext,
         );
         when(
           () => loadConversationToolSpecsUsecase.call(
@@ -393,12 +420,40 @@ void main() {
         });
 
         final _ = await usecase.call(conversationId: 'conversation-1');
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.selectedRevisions,
+          isEmpty,
+        );
+        skillContext.markNeedsContext('conversation-1');
         final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(origin: .toolResume),
         );
 
         expect(sentTools, hasLength(2));
+        expect(contexts.calls, 2);
+        expect(
+          sentMessages.last.first.metadata['kind'],
+          skillCatalogMetadataKind,
+        );
+        expect(
+          container.read(conversationSkillContextRuntimeProvider.notifier),
+          same(skillContext),
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.phase,
+          ConversationSkillContextPhase.ready,
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.selectedRevisions['research'],
+          'r1',
+        );
         final firstTools = sentTools.firstOrNull;
         final lastTools = sentTools.lastOrNull;
         expect(firstTools, isNotNull);
@@ -411,6 +466,22 @@ void main() {
         expect(
           sentMessages.last.map((message) => message.text).join(),
           contains('<skill_tools>'),
+        );
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenThrow(StateError('tool catalog unavailable'));
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsStateError,
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.phase,
+          ConversationSkillContextPhase.error,
         );
       },
     );
@@ -718,13 +789,7 @@ void main() {
 
       await expectLater(
         usecase.call(conversationId: 'conversation-1'),
-        throwsA(
-          isA<Exception>().having(
-            (error) => error.toString(),
-            'message',
-            contains('Selected Codex model is not supported'),
-          ),
-        ),
+        throwsA(isA<SelectedModelNotFoundException>()),
       );
       final _ = verifyNever(
         () => chatbotService.sendMessage(
@@ -1074,6 +1139,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -1123,6 +1189,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -1157,6 +1224,11 @@ void main() {
 
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => messageRepository.getTranscriptMessagesByConversation(
+          'conversation-1',
+        ),
+      ).thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages(any()))
           .thenAnswer((_) async => []);
     });
@@ -1532,6 +1604,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -1581,6 +1654,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -1633,6 +1707,8 @@ void main() {
       when(() => messageRepository.patchMessage(any(), any()))
           .thenAnswer((_) async => _unfinishedAssistantMessage);
       when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.getTranscriptMessagesByConversation(any()))
           .thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages(any()))
           .thenAnswer((_) async => []);
@@ -1712,6 +1788,7 @@ const _skillContextXml =
 
 AppAgentContinuationAdapter _appAgentContinuationAdapter({
   required MockConversationRepository conversationRepository,
+  required MockMessageRepository messageRepository,
   required MockWorkspaceModelSelectionRepository
   workspaceModelSelectionsRepository,
   required MockApiModelRepository apiModelRepository,
@@ -1722,10 +1799,15 @@ AppAgentContinuationAdapter _appAgentContinuationAdapter({
 }) {
   return AppAgentContinuationAdapter(
     conversationRepository: conversationRepository,
+    messageRepository: messageRepository,
     modelSelectionStore: (_) async => workspaceModelSelectionsRepository,
     apiModelRepository: apiModelRepository,
     selectPromptMessagesUsecase: selectPromptMessagesUsecase,
     buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,
+    loadApprovalStates: ({
+      required conversationId,
+      required workspaceId,
+    }) async => const {},
     loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
   );
 }

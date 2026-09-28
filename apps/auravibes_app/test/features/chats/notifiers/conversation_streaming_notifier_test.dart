@@ -1,5 +1,7 @@
 // ignore_for_file: cascade_invocations
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -86,6 +88,17 @@ void main() {
         ..start('conv-1');
 
       expect(container.read(conversationStreamingProvider), {'conv-1'});
+    });
+
+    test('start rejects a conversation during checkpoint restore', () {
+      final gate = container.read(conversationActivityGateProvider);
+      expect(gate.tryBeginCheckpointRestore('conv-1'), isTrue);
+      final notifier = container.read(conversationStreamingProvider.notifier);
+
+      expect(
+        () => notifier.start('conv-1'),
+        throwsA(isA<CompactionCheckpointRestoreException>()),
+      );
     });
   });
 }

@@ -538,7 +538,7 @@ class const _ServiceConnectionCreateAppBar()
       title: const TextLocale(LocaleKeys.service_connections_create_title),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => Navigator.of(context).maybePop(),
       ),
     );
   }

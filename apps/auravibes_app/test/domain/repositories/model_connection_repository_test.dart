@@ -2,12 +2,21 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
+import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubModelConnectionRepository implements ModelConnectionRepository {
   List<ModelConnectionEntity> connections = [];
   List<ModelConnectionEntity> created = [];
   List<String> deleted = [];
+
+  @override
+  Future<ModelProviderVerification> verifyModelConnection(
+    ModelProviderVerificationRequest request,
+  ) async => ModelProviderVerification.fromRequest(
+    request: request,
+    modelIds: const ['gpt-4o'],
+  );
 
   @override
   Future<List<ModelConnectionEntity>> getModelConnections(
@@ -30,8 +39,9 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
-    ModelConnectionToCreate modelConnection,
-  ) async {
+    ModelConnectionToCreate modelConnection, {
+    ModelProviderVerification? verification,
+  }) async {
     final entity = ModelConnectionEntity(
       id: 'mc-${created.length}',
       name: modelConnection.name,
@@ -70,8 +80,9 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
   @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
-    ModelConnectionToUpdate modelConnection,
-  ) async {
+    ModelConnectionToUpdate modelConnection, {
+    ModelProviderVerification? verification,
+  }) async {
     throw UnimplementedError();
   }
 

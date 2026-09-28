@@ -120,10 +120,18 @@ import 'features/conversations/models/remove_pending_conversation_message_reques
     as _iy526sio;
 import 'features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _infbxzxr;
+import 'features/conversations/models/restore_conversation_checkpoint_request.dart'
+    as _ia1pnkb0;
 import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
 import 'features/conversations/models/stop_conversation_request.dart'
     as _i4cgq7zt;
+import 'features/conversations/models/submit_tool_decision_batch_call.dart'
+    as _ir42bm8f;
+import 'features/conversations/models/submit_tool_decision_batch_request.dart'
+    as _itvwh93k;
+import 'features/conversations/models/submit_tool_decision_batch_result.dart'
+    as _iab6jpet;
 import 'features/conversations/models/submit_tool_decision_request.dart'
     as _inla43mu;
 import 'features/conversations/models/turn_snapshot.dart' as _ih4jnnah;
@@ -168,6 +176,10 @@ import 'features/model_connections/models/test_and_sync_model_connection_request
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
     as _iw5yf4pd;
+import 'features/model_connections/models/verify_model_connection_request.dart'
+    as _ic2lxbsg;
+import 'features/model_connections/models/verify_model_connection_result.dart'
+    as _ibj3h7po;
 import 'features/model_connections/models/workspace_model_connection.dart'
     as _ihf3aqrg;
 import 'features/model_connections/models/workspace_model_selection_view.dart'
@@ -337,9 +349,13 @@ export 'features/conversations/models/provider_admission_reservation.dart';
 export 'features/conversations/models/queue_conversation_message_request.dart';
 export 'features/conversations/models/remove_pending_conversation_message_request.dart';
 export 'features/conversations/models/reorder_pending_conversation_message_request.dart';
+export 'features/conversations/models/restore_conversation_checkpoint_request.dart';
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
 export 'features/conversations/models/stop_conversation_request.dart';
+export 'features/conversations/models/submit_tool_decision_batch_call.dart';
+export 'features/conversations/models/submit_tool_decision_batch_request.dart';
+export 'features/conversations/models/submit_tool_decision_batch_result.dart';
 export 'features/conversations/models/submit_tool_decision_request.dart';
 export 'features/conversations/models/turn_snapshot.dart';
 export 'features/conversations/models/update_conversation_request.dart';
@@ -366,6 +382,8 @@ export 'features/model_connections/models/recent_model_selection.dart';
 export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
+export 'features/model_connections/models/verify_model_connection_request.dart';
+export 'features/model_connections/models/verify_model_connection_result.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
 export 'features/model_connections/models/workspace_model_selection_view.dart';
 export 'features/objects/models/begin_upload_request.dart';
@@ -638,6 +656,9 @@ class Protocol extends _isc.SerializationManager {
       return _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(data)
           as T;
     }
+    if (t == _ia1pnkb0.RestoreConversationCheckpointRequest) {
+      return _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data) as T;
+    }
     if (t == _iocu6u94.StartTurnRequest) {
       return _iocu6u94.StartTurnRequest.fromJson(data) as T;
     }
@@ -646,6 +667,15 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _i4cgq7zt.StopConversationRequest) {
       return _i4cgq7zt.StopConversationRequest.fromJson(data) as T;
+    }
+    if (t == _ir42bm8f.SubmitToolDecisionBatchCall) {
+      return _ir42bm8f.SubmitToolDecisionBatchCall.fromJson(data) as T;
+    }
+    if (t == _itvwh93k.SubmitToolDecisionBatchRequest) {
+      return _itvwh93k.SubmitToolDecisionBatchRequest.fromJson(data) as T;
+    }
+    if (t == _iab6jpet.SubmitToolDecisionBatchResult) {
+      return _iab6jpet.SubmitToolDecisionBatchResult.fromJson(data) as T;
     }
     if (t == _inla43mu.SubmitToolDecisionRequest) {
       return _inla43mu.SubmitToolDecisionRequest.fromJson(data) as T;
@@ -724,6 +754,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _iw5yf4pd.UpdateModelConnectionRequest) {
       return _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _ic2lxbsg.VerifyModelConnectionRequest) {
+      return _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data) as T;
+    }
+    if (t == _ibj3h7po.VerifyModelConnectionResult) {
+      return _ibj3h7po.VerifyModelConnectionResult.fromJson(data) as T;
     }
     if (t == _ihf3aqrg.WorkspaceModelConnection) {
       return _ihf3aqrg.WorkspaceModelConnection.fromJson(data) as T;
@@ -1239,6 +1275,12 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_ia1pnkb0.RestoreConversationCheckpointRequest?>()) {
+      return (data != null
+              ? _ia1pnkb0.RestoreConversationCheckpointRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_iocu6u94.StartTurnRequest?>()) {
       return (data != null ? _iocu6u94.StartTurnRequest.fromJson(data) : null)
           as T;
@@ -1250,6 +1292,24 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_i4cgq7zt.StopConversationRequest?>()) {
       return (data != null
               ? _i4cgq7zt.StopConversationRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ir42bm8f.SubmitToolDecisionBatchCall?>()) {
+      return (data != null
+              ? _ir42bm8f.SubmitToolDecisionBatchCall.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_itvwh93k.SubmitToolDecisionBatchRequest?>()) {
+      return (data != null
+              ? _itvwh93k.SubmitToolDecisionBatchRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iab6jpet.SubmitToolDecisionBatchResult?>()) {
+      return (data != null
+              ? _iab6jpet.SubmitToolDecisionBatchResult.fromJson(data)
               : null)
           as T;
     }
@@ -1392,6 +1452,18 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_iw5yf4pd.UpdateModelConnectionRequest?>()) {
       return (data != null
               ? _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ic2lxbsg.VerifyModelConnectionRequest?>()) {
+      return (data != null
+              ? _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ibj3h7po.VerifyModelConnectionResult?>()) {
+      return (data != null
+              ? _ibj3h7po.VerifyModelConnectionResult.fromJson(data)
               : null)
           as T;
     }
@@ -1833,6 +1905,12 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_ir42bm8f.SubmitToolDecisionBatchCall>) {
+      return (data as List)
+              .map((e) => deserialize<_ir42bm8f.SubmitToolDecisionBatchCall>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_igzjg3pi.DiscoveredMcpTool>) {
       return (data as List)
               .map((e) => deserialize<_igzjg3pi.DiscoveredMcpTool>(e))
@@ -2022,9 +2100,16 @@ class Protocol extends _isc.SerializationManager {
         'RemovePendingConversationMessageRequest',
       _infbxzxr.ReorderPendingConversationMessageRequest =>
         'ReorderPendingConversationMessageRequest',
+      _ia1pnkb0.RestoreConversationCheckpointRequest =>
+        'RestoreConversationCheckpointRequest',
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
       _i4cgq7zt.StopConversationRequest => 'StopConversationRequest',
+      _ir42bm8f.SubmitToolDecisionBatchCall => 'SubmitToolDecisionBatchCall',
+      _itvwh93k.SubmitToolDecisionBatchRequest =>
+        'SubmitToolDecisionBatchRequest',
+      _iab6jpet.SubmitToolDecisionBatchResult =>
+        'SubmitToolDecisionBatchResult',
       _inla43mu.SubmitToolDecisionRequest => 'SubmitToolDecisionRequest',
       _ih4jnnah.TurnSnapshot => 'TurnSnapshot',
       _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
@@ -2056,6 +2141,8 @@ class Protocol extends _isc.SerializationManager {
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
+      _ic2lxbsg.VerifyModelConnectionRequest => 'VerifyModelConnectionRequest',
+      _ibj3h7po.VerifyModelConnectionResult => 'VerifyModelConnectionResult',
       _ihf3aqrg.WorkspaceModelConnection => 'WorkspaceModelConnection',
       _i2zocl9o.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
       _ii7xucwd.BeginUploadRequest => 'BeginUploadRequest',
@@ -2259,12 +2346,20 @@ class Protocol extends _isc.SerializationManager {
         return 'RemovePendingConversationMessageRequest';
       case _infbxzxr.ReorderPendingConversationMessageRequest():
         return 'ReorderPendingConversationMessageRequest';
+      case _ia1pnkb0.RestoreConversationCheckpointRequest():
+        return 'RestoreConversationCheckpointRequest';
       case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
       case _iw8le0j7.StartTurnResult():
         return 'StartTurnResult';
       case _i4cgq7zt.StopConversationRequest():
         return 'StopConversationRequest';
+      case _ir42bm8f.SubmitToolDecisionBatchCall():
+        return 'SubmitToolDecisionBatchCall';
+      case _itvwh93k.SubmitToolDecisionBatchRequest():
+        return 'SubmitToolDecisionBatchRequest';
+      case _iab6jpet.SubmitToolDecisionBatchResult():
+        return 'SubmitToolDecisionBatchResult';
       case _inla43mu.SubmitToolDecisionRequest():
         return 'SubmitToolDecisionRequest';
       case _ih4jnnah.TurnSnapshot():
@@ -2317,6 +2412,10 @@ class Protocol extends _isc.SerializationManager {
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
         return 'UpdateModelConnectionRequest';
+      case _ic2lxbsg.VerifyModelConnectionRequest():
+        return 'VerifyModelConnectionRequest';
+      case _ibj3h7po.VerifyModelConnectionResult():
+        return 'VerifyModelConnectionResult';
       case _ihf3aqrg.WorkspaceModelConnection():
         return 'WorkspaceModelConnection';
       case _i2zocl9o.WorkspaceModelSelectionView():
@@ -2656,6 +2755,11 @@ class Protocol extends _isc.SerializationManager {
         data['data'],
       );
     }
+    if (dataClassName == 'RestoreConversationCheckpointRequest') {
+      return deserialize<_ia1pnkb0.RestoreConversationCheckpointRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'StartTurnRequest') {
       return deserialize<_iocu6u94.StartTurnRequest>(data['data']);
     }
@@ -2664,6 +2768,17 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'StopConversationRequest') {
       return deserialize<_i4cgq7zt.StopConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchCall') {
+      return deserialize<_ir42bm8f.SubmitToolDecisionBatchCall>(data['data']);
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchRequest') {
+      return deserialize<_itvwh93k.SubmitToolDecisionBatchRequest>(
+        data['data'],
+      );
+    }
+    if (dataClassName == 'SubmitToolDecisionBatchResult') {
+      return deserialize<_iab6jpet.SubmitToolDecisionBatchResult>(data['data']);
     }
     if (dataClassName == 'SubmitToolDecisionRequest') {
       return deserialize<_inla43mu.SubmitToolDecisionRequest>(data['data']);
@@ -2752,6 +2867,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'UpdateModelConnectionRequest') {
       return deserialize<_iw5yf4pd.UpdateModelConnectionRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyModelConnectionRequest') {
+      return deserialize<_ic2lxbsg.VerifyModelConnectionRequest>(data['data']);
+    }
+    if (dataClassName == 'VerifyModelConnectionResult') {
+      return deserialize<_ibj3h7po.VerifyModelConnectionResult>(data['data']);
     }
     if (dataClassName == 'WorkspaceModelConnection') {
       return deserialize<_ihf3aqrg.WorkspaceModelConnection>(data['data']);

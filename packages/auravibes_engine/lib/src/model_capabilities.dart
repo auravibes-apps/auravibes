@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:auravibes_engine/src/reasoning_configuration.dart';
+
 final class ModelCapabilities {
   new({
     required this.id,
@@ -14,15 +16,19 @@ final class ModelCapabilities {
     this.costOutput,
     this.openWeights,
     this.supportsReasoning = false,
+    Iterable<ReasoningOption> reasoningOptions = const [],
     this.isCanonical = true,
     this.supportsPriorityMode = false,
     this.supportsToolCalls = false,
+    this.supportsStructuredOutput = false,
+    this.supportsStrictToolSampling = false,
   }) : inputModalities = UnmodifiableListView(
          inputModalities.map((value) => value.toLowerCase()),
        ),
        outputModalities = UnmodifiableListView(
          outputModalities.map((value) => value.toLowerCase()),
-       );
+       ),
+       reasoningOptions = UnmodifiableListView(reasoningOptions);
 
   factory fromJson(
     String providerId,
@@ -32,7 +38,10 @@ final class ModelCapabilities {
     final cost = _optionalMap(json, 'cost');
     final limit = _requiredMap(json, 'limit');
     final modalities = _requiredMap(json, 'modalities');
+    final reasoningOptions = _reasoningOptions(json['reasoning_options']);
+    final legacyReasoning = _optionalBool(json, 'reasoning') ?? false;
     final id = _requiredString(json, 'id');
+    final supportsToolCalls = _optionalBool(json, 'tool_call') ?? false;
 
     return ModelCapabilities(
       id: id,
@@ -46,12 +55,19 @@ final class ModelCapabilities {
       costCacheRead: _optionalNum(cost, 'cache_read')?.toDouble(),
       costOutput: _optionalNum(cost, 'output')?.toDouble(),
       openWeights: _optionalBool(json, 'open_weights'),
-      supportsReasoning: _optionalBool(json, 'reasoning') ?? false,
+      supportsReasoning: legacyReasoning || reasoningOptions.isNotEmpty,
+      reasoningOptions: legacyReasoning && reasoningOptions.isEmpty
+          ? const [ReasoningOption.toggle()]
+          : reasoningOptions,
       isCanonical:
           canonicalModelIds.isEmpty ||
           canonicalModelIds.contains('$providerId/$id'),
       supportsPriorityMode: _supportsPriorityMode(json),
-      supportsToolCalls: _optionalBool(json, 'tool_call') ?? false,
+      supportsToolCalls: supportsToolCalls,
+      supportsStructuredOutput:
+          _optionalBool(json, 'structured_output') ?? false,
+      supportsStrictToolSampling:
+          supportsToolCalls && verifiedStrictToolSampling(providerId, id),
     );
   }
 
@@ -67,9 +83,12 @@ final class ModelCapabilities {
   final double? costOutput;
   final bool? openWeights;
   final bool supportsReasoning;
+  final List<ReasoningOption> reasoningOptions;
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
+  final bool supportsStructuredOutput;
+  final bool supportsStrictToolSampling;
 
   bool get isTextGenerationModel =>
       isCanonical &&
@@ -82,6 +101,24 @@ final class ModelCapabilities {
       inputModalities.contains('text') &&
       outputModalities.contains('text') &&
       limitOutput > 0;
+}
+
+// OpenAI documents strict function calling for these model IDs. models.dev's
+// structured_output describes response formatting, not strict function tools.
+// https://developers.openai.com/api/docs/guides/function-calling
+bool verifiedStrictToolSampling(String providerId, String modelId) =>
+    providerId == 'openai' &&
+    const {
+      'gpt-4o',
+      'gpt-4o-2024-08-06',
+      'gpt-4o-mini',
+      'gpt-4o-mini-2024-07-18',
+    }.contains(modelId);
+
+List<ReasoningOption> _reasoningOptions(Object? value) {
+  if (value is! List) return const [];
+
+  return [for (final item in value) ?ReasoningOption.fromJson(item)];
 }
 
 bool _supportsPriorityMode(Map<String, dynamic> json) {

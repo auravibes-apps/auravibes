@@ -35,6 +35,9 @@ class Conversations extends Table with TableMixin {
   )();
   TextColumn get agentId =>
       text().nullable().references(Agents, #id, onDelete: .setNull)();
+
+  /// JSON-encoded conversation-scoped reasoning override.
+  TextColumn get reasoningConfigJson => text().nullable()();
   TextColumn get parentConversationId =>
       text().nullable().references(Conversations, #id, onDelete: .cascade)();
 
@@ -53,6 +56,8 @@ class Conversations extends Table with TableMixin {
 
   /// Non-null after the source history has been materialized into this fork.
   DateTimeColumn get forkMaterializedAt => dateTime().nullable()();
+
+  TextColumn get activeCompactionCheckpointId => text().nullable()();
 
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

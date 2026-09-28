@@ -242,6 +242,7 @@ ConversationEntity _cloudConversation(
   final mapped = _cloudConversationCore(conversation, localWorkspaceId);
 
   return mapped.copyWith(
+    activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
     forkSourceConversationId: conversation.forkSourceConversationId,
     forkSourceTitle: conversation.forkSourceTitle,
     forkThroughMessageId: conversation.forkThroughMessageId,
@@ -263,6 +264,7 @@ ConversationEntity _cloudConversationCore(
     revision: conversation.revision,
     modelId: conversation.modelId,
     agentId: conversation.agentId,
+    reasoningConfiguration: .decode(conversation.reasoningConfigJson),
     parentConversationId: conversation.parentConversationId,
   );
 }

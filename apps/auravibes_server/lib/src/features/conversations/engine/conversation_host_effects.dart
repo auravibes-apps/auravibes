@@ -39,12 +39,38 @@ abstract interface class ConversationCancellationProbe {
   Future<bool> isCancelled(Session session, int turnId);
 }
 
+Future<bool> hasActiveConversationAccess(
+  Session session, {
+  required int workspaceId,
+  required String userId,
+}) async {
+  final workspace = await CloudWorkspace.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.id.equals(workspaceId) & table.deletedAt.equals(null),
+  );
+  if (workspace == null) return false;
+  final member = await WorkspaceMember.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.userId.equals(userId) &
+        table.removedAt.equals(null),
+  );
+  return member != null;
+}
+
 class const DatabaseConversationCancellationProbe()
     implements ConversationCancellationProbe {
   @override
   Future<bool> isCancelled(Session session, int turnId) async {
     final turn = await ConversationTurn.db.findById(session, turnId);
-    return turn == null || turn.cancellationRequestedAt != null;
+    if (turn == null || turn.cancellationRequestedAt != null) return true;
+    return !await hasActiveConversationAccess(
+      session,
+      workspaceId: turn.workspaceId,
+      userId: turn.initiatorUserId,
+    );
   }
 }
 

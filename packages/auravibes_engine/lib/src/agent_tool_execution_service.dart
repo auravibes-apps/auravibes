@@ -1,4 +1,5 @@
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/agent_tool_batch_executor.dart';
 import 'package:auravibes_engine/src/tool_calls.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
@@ -19,6 +20,10 @@ class const AgentToolResultUpdate({
   required final String toolCallId,
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
+  final String? responseContextRaw,
+  final bool outputTruncated = false,
+  final int? originalResponseBytes,
+  final bool fullOutputForContext = false,
 });
 
 typedef AgentToolApprovalRequest<TTool extends Object> = ({
@@ -68,6 +73,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
 class const AgentToolExecutionService<TTool extends Object>({
   required final AgentToolExecutionProvider<TTool> provider,
+  final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -114,6 +120,16 @@ class const AgentToolExecutionService<TTool extends Object>({
         resolvedTool: toolToCall.tool,
         argumentsRaw: toolToCall.argumentsRaw,
       ));
+
+      if (provider.isCancellationRequested(conversationId)) {
+        updates.add(
+          AgentToolResultUpdate(
+            toolCallId: toolToCall.id,
+            resultStatus: .stoppedByUser,
+          ),
+        );
+        continue;
+      }
 
       switch (decision.permissionResult) {
         case .granted:
@@ -189,14 +205,32 @@ class const AgentToolExecutionService<TTool extends Object>({
         return next;
       }
 
-      await Future.wait(
-        grantedTools.map((tool) async {
-          final result = await _executeSafely(
+      await AgentToolBatchExecutor<TTool>(
+        runResolvedTool: provider.runResolvedTool,
+        isCancellationRequested: provider.isCancellationRequested,
+        logToolExecutionError: provider.logToolExecutionError,
+        outputPolicyForTool: outputPolicyForTool,
+      ).call(
+        grantedTools.map(
+          (tool) => AgentToolBatchCall(
             conversationId: conversationId,
-            toolToCall: tool,
-          );
-          await persistResult(result);
-        }),
+            messageId: latestToolCalls.messageId,
+            toolCallId: tool.id,
+            tool: tool.tool,
+            argumentsRaw: tool.argumentsRaw,
+          ),
+        ),
+        onResult: (batchResult) => persistResult(
+          AgentToolResultUpdate(
+            toolCallId: batchResult.call.toolCallId,
+            resultStatus: batchResult.result.resultStatus,
+            responseRaw: batchResult.result.responseRaw,
+            responseContextRaw: batchResult.result.responseContextRaw,
+            outputTruncated: batchResult.result.outputTruncated,
+            originalResponseBytes: batchResult.result.originalResponseBytes,
+            fullOutputForContext: batchResult.result.fullOutputForContext,
+          ),
+        ),
       );
     }
 
@@ -246,59 +280,5 @@ class const AgentToolExecutionService<TTool extends Object>({
         ),
       ),
     );
-  }
-
-  Future<AgentToolExecutionResult> _executeTool({
-    required String conversationId,
-    required AgentToolToCall<TTool> toolToCall,
-  }) {
-    return AgentToolExecutionDispatcher<TTool>(
-      runResolvedTool: provider.runResolvedTool,
-      isCancellationRequested: provider.isCancellationRequested,
-      logToolExecutionError: provider.logToolExecutionError,
-    ).call(
-      conversationId: conversationId,
-      toolCallId: toolToCall.id,
-      tool: toolToCall.tool,
-      argumentsRaw: toolToCall.argumentsRaw,
-    );
-  }
-
-  Future<AgentToolResultUpdate> _executeSafely({
-    required String conversationId,
-    required AgentToolToCall<TTool> toolToCall,
-  }) async {
-    try {
-      final result = await _executeTool(
-        conversationId: conversationId,
-        toolToCall: toolToCall,
-      );
-
-      return AgentToolResultUpdate(
-        toolCallId: toolToCall.id,
-        resultStatus: result.resultStatus,
-        responseRaw: result.responseRaw,
-      );
-    } on Object catch (error, stackTrace) {
-      _logExecutionError((
-        conversationId: conversationId,
-        toolCallId: toolToCall.id,
-        tool: toolToCall.tool,
-        error: error,
-        stackTrace: stackTrace,
-        failurePhase: null,
-      ));
-
-      return AgentToolResultUpdate(
-        toolCallId: toolToCall.id,
-        resultStatus: provider.isCancellationRequested(conversationId)
-            ? AgentToolResultStatus.stoppedByUser
-            : AgentToolResultStatus.executionError,
-      );
-    }
-  }
-
-  void _logExecutionError(AgentToolExecutionErrorRequest<TTool> request) {
-    provider.logToolExecutionError(request);
   }
 }

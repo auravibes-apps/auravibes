@@ -3,3 +3,4 @@ fields:
   name: String
   description: String?
   inputSchemaJson: String
+  outputSchemaJson: String?

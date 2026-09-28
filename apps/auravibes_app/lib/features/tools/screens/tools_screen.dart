@@ -249,7 +249,10 @@ class const _ReconnectFailedMcpsButtonContent({
         ref
             .watch(groupedToolsProvider(workspaceId))
             .value
-            ?.any((group) => group.isMcpGroup && group.needsAttention) ??
+            ?.any(
+              (group) =>
+                  group.isEnabled && group.isMcpGroup && group.needsAttention,
+            ) ??
         false;
 
     return _ReconnectFailedMcpsButtonView(

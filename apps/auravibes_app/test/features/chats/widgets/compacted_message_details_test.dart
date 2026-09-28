@@ -31,11 +31,17 @@ class const _Subject({required final MessageEntity message})
       child: Builder(
         builder: (context) {
           return MaterialApp(
-            home: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: Scaffold(
-                body: SingleChildScrollView(
-                  child: CompactedMessageDetails(message: message),
+            home: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: Scaffold(
+                  body: SingleChildScrollView(
+                    child: CompactedMessageDetails(
+                      message: message,
+                      workspaceId: 'ws-1',
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -72,7 +78,9 @@ void main() {
       metadata: metadata,
     );
 
-    await tester.pumpWidget(_Subject(message: message));
+    await tester.runAsync(() async {
+      await tester.pumpWidget(_Subject(message: message));
+    });
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Compaction summary content'), findsOneWidget);

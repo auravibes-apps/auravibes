@@ -75,6 +75,23 @@ void main() {
     expect(serverToolExecutionFailureCode(StateError('secret')), 'unexpected');
   });
 
+  test('recognizes every persisted skill kind for replay', () {
+    expect(
+      [
+        AgentResolvedToolKind.skillTemplate,
+        AgentResolvedToolKind.skillNative,
+        AgentResolvedToolKind.skillAppTemplate,
+      ].every(serverToolIsReplayableSkillKind),
+      isTrue,
+    );
+    expect(serverToolIsReplayableSkillKind(AgentResolvedToolKind.mcp), isFalse);
+  });
+
+  test('does not infer an omitted cloud tool credentialId', () {
+    expect(cloudToolCredentialId(null), isNull);
+    expect(cloudToolCredentialId(' credential-1 '), 'credential-1');
+  });
+
   test('builds audited cloud skill selection patches', () {
     final activation = cloudSkillSelectionPatchRequest(
       workspaceId: 7,
@@ -161,6 +178,82 @@ void main() {
       defaultCloudToolPermission(controls.first.descriptor),
       AgentToolPermissionResult.needsConfirmation,
     );
+  });
+
+  test('offers content-only A2UI only to top-level conversations', () {
+    final controls = materializeCloudSkillControlTools(
+      selectedSkillIds: const {},
+      userSkills: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+    );
+    final slugs =
+        (((controls.single.spec.inputJsonSchema['properties'] as Map)['slug']
+                    as Map)['enum']
+                as List)
+            .cast<String>();
+
+    expect(slugs, contains(a2uiSkillSlug));
+    expect(
+      materializeCloudSkillControlTools(
+        selectedSkillIds: const {},
+        userSkills: const [],
+        appSkillSettings: const [],
+        isChildConversation: true,
+      ).single.spec.inputJsonSchema['properties'],
+      isNot(
+        containsPair(
+          'slug',
+          containsPair('enum', contains(a2uiSkillSlug)),
+        ),
+      ),
+    );
+
+    final optedOut = materializeCloudSkillControlTools(
+      selectedSkillIds: const {},
+      userSkills: const [],
+      appSkillSettings: const [],
+      isChildConversation: false,
+      a2uiSupportedComponents: const {},
+    );
+    expect(
+      optedOut.single.spec.inputJsonSchema['properties'],
+      isNot(
+        containsPair(
+          'slug',
+          containsPair('enum', contains(a2uiSkillSlug)),
+        ),
+      ),
+    );
+  });
+
+  test(
+    'content-only A2UI has no executable cloud tools or readiness inputs',
+    () {
+      expect(cloudServiceSkillReady(a2uiSkillDefinition, const []), isTrue);
+      expect(
+        materializeCloudSkillTools(
+          selectedSkillIds: const {a2uiSkillSlug},
+          userSkills: const [],
+          templateTools: const [],
+          appSkillSettings: const [],
+          isChildConversation: false,
+        ).where((tool) => tool.descriptor.skillSlug == a2uiSkillSlug),
+        isEmpty,
+      );
+    },
+  );
+
+  test('builds a content-only A2UI manifest without tools', () async {
+    final manifest = await buildCloudSkillManifest(
+      slug: a2uiSkillSlug,
+      userSkills: const [],
+      tools: const [],
+    );
+
+    expect(manifest, isNotNull);
+    expect(manifest!.title, a2uiSkillDefinition.title);
+    expect(manifest.tools, isEmpty);
   });
 
   test('materializes selected cloud skill tools only', () {

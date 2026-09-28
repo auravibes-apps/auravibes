@@ -299,6 +299,7 @@ ToolSpec _spec(
       const {
         'type': 'object',
         'properties': <String, Object?>{},
+        'required': <String>[],
         'additionalProperties': false,
       },
 );

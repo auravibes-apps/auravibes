@@ -34,6 +34,37 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
+  test('non-Dart runtime input returns full', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          'apps/server/migrations/20260713134310558-final/migration.sql',
+        ),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {'server': 'apps/server'},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('non-Dart runtime input returns full beside package Dart', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified(
+          'apps/server/migrations/20260713134310558-final/migration.sql',
+        ),
+        const ChangedFile.modified('packages/core/lib/leaf.dart'),
+      ],
+      headSources: _sources,
+      baseSources: _sources,
+      packageRoots: {..._roots, 'server': 'apps/server'},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
   test('non-scoped changes do not force full beside package Dart', () {
     final result = selectChangedTests(
       changes: [
@@ -761,6 +792,53 @@ void main() {
     expect(launches, 0);
   });
 
+  test('runner reports process launch failures with command context', () async {
+    final root = await _runnerFixture(flutter: true);
+    addTearDown(() => root.delete(recursive: true));
+    final selection = SelectionResult(
+      mode: .affected,
+      packages: {
+        'packages/core': ['test/behavior_test.dart'],
+      },
+      reason: 'test',
+    );
+    final diagnostics = <String>[];
+    var capturedExecutable = '';
+    var capturedArguments = <String>[];
+    var capturedWorkingDirectory = '';
+    final code = await runSelectedTests(
+      selection,
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedExecutable = executable;
+            capturedArguments = arguments;
+            capturedWorkingDirectory = workingDirectory;
+            throw StateError('process launch failed');
+          },
+      onDiagnostic: diagnostics.add,
+    );
+
+    final diagnostic = diagnostics.join('\n');
+    expect(code, isNot(0));
+    expect(capturedExecutable, isNotEmpty);
+    expect(capturedArguments, isNotEmpty);
+    expect(
+      capturedWorkingDirectory,
+      Directory('${root.path}/packages/core').path,
+    );
+    expect(diagnostic, contains('packageRoot=packages/core'));
+    expect(diagnostic, contains('workingDirectory=$capturedWorkingDirectory'));
+    expect(diagnostic, contains('executable=$capturedExecutable'));
+    expect(diagnostic, contains('arguments=${jsonEncode(capturedArguments)}'));
+    expect(diagnostic, contains('process launch failed'));
+    expect(diagnostic, contains('stackTrace:'));
+  });
+
   test('full runner excludes helper files from explicit test paths', () async {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));
@@ -817,10 +895,10 @@ void main() {
       capturedArguments,
       containsAllInOrder([
         'test',
-        '--exclude-tags=integration',
+        '--exclude-tags=integration,golden',
         '--concurrency=1',
         '--timeout=30s',
-        '--reporter=expanded',
+        '--reporter=compact',
       ]),
     );
   });

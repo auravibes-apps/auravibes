@@ -117,7 +117,7 @@ void main() {
       overrides: [
         cloudSkillStoreProvider(workspaceId).overrideWithValue(null),
         skillsRepositoryProvider.overrideWithValue(
-          const _FakeSkillsRepository(),
+          const _FakeSkillsRepository(skill: null),
         ),
         appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
           const _FakeAppSkillWorkspaceSettingsRepository(enabled: false),
@@ -148,6 +148,40 @@ void main() {
 
     final detail = await container.read(
       skillDetailProvider(workspaceId, 'unknown').future,
+    );
+
+    expect(detail, isNull);
+  });
+
+  test('returns null for a local skill from another workspace', () async {
+    final now = DateTime.utc(2026);
+    final container = ProviderContainer(
+      overrides: [
+        cloudSkillStoreProvider(workspaceId).overrideWithValue(null),
+        skillsRepositoryProvider.overrideWithValue(
+          _FakeSkillsRepository(
+            skill: .new(
+              id: 'foreign-skill',
+              workspaceId: 'workspace-2',
+              source: .user,
+              kind: .template,
+              title: 'Foreign skill',
+              slug: 'foreign-skill',
+              description: 'Another workspace skill.',
+              content: 'Do not expose these instructions.',
+              isEnabled: true,
+              isCredentialOptional: false,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final detail = await container.read(
+      skillDetailProvider(workspaceId, 'foreign-skill').future,
     );
 
     expect(detail, isNull);
@@ -200,9 +234,10 @@ WorkspaceResource _resource({
   );
 }
 
-class const _FakeSkillsRepository() implements SkillsRepository {
+class const _FakeSkillsRepository({required final SkillEntity? skill})
+    implements SkillsRepository {
   @override
-  Future<SkillEntity?> getSkillById(String skillId) async => null;
+  Future<SkillEntity?> getSkillById(String skillId) async => skill;
 
   @override
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) =>

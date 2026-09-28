@@ -5,7 +5,10 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatContract,
         a2uiChatFormSubmitActionName,
-        a2uiChatFormSubmitComponentId;
+        a2uiChatFormSubmitComponentId,
+        ReasoningConfiguration,
+        ReasoningOption,
+        projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -51,6 +54,19 @@ typedef _ForkCopies = ({
   Map<String, String> stableMessageIds,
 });
 
+class _BatchDecisionState {
+  _BatchDecisionState(this.jobs);
+
+  final List<ConversationJob> jobs;
+  final conversations = <String, Conversation>{};
+  final turns = <String, ConversationTurn>{};
+  final accepted = <String>[];
+  final alreadyHandled = <String>[];
+  final conflicted = <String>[];
+  final acceptedByTurn = <int, List<ConversationToolCall>>{};
+  final authorizedTurnIds = <int>{};
+}
+
 class ConversationUseCases {
   new(
     this._repository, {
@@ -73,6 +89,7 @@ class ConversationUseCases {
     'approved',
     'granted',
     'running',
+    'awaitingSubAgents',
   };
   static const _cancelledMessageMetadata = '{"errorCode":"cancelled"}';
   static const _subAgentCancelledMessage = 'Sub-agent cancelled.';
@@ -112,6 +129,13 @@ class ConversationUseCases {
         parentConversationId: request.parentConversationId,
         transaction: transaction,
       );
+      final reasoningConfigJson = await _validatedReasoningConfig(
+        session,
+        workspaceId: request.workspaceId,
+        modelId: request.modelId,
+        value: request.reasoningConfigJson,
+        transaction: transaction,
+      );
       if (request.isPinned) {
         await _ensurePinnedCapacity(
           session,
@@ -129,6 +153,7 @@ class ConversationUseCases {
             isPinned: request.isPinned,
             modelId: request.modelId,
             agentId: request.agentId,
+            reasoningConfigJson: reasoningConfigJson,
             parentConversationStableId: request.parentConversationId,
             revision: 1,
             projectionRevision: 1,
@@ -168,6 +193,11 @@ class ConversationUseCases {
         lock: true,
       );
       if (source == null) _fail(ConversationErrorCode.notFound);
+      await _ensureForkCapacity(
+        session,
+        workspaceId: request.workspaceId,
+        transaction: transaction,
+      );
       final existing = await _repository.findConversationByStableId(
         session,
         workspaceId: request.workspaceId,
@@ -203,6 +233,20 @@ class ConversationUseCases {
           )) {
         _fail(ConversationErrorCode.validationFailed);
       }
+      final boundaryIndex = sourceMessages.indexWhere(
+        (message) => message.stableId == boundary,
+      );
+      if (boundaryIndex >= ConversationLimits.maxForkHistoryMessages) {
+        _fail(ConversationErrorCode.validationFailed);
+      }
+      final activeCheckpointId = source.activeCompactionCheckpointId;
+      final inheritedCheckpointId =
+          activeCheckpointId != null &&
+              sourceMessages
+                  .take(boundaryIndex + 1)
+                  .any((message) => message.stableId == activeCheckpointId)
+          ? activeCheckpointId
+          : null;
       final title = await _copyConversationTitle(
         session,
         workspaceId: request.workspaceId,
@@ -219,9 +263,11 @@ class ConversationUseCases {
           isPinned: false,
           modelId: source.modelId,
           agentId: source.agentId,
+          reasoningConfigJson: source.reasoningConfigJson,
           forkSourceConversationId: source.stableId,
           forkSourceTitle: source.title,
           forkThroughMessageId: boundary,
+          activeCompactionCheckpointId: inheritedCheckpointId,
           revision: 1,
           projectionRevision: 1,
           eventSequence: 0,
@@ -423,6 +469,25 @@ class ConversationUseCases {
             : request.parentConversationId,
         transaction: transaction,
       );
+      final requestedReasoningConfigJson = request.clearReasoningConfig
+          ? null
+          : request.reasoningConfigJson ?? conversation.reasoningConfigJson;
+      final mustValidateReasoning =
+          requestedReasoningConfigJson != null &&
+          (request.reasoningConfigJson != null ||
+              request.modelId != null ||
+              request.clearModel);
+      final reasoningConfigJson = mustValidateReasoning
+          ? await _validatedReasoningConfig(
+              session,
+              workspaceId: request.workspaceId,
+              modelId: request.clearModel
+                  ? null
+                  : request.modelId ?? conversation.modelId,
+              value: requestedReasoningConfigJson,
+              transaction: transaction,
+            )
+          : requestedReasoningConfigJson;
       if (request.isPinned == true && !conversation.isPinned) {
         await _ensurePinnedCapacity(
           session,
@@ -441,6 +506,7 @@ class ConversationUseCases {
           agentId: request.clearAgent
               ? null
               : request.agentId ?? conversation.agentId,
+          reasoningConfigJson: reasoningConfigJson,
           parentConversationStableId: request.clearParent
               ? null
               : request.parentConversationId ??
@@ -999,6 +1065,7 @@ class ConversationUseCases {
         forkThroughMessageId: conversation.forkThroughMessageId,
         forkMaterializedAt: conversation.forkMaterializedAt,
         activeExecutionId: execution?.stableId,
+        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
         updatedAt: conversation.updatedAt,
       ),
       messages: messages,
@@ -1400,6 +1467,7 @@ class ConversationUseCases {
               settingsJson: jsonEncode({
                 'modelId': conversation.modelId,
                 'agentId': conversation.agentId,
+                'reasoningConfigJson': conversation.reasoningConfigJson,
                 'parentTurnId': ?parentTurnId,
                 'parentToolCallId': ?parentToolCallId,
               }),
@@ -1500,6 +1568,8 @@ class ConversationUseCases {
                 parentTurnId: parentTurnId,
                 parentToolCallId: parentToolCallId,
                 a2uiSupportedComponents: request.a2uiSupportedComponents,
+                reasoningConfigJson: conversation.reasoningConfigJson,
+                includeReasoningConfigSnapshot: true,
               ),
               attempt: 0,
               maxAttempts: 3,
@@ -1586,7 +1656,15 @@ class ConversationUseCases {
           transaction: transaction,
           lockMode: LockMode.forUpdate,
         );
-        if (turn != null && !ConversationStatuses.isTerminal(turn.status)) {
+        if (turn == null) _fail(ConversationErrorCode.notFound);
+        await _requireTurnMutationAuthorization(
+          session,
+          userId: userId,
+          workspaceId: request.workspaceId,
+          turn: turn,
+          transaction: transaction,
+        );
+        if (!ConversationStatuses.isTerminal(turn.status)) {
           await ConversationTurn.db.updateRow(
             session,
             turn.copyWith(
@@ -2033,6 +2111,13 @@ class ConversationUseCases {
                         .conversationParentToolCallIdForExecutionSettings(
                           execution.settingsJson,
                         ),
+              reasoningConfigJson: execution == null
+                  ? conversation.reasoningConfigJson
+                  : conversation_repo
+                        .conversationReasoningConfigForExecutionSettings(
+                          execution.settingsJson,
+                        ),
+              includeReasoningConfigSnapshot: true,
             ),
             now: now,
             transaction: transaction,
@@ -2056,6 +2141,387 @@ class ConversationUseCases {
     return result;
   }
 
+  Future<SubmitToolDecisionBatchResult> submitToolDecisionBatch(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+  }) async {
+    final jobs = <ConversationJob>[];
+    final result = await _mutate(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.submitToolDecisionBatch',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: SubmitToolDecisionBatchResult.fromJson,
+      run: (transaction, now) async {
+        _validateBatchDecisionRequest(request);
+        final state = _BatchDecisionState(jobs);
+        final calls = _deduplicateBatchDecisionCalls(request.calls);
+
+        for (final call in calls) {
+          await _processBatchDecisionCall(
+            session,
+            userId: userId,
+            request: request,
+            call: call,
+            now: now,
+            transaction: transaction,
+            state: state,
+          );
+        }
+
+        for (final entry in state.acceptedByTurn.entries) {
+          await _finalizeBatchDecisionTurn(
+            session,
+            userId: userId,
+            request: request,
+            now: now,
+            transaction: transaction,
+            state: state,
+            entry: entry,
+          );
+        }
+
+        return _Mutation(
+          SubmitToolDecisionBatchResult(
+            accepted: state.accepted,
+            alreadyHandled: state.alreadyHandled,
+            conflicted: state.conflicted,
+          ),
+          'toolDecisionBatchRecorded',
+          request.requestId,
+          affectedConversationIds: state.conversations.keys.toList(),
+        );
+      },
+    );
+    for (final job in jobs) {
+      await _publishConversationJob(session, job);
+    }
+
+    return result;
+  }
+
+  void _validateBatchDecisionRequest(SubmitToolDecisionBatchRequest request) {
+    _requireId(request.requestId);
+    if (request.decision != 'approve' && request.decision != 'deny') {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    if (request.calls.isEmpty) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+  }
+
+  List<SubmitToolDecisionBatchCall> _deduplicateBatchDecisionCalls(
+    List<SubmitToolDecisionBatchCall> requestedCalls,
+  ) {
+    final calls = <SubmitToolDecisionBatchCall>[];
+    final seenCallIds = <String>{};
+    for (final call in requestedCalls) {
+      if (seenCallIds.add(_batchCallIdentity(call))) calls.add(call);
+    }
+    calls.sort(
+      (left, right) => _batchCallSortKey(left).compareTo(
+        _batchCallSortKey(right),
+      ),
+    );
+    return calls;
+  }
+
+  Future<void> _processBatchDecisionCall(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required SubmitToolDecisionBatchCall call,
+    required DateTime now,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final identity = _batchCallIdentity(call);
+    final conversation = await _findBatchDecisionConversation(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: call.conversationId,
+      transaction: transaction,
+      state: state,
+    );
+    if (conversation == null) {
+      state.conflicted.add(identity);
+      return;
+    }
+
+    final turn = await _requireBatchDecisionTurn(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      turnId: call.turnId,
+      transaction: transaction,
+      state: state,
+    );
+    if (turn == null || turn.conversationId != conversation.id) {
+      state.conflicted.add(identity);
+      return;
+    }
+    if (state.authorizedTurnIds.add(turn.id!)) {
+      await _requireTurnForMutation(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        turnId: call.turnId,
+        transaction: transaction,
+      );
+    }
+
+    final toolCall = await _repository.findToolCallByStableId(
+      session,
+      workspaceId: request.workspaceId,
+      turnId: turn.id!,
+      toolCallId: call.toolCallId,
+      transaction: transaction,
+    );
+    if (toolCall == null || toolCall.argumentsDigest != call.argumentsDigest) {
+      state.conflicted.add(identity);
+      return;
+    }
+    if (toolCall.decision != null || toolCall.status != 'pending') {
+      _recordBatchHandledCall(
+        request.decision,
+        identity: identity,
+        toolCall: toolCall,
+        state: state,
+      );
+      return;
+    }
+    if (turn.status != ConversationStatuses.awaitingApproval ||
+        turn.revision != call.expectedTurnRevision) {
+      state.conflicted.add(identity);
+      return;
+    }
+
+    final updated = await _updateBatchDecisionToolCall(
+      session,
+      userId: userId,
+      request: request,
+      call: call,
+      toolCall: toolCall,
+      now: now,
+      transaction: transaction,
+    );
+    state.accepted.add(identity);
+    (state.acceptedByTurn[turn.id!] ??= []).add(updated);
+  }
+
+  Future<Conversation?> _findBatchDecisionConversation(
+    Session session, {
+    required int workspaceId,
+    required String conversationId,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final cached = state.conversations[conversationId];
+    if (cached != null) return cached;
+    final conversation = await _repository.findConversationByStableId(
+      session,
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (conversation != null) {
+      state.conversations[conversationId] = conversation;
+    }
+    return conversation;
+  }
+
+  Future<ConversationTurn?> _requireBatchDecisionTurn(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required String turnId,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+  }) async {
+    final cached = state.turns[turnId];
+    if (cached != null) return cached;
+    final turn = await _repository.findTurnByStableId(
+      session,
+      workspaceId: workspaceId,
+      turnId: turnId,
+      transaction: transaction,
+      lock: true,
+    );
+    if (turn == null) return null;
+    await _requireTurnMutationAuthorization(
+      session,
+      userId: userId,
+      workspaceId: workspaceId,
+      turn: turn,
+      transaction: transaction,
+    );
+    state.turns[turnId] = turn;
+    return turn;
+  }
+
+  void _recordBatchHandledCall(
+    String decision, {
+    required String identity,
+    required ConversationToolCall toolCall,
+    required _BatchDecisionState state,
+  }) {
+    if (toolCall.decision == null || toolCall.decision == decision) {
+      state.alreadyHandled.add(identity);
+      return;
+    }
+    state.conflicted.add(identity);
+  }
+
+  Future<ConversationToolCall> _updateBatchDecisionToolCall(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required SubmitToolDecisionBatchCall call,
+    required ConversationToolCall toolCall,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final arguments = call.editedArgumentsJson ?? toolCall.argumentsJson;
+    _requireJsonObject(arguments);
+    final argumentsDigest = base64UrlEncode(
+      (await Sha256().hash(utf8.encode(arguments))).bytes,
+    );
+    final updated = toolCall.copyWith(
+      argumentsJson: arguments,
+      argumentsDigest: argumentsDigest,
+      decision: request.decision,
+      decisionByUserId: userId,
+      decisionAt: now,
+      status: request.decision == 'approve' ? 'approved' : 'denied',
+      revision: toolCall.revision + 1,
+      updatedAt: now,
+    );
+    await ConversationToolCall.db.updateRow(
+      session,
+      updated,
+      transaction: transaction,
+    );
+    return updated;
+  }
+
+  Future<void> _finalizeBatchDecisionTurn(
+    Session session, {
+    required String userId,
+    required SubmitToolDecisionBatchRequest request,
+    required DateTime now,
+    required Transaction transaction,
+    required _BatchDecisionState state,
+    required MapEntry<int, List<ConversationToolCall>> entry,
+  }) async {
+    final turn = state.turns.values.firstWhere(
+      (candidate) => candidate.id == entry.key,
+    );
+    final pending = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.turnId.equals(turn.id) &
+          table.status.equals('pending'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final shouldResume = pending.isEmpty;
+    final updatedTurn = await ConversationTurn.db.updateRow(
+      session,
+      turn.copyWith(
+        status: shouldResume
+            ? ConversationStatuses.queued
+            : ConversationStatuses.awaitingApproval,
+        terminalAt: null,
+        revision: turn.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final conversation = state.conversations.values.firstWhere(
+      (candidate) => candidate.id == updatedTurn.conversationId,
+    );
+    final execution = conversation.activeExecutionId == null
+        ? null
+        : await ConversationExecution.db.findById(
+            session,
+            conversation.activeExecutionId!,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+    final projected = await Conversation.db.updateRow(
+      session,
+      conversation.copyWith(
+        eventSequence: conversation.eventSequence + 1,
+        projectionRevision: conversation.projectionRevision + 1,
+        executionState: shouldResume
+            ? 'running'
+            : ConversationStatuses.awaitingApproval,
+        activeExecutionId: conversation.activeExecutionId,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationEvent.db.insertRow(
+      session,
+      ConversationEvent(
+        workspaceId: request.workspaceId,
+        conversationId: projected.id!,
+        sequence: projected.eventSequence,
+        eventId: const Uuid().v7(),
+        actorUserId: userId,
+        requestId: request.requestId,
+        kind: ConversationEventType.toolDecisionRecorded,
+        payloadJson: jsonEncode({
+          'toolCallIds': entry.value.map((call) => call.stableId).toList(),
+          'decision': request.decision,
+        }),
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    if (!shouldResume || execution == null) return;
+
+    await ConversationExecution.db.updateRow(
+      session,
+      execution.copyWith(
+        status: 'running',
+        terminalAt: null,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    state.jobs.add(
+      await _insertJob(
+        session,
+        workspaceId: turn.workspaceId,
+        conversationId: turn.conversationId,
+        turnId: turn.id,
+        requestId: '${request.requestId}:${turn.requestId}',
+        kind: ConversationJobKinds.turn,
+        payloadJson: conversation_repo.conversationTurnJobPayload(
+          turn.initiatorUserId,
+          executionId: execution.stableId,
+          a2uiSupportedComponents: request.a2uiSupportedComponents,
+          parentTurnId: conversation_repo
+              .conversationParentTurnIdForExecutionSettings(
+                execution.settingsJson,
+              ),
+          parentToolCallId: conversation_repo
+              .conversationParentToolCallIdForExecutionSettings(
+                execution.settingsJson,
+              ),
+        ),
+        now: now,
+        transaction: transaction,
+      ),
+    );
+  }
+
   Future<ConversationMutationResult> cancelTurn(
     Session session, {
     required String userId,
@@ -2064,6 +2530,12 @@ class ConversationUseCases {
     String? cancelledConversationId;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
+      );
       final turn = await _requireTurnForMutation(
         session,
         userId: userId,
@@ -2277,6 +2749,9 @@ class ConversationUseCases {
       lockMode: LockMode.forUpdate,
     );
     for (final call in calls) {
+      final projection = projectToolOutput(
+        _cancelledSubAgentResult(call.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         call.copyWith(
@@ -2284,7 +2759,7 @@ class ConversationUseCases {
           decisionByUserId: call.decisionByUserId ?? userId,
           decisionAt: call.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledSubAgentResult(call.resultJson),
+          resultJson: projection.persistedText,
           revision: call.revision + 1,
           updatedAt: now,
         ),
@@ -2393,6 +2868,9 @@ class ConversationUseCases {
       lockMode: LockMode.forUpdate,
     );
     for (final toolCall in activeToolCalls) {
+      final projection = projectToolOutput(
+        _cancelledSubAgentResult(toolCall.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         toolCall.copyWith(
@@ -2400,7 +2878,7 @@ class ConversationUseCases {
           decisionByUserId: toolCall.decisionByUserId ?? turn.initiatorUserId,
           decisionAt: toolCall.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledSubAgentResult(toolCall.resultJson),
+          resultJson: projection.persistedText,
           revision: toolCall.revision + 1,
           updatedAt: now,
         ),
@@ -2524,6 +3002,132 @@ class ConversationUseCases {
     });
   }
 
+  Future<ConversationSnapshot> restoreCompactionCheckpoint(
+    Session session, {
+    required String userId,
+    required RestoreConversationCheckpointRequest request,
+  }) async {
+    await _mutate<ConversationMutationResult>(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.restoreCompactionCheckpoint',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: ConversationMutationResult.fromJson,
+      run: (transaction, now) async {
+        final conversation = await _repository.findConversationByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null) _fail(ConversationErrorCode.notFound);
+        if (conversation.revision != request.expectedConversationRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        if (conversation.executionState != 'idle' ||
+            conversation.activeExecutionId != null ||
+            await _repository.hasActiveMutation(
+              session,
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              transaction: transaction,
+            )) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final checkpoint = await ConversationMessage.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.stableId.equals(request.checkpointMessageId) &
+              table.role.equals('system') &
+              table.status.equals('sent'),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (checkpoint == null ||
+            _tryDecodeJson(checkpoint.metadataJson ?? '') is! Map ||
+            (_tryDecodeJson(checkpoint.metadataJson ?? '')
+                    as Map)['isCompactionSummary'] !=
+                true) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final unresolvedCalls = await ConversationToolCall.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.status.inSet(_transientToolCallStatuses),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (unresolvedCalls != null) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final activeTurns = await ConversationTurn.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!) &
+              table.status.inSet(_transientMessageStatuses),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (activeTurns != null) {
+          _fail(ConversationErrorCode.checkpointRestoreConflict);
+        }
+        final updated = await Conversation.db.updateRow(
+          session,
+          conversation.copyWith(
+            activeCompactionCheckpointId: request.checkpointMessageId,
+            revision: conversation.revision + 1,
+            projectionRevision: conversation.projectionRevision + 1,
+            eventSequence: conversation.eventSequence + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        await ConversationEvent.db.insertRow(
+          session,
+          ConversationEvent(
+            workspaceId: request.workspaceId,
+            conversationId: conversation.id!,
+            sequence: updated.eventSequence,
+            eventId: const Uuid().v7(),
+            actorUserId: userId,
+            requestId: request.requestId,
+            kind: ConversationEventType.settingsChanged,
+            payloadJson: jsonEncode({
+              'activeCompactionCheckpointId': request.checkpointMessageId,
+            }),
+            createdAt: now,
+          ),
+          transaction: transaction,
+        );
+        return _Mutation(
+          ConversationMutationResult(
+            conversationId: updated.stableId,
+            revision: updated.revision,
+            status: 'checkpointRestored',
+          ),
+          'checkpointRestored',
+          updated.stableId,
+        );
+      },
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
   Future<ConversationMutationResult> compact(
     Session session, {
     required String userId,
@@ -2631,12 +3235,6 @@ class ConversationUseCases {
     required Transaction transaction,
     bool initiatorOnly = false,
   }) async {
-    final member = await _requireMember(
-      session,
-      workspaceId: workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
     final turn = await _repository.findTurnByStableId(
       session,
       workspaceId: workspaceId,
@@ -2645,16 +3243,40 @@ class ConversationUseCases {
       lock: true,
     );
     if (turn == null) _fail(ConversationErrorCode.notFound);
+    await _requireTurnMutationAuthorization(
+      session,
+      userId: userId,
+      workspaceId: workspaceId,
+      turn: turn,
+      transaction: transaction,
+      initiatorOnly: initiatorOnly,
+    );
+    if (expectedRevision != null && turn.revision != expectedRevision) {
+      _fail(ConversationErrorCode.staleRevision);
+    }
+    return turn;
+  }
+
+  Future<void> _requireTurnMutationAuthorization(
+    Session session, {
+    required String userId,
+    required int workspaceId,
+    required ConversationTurn turn,
+    required Transaction transaction,
+    bool initiatorOnly = false,
+  }) async {
+    final member = await _requireMember(
+      session,
+      workspaceId: workspaceId,
+      userId: userId,
+      transaction: transaction,
+    );
     final canCancelAny =
         member.role == WorkspaceRoles.owner ||
         member.role == WorkspaceRoles.admin;
     if (turn.initiatorUserId != userId && (initiatorOnly || !canCancelAny)) {
       _fail(ConversationErrorCode.permissionDenied);
     }
-    if (expectedRevision != null && turn.revision != expectedRevision) {
-      _fail(ConversationErrorCode.staleRevision);
-    }
-    return turn;
   }
 
   Future<WorkspaceMember> _requireMember(
@@ -3134,6 +3756,12 @@ class ConversationUseCases {
             ? null
             : copies.stableMessageIds[context.fork.forkThroughMessageId!] ??
                   context.fork.forkThroughMessageId,
+        activeCompactionCheckpointId:
+            context.fork.activeCompactionCheckpointId == null
+            ? null
+            : copies.stableMessageIds[context
+                  .fork
+                  .activeCompactionCheckpointId!],
         forkMaterializedAt: context.now,
         revision: context.fork.revision + 1,
         projectionRevision: context.fork.projectionRevision + 1,
@@ -3245,6 +3873,17 @@ class ConversationUseCases {
     List<ConversationTurn> sourceTurns,
     _ForkCopies copies,
   ) async {
+    final sourceMessagesByTurnId = <int, List<ConversationMessage>>{};
+    for (final message in copies.sourceMessages) {
+      final turnId = message.turnId;
+      if (turnId != null) {
+        (sourceMessagesByTurnId[turnId] ??= []).add(message);
+      }
+    }
+    final targetIndexesById = <int, int>{
+      for (var index = 0; index < copies.targetMessages.length; index++)
+        copies.targetMessages[index].id!: index,
+    };
     for (final turn in sourceTurns.where(
       (turn) => ConversationStatuses.isTerminal(turn.status),
     )) {
@@ -3277,19 +3916,13 @@ class ConversationUseCases {
         ),
         transaction: context.transaction,
       );
-      for (final message in copies.targetMessages.where(
-        (message) => copies.messageIds.entries.any(
-          (entry) =>
-              entry.value == message.id &&
-              copies.sourceMessages
-                      .firstWhere((source) => source.id == entry.key)
-                      .turnId ==
-                  turn.id,
-        ),
-      )) {
-        final targetIndex = copies.targetMessages.indexWhere(
-          (target) => target.id == message.id,
-        );
+      for (final sourceMessage in sourceMessagesByTurnId[turn.id] ?? const []) {
+        final targetId = copies.messageIds[sourceMessage.id];
+        final targetIndex = targetId == null
+            ? null
+            : targetIndexesById[targetId];
+        if (targetIndex == null) continue;
+        final message = copies.targetMessages[targetIndex];
         final updatedMessage = message.copyWith(turnId: copy.id);
         await ConversationMessage.db.updateRow(
           session,
@@ -3298,6 +3931,26 @@ class ConversationUseCases {
         );
         copies.targetMessages[targetIndex] = updatedMessage;
       }
+    }
+  }
+
+  Future<void> _ensureForkCapacity(
+    Session session, {
+    required int workspaceId,
+    required Transaction transaction,
+  }) async {
+    final pendingForks = await Conversation.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.forkSourceConversationId.notEquals(null) &
+          table.forkMaterializedAt.equals(null) &
+          table.deletedAt.equals(null),
+      limit: ConversationLimits.maxPendingForksPerWorkspace,
+      transaction: transaction,
+    );
+    if (pendingForks.length >= ConversationLimits.maxPendingForksPerWorkspace) {
+      _fail(ConversationErrorCode.validationFailed);
     }
   }
 
@@ -4127,12 +4780,14 @@ class ConversationUseCases {
         isPinned: conversation.isPinned,
         modelId: conversation.modelId,
         agentId: conversation.agentId,
+        reasoningConfigJson: conversation.reasoningConfigJson,
         parentConversationId: conversation.parentConversationStableId,
         forkSourceConversationId: conversation.forkSourceConversationId,
         forkSourceTitle: conversation.forkSourceTitle,
         forkThroughMessageId: conversation.forkThroughMessageId,
         forkMaterializedAt: conversation.forkMaterializedAt,
         revision: conversation.revision,
+        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
       );
@@ -4190,26 +4845,37 @@ class ConversationUseCases {
     ConversationToolCall call,
     ConversationTurn turn,
     List<ConversationMessage> messages,
-  ) => ConversationToolCallView(
-    id: call.stableId,
-    turnId: turn.requestId,
-    messageId:
-        messages
-            .where((message) => message.id == call.messageId)
-            .firstOrNull
-            ?.stableId ??
-        '',
-    name: call.name,
-    argumentsJson: call.argumentsJson,
-    argumentsDigest: call.argumentsDigest,
-    userFacingDescription: call.userFacingDescription,
-    status: call.status,
-    decision: call.decision,
-    resultJson: call.resultJson,
-    revision: call.revision,
-    createdAt: call.createdAt,
-    updatedAt: call.updatedAt,
-  );
+  ) {
+    final result = call.resultJson;
+    final projection = result == null ? null : projectToolOutput(result);
+    final truncated = projection?.truncated ?? false;
+
+    return ConversationToolCallView(
+      id: call.stableId,
+      turnId: turn.requestId,
+      messageId:
+          messages
+              .where((message) => message.id == call.messageId)
+              .firstOrNull
+              ?.stableId ??
+          '',
+      name: call.name,
+      argumentsJson: call.argumentsJson,
+      argumentsDigest: call.argumentsDigest,
+      userFacingDescription: call.userFacingDescription,
+      status: call.status,
+      decision: call.decision,
+      resultJson: result,
+      resultContextJson: projection == null || projection.text == result
+          ? null
+          : projection.text,
+      resultOutputTruncated: truncated,
+      resultOriginalBytes: truncated ? projection!.originalBytes : null,
+      revision: call.revision,
+      createdAt: call.createdAt,
+      updatedAt: call.updatedAt,
+    );
+  }
 
   void _validateMetadata(
     String? title,
@@ -4223,6 +4889,43 @@ class ConversationUseCases {
     }
     if (modelId != null) _requireId(modelId);
     if (agentId != null) _requireId(agentId);
+  }
+
+  Future<String?> _validatedReasoningConfig(
+    Session session, {
+    required int workspaceId,
+    required String? modelId,
+    required String? value,
+    required Transaction transaction,
+  }) async {
+    if (value == null) return null;
+    if (value.length > ReasoningConfiguration.maxEncodedLength) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final configuration = ReasoningConfiguration.decode(value);
+    if (configuration == null || modelId == null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final selection = await _repository.resolveModelSelection(
+      session,
+      workspaceId: workspaceId,
+      modelId: modelId,
+      transaction: transaction,
+    );
+    if (selection == null ||
+        !configuration.isValidFor(
+          ReasoningOption.decodeJsonList(
+            selection.model.reasoningOptionsJson,
+            supportsReasoning: selection.model.supportsReasoning,
+          ),
+        )) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final normalized = configuration.encode();
+    if (normalized.length > ReasoningConfiguration.maxEncodedLength) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    return normalized;
   }
 
   Future<void> _validateA2uiActionAssociation(
@@ -4429,3 +5132,9 @@ class const _Mutation<T>(
   final String resourceId, {
   final List<String> affectedConversationIds = const [],
 });
+
+String _batchCallSortKey(SubmitToolDecisionBatchCall call) =>
+    '${call.conversationId}:${call.turnId}:${call.toolCallId}';
+
+String _batchCallIdentity(SubmitToolDecisionBatchCall call) =>
+    _batchCallSortKey(call);

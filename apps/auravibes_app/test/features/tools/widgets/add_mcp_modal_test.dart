@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,14 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
 class _FakeMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) => const McpFormState();
+}
+
+class _DirtyMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) => const McpFormState(
+    name: 'Private MCP',
+    bearerToken: 'secret-token-value',
+  );
 }
 
 class _OAuthMcpFormNotifier extends McpFormNotifier {
@@ -71,6 +80,9 @@ const _wsId = 'ws1';
 
 class const _Subject({
   final McpFormNotifier Function() formNotifier = _FakeMcpFormNotifier.new,
+  final WorkspaceRef workspace = const LocalWorkspaceRef(
+    localWorkspaceId: _wsId,
+  ),
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -80,22 +92,25 @@ class const _Subject({
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
           // ignore: deprecated_member_use - Required to override generated provider.
           mcpFormProvider.overrideWith(formNotifier),
-          workspaceSessionForRouteProvider(_wsId).overrideWithValue(
-            const AsyncData(
-              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
-            ),
-          ),
+          workspaceSessionForRouteProvider(_wsId)
+              .overrideWithValue(AsyncData(WorkspaceSession(workspace))),
         ],
         child: Portal(
           child: Builder(
             builder: (context) {
               return MaterialApp(
-                home: Theme(
-                  data: .new(extensions: [AuraTheme.light]),
-                  child: const Scaffold(body: SizedBox.shrink()),
+                home: AuraThemeScope(
+                  theme: .light,
+                  child: Theme(
+                    data: .new(),
+                    child: const Scaffold(body: SizedBox.shrink()),
+                  ),
                 ),
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                builder: (_, child) => AuraLegacyMaterialBridge(
+                  child: AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -169,6 +184,51 @@ void main() {
       await tester.tap(find.byIcon(Icons.close));
       await tester.pump();
 
+      expect(find.byType(AddMcpModal), findsNothing);
+    });
+
+    testWidgets('dirty close asks before discarding without exposing secrets', (
+      tester,
+    ) async {
+      await _pumpAndInit(
+        tester,
+        const _Subject(
+          formNotifier: _DirtyMcpFormNotifier.new,
+          workspace: CloudWorkspaceRef(
+            localWorkspaceId: _wsId,
+            serverUrl: 'https://cloud.example.com',
+            accountId: 'account',
+            cloudWorkspaceId: 1,
+          ),
+        ),
+      );
+      await _showDialog(tester);
+
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(LocaleKeys.common_unsaved_changes_title.tr()),
+        findsOneWidget,
+      );
+      final confirmationDialog = find.byType(AuraConfirmDialog);
+      expect(confirmationDialog, findsOneWidget);
+      expect(
+        find.descendant(
+          of: confirmationDialog,
+          matching: find.textContaining('secret-token-value'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(find.text(LocaleKeys.common_keep_editing.tr()));
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(AddMcpModal), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text(LocaleKeys.common_discard_changes.tr()));
+      final _ = await tester.pumpAndSettle();
       expect(find.byType(AddMcpModal), findsNothing);
     });
 
@@ -280,12 +340,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
@@ -334,12 +399,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
@@ -395,12 +465,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,

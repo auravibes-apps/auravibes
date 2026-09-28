@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
@@ -118,6 +119,7 @@ abstract class _ContinueAgentServiceDependencies({
   required final ConversationStreamingRuntime conversationStreamingRuntime,
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final MonitoringService monitoringService,
+  final ConversationSkillContextRuntime? skillContextRuntime,
   final ChatA2uiRuntime Function(String conversationId)?
   a2uiRuntimeForConversation,
   final Future<bool> Function(String conversationId)? isTopLevelConversation,
@@ -133,6 +135,7 @@ class ContinueAgentService({
   required super.conversationStreamingRuntime,
   required super.agentCancellationRuntime,
   required super.monitoringService,
+  super.skillContextRuntime,
   super.a2uiRuntimeForConversation,
   super.isTopLevelConversation,
 }) extends _ContinueAgentServiceDependencies
@@ -824,6 +827,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       options: .new(
         tools: preparedInput.enabledTools,
         sessionId: request.conversationId,
+        reasoningConfiguration: preparedInput.reasoningConfiguration,
       ),
       a2uiRuntime: request.a2uiRuntime,
     );
@@ -848,22 +852,80 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
         provider: this,
       );
 
-  Future<
+  Future<_ContinueAgentPreparedInput> _prepareInput(
+    String conversationId,
+  ) async {
+    final runtime = skillContextRuntime;
+    final generation = runtime?.begin(conversationId);
+    try {
+      final prepared = await _prepareContinuation(conversationId);
+      _recordPreparedSkillContext(
+        runtime,
+        conversationId,
+        generation,
+        prepared,
+      );
+
+      return prepared;
+    } on Object {
+      if (generation != null) runtime?.error(conversationId, generation);
+      rethrow;
+    }
+  }
+
+  Future<_ContinueAgentPreparedInput> _prepareContinuation(
+    String conversationId,
+  ) =>
+      AgentContinuationPreparer<
+            WorkspaceModelSelectionWithConnectionEntity,
+            MessageEntity,
+            ChatMessage,
+            ToolSpec
+          >(provider: agentContinuationProvider)
+          .call(conversationId: conversationId);
+}
+
+typedef _ContinueAgentPreparedInput =
     PreparedContinueAgentInput<
       WorkspaceModelSelectionWithConnectionEntity,
       ChatMessage,
       ToolSpec
-    >
-  >
-  _prepareInput(String conversationId) {
-    return AgentContinuationPreparer<
-          WorkspaceModelSelectionWithConnectionEntity,
-          MessageEntity,
-          ChatMessage,
-          ToolSpec
-        >(provider: agentContinuationProvider)
-        .call(conversationId: conversationId);
+    >;
+
+void _recordPreparedSkillContext(
+  ConversationSkillContextRuntime? runtime,
+  String conversationId,
+  int? generation,
+  _ContinueAgentPreparedInput prepared,
+) {
+  if (runtime == null || generation == null) return;
+
+  runtime.ready(
+    conversationId,
+    generation,
+    selectedRevisions: _selectedSkillRevisions(
+      prepared.requestedContextMessages,
+    ),
+    canActivate: prepared.enabledTools.any(
+      (tool) => tool.name == activateSkillToolName,
+    ),
+  );
+}
+
+Map<String, String> _selectedSkillRevisions(List<ChatMessage> history) {
+  for (final message in history) {
+    if (message.metadata['kind'] != skillCatalogMetadataKind) continue;
+    final raw = message.metadata[skillCatalogSelectedRevisionsMetadataKey];
+    if (raw is! Map) return const {};
+
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String && entry.value is String)
+          entry.key as String: entry.value as String,
+    };
   }
+
+  return const {};
 }
 
 extension _ContinueAgentMetadata on _ContinueAgentServiceDependencies {
@@ -958,11 +1020,15 @@ extension _ContinueAgentMetadata on _ContinueAgentServiceDependencies {
 }
 
 ContinueAgentService _continueAgentService(Ref ref) {
-  return _createContinueAgentService(_continueAgentDependencies(ref));
+  return _createContinueAgentService(
+    _continueAgentDependencies(ref),
+    ref.watch(conversationSkillContextRuntimeProvider.notifier),
+  );
 }
 
 ContinueAgentService _createContinueAgentService(
   _ContinueAgentDependencies dependencies,
+  ConversationSkillContextRuntime skillContextRuntime,
 ) {
   return ContinueAgentService(
     chatbotService: dependencies.chatbotService,
@@ -972,6 +1038,7 @@ ContinueAgentService _createContinueAgentService(
     conversationStreamingRuntime: dependencies.conversationStreamingRuntime,
     agentCancellationRuntime: dependencies.agentCancellationRuntime,
     monitoringService: dependencies.monitoringService,
+    skillContextRuntime: skillContextRuntime,
     a2uiRuntimeForConversation: dependencies.a2uiRuntimeForConversation,
     isTopLevelConversation: dependencies.isTopLevelConversation,
   );

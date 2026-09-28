@@ -57,7 +57,7 @@ class _ReconnectAllNotifier extends GroupedToolsNotifier {
   }
 }
 
-ToolsGroupWithTools _failedMcpGroup() {
+ToolsGroupWithTools _failedMcpGroup({bool isEnabled = true}) {
   final server = McpServerEntity(
     id: 'failed-server',
     workspaceId: 'test-ws',
@@ -74,7 +74,7 @@ ToolsGroupWithTools _failedMcpGroup() {
       id: 'failed-group',
       workspaceId: 'test-ws',
       name: 'Failed MCP',
-      isEnabled: true,
+      isEnabled: isEnabled,
       permissions: .ask,
       createdAt: .new(2026),
       updatedAt: .new(2026),
@@ -101,9 +101,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               workspaceToolsProvider('test-ws')
@@ -135,9 +138,12 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const ToolsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               workspaceToolsProvider('test-ws').overrideWith(() => notifier),
@@ -190,9 +196,12 @@ void main() {
               pages: [
                 const MaterialPage<void>(child: Placeholder()),
                 MaterialPage<void>(
-                  child: Theme(
-                    data: .new(extensions: [AuraTheme.light]),
-                    child: const ToolsScreen(workspaceId: 'test-ws'),
+                  child: AuraThemeScope(
+                    theme: .light,
+                    child: Theme(
+                      data: .new(),
+                      child: const ToolsScreen(workspaceId: 'test-ws'),
+                    ),
                   ),
                 ),
               ],
@@ -232,9 +241,12 @@ void main() {
         await tester.runAsync(() async {
           await tester.pumpWidget(
             TestableApp(
-              child: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: const ToolsScreen(workspaceId: 'test-ws'),
+              child: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: const ToolsScreen(workspaceId: 'test-ws'),
+                ),
               ),
               overrides: [
                 workspaceToolsProvider('test-ws')
@@ -256,7 +268,11 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
-        final reconnectButton = find.byType(AuraButton);
+        final reconnectButton = find.byWidgetPredicate(
+          (widget) =>
+              widget is AuraButton &&
+              widget.semanticLabel == 'Reconnect all failed MCPs',
+        );
         expect(find.text('Reconnect all failed MCPs'), findsOneWidget);
         expect(reconnectButton, findsOneWidget);
 
@@ -273,5 +289,42 @@ void main() {
         expect(find.text('Could not reconnect 1 MCP group.'), findsOneWidget);
       },
     );
+
+    testWidgets('does not offer bulk reconnect for disabled MCP groups', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          TestableApp(
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const ToolsScreen(workspaceId: 'test-ws'),
+              ),
+            ),
+            overrides: [
+              workspaceToolsProvider('test-ws')
+                  .overrideWith(_MockWorkspaceToolsNotifier.new),
+              groupedToolsProvider('test-ws').overrideWith(
+                () =>
+                    _ReconnectAllNotifier([_failedMcpGroup(isEnabled: false)]),
+              ),
+              workspaceSessionForRouteProvider('test-ws').overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(
+                    LocalWorkspaceRef(localWorkspaceId: 'test-ws'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      });
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Reconnect all failed MCPs'), findsNothing);
+    });
   });
 }

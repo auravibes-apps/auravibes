@@ -1,0 +1,5 @@
+class: SubmitToolDecisionBatchResult
+fields:
+  accepted: List<String>
+  alreadyHandled: List<String>
+  conflicted: List<String>

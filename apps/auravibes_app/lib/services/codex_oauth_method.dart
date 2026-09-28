@@ -245,7 +245,13 @@ extension _CodexOAuthCallbacksAndPolling on CodexOAuthService {
   Future<bool> _handleKnownBrowserCallback(
     _BrowserCallbackRequest callback,
   ) async {
-    final error = _browserCallbackError(callback.uri, callback.state);
+    if (callback.uri.queryParameters['state'] != callback.state) {
+      await _writeHtml(callback.request, _errorHtml('OAuth state mismatch'));
+
+      return false;
+    }
+
+    final error = _browserCallbackError(callback.uri);
     if (error != null) {
       await _failBrowserCallback(callback.request, callback.completer, error);
 
@@ -532,13 +538,10 @@ class _CancellationPoller {
 
 class const CodexOAuthCanceledException() implements Exception;
 
-String? _browserCallbackError(Uri uri, String expectedState) {
+String? _browserCallbackError(Uri uri) {
   final error = uri.queryParameters['error'];
   if (error != null) {
     return uri.queryParameters['error_description'] ?? error;
-  }
-  if (uri.queryParameters['state'] != expectedState) {
-    return 'OAuth state mismatch';
   }
   final code = uri.queryParameters['code'];
   if (code == null || code.isEmpty) return 'OAuth code not found';

@@ -74,6 +74,7 @@ Future<_SkillDetailRequestInput> _loadSkillDetailInputs(
     request.ref,
     cloud,
     request.skillId,
+    request.workspaceId,
   );
 
   return _skillDetailInput(request, cloud, sourceSkill);
@@ -157,10 +158,13 @@ Future<SkillEntity?> _loadSourceSkill(
   Ref ref,
   CloudSkillStore? cloud,
   String skillId,
-) {
-  if (cloud != null) return cloud.skill(skillId);
+  String workspaceId,
+) async {
+  if (cloud != null) return await cloud.skill(skillId);
 
-  return ref.watch(skillsRepositoryProvider).getSkillById(skillId);
+  final skill = await ref.watch(skillsRepositoryProvider).getSkillById(skillId);
+
+  return skill?.workspaceId == workspaceId ? skill : null;
 }
 
 bool _isAppRecord(SkillEntity sourceSkill, AppSkillDefinition? appSkill) =>

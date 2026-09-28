@@ -26,7 +26,8 @@ mixin _$ApiModelEntity {
  double? get costCacheRead;/// Cost per 1M output tokens.
  double? get costOutput;/// Whether the model is open source.
  bool? get openWeights;/// Whether the provider reports reasoning/thinking support for this model.
- bool get supportsReasoning;/// Whether this row maps to a canonical models.dev model.
+ bool get supportsReasoning;/// Provider/model reasoning controls from the catalog.
+ List<ReasoningOption> get reasoningOptions;/// Whether this row maps to a canonical models.dev model.
  bool get isCanonical;/// Whether models.dev reports a priority backend mode for this model.
  bool get supportsPriorityMode;/// Whether models.dev reports tool-call support for this model.
  bool get supportsToolCalls;
@@ -41,20 +42,20 @@ $ApiModelEntityCopyWith<ApiModelEntity> get copyWith => _$ApiModelEntityCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as ApiModelEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, _this.modelProvider) || other.modelProvider == _this.modelProvider)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.limitContext, _this.limitContext) || other.limitContext == _this.limitContext)&&(identical(other.limitOutput, _this.limitOutput) || other.limitOutput == _this.limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.family, _this.family) || other.family == _this.family)&&(identical(other.costInput, _this.costInput) || other.costInput == _this.costInput)&&(identical(other.costCacheRead, _this.costCacheRead) || other.costCacheRead == _this.costCacheRead)&&(identical(other.costOutput, _this.costOutput) || other.costOutput == _this.costOutput)&&(identical(other.openWeights, _this.openWeights) || other.openWeights == _this.openWeights)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&(identical(other.isCanonical, _this.isCanonical) || other.isCanonical == _this.isCanonical)&&(identical(other.supportsPriorityMode, _this.supportsPriorityMode) || other.supportsPriorityMode == _this.supportsPriorityMode)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, _this.modelProvider) || other.modelProvider == _this.modelProvider)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.limitContext, _this.limitContext) || other.limitContext == _this.limitContext)&&(identical(other.limitOutput, _this.limitOutput) || other.limitOutput == _this.limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.family, _this.family) || other.family == _this.family)&&(identical(other.costInput, _this.costInput) || other.costInput == _this.costInput)&&(identical(other.costCacheRead, _this.costCacheRead) || other.costCacheRead == _this.costCacheRead)&&(identical(other.costOutput, _this.costOutput) || other.costOutput == _this.costOutput)&&(identical(other.openWeights, _this.openWeights) || other.openWeights == _this.openWeights)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _this.reasoningOptions)&&(identical(other.isCanonical, _this.isCanonical) || other.isCanonical == _this.isCanonical)&&(identical(other.supportsPriorityMode, _this.supportsPriorityMode) || other.supportsPriorityMode == _this.supportsPriorityMode)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ApiModelEntity;
-  return Object.hash(runtimeType,_this.modelProvider,_this.id,_this.name,_this.limitContext,_this.limitOutput,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.family,_this.costInput,_this.costCacheRead,_this.costOutput,_this.openWeights,_this.supportsReasoning,_this.isCanonical,_this.supportsPriorityMode,_this.supportsToolCalls);
+  return Object.hash(runtimeType,_this.modelProvider,_this.id,_this.name,_this.limitContext,_this.limitOutput,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.family,_this.costInput,_this.costCacheRead,_this.costOutput,_this.openWeights,_this.supportsReasoning,const DeepCollectionEquality().hash(_this.reasoningOptions),_this.isCanonical,_this.supportsPriorityMode,_this.supportsToolCalls);
 }
 
 @override
 String toString() {
   final _this = this as ApiModelEntity;
-  return 'ApiModelEntity(modelProvider: ${_this.modelProvider}, id: ${_this.id}, name: ${_this.name}, limitContext: ${_this.limitContext}, limitOutput: ${_this.limitOutput}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, family: ${_this.family}, costInput: ${_this.costInput}, costCacheRead: ${_this.costCacheRead}, costOutput: ${_this.costOutput}, openWeights: ${_this.openWeights}, supportsReasoning: ${_this.supportsReasoning}, isCanonical: ${_this.isCanonical}, supportsPriorityMode: ${_this.supportsPriorityMode}, supportsToolCalls: ${_this.supportsToolCalls})';
+  return 'ApiModelEntity(modelProvider: ${_this.modelProvider}, id: ${_this.id}, name: ${_this.name}, limitContext: ${_this.limitContext}, limitOutput: ${_this.limitOutput}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, family: ${_this.family}, costInput: ${_this.costInput}, costCacheRead: ${_this.costCacheRead}, costOutput: ${_this.costOutput}, openWeights: ${_this.openWeights}, supportsReasoning: ${_this.supportsReasoning}, reasoningOptions: ${_this.reasoningOptions}, isCanonical: ${_this.isCanonical}, supportsPriorityMode: ${_this.supportsPriorityMode}, supportsToolCalls: ${_this.supportsToolCalls})';
 }
 
 
@@ -65,7 +66,7 @@ abstract mixin class $ApiModelEntityCopyWith<$Res>  {
   factory $ApiModelEntityCopyWith(ApiModelEntity value, $Res Function(ApiModelEntity) _then) = _$ApiModelEntityCopyWithImpl;
 @useResult
 $Res call({
- String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
+ String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
 });
 
 
@@ -82,7 +83,7 @@ class _$ApiModelEntityCopyWithImpl<$Res>
 
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
   return _then(ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
@@ -97,7 +98,8 @@ as double?,costCacheRead: freezed == costCacheRead ? _self.costCacheRead : costC
 as double?,costOutput: freezed == costOutput ? _self.costOutput : costOutput // ignore: cast_nullable_to_non_nullable
 as double?,openWeights: freezed == openWeights ? _self.openWeights : openWeights // ignore: cast_nullable_to_non_nullable
 as bool?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
-as bool,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
+as bool,reasoningOptions: null == reasoningOptions ? _self.reasoningOptions : reasoningOptions // ignore: cast_nullable_to_non_nullable
+as List<ReasoningOption>,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
 as bool,supportsPriorityMode: null == supportsPriorityMode ? _self.supportsPriorityMode : supportsPriorityMode // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -185,10 +187,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ApiModelEntity() when $default != null:
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
   return orElse();
 
 }
@@ -206,10 +208,10 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)  $default,) {final _that = this;
 switch (_that) {
 case _ApiModelEntity():
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -226,10 +228,10 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,) {final _that = this;
 switch (_that) {
 case _ApiModelEntity() when $default != null:
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
   return null;
 
 }
@@ -241,7 +243,7 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 
 
 class _ApiModelEntity extends ApiModelEntity {
-  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false, this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,super._();
+  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false,  List<ReasoningOption> reasoningOptions = const [], this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,_reasoningOptions = reasoningOptions,super._();
   
 
 /// ID of the provider that offers this model.
@@ -280,6 +282,15 @@ class _ApiModelEntity extends ApiModelEntity {
 @override final  bool? openWeights;
 /// Whether the provider reports reasoning/thinking support for this model.
 @override@JsonKey() final  bool supportsReasoning;
+/// Provider/model reasoning controls from the catalog.
+ final  List<ReasoningOption> _reasoningOptions;
+/// Provider/model reasoning controls from the catalog.
+@override@JsonKey() List<ReasoningOption> get reasoningOptions {
+  if (_reasoningOptions is EqualUnmodifiableListView) return _reasoningOptions;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_reasoningOptions);
+}
+
 /// Whether this row maps to a canonical models.dev model.
 @override@JsonKey() final  bool isCanonical;
 /// Whether models.dev reports a priority backend mode for this model.
@@ -297,18 +308,18 @@ _$ApiModelEntityCopyWith<_ApiModelEntity> get copyWith => __$ApiModelEntityCopyW
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _reasoningOptions)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,isCanonical,supportsPriorityMode,supportsToolCalls);
+    return Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,const DeepCollectionEquality().hash(_reasoningOptions),isCanonical,supportsPriorityMode,supportsToolCalls);
 }
 
 @override
 String toString() {
-    return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
+    return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, reasoningOptions: $reasoningOptions, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
 }
 
 
@@ -319,7 +330,7 @@ abstract mixin class _$ApiModelEntityCopyWith<$Res> implements $ApiModelEntityCo
   factory _$ApiModelEntityCopyWith(_ApiModelEntity value, $Res Function(_ApiModelEntity) _then) = __$ApiModelEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
+ String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
 });
 
 
@@ -336,7 +347,7 @@ class __$ApiModelEntityCopyWithImpl<$Res>
 
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
   return _then(_ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
@@ -351,7 +362,8 @@ as double?,costCacheRead: freezed == costCacheRead ? _self.costCacheRead : costC
 as double?,costOutput: freezed == costOutput ? _self.costOutput : costOutput // ignore: cast_nullable_to_non_nullable
 as double?,openWeights: freezed == openWeights ? _self.openWeights : openWeights // ignore: cast_nullable_to_non_nullable
 as bool?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
-as bool,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
+as bool,reasoningOptions: null == reasoningOptions ? _self._reasoningOptions : reasoningOptions // ignore: cast_nullable_to_non_nullable
+as List<ReasoningOption>,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
 as bool,supportsPriorityMode: null == supportsPriorityMode ? _self.supportsPriorityMode : supportsPriorityMode // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
 as bool,

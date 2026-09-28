@@ -1,4 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_snapshot_mapper.dart';
@@ -8,22 +9,35 @@ import 'package:riverpod/riverpod.dart';
 
 class const SelectPromptMessagesUsecase({
   required final MessageRepository messageRepository,
+  final ConversationRepository? conversationRepository,
 }) {
   Future<List<MessageEntity>> call(String conversationId) async {
     final messages = await _promptMessages(conversationId);
 
+    final conversation = await conversationRepository?.getConversationById(
+      conversationId,
+    );
     final selectedIds = selectAgentPromptHistory(
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
+      activeCompactionCheckpointId: conversation?.activeCompactionCheckpointId,
     ).messageIds;
-    final messagesById = {for (final message in messages) message.id: message};
 
-    return selectedIds.map((id) => messagesById[id]!).toList();
+    return _messagesInSelectionOrder(selectedIds, messages);
   }
 
   Future<List<MessageEntity>> _promptMessages(String conversationId) async =>
       (await messageRepository.getMessagesByConversation(conversationId))
           .where((message) => !_isPromptExcludedMessage(message))
           .toList();
+}
+
+List<MessageEntity> _messagesInSelectionOrder(
+  List<String> selectedIds,
+  List<MessageEntity> messages,
+) {
+  final messagesById = {for (final message in messages) message.id: message};
+
+  return selectedIds.map((id) => messagesById[id]!).toList();
 }
 
 bool _isPromptExcludedMessage(MessageEntity message) =>
@@ -33,5 +47,6 @@ final selectPromptMessagesUsecaseProvider =
     Provider<SelectPromptMessagesUsecase>((ref) {
       return SelectPromptMessagesUsecase(
         messageRepository: ref.watch(messageRepositoryProvider),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
       );
     });

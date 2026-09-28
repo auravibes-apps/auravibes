@@ -93,7 +93,7 @@ class ResolveToolApprovalDecisionUsecase({
     final toolGroup = await toolsGroupsRepository.getToolsGroupByMcpServerId(
       serverId,
     );
-    if (toolGroup == null) return null;
+    if (toolGroup == null || !toolGroup.isEnabled) return null;
     final workspaceTool = await workspaceToolsRepository
         .getWorkspaceToolByToolName(
           toolGroupId: toolGroup.id,
