@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -10,6 +11,7 @@ typedef ServiceConnectionMcpCredential = ({
   String name,
   String url,
   String mcpServerId,
+  McpTransportType transport,
   String authenticationType,
   bool isEnabled,
   ServiceConnectionAuthStatus? authStatus,
@@ -39,6 +41,7 @@ class const ServiceConnectionListItem({
   required final List<ServiceConnectionMetadataValue> metadataValues,
   required final bool canRefresh,
   required final bool canReconnect,
+  final McpTransportType? transport,
 }) {
   new _fromModelConnection(ModelConnectionEntity connection)
     : this(
@@ -145,6 +148,7 @@ class const ServiceConnectionListItem({
         ),
         canRefresh: data.canRefresh,
         canReconnect: true,
+        transport: data.transport,
       );
 
   factory fromSkillCredential({

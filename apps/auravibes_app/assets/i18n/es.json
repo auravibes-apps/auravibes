@@ -189,10 +189,32 @@
     "action": {
       "reconnect": "Reconectar",
       "refresh_token": "Actualizar token",
+      "test_connection": "Probar conexión",
       "reconnect_success": "Servidor MCP reconectado",
       "reconnect_error": "No se pudo reconectar el servidor MCP",
       "refresh_success": "Token OAuth actualizado",
       "refresh_error": "No se pudo actualizar el token OAuth"
+    },
+    "test": {
+      "success": "La prueba de conexión MCP se completó",
+      "authentication": "Falló la autenticación MCP",
+      "network": "Falló la red o se agotó el tiempo de espera de MCP",
+      "protocol": "Falló el servidor MCP o su configuración",
+      "unknown": "Falló la prueba de conexión MCP",
+      "attempted_at": "Prueba realizada {time}",
+      "recovery_auth": "Reconecta este servidor MCP para restablecer el acceso.",
+      "recovery_network": "Revisa tu conexión de red y vuelve a probar el servidor.",
+      "recovery_protocol": "Revisa este servidor MCP en Herramientas. Para cambiar su URL o autenticación, agrega una conexión nueva.",
+      "retry": "Reintentar prueba",
+      "open_tools": "Abrir Herramientas"
+    },
+    "diagnostics": {
+      "transport": "Transporte",
+      "category": "Categoría del estado",
+      "attempted_at": "Hora del intento",
+      "app_version": "Versión de la app",
+      "summary": "Resumen",
+      "unavailable": "No registrado"
     },
     "create": {
       "type_label": "Tipo de conexión",

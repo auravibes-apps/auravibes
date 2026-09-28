@@ -11,12 +11,13 @@ abstract final class McpErrorDetails {
     BuildContext context, {
     required String? groupName,
     required String? errorMessage,
+    Future<String> Function()? copyText,
   }) async {
     final details = _build(groupName: groupName, errorMessage: errorMessage);
     final shouldCopy = await _showDialog(context, details);
     if (shouldCopy != true) return;
 
-    if (!await _copy(details)) return;
+    if (!await _copy(copyText == null ? details : await copyText())) return;
     if (!context.mounted) return;
     _showCopied(context);
   }
