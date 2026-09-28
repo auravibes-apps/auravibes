@@ -44,7 +44,7 @@ typedef _ActionErrorRequest = ({
 typedef _BatchApprovalErrorRequest = ({
   BuildContext context,
   bool approved,
-  Set<String> hiddenKeys,
+  Set<String> processingKeys,
   Object error,
   StackTrace stackTrace,
 });
@@ -102,24 +102,32 @@ class const _PendingToolCallsView({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hiddenKeys = useState(<String>{});
+    final processingKeys = useState(<String>{});
     final asyncCalls = pendingCalls == null
         ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
         : null;
 
-    useEffect(() => _resetHiddenKeys(hiddenKeys), [conversationId]);
+    useEffect(() => _resetApprovalState(hiddenKeys, processingKeys), [
+      conversationId,
+    ]);
 
     return _PendingToolCallsResult(
       workspaceId: workspaceId,
       conversationId: conversationId,
       hiddenKeys: hiddenKeys,
+      processingKeys: processingKeys,
       pendingCalls: pendingCalls,
       asyncCalls: asyncCalls,
     );
   }
 }
 
-Dispose? _resetHiddenKeys(ValueNotifier<Set<String>> hiddenKeys) {
+Dispose? _resetApprovalState(
+  ValueNotifier<Set<String>> hiddenKeys,
+  ValueNotifier<Set<String>> processingKeys,
+) {
   hiddenKeys.value = {};
+  processingKeys.value = {};
 
   return null;
 }
@@ -128,6 +136,7 @@ class const _PendingToolCallsResult({
   required final String workspaceId,
   required final String conversationId,
   required final ValueNotifier<Set<String>> hiddenKeys,
+  required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
 }) extends StatelessWidget {
@@ -143,6 +152,7 @@ class const _PendingToolCallsResult({
       workspaceId: workspaceId,
       conversationId: conversationId,
       hiddenKeys: hiddenKeys,
+      processingKeys: processingKeys,
       pendingCalls: pendingCalls ?? asyncCalls?.value ?? const [],
     );
   }
@@ -152,6 +162,7 @@ class const _PendingToolCallsList({
   required final String workspaceId,
   required final String conversationId,
   required final ValueNotifier<Set<String>> hiddenKeys,
+  required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall> pendingCalls,
 }) extends StatelessWidget {
   @override
@@ -161,6 +172,7 @@ class const _PendingToolCallsList({
           workspaceId: workspaceId,
           conversationId: conversationId,
           hiddenKeys: hiddenKeys,
+          processingKeys: processingKeys,
           pendingCalls: pendingCalls,
         );
 }
@@ -169,14 +181,17 @@ class const _PendingToolCallsPager({
   required final String workspaceId,
   required final String conversationId,
   required final ValueNotifier<Set<String>> hiddenKeys,
+  required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall> pendingCalls,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
+    final _ = useListenable(processingKeys);
     final request = _usePendingToolCallsPager((
       workspaceId: workspaceId,
       conversationId: conversationId,
       hiddenKeys: hiddenKeys,
+      processingKeys: processingKeys,
       pendingCalls: pendingCalls,
     ));
 
@@ -188,22 +203,26 @@ typedef _PendingToolCallsPagerPageRequest = ({
   String workspaceId,
   String conversationId,
   List<PendingToolCall> visibleCalls,
+  Set<String> processingKeys,
   ValueNotifier<String?> selectedKey,
   List<String> previousKeys,
-  _HideApprovalCalls onHideCalls,
   _RestoreApprovalCalls onRestoreCalls,
+  _StartApprovalCalls onStartCalls,
+  _RestoreApprovalCalls onCompleteCalls,
 });
 
 typedef _PendingToolCallsPagerHookRequest = ({
   String workspaceId,
   String conversationId,
   ValueNotifier<Set<String>> hiddenKeys,
+  ValueNotifier<Set<String>> processingKeys,
   List<PendingToolCall> pendingCalls,
 });
 
 typedef _PagerVisibilityCallbacks = ({
-  _HideApprovalCalls onHideCalls,
   _RestoreApprovalCalls onRestoreCalls,
+  _StartApprovalCalls onStartCalls,
+  _RestoreApprovalCalls onCompleteCalls,
 });
 
 typedef _PagerSelectionState = ({
@@ -220,6 +239,7 @@ _PendingToolCallsPagerPageRequest _usePendingToolCallsPager(
   final selection = _usePagerSelection(request.conversationId, visible.keys);
   final callbacks = _pagerVisibilityCallbacks(
     request.hiddenKeys,
+    request.processingKeys,
     request.conversationId,
   );
 
@@ -235,10 +255,12 @@ _PendingToolCallsPagerPageRequest _pagerPageRequest(
   workspaceId: request.workspaceId,
   conversationId: request.conversationId,
   visibleCalls: visible.calls,
+  processingKeys: request.processingKeys.value,
   selectedKey: selection.selectedKey,
   previousKeys: selection.previousKeys.value,
-  onHideCalls: callbacks.onHideCalls,
   onRestoreCalls: callbacks.onRestoreCalls,
+  onStartCalls: callbacks.onStartCalls,
+  onCompleteCalls: callbacks.onCompleteCalls,
 );
 
 _PagerVisibleState _visiblePagerState(
@@ -274,14 +296,16 @@ _PagerSelectionState _usePagerSelection(
 
 _PagerVisibilityCallbacks _pagerVisibilityCallbacks(
   ValueNotifier<Set<String>> hiddenKeys,
+  ValueNotifier<Set<String>> processingKeys,
   String conversationId,
 ) => (
-  onHideCalls: (calls) => _hidePendingCalls((
-    calls: calls,
-    conversationId: conversationId,
-    hiddenKeys: hiddenKeys,
-  )),
-  onRestoreCalls: (keys) => _restorePendingCalls(hiddenKeys, keys),
+  onRestoreCalls: (keys) => _clearProcessingCalls(processingKeys, keys),
+  onStartCalls: (calls) =>
+      _startProcessingCalls(processingKeys, calls, conversationId),
+  onCompleteCalls: (keys) {
+    _clearProcessingCalls(processingKeys, keys);
+    hiddenKeys.value = {...hiddenKeys.value, ...keys};
+  },
 );
 
 typedef _PagerSelectionEffectsRequest = ({
@@ -320,10 +344,12 @@ class const _PendingToolCallsPagerPageBuilder({
       workspaceId: request.workspaceId,
       conversationId: conversationId,
       pendingCalls: visibleCalls,
+      processingKeys: request.processingKeys,
       selectedKey: request.selectedKey,
       previousKeys: request.previousKeys,
-      onHideCalls: request.onHideCalls,
       onRestoreCalls: request.onRestoreCalls,
+      onStartCalls: request.onStartCalls,
+      onCompleteCalls: request.onCompleteCalls,
     );
   }
 }
@@ -407,28 +433,23 @@ int _pagerSelectionIndex(_PagerKeySelectionRequest request) {
   return math.min(math.max(previousIndex, 0), request.currentKeys.length - 1);
 }
 
-typedef _HidePendingCallsRequest = ({
+Set<String>? _startProcessingCalls(
+  ValueNotifier<Set<String>> processingKeys,
   Iterable<PendingToolCall> calls,
   String conversationId,
-  ValueNotifier<Set<String>> hiddenKeys,
-});
-
-Set<String>? _hidePendingCalls(_HidePendingCallsRequest request) {
-  final keys = _pendingToolCallKeys(request.calls, request.conversationId);
-  final newKeys = keys.toSet().difference(request.hiddenKeys.value);
-  if (newKeys.isEmpty) return null;
-
-  request.hiddenKeys.value = {...request.hiddenKeys.value, ...newKeys};
-
-  return newKeys;
-}
-
-void _restorePendingCalls(
-  ValueNotifier<Set<String>> hiddenKeys,
-  Set<String> keys,
 ) {
-  hiddenKeys.value = {...hiddenKeys.value}..removeAll(keys);
+  final keys = _pendingToolCallKeys(calls, conversationId).toSet();
+  if (keys.isEmpty || keys.any(processingKeys.value.contains)) return null;
+
+  processingKeys.value = {...processingKeys.value, ...keys};
+
+  return keys;
 }
+
+void _clearProcessingCalls(
+  ValueNotifier<Set<String>> processingKeys,
+  Set<String> keys,
+) => processingKeys.value = {...processingKeys.value}..removeAll(keys);
 
 String _pendingToolCallKey(PendingToolCall pendingCall, String conversationId) {
   final sourceConversationId = _pendingToolCallConversationId(
@@ -447,7 +468,7 @@ String _pendingToolCallConversationId(
     ? fallbackConversationId
     : pendingCall.sourceConversationId;
 
-typedef _HideApprovalCalls = Set<String>? Function(
+typedef _StartApprovalCalls = Set<String>? Function(
   Iterable<PendingToolCall> calls,
 );
 
@@ -465,10 +486,12 @@ class const _PendingToolCallsPagerPage({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
+  required final Set<String> processingKeys,
   required final ValueNotifier<String?> selectedKey,
   required final List<String> previousKeys,
-  required final _HideApprovalCalls onHideCalls,
   required final _RestoreApprovalCalls onRestoreCalls,
+  required final _StartApprovalCalls onStartCalls,
+  required final _RestoreApprovalCalls onCompleteCalls,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _PendingToolCallsPagerContentBuilder(
@@ -476,11 +499,13 @@ class const _PendingToolCallsPagerPage({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingCalls: pendingCalls,
+      processingKeys: processingKeys,
       selectedKey: selectedKey.value,
       previousKeys: previousKeys,
       selectedKeyNotifier: selectedKey,
-      onHideCalls: onHideCalls,
       onRestoreCalls: onRestoreCalls,
+      onStartCalls: onStartCalls,
+      onCompleteCalls: onCompleteCalls,
     ),
   );
 }
@@ -489,11 +514,13 @@ typedef _PendingToolCallsPagerContentRequest = ({
   String workspaceId,
   String conversationId,
   List<PendingToolCall> pendingCalls,
+  Set<String> processingKeys,
   String? selectedKey,
   List<String> previousKeys,
   ValueNotifier<String?> selectedKeyNotifier,
-  _HideApprovalCalls onHideCalls,
   _RestoreApprovalCalls onRestoreCalls,
+  _StartApprovalCalls onStartCalls,
+  _RestoreApprovalCalls onCompleteCalls,
 });
 
 typedef _PagerApprovalCardBuildRequest = ({
@@ -501,6 +528,7 @@ typedef _PagerApprovalCardBuildRequest = ({
   _PendingToolCallsPageSelection selection,
   PendingToolCall current,
   String conversationId,
+  Set<String> processingKeys,
 });
 
 class const _PendingToolCallsPagerContentBuilder({
@@ -526,6 +554,7 @@ class const _PendingToolCallsPagerContentBuilder({
         selection: selection,
         current: current,
         conversationId: conversationId,
+        processingKeys: request.processingKeys,
       )),
     );
   }
@@ -547,6 +576,9 @@ _ApprovalCardRequest _pagerApprovalCardRequest(
     totalCount: page.totalCount,
     hasPrev: page.hasPrev,
     hasNext: page.hasNext,
+    isSubmitting: input.processingKeys.contains(
+      _pendingToolCallKey(input.current, input.conversationId),
+    ),
     actions: _pagerApprovalActions(
       input.request,
       input.current,
@@ -576,6 +608,7 @@ typedef _ApprovalCardActions = ({
   _StartApprovalDecision onDecisionStarted,
   _StartApprovalDecision onStopAllStarted,
   _RestoreApprovalCalls onDecisionFailed,
+  _RestoreApprovalCalls onDecisionCompleted,
 });
 
 _ApprovalCardActions _pagerApprovalActions(
@@ -592,6 +625,7 @@ _ApprovalCardActions _pagerApprovalActions(
     onDecisionStarted: decisions.onDecisionStarted,
     onStopAllStarted: decisions.onStopAllStarted,
     onDecisionFailed: request.onRestoreCalls,
+    onDecisionCompleted: request.onCompleteCalls,
   );
 }
 
@@ -636,14 +670,16 @@ VoidCallback _setPagerSelection(
 typedef _PagerDecisionActions = ({
   _StartApprovalDecision onDecisionStarted,
   _StartApprovalDecision onStopAllStarted,
+  _RestoreApprovalCalls onDecisionCompleted,
 });
 
 _PagerDecisionActions _pagerDecisionActions(
   _PendingToolCallsPagerContentRequest request,
   PendingToolCall current,
 ) => (
-  onDecisionStarted: () => request.onHideCalls([current]),
-  onStopAllStarted: () => request.onHideCalls(request.pendingCalls),
+  onDecisionStarted: () => request.onStartCalls([current]),
+  onStopAllStarted: () => request.onStartCalls(request.pendingCalls),
+  onDecisionCompleted: request.onCompleteCalls,
 );
 
 class _PendingToolCallsPageSelection {
@@ -691,6 +727,7 @@ typedef _ApprovalCardRequest = ({
   int totalCount,
   bool hasPrev,
   bool hasNext,
+  bool isSubmitting,
   _ApprovalCardActions actions,
 });
 
@@ -815,8 +852,8 @@ class _ApprovalCardBodyChildren {
         _NavigationHeader(
           currentIndex: request.currentIndex,
           totalCount: request.totalCount,
-          hasPrev: request.hasPrev,
-          hasNext: request.hasNext,
+          hasPrev: request.hasPrev && !request.isSubmitting,
+          hasNext: request.hasNext && !request.isSubmitting,
           onPrev: request.actions.onPrev,
           onNext: request.actions.onNext,
         ),
@@ -830,8 +867,10 @@ class _ApprovalCardBodyChildren {
             workspaceId: request.source.workspaceId,
             conversationId: request.conversationId,
             pendingCalls: request.source.pendingCalls,
-            onHideCalls: request.source.onHideCalls,
+            onStartCalls: request.source.onStartCalls,
             onRestoreCalls: request.source.onRestoreCalls,
+            onCompleteCalls: request.source.onCompleteCalls,
+            isSubmitting: request.isSubmitting,
           ),
         _ConfirmationButtons(
           workspaceId: request.source.workspaceId,
@@ -841,9 +880,11 @@ class _ApprovalCardBodyChildren {
           ),
           toolCall: request.current.toolCall,
           messageId: request.current.messageId,
+          isSubmitting: request.isSubmitting,
           onDecisionStarted: request.actions.onDecisionStarted,
           onStopAllStarted: request.actions.onStopAllStarted,
           onDecisionFailed: request.actions.onDecisionFailed,
+          onDecisionCompleted: request.actions.onDecisionCompleted,
         ),
       ];
 
@@ -863,12 +904,13 @@ class const _NavigationHeader({
     return Row(
       children: [
         _NavigationTitle(currentIndex: currentIndex, totalCount: totalCount),
-        _NavigationControls(
-          hasPrev: hasPrev,
-          hasNext: hasNext,
-          onPrev: onPrev,
-          onNext: onNext,
-        ),
+        if (totalCount > 1)
+          _NavigationControls(
+            hasPrev: hasPrev,
+            hasNext: hasNext,
+            onPrev: onPrev,
+            onNext: onNext,
+          ),
       ],
     );
   }
@@ -957,12 +999,14 @@ class _NavigationControlChildren {
            icon: Icons.chevron_left,
            onPressed: hasPrev ? onPrev : null,
            selectorId: 'tool_approval_previous',
+           semanticLabel: LocaleKeys.tool_approval_previous.tr(),
          ),
          const AuraSizedBox(width: .xs),
          _NavButton(
            icon: Icons.chevron_right,
            onPressed: hasNext ? onNext : null,
            selectorId: 'tool_approval_next',
+           semanticLabel: LocaleKeys.tool_approval_next.tr(),
          ),
        ];
 
@@ -973,17 +1017,17 @@ class const _NavButton({
   required final IconData icon,
   required final VoidCallback? onPressed,
   required final String selectorId,
+  required final String semanticLabel,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    key: ValueKey<String>(selectorId),
-    child: AuraIconButton(
-      icon: icon,
-      onPressed: onPressed,
-      disabled: onPressed == null,
-      size: .small,
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: icon,
+    onPressed: onPressed,
+    disabled: onPressed == null,
+    size: .small,
     identifier: selectorId,
+    semanticLabel: semanticLabel,
+    tooltip: semanticLabel,
   );
 }
 
@@ -1000,6 +1044,7 @@ class const _ToolCallInfo({
     return _ToolCallInfoFrame(
       child: _ToolCallInfoContent(
         displayName: displayName,
+        argumentsRaw: argumentsRaw,
         sourceLabel: sourceLabel,
         argumentLines: argumentLines,
         copyableArgs: copyableArgs,
@@ -1043,6 +1088,7 @@ BoxDecoration _toolCallInfoDecoration(BuildContext context) {
 
 class const _ToolCallInfoContent({
   required final String displayName,
+  required final String argumentsRaw,
   required final String? sourceLabel,
   required final List<_ApprovalArgumentLine>? argumentLines,
   required final String? copyableArgs,
@@ -1052,6 +1098,7 @@ class const _ToolCallInfoContent({
     crossAxisAlignment: .start,
     children: _ToolCallInfoChildren(
       displayName: displayName,
+      argumentsRaw: argumentsRaw,
       sourceLabel: sourceLabel,
       argumentLines: argumentLines,
       copyableArgs: copyableArgs,
@@ -1062,12 +1109,16 @@ class const _ToolCallInfoContent({
 class _ToolCallInfoChildren {
   new({
     required String displayName,
+    required String argumentsRaw,
     required String? sourceLabel,
     required List<_ApprovalArgumentLine>? argumentLines,
     required String? copyableArgs,
   }) : values = [
          _ToolCallName(displayName: displayName),
-         _ToolCallDescription(displayName: displayName),
+         _ToolCallDescription(
+           displayName: displayName,
+           argumentsRaw: argumentsRaw,
+         ),
          _ToolCallSource(sourceLabel: sourceLabel),
          if (argumentLines case final lines? when lines.isNotEmpty)
            _ToolCallArgumentsPreview(
@@ -1080,8 +1131,10 @@ class _ToolCallInfoChildren {
   final List<Widget> values;
 }
 
-class const _ToolCallDescription({required final String displayName})
-    extends StatelessWidget {
+class const _ToolCallDescription({
+  required final String displayName,
+  required final String argumentsRaw,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
@@ -1089,14 +1142,49 @@ class const _ToolCallDescription({required final String displayName})
       bottom: context.auraTheme.fromSpacing(.xs),
     ),
     child: Text(
-      LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
-          .tr(namedArgs: {'tool': displayName}),
+      _toolCallApprovalSummary(context, displayName, argumentsRaw),
       style: .new(
         color: context.auraColors.onSurface,
         fontSize: context.auraTheme.typography.fontSizeXs,
       ),
+      overflow: .ellipsis,
+      maxLines: 2,
     ),
   );
+}
+
+String _toolCallApprovalSummary(
+  BuildContext context,
+  String displayName,
+  String argumentsRaw,
+) {
+  final decoded = _decodeApprovalArguments(argumentsRaw);
+  final arguments = decoded.value;
+  if (decoded.success && arguments is Map) {
+    final page = arguments['page'];
+    final change = arguments['change'];
+    if (page is String &&
+        page.trim().isNotEmpty &&
+        change is String &&
+        change.trim().isNotEmpty) {
+      return LocaleKeys.tool_approval_requested_change_summary.tr(
+        context: context,
+        namedArgs: {'target': page, 'change': change},
+      );
+    }
+
+    final action = arguments['action'];
+    if (action is String && action.trim().isNotEmpty) {
+      return LocaleKeys.tool_approval_requested_action_summary.tr(
+        context: context,
+        namedArgs: {'action': action},
+      );
+    }
+  }
+
+  return LocaleKeys
+      .chats_screens_chat_conversation_tool_call_fallback_description
+      .tr(context: context, namedArgs: {'tool': displayName});
 }
 
 class const _ToolCallName({required final String displayName})
@@ -1138,21 +1226,52 @@ class const _ToolCallSource({required final String? sourceLabel})
   }
 }
 
-class _ToolCallArgumentsPreview extends StatelessWidget {
+class _ToolCallArgumentsPreview extends StatefulWidget {
   const new({required this.lines, required this.copyValue, super.key});
 
   final List<_ApprovalArgumentLine> lines;
   final String copyValue;
 
   @override
+  State<_ToolCallArgumentsPreview> createState() =>
+      _ToolCallArgumentsPreviewState();
+}
+
+class _ToolCallArgumentsPreviewState extends State<_ToolCallArgumentsPreview> {
+  static const _previewLineCount = 4;
+  static const _longValueLength = 120;
+
+  var _showAll = false;
+
+  bool get _hasMore =>
+      widget.lines.length > _previewLineCount ||
+      widget.lines.any((line) => line.value.length > _longValueLength);
+
+  @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const AuraSizedBox(height: .xs),
       _ToolCallArgumentLines(
-        lines: lines,
-        maxLines: null,
-        copyValue: copyValue,
+        lines: _showAll
+            ? widget.lines
+            : widget.lines.take(_previewLineCount).toList(),
+        maxLines: _showAll ? null : 2,
+        copyValue: widget.copyValue,
       ),
+      if (_hasMore)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AuraButton(
+            onPressed: () => setState(() => _showAll = !_showAll),
+            child: TextLocale(
+              _showAll
+                  ? LocaleKeys.tool_approval_show_fewer_arguments
+                  : LocaleKeys.tool_approval_show_all_arguments,
+            ),
+            variant: .ghost,
+            size: .small,
+          ),
+        ),
     ],
     spacing: .xs,
   );
@@ -1414,8 +1533,10 @@ class const _BatchApprovalButtons({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
-  required final _HideApprovalCalls onHideCalls,
+  required final _StartApprovalCalls onStartCalls,
   required final _RestoreApprovalCalls onRestoreCalls,
+  required final _RestoreApprovalCalls onCompleteCalls,
+  required final bool isSubmitting,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraRow(
@@ -1424,17 +1545,21 @@ class const _BatchApprovalButtons({
         workspaceId: workspaceId,
         conversationId: conversationId,
         pendingCalls: pendingCalls,
-        onHideCalls: onHideCalls,
+        onStartCalls: onStartCalls,
         onRestoreCalls: onRestoreCalls,
+        onCompleteCalls: onCompleteCalls,
         approved: true,
+        isSubmitting: isSubmitting,
       ),
       _BatchApprovalButton(
         workspaceId: workspaceId,
         conversationId: conversationId,
         pendingCalls: pendingCalls,
-        onHideCalls: onHideCalls,
+        onStartCalls: onStartCalls,
         onRestoreCalls: onRestoreCalls,
+        onCompleteCalls: onCompleteCalls,
         approved: false,
+        isSubmitting: isSubmitting,
       ),
     ],
   );
@@ -1442,6 +1567,7 @@ class const _BatchApprovalButtons({
 
 class const _BatchApprovalAction({
   required final bool approved,
+  required final bool isSubmitting,
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
@@ -1462,6 +1588,7 @@ class const _BatchApprovalAction({
         variant: .outlined,
         tint: approved ? null : .error,
         size: .small,
+        disabled: isSubmitting,
       ),
       identifier: identifier,
     );
@@ -1472,14 +1599,17 @@ class const _BatchApprovalButton({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
-  required final _HideApprovalCalls onHideCalls,
+  required final _StartApprovalCalls onStartCalls,
   required final _RestoreApprovalCalls onRestoreCalls,
+  required final _RestoreApprovalCalls onCompleteCalls,
   required final bool approved,
+  required final bool isSubmitting,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Expanded(
     child: _BatchApprovalAction(
       approved: approved,
+      isSubmitting: isSubmitting,
       onPressed: () => unawaited(_runBatch(ref, context, approved: approved)),
     ),
   );
@@ -1490,8 +1620,8 @@ class const _BatchApprovalButton({
     required bool approved,
   }) async {
     final calls = _uniquePendingToolCalls(pendingCalls, conversationId);
-    final hiddenKeys = onHideCalls(calls);
-    if (hiddenKeys == null) return;
+    final processingKeys = onStartCalls(calls);
+    if (processingKeys == null) return;
 
     try {
       await _performBatch(ref, calls, approved: approved);
@@ -1500,7 +1630,7 @@ class const _BatchApprovalButton({
         _handleBatchError((
           context: context,
           approved: approved,
-          hiddenKeys: hiddenKeys,
+          processingKeys: processingKeys,
           error: error,
           stackTrace: stackTrace,
         ));
@@ -1515,11 +1645,16 @@ class const _BatchApprovalButton({
   }) async {
     final result = await _submitBatch(ref, calls, approved: approved);
     final restoreKeys = _restoreKeys(calls, result);
+    final callKeys = {
+      for (final call in calls) _pendingToolCallKey(call, conversationId),
+    };
+    final completedKeys = callKeys.difference(restoreKeys);
+    if (completedKeys.isNotEmpty) onCompleteCalls(completedKeys);
     if (restoreKeys.isNotEmpty) onRestoreCalls(restoreKeys);
   }
 
   void _handleBatchError(_BatchApprovalErrorRequest request) {
-    onRestoreCalls(request.hiddenKeys);
+    onRestoreCalls(request.processingKeys);
 
     _showApprovalActionError((
       context: request.context,
@@ -1573,9 +1708,11 @@ class const _ConfirmationButtons({
   required final String conversationId,
   required final MessageToolCallEntity toolCall,
   required final String messageId,
+  required final bool isSubmitting,
   required final _StartApprovalDecision onDecisionStarted,
   required final _StartApprovalDecision onStopAllStarted,
   required final _RestoreApprovalCalls onDecisionFailed,
+  required final _RestoreApprovalCalls onDecisionCompleted,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1587,12 +1724,14 @@ class const _ConfirmationButtons({
       onDecisionStarted: onDecisionStarted,
       onStopAllStarted: onStopAllStarted,
       onDecisionFailed: onDecisionFailed,
+      onDecisionCompleted: onDecisionCompleted,
     );
 
     return _ConfirmationButtonRows(
       ref: ref,
       context: context,
       handler: actionHandler,
+      isSubmitting: isSubmitting,
     );
   }
 }
@@ -1605,6 +1744,7 @@ class const _ConfirmationActionHandler({
   required final _StartApprovalDecision onDecisionStarted,
   required final _StartApprovalDecision onStopAllStarted,
   required final _RestoreApprovalCalls onDecisionFailed,
+  required final _RestoreApprovalCalls onDecisionCompleted,
 }) {
   bool get _isCloudCall =>
       toolCall.turnId != null &&
@@ -1620,6 +1760,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
       action: () => _approve(ref, agent.AgentToolGrantLevel.once),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
+      onCompleted: onDecisionCompleted,
     ));
   }
 
@@ -1630,6 +1771,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
       action: () => _approve(ref, agent.AgentToolGrantLevel.conversation),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
+      onCompleted: onDecisionCompleted,
     ));
   }
 
@@ -1640,6 +1782,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
       action: () => _skip(ref),
       onStarted: onDecisionStarted,
       onFailed: onDecisionFailed,
+      onCompleted: onDecisionCompleted,
     ));
   }
 
@@ -1650,6 +1793,7 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
       action: () => _stopAll(ref),
       onStarted: onStopAllStarted,
       onFailed: onDecisionFailed,
+      onCompleted: onDecisionCompleted,
     ));
   }
 }
@@ -1742,6 +1886,7 @@ typedef _RunApprovalActionRequest = ({
   Future<void> Function() action,
   _StartApprovalDecision onStarted,
   _RestoreApprovalCalls onFailed,
+  _RestoreApprovalCalls onCompleted,
 });
 
 extension _ConfirmationCloudActions on _ConfirmationActionHandler {
@@ -1820,9 +1965,10 @@ extension _ConfirmationActionExecution on _ConfirmationActionHandler {
 
     try {
       await request.action();
+      if (request.context.mounted) request.onCompleted(hiddenKeys);
     } on Object catch (error, stackTrace) {
-      request.onFailed(hiddenKeys);
       if (!request.context.mounted) return;
+      request.onFailed(hiddenKeys);
       _showApprovalActionError((
         context: request.context,
         errorMessageKey: request.errorMessageKey,
@@ -1837,16 +1983,24 @@ class const _ConfirmationButtonRows({
   required final WidgetRef ref,
   required final BuildContext context,
   required final _ConfirmationActionHandler handler,
+  required final bool isSubmitting,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        _AllowButtons(ref: ref, actionContext: this.context, handler: handler),
+        if (isSubmitting) const _ApprovalSubmittingState(),
+        _AllowButtons(
+          ref: ref,
+          actionContext: this.context,
+          handler: handler,
+          isSubmitting: isSubmitting,
+        ),
         _DecisionButtons(
           ref: ref,
           actionContext: this.context,
           handler: handler,
+          isSubmitting: isSubmitting,
         ),
       ],
       spacing: .sm,
@@ -1854,10 +2008,26 @@ class const _ConfirmationButtonRows({
   }
 }
 
+class const _ApprovalSubmittingState() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: const AuraRow(
+      children: [
+        AuraIcon(Icons.hourglass_empty, size: .small, tint: .warning),
+        TextLocale(LocaleKeys.tool_approval_submitting),
+      ],
+      spacing: .xs,
+      mainAxisSize: .min,
+    ),
+    liveRegion: true,
+  );
+}
+
 class const _AllowButtons({
   required final WidgetRef ref,
   required final BuildContext actionContext,
   required final _ConfirmationActionHandler handler,
+  required final bool isSubmitting,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
@@ -1865,6 +2035,7 @@ class const _AllowButtons({
       ref: ref,
       actionContext: actionContext,
       handler: handler,
+      isSubmitting: isSubmitting,
     ).values,
   );
 }
@@ -1874,35 +2045,26 @@ class _AllowButtonChildren {
     required WidgetRef ref,
     required BuildContext actionContext,
     required _ConfirmationActionHandler handler,
+    required bool isSubmitting,
   }) : values = [
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_allow_once'),
-             child: AuraButton(
-               onPressed: () =>
-                   unawaited(handler.allowOnce(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_allow_once),
-               variant: .outlined,
-               size: .small,
-             ),
+           child: _ApprovalChoice(
              identifier: 'tool_approval_allow_once',
+             labelKey: LocaleKeys.tool_confirmation_allow_once,
+             scopeKey: LocaleKeys.tool_approval_allow_once_scope,
+             onPressed: () => unawaited(handler.allowOnce(ref, actionContext)),
+             isSubmitting: isSubmitting,
            ),
          ),
          if (!handler._isCloudCall)
            Expanded(
-             child: Semantics(
-               key: const ValueKey<String>('tool_approval_allow_conversation'),
-               child: AuraButton(
-                 onPressed: () => unawaited(
-                   handler.allowForConversation(ref, actionContext),
-                 ),
-                 child: const TextLocale(
-                   LocaleKeys.tool_confirmation_allow_conversation,
-                 ),
-                 variant: .outlined,
-                 size: .small,
-               ),
+             child: _ApprovalChoice(
                identifier: 'tool_approval_allow_conversation',
+               labelKey: LocaleKeys.tool_confirmation_allow_conversation,
+               scopeKey: LocaleKeys.tool_approval_allow_conversation_scope,
+               onPressed: () =>
+                   unawaited(handler.allowForConversation(ref, actionContext)),
+               isSubmitting: isSubmitting,
              ),
            ),
        ];
@@ -1914,6 +2076,7 @@ class const _DecisionButtons({
   required final WidgetRef ref,
   required final BuildContext actionContext,
   required final _ConfirmationActionHandler handler,
+  required final bool isSubmitting,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
@@ -1921,6 +2084,7 @@ class const _DecisionButtons({
       ref: ref,
       actionContext: actionContext,
       handler: handler,
+      isSubmitting: isSubmitting,
     ).values,
   );
 }
@@ -1930,34 +2094,76 @@ class _DecisionButtonChildren {
     required WidgetRef ref,
     required BuildContext actionContext,
     required _ConfirmationActionHandler handler,
+    required bool isSubmitting,
   }) : values = [
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_skip'),
-             child: AuraButton(
-               onPressed: () => unawaited(handler.skip(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_skip),
-               variant: .outlined,
-               tint: .primary,
-               size: .small,
-             ),
+           child: _ApprovalChoice(
              identifier: 'tool_approval_skip',
+             labelKey: LocaleKeys.tool_confirmation_skip,
+             scopeKey: LocaleKeys.tool_approval_skip_scope,
+             onPressed: () => unawaited(handler.skip(ref, actionContext)),
+             isSubmitting: isSubmitting,
+             tint: .primary,
            ),
          ),
          Expanded(
-           child: Semantics(
-             key: const ValueKey<String>('tool_approval_stop_all'),
-             child: AuraButton(
-               onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
-               child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
-               variant: .outlined,
-               tint: .error,
-               size: .small,
-             ),
+           child: _ApprovalChoice(
              identifier: 'tool_approval_stop_all',
+             labelKey: LocaleKeys.tool_confirmation_stop_all,
+             scopeKey: LocaleKeys.tool_approval_stop_all_scope,
+             onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
+             isSubmitting: isSubmitting,
+             tint: .error,
            ),
          ),
        ];
 
   final List<Widget> values;
+}
+
+class const _ApprovalChoice({
+  required final String identifier,
+  required final String labelKey,
+  required final String scopeKey,
+  required final VoidCallback onPressed,
+  required final bool isSubmitting,
+  final AuraTint? tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final semanticLabel =
+        '${labelKey.tr(context: context)}. ${scopeKey.tr(context: context)}';
+
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        Semantics(
+          key: ValueKey<String>(identifier),
+          child: AuraButton(
+            onPressed: onPressed,
+            child: TextLocale(labelKey),
+            variant: .outlined,
+            tint: tint,
+            size: .small,
+            isFullWidth: true,
+            disabled: isSubmitting,
+            semanticLabel: semanticLabel,
+          ),
+          identifier: identifier,
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+          child: TextLocale(
+            scopeKey,
+            style: .new(
+              color: context.auraColors.onSurfaceVariant,
+              fontSize: context.auraTheme.typography.fontSizeXs,
+              fontFamily: context.auraTheme.typography.bodyFontFamily,
+            ),
+            textAlign: .center,
+          ),
+        ),
+      ],
+    );
+  }
 }

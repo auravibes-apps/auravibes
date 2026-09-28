@@ -5,20 +5,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
-import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
-import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
-import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -54,7 +54,10 @@ class _FakeBatchToolApprovalActions implements BatchToolApprovalActions {
 }
 
 void main() {
-  Widget buildSubject({required List<Object> overrides}) {
+  Widget buildSubject({
+    required List<Object> overrides,
+    Locale locale = const Locale('en'),
+  }) {
     return EasyLocalization(
       child: ProviderScope(
         overrides: overrides.cast(),
@@ -73,17 +76,26 @@ void main() {
                   ),
                 ),
               ),
+              builder: (_, child) => AuraLegacyMaterialBridge(
+                child: AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             );
           },
         ),
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: locale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
     );
@@ -116,34 +128,17 @@ void main() {
   }
 
   List<Object> _skillTitleOverrides() => [
-    workspaceSkillsProvider('ws-1').overrideWith(
-      (ref) async => const [
-        WorkspaceSkill(
-          source: .user,
-          id: 'skill-1',
-          slug: 'research',
-          title: 'Research Assistant',
-          description: '',
-          kind: .template,
-          isEnabled: true,
-        ),
-      ],
-    ),
-    skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
-      (ref) async => [
-        SkillTemplateToolEntity(
-          id: 'tool-1',
-          skillId: 'skill-1',
-          templateType: .url,
-          title: 'Search the web',
-          description: 'Searches the web.',
-          slug: 'search_web',
-          isEnabled: true,
-          requiresCredential: false,
-          createdAt: .new(2026),
-          updatedAt: .new(2026),
-        ),
-      ],
+    skillToolCallDisplayTitlesProvider(
+      'ws-1',
+      'research',
+      'search_web',
+    ).overrideWith(
+      (_) => const (
+        skillTitle: 'Research Assistant',
+        skillTitleKey: null,
+        toolTitle: 'Search the web',
+        toolTitleKey: null,
+      ),
     ),
   ];
 
@@ -187,6 +182,9 @@ void main() {
       );
 
       expect(find.byIcon(Icons.build_outlined), findsOneWidget);
+      expect(find.text('Tool approval 1 of 1'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_left), findsNothing);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
       for (final selector in [
         'tool_approval_allow_once',
         'tool_approval_allow_conversation',
@@ -232,7 +230,7 @@ void main() {
       );
     });
 
-    testWidgets('allow all closes immediately and submits one batch', (
+    testWidgets('allow all stays visible while its batch submits', (
       tester,
     ) async {
       final actions = _FakeBatchToolApprovalActions();
@@ -255,10 +253,14 @@ void main() {
       );
       await tester.pump();
 
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
-        findsNothing,
+      expect(find.text('Submitting decision...'), findsOneWidget);
+      final allowAll = tester.widget<AuraButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+          matching: find.byType(AuraButton),
+        ),
       );
+      expect(allowAll.disabled, isTrue);
       final approvedCalls = actions.approvedCalls;
       expect(approvedCalls, hasLength(2));
       if (approvedCalls case final calls?) {
@@ -276,9 +278,15 @@ void main() {
         ),
       );
       await tester.pump();
+
+      expect(find.text('Submitting decision...'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_allow_all')),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('deny all closes immediately and submits one batch', (
+    testWidgets('deny all stays visible while its batch submits', (
       tester,
     ) async {
       final actions = _FakeBatchToolApprovalActions();
@@ -301,10 +309,14 @@ void main() {
       );
       await tester.pump();
 
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
-        findsNothing,
+      expect(find.text('Submitting decision...'), findsOneWidget);
+      final denyAll = tester.widget<AuraButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+          matching: find.byType(AuraButton),
+        ),
       );
+      expect(denyAll.disabled, isTrue);
       expect(actions.skippedCalls, hasLength(2));
 
       actions.skipCompleter.complete(
@@ -315,6 +327,12 @@ void main() {
         ),
       );
       await tester.pump();
+
+      expect(find.text('Submitting decision...'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_deny_all')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('approves a child conversation tool call in its source', (
@@ -374,6 +392,66 @@ void main() {
       ).called(1);
     });
 
+    testWidgets('shows submitting state and recovers after approval failure', (
+      tester,
+    ) async {
+      final approvalProvider = _MockApproveToolCallProvider();
+      final agentService = _MockAuraAgentService();
+      final cancellationEffects = _MockAgentCancellationEffects();
+      final scope = agent.AgentCancellationScope();
+      final loadCompleter = Completer<agent.AgentApprovableToolCall?>();
+      when(() => cancellationEffects.start('conv-1')).thenReturn(scope);
+      when(
+        () => approvalProvider.loadToolCall(
+          messageId: 'msg-1',
+          toolCallId: 'tc-1',
+          conversationId: 'conv-1',
+        ),
+      ).thenAnswer((_) => loadCompleter.future);
+      when(() => agentService.tools).thenReturn(
+        agent.ToolsNamespace<ResolvedTool>(
+          approvals: approvalProvider,
+          skips: _MockSkipToolCallProvider(),
+          stopPending: _MockStopPendingToolCallsProvider(),
+          resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: cancellationEffects,
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [_createPendingToolCall()],
+            ),
+            auraAgentServiceProvider.overrideWithValue(agentService),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_allow_once')),
+      );
+      await tester.pump();
+
+      expect(find.text('Submitting decision...'), findsOneWidget);
+      final allowOnce = tester.widget<AuraButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey('tool_approval_allow_once')),
+          matching: find.byType(AuraButton),
+        ),
+      );
+      expect(allowOnce.disabled, isTrue);
+
+      loadCompleter.completeError(StateError('approval failed'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Submitting decision...'), findsNothing);
+      expect(find.text('Allow Once'), findsOneWidget);
+      expect(find.text('Could not approve this tool call.'), findsOneWidget);
+    });
+
     testWidgets('shows navigation chevrons for multiple pending calls', (
       tester,
     ) async {
@@ -392,14 +470,8 @@ void main() {
 
       expect(find.byIcon(Icons.chevron_left), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_previous')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('tool_approval_next')),
-        findsOneWidget,
-      );
+      expect(find.byTooltip('Previous tool approval'), findsOneWidget);
+      expect(find.byTooltip('Next tool approval'), findsOneWidget);
     });
 
     testWidgets('shows formatted tool display name', (tester) async {
@@ -450,7 +522,99 @@ void main() {
       expect(argumentColumn.crossAxisAlignment, CrossAxisAlignment.start);
     });
 
-    testWidgets('shows complete argument values', (tester) async {
+    testWidgets('summarizes only the requested change in supplied arguments', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(
+                  userFacingDescription: 'The page is now updated.',
+                  toolName: 'notion_update_page',
+                  argumentsRaw: jsonEncode({
+                    'page': 'Launch Plan',
+                    'change': 'Add a task checklist',
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.text('Requested change for Launch Plan: Add a task checklist'),
+        findsOneWidget,
+      );
+      expect(find.text('The page is now updated.'), findsNothing);
+    });
+
+    testWidgets('localizes the requested action summary and decision scope', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          locale: const Locale('es'),
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [
+                _createPendingToolCall(
+                  toolName: 'notion_update_page',
+                  argumentsRaw: jsonEncode({
+                    'page': 'Launch Plan',
+                    'change': 'Add a task checklist',
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        find.text('Cambio solicitado para Launch Plan: Add a task checklist'),
+        findsOneWidget,
+      );
+      expect(find.text('Permite esta llamada una vez.'), findsOneWidget);
+    });
+
+    testWidgets('approval decisions expose their scope to assistive tech', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [_createPendingToolCall()],
+            ),
+          ],
+        ),
+      );
+
+      final allowOnce = tester.widget<AuraButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey('tool_approval_allow_once')),
+          matching: find.byType(AuraButton),
+        ),
+      );
+      expect(allowOnce.semanticLabel, 'Allow Once. Allows this call once.');
+      expect(find.text('Allows this call once.'), findsOneWidget);
+      expect(
+        find.text('Allows this tool for this conversation.'),
+        findsOneWidget,
+      );
+      expect(find.text('Declines this call only.'), findsOneWidget);
+      expect(find.text('Stops all pending tool calls.'), findsOneWidget);
+    });
+
+    testWidgets('bounds long argument previews and expands on request', (
+      tester,
+    ) async {
       await pumpAndInit(
         tester,
         buildSubject(
@@ -467,8 +631,19 @@ void main() {
       );
 
       final argument = tester.widget<Text>(find.textContaining('query:'));
-      expect(argument.maxLines, isNull);
-      expect(argument.overflow, TextOverflow.clip);
+      expect(argument.maxLines, 2);
+      expect(argument.overflow, TextOverflow.ellipsis);
+      expect(find.text('Show all arguments'), findsOneWidget);
+
+      await tester.tap(find.text('Show all arguments'));
+      final _ = await tester.pumpAndSettle();
+
+      final expandedArgument = tester.widget<Text>(
+        find.textContaining('query:'),
+      );
+      expect(expandedArgument.maxLines, isNull);
+      expect(expandedArgument.overflow, TextOverflow.clip);
+      expect(find.text('Show fewer arguments'), findsOneWidget);
     });
 
     testWidgets('uses deterministic fallback when description is absent', (
@@ -509,9 +684,7 @@ void main() {
       );
 
       expect(find.text(description), findsNothing);
-      await tester.tap(
-        find.byKey(const ValueKey<String>('tool_approval_next')),
-      );
+      await tester.tap(find.byTooltip('Next tool approval'));
       await tester.pump();
       expect(find.text(description), findsNothing);
     });
@@ -662,7 +835,7 @@ void main() {
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
 
-    testWidgets('flattens and exposes all arguments by default', (
+    testWidgets('bounds flattened arguments and expands the full list', (
       tester,
     ) async {
       final pendingCalls = [
@@ -690,9 +863,16 @@ void main() {
 
       expect(find.textContaining('arg1: search'), findsOneWidget);
       expect(find.textContaining('arg3.something: my search'), findsOneWidget);
-      expect(find.textContaining('arg4: last'), findsOneWidget);
       expect(find.textContaining('arg3.items[0]: first'), findsOneWidget);
-      expect(find.text('Show more'), findsNothing);
+      expect(find.textContaining('arg4: last'), findsNothing);
+      expect(find.text('Show all arguments'), findsOneWidget);
+
+      await tester.tap(find.text('Show all arguments'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.textContaining('arg4: last'), findsOneWidget);
+      expect(find.textContaining('arg3.items[1]: second'), findsOneWidget);
+      expect(find.text('Show fewer arguments'), findsOneWidget);
     });
 
     testWidgets('flattens nested URL input', (tester) async {

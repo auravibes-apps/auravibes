@@ -847,6 +847,17 @@
   },
   "tool_approval": {
     "pending_count": "Tool approval {} of {}",
+    "requested_change_summary": "Requested change for {target}: {change}",
+    "requested_action_summary": "Requested action: {action}",
+    "show_all_arguments": "Show all arguments",
+    "show_fewer_arguments": "Show fewer arguments",
+    "allow_once_scope": "Allows this call once.",
+    "allow_conversation_scope": "Allows this tool for this conversation.",
+    "skip_scope": "Declines this call only.",
+    "stop_all_scope": "Stops all pending tool calls.",
+    "previous": "Previous tool approval",
+    "next": "Next tool approval",
+    "submitting": "Submitting decision...",
     "errors": {
       "approve_once": "Could not approve this tool call.",
       "approve_conversation": "Could not approve this tool call for the conversation.",

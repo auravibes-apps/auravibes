@@ -847,6 +847,17 @@
   },
   "tool_approval": {
     "pending_count": "Aprobación de herramienta {} de {}",
+    "requested_change_summary": "Cambio solicitado para {target}: {change}",
+    "requested_action_summary": "Acción solicitada: {action}",
+    "show_all_arguments": "Mostrar todos los argumentos",
+    "show_fewer_arguments": "Mostrar menos argumentos",
+    "allow_once_scope": "Permite esta llamada una vez.",
+    "allow_conversation_scope": "Permite usar esta herramienta en esta conversación.",
+    "skip_scope": "Rechaza solo esta llamada.",
+    "stop_all_scope": "Detiene todas las llamadas pendientes.",
+    "previous": "Aprobación de herramienta anterior",
+    "next": "Aprobación de herramienta siguiente",
+    "submitting": "Enviando decisión...",
     "errors": {
       "approve_once": "No se pudo aprobar esta llamada de herramienta.",
       "approve_conversation": "No se pudo aprobar esta llamada de herramienta para la conversación.",

@@ -1164,6 +1164,23 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval_requested_change_summary =
+      'tool_approval.requested_change_summary';
+  static const tool_approval_requested_action_summary =
+      'tool_approval.requested_action_summary';
+  static const tool_approval_show_all_arguments =
+      'tool_approval.show_all_arguments';
+  static const tool_approval_show_fewer_arguments =
+      'tool_approval.show_fewer_arguments';
+  static const tool_approval_allow_once_scope =
+      'tool_approval.allow_once_scope';
+  static const tool_approval_allow_conversation_scope =
+      'tool_approval.allow_conversation_scope';
+  static const tool_approval_skip_scope = 'tool_approval.skip_scope';
+  static const tool_approval_stop_all_scope = 'tool_approval.stop_all_scope';
+  static const tool_approval_previous = 'tool_approval.previous';
+  static const tool_approval_next = 'tool_approval.next';
+  static const tool_approval_submitting = 'tool_approval.submitting';
   static const tool_approval_errors_approve_once =
       'tool_approval.errors.approve_once';
   static const tool_approval_errors_approve_conversation =
