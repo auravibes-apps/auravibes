@@ -865,6 +865,8 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.bullets';
   static const markdown_editor_toolbar_numbered_list =
       'markdown_editor.toolbar.numbered_list';
+  static const markdown_editor_toolbar_task_list =
+      'markdown_editor.toolbar.task_list';
   static const markdown_editor_toolbar_link = 'markdown_editor.toolbar.link';
   static const markdown_editor_toolbar_link_text_placeholder =
       'markdown_editor.toolbar.link_text_placeholder';
@@ -873,6 +875,15 @@ abstract class LocaleKeys {
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
   static const markdown_editor_toolbar_undo = 'markdown_editor.toolbar.undo';
+  static const markdown_editor_toolbar_redo = 'markdown_editor.toolbar.redo';
+  static const markdown_editor_link_dialog_title =
+      'markdown_editor.link_dialog_title';
+  static const markdown_editor_link_text_label =
+      'markdown_editor.link_text_label';
+  static const markdown_editor_link_destination_label =
+      'markdown_editor.link_destination_label';
+  static const markdown_editor_link_destination_required =
+      'markdown_editor.link_destination_required';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';

@@ -96,6 +96,63 @@ void main() {
     expect(find.byType(MarkdownEditorScreen), findsNothing);
     expect(result, _editedMarkdown);
   });
+
+  testWidgets('numbered lists continue and native undo restores', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = const .new(
+        text: '1. first\n2. second',
+        selection: .collapsed(offset: 8),
+      );
+    await tester.pump(const Duration(milliseconds: 600));
+
+    tester.testTextInput.updateEditingValue(
+      const .new(
+        text: '1. first\n\n2. second',
+        selection: .collapsed(offset: 9),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(controller.text, '1. first\n2. \n3. second');
+    expect(controller.selection, const TextSelection.collapsed(offset: 12));
+
+    final _ = await tester.sendKeyDownEvent(.controlLeft);
+    final _ = await tester.sendKeyEvent(.keyZ);
+    final _ = await tester.sendKeyUpEvent(.controlLeft);
+    await tester.pump();
+    expect(controller.text, '1. first\n2. second');
+  });
+
+  testWidgets('editor input exits empty bullet on Enter', (tester) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = const .new(
+        text: '- first\n- ',
+        selection: .collapsed(offset: 10),
+      );
+    await tester.pump();
+
+    tester.testTextInput.updateEditingValue(
+      const .new(text: '- first\n- \n', selection: .collapsed(offset: 11)),
+    );
+    await tester.pump();
+
+    expect(controller.text, '- first\n');
+    expect(controller.selection, const TextSelection.collapsed(offset: 8));
+  });
 }
 
 Future<void> _openMarkdownEditor(

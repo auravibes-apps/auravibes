@@ -1,4 +1,7 @@
 // Required: Toolbar actions intentionally mutate selected editor text.
+import 'dart:async';
+
+import 'package:auravibes_app/features/markdown/widgets/markdown_link_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -14,55 +17,84 @@ class const MarkdownEditorToolbar({
 }
 
 class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
-  TextEditingValue? _previousValue;
-  String? _toolbarResultText;
+  final _undoHistory = <({TextEditingValue before, TextEditingValue after})>[];
+  final _redoHistory = <({TextEditingValue before, TextEditingValue after})>[];
+  String _lastText = '';
 
   TextEditingController get _controller => widget.controller;
 
   FocusNode get _focusNode => widget.focusNode;
 
   bool get _canUndo =>
-      _previousValue != null && _controller.text == _toolbarResultText;
+      _undoHistory.isNotEmpty &&
+      _controller.text == _undoHistory.last.after.text;
+
+  bool get _canRedo =>
+      _redoHistory.isNotEmpty &&
+      _controller.text == _redoHistory.last.before.text;
+
+  @override
+  void initState() {
+    super.initState();
+    _lastText = _controller.text;
+  }
 
   @override
   void didUpdateWidget(MarkdownEditorToolbar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller == widget.controller) return;
 
-    _previousValue = null;
-    _toolbarResultText = null;
+    _lastText = _controller.text;
+    _undoHistory.clear();
+    _redoHistory.clear();
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: _controller,
-    builder: (_, _, _) => SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: _ToolbarActions(toolbar: this),
-    ),
-  );
+  Widget build(BuildContext context) => _ToolbarActions(toolbar: this);
 
-  void _rememberAction(TextEditingValue previousValue) {
+  void _rememberAction(TextEditingValue before) {
+    final after = _controller.value;
+    if (after.text == before.text) return;
+
     setState(() {
-      _previousValue = previousValue;
-      _toolbarResultText = _controller.text;
+      _undoHistory.add((before: before, after: after));
+      _redoHistory.clear();
     });
   }
 
   void _undo() {
-    final previousValue = _previousValue;
-    if (!_canUndo || previousValue == null) return;
+    if (!_canUndo) return;
 
-    _controller.value = previousValue;
+    final action = _undoHistory.removeLast();
+    _toolbarEdit(() => _controller.value = action.before);
     if (!_focusNode.hasFocus) _focusNode.requestFocus();
-    setState(() {
-      _previousValue = null;
-      _toolbarResultText = null;
-    });
+    setState(() => _redoHistory.add(action));
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+
+    final action = _redoHistory.removeLast();
+    _toolbarEdit(() => _controller.value = action.after);
+    if (!_focusNode.hasFocus) _focusNode.requestFocus();
+    setState(() => _undoHistory.add(action));
   }
 }
 
 extension on _MarkdownEditorToolbarState {
+  void _toolbarEdit(VoidCallback edit) {
+    edit();
+    _lastText = _controller.text;
+  }
+
+  void _syncHistory(String text) {
+    if (text == _lastText) return;
+
+    _lastText = text;
+    _undoHistory.clear();
+    _redoHistory.clear();
+  }
+
   TextSelection get _safeSelection {
     final selection = _controller.selection;
     if (selection.isValid) return selection;
@@ -73,28 +105,58 @@ extension on _MarkdownEditorToolbarState {
   }
 
   void _applyAction(_ToolbarActionKind action, BuildContext context) {
+    if (action == .link) {
+      unawaited(_formatLink(context));
+
+      return;
+    }
+
     final previousValue = _controller.value;
+    _toolbarEdit(() {
+      if (!_applyInlineAction(action)) _applyLineAction(action);
+    });
+    _rememberAction(previousValue);
+  }
+
+  bool _applyInlineAction(_ToolbarActionKind action) {
     switch (action) {
       case .bold:
         _wrapSelection('**', '**');
       case .italic:
         _wrapSelection('*', '*');
+      case .code:
+        _formatCode();
+      case .heading ||
+          .bullets ||
+          .numberedList ||
+          .taskList ||
+          .link ||
+          .quote:
+        return false;
+    }
+
+    return true;
+  }
+
+  void _applyLineAction(_ToolbarActionKind action) {
+    switch (action) {
       case .heading:
         _prefixLines('# ');
       case .bullets:
         _prefixLines('- ');
       case .numberedList:
         _prefixNumberedLines();
-      case .link:
-        _formatLink(context);
-      case .code:
-        _formatCode();
+      case .taskList:
+        _formatTaskList();
       case .quote:
         _prefixLines('> ');
+      case .bold || .italic || .link || .code:
+        break;
     }
-    _rememberAction(previousValue);
   }
+}
 
+extension on _MarkdownEditorToolbarState {
   void _wrapSelection(String before, String after) {
     final selection = _safeSelection;
     final selected = selection.textInside(_controller.text);
@@ -189,49 +251,79 @@ extension on _MarkdownEditorToolbarState {
         })
         .join('\n');
   }
+}
 
-  void _formatLink(BuildContext context) {
+extension on _MarkdownEditorToolbarState {
+  void _formatTaskList() {
     final selection = _safeSelection;
-    final selected = selection.textInside(_controller.text);
-    if (selected.isEmpty) {
-      _insertLinkPlaceholder(context, selection);
+    final updated = _taskListValue(_controller.value, selection);
+    if (updated == _controller.value) return;
+
+    _controller.value = updated;
+    _requestFocus();
+  }
+
+  Future<void> _formatLink(BuildContext context) async {
+    final before = _controller.value;
+    final selection = _safeSelection;
+    final result = await MarkdownLinkDialog.show(
+      context,
+      selectedText: selection.textInside(before.text),
+    );
+    if (!context.mounted || _controller.text != before.text) return;
+
+    _completeLink((value: before, selection: selection), result, context);
+  }
+
+  void _completeLink(
+    ({TextEditingValue value, TextSelection selection}) snapshot,
+    ({String text, String destination})? result,
+    BuildContext context,
+  ) {
+    if (result == null) {
+      _restoreLinkSelection(snapshot.value.selection);
 
       return;
     }
 
-    _insertSelectedLink(context, selection, selected);
+    _insertLink(snapshot, _linkValue(result, context));
   }
 
-  void _insertSelectedLink(
+  void _restoreLinkSelection(TextSelection selection) {
+    if (_controller.selection == selection) return;
+
+    _toolbarEdit(() => _controller.selection = selection);
+  }
+
+  ({String label, String destination, bool isPlaceholder}) _linkValue(
+    ({String text, String destination}) result,
     BuildContext context,
-    TextSelection selection,
-    String selected,
   ) {
-    final url = _linkUrl(context);
-    final urlStart = selection.start + selected.length + 3;
-    _replace(
-      selection,
-      '[$selected]($url)',
-      .new(baseOffset: urlStart, extentOffset: urlStart + url.length),
+    final isPlaceholder = result.text.isEmpty;
+    final label = isPlaceholder
+        ? LocaleKeys.markdown_editor_toolbar_link_text_placeholder.tr(
+            context: context,
+          )
+        : result.text;
+
+    return (
+      label: label,
+      destination: result.destination,
+      isPlaceholder: isPlaceholder,
     );
   }
 
-  void _insertLinkPlaceholder(BuildContext context, TextSelection selection) {
-    final label = LocaleKeys.markdown_editor_toolbar_link_text_placeholder.tr(
-      context: context,
-    );
-    final url = _linkUrl(context);
-    final labelStart = selection.start + 1;
-    _replace(
-      selection,
-      '[$label]($url)',
-      .new(baseOffset: labelStart, extentOffset: labelStart + label.length),
-    );
+  void _insertLink(
+    ({TextEditingValue value, TextSelection selection}) snapshot,
+    ({String label, String destination, bool isPlaceholder}) linkValue,
+  ) {
+    final before = snapshot.value;
+    final selection = snapshot.selection;
+    final link = '[${linkValue.label}](${linkValue.destination})';
+    final insertedSelection = _linkSelection(selection.start, link, linkValue);
+    _toolbarEdit(() => _replace(selection, link, insertedSelection));
+    _rememberAction(before);
   }
-
-  String _linkUrl(BuildContext context) => LocaleKeys
-      .markdown_editor_toolbar_link_url_placeholder
-      .tr(context: context);
 
   void _formatCode() {
     final selection = _safeSelection;
@@ -271,40 +363,183 @@ extension on _MarkdownEditorToolbarState {
 int _toolbarLineStart(String text, int selectionStart) =>
     selectionStart == 0 ? 0 : text.lastIndexOf('\n', selectionStart - 1) + 1;
 
-int _toolbarLineEnd(String text, int selectionEnd) =>
-    selectionEnd >= text.length
-    ? text.length
-    : text.indexOf('\n', selectionEnd);
+int _toolbarLineEnd(String text, int selectionEnd) {
+  final end = text.indexOf('\n', selectionEnd);
+
+  return end == -1 ? text.length : end;
+}
+
+TextSelection _linkSelection(
+  int start,
+  String link,
+  ({String label, String destination, bool isPlaceholder}) value,
+) => value.isPlaceholder
+    ? TextSelection(
+        baseOffset: start + 1,
+        extentOffset: start + 1 + value.label.length,
+      )
+    : TextSelection.collapsed(offset: start + link.length);
+
+typedef _TaskEdit = ({int start, int end, String replacement});
+
+final _taskMarker = RegExp(r'^[ \t]*- \[[ xX]\] ');
+
+TextEditingValue _taskListValue(
+  TextEditingValue value,
+  TextSelection selection,
+) {
+  if (selection.isCollapsed) return _insertTaskMarker(value, selection);
+
+  final edits = _selectedTaskEdits(value.text, selection);
+  if (edits.isEmpty) return value;
+
+  return _applyTaskEdits(value, edits);
+}
+
+TextEditingValue _insertTaskMarker(
+  TextEditingValue value,
+  TextSelection selection,
+) {
+  final text = value.text;
+  final start = _toolbarLineStart(text, selection.start);
+  final line = _textInside(text, start, _toolbarLineEnd(text, selection.start));
+  final edit = _taskEdit(line, start);
+  if (edit == null) return value;
+
+  return _applyTaskEdits(value, [edit]);
+}
+
+List<_TaskEdit> _selectedTaskEdits(String text, TextSelection selection) {
+  final selected = _selectedTaskLines(text, selection);
+  var lineStart = selected.start;
+  final edits = <_TaskEdit>[];
+  for (final line in selected.lines) {
+    final edit = _taskEdit(line, lineStart);
+    if (edit != null) edits.add(edit);
+    lineStart += line.length + '\n'.length;
+  }
+
+  return edits;
+}
+
+({int start, List<String> lines}) _selectedTaskLines(
+  String text,
+  TextSelection selection,
+) {
+  final start = _toolbarLineStart(text, selection.start);
+  final end = _toolbarLineEnd(text, selection.end - 1);
+
+  return (start: start, lines: _textInside(text, start, end).split('\n'));
+}
+
+String _textInside(String text, int start, int end) =>
+    TextSelection(baseOffset: start, extentOffset: end).textInside(text);
+
+_TaskEdit? _taskEdit(String line, int lineStart) {
+  final content = line.trimLeft();
+  if (_taskMarker.hasMatch(content)) return null;
+
+  final markerStart = lineStart + line.length - content.length;
+  final bulletEnd = content.startsWith('- ')
+      ? markerStart + '- '.length
+      : markerStart;
+
+  return (start: markerStart, end: bulletEnd, replacement: '- [ ] ');
+}
+
+TextEditingValue _applyTaskEdits(
+  TextEditingValue value,
+  List<_TaskEdit> edits,
+) => value.copyWith(
+  text: _applyTaskTextEdits(value.text, edits),
+  selection: _taskSelection(value.selection, edits),
+);
+
+String _applyTaskTextEdits(String text, List<_TaskEdit> edits) {
+  var updated = text;
+  for (final edit in edits.reversed) {
+    updated = updated.replaceRange(edit.start, edit.end, edit.replacement);
+  }
+
+  return updated;
+}
+
+TextSelection _taskSelection(TextSelection selection, List<_TaskEdit> edits) =>
+    TextSelection(
+      baseOffset: _taskSelectionOffset(selection.baseOffset, edits),
+      extentOffset: _taskSelectionOffset(selection.extentOffset, edits),
+      affinity: selection.affinity,
+      isDirectional: selection.isDirectional,
+    );
+
+int _taskSelectionOffset(int offset, List<_TaskEdit> edits) {
+  var shift = 0;
+  for (final edit in edits) {
+    if (offset < edit.start) break;
+    if (offset <= edit.end) {
+      return edit.start + shift + edit.replacement.length;
+    }
+    shift += edit.replacement.length - (edit.end - edit.start);
+  }
+
+  return offset + shift;
+}
 
 class const _ToolbarActions({
   required final _MarkdownEditorToolbarState toolbar,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _ToolbarActionList(toolbar: toolbar);
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: toolbar._controller,
+    builder: (_, value, _) {
+      toolbar._syncHistory(value.text);
+
+      return SingleChildScrollView(
+        scrollDirection: .horizontal,
+        child: _ToolbarActionList(toolbar: toolbar),
+      );
+    },
+  );
 }
 
 class const _ToolbarActionList({
   required final _MarkdownEditorToolbarState toolbar,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final undoLabel = LocaleKeys.markdown_editor_toolbar_undo.tr(
-      context: context,
-    );
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      _ToolbarHistoryButton(toolbar: toolbar, isUndo: true),
+      _ToolbarHistoryButton(toolbar: toolbar, isUndo: false),
+      for (final action in _ToolbarActionKind.values)
+        _ToolbarAction(toolbar: toolbar, action: action),
+    ],
+    spacing: .xs,
+  );
+}
 
-    return AuraRow(
-      children: [
-        _ToolbarButton(
-          icon: Icons.undo,
-          label: undoLabel,
-          onPressed: toolbar._canUndo ? toolbar._undo : null,
-        ),
-        for (final action in _ToolbarActionKind.values)
-          _ToolbarAction(toolbar: toolbar, action: action),
-      ],
-      spacing: .xs,
-    );
-  }
+class const _ToolbarHistoryButton({
+  required final _MarkdownEditorToolbarState toolbar,
+  required final bool isUndo,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ToolbarButton(
+    icon: isUndo ? Icons.undo : Icons.redo,
+    label:
+        (isUndo
+                ? LocaleKeys.markdown_editor_toolbar_undo
+                : LocaleKeys.markdown_editor_toolbar_redo)
+            .tr(context: context),
+    onPressed: _historyCallback(toolbar, isUndo),
+  );
+}
+
+VoidCallback? _historyCallback(
+  _MarkdownEditorToolbarState toolbar,
+  bool isUndo,
+) {
+  if (isUndo) return toolbar._canUndo ? toolbar._undo : null;
+
+  return toolbar._canRedo ? toolbar._redo : null;
 }
 
 class const _ToolbarAction({
@@ -331,6 +566,7 @@ enum _ToolbarActionKind {
     Icons.format_list_numbered,
     LocaleKeys.markdown_editor_toolbar_numbered_list,
   ),
+  taskList(Icons.checklist, LocaleKeys.markdown_editor_toolbar_task_list),
   link(Icons.link, LocaleKeys.markdown_editor_toolbar_link),
   code(Icons.code, LocaleKeys.markdown_editor_toolbar_code),
   quote(Icons.format_quote, LocaleKeys.markdown_editor_toolbar_quote);
