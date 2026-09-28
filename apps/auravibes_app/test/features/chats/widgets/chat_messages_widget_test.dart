@@ -610,9 +610,7 @@ void main() {
         ),
       );
 
-      final bubbleRight = tester
-          .getTopRight(find.byType(AuraMessageBubble))
-          .dx;
+      final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
       final copyActionRight = tester
           .getTopRight(find.byTooltip('Copy message'))
           .dx;
