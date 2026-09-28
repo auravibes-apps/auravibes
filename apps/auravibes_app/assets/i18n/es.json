@@ -1241,6 +1241,7 @@
     "delete_title": "¿Eliminar definitivamente la cuenta en la nube?",
     "delete_message": "¿Eliminar definitivamente {email} y sus credenciales de acceso? Perderás acceso a los espacios en la nube compartidos, pero su contenido permanecerá. Primero elimina o transfiere los espacios en la nube que posees. Esta acción no se puede deshacer.",
     "delete_owned_workspaces_error": "Elimina o transfiere los espacios en la nube que posees antes de eliminar esta cuenta.",
+    "delete_local_cleanup_failed": "La cuenta se eliminó, pero la limpieza en este dispositivo no terminó. Es posible que queden accesos directos a espacios en la nube.",
     "delete_failed": "No se pudo completar la eliminación de esta cuenta. Revisa tu conexión e inténtalo otra vez."
   }
 }

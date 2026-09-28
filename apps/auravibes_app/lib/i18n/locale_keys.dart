@@ -1627,5 +1627,7 @@ abstract class LocaleKeys {
   static const cloud_accounts_delete_message = 'cloud_accounts.delete_message';
   static const cloud_accounts_delete_owned_workspaces_error =
       'cloud_accounts.delete_owned_workspaces_error';
+  static const cloud_accounts_delete_local_cleanup_failed =
+      'cloud_accounts.delete_local_cleanup_failed';
   static const cloud_accounts_delete_failed = 'cloud_accounts.delete_failed';
 }

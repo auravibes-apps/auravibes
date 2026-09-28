@@ -1241,6 +1241,7 @@
     "delete_title": "Permanently delete cloud account?",
     "delete_message": "Permanently delete {email} and its sign-in credentials? Your access to shared cloud workspaces will end, but their content will remain. Delete or transfer any cloud workspaces you own first. This cannot be undone.",
     "delete_owned_workspaces_error": "Delete or transfer the cloud workspaces you own before deleting this account.",
+    "delete_local_cleanup_failed": "Account was deleted, but cleanup on this device did not finish. Some cloud workspace shortcuts may remain.",
     "delete_failed": "Could not finish deleting this account. Check your connection and try again."
   }
 }

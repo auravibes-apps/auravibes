@@ -49,16 +49,11 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
     required String userId,
   }) async {
     final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
-    try {
-      final _ = await _workspaceRepository
-          .deleteCloudWorkspaceMirrorsForAccount(userId, serverUrl: origin);
-    } finally {
-      try {
-        await _store.removeAccount(serverUrl: origin, userId: userId);
-      } finally {
-        invalidateAccount(origin, userId);
-      }
-    }
+    final _ = await _workspaceRepository.deleteCloudWorkspaceMirrorsForAccount(
+      userId,
+      serverUrl: origin,
+    );
+    await _removeLocalAccount(origin, userId);
   }
 
   Future<void> deleteAccount({
@@ -67,7 +62,31 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   }) async {
     final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     await deleteRemoteAccount(serverUrl: origin, userId: userId);
-    await remove(serverUrl: origin, userId: userId);
+    var localCleanupFailed = false;
+    try {
+      final _ = await _workspaceRepository
+          .deleteCloudWorkspaceMirrorsForAccount(userId, serverUrl: origin);
+    } on Object {
+      localCleanupFailed = true;
+    }
+    try {
+      await _removeLocalAccount(origin, userId);
+    } on Object {
+      localCleanupFailed = true;
+    }
+    if (localCleanupFailed) {
+      throw const CloudAccountDeletionException(
+        LocaleKeys.cloud_accounts_delete_local_cleanup_failed,
+      );
+    }
+  }
+
+  Future<void> _removeLocalAccount(String origin, String userId) async {
+    try {
+      await _store.removeAccount(serverUrl: origin, userId: userId);
+    } finally {
+      invalidateAccount(origin, userId);
+    }
   }
 
   Future<CloudAccountSession> _saveSignedInAccount(
