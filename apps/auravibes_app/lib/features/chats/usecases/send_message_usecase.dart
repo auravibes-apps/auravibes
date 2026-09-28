@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_message_sender.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
@@ -161,10 +162,20 @@ class SendMessageUsecase {
       conversationId: conversationId,
       draft: draft,
     );
-    await continueFromUserMessage(
-      conversationId: conversationId,
-      messageId: createdMessage.id,
-    );
+    try {
+      await continueFromUserMessage(
+        conversationId: conversationId,
+        messageId: createdMessage.id,
+      );
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        MessagePersistedException(
+          message: error.toString(),
+          stackTrace: stackTrace,
+        ),
+        stackTrace,
+      );
+    }
   }
 }
 

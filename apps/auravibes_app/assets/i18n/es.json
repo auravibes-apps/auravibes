@@ -373,6 +373,7 @@
         "restore_default": "Restaurar predeterminado del proveedor"
       },
       "message_placeholder": "Escribe tu mensaje...",
+      "discard_draft": "Descartar borrador",
       "attach_file": "Adjuntar archivo",
       "attach_photo": "Adjuntar foto",
       "attach_camera": "Tomar foto",
