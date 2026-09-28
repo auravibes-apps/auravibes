@@ -1,10 +1,18 @@
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillDefinitionKind;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -49,19 +57,24 @@ class _FakeMcpServersRepository(final Map<String, McpServerEntity> _servers)
   }
 }
 
-ProviderContainer createContainer(Map<String, McpServerEntity> servers) =>
-    ProviderContainer(
-      overrides: [
-        mcpServersRepositoryProvider.overrideWithValue(
-          _FakeMcpServersRepository(servers),
-        ),
-        workspaceSessionForRouteProvider('ws1').overrideWithValue(
-          const AsyncData(
-            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
-          ),
-        ),
-      ],
-    );
+ProviderContainer createContainer(
+  Map<String, McpServerEntity> servers, {
+  List<Object> providerOverrides = const [],
+}) {
+  final overrides = [
+    ...providerOverrides,
+    mcpServersRepositoryProvider.overrideWithValue(
+      _FakeMcpServersRepository(servers),
+    ),
+    workspaceSessionForRouteProvider('ws1').overrideWithValue(
+      const AsyncData(
+        WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+      ),
+    ),
+  ];
+
+  return ProviderContainer(overrides: overrides.cast());
+}
 
 void main() {
   group('toolDisplayNameProvider', () {
@@ -124,6 +137,163 @@ void main() {
         toolDisplayNameProvider('ws1', 'mcp_missing_myserver_do_stuff').future,
       );
       expect(name, 'Myserver: Do Stuff');
+    });
+  });
+
+  group('skillToolCallDisplayTitlesProvider', () {
+    test('resolves saved titles for app skill tools', () async {
+      const registry = AppSkillRegistry();
+      final appSkill = registry.getAll().firstWhere(
+        (skill) => skill.tools.isNotEmpty,
+      );
+      final tool = appSkill.tools.first;
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith(
+            (ref) async => [
+              WorkspaceSkill(
+                source: SkillSource.app,
+                id: appSkill.identifier,
+                slug: appSkill.slug,
+                title: appSkill.title,
+                description: appSkill.description,
+                kind: appSkill.kind == AppSkillDefinitionKind.template
+                    ? SkillKind.template
+                    : SkillKind.native,
+                isEnabled: true,
+                titleKey: appSkill.titleKey,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          appSkill.slug,
+          tool.slug,
+        ).future,
+      );
+
+      expect(titles, (
+        skillTitle: appSkill.title,
+        skillTitleKey: appSkill.titleKey,
+        toolTitle: tool.title,
+        toolTitleKey: tool.titleKey,
+      ));
+    });
+
+    test('resolves saved titles for user template tools', () async {
+      final templateTool = SkillTemplateToolEntity(
+        id: 'tool-1',
+        skillId: 'skill-1',
+        templateType: .url,
+        title: 'Search the web',
+        description: 'Searches the web.',
+        slug: 'search_web',
+        isEnabled: true,
+        requiresCredential: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      );
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith(
+            (ref) async => [
+              const WorkspaceSkill(
+                source: .user,
+                id: 'skill-1',
+                slug: 'research',
+                title: 'Research Assistant',
+                description: '',
+                kind: .template,
+                isEnabled: true,
+              ),
+            ],
+          ),
+          skillTemplateToolsProvider(
+            'ws1',
+            'skill-1',
+          ).overrideWith((ref) async => [templateTool]),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          'research',
+          'search_web',
+        ).future,
+      );
+
+      expect(titles, (
+        skillTitle: 'Research Assistant',
+        skillTitleKey: null,
+        toolTitle: 'Search the web',
+        toolTitleKey: null,
+      ));
+    });
+
+    test('returns skill title when tool metadata is missing', () async {
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith(
+            (ref) async => [
+              const WorkspaceSkill(
+                source: .user,
+                id: 'skill-1',
+                slug: 'research',
+                title: 'Research Assistant',
+                description: '',
+                kind: .template,
+                isEnabled: true,
+              ),
+            ],
+          ),
+          skillTemplateToolsProvider(
+            'ws1',
+            'skill-1',
+          ).overrideWith((ref) async => []),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          'research',
+          'missing_tool',
+        ).future,
+      );
+
+      expect(titles?.skillTitle, 'Research Assistant');
+      expect(titles?.toolTitle, isNull);
+    });
+
+    test('returns null when skill metadata is unavailable', () async {
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith((ref) async => []),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          'missing_skill',
+          'missing_tool',
+        ).future,
+      );
+
+      expect(titles, isNull);
     });
   });
 

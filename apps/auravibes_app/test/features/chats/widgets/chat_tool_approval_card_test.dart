@@ -5,11 +5,15 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
@@ -110,6 +114,38 @@ void main() {
       sourceConversationId: sourceConversationId,
     );
   }
+
+  List<Object> _skillTitleOverrides() => [
+    workspaceSkillsProvider('ws-1').overrideWith(
+      (ref) async => const [
+        WorkspaceSkill(
+          source: .user,
+          id: 'skill-1',
+          slug: 'research',
+          title: 'Research Assistant',
+          description: '',
+          kind: .template,
+          isEnabled: true,
+        ),
+      ],
+    ),
+    skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+      (ref) async => [
+        SkillTemplateToolEntity(
+          id: 'tool-1',
+          skillId: 'skill-1',
+          templateType: .url,
+          title: 'Search the web',
+          description: 'Searches the web.',
+          slug: 'search_web',
+          isEnabled: true,
+          requiresCredential: false,
+          createdAt: .new(2026),
+          updatedAt: .new(2026),
+        ),
+      ],
+    ),
+  ];
 
   Future<void> pumpAndInit(WidgetTester tester, Widget widget) async {
     await tester.runAsync(() async {
@@ -487,7 +523,7 @@ void main() {
         _createPendingToolCall(
           toolName: 'call_skill_tool',
           argumentsRaw:
-              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"skill":"research","tool":"search_web","args":'
               '{"api_key":"secret-key","query":"visible"}}',
         ),
       ];
@@ -496,13 +532,13 @@ void main() {
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
           ],
         ),
       );
 
-      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
-      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
       expect(find.textContaining('secret-key'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });
@@ -514,7 +550,7 @@ void main() {
         _createPendingToolCall(
           toolName: 'call_skill_tool',
           argumentsRaw:
-              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"skill":"research","tool":"search_web","args":'
               '{"credential":"secret-value"}}',
           argumentsDigest: 'digest-1',
           turnId: 'turn-1',
@@ -526,13 +562,13 @@ void main() {
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+            ..._skillTitleOverrides(),
           ],
         ),
       );
 
-      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
-      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
       expect(find.textContaining('secret-value'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
     });

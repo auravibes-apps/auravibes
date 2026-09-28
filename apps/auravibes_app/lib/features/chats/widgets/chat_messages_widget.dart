@@ -27,6 +27,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
+import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -1601,11 +1602,11 @@ class const _AssistantActivityRun({
             messageId: item.messageId,
             toolCall: item.toolCall,
             isForkReference: item.isForkReference,
-            displayName: _toolCallDisplayName(
-              ref.watch(
-                toolDisplayNameProvider(workspaceId, item.toolCall.name),
-              ),
-              item.toolCall.name,
+            displayName: _activityToolCallDisplayName(
+              context: context,
+              ref: ref,
+              workspaceId: workspaceId,
+              toolCall: item.toolCall,
             ),
             openSubAgent: _openSubAgent(
               context: context,
@@ -1857,6 +1858,38 @@ String _toolCallDisplayName(
     rawName: toolName,
   ),
 );
+
+String _activityToolCallDisplayName({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required MessageToolCallEntity toolCall,
+}) {
+  final target = SkillToolCallDisplay.parseTarget(toolCall);
+  if (target != null) {
+    final titlesAsync = ref.watch(
+      skillToolCallDisplayTitlesProvider(
+        workspaceId,
+        target.skillSlug,
+        target.toolSlug,
+      ),
+    );
+
+    return SkillToolCallDisplay.displayName(
+      context: context,
+      titles: titlesAsync.maybeWhen(
+        data: (titles) => titles,
+        orElse: () => null,
+      ),
+      target: target,
+    );
+  }
+
+  return _toolCallDisplayName(
+    ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+    toolCall.name,
+  );
+}
 
 String _toolCallsSummary(Iterable<String> displayNames) {
   const maximumNames = 2;
@@ -2182,17 +2215,30 @@ class const _ActivityToolCallRow({
                       ),
                     ),
                     const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text(
-                        statusKey.tr(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: context.auraTheme.typography.fontSizeXs,
-                          fontFamily:
-                              context.auraTheme.typography.bodyFontFamily,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 120),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.auraTheme.fromSpacing(.xs),
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: .12),
+                          borderRadius: BorderRadius.circular(
+                            context.auraTheme.fromBorderRadius(.sm),
+                          ),
+                        ),
+                        child: Text(
+                          statusKey.tr(),
+                          key: ValueKey('activity_tool_status_${toolCall.id}'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: context.auraTheme.typography.fontSizeXs,
+                            fontFamily:
+                                context.auraTheme.typography.bodyFontFamily,
+                          ),
                         ),
                       ),
                     ),
