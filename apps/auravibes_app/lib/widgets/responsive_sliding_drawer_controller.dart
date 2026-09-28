@@ -183,7 +183,9 @@ extension _ResponsiveSlidingDrawerAppearance on _ResponsiveSlidingDrawerState {
     return isDesktop
         ? (_desktopDrawerWidth ??
               (_ResponsiveSlidingDrawerState._desktopOpenRatio * screenWidth))
-        : _ResponsiveSlidingDrawerState._openRatio * screenWidth;
+        : (_ResponsiveSlidingDrawerState._openRatio * screenWidth)
+              .clamp(0.0, _ResponsiveSlidingDrawerState._desktopMaxDrawerWidth)
+              .toDouble();
   }
 
   bool get _drawerFullyOpen =>

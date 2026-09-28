@@ -1,13 +1,41 @@
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
+  testWidgets('labels navigation toggle in English and Spanish', (
+    tester,
+  ) async {
+    for (final locale in const [Locale('en'), Locale('es')]) {
+      await _pumpLocalizedMenu(tester, locale);
+      final label = LocaleKeys.navigation_drawer_toggle_tooltip.tr();
+      final semantics = tester.ensureSemantics();
+      try {
+        final menu = find.byIcon(Icons.menu);
+        expect(find.byTooltip(label), findsOneWidget);
+        expect(tester.getSemantics(menu).label, label);
+      } finally {
+        semantics.dispose();
+      }
+    }
+  });
+
   testWidgets('renders app bar with menu icon', (tester) async {
     await tester.pumpWidget(
       AuraThemeScope(
@@ -204,4 +232,38 @@ void main() {
 
     expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
   });
+}
+
+Future<void> _pumpLocalizedMenu(WidgetTester tester, Locale locale) async {
+  await tester.runAsync(() async {
+    expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
+    await tester.pumpWidget(
+      EasyLocalization(
+        child: Builder(
+          builder: (context) => AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              home: const Scaffold(
+                appBar: AuraAppBarWithDrawer(title: Text('Chat')),
+              ),
+              theme: .new(),
+              locale: context.locale,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                ...context.localizationDelegates,
+              ],
+              supportedLocales: context.supportedLocales,
+            ),
+          ),
+        ),
+        supportedLocales: const [Locale('en'), Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: locale,
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+  });
+  await tester.pumpAndSettle();
 }

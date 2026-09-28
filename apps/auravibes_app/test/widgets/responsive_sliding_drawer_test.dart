@@ -160,9 +160,16 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
       bool initiallyOpen = false,
+      Size viewSize = const Size(1200, 800),
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) async {
+      tester.view.physicalSize = viewSize;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
       await tester.runAsync(() async {
         await tester.pumpWidget(
           buildDrawer(
@@ -275,7 +282,7 @@ void main() {
       expect(controller1.isDesktop, isFalse);
     });
 
-    testWidgets('uses desktop layout when width >= 600', (tester) async {
+    testWidgets('uses docked layout when width >= 960', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(tester, controller: controller);
@@ -283,32 +290,37 @@ void main() {
       expect(controller.isDesktop, isTrue);
     });
 
-    testWidgets('uses mobile layout when width < 600', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
+    testWidgets('uses overlay through 959 and docked layout at 960', (
+      tester,
+    ) async {
+      for (final width in [599.0, 600.0, 959.0, 960.0]) {
+        final controller = ResponsiveSlidingDrawerController();
+        await pumpDrawer(
+          tester,
+          controller: controller,
+          viewSize: Size(width, 800),
+          initiallyOpen: true,
+        );
 
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await pumpDrawer(tester, controller: controller);
-
-      expect(controller.isDesktop, isFalse);
+        expect(controller.isDesktop, width == 960);
+        final panel = find
+            .ancestor(of: find.text('Drawer'), matching: find.byType(SizedBox))
+            .first;
+        final expectedWidth = width >= 960
+            ? (width * 0.3).clamp(150.0, 400.0).toDouble()
+            : (width * 0.8).clamp(0.0, 400.0).toDouble();
+        expect(tester.getSize(panel).width, closeTo(expectedWidth, 0.1));
+      }
     });
 
     testWidgets('closeIfMobile closes drawer on mobile width', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await pumpDrawer(tester, controller: controller);
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+      );
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -322,14 +334,12 @@ void main() {
     testWidgets('renders dark mode scrim colors', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await pumpDrawer(tester, controller: controller, isDarkMode: true);
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        isDarkMode: true,
+        viewSize: const Size(400, 800),
+      );
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -342,14 +352,11 @@ void main() {
     ) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await pumpDrawer(tester, controller: controller);
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+      );
 
       controller.toggle();
       final _ = await tester.pumpAndSettle();
@@ -363,14 +370,11 @@ void main() {
     testWidgets('mobile tap closes drawer when fully open', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      await pumpDrawer(tester, controller: controller);
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(400, 800),
+      );
 
       controller.open();
       final _ = await tester.pumpAndSettle();
@@ -383,6 +387,42 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
+    });
+
+    testWidgets('only exposes drawer actions to keyboard focus while open', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+      final drawerFocus = FocusNode(debugLabel: 'drawer action');
+      addTearDown(drawerFocus.dispose);
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        viewSize: const Size(599, 800),
+        drawer: TextButton(
+          focusNode: drawerFocus,
+          onPressed: () {},
+          child: const Text('Drawer action'),
+        ),
+      );
+
+      drawerFocus.requestFocus();
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
+
+      controller.open();
+      await tester.pumpAndSettle();
+      drawerFocus.requestFocus();
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, same(drawerFocus));
+
+      controller.close();
+      await tester.pumpAndSettle();
+      drawerFocus.unfocus();
+      drawerFocus.requestFocus();
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
     });
 
     testWidgets('divider hover changes state on desktop', (tester) async {

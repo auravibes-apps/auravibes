@@ -68,7 +68,10 @@ void main() {
 
     for (final scenario in const [
       (width: 390.0, isDesktop: false),
-      (width: 768.0, isDesktop: true),
+      (width: 600.0, isDesktop: false),
+      (width: 768.0, isDesktop: false),
+      (width: 959.0, isDesktop: false),
+      (width: 960.0, isDesktop: true),
       (width: 1280.0, isDesktop: true),
     ]) {
       tester.view.physicalSize = .new(scenario.width, 900);
@@ -105,26 +108,50 @@ void main() {
         brightness: Brightness.dark,
       ),
       (
-        name: 'desktop_600_closed_light',
+        name: 'mobile_600_closed_light',
         width: 600.0,
         initiallyOpen: false,
         brightness: Brightness.light,
       ),
       (
-        name: 'desktop_600_open_light',
+        name: 'mobile_600_open_light',
         width: 600.0,
         initiallyOpen: true,
         brightness: Brightness.light,
       ),
       (
-        name: 'desktop_600_closed_dark',
+        name: 'mobile_600_closed_dark',
         width: 600.0,
         initiallyOpen: false,
         brightness: Brightness.dark,
       ),
       (
-        name: 'desktop_600_open_dark',
+        name: 'mobile_600_open_dark',
         width: 600.0,
+        initiallyOpen: true,
+        brightness: Brightness.dark,
+      ),
+      (
+        name: 'mobile_959_closed_light',
+        width: 959.0,
+        initiallyOpen: false,
+        brightness: Brightness.light,
+      ),
+      (
+        name: 'mobile_959_open_light',
+        width: 959.0,
+        initiallyOpen: true,
+        brightness: Brightness.light,
+      ),
+      (
+        name: 'desktop_960_closed_light',
+        width: 960.0,
+        initiallyOpen: false,
+        brightness: Brightness.light,
+      ),
+      (
+        name: 'desktop_960_open_dark',
+        width: 960.0,
         initiallyOpen: true,
         brightness: Brightness.dark,
       ),
@@ -144,7 +171,7 @@ void main() {
       }
       expect(await tester.pumpAndSettle(), greaterThan(0));
 
-      expect(controller.isDesktop, scenario.width >= 600);
+      expect(controller.isDesktop, scenario.width >= 960);
       expect(content, findsOneWidget);
       expect(tester.takeException(), isNull);
       await expectLater(
