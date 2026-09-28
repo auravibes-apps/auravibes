@@ -134,7 +134,8 @@ class AppAgentContinuationAdapter({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    return AppAgentTranscriptContextAdapter(messageRepository).reconcile(
+
+    return await AppAgentTranscriptContextAdapter(messageRepository).reconcile(
       conversationId: conversationId,
       contextMessages: contextMessages,
       tools: tools,
