@@ -20,7 +20,8 @@ enum ConversationErrorCode implements _isc.SerializableModel {
   staleRevision,
   idempotencyConflict,
   turnConflict,
-  toolDecisionConflict;
+  toolDecisionConflict,
+  checkpointRestoreConflict;
 
   static ConversationErrorCode fromJson(String name) {
     switch (name) {
@@ -40,6 +41,8 @@ enum ConversationErrorCode implements _isc.SerializableModel {
         return ConversationErrorCode.turnConflict;
       case 'toolDecisionConflict':
         return ConversationErrorCode.toolDecisionConflict;
+      case 'checkpointRestoreConflict':
+        return ConversationErrorCode.checkpointRestoreConflict;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "ConversationErrorCode"',

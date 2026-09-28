@@ -28,6 +28,7 @@ abstract class ConversationProjectionView
     this.forkThroughMessageId,
     this.forkMaterializedAt,
     this.activeExecutionId,
+    this.activeCompactionCheckpointId,
     required this.updatedAt,
   });
 
@@ -45,6 +46,7 @@ abstract class ConversationProjectionView
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime updatedAt,
   }) = _ConversationProjectionViewImpl;
 
@@ -71,6 +73,8 @@ abstract class ConversationProjectionView
               jsonSerialization['forkMaterializedAt'],
             ),
       activeExecutionId: jsonSerialization['activeExecutionId'] as String?,
+      activeCompactionCheckpointId:
+          jsonSerialization['activeCompactionCheckpointId'] as String?,
       updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
@@ -103,6 +107,8 @@ abstract class ConversationProjectionView
 
   String? activeExecutionId;
 
+  String? activeCompactionCheckpointId;
+
   DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationProjectionView]
@@ -122,6 +128,7 @@ abstract class ConversationProjectionView
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     DateTime? updatedAt,
   });
   @override
@@ -145,6 +152,8 @@ abstract class ConversationProjectionView
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -170,6 +179,8 @@ abstract class ConversationProjectionView
       if (forkMaterializedAt != null)
         'forkMaterializedAt': forkMaterializedAt?.toJson(),
       if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
+      if (activeCompactionCheckpointId != null)
+        'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -197,6 +208,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     String? forkThroughMessageId,
     DateTime? forkMaterializedAt,
     String? activeExecutionId,
+    String? activeCompactionCheckpointId,
     required DateTime updatedAt,
   }) : super._(
          id: id,
@@ -212,6 +224,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
          forkThroughMessageId: forkThroughMessageId,
          forkMaterializedAt: forkMaterializedAt,
          activeExecutionId: activeExecutionId,
+         activeCompactionCheckpointId: activeCompactionCheckpointId,
          updatedAt: updatedAt,
        );
 
@@ -233,6 +246,7 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
     Object? forkThroughMessageId = _Undefined,
     Object? forkMaterializedAt = _Undefined,
     Object? activeExecutionId = _Undefined,
+    Object? activeCompactionCheckpointId = _Undefined,
     DateTime? updatedAt,
   }) {
     return ConversationProjectionView(
@@ -261,6 +275,9 @@ class _ConversationProjectionViewImpl extends ConversationProjectionView {
       activeExecutionId: activeExecutionId is String?
           ? activeExecutionId
           : this.activeExecutionId,
+      activeCompactionCheckpointId: activeCompactionCheckpointId is String?
+          ? activeCompactionCheckpointId
+          : this.activeCompactionCheckpointId,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

@@ -43,6 +43,7 @@ conversation:
   - submitToolDecisionBatch:
   - cancelTurn:
   - compact:
+  - restoreCompactionCheckpoint:
 mcpServer:
   - verify:
   - create:

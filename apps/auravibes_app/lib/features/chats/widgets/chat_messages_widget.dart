@@ -738,6 +738,7 @@ class const _ChatMessageTimelineItem({
     if (message.metadata?.isCompactionSummary == true) {
       return _CompactedMessageWidget(
         message: message,
+        workspaceId: workspaceId,
         key: ValueKey(message.id),
       );
     }
@@ -2439,6 +2440,7 @@ String? _subAgentTitle(MessageToolCallEntity toolCall) {
 
 class const _CompactedMessageWidget({
   required final MessageEntity message,
+  required final String workspaceId,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2505,7 +2507,12 @@ class const _CompactedMessageWidget({
         builder: (modalContext) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(child: CompactedMessageDetails(message: message)),
+            Flexible(
+              child: CompactedMessageDetails(
+                message: message,
+                workspaceId: workspaceId,
+              ),
+            ),
             AuraButton(
               onPressed: () =>
                   Navigator.of(modalContext, rootNavigator: true).pop(),

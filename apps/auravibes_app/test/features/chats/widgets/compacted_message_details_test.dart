@@ -37,7 +37,10 @@ class const _Subject({required final MessageEntity message})
                 data: .new(),
                 child: Scaffold(
                   body: SingleChildScrollView(
-                    child: CompactedMessageDetails(message: message),
+                    child: CompactedMessageDetails(
+                      message: message,
+                      workspaceId: 'ws-1',
+                    ),
                   ),
                 ),
               ),

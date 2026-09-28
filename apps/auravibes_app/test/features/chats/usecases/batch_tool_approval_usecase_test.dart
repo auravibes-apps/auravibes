@@ -1,7 +1,9 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
@@ -32,6 +34,7 @@ void main() {
   var resumeService = MockAgentToolResumeService();
   var resolvedToolService = _MockResolvedToolService();
   var loadToolSpecs = MockLoadConversationToolSpecsUsecase();
+  var activityGate = ConversationActivityGate();
   var changeCount = 0;
 
   setUp(() {
@@ -40,6 +43,7 @@ void main() {
     resumeService = MockAgentToolResumeService();
     resolvedToolService = _MockResolvedToolService();
     loadToolSpecs = MockLoadConversationToolSpecsUsecase();
+    activityGate = ConversationActivityGate();
     changeCount = 0;
 
     when(() => resumeService.call(messageId: any(named: 'messageId')))
@@ -51,6 +55,7 @@ void main() {
   }) => BatchToolApprovalUsecase(
     messageRepository: messageRepository,
     conversationRepository: conversationRepository,
+    conversationActivityGate: activityGate,
     agentToolResumeService: resumeService,
     runResolvedTool: resolvedToolService,
     cancellationRuntime: .new(),
@@ -78,6 +83,22 @@ void main() {
       );
     },
   );
+
+  test('blocks local tool approval during checkpoint restore', () async {
+    expect(activityGate.tryBeginCheckpointRestore('root'), isTrue);
+
+    await expectLater(
+      createUsecase().skip(
+        rootConversationId: 'root',
+        workspaceId: 'workspace',
+        pendingCalls: [_pending()],
+      ),
+      throwsA(isA<CompactionCheckpointRestoreException>()),
+    );
+    final _ = verifyNever(
+      () => messageRepository.claimToolCallBatch(any(), approve: false),
+    );
+  });
 
   test(
     'skips unique local calls and resumes each source message once',

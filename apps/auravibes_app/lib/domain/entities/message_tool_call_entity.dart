@@ -164,6 +164,9 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
     String? compactedThroughMessageId,
     @Default(<String>[]) List<String> compactedMessageIds,
     DateTime? compactionCreatedAt,
+
+    String? compactionProviderId,
+    String? compactionModelId,
   }) = _MessageMetadataEntity;
   factory fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);

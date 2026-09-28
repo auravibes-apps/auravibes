@@ -5,6 +5,7 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -59,6 +60,21 @@ void main() {
         container.read(compactionExecutionProvider)['conv-1']?.trigger,
         CompactionTrigger.auto,
       );
+    });
+
+    test('tryMarkRunning rejects during checkpoint restore', () {
+      final gate = container.read(conversationActivityGateProvider);
+      expect(gate.tryBeginCheckpointRestore('conv-1'), isTrue);
+      final notifier = container.read(compactionExecutionProvider.notifier);
+      final state = CompactionExecutionState(
+        conversationId: 'conv-1',
+        trigger: .auto,
+        startedAt: .new(2026),
+        status: .running,
+      );
+
+      expect(notifier.tryMarkRunning(state), isFalse);
+      expect(container.read(compactionExecutionProvider), isEmpty);
     });
 
     test('isCompacting returns true when running', () {

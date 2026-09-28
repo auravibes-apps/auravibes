@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_streaming_notifier.g.dart';
@@ -10,6 +12,11 @@ class ConversationStreamingNotifier extends _$ConversationStreamingNotifier {
   }
 
   void start(String conversationId) {
+    if (ref
+        .read(conversationActivityGateProvider)
+        .isCheckpointRestoreInProgress(conversationId)) {
+      throw const CompactionCheckpointRestoreException();
+    }
     state = {...state, conversationId};
   }
 

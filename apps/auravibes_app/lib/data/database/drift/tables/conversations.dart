@@ -57,5 +57,7 @@ class Conversations extends Table with TableMixin {
   /// Non-null after the source history has been materialized into this fork.
   DateTimeColumn get forkMaterializedAt => dateTime().nullable()();
 
+  TextColumn get activeCompactionCheckpointId => text().nullable()();
+
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

@@ -1,0 +1,7 @@
+class: RestoreConversationCheckpointRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  checkpointMessageId: String
+  expectedConversationRevision: int

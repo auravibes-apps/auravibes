@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
@@ -14,6 +15,7 @@ final batchToolApprovalUsecaseProvider = Provider<BatchToolApprovalActions>(
   (ref) => BatchToolApprovalUsecase(
     messageRepository: ref.watch(messageRepositoryProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
+    conversationActivityGate: ref.watch(conversationActivityGateProvider),
     agentToolResumeService: ref.watch(agentToolResumeServiceProvider),
     runResolvedTool: ref.watch(resolvedToolServiceProvider),
     cancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
