@@ -190,7 +190,9 @@ AgentTranscriptContextEntry? _snapshotBeforeSummary(
 
   return AgentTranscriptContextEntry(
     afterMessageId: null,
-    update: snapshotAgentTranscriptContext(foldAgentTranscriptContext(updates)),
+    update: snapshotAgentTranscriptContext(
+      foldAgentTranscriptContext(updates),
+    ),
   );
 }
 
