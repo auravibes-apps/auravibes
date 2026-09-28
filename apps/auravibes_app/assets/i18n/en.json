@@ -373,6 +373,7 @@
         "restore_default": "Restore provider default"
       },
       "message_placeholder": "Type your message...",
+      "discard_draft": "Discard draft",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",
       "attach_camera": "Take photo",
@@ -622,13 +623,19 @@
       "heading": "Heading",
       "bullets": "Bullets",
       "numbered_list": "Numbered list",
+      "task_list": "Task list",
       "link": "Link",
       "link_text_placeholder": "Link text",
       "link_url_placeholder": "https://example.com",
       "code": "Code",
       "quote": "Quote",
-      "undo": "Undo"
-    }
+      "undo": "Undo",
+      "redo": "Redo"
+    },
+    "link_dialog_title": "Insert link",
+    "link_text_label": "Link text",
+    "link_destination_label": "Destination URL",
+    "link_destination_required": "Enter a destination URL"
   },
   "skills_resource": {
     "section_title": "Resources",
@@ -739,6 +746,10 @@
     "not_found": "Credential not found",
     "save": "Save",
     "save_error": "Unable to save credential",
+    "secret_required": "Add at least one secret field. Metadata-only definitions cannot be used as credentials.",
+    "schema_conflict": "Cannot change {fields}: {credentials} saved credentials use this definition. Edit or remove those credentials first.",
+    "delete_conflict": "Cannot delete: {credentials} linked credentials, {skills} skills, and {tools} template tools are affected. Remove the credentials first.",
+    "manage_credentials": "Manage credentials",
     "duplicate": "Duplicate",
     "duplicate_success": "Credential duplicated",
     "duplicate_error": "Unable to duplicate credential",

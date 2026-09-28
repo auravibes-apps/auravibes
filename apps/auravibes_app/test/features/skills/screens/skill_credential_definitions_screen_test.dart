@@ -103,11 +103,17 @@ void main() {
       addTearDown(harness.dispose);
       final _ = await harness.repository.createDefinition(
         harness.workspaceId,
-        const .new(title: 'GitHub', attributesJson: '{}'),
+        const .new(
+          title: 'GitHub',
+          attributesJson: '{"api_key":{"description":"API key"}}',
+        ),
       );
       final _ = await harness.repository.createDefinition(
         harness.workspaceId,
-        const .new(title: 'Data Warehouse', attributesJson: '{}'),
+        const .new(
+          title: 'Data Warehouse',
+          attributesJson: '{"api_key":{"description":"API key"}}',
+        ),
       );
       await _pumpScreen(tester, harness);
 

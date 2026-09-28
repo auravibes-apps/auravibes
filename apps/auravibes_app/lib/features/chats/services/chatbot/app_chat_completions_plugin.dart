@@ -17,6 +17,9 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     this.httpClient,
     this.requestTimeout = const Duration(seconds: 30),
     this.retryWait,
+    this.modelSupportsStrictToolSampling = false,
+    this.defaultToolSamplingPolicy = ToolSamplingPolicy.off,
+    this.onToolSamplingDecision,
   }) {
     if (name.isEmpty || name.contains('/')) {
       throw GenkitException(
@@ -36,6 +39,9 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
   final http.Client? httpClient;
   final Duration requestTimeout;
   final Future<void> Function(Duration)? retryWait;
+  final bool modelSupportsStrictToolSampling;
+  final ToolSamplingPolicy defaultToolSamplingPolicy;
+  final void Function(List<ToolSamplingDecision>)? onToolSamplingDecision;
 
   @override
   Future<List<Action<dynamic, dynamic, dynamic, dynamic>>> init() async => [
@@ -70,6 +76,9 @@ extension on AppChatCompletionsPlugin {
       modelName: modelName,
       request: request,
       stream: context.streamingRequested,
+      modelSupportsStrictToolSampling: modelSupportsStrictToolSampling,
+      defaultPolicy: defaultToolSamplingPolicy,
+      onToolSamplingDecision: onToolSamplingDecision,
     );
 
     return _generateWithRetry(this, body, context);

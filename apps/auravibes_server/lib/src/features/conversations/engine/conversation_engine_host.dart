@@ -509,6 +509,7 @@ final class const ServerConversationEngineHost({
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
+      supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
       customize: (modelName, _) => (
         model: modelName,
         extraBody: reasoningRequestBody(
@@ -680,6 +681,21 @@ final class const ServerConversationEngineHost({
       if (iteration >= 20) {
         throw const ConversationEngineConfigurationException('tool_loop_limit');
       }
+      final toolSampling = evaluateCloudToolSampling(
+        codec,
+        tools,
+        policy: config.toolSamplingPolicy,
+        modelSupportsStrict: config.modelSupportsStrictToolSampling,
+      );
+      if (debugA2ui) {
+        for (final decision in toolSampling.decisions) {
+          if (decision.policy == ToolSamplingPolicy.off) continue;
+          session.log(
+            'Tool sampling: ${jsonEncode(decision.toDiagnostic())}',
+          );
+        }
+      }
+      toolSampling.requireStrict();
       providerResponse = await admissionGate
           .run(
             session,
@@ -698,8 +714,7 @@ final class const ServerConversationEngineHost({
               {
                 'model': config.modelId,
                 'messages': requestMessages,
-                if (tools.isNotEmpty)
-                  'tools': tools.map(_providerTool).toList(growable: false),
+                if (tools.isNotEmpty) 'tools': toolSampling.definitions,
                 'stream': true,
                 'stream_options': {'include_usage': true},
               },
@@ -1491,9 +1506,25 @@ final class const ServerConversationEngineHost({
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
+    final providerSupportsStrict =
+        connection.providerId == 'openai' && connection.url == null;
+    final modelSupportsStrict =
+        providerSupportsStrict &&
+        selection.model.supportsToolCalls &&
+        verifiedStrictToolSampling(
+          connection.providerId,
+          selection.model.modelId,
+        );
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
+      providerSupportsStrictToolSampling: providerSupportsStrict,
+      modelSupportsStrictToolSampling: modelSupportsStrict,
+      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
+          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+          : modelSupportsStrict
+          ? ToolSamplingPolicy.prefer
+          : ToolSamplingPolicy.off,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(
@@ -1571,14 +1602,23 @@ String _activationSkillKey(ConversationToolCall call) {
   return call.stableId;
 }
 
-Map<String, Object?> _providerTool(ServerResolvedTool tool) => {
-  'type': 'function',
-  'function': {
-    'name': tool.spec.name,
-    'description': tool.spec.description,
-    'parameters': tool.spec.inputJsonSchema,
-  },
-};
+ToolSamplingResult evaluateCloudToolSampling(
+  ChatCompletionsCodec codec,
+  Iterable<ServerResolvedTool> tools, {
+  required ToolSamplingPolicy policy,
+  required bool modelSupportsStrict,
+}) => codec.evaluateTools(
+  tools: [
+    for (final tool in tools)
+      ToolDefinition(
+        name: tool.spec.name,
+        description: tool.spec.description,
+        inputSchema: tool.spec.inputJsonSchema,
+      ),
+  ],
+  policy: policy,
+  modelSupportsStrict: modelSupportsStrict,
+);
 
 Uri providerRequestUri(String providerId, Uri baseUri) {
   final endpoint = switch (providerId) {
@@ -1784,6 +1824,9 @@ Map<String, dynamic> _jsonObject(String source) {
 class const _ProviderConfig({
   required final String providerId,
   required final String modelId,
+  required final bool providerSupportsStrictToolSampling,
+  required final bool modelSupportsStrictToolSampling,
+  required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,
   required final Map<String, String> headers,

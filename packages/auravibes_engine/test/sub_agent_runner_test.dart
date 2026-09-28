@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -59,13 +60,13 @@ void main() {
       expect(result['status'], 'done');
       expect(result, isNot(contains('agentId')));
       expect(conversations.createdChildren, ['Learn D&D']);
-      expect(runSubAgentToolSpec.description, contains('Omit agentId'));
+      expect(runSubAgentToolSpec.description, contains('omit agentId'));
       final properties =
           runSubAgentToolSpec.inputJsonSchema['properties']!
               as Map<String, Object?>;
       expect(
         (properties['agentId']! as Map<String, Object?>)['description'],
-        contains('Omit for a general sub-agent'),
+        contains('Set null for a general sub-agent'),
       );
     });
 
@@ -118,16 +119,33 @@ void main() {
       expect(failure.failurePhase, 'listAgents.validate');
     });
 
-    test('list_agents schema exposes optional query, type, limit, cursor', () {
+    test('list_agents schema encodes optional values as nullable', () {
       final schema = listAgentsToolSpec.inputJsonSchema;
       final properties = schema['properties']! as Map<String, Object?>;
       final type = properties['type']! as Map<String, Object?>;
 
-      expect(type['enum'], ['main', 'sub_agent']);
-      expect(schema['required'], isNot(contains('type')));
+      expect(type['enum'], ['main', 'sub_agent', null]);
+      expect(schema['required'], ['query', 'type', 'limit', 'cursor']);
+      expect(type['type'], ['string', 'null']);
+      expect(strictToolSchemaIssue(Map<String, dynamic>.from(schema)), isNull);
       expect(properties['query'], containsPair('maxLength', 200));
       expect(properties['limit'], containsPair('maximum', 100));
       expect(properties['cursor'], containsPair('maxLength', 2048));
+    });
+
+    test('explicit null list filters keep omission defaults', () {
+      final absent = SubAgentCatalogQuery.fromArguments('w1', const {});
+      final nullable = SubAgentCatalogQuery.fromArguments('w1', const {
+        'query': null,
+        'type': null,
+        'limit': null,
+        'cursor': null,
+      });
+
+      expect(nullable.query, absent.query);
+      expect(nullable.type, absent.type);
+      expect(nullable.limit, absent.limit);
+      expect(nullable.cursor, absent.cursor);
     });
 
     test('forwards list query, limit, cursor, and next cursor', () async {
@@ -173,13 +191,14 @@ void main() {
       }
     });
 
-    test('run_sub_agent agentId schema is optional string only', () {
+    test('run_sub_agent schema accepts null agentId', () {
       final schema = runSubAgentToolSpec.inputJsonSchema;
       final properties = schema['properties']! as Map<String, Object?>;
       final agentId = properties['agentId']! as Map<String, Object?>;
 
-      expect(agentId['type'], 'string');
-      expect(schema['required'], isNot(contains('agentId')));
+      expect(agentId['type'], ['string', 'null']);
+      expect(schema['required'], contains('agentId'));
+      expect(strictToolSchemaIssue(Map<String, dynamic>.from(schema)), isNull);
     });
 
     test(

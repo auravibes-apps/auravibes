@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
@@ -70,6 +71,8 @@ class const ChatInputWidget({
   required final Widget modelCompactControl,
   required final Widget agentCompactControl,
   final ValueChanged<bool>? onDraftStatusChanged,
+  final String? conversationId,
+  final bool autofocus = false,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
   final List<String> modalitiesInput = const [],
@@ -127,12 +130,15 @@ typedef _ChatInputStateRequest = ({
 });
 
 abstract final class _ChatInputHooksFactory {
-  static _ChatInputDraftHooks draft() => _ChatInputDraftHooks(
-    controller: useTextEditingController(),
-    focusNode: useFocusNode(),
-    attachments: useState(<MessageAttachmentToCreate>[]),
-    isSending: useState(false),
-  );
+  static _ChatInputDraftHooks draft(ChatDraft? initialDraft) =>
+      _ChatInputDraftHooks(
+        controller: useTextEditingController(text: initialDraft?.text),
+        focusNode: useFocusNode(),
+        attachments: useState(
+          initialDraft?.attachments ?? <MessageAttachmentToCreate>[],
+        ),
+        isSending: useState(false),
+      );
 
   static _ChatInputRecordingHooks recording() => _ChatInputRecordingHooks(
     isRecording: useState(false),
@@ -142,22 +148,21 @@ abstract final class _ChatInputHooksFactory {
     recordingStart: useRef<Future<void>?>(null),
   );
 
-  static _ChatInputHooks hooks() => _ChatInputHooks(
-    draft: draft(),
+  static _ChatInputHooks hooks(ChatDraft? initialDraft) => _ChatInputHooks(
+    draft: draft(initialDraft),
     recording: recording(),
     attachmentUsecase: useRef<LocalChatAttachmentUsecase?>(null),
   );
 
   static _ChatInputState state(WidgetRef ref, ChatInputWidget input) {
-    final hooks = _ChatInputHooksFactory.hooks();
+    final initialDraft = _initialConversationDraft(ref, input);
+    final hooks = _ChatInputHooksFactory.hooks(initialDraft);
     final actions = _createAndRegisterActions(
       ref: ref,
       hooks: hooks,
       input: input,
     );
-    useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
-      input.draftToLoad,
-    ]);
+    _registerDraftEffects(ref, input, actions, hooks.draft);
 
     return _assembleChatInputState((
       ref: ref,
@@ -214,6 +219,70 @@ abstract final class _ChatInputHooksFactory {
 
     return actions;
   }
+}
+
+ChatDraft? _initialConversationDraft(WidgetRef ref, ChatInputWidget input) {
+  final conversationId = input.conversationId;
+  if (conversationId == null) return null;
+
+  return ref.read(conversationDraftProvider(input.workspaceId, conversationId));
+}
+
+void _registerDraftEffects(
+  WidgetRef ref,
+  ChatInputWidget input,
+  _ChatInputActions actions,
+  _ChatInputDraftHooks draft,
+) {
+  useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
+    input.draftToLoad,
+  ]);
+  useEffect(() => _saveConversationDraft(ref, input, draft), [
+    input.workspaceId,
+    input.conversationId,
+  ]);
+}
+
+Dispose? _saveConversationDraft(
+  WidgetRef ref,
+  ChatInputWidget input,
+  _ChatInputDraftHooks draft,
+) {
+  final conversationId = input.conversationId;
+  if (conversationId == null) return null;
+
+  final draftNotifier = ref.read(
+    conversationDraftProvider(input.workspaceId, conversationId).notifier,
+  );
+
+  return _listenForConversationDraftChanges(draftNotifier, draft);
+}
+
+Dispose _listenForConversationDraftChanges(
+  ConversationDraft draftNotifier,
+  _ChatInputDraftHooks draft,
+) {
+  void save() => _saveCurrentConversationDraft(draftNotifier, draft);
+  draft.controller.addListener(save);
+  draft.attachments.addListener(save);
+
+  return () {
+    draft.controller.removeListener(save);
+    draft.attachments.removeListener(save);
+  };
+}
+
+void _saveCurrentConversationDraft(
+  ConversationDraft draftNotifier,
+  _ChatInputDraftHooks draft,
+) {
+  final current = ChatDraft(
+    text: draft.controller.text,
+    attachments: draft.attachments.value,
+  );
+  if (draft.isSending.value && current.isEmpty) return;
+
+  draftNotifier.save(current);
 }
 
 void _reportDraftStatus(
@@ -468,6 +537,7 @@ class const _ChatInputField({
       actions: state.actions,
       controller: state.hooks.draft.controller,
       focusNode: state.hooks.draft.focusNode,
+      autofocus: state.input.autofocus,
       footer: footer,
       header: header,
       isRecording: state.hooks.recording.isRecording.value,
@@ -480,6 +550,7 @@ class _ChatInputFieldView extends StatelessWidget {
     required _ChatInputActions actions,
     required TextEditingController controller,
     required FocusNode focusNode,
+    required bool autofocus,
     required Widget footer,
     required Widget header,
     required bool isRecording,
@@ -490,6 +561,7 @@ class _ChatInputFieldView extends StatelessWidget {
          ),
          textInputAction: .send,
          readOnly: isRecording,
+         autofocus: autofocus,
          maxLines: ChatInputWidget._maxInputLines,
          onSubmitted: (_) => unawaited(actions.sendMessage()),
          onTapOutside: (_) => focusNode.unfocus(),
@@ -591,8 +663,27 @@ extension _ChatInputDraftActions on _ChatInputActions {
     if (_recording.isRecording.value || _recording.isStartingRecording.value) {
       unawaited(_attachmentUsecase.cancelVoiceRecording());
     }
-    _draft.attachments.value.forEach(deleteUnsentAttachment);
+    if (input.conversationId == null) {
+      _draft.attachments.value.forEach(deleteUnsentAttachment);
+    }
     _recording.recordingTimer.value?.cancel();
+  }
+
+  void discardDraft() {
+    _draft.attachments.value.forEach(deleteUnsentAttachment);
+    _draft.controller.clear();
+    _draft.attachments.value = const [];
+    final conversationId = input.conversationId;
+    if (conversationId != null) {
+      ref
+          .read(
+            conversationDraftProvider(
+              input.workspaceId,
+              conversationId,
+            ).notifier,
+          )
+          .clear();
+    }
   }
 
   void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
@@ -842,21 +933,48 @@ extension _ChatInputMessageActions on _ChatInputActions {
   }
 
   Future<void> _sendDraftToConversation(ChatDraft draft) async {
+    final savedDraft = _readSavedConversationDraft();
     final sendResult = input.onSendMessage(draft);
     _draft.controller.clear();
     _draft.attachments.value = const [];
-    await _awaitSendResult(sendResult, draft);
+    if (await _awaitSendResult(sendResult, draft)) {
+      _clearSavedConversationDraft(savedDraft);
+    }
   }
 
-  Future<void> _awaitSendResult(
+  ChatDraft? _readSavedConversationDraft() {
+    final conversationId = input.conversationId;
+    if (conversationId == null) return null;
+
+    return ref.read(
+      conversationDraftProvider(input.workspaceId, conversationId),
+    );
+  }
+
+  void _clearSavedConversationDraft(ChatDraft? savedDraft) {
+    final conversationId = input.conversationId;
+    if (conversationId == null) return;
+
+    ref
+        .read(
+          conversationDraftProvider(input.workspaceId, conversationId).notifier,
+        )
+        .clearIfSame(savedDraft);
+  }
+
+  Future<bool> _awaitSendResult(
     FutureOr<void> sendResult,
     ChatDraft draft,
   ) async {
     try {
       await sendResult;
+
+      return true;
     } on Object catch (error, stackTrace) {
       _logger.warning('Failed to send draft', error, stackTrace);
       _restoreDraftAfterSendFailure(draft);
+
+      return false;
     }
   }
 
@@ -1139,12 +1257,23 @@ bool get _isMobilePlatform =>
 
 List<AuraPopupMenuItem> _conversationMenuItems(_ChatInputState state) => [
   _toolsMenuItem(state),
+  if (state.input.conversationId != null && !state.isEmpty)
+    _discardDraftMenuItem(state),
   if (state.input.onSkillsPress case final onSkillsPress?)
     _skillsMenuItem(onSkillsPress),
   ?_continueMenuItem(state),
   if (state.input.onCompact case final onCompact?)
     _compactMenuItem(state, onCompact),
 ];
+
+AuraPopupMenuItem _discardDraftMenuItem(_ChatInputState state) =>
+    AuraPopupMenuItem(
+      title: const TextLocale(
+        LocaleKeys.chats_screens_chat_conversation_discard_draft,
+      ),
+      onTap: state.actions.discardDraft,
+      leading: const AuraIcon(Icons.delete_outline),
+    );
 
 AuraPopupMenuItem _toolsMenuItem(_ChatInputState state) => AuraPopupMenuItem(
   title: const TextLocale(LocaleKeys.menu_tools),

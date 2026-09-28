@@ -320,6 +320,17 @@ extension CloudSkillStoreCredentialApi on CloudSkillStore {
   Future<List<SkillCredentialEntity>> credentials(String definitionId) =>
       _apiCredentials(definitionId);
 
+  Future<List<SkillCredentialEntity>> usableCredentials(String definitionId) =>
+      _apiCredentials(definitionId, requireSecret: true);
+
+  Future<int> linkedCredentialCount(String definitionId) async =>
+      (await _active(.serviceConnection)).where((item) {
+        final data = _data(item);
+
+        return data['kind'] == 'skillCredential' &&
+            data['credentialDefinitionId'] == definitionId;
+      }).length;
+
   Future<SkillCredentialEntity> createCredential(
     SkillCredentialToCreate value,
   ) => _apiCreateCredential(value);
@@ -445,6 +456,9 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
   Future<SkillCredentialDefinitionEntity> _apiCreateDefinition(
     SkillCredentialDefinitionToCreate value,
   ) async {
+    final _ = SkillCredentialAttributeDefinition.validateDefinitionMap(
+      value.attributesJson,
+    );
     final now = DateTime.now().toUtc();
     final id = const UuidV7().generate();
     final entity = _definitionFromCreate(id, value, now);
@@ -463,6 +477,7 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
   ) async {
     final resource = await _required(.skillDefinition, id);
     final current = _definition(resource);
+    _validateDefinitionUpdate(current, value);
     final updated = _updatedDefinition(current, value);
     await _store.update(
       kind: .skillDefinition,
@@ -474,17 +489,32 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
     return updated;
   }
 
+  void _validateDefinitionUpdate(
+    SkillCredentialDefinitionEntity current,
+    SkillCredentialDefinitionToUpdate value,
+  ) {
+    final _ = SkillCredentialAttributeDefinition.validateDefinitionMap(
+      value.attributesJson ?? current.attributesJson,
+    );
+  }
+
   Future<void> _apiDeleteDefinition(String id) => _delete(.skillDefinition, id);
 }
 
 extension CloudSkillStoreCredentialOperations on CloudSkillStore {
   Future<List<SkillCredentialEntity>> _apiCredentials(
-    String definitionId,
-  ) async =>
-      (await _active(.serviceConnection))
-          .where((item) => _isCredentialForDefinition(item, definitionId))
-          .map(_credential)
-          .toList();
+    String definitionId, {
+    bool requireSecret = false,
+  }) async => (await _active(.serviceConnection))
+      .where(
+        (item) => _isCredentialForDefinition(
+          item,
+          definitionId,
+          requireSecret: requireSecret,
+        ),
+      )
+      .map(_credential)
+      .toList();
 
   Future<SkillCredentialEntity> _apiCreateCredential(
     SkillCredentialToCreate value,
@@ -559,7 +589,7 @@ extension CloudSkillStoreRuntimeOperations on CloudSkillStore {
       return true;
     }
 
-    return (await credentials(credentialDefinitionId)).isNotEmpty;
+    return (await usableCredentials(credentialDefinitionId)).isNotEmpty;
   }
 
   /// Matches the server's cloud template-tool materialization policy.
@@ -573,7 +603,7 @@ extension CloudSkillStoreRuntimeOperations on CloudSkillStore {
       final credentialDefinitionId =
           tool.credentialDefinitionId ?? skillCredentialDefinitionId;
       if (credentialDefinitionId != null &&
-          (await credentials(credentialDefinitionId)).isNotEmpty) {
+          (await usableCredentials(credentialDefinitionId)).isNotEmpty) {
         return true;
       }
     }
@@ -912,13 +942,17 @@ extension _CloudSkillStoreDefinitionMapping on CloudSkillStore {
 }
 
 extension _CloudSkillStoreCredentialMapping on CloudSkillStore {
-  bool _isCredentialForDefinition(WorkspaceResource item, String definitionId) {
+  bool _isCredentialForDefinition(
+    WorkspaceResource item,
+    String definitionId, {
+    bool requireSecret = false,
+  }) {
     final data = _data(item);
 
     return data['kind'] == 'skillCredential' &&
         data['credentialDefinitionId'] == definitionId &&
         data['isEnabled'] == true &&
-        data['hasSecret'] == true;
+        (!requireSecret || data['hasSecret'] == true);
   }
 
   ({Map<String, String> secret, Map<String, String> metadata})
