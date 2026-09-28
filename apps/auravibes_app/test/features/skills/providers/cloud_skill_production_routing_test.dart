@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
@@ -393,7 +394,7 @@ void main() {
         duplicatedTool.id,
       );
       await container.read(
-        deleteSkillCredentialDefinitionProvider(workspaceId),
+        deleteSkillCredentialDefinitionUsecaseProvider(workspaceId),
       )(updatedDefinition.id);
       await container.read(deleteSkillProvider(workspaceId))(
         duplicatedSkill.id,

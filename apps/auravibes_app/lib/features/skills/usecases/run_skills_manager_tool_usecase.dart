@@ -17,6 +17,8 @@ import 'package:auravibes_app/features/skills/usecases/clone_app_skill_usecase.d
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
@@ -74,6 +76,8 @@ class const RunSkillsManagerToolUsecase(
   _createSkillCredentialDefinitionUsecase,
   final UpdateSkillCredentialDefinitionUsecase
   _updateSkillCredentialDefinitionUsecase, {
+  required final DeleteSkillCredentialDefinitionUsecase
+  deleteSkillCredentialDefinitionUsecase,
   final CloudSkillStore? cloudStore,
   final CloneAppSkillUsecase? cloneAppSkillUsecase,
   final SkillResourcesRepository? resourceRepository,
@@ -84,7 +88,23 @@ class const RunSkillsManagerToolUsecase(
     required String workspaceId,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) {
+  }) async {
+    try {
+      return await _run(workspaceId, toolSlug, arguments);
+    } on CredentialDefinitionConflictException catch (conflict) {
+      if (!_credentialDefinitionToolSlugs.contains(toolSlug)) rethrow;
+      return conflict.toManagerResult();
+    } on CredentialDefinitionValidationException {
+      if (!_credentialDefinitionToolSlugs.contains(toolSlug)) rethrow;
+      return {'status': 'invalid', 'reason': 'secretRequired'};
+    }
+  }
+
+  Future<Object> _run(
+    String workspaceId,
+    String toolSlug,
+    Map<String, dynamic> arguments,
+  ) {
     if (_userSkillToolSlugs.contains(toolSlug)) {
       return _callUserSkillTool(workspaceId, toolSlug, arguments);
     }
@@ -826,17 +846,12 @@ extension _RunSkillsManagerCredentials on RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'definitionSlug'),
     );
-    final deleted = await _deleteCredentialDefinitionById(definition.id);
+    final deleted = await deleteSkillCredentialDefinitionUsecase.call(
+      definition.id,
+    );
 
     return _credentialDefinitionDeletionResult(deleted, definition);
   }
-
-  Future<bool> _deleteCredentialDefinitionById(String definitionId) =>
-      _deleteCredentialDefinition(
-        definitionId,
-        cloud: cloudStore,
-        repository: _skillCredentialDefinitionsRepository,
-      );
 }
 
 extension _RunSkillsManagerCredentialValues on RunSkillsManagerToolUsecase {
@@ -872,23 +887,6 @@ extension _RunSkillsManagerLookups on RunSkillsManagerToolUsecase {
     }
 
     throw StateError('Skill store is unavailable');
-  }
-
-  Future<bool> _deleteCredentialDefinition(
-    String definitionId, {
-    required CloudSkillStore? cloud,
-    required SkillCredentialDefinitionsRepository? repository,
-  }) async {
-    if (cloud != null) {
-      await cloud.deleteDefinition(definitionId);
-
-      return true;
-    }
-    if (repository != null) {
-      return await repository.deleteDefinition(definitionId);
-    }
-
-    throw StateError('Credential definition store is unavailable');
   }
 
   Future<SkillTemplateToolEntity> _getSkillTemplateTool(
@@ -1228,6 +1226,9 @@ runSkillsManagerToolUsecaseProvider =
         ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
         ref.watch(createSkillCredentialDefinitionUsecaseProvider(workspaceId)),
         ref.watch(updateSkillCredentialDefinitionUsecaseProvider(workspaceId)),
+        deleteSkillCredentialDefinitionUsecase: ref.watch(
+          deleteSkillCredentialDefinitionUsecaseProvider(workspaceId),
+        ),
         cloudStore: cloud,
         cloneAppSkillUsecase: ref.watch(
           cloneAppSkillUsecaseProvider(workspaceId),

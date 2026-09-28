@@ -1,8 +1,10 @@
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
+import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/misc.dart';
@@ -11,6 +13,7 @@ import 'package:riverpod/riverpod.dart';
 class const UpdateSkillCredentialDefinitionUsecase(
   final SkillCredentialDefinitionsRepository?
   _skillCredentialDefinitionsRepository, {
+  final SkillCredentialsRepository? credentialsRepository,
   final CloudSkillStore? cloudStore,
 }) {
   Future<SkillCredentialDefinitionEntity> call(
@@ -20,7 +23,7 @@ class const UpdateSkillCredentialDefinitionUsecase(
     final existingDefinition = await _requiredDefinition(definitionId);
     final title = definition.title;
     await _validateTitle(existingDefinition, definitionId, title);
-    _validateAttributes(definition.attributesJson);
+    await _validateAttributes(existingDefinition, definition.attributesJson);
 
     return await _updateDefinition(definitionId, definition);
   }
@@ -36,10 +39,46 @@ class const UpdateSkillCredentialDefinitionUsecase(
     return definition;
   }
 
-  void _validateAttributes(String? attributesJson) {
+  Future<void> _validateAttributes(
+    SkillCredentialDefinitionEntity existing,
+    String? attributesJson,
+  ) async {
+    final next = CredentialDefinitionSchema.validate(
+      attributesJson ?? existing.attributesJson,
+    );
     if (attributesJson == null) return;
+    final changes = CredentialDefinitionSchema.diffJson(
+      existing.attributesJson,
+      next,
+    );
+    if (changes.isEmpty) return;
+    final count = await _linkedCredentialCount(existing);
+    if (count == 0) return;
+    throw CredentialDefinitionConflictException(
+      reason: .schemaChange,
+      credentialCount: count,
+      changes: changes,
+    );
+  }
 
-    final _ = SkillCredentialAttributeDefinition.parseMap(attributesJson);
+  Future<int> _linkedCredentialCount(SkillCredentialDefinitionEntity existing) {
+    final cloud = cloudStore;
+    if (cloud != null) return cloud.linkedCredentialCount(existing.id);
+
+    return _localCredentialCount(existing);
+  }
+
+  Future<int> _localCredentialCount(
+    SkillCredentialDefinitionEntity definition,
+  ) {
+    final repository = credentialsRepository;
+    if (repository == null) {
+      throw StateError('Skill credentials repository is unavailable');
+    }
+    return repository.countLinkedCredentials(
+      workspaceId: definition.workspaceId,
+      credentialDefinitionId: definition.id,
+    );
   }
 
   Future<SkillCredentialDefinitionEntity?> _existingDefinition(
@@ -124,6 +163,9 @@ updateSkillCredentialDefinitionUsecaseProvider =
       return UpdateSkillCredentialDefinitionUsecase(
         cloud == null
             ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+        credentialsRepository: cloud == null
+            ? ref.watch(skillCredentialsRepositoryProvider)
             : null,
         cloudStore: cloud,
       );

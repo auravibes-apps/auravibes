@@ -27,6 +27,7 @@ import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
@@ -163,12 +164,92 @@ void main() {
         createTemplateToolUsecase(),
         updateTemplateToolUsecase(),
         .new(skillCredentialDefinitionsRepository),
-        .new(skillCredentialDefinitionsRepository),
+        .new(
+          skillCredentialDefinitionsRepository,
+          credentialsRepository: skillCredentialsRepository,
+        ),
+        deleteSkillCredentialDefinitionUsecase:
+            DeleteSkillCredentialDefinitionUsecase(
+              definitionsRepository: skillCredentialDefinitionsRepository,
+              credentialsRepository: skillCredentialsRepository,
+              skillsRepository: skillsRepository,
+              toolsRepository: toolsRepository,
+            ),
         resourceRepository: resourceRepository,
         createSkillResourceUsecase: .new(resourceRepository),
         updateSkillResourceUsecase: .new(resourceRepository),
       );
     }
+
+    test(
+      'Skills Manager reports credential definition conflicts as data',
+      () async {
+        final workspace = await workspaceRepository.createWorkspace(
+          const WorkspaceToCreate(name: 'Test Workspace', type: .local),
+        );
+        final definition = await skillCredentialDefinitionsRepository
+            .createDefinition(
+              workspace.id,
+              const .new(
+                title: 'Service',
+                attributesJson:
+                    '{"token":{"description":"Token"},'
+                    '"region":{"description":"Region","secret":false}}',
+              ),
+            );
+        final _ = await skillCredentialsRepository.createCredential(
+          workspace.id,
+          .new(
+            credentialDefinitionId: definition.id,
+            name: 'Saved',
+            attributes: const {'token': 'test-value', 'region': 'us-east'},
+          ),
+        );
+        final manager = runSkillsManagerToolUsecase();
+        final update = await manager.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.updateSkillCredentialDefinition,
+          arguments: {
+            'definitionSlug': 'service',
+            'attributes': {
+              'token': {'description': 'Token'},
+            },
+          },
+        ) as Map<String, Object?>;
+        final delete = await manager.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.deleteSkillCredentialDefinition,
+          arguments: {'definitionSlug': 'service'},
+        ) as Map<String, Object?>;
+        final invalid = await manager.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.createSkillCredentialDefinition,
+          arguments: {
+            'title': 'Metadata',
+            'attributes': {
+              'region': {'description': 'Region', 'secret': false},
+            },
+          },
+        ) as Map<String, Object?>;
+
+        expect(update['status'], 'conflict');
+        expect(update['affectedCredentialCount'], 1);
+        expect(update['destructiveFields'], [
+          {'variable': 'region', 'change': 'removed'},
+        ]);
+        expect(update.toString(), isNot(contains('test-value')));
+        expect(delete['status'], 'conflict');
+        expect(delete['affectedCredentialCount'], 1);
+        expect(delete.toString(), isNot(contains('test-value')));
+        expect(invalid, {'status': 'invalid', 'reason': 'secretRequired'});
+        expect(
+          await skillCredentialDefinitionsRepository.getDefinitionById(
+            definition.id,
+          ),
+          definition,
+        );
+      },
+    );
 
     test('creates user skill with generated immutable slug', () async {
       final workspace = await workspaceRepository.createWorkspace(

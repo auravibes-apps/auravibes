@@ -984,6 +984,14 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.save';
   static const skill_credentials_definitions_save_error =
       'skill_credentials_definitions.save_error';
+  static const skill_credentials_definitions_secret_required =
+      'skill_credentials_definitions.secret_required';
+  static const skill_credentials_definitions_schema_conflict =
+      'skill_credentials_definitions.schema_conflict';
+  static const skill_credentials_definitions_delete_conflict =
+      'skill_credentials_definitions.delete_conflict';
+  static const skill_credentials_definitions_manage_credentials =
+      'skill_credentials_definitions.manage_credentials';
   static const skill_credentials_definitions_duplicate =
       'skill_credentials_definitions.duplicate';
   static const skill_credentials_definitions_duplicate_success =
