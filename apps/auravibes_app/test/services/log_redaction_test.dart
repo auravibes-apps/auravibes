@@ -20,4 +20,23 @@ void main() {
       'FormatException: token=[REDACTED]',
     );
   });
+
+  test('redacts authentication token key variants', () {
+    expect(
+      LogRedaction.redact('authToken=secret-value'),
+      'authToken=[REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('{"oauth_token":"secret-value"}'),
+      '{"oauth_token":"[REDACTED]"}',
+    );
+    expect(
+      LogRedaction.redact('bearerToken: secret-value'),
+      'bearerToken: [REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('?oauthToken=secret-value'),
+      '?oauthToken=[REDACTED]',
+    );
+  });
 }
