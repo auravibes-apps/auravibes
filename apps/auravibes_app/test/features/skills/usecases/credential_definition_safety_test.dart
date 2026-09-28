@@ -4,8 +4,6 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
@@ -44,13 +42,12 @@ void main() {
         '"replacement":{"description":"Replacement"}}',
       );
       expect(
-        CredentialDefinitionSchema.diff(
-          previous,
-          next,
-        ).map((change) => (change.variable, change.kind)).toList(),
+        CredentialDefinitionSchema.diff(previous, next)
+            .map((change) => (variable: change.variable, kind: change.kind))
+            .toList(),
         [
-          ('token', CredentialSchemaChangeKind.removed),
-          ('region', CredentialSchemaChangeKind.secretChanged),
+          (variable: 'token', kind: CredentialSchemaChangeKind.removed),
+          (variable: 'region', kind: CredentialSchemaChangeKind.secretChanged),
         ],
       );
       final newlyRequired = SkillCredentialAttributeDefinition.parseMap(
@@ -114,25 +111,27 @@ void main() {
           attributes: const {'token': 'test-value', 'region': 'us-east'},
         ),
       );
-      for (final (schema, kind) in [
+      for (final (:schema, :kind) in [
         (
-          '{"token":{"description":"Token","optional":true}}',
-          CredentialSchemaChangeKind.removed,
+          schema: '{"token":{"description":"Token","optional":true}}',
+          kind: CredentialSchemaChangeKind.removed,
         ),
         (
-          '{"token":{"description":"Token"},'
+          schema:
+              '{"token":{"description":"Token"},'
               '"region":{"description":"Region","secret":false}}',
-          CredentialSchemaChangeKind.required,
+          kind: CredentialSchemaChangeKind.required,
         ),
         (
-          '{"token":{"description":"Token","optional":true},'
+          schema:
+              '{"token":{"description":"Token","optional":true},'
               '"region":{"description":"Region","secret":true}}',
-          CredentialSchemaChangeKind.secretChanged,
+          kind: CredentialSchemaChangeKind.secretChanged,
         ),
       ]) {
         final call = harness.update.call(
           definition.id,
-          SkillCredentialDefinitionToUpdate(attributesJson: schema),
+          .new(attributesJson: schema),
         );
         await expectLater(
           call,
@@ -147,8 +146,8 @@ void main() {
           ),
         );
         expect(
-          (await harness.definitions.getDefinitionById(definition.id))!
-              .attributesJson,
+          (await harness.definitions.getDefinitionById(definition.id))
+              ?.attributesJson,
           _mixed,
         );
       }
@@ -193,8 +192,8 @@ void main() {
       addTearDown(harness.database.close);
       final legacy = await harness.database.skillCredentialDefinitionsDao
           .createDefinition(
-            SkillCredentialDefinitionsCompanion(
-              workspaceId: Value(harness.workspaceId),
+            .new(
+              workspaceId: .new(harness.workspaceId),
               title: const Value('Legacy'),
               slug: const Value('legacy'),
               attributesJson: const Value(_metadataOnly),
@@ -245,7 +244,7 @@ void main() {
       );
       final _ = await harness.database.skillCredentialsDao.updateCredential(
         metadata.id,
-        const ServiceConnectionsCompanion(isEnabled: Value(false)),
+        const .new(isEnabled: .new(false)),
       );
       final secret = await harness.credentials.createCredential(
         harness.workspaceId,
@@ -257,7 +256,7 @@ void main() {
       );
       final skill = await harness.skills.createSkill(
         harness.workspaceId,
-        SkillToCreate(
+        .new(
           kind: .template,
           title: 'Service Skill',
           description: 'Test',
@@ -349,16 +348,17 @@ class const _LocalHarness({
     );
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Test Workspace', type: .local));
+
     return _LocalHarness(
       database: database,
       workspaceId: workspace.id,
-      definitions: SkillCredentialDefinitionsRepository(database),
-      credentials: SkillCredentialsRepository(
+      definitions: .new(database),
+      credentials: .new(
         database: database,
         encryptionService: .new(_FakeSecretKeyManager()),
       ),
-      skills: SkillsRepository(database),
-      tools: SkillTemplateToolsRepository(database),
+      skills: .new(database),
+      tools: .new(database),
     );
   }
 }

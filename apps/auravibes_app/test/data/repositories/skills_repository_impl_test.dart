@@ -27,7 +27,6 @@ import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
@@ -168,13 +167,12 @@ void main() {
           skillCredentialDefinitionsRepository,
           credentialsRepository: skillCredentialsRepository,
         ),
-        deleteSkillCredentialDefinitionUsecase:
-            DeleteSkillCredentialDefinitionUsecase(
-              definitionsRepository: skillCredentialDefinitionsRepository,
-              credentialsRepository: skillCredentialsRepository,
-              skillsRepository: skillsRepository,
-              toolsRepository: toolsRepository,
-            ),
+        deleteSkillCredentialDefinitionUsecase: .new(
+          definitionsRepository: skillCredentialDefinitionsRepository,
+          credentialsRepository: skillCredentialsRepository,
+          skillsRepository: skillsRepository,
+          toolsRepository: toolsRepository,
+        ),
         resourceRepository: resourceRepository,
         createSkillResourceUsecase: .new(resourceRepository),
         updateSkillResourceUsecase: .new(resourceRepository),

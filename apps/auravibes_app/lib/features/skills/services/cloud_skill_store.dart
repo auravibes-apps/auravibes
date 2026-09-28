@@ -326,6 +326,7 @@ extension CloudSkillStoreCredentialApi on CloudSkillStore {
   Future<int> linkedCredentialCount(String definitionId) async =>
       (await _active(.serviceConnection)).where((item) {
         final data = _data(item);
+
         return data['kind'] == 'skillCredential' &&
             data['credentialDefinitionId'] == definitionId;
       }).length;

@@ -59,12 +59,14 @@ class const DeleteSkillCredentialDefinitionUsecase({
     final cloud = cloudStore;
     if (cloud != null) {
       await cloud.deleteDefinition(definitionId);
+
       return true;
     }
     final repository = definitionsRepository;
     if (repository == null) {
       throw StateError('Credential definition store is unavailable');
     }
+
     return await repository.deleteDefinition(definitionId);
   }
 
@@ -75,6 +77,7 @@ class const DeleteSkillCredentialDefinitionUsecase({
     if (repository == null) {
       throw StateError('Skill credentials repository is unavailable');
     }
+
     return repository.countLinkedCredentials(
       workspaceId: workspaceId,
       credentialDefinitionId: definitionId,
@@ -117,6 +120,7 @@ class const DeleteSkillCredentialDefinitionUsecase({
     if (cloud != null) return cloud.skills();
     final repository = skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
+
     return repository.getWorkspaceSkills(workspaceId);
   }
 
@@ -127,6 +131,7 @@ class const DeleteSkillCredentialDefinitionUsecase({
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
+
     return repository.getSkillTools(skill.id);
   }
 }
@@ -138,6 +143,7 @@ deleteSkillCredentialDefinitionUsecaseProvider =
       workspaceId,
     ) {
       final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+
       return DeleteSkillCredentialDefinitionUsecase(
         definitionsRepository: cloud == null
             ? ref.watch(skillCredentialDefinitionsRepositoryProvider)

@@ -93,9 +93,11 @@ class const RunSkillsManagerToolUsecase(
       return await _run(workspaceId, toolSlug, arguments);
     } on CredentialDefinitionConflictException catch (conflict) {
       if (!_credentialDefinitionToolSlugs.contains(toolSlug)) rethrow;
+
       return conflict.toManagerResult();
     } on CredentialDefinitionValidationException {
       if (!_credentialDefinitionToolSlugs.contains(toolSlug)) rethrow;
+
       return {'status': 'invalid', 'reason': 'secretRequired'};
     }
   }

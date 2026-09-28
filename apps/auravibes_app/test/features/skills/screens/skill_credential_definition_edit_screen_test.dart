@@ -355,8 +355,10 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     await tester.enterText(_editableInputAt(0), 'Example Service');
+    await tester.ensureVisible(find.text('Add attribute'));
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Add attribute'));
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(_editableInputAt(3), 'api_key');
@@ -444,14 +446,14 @@ void main() {
         ),
       );
       final _ = await harness.database.skillCredentialsDao.createCredential(
-        ServiceConnectionsCompanion(
-          name: const Value('Linked'),
-          serviceId: Value(definition.id),
+        .new(
+          name: const .new('Linked'),
+          serviceId: .new(definition.id),
           kind: const Value(ServiceConnectionKindTable.skillCredential),
           authenticationType: const Value(
             ServiceAuthenticationTypeTable.apiKey,
           ),
-          workspaceId: Value(harness.workspaceId),
+          workspaceId: .new(harness.workspaceId),
           isEnabled: const Value(false),
         ),
       );

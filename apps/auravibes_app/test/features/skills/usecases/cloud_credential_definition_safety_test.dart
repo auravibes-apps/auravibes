@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -68,9 +67,9 @@ void main() {
       );
       expect(await fake.store.linkedCredentialCount('definition-1'), 3);
       final skill = SkillEntity(
-        source: .user,
         id: 'skill-1',
         workspaceId: 'workspace-1',
+        source: .user,
         kind: .template,
         title: 'Service',
         slug: 'service',
@@ -78,14 +77,17 @@ void main() {
         content: '',
         isEnabled: true,
         isCredentialOptional: false,
+        createdAt: .utc(2026),
+        updatedAt: .utc(2026),
         credentialDefinitionId: 'definition-1',
-        createdAt: DateTime.utc(2026),
-        updatedAt: DateTime.utc(2026),
       );
       expect(await fake.store.credentialReady(skill), isTrue);
       fake.resources.removeWhere((resource) => resource.resourceId == 'secret');
       expect(await fake.store.credentialReady(skill), isFalse);
-      fake.resources[0] = _definition(_metadataOnly);
+      fake.resources.removeWhere(
+        (resource) => resource.resourceId == 'definition-1',
+      );
+      fake.resources.add(_definition(_metadataOnly));
       expect((await fake.store.definitions()).single.id, 'definition-1');
       await expectLater(
         UpdateSkillCredentialDefinitionUsecase(
@@ -174,14 +176,15 @@ class _FakeCloud {
   int patches = 0;
 
   CloudSkillStore get store => CloudSkillStore(
-    CloudWorkspaceResourceStore.forTesting(
+    .forTesting(
+      patch: ({required requestId, required operations}) async {
+        patches++;
+
+        return .new(resources: const [], sequence: patches);
+      },
       watch: (kinds) => Stream.value(
         resources.where((item) => kinds.contains(item.resourceKind)).toList(),
       ),
-      patch: ({required requestId, required operations}) async {
-        patches++;
-        return .new(resources: const [], sequence: patches);
-      },
       putSecret: (_) async => PutWorkspaceSecretResponse(
         configured: false,
         revision: 0,
@@ -207,8 +210,8 @@ WorkspaceResource _resource(
   resourceId: id,
   data: jsonEncode(data),
   revision: 1,
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
+  createdAt: .utc(2026),
+  updatedAt: .utc(2026),
 );
 
 WorkspaceResource _definition(String schema) => _resource(

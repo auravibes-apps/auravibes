@@ -417,12 +417,14 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _deleteDefinition(String definitionId) async {
-    await ref
+    final deleted = await ref
         .read(
           deleteSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
         )
         .call(definitionId);
-    ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+    if (deleted) {
+      ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+    }
   }
 
   Future<void> _deleteDefinitionAndClose(
@@ -807,10 +809,10 @@ class const _CredentialDefinitionAttributes({
         _CredentialDefinitionAttributeRows(state: state),
         if (!state._hasSecretAttribute)
           const AuraText(
-            tint: .error,
             child: TextLocale(
               LocaleKeys.skill_credentials_definitions_secret_required,
             ),
+            tint: .error,
           ),
         _CredentialDefinitionAddAttributeButton(
           onPressed: state._addAttributeRow,

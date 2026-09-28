@@ -28,13 +28,16 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
   Future<int> countLinkedCredentials({
     required String workspaceId,
     required String credentialDefinitionId,
-  }) {
+  }) async {
     final count = serviceConnections.id.count();
     final query = selectOnly(serviceConnections)
       ..addColumns([count])
       ..where(_linkedCredentialFilter(workspaceId, credentialDefinitionId));
 
-    return query.getSingle().then((row) => row.read(count) ?? 0);
+    final row = await query.getSingle();
+    final result = row.read(count) ?? 0;
+
+    return result;
   }
 
   Stream<List<ServiceConnectionTable>> watchCredentialsForWorkspace(

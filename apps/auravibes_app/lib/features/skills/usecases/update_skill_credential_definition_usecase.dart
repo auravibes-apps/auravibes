@@ -75,6 +75,7 @@ class const UpdateSkillCredentialDefinitionUsecase(
     if (repository == null) {
       throw StateError('Skill credentials repository is unavailable');
     }
+
     return repository.countLinkedCredentials(
       workspaceId: definition.workspaceId,
       credentialDefinitionId: definition.id,
