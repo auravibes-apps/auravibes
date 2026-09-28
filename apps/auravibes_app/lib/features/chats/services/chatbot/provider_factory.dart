@@ -21,6 +21,12 @@ typedef _ProviderToolSampling = ({
   bool officialOpenAI,
   bool strictToolSampling,
 });
+typedef _OpenAICompatPluginOptions = ({
+  String name,
+  ChatCompletionsCodec codec,
+  bool modelSupportsStrictToolSampling,
+  http.Client? httpClient,
+});
 typedef _ProviderRequest = ({
   WorkspaceModelSelectionWithConnectionEntity config,
   String apiKey,
@@ -278,39 +284,44 @@ extension _ProviderFactoryPlugins on ProviderFactory {
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
     final toolSampling = request.toolSampling;
-    final baseUrl = request.baseUrl ?? providerProfile('openai').defaultUrl;
 
-    return AppChatCompletionsPlugin(
+    return _openAICompatPlugin(request, (
       name: ProviderFactory._openAIReasoningNamespace,
-      baseUrl: baseUrl,
-      apiKey: request.apiKey,
       codec: _openAICompatReasoningCodec(toolSampling.officialOpenAI),
-      models: [ChatCompletionsModelDefinition(name: request.modelId)],
       modelSupportsStrictToolSampling: toolSampling.strictToolSampling,
-      defaultToolSamplingPolicy: _strictToolSamplingPolicy(
-        toolSampling.strictToolSampling,
-      ),
-      onToolSamplingDecision: _logToolSamplingDecision,
-    );
+      httpClient: null,
+    ));
   }
 
   GenkitPlugin _openAIPlugin(_ProviderRequest request) {
-    if (request.toolSampling.strictToolSampling) {
-      return AppChatCompletionsPlugin(
-        name: 'openai',
-        baseUrl: request.baseUrl ?? providerProfile('openai').defaultUrl,
-        apiKey: request.apiKey,
-        codec: _openAICodec(),
-        models: [ChatCompletionsModelDefinition(name: request.modelId)],
-        httpClient: httpClient,
-        modelSupportsStrictToolSampling: true,
-        defaultToolSamplingPolicy: .prefer,
-        onToolSamplingDecision: _logToolSamplingDecision,
-      );
+    if (!request.toolSampling.strictToolSampling) {
+      return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
     }
 
-    return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    return _openAICompatPlugin(request, (
+      name: 'openai',
+      codec: _openAICodec(),
+      modelSupportsStrictToolSampling: true,
+      httpClient: httpClient,
+    ));
   }
+
+  AppChatCompletionsPlugin _openAICompatPlugin(
+    _ProviderRequest request,
+    _OpenAICompatPluginOptions options,
+  ) => AppChatCompletionsPlugin(
+    name: options.name,
+    baseUrl: request.baseUrl ?? providerProfile('openai').defaultUrl,
+    apiKey: request.apiKey,
+    codec: options.codec,
+    models: [ChatCompletionsModelDefinition(name: request.modelId)],
+    httpClient: options.httpClient,
+    modelSupportsStrictToolSampling: options.modelSupportsStrictToolSampling,
+    defaultToolSamplingPolicy: _strictToolSamplingPolicy(
+      options.modelSupportsStrictToolSampling,
+    ),
+    onToolSamplingDecision: _logToolSamplingDecision,
+  );
 }
 
 extension _ProviderFactoryResolution on ProviderFactory {
