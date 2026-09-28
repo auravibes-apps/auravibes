@@ -318,8 +318,8 @@ void main() {
             }
 
             return ProviderScope(
-              retry: (retryCount, error) => null,
               overrides: overrides.cast(),
+              retry: (retryCount, error) => null,
               child: MaterialApp(
                 home: AuraSnackBarHost(
                   child: WorkspaceManagementScreen(workspaceId: workspaceId),
@@ -588,8 +588,8 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      final _ = await tester.sendKeyEvent(.tab);
+      final _ = await tester.sendKeyEvent(.enter);
       final _ = await tester.pumpAndSettle();
 
       expect(
@@ -609,8 +609,13 @@ void main() {
     testWidgets('search folds accents across workspace sources', (
       tester,
     ) async {
+      final acuteE = String.fromCharCode(0x00e9);
+      final graveE = String.fromCharCode(0x00e8);
+      final combiningAcute = String.fromCharCode(0x0301);
+      final precomposedCafe = 'Caf$acuteE';
+      final decomposedCafe = 'Cafe$combiningAcute';
       final local = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Café Local', type: .local),
+        .new(name: '$precomposedCafe Local', type: .local),
       );
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Other Local', type: .local),
@@ -618,7 +623,7 @@ void main() {
       final _ = await repository.upsertCloudWorkspaceMirror(
         cloudWorkspaceId: 'connected-1',
         cloudAccountId: 'account-1',
-        name: 'Cafe\u0301 Connected',
+        name: '$decomposedCafe Connected',
         serverUrl: 'http://localhost:8080',
       );
       const account = CloudAccountSession(
@@ -630,7 +635,7 @@ void main() {
         workspaces: [
           CloudWorkspaceSummary(
             id: 2,
-            name: 'Cafè Cloud',
+            name: 'Caf$graveE Cloud',
             role: 'owner',
             revision: 1,
             sequence: 1,
@@ -653,15 +658,15 @@ void main() {
 
       await tester.enterText(find.byType(AuraInput), '  CAFE  ');
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Café Local'), findsOneWidget);
-      expect(find.text('Cafe\u0301 Connected'), findsOneWidget);
-      expect(find.text('Cafè Cloud'), findsOneWidget);
+      expect(find.text('$precomposedCafe Local'), findsOneWidget);
+      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('Caf$graveE Cloud'), findsOneWidget);
       expect(find.text('Other Local'), findsNothing);
 
-      await tester.enterText(find.byType(AuraInput), 'café');
+      await tester.enterText(find.byType(AuraInput), precomposedCafe);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Cafe\u0301 Connected'), findsOneWidget);
-      expect(find.text('Cafè Cloud'), findsOneWidget);
+      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('Caf$graveE Cloud'), findsOneWidget);
     });
 
     testWidgets('retry reloads only the failed cloud account', (tester) async {
@@ -704,10 +709,12 @@ void main() {
             'account-1': () async {
               firstLoads++;
               if (firstLoads == 1) throw StateError('temporary failure');
+
               return state('Cloud One', 1);
             },
             'account-2': () async {
               secondLoads++;
+
               return state('Cloud Two', 2);
             },
           },
@@ -1266,10 +1273,10 @@ void main() {
           );
           for (final name in names) {
             final _ = await repository.createWorkspace(
-              WorkspaceToCreate(name: name, type: .local),
+              .new(name: name, type: .local),
             );
           }
-          repository.deleteError = Exception('delete failed');
+          repository.deleteError = .new('delete failed');
 
           await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
           final _ = await tester.pumpAndSettle();
@@ -1284,13 +1291,15 @@ void main() {
           await tester.tap(find.text('Delete'));
           final _ = await tester.pumpAndSettle();
 
-          final feedback = tester
-              .widget<Text>(
-                find.textContaining(
-                  'Could not delete or remove ${names.length} workspace',
-                ),
-              )
-              .data!;
+          final feedback =
+              tester
+                  .widget<Text>(
+                    find.textContaining(
+                      'Could not delete or remove ${names.length} workspace',
+                    ),
+                  )
+                  .data ??
+              fail('Expected failure feedback');
           expect(
             feedback,
             contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),

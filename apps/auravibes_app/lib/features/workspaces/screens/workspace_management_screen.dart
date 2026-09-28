@@ -449,28 +449,81 @@ bool _matchesWorkspaceName(String name, String query) {
 }
 
 // Ponytail: Latin accents only. Use Unicode normalization for other scripts.
-String _foldWorkspaceSearch(String value) => value
-    .toLowerCase()
-    .replaceAll(RegExp('[\u0300-\u036f]'), '')
-    .replaceAll(RegExp('[àáâãäåāăąǎ]'), 'a')
-    .replaceAll(RegExp('[çćĉċč]'), 'c')
-    .replaceAll(RegExp('[ďđ]'), 'd')
-    .replaceAll(RegExp('[èéêëēĕėęě]'), 'e')
-    .replaceAll(RegExp('[ĝğġģ]'), 'g')
-    .replaceAll(RegExp('[ĥħ]'), 'h')
-    .replaceAll(RegExp('[ìíîïĩīĭįıǐ]'), 'i')
-    .replaceAll(RegExp('[ĵ]'), 'j')
-    .replaceAll(RegExp('[ķ]'), 'k')
-    .replaceAll(RegExp('[ĺļľł]'), 'l')
-    .replaceAll(RegExp('[ñńņň]'), 'n')
-    .replaceAll(RegExp('[òóôõöøōŏőǒ]'), 'o')
-    .replaceAll(RegExp('[ŕŗř]'), 'r')
-    .replaceAll(RegExp('[śŝşš]'), 's')
-    .replaceAll(RegExp('[ţťŧ]'), 't')
-    .replaceAll(RegExp('[ùúûüũūŭůűųǔ]'), 'u')
-    .replaceAll(RegExp('[ŵ]'), 'w')
-    .replaceAll(RegExp('[ýÿŷ]'), 'y')
-    .replaceAll(RegExp('[źżž]'), 'z');
+String _foldWorkspaceSearch(String value) => String.fromCharCodes(
+  value
+      .toLowerCase()
+      .runes
+      .where((rune) => rune < 0x0300 || rune > 0x036f)
+      .map(_foldWorkspaceSearchRune),
+);
+
+int _foldWorkspaceSearchRune(int rune) => switch (rune) {
+  0x00e0 ||
+  0x00e1 ||
+  0x00e2 ||
+  0x00e3 ||
+  0x00e4 ||
+  0x00e5 ||
+  0x0101 ||
+  0x0103 ||
+  0x0105 ||
+  0x01ce => 0x61,
+  0x00e7 || 0x0107 || 0x0109 || 0x010b || 0x010d => 0x63,
+  0x010f || 0x0111 => 0x64,
+  0x00e8 ||
+  0x00e9 ||
+  0x00ea ||
+  0x00eb ||
+  0x0113 ||
+  0x0115 ||
+  0x0117 ||
+  0x0119 ||
+  0x011b => 0x65,
+  0x011d || 0x011f || 0x0121 || 0x0123 => 0x67,
+  0x0125 || 0x0127 => 0x68,
+  0x00ec ||
+  0x00ed ||
+  0x00ee ||
+  0x00ef ||
+  0x0129 ||
+  0x012b ||
+  0x012d ||
+  0x012f ||
+  0x0131 ||
+  0x01d0 => 0x69,
+  0x0135 => 0x6a,
+  0x0137 => 0x6b,
+  0x013a || 0x013c || 0x013e || 0x0142 => 0x6c,
+  0x00f1 || 0x0144 || 0x0146 || 0x0148 => 0x6e,
+  0x00f2 ||
+  0x00f3 ||
+  0x00f4 ||
+  0x00f5 ||
+  0x00f6 ||
+  0x00f8 ||
+  0x014d ||
+  0x014f ||
+  0x0151 ||
+  0x01d2 => 0x6f,
+  0x0155 || 0x0157 || 0x0159 => 0x72,
+  0x015b || 0x015d || 0x015f || 0x0161 => 0x73,
+  0x0163 || 0x0165 || 0x0167 => 0x74,
+  0x00f9 ||
+  0x00fa ||
+  0x00fb ||
+  0x00fc ||
+  0x0169 ||
+  0x016b ||
+  0x016d ||
+  0x016f ||
+  0x0171 ||
+  0x0173 ||
+  0x01d4 => 0x75,
+  0x0175 => 0x77,
+  0x00fd || 0x00ff || 0x0177 => 0x79,
+  0x017a || 0x017c || 0x017e => 0x7a,
+  _ => rune,
+};
 
 List<CloudWorkspaceSummary> _matchingCloudWorkspaces(
   List<CloudWorkspaceSummary> workspaces,
@@ -740,8 +793,8 @@ class const _WorkspaceSearchDecoration({required final Widget child})
     padding: const EdgeInsets.only(bottom: 16),
     child: Semantics(
       key: const ValueKey<String>('workspace_search'),
-      identifier: 'workspace_search',
       child: child,
+      identifier: 'workspace_search',
     ),
   );
 }
@@ -768,10 +821,10 @@ class const _WorkspaceSearchClearButton({required final VoidCallback onPressed})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraIconButton(
-    key: const ValueKey('workspace-search-clear'),
     icon: Icons.close,
-    size: .small,
     onPressed: onPressed,
+    key: const ValueKey('workspace-search-clear'),
+    size: .small,
     semanticLabel: LocaleKeys.common_clear_search.tr(context: context),
     tooltip: LocaleKeys.common_clear_search.tr(context: context),
   );
@@ -1661,13 +1714,13 @@ class _AvailableCloudAccountState extends StatelessWidget {
                ),
              ),
              AuraButton(
-               key: ValueKey('workspace_cloud_retry_${account.userId}'),
                onPressed: () => actions.ref.invalidate(
                  cloudWorkspaceStateProvider(account.userId),
                ),
                child: const TextLocale(
                  LocaleKeys.workspace_management_cloud_retry,
                ),
+               key: ValueKey('workspace_cloud_retry_${account.userId}'),
                size: .small,
              ),
            ],

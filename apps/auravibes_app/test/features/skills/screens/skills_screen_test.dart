@@ -77,7 +77,7 @@ void main() {
     final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
-      SkillToCreate(
+      .new(
         kind: .template,
         title: skillTitle,
         description: 'Summarize selected content.',
@@ -89,7 +89,7 @@ void main() {
       userSkills.add(
         await skillsRepository.createSkill(
           workspace.id,
-          SkillToCreate(
+          .new(
             kind: .template,
             title: title,
             description: 'Test skill.',
@@ -100,7 +100,7 @@ void main() {
     }
     Future<void> deleteSkill(String id) async {
       if (failDeletes) throw StateError('delete failed');
-      await skillsRepository.deleteSkill(id);
+      final _ = await skillsRepository.deleteSkill(id);
     }
 
     final appSkillSettings = AppSkillWorkspaceSettingsRepository(database);
@@ -459,7 +459,7 @@ void main() {
       tester,
     ) async {
       final fixture = await createFixture(
-        skillTitle: names.first,
+        skillTitle: names.firstOrNull ?? fail('Expected a skill name'),
         additionalUserSkillNames: names.skip(1).toList(),
         failDeletes: true,
       );
@@ -481,11 +481,13 @@ void main() {
       await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
       final _ = await tester.pumpAndSettle();
 
-      final feedback = tester
-          .widget<Text>(
-            find.textContaining('Could not delete ${names.length} skill'),
-          )
-          .data!;
+      final feedback =
+          tester
+              .widget<Text>(
+                find.textContaining('Could not delete ${names.length} skill'),
+              )
+              .data ??
+          fail('Expected failure feedback');
       expect(
         feedback,
         contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),

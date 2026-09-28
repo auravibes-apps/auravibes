@@ -497,11 +497,13 @@ void main() {
       await tester.tap(find.text('Delete'));
       final _ = await tester.pumpAndSettle();
 
-      final feedback = tester
-          .widget<Text>(
-            find.textContaining('Could not remove ${names.length} tool'),
-          )
-          .data!;
+      final feedback =
+          tester
+              .widget<Text>(
+                find.textContaining('Could not remove ${names.length} tool'),
+              )
+              .data ??
+          fail('Expected failure feedback');
       expect(
         feedback,
         contains(names.length == 4 ? 'Fail Very Long' : 'Fail One'),

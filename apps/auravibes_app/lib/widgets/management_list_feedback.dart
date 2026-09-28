@@ -22,6 +22,7 @@ abstract final class ManagementListFeedback {
       LocaleKeys.common_hidden_selected_count,
       hiddenCount,
     );
+
     return '$selected\n$hidden';
   }
 
@@ -51,7 +52,13 @@ abstract final class ManagementListFeedback {
     if (failedNames.length <= _failurePreviewLimit) return summary;
 
     final omitted = failedNames.length - _failurePreviewLimit;
-    return '$summary${context.plural(LocaleKeys.common_additional_failures, omitted)}';
+
+    final additional = context.plural(
+      LocaleKeys.common_additional_failures,
+      omitted,
+    );
+
+    return '$summary$additional';
   }
 
   static String _confirmationText(
@@ -59,8 +66,16 @@ abstract final class ManagementListFeedback {
     String messageKey, {
     required int selectedCount,
     required int hiddenCount,
-  }) =>
-      '${messageKey.tr(context: context)}\n\n${selectionText(context, selectedCount: selectedCount, hiddenCount: hiddenCount)}';
+  }) {
+    final message = messageKey.tr(context: context);
+    final selection = selectionText(
+      context,
+      selectedCount: selectedCount,
+      hiddenCount: hiddenCount,
+    );
+
+    return '$message\n\n$selection';
+  }
 
   static String _failurePreview(List<String> failedNames) => failedNames
       .take(_failurePreviewLimit)
