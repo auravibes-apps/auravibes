@@ -183,7 +183,7 @@ final class SkillToolCallDisplayTitlesProvider
 }
 
 String _$skillToolCallDisplayTitlesHash() =>
-    r'c67ee8a02f656ac355088d729bc90201ea7a1450';
+    r'a60f42e3d240652d42d64602177bfb915b669d01';
 
 final class SkillToolCallDisplayTitlesFamily extends $Family
     with

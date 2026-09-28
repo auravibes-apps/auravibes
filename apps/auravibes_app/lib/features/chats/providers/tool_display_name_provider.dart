@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
@@ -54,8 +55,7 @@ Future<SkillToolCallDisplayTitles?> skillToolCallDisplayTitles(
   String workspaceId,
   String skillSlug,
   String toolSlug,
-) =>
-    _resolveSkillToolCallDisplayTitles(ref, workspaceId, skillSlug, toolSlug);
+) => _resolveSkillToolCallDisplayTitles(ref, workspaceId, skillSlug, toolSlug);
 
 typedef _SkillToolTitles = ({String? title, String? titleKey});
 
@@ -83,7 +83,7 @@ Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
   );
 }
 
-Future<SkillEntity?> _workspaceSkillBySlug(
+Future<WorkspaceSkill?> _workspaceSkillBySlug(
   Ref ref,
   String workspaceId,
   String skillSlug,
@@ -95,7 +95,7 @@ Future<SkillEntity?> _workspaceSkillBySlug(
 Future<_SkillToolTitles> _toolTitlesForSkill(
   Ref ref,
   String workspaceId,
-  SkillEntity skill,
+  WorkspaceSkill skill,
   String toolSlug,
 ) async {
   if (skill.source == SkillSource.app) {
@@ -105,12 +105,12 @@ Future<_SkillToolTitles> _toolTitlesForSkill(
     return (title: null, titleKey: null);
   }
 
-  return _templateSkillToolTitles(ref, workspaceId, skill.id, toolSlug);
+  return await _templateSkillToolTitles(ref, workspaceId, skill.id, toolSlug);
 }
 
 _SkillToolTitles _appSkillToolTitles(
   Ref ref,
-  SkillEntity skill,
+  WorkspaceSkill skill,
   String toolSlug,
 ) {
   final appSkill = ref

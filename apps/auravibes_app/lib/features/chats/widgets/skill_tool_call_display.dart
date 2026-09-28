@@ -75,6 +75,5 @@ abstract final class SkillToolCallDisplay {
     BuildContext context,
     String? titleKey,
     String fallback,
-  ) =>
-      titleKey?.tr(context: context) ?? fallback;
+  ) => titleKey?.tr(context: context) ?? fallback;
 }
