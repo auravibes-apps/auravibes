@@ -145,7 +145,9 @@ class AppDatabase extends _$AppDatabase {
       _apiModelModalitiesSchemaVersion + 1;
   static const int _reasoningControlsSchemaVersion =
       _legacyStreamingStatusSchemaVersion + 1;
-  static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
+  static const int _mcpOutputSchemaVersion =
+      _reasoningControlsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _mcpOutputSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -198,7 +200,17 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
+    await _upgradeMcpOutputSchema(m, from);
     await _runConversationUpgrades(m, from);
+  }
+
+  Future<void> _upgradeMcpOutputSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._mcpOutputSchemaVersion ||
+        !await _tableExists('tools') ||
+        await _columnExists('tools', 'output_schema')) {
+      return;
+    }
+    await m.addColumn(tools, tools.outputSchema);
   }
 
   Future<void> _runConversationUpgrades(Migrator m, int from) async {
@@ -266,7 +278,7 @@ extension on AppDatabase {
   }
 
   Future<void> _upgradeAgentCatalogSchema(int from) async {
-    if (from >= AppDatabase._currentSchemaVersion) return;
+    if (from >= AppDatabase._reasoningControlsSchemaVersion) return;
     await customStatement(
       'CREATE INDEX IF NOT EXISTS agents_workspace_name_id '
       'ON agents (workspace_id, name COLLATE NOCASE, id)',

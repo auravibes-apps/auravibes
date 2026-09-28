@@ -31,6 +31,7 @@ void main() {
       String? config,
       String? description,
       String? inputSchema,
+      String? outputSchema,
       String? workspaceToolsGroupId,
     }) {
       return ToolsTable(
@@ -43,6 +44,7 @@ void main() {
         description: description,
         config: config,
         inputSchema: inputSchema,
+        outputSchema: outputSchema,
         isEnabled: isEnabled,
         permissions: permissions,
       );
@@ -52,7 +54,11 @@ void main() {
       test('returns mapped entities after ensuring native tools', () async {
         when(() => fixture.mockToolsDao.getWorkspaceTools('ws-1')).thenAnswer(
           (_) async => [
-            createToolRow(id: 't1', toolId: 'url'),
+            createToolRow(
+              id: 't1',
+              toolId: 'url',
+              outputSchema: '{"type":"object"}',
+            ),
             createToolRow(id: 't2'),
           ],
         );
@@ -62,6 +68,7 @@ void main() {
         expect(result, hasLength(2));
         expect(result.firstOrNull?.id, 't1');
         expect(result.firstOrNull?.toolId, 'url');
+        expect(result.firstOrNull?.outputSchemaJson, '{"type":"object"}');
         expect(result[1].toolId, 'calculator');
       });
     });

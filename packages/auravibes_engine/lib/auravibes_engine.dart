@@ -89,6 +89,7 @@ export 'src/tool_catalog.dart';
 export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';
+export 'src/tool_output_policy.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';

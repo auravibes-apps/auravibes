@@ -80,7 +80,7 @@ class McpServersRepository implements McpServersRepositoryContract {
         () => _syncMcpTools(mcpServerId, currentTools),
       );
 
-      // Note: Existing tools are NOT modified - user customizations preserved.
+      // Existing tool permissions and enablement remain unchanged.
     } on McpServerNotFoundException {
       rethrow;
     } on Exception catch (e, stackTrace) {
@@ -280,6 +280,9 @@ extension on McpServersRepository {
       toolId: tool.toolName,
       description: .new(tool.description),
       inputSchema: .new(jsonEncode(tool.inputSchema)),
+      outputSchema: .new(
+        tool.outputSchema == null ? null : jsonEncode(tool.outputSchema),
+      ),
       isEnabled: const Value(true),
       permissions: const Value(PermissionAccess.ask),
     );
@@ -292,10 +295,56 @@ extension on McpServersRepository {
     final existingTools = await _workspaceToolsDao.getToolsByGroupId(group.id);
     final toolsToAdd = _toolsToAdd(existingTools, currentTools);
     final toolsToRemove = _toolsToRemove(existingTools, currentTools);
+    await _updateExistingToolMetadata(existingTools, currentTools);
 
     await _insertTools(group.workspaceId, group.id, toolsToAdd);
     await _removeTools(toolsToRemove);
   }
+
+  Future<void> _updateExistingToolMetadata(
+    List<ToolsTable> existingTools,
+    List<McpToolInfo> currentTools,
+  ) async {
+    final currentById = {for (final tool in currentTools) tool.toolName: tool};
+
+    for (final existing in existingTools) {
+      final current = currentById[existing.toolId];
+      if (current == null) continue;
+      await _updateToolMetadata(existing, current);
+    }
+  }
+
+  Future<void> _updateToolMetadata(
+    ToolsTable existing,
+    McpToolInfo current,
+  ) async {
+    final schemas = _serializedToolSchemas(current);
+    if (_hasCurrentToolMetadata(existing, current, schemas)) return;
+    await _workspaceToolsDao.updateToolMetadata(
+      id: existing.id,
+      description: current.description,
+      inputSchema: schemas.inputSchema,
+      outputSchema: .new(schemas.outputSchema),
+    );
+  }
+
+  ({String inputSchema, String? outputSchema}) _serializedToolSchemas(
+    McpToolInfo tool,
+  ) => (
+    inputSchema: jsonEncode(tool.inputSchema),
+    outputSchema: tool.outputSchema == null
+        ? null
+        : jsonEncode(tool.outputSchema),
+  );
+
+  bool _hasCurrentToolMetadata(
+    ToolsTable existing,
+    McpToolInfo current,
+    ({String inputSchema, String? outputSchema}) schemas,
+  ) =>
+      existing.description == current.description &&
+      existing.inputSchema == schemas.inputSchema &&
+      existing.outputSchema == schemas.outputSchema;
 
   List<McpToolInfo> _toolsToAdd(
     List<ToolsTable> existingTools,

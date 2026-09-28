@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_engine/auravibes_engine.dart' show projectToolOutput;
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -767,11 +768,12 @@ class const ConversationWorker({
     required DateTime now,
     required Transaction transaction,
   }) async {
+    final projection = projectToolOutput(jsonEncode(result));
     await ConversationToolCall.db.updateRow(
       session,
       call.copyWith(
         status: status,
-        resultJson: jsonEncode(result),
+        resultJson: projection.persistedText,
         revision: call.revision + 1,
         updatedAt: now,
       ),
@@ -1598,6 +1600,9 @@ class const ConversationWorker({
       lockMode: LockMode.forUpdate,
     );
     for (final toolCall in activeToolCalls) {
+      final projection = projectToolOutput(
+        _cancelledToolResult(toolCall.resultJson),
+      );
       await ConversationToolCall.db.updateRow(
         session,
         toolCall.copyWith(
@@ -1605,7 +1610,7 @@ class const ConversationWorker({
           decisionByUserId: toolCall.decisionByUserId ?? turn.initiatorUserId,
           decisionAt: toolCall.decisionAt ?? now,
           status: 'cancelled',
-          resultJson: _cancelledToolResult(toolCall.resultJson),
+          resultJson: projection.persistedText,
           revision: toolCall.revision + 1,
           updatedAt: now,
         ),

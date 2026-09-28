@@ -411,16 +411,29 @@ List<MessageToolCallEntity> _readCloudToolCalls(
 MessageToolCallEntity _readCloudToolCall(
   ConversationToolCallView call,
   ConversationMessageView message,
-) => MessageToolCallEntity(
-  id: call.id,
-  name: call.name,
-  argumentsRaw: call.argumentsJson,
-  userFacingDescription: call.userFacingDescription,
-  argumentsDigest: call.argumentsDigest,
-  turnId: message.turnId,
-  turnRevision: message.turnRevision,
+) {
+  final toolCall = MessageToolCallEntity(
+    id: call.id,
+    name: call.name,
+    argumentsRaw: call.argumentsJson,
+    userFacingDescription: call.userFacingDescription,
+    argumentsDigest: call.argumentsDigest,
+    turnId: message.turnId,
+    turnRevision: message.turnRevision,
+    resultStatus: CloudMessageTools.resultStatus(call.status),
+  );
+
+  return _withCloudToolOutput(toolCall, call);
+}
+
+MessageToolCallEntity _withCloudToolOutput(
+  MessageToolCallEntity toolCall,
+  ConversationToolCallView call,
+) => toolCall.copyWith(
   responseRaw: call.resultJson,
-  resultStatus: CloudMessageTools.resultStatus(call.status),
+  responseContextRaw: call.resultContextJson,
+  outputTruncated: call.resultOutputTruncated,
+  originalResponseBytes: call.resultOriginalBytes,
 );
 
 MessageStatus _readCloudMessageStatus(String status) => switch (status) {
