@@ -172,7 +172,10 @@ void main() {
       RecordPlatform.instance = _FakeRecordPlatform(hasPermissionValue: false);
       final service = LocalChatAttachmentService();
 
-      await expectLater(service.startVoiceRecording(), throwsStateError);
+      await expectLater(
+        service.startVoiceRecording(),
+        throwsA(isA<ChatMicrophonePermissionDeniedException>()),
+      );
     },
   );
 

@@ -527,6 +527,28 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.voice_record_label';
   static const chats_screens_chat_conversation_image_attachment_label =
       'chats_screens.chat_conversation.image_attachment_label';
+  static const chats_screens_chat_conversation_camera_attachment_error =
+      'chats_screens.chat_conversation.camera_attachment_error';
+  static const chats_screens_chat_conversation_clear_all_attachments =
+      'chats_screens.chat_conversation.clear_all_attachments';
+  static const chats_screens_chat_conversation_play_voice_attachment =
+      'chats_screens.chat_conversation.play_voice_attachment';
+  static const chats_screens_chat_conversation_stop_voice_attachment =
+      'chats_screens.chat_conversation.stop_voice_attachment';
+  static const chats_screens_chat_conversation_microphone_permission_denied =
+      'chats_screens.chat_conversation.microphone_permission_denied';
+  static const chats_screens_chat_conversation_attachment_file_model_unsupported =
+      'chats_screens.chat_conversation.attachment_file_model_unsupported';
+  static const chats_screens_chat_conversation_attachment_file_local_unavailable =
+      'chats_screens.chat_conversation.attachment_file_local_unavailable';
+  static const chats_screens_chat_conversation_attachment_image_model_unsupported =
+      'chats_screens.chat_conversation.attachment_image_model_unsupported';
+  static const chats_screens_chat_conversation_attachment_image_local_unavailable =
+      'chats_screens.chat_conversation.attachment_image_local_unavailable';
+  static const chats_screens_chat_conversation_attachment_audio_model_unsupported =
+      'chats_screens.chat_conversation.attachment_audio_model_unsupported';
+  static const chats_screens_chat_conversation_attachment_audio_local_unavailable =
+      'chats_screens.chat_conversation.attachment_audio_local_unavailable';
   static const chats_screens_chat_conversation_a2ui_image_loading =
       'chats_screens.chat_conversation.a2ui_image_loading';
   static const chats_screens_chat_conversation_a2ui_image_error =

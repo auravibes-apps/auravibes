@@ -1,6 +1,11 @@
+import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const ChatAttachmentDraftPreview({
@@ -21,10 +26,99 @@ class const ChatAttachmentDraftPreview({
       ),
       label: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _maxLabelWidth),
-        child: _AttachmentDraftLabel(attachment: attachment),
+        child: Row(
+          mainAxisSize: .min,
+          children: [
+            if (attachment.modality == .audio) ...[
+              _AttachmentDraftAudioPlayer(
+                key: ObjectKey(attachment),
+                localPath: attachment.localPath,
+                enabled: enabled,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Flexible(child: _AttachmentDraftLabel(attachment: attachment)),
+          ],
+        ),
       ),
       onDeleted: enabled ? () => onRemove(attachment) : null,
     );
+  }
+}
+
+class const _AttachmentDraftAudioPlayer({
+  required final String localPath,
+  required final bool enabled,
+  super.key,
+}) extends StatefulWidget {
+  @override
+  State<_AttachmentDraftAudioPlayer> createState() =>
+      _AttachmentDraftAudioPlayerState();
+}
+
+class _AttachmentDraftAudioPlayerState
+    extends State<_AttachmentDraftAudioPlayer> {
+  AudioPlayer? _player;
+  StreamSubscription<void>? _completionSubscription;
+  bool _isPlaying = false;
+
+  @override
+  void dispose() {
+    final completionSubscription = _completionSubscription;
+    if (completionSubscription != null) {
+      unawaited(completionSubscription.cancel());
+    }
+    final player = _player;
+    if (player != null) unawaited(_disposePlayer(player));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label =
+        (_isPlaying
+                ? LocaleKeys
+                      .chats_screens_chat_conversation_stop_voice_attachment
+                : LocaleKeys
+                      .chats_screens_chat_conversation_play_voice_attachment)
+            .tr();
+
+    return AuraIconButton(
+      icon: _isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+      onPressed: widget.enabled ? _togglePlayback : null,
+      disabled: !widget.enabled,
+      semanticLabel: label,
+      tooltip: label,
+    );
+  }
+
+  Future<void> _togglePlayback() async {
+    final player = _player ??= AudioPlayer();
+    _completionSubscription ??= player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _isPlaying = false);
+    });
+
+    try {
+      if (_isPlaying) {
+        await player.stop();
+        if (mounted) setState(() => _isPlaying = false);
+
+        return;
+      }
+
+      setState(() => _isPlaying = true);
+      await player.play(DeviceFileSource(widget.localPath));
+    } on Object {
+      if (mounted) setState(() => _isPlaying = false);
+    }
+  }
+
+  Future<void> _disposePlayer(AudioPlayer player) async {
+    try {
+      await player.dispose();
+    } on Object {
+      // The preview is already leaving the tree; there is no UI to report to.
+    }
   }
 }
 
