@@ -653,6 +653,7 @@ class const _AuraButtonGroupLabel<T>({
       color: colors.foregroundColor,
       fontSize: dimensions.fontSize,
       fontWeight: item._auraTheme.typography.fontWeightMedium,
+      fontFamily: item._auraTheme.typography.bodyFontFamily,
     ),
     child: IconTheme(
       data: .new(size: dimensions.iconSize, color: colors.foregroundColor),

@@ -82,6 +82,12 @@ void main() {
 
       expect(find.text('Option 1'), findsOneWidget);
       expect(find.text('Option 2'), findsOneWidget);
+      expect(
+        DefaultTextStyle.of(tester.element(find.text('Option 1')))
+            .style
+            .fontFamily,
+        'Inter',
+      );
     });
 
     testWidgets('highlights selected option in dropdown', (tester) async {

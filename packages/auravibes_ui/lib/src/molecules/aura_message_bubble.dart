@@ -19,6 +19,7 @@ class AuraMessageBubble extends StatelessWidget {
     super.key,
     this.status = AuraMessageDeliveryStatus.sent,
     this.timestamp,
+    this.timestampLabel,
     this.contentType = AuraMessageContentType.text,
     this.onTap,
     this.onLongPress,
@@ -41,6 +42,9 @@ class AuraMessageBubble extends StatelessWidget {
 
   /// The timestamp when the message was sent.
   final DateTime? timestamp;
+
+  /// Optional localized timestamp label supplied by the app.
+  final String? timestampLabel;
 
   /// The type of content in the message.
   final AuraMessageContentType contentType;
@@ -196,6 +200,7 @@ class const _AuraOptionalMessageTimestamp({
     null => const SizedBox.shrink(),
     final timestamp => _AuraMessageBubbleTimestamp(
       timestamp: timestamp,
+      label: message.timestampLabel,
       isUser: message.isUser,
       now: message.now,
     ),
@@ -337,6 +342,7 @@ class const _AuraFileName({
 
 class const _AuraMessageBubbleTimestamp({
   required final DateTime timestamp,
+  required final String? label,
   required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
@@ -345,6 +351,7 @@ class const _AuraMessageBubbleTimestamp({
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
     child: _AuraMessageBubbleTimestampText(
       timestamp: timestamp,
+      label: label,
       isUser: isUser,
       now: now,
     ),
@@ -353,12 +360,13 @@ class const _AuraMessageBubbleTimestamp({
 
 class const _AuraMessageBubbleTimestampText({
   required final DateTime timestamp,
+  required final String? label,
   required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    _formatMessageTimestamp(timestamp, now: now?.call()),
+    label ?? _formatMessageTimestamp(timestamp, now: now?.call()),
     style: _messageTimestampStyle(
       context,
       _messageTimestampColor(context, isUser),

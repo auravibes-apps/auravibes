@@ -326,6 +326,7 @@ class _ButtonTextStyleData {
         fontSize: _buttonFontSize(request.button.size, request.typography),
         fontWeight: _buttonFontWeight(request.button.size, request.typography),
         height: request.typography.lineHeightBase,
+        fontFamily: request.typography.bodyFontFamily,
       );
 
   final TextStyle value;

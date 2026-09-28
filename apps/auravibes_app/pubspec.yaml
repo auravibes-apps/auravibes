@@ -75,6 +75,7 @@ dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.16.1
   # Code generation for Drift
+  device_preview: ^3.0.0
   drift_dev: 2.35.0
   flutter_flavorizr: ^2.5.0
   flutter_launcher_icons: ^0.14.4
@@ -93,6 +94,10 @@ flutter:
     enable-swift-package-manager: true
   assets:
     - assets/i18n/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
   uses-material-design: true
 
 flavorizr:

@@ -1,0 +1,13 @@
+{
+  "newConnection": "Nueva Conexión",
+  "updatedPrefix": "Actualicé",
+  "toolName": "Notion: Actualizar página",
+  "campaignIdeas": "Ideas de campaña",
+  "agentRequest": "Ayúdame a planear el lanzamiento de mi proyecto.",
+  "reply": "Actualicé la página Plan de lanzamiento en Notion con una lista de tareas: revisar el texto, preparar las imágenes y publicar la página.",
+  "agentReply": "Preparé un plan sencillo: revisa el texto hoy, reúne las imágenes mañana y publica cuando todo esté listo.",
+  "contextRequest1": "¿Qué debemos preparar para el lanzamiento?",
+  "contextReply1": "Necesitamos una página, una lista de tareas y una revisión antes de publicar.",
+  "contextRequest2": "Mantén las tareas en Plan de lanzamiento.",
+  "contextReply2": "Puedo organizar los pasos allí."
+}

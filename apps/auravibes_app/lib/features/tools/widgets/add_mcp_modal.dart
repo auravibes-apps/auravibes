@@ -548,25 +548,50 @@ class const _FooterButtons({
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      const Expanded(child: _FooterCancelButton()),
-      const AuraSizedBox(width: .sm),
-      Expanded(
-        child: _FooterTestConnectionButton(
-          isTestingConnection: isTestingConnection,
-          onTestConnection: onTestConnection,
-        ),
-      ),
-      const AuraSizedBox(width: .sm),
-      Expanded(
-        child: _FooterSaveButton(
-          isSubmitting: isSubmitting,
-          disabled: isTestingConnection || !isConnectionVerified,
-          onSubmit: onSubmit,
-        ),
-      ),
-    ],
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (constraints.maxWidth < 430) {
+        return Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .stretch,
+          children: [
+            _FooterTestConnectionButton(
+              isTestingConnection: isTestingConnection,
+              onTestConnection: onTestConnection,
+            ),
+            const AuraSizedBox(height: .sm),
+            _FooterSaveButton(
+              isSubmitting: isSubmitting,
+              disabled: isTestingConnection || !isConnectionVerified,
+              onSubmit: onSubmit,
+            ),
+            const AuraSizedBox(height: .sm),
+            const _FooterCancelButton(),
+          ],
+        );
+      }
+
+      return Row(
+        children: [
+          const Expanded(child: _FooterCancelButton()),
+          const AuraSizedBox(width: .sm),
+          Expanded(
+            child: _FooterTestConnectionButton(
+              isTestingConnection: isTestingConnection,
+              onTestConnection: onTestConnection,
+            ),
+          ),
+          const AuraSizedBox(width: .sm),
+          Expanded(
+            child: _FooterSaveButton(
+              isSubmitting: isSubmitting,
+              disabled: isTestingConnection || !isConnectionVerified,
+              onSubmit: onSubmit,
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 
@@ -763,10 +788,14 @@ class _AuthenticationSelectorChildren {
            child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
            style: .bodySmall,
          ),
-         AuraButtonGroup<McpAuthenticationTypeOptions>.single(
-           items: items,
-           selectedValue: selectedValue,
-           onChanged: onChanged,
+         FittedBox(
+           fit: .scaleDown,
+           alignment: .centerLeft,
+           child: AuraButtonGroup<McpAuthenticationTypeOptions>.single(
+             items: items,
+             selectedValue: selectedValue,
+             onChanged: onChanged,
+           ),
          ),
        ];
 
