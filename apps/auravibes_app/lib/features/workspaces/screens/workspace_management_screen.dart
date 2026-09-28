@@ -16,6 +16,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -241,7 +242,11 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
   Future<void> _confirmDeleteSelected(BuildContext context) async {
     final selected = _selectedWorkspaces(widget.workspaces, _selectedIds);
     if (selected.isEmpty || _isBulkDeleting) return;
-    final confirmed = await _confirmWorkspaceBulkDelete(context);
+    final confirmed = await _confirmWorkspaceBulkDelete(
+      context,
+      selected.length,
+      _data().hiddenSelectedCount,
+    );
     if (confirmed != true || !context.mounted) return;
 
     await _deleteSelected(selected);
@@ -268,18 +273,22 @@ List<WorkspaceEntity> _selectedWorkspaces(
     .where((workspace) => selectedIds.contains(workspace.id))
     .toList();
 
-Future<bool?> _confirmWorkspaceBulkDelete(BuildContext context) =>
-    AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(
-        LocaleKeys.workspace_management_bulk_delete_title,
-      ),
-      message: const TextLocale(
-        LocaleKeys.workspace_management_bulk_delete_confirm,
-      ),
-      actions: _deleteConfirmationActions,
-      isDestructive: true,
-    );
+Future<bool?> _confirmWorkspaceBulkDelete(
+  BuildContext context,
+  int selectedCount,
+  int hiddenCount,
+) => AuraDialogs.confirm(
+  context: context,
+  title: const TextLocale(LocaleKeys.workspace_management_bulk_delete_title),
+  message: ManagementListFeedback.confirmationMessage(
+    context,
+    LocaleKeys.workspace_management_bulk_delete_confirm,
+    selectedCount: selectedCount,
+    hiddenCount: hiddenCount,
+  ),
+  actions: _deleteConfirmationActions,
+  isDestructive: true,
+);
 
 void _showWorkspaceBulkDeleteFailures(
   BuildContext context,
@@ -288,8 +297,10 @@ void _showWorkspaceBulkDeleteFailures(
   final _ = AuraSnackBars.show(
     context: context,
     content: Text(
-      LocaleKeys.workspace_management_bulk_delete_failures.tr(
-        args: [failed.map((workspace) => workspace.name).join(', ')],
+      ManagementListFeedback.failureText(
+        context,
+        LocaleKeys.workspace_management_bulk_delete_failures,
+        failed.map((workspace) => workspace.name).toList(),
       ),
     ),
     variant: .error,
@@ -308,7 +319,7 @@ _WorkspaceListSource _workspaceListSource(
   activeWorkspaceId: widget.activeWorkspaceId,
   accounts: widget.accounts,
   editingWorkspace: widget.editingWorkspace,
-  searchQuery: searchQuery.trim().toLowerCase(),
+  searchQuery: _foldWorkspaceSearch(searchQuery.trim()),
   sort: sort,
   isBulkDeleting: isBulkDeleting,
   workspaces: widget.workspaces,
@@ -330,10 +341,13 @@ _WorkspaceSelectionData _workspaceSelectionData(
   Set<String> selectedIds,
 ) {
   final visible = _visibleSelectableWorkspaceResults(source, results);
+  final selectedCount = _selectedWorkspaceCount(source.workspaces, selectedIds);
 
   return (
     selectedIds: selectedIds,
-    selectedCount: _selectedWorkspaceCount(source.workspaces, selectedIds),
+    selectedCount: selectedCount,
+    hiddenSelectedCount:
+        selectedCount - _selectedWorkspaceCount(visible, selectedIds),
     selectableCount: visible.length,
     allVisibleSelected: _allWorkspacesSelected(visible, selectedIds),
   );
@@ -428,8 +442,35 @@ List<WorkspaceEntity> _filterWorkspaces(
       .toList();
 }
 
-bool _matchesWorkspaceName(String name, String query) =>
-    query.isEmpty || name.toLowerCase().contains(query);
+bool _matchesWorkspaceName(String name, String query) {
+  if (query.isEmpty) return true;
+
+  return _foldWorkspaceSearch(name).contains(query);
+}
+
+// Ponytail: Latin accents only. Use Unicode normalization for other scripts.
+String _foldWorkspaceSearch(String value) => value
+    .toLowerCase()
+    .replaceAll(RegExp('[\u0300-\u036f]'), '')
+    .replaceAll(RegExp('[àáâãäåāăąǎ]'), 'a')
+    .replaceAll(RegExp('[çćĉċč]'), 'c')
+    .replaceAll(RegExp('[ďđ]'), 'd')
+    .replaceAll(RegExp('[èéêëēĕėęě]'), 'e')
+    .replaceAll(RegExp('[ĝğġģ]'), 'g')
+    .replaceAll(RegExp('[ĥħ]'), 'h')
+    .replaceAll(RegExp('[ìíîïĩīĭįıǐ]'), 'i')
+    .replaceAll(RegExp('[ĵ]'), 'j')
+    .replaceAll(RegExp('[ķ]'), 'k')
+    .replaceAll(RegExp('[ĺļľł]'), 'l')
+    .replaceAll(RegExp('[ñńņň]'), 'n')
+    .replaceAll(RegExp('[òóôõöøōŏőǒ]'), 'o')
+    .replaceAll(RegExp('[ŕŗř]'), 'r')
+    .replaceAll(RegExp('[śŝşš]'), 's')
+    .replaceAll(RegExp('[ţťŧ]'), 't')
+    .replaceAll(RegExp('[ùúûüũūŭůűųǔ]'), 'u')
+    .replaceAll(RegExp('[ŵ]'), 'w')
+    .replaceAll(RegExp('[ýÿŷ]'), 'y')
+    .replaceAll(RegExp('[źżž]'), 'z');
 
 List<CloudWorkspaceSummary> _matchingCloudWorkspaces(
   List<CloudWorkspaceSummary> workspaces,
@@ -575,6 +616,7 @@ typedef _WorkspaceListResults = ({
 typedef _WorkspaceSelectionData = ({
   Set<String> selectedIds,
   int selectedCount,
+  int hiddenSelectedCount,
   int selectableCount,
   bool allVisibleSelected,
 });
@@ -594,6 +636,7 @@ class _WorkspaceListData {
        sort = source.sort,
        selectedIds = selection.selectedIds,
        selectedCount = selection.selectedCount,
+       hiddenSelectedCount = selection.hiddenSelectedCount,
        selectableCount = selection.selectableCount,
        allVisibleSelected = selection.allVisibleSelected,
        isBulkDeleting = source.isBulkDeleting,
@@ -609,6 +652,7 @@ class _WorkspaceListData {
   final _WorkspaceSort sort;
   final Set<String> selectedIds;
   final int selectedCount;
+  final int hiddenSelectedCount;
   final int selectableCount;
   final bool allVisibleSelected;
   final bool isBulkDeleting;
@@ -629,32 +673,107 @@ class const _WorkspaceListSections({
         _WorkspaceManagementRow(data: data, actions: actions),
         if (data.selectedCount > 0)
           _WorkspaceSelectionActions(data: data, actions: actions),
-        _LocalWorkspaceSection(data: data, actions: actions),
-        _ConnectedWorkspaceSection(data: data, actions: actions),
-        _AvailableCloudWorkspaceSection(data: data, actions: actions),
+        _WorkspaceSourceSections(data: data, actions: actions),
       ],
     );
   }
 }
 
+class const _WorkspaceSourceSections({
+  required final _WorkspaceListData data,
+  required final _WorkspaceListActions actions,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _LocalWorkspaceSection(data: data, actions: actions),
+      _ConnectedWorkspaceSection(data: data, actions: actions),
+      _AvailableCloudWorkspaceSection(data: data, actions: actions),
+    ],
+  );
+}
+
 class const _WorkspaceSearchInput({
   required final ValueChanged<String> onChanged,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
+  @override
+  State<_WorkspaceSearchInput> createState() => _WorkspaceSearchInputState();
+}
+
+class _WorkspaceSearchInputState extends State<_WorkspaceSearchInput> {
+  final _controller = TextEditingController();
+  var _hasSearchText = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _WorkspaceSearchDecoration(
+    child: _WorkspaceSearchField(
+      controller: _controller,
+      suffixIcon: _hasSearchText
+          ? _WorkspaceSearchClearButton(onPressed: _clearSearch)
+          : null,
+      onChanged: _updateSearch,
+    ),
+  );
+
+  void _updateSearch(String query) {
+    setState(() => _hasSearchText = query.isNotEmpty);
+    widget.onChanged(query);
+  }
+
+  void _clearSearch() {
+    _controller.clear();
+    _updateSearch('');
+  }
+}
+
+class const _WorkspaceSearchDecoration({required final Widget child})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: Semantics(
       key: const ValueKey<String>('workspace_search'),
-      child: AuraInput(
-        placeholder: const TextLocale(
-          LocaleKeys.workspace_management_search_placeholder,
-        ),
-        prefixIcon: const AuraIcon(Icons.search),
-        size: .small,
-        onChanged: onChanged,
-      ),
       identifier: 'workspace_search',
+      child: child,
     ),
+  );
+}
+
+class const _WorkspaceSearchField({
+  required final TextEditingController controller,
+  required final Widget? suffixIcon,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: controller,
+    placeholder: const TextLocale(
+      LocaleKeys.workspace_management_search_placeholder,
+    ),
+    prefixIcon: const AuraIcon(Icons.search),
+    suffixIcon: suffixIcon,
+    size: .small,
+    onChanged: onChanged,
+  );
+}
+
+class const _WorkspaceSearchClearButton({required final VoidCallback onPressed})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    key: const ValueKey('workspace-search-clear'),
+    icon: Icons.close,
+    size: .small,
+    onPressed: onPressed,
+    semanticLabel: LocaleKeys.common_clear_search.tr(context: context),
+    tooltip: LocaleKeys.common_clear_search.tr(context: context),
   );
 }
 
@@ -755,7 +874,12 @@ class const _WorkspaceSelectionActionRow({
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _WorkspaceSelectedCount(count: data.selectedCount)),
+      Expanded(
+        child: _WorkspaceSelectedCount(
+          count: data.selectedCount,
+          hiddenCount: data.hiddenSelectedCount,
+        ),
+      ),
       _WorkspaceDeleteSelectedButton(data: data, actions: actions),
       const SizedBox(width: 8),
       _WorkspaceClearSelectionButton(data: data, actions: actions),
@@ -763,11 +887,19 @@ class const _WorkspaceSelectionActionRow({
   );
 }
 
-class const _WorkspaceSelectedCount({required final int count})
-    extends StatelessWidget {
+class const _WorkspaceSelectedCount({
+  required final int count,
+  required final int hiddenCount,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
-    child: Text(context.plural(LocaleKeys.common_selected_count, count)),
+    child: Text(
+      ManagementListFeedback.selectionText(
+        context,
+        selectedCount: count,
+        hiddenCount: hiddenCount,
+      ),
+    ),
     style: .bodySmall,
   );
 }
@@ -1521,8 +1653,24 @@ class _AvailableCloudAccountState extends StatelessWidget {
            LocaleKeys.cloud_accounts_no_workspaces,
          ),
          AsyncLoading() => const Center(child: AuraSpinner()),
-         AsyncError() => const TextLocale(
-           LocaleKeys.workspace_management_cloud_load_error,
+         AsyncError() => Row(
+           children: [
+             const Expanded(
+               child: TextLocale(
+                 LocaleKeys.workspace_management_cloud_load_error,
+               ),
+             ),
+             AuraButton(
+               key: ValueKey('workspace_cloud_retry_${account.userId}'),
+               onPressed: () => actions.ref.invalidate(
+                 cloudWorkspaceStateProvider(account.userId),
+               ),
+               child: const TextLocale(
+                 LocaleKeys.workspace_management_cloud_retry,
+               ),
+               size: .small,
+             ),
+           ],
          ),
        };
 

@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -56,6 +57,7 @@ typedef _ToolsFilterState = ({
 typedef _ToolsSelectionData = ({
   Set<String> selectedKeys,
   int selectedCount,
+  int hiddenSelectedCount,
   int selectableCount,
   bool allVisibleSelected,
   bool isDeleting,
@@ -71,6 +73,7 @@ typedef _ToolsSelectionCallbacks = ({
 typedef _ToolsSelectionSnapshot = ({
   List<_ToolsDeleteTarget> visibleTargets,
   List<_ToolsDeleteTarget> selectedTargets,
+  int hiddenSelectedCount,
   bool allVisibleSelected,
 });
 
@@ -184,13 +187,22 @@ _ToolsSelectionSnapshot _toolsSelectionSnapshot(
 ) {
   final visibleTargets = _visibleToolsDeleteTargets(groups, hooks);
   final selectedKeys = hooks.selectedKeys.value;
+  final selectedTargets = _selectedToolsDeleteTargets(groups, selectedKeys);
 
   return (
     visibleTargets: visibleTargets,
-    selectedTargets: _selectedToolsDeleteTargets(groups, selectedKeys),
+    selectedTargets: selectedTargets,
+    hiddenSelectedCount:
+        selectedTargets.length -
+        _selectedVisibleToolsTargetCount(visibleTargets, selectedKeys),
     allVisibleSelected: _allToolsTargetsSelected(visibleTargets, selectedKeys),
   );
 }
+
+int _selectedVisibleToolsTargetCount(
+  List<_ToolsDeleteTarget> targets,
+  Set<String> selectedKeys,
+) => targets.where((target) => selectedKeys.contains(target.key)).length;
 
 List<_ToolsDeleteTarget> _visibleToolsDeleteTargets(
   List<ToolsGroupWithTools> groups,
@@ -224,6 +236,7 @@ _ToolsSelectionData _toolsSelectionData(
 ) => (
   selectedKeys: hooks.selectedKeys.value,
   selectedCount: snapshot.selectedTargets.length,
+  hiddenSelectedCount: snapshot.hiddenSelectedCount,
   selectableCount: snapshot.visibleTargets.length,
   allVisibleSelected: snapshot.allVisibleSelected,
   isDeleting: hooks.isDeleting.value,
@@ -272,6 +285,7 @@ _ToolsBulkDeleteRequest _toolsBulkDeleteRequest(
   ref: request.ref,
   workspaceId: request.workspaceId,
   selectedTargets: request.snapshot.selectedTargets,
+  hiddenSelectedCount: request.snapshot.hiddenSelectedCount,
   selectedKeys: request.hooks.selectedKeys,
   isDeleting: request.hooks.isDeleting,
 );
@@ -324,6 +338,7 @@ class const _OptionalToolsSelectionActions({
 
     return _ToolsSelectionActions(
       count: selection.selectedCount,
+      hiddenCount: selection.hiddenSelectedCount,
       isDeleting: selection.isDeleting,
       onDelete: actions.onDelete,
       onClear: actions.onClear,
@@ -442,6 +457,7 @@ const _toolsSortOptions = <AuraDropdownOption<_ToolsSort>>[
 
 class const _ToolsSelectionActions({
   required final int count,
+  required final int hiddenCount,
   required final bool isDeleting,
   required final VoidCallback onDelete,
   required final VoidCallback onClear,
@@ -454,6 +470,7 @@ class const _ToolsSelectionActions({
       padding: EdgeInsets.only(left: spacing, top: spacing, right: spacing),
       child: _ToolsSelectionActionRow(
         count: count,
+        hiddenCount: hiddenCount,
         isDeleting: isDeleting,
         onDelete: onDelete,
         onClear: onClear,
@@ -465,6 +482,7 @@ class const _ToolsSelectionActions({
 
 class const _ToolsSelectionActionRow({
   required final int count,
+  required final int hiddenCount,
   required final bool isDeleting,
   required final VoidCallback onDelete,
   required final VoidCallback onClear,
@@ -473,7 +491,9 @@ class const _ToolsSelectionActionRow({
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _ToolsSelectedCount(count: count)),
+      Expanded(
+        child: _ToolsSelectedCount(count: count, hiddenCount: hiddenCount),
+      ),
       _ToolsDeleteSelectedButton(isDeleting: isDeleting, onPressed: onDelete),
       SizedBox(width: spacing),
       _ToolsClearSelectionButton(isDeleting: isDeleting, onPressed: onClear),
@@ -481,11 +501,19 @@ class const _ToolsSelectionActionRow({
   );
 }
 
-class const _ToolsSelectedCount({required final int count})
-    extends StatelessWidget {
+class const _ToolsSelectedCount({
+  required final int count,
+  required final int hiddenCount,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
-    child: Text(context.plural(LocaleKeys.common_selected_count, count)),
+    child: Text(
+      ManagementListFeedback.selectionText(
+        context,
+        selectedCount: count,
+        hiddenCount: hiddenCount,
+      ),
+    ),
     style: .bodySmall,
   );
 }
@@ -748,6 +776,7 @@ typedef _ToolsBulkDeleteRequest = ({
   WidgetRef ref,
   String workspaceId,
   List<_ToolsDeleteTarget> selectedTargets,
+  int hiddenSelectedCount,
   ValueNotifier<Set<String>> selectedKeys,
   ValueNotifier<bool> isDeleting,
 });
@@ -756,23 +785,35 @@ Future<void> _confirmDeleteSelectedTools(
   _ToolsBulkDeleteRequest request,
 ) async {
   if (request.selectedTargets.isEmpty || request.isDeleting.value) return;
-  final confirmed = await _confirmToolsBulkDelete(request.context);
+  final confirmed = await _confirmToolsBulkDelete(
+    request.context,
+    request.selectedTargets.length,
+    request.hiddenSelectedCount,
+  );
   if (confirmed != true || !request.context.mounted) return;
 
   await _runToolsBulkDelete(request);
 }
 
-Future<bool?> _confirmToolsBulkDelete(BuildContext context) =>
-    AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(LocaleKeys.tools_screen_bulk_delete_title),
-      message: const TextLocale(LocaleKeys.tools_screen_bulk_delete_confirm),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(LocaleKeys.common_delete),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
-      ),
-      isDestructive: true,
-    );
+Future<bool?> _confirmToolsBulkDelete(
+  BuildContext context,
+  int selectedCount,
+  int hiddenCount,
+) => AuraDialogs.confirm(
+  context: context,
+  title: const TextLocale(LocaleKeys.tools_screen_bulk_delete_title),
+  message: ManagementListFeedback.confirmationMessage(
+    context,
+    LocaleKeys.tools_screen_bulk_delete_confirm,
+    selectedCount: selectedCount,
+    hiddenCount: hiddenCount,
+  ),
+  actions: const AuraConfirmDialogActions(
+    confirmLabel: TextLocale(LocaleKeys.common_delete),
+    cancelLabel: TextLocale(LocaleKeys.common_cancel),
+  ),
+  isDestructive: true,
+);
 
 Future<void> _runToolsBulkDelete(_ToolsBulkDeleteRequest request) async {
   request.isDeleting.value = true;
@@ -804,8 +845,10 @@ void _showToolsDeleteFailures(
   final _ = AuraSnackBars.show(
     context: context,
     content: Text(
-      LocaleKeys.tools_screen_bulk_delete_failures.tr(
-        args: [failed.map((target) => target.label).join(', ')],
+      ManagementListFeedback.failureText(
+        context,
+        LocaleKeys.tools_screen_bulk_delete_failures,
+        failed.map((target) => target.label).toList(),
       ),
     ),
     variant: .error,

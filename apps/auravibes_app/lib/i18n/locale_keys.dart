@@ -1124,7 +1124,10 @@ abstract class LocaleKeys {
   static const common_deselect_all = 'common.deselect_all';
   static const common_clear_selection = 'common.clear_selection';
   static const common_delete_selected = 'common.delete_selected';
+  static const common_clear_search = 'common.clear_search';
   static const common_selected_count = 'common.selected_count';
+  static const common_hidden_selected_count = 'common.hidden_selected_count';
+  static const common_additional_failures = 'common.additional_failures';
   static const common_show_more = 'common.show_more';
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
@@ -1392,6 +1395,8 @@ abstract class LocaleKeys {
       'workspace_management.bulk_delete_confirm';
   static const workspace_management_bulk_delete_failures =
       'workspace_management.bulk_delete_failures';
+  static const workspace_management_cloud_retry =
+      'workspace_management.cloud_retry';
   static const workspace_management_create_button =
       'workspace_management.create_button';
   static const workspace_management_duplicate =

@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dar
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -74,6 +75,7 @@ typedef _SkillsFilterData = ({
 typedef _SkillsSelectionData = ({
   Set<String> selectedIds,
   int selectedCount,
+  int hiddenSelectedCount,
   int selectableCount,
   bool allVisibleSelected,
   bool isDeleting,
@@ -502,6 +504,7 @@ typedef _SkillsViewRuntime = ({
   List<WorkspaceSkill> visibleSkills,
   List<WorkspaceSkill> visibleUserSkills,
   List<WorkspaceSkill> selectedSkills,
+  int hiddenSelectedCount,
   bool allVisibleSelected,
 });
 
@@ -512,17 +515,31 @@ _SkillsViewRuntime _skillsViewRuntime(
 ) {
   final visibleSkills = _visibleSkills(context, skills, hooks);
   final visibleUserSkills = _userSkills(visibleSkills);
+  final selectedSkills = _selectedUserSkills(skills, hooks.selectedIds.value);
 
   return (
     visibleSkills: visibleSkills,
     visibleUserSkills: visibleUserSkills,
-    selectedSkills: _selectedUserSkills(skills, hooks.selectedIds.value),
+    selectedSkills: selectedSkills,
+    hiddenSelectedCount: _hiddenSelectedSkillCount(
+      selectedSkills,
+      visibleUserSkills,
+      hooks.selectedIds.value,
+    ),
     allVisibleSelected: _allVisibleSkillsSelected(
       visibleUserSkills,
       hooks.selectedIds.value,
     ),
   );
 }
+
+int _hiddenSelectedSkillCount(
+  List<WorkspaceSkill> selectedSkills,
+  List<WorkspaceSkill> skills,
+  Set<String> selectedIds,
+) =>
+    selectedSkills.length -
+    skills.where((skill) => selectedIds.contains(skill.id)).length;
 
 List<WorkspaceSkill> _visibleSkills(
   BuildContext context,
@@ -578,6 +595,7 @@ _SkillsSelectionData _skillsSelectionData(
 ) => (
   selectedIds: hooks.selectedIds.value,
   selectedCount: runtime.selectedSkills.length,
+  hiddenSelectedCount: runtime.hiddenSelectedCount,
   selectableCount: runtime.visibleUserSkills.length,
   allVisibleSelected: runtime.allVisibleSelected,
   isDeleting: hooks.isDeleting.value,
@@ -639,16 +657,18 @@ VoidCallback _skillsSelectAllCallback(_SkillsViewRequest request) =>
       request.runtime.allVisibleSelected,
     );
 
-VoidCallback _skillsDeleteSelectedCallback(_SkillsViewRequest request) =>
-    () => unawaited(
-      _confirmDeleteSelectedSkills((
-        context: request.context,
-        selectedSkills: request.runtime.selectedSkills,
-        selectedIds: request.hooks.selectedIds,
-        isDeleting: request.hooks.isDeleting,
-        onDeleteSkills: request.content.onDeleteSkills,
-      )),
-    );
+VoidCallback _skillsDeleteSelectedCallback(_SkillsViewRequest request) {
+  final bulkDelete = (
+    context: request.context,
+    selectedSkills: request.runtime.selectedSkills,
+    hiddenSelectedCount: request.runtime.hiddenSelectedCount,
+    selectedIds: request.hooks.selectedIds,
+    isDeleting: request.hooks.isDeleting,
+    onDeleteSkills: request.content.onDeleteSkills,
+  );
+
+  return () => unawaited(_confirmDeleteSelectedSkills(bulkDelete));
+}
 
 _SkillsFilterState _loadedSkillFiltersFromHooks(_SkillsLoadedHooks hooks) =>
     _loadedSkillFilters(
@@ -734,6 +754,7 @@ void _toggleAllVisibleSkills(
 typedef _SkillsBulkDeleteRequest = ({
   BuildContext context,
   List<WorkspaceSkill> selectedSkills,
+  int hiddenSelectedCount,
   ValueNotifier<Set<String>> selectedIds,
   ValueNotifier<bool> isDeleting,
   _DeleteSkills onDeleteSkills,
@@ -743,17 +764,27 @@ Future<void> _confirmDeleteSelectedSkills(
   _SkillsBulkDeleteRequest request,
 ) async {
   if (request.selectedSkills.isEmpty || request.isDeleting.value) return;
-  final shouldDelete = await _confirmSkillsBulkDelete(request.context);
+  final shouldDelete = await _confirmSkillsBulkDelete(
+    request.context,
+    request.selectedSkills.length,
+    request.hiddenSelectedCount,
+  );
   if (shouldDelete != true || !request.context.mounted) return;
 
   await _runSkillsBulkDelete(request);
 }
 
-Future<bool?> _confirmSkillsBulkDelete(BuildContext context) =>
-    showDialog<bool>(
-      context: context,
-      builder: (_) => const _BulkDeleteSkillsDialog(),
-    );
+Future<bool?> _confirmSkillsBulkDelete(
+  BuildContext context,
+  int selectedCount,
+  int hiddenCount,
+) => showDialog<bool>(
+  context: context,
+  builder: (_) => _BulkDeleteSkillsDialog(
+    selectedCount: selectedCount,
+    hiddenCount: hiddenCount,
+  ),
+);
 
 Future<void> _runSkillsBulkDelete(_SkillsBulkDeleteRequest request) async {
   request.isDeleting.value = true;
@@ -787,12 +818,10 @@ void _showSkillsDeleteFailures(
   final _ = AuraSnackBars.show(
     context: context,
     content: Text(
-      LocaleKeys.skills_screen_bulk_delete_failures.tr(
-        args: [
-          failed
-              .map((skill) => _localizedSkillTitle(context, skill))
-              .join(', '),
-        ],
+      ManagementListFeedback.failureText(
+        context,
+        LocaleKeys.skills_screen_bulk_delete_failures,
+        failed.map((skill) => _localizedSkillTitle(context, skill)).toList(),
       ),
     ),
     variant: .error,
@@ -821,6 +850,7 @@ class const _OptionalSkillsSelectionActions({
 
     return _SkillsSelectionActions(
       count: selection.selectedCount,
+      hiddenCount: selection.hiddenSelectedCount,
       isDeleting: selection.isDeleting,
       onDelete: state.actions.bulk.onDeleteSelected,
       onClear: state.actions.bulk.onClearSelection,
@@ -1007,6 +1037,7 @@ const _skillSortOptions = <AuraDropdownOption<_SkillSort>>[
 
 class const _SkillsSelectionActions({
   required final int count,
+  required final int hiddenCount,
   required final bool isDeleting,
   required final VoidCallback onDelete,
   required final VoidCallback onClear,
@@ -1019,6 +1050,7 @@ class const _SkillsSelectionActions({
       padding: EdgeInsets.only(left: spacing, top: spacing, right: spacing),
       child: _SkillsSelectionActionRow(
         count: count,
+        hiddenCount: hiddenCount,
         isDeleting: isDeleting,
         onDelete: onDelete,
         onClear: onClear,
@@ -1030,6 +1062,7 @@ class const _SkillsSelectionActions({
 
 class const _SkillsSelectionActionRow({
   required final int count,
+  required final int hiddenCount,
   required final bool isDeleting,
   required final VoidCallback onDelete,
   required final VoidCallback onClear,
@@ -1038,7 +1071,9 @@ class const _SkillsSelectionActionRow({
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      Expanded(child: _SkillsSelectedCount(count: count)),
+      Expanded(
+        child: _SkillsSelectedCount(count: count, hiddenCount: hiddenCount),
+      ),
       _SkillsDeleteSelectedButton(isDeleting: isDeleting, onPressed: onDelete),
       SizedBox(width: spacing),
       _SkillsClearSelectionButton(isDeleting: isDeleting, onPressed: onClear),
@@ -1046,11 +1081,19 @@ class const _SkillsSelectionActionRow({
   );
 }
 
-class const _SkillsSelectedCount({required final int count})
-    extends StatelessWidget {
+class const _SkillsSelectedCount({
+  required final int count,
+  required final int hiddenCount,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
-    child: Text(context.plural(LocaleKeys.common_selected_count, count)),
+    child: Text(
+      ManagementListFeedback.selectionText(
+        context,
+        selectedCount: count,
+        hiddenCount: hiddenCount,
+      ),
+    ),
     style: .bodySmall,
   );
 }
@@ -1670,11 +1713,19 @@ class _DeleteSkillDialog extends StatelessWidget {
   }
 }
 
-class const _BulkDeleteSkillsDialog() extends StatelessWidget {
+class const _BulkDeleteSkillsDialog({
+  required final int selectedCount,
+  required final int hiddenCount,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraConfirmDialog(
     title: const TextLocale(LocaleKeys.skills_screen_bulk_delete_title),
-    message: const TextLocale(LocaleKeys.skills_screen_bulk_delete_confirm),
+    message: ManagementListFeedback.confirmationMessage(
+      context,
+      LocaleKeys.skills_screen_bulk_delete_confirm,
+      selectedCount: selectedCount,
+      hiddenCount: hiddenCount,
+    ),
     confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
     cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
     isDestructive: true,
