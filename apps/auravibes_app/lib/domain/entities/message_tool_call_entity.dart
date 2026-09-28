@@ -239,9 +239,6 @@ abstract class const MessageEntity._() with _$MessageEntity {
     return hasValidContent && conversationId.isNotEmpty;
   }
 
-  bool isForConversation(String conversationId) =>
-      this.conversationId == conversationId;
-
   bool get isAgentTranscriptContextUpdate =>
       messageType == MessageType.system &&
       !isUser &&
@@ -249,6 +246,9 @@ abstract class const MessageEntity._() with _$MessageEntity {
       metadata?.modelMetadata[MessageMetadataEntity
               .agentTranscriptContextMetadataKey] ==
           true;
+
+  bool isForConversation(String conversationId) =>
+      this.conversationId == conversationId;
 }
 
 /// Entity for creating a new message.

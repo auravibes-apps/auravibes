@@ -22,8 +22,8 @@ Map<String, Object?> _updateToJson(AgentTranscriptContextUpdate update) => {
   'toolsRemoved': update.toolsRemoved,
   if (update.contextMessages case final messages?)
     'contextMessages': _encodeMessages(messages),
-  if (update.toolOrder case final order?) 'toolOrder': order,
-  if (update.approvalStates case final states?) 'approvalStates': states,
+  'toolOrder': ?update.toolOrder,
+  'approvalStates': ?update.approvalStates,
 };
 
 List<Map<String, Object?>> _encodeTools(List<ToolSpec> tools) => [
@@ -43,7 +43,7 @@ List<Map<String, Object?>> _encodeMessages(
 Map<String, Object?> _encodeMessage(AgentContextMessage message) => {
   'role': message.role.name,
   'content': message.content,
-  if (message.kind case final kind?) 'kind': kind,
+  'kind': ?message.kind,
 };
 
 AgentTranscriptContextUpdate? _tryDecodeUpdate(String content) {
