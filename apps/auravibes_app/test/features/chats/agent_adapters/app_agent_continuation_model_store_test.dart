@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
@@ -10,6 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _ConversationRepository extends Mock implements ConversationRepository;
+
+class _MessageRepository extends Mock implements MessageRepository;
 
 class _ModelSelectionStore extends Mock implements ModelSelectionStore;
 
@@ -43,6 +46,7 @@ void main() {
       final resolvedWorkspaces = <String>[];
       final adapter = AppAgentContinuationAdapter(
         conversationRepository: conversations,
+        messageRepository: _MessageRepository(),
         modelSelectionStore: (workspaceId) async {
           resolvedWorkspaces.add(workspaceId);
 
@@ -51,6 +55,10 @@ void main() {
         apiModelRepository: _ApiModelRepository(),
         selectPromptMessagesUsecase: _SelectPromptMessages(),
         buildSkillContextMessagesUsecase: _BuildSkillContext(),
+        loadApprovalStates: ({
+          required conversationId,
+          required workspaceId,
+        }) async => const {},
         loadConversationToolSpecsUsecase: _LoadTools(),
       );
 

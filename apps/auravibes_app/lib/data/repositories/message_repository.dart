@@ -111,6 +111,11 @@ class MessageRepository(
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) => _getEffectiveMessages(conversationId);
+
+  /// Includes trusted context entries for continuation replay and fork history.
+  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
+    String conversationId,
+  ) => _getEffectiveTranscriptMessages(conversationId);
 }
 
 mixin _MessageRepositoryReadApi {
@@ -239,6 +244,13 @@ extension MessageRepositoryReadOperations on MessageRepository {
 
 extension on MessageRepository {
   Future<List<MessageEntity>> _getEffectiveMessages(
+    String conversationId,
+  ) async =>
+      (await _getEffectiveTranscriptMessages(conversationId))
+          .where((message) => !message.isAgentTranscriptContextUpdate)
+          .toList();
+
+  Future<List<MessageEntity>> _getEffectiveTranscriptMessages(
     String conversationId,
   ) async {
     final rows = await _effectiveMessageRows(conversationId);

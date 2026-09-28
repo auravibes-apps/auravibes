@@ -126,6 +126,9 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
 // DCL cannot see Freezed-generated members in the part file.
 // ignore: weight-of-class
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
+  static const String agentTranscriptContextMetadataKey =
+      'agentTranscriptContextUpdate';
+
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
     int? promptTokens,
@@ -235,6 +238,14 @@ abstract class const MessageEntity._() with _$MessageEntity {
   bool get isValid {
     return hasValidContent && conversationId.isNotEmpty;
   }
+
+  bool get isAgentTranscriptContextUpdate =>
+      messageType == MessageType.system &&
+      !isUser &&
+      status == MessageStatus.sent &&
+      metadata?.modelMetadata[MessageMetadataEntity
+              .agentTranscriptContextMetadataKey] ==
+          true;
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;

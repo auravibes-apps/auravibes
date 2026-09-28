@@ -50,6 +50,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -104,6 +105,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -139,6 +141,11 @@ void main() {
           .thenAnswer((_) async => _conversation);
       when(() => messageRepository.getMessagesByConversation('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => messageRepository.getTranscriptMessagesByConversation(
+          'conversation-1',
+        ),
+      ).thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages('conversation-1'))
           .thenAnswer((_) async => []);
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
@@ -163,6 +170,7 @@ void main() {
     test('disables tools for unsupported non-Codex models', () {
       final adapter = _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -250,6 +258,7 @@ void main() {
           messageRepository: messageRepository,
           agentContinuationProvider: _appAgentContinuationAdapter(
             conversationRepository: conversationRepository,
+            messageRepository: messageRepository,
             workspaceModelSelectionsRepository:
                 workspaceModelSelectionsRepository,
             apiModelRepository: apiModelRepository,
@@ -336,6 +345,7 @@ void main() {
           messageRepository: messageRepository,
           agentContinuationProvider: _appAgentContinuationAdapter(
             conversationRepository: conversationRepository,
+            messageRepository: messageRepository,
             workspaceModelSelectionsRepository:
                 workspaceModelSelectionsRepository,
             apiModelRepository: apiModelRepository,
@@ -1068,6 +1078,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -1117,6 +1128,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -1151,6 +1163,11 @@ void main() {
 
       when(() => selectPromptMessagesUsecase.call('conversation-1'))
           .thenAnswer((_) async => [_userMessage]);
+      when(
+        () => messageRepository.getTranscriptMessagesByConversation(
+          'conversation-1',
+        ),
+      ).thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages(any()))
           .thenAnswer((_) async => []);
     });
@@ -1526,6 +1543,7 @@ void main() {
       messageRepository: messageRepository,
       agentContinuationProvider: _appAgentContinuationAdapter(
         conversationRepository: conversationRepository,
+        messageRepository: messageRepository,
         workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
         apiModelRepository: apiModelRepository,
         selectPromptMessagesUsecase: selectPromptMessagesUsecase,
@@ -1575,6 +1593,7 @@ void main() {
         messageRepository: messageRepository,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
+          messageRepository: messageRepository,
           workspaceModelSelectionsRepository:
               workspaceModelSelectionsRepository,
           apiModelRepository: apiModelRepository,
@@ -1627,6 +1646,8 @@ void main() {
       when(() => messageRepository.patchMessage(any(), any()))
           .thenAnswer((_) async => _unfinishedAssistantMessage);
       when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.getTranscriptMessagesByConversation(any()))
           .thenAnswer((_) async => [_userMessage]);
       when(() => messageRepository.getSystemMessages(any()))
           .thenAnswer((_) async => []);
@@ -1706,6 +1727,7 @@ const _skillContextXml =
 
 AppAgentContinuationAdapter _appAgentContinuationAdapter({
   required MockConversationRepository conversationRepository,
+  required MockMessageRepository messageRepository,
   required MockWorkspaceModelSelectionRepository
   workspaceModelSelectionsRepository,
   required MockApiModelRepository apiModelRepository,
@@ -1716,10 +1738,15 @@ AppAgentContinuationAdapter _appAgentContinuationAdapter({
 }) {
   return AppAgentContinuationAdapter(
     conversationRepository: conversationRepository,
+    messageRepository: messageRepository,
     modelSelectionStore: (_) async => workspaceModelSelectionsRepository,
     apiModelRepository: apiModelRepository,
     selectPromptMessagesUsecase: selectPromptMessagesUsecase,
     buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,
+    loadApprovalStates: ({
+      required conversationId,
+      required workspaceId,
+    }) async => const {},
     loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
   );
 }
