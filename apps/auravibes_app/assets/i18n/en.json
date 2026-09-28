@@ -666,7 +666,11 @@
     "available_empty": "No skills available",
     "credentials_ready": "Ready",
     "credentials_missing": "Missing credentials",
-    "credentials_unknown": "Credential status unknown"
+    "credentials_unknown": "Credential status unknown",
+    "context_added": "Added",
+    "context_ready": "Ready in context",
+    "context_needs_context": "Needs context",
+    "context_error": "Context error"
   },
   "skills_tool": {
     "section_title": "Template tools",

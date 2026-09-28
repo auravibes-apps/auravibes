@@ -922,6 +922,11 @@ abstract class LocaleKeys {
       'skills_selector.credentials_missing';
   static const skills_selector_credentials_unknown =
       'skills_selector.credentials_unknown';
+  static const skills_selector_context_added = 'skills_selector.context_added';
+  static const skills_selector_context_ready = 'skills_selector.context_ready';
+  static const skills_selector_context_needs_context =
+      'skills_selector.context_needs_context';
+  static const skills_selector_context_error = 'skills_selector.context_error';
   static const skills_tool_section_title = 'skills_tool.section_title';
   static const skills_tool_empty = 'skills_tool.empty';
   static const skills_tool_create_title = 'skills_tool.create_title';

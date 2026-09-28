@@ -13,6 +13,7 @@ void main() {
         'skill context',
         'hello',
       ]);
+      expect(result.requestedContextMessages.single.content, 'skill context');
       expect(result.enabledTools, ['calculator']);
       expect(result.messagesCount, 1);
       expect(result.transcriptContextEntries, isEmpty);

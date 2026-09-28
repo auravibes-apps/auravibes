@@ -164,6 +164,7 @@ class const _LoadedSkillSection({
       skills: state.loaded,
       actionIcon: Icons.remove_circle_outline,
       onPressed: onUnload,
+      contextStatusBySlug: state.contextStatusBySlug,
     );
   }
 }
@@ -190,6 +191,8 @@ class const _SkillSection({
   required final List<AvailableSkill> skills,
   required final IconData actionIcon,
   required final ValueChanged<AvailableSkill> onPressed,
+  final Map<String, ConversationSkillContextStatus> contextStatusBySlug =
+      const {},
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -199,6 +202,7 @@ class const _SkillSection({
         _SkillSectionContent(
           emptyKey: emptyKey,
           skills: skills,
+          contextStatusBySlug: contextStatusBySlug,
           actionIcon: actionIcon,
           onPressed: onPressed,
         ),
@@ -220,6 +224,8 @@ class const _SkillSectionTitle({required final String titleKey})
 class const _SkillSectionContent({
   required final String emptyKey,
   required final List<AvailableSkill> skills,
+  required final Map<String, ConversationSkillContextStatus>
+  contextStatusBySlug,
   required final IconData actionIcon,
   required final ValueChanged<AvailableSkill> onPressed,
 }) extends StatelessWidget {
@@ -229,6 +235,7 @@ class const _SkillSectionContent({
 
     return _SkillSectionList(
       skills: skills,
+      contextStatusBySlug: contextStatusBySlug,
       actionIcon: actionIcon,
       onPressed: onPressed,
     );
@@ -237,6 +244,8 @@ class const _SkillSectionContent({
 
 class const _SkillSectionList({
   required final List<AvailableSkill> skills,
+  required final Map<String, ConversationSkillContextStatus>
+  contextStatusBySlug,
   required final IconData actionIcon,
   required final ValueChanged<AvailableSkill> onPressed,
 }) extends StatelessWidget {
@@ -247,6 +256,7 @@ class const _SkillSectionList({
         for (final skill in skills)
           _SkillSelectorTile(
             skill: skill,
+            contextStatus: contextStatusBySlug[skill.slug],
             actionIcon: actionIcon,
             onPressed: onPressed,
           ),
@@ -259,12 +269,14 @@ class const _SkillSectionList({
 
 class const _SkillSelectorTile({
   required final AvailableSkill skill,
+  required final ConversationSkillContextStatus? contextStatus,
   required final IconData actionIcon,
   required final ValueChanged<AvailableSkill> onPressed,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SkillSelectorTileData(
     skill: skill,
+    contextStatus: contextStatus,
     actionIcon: actionIcon,
     onPressed: onPressed,
   ).child;
@@ -273,6 +285,7 @@ class const _SkillSelectorTile({
 class _SkillSelectorTileData {
   new({
     required AvailableSkill skill,
+    required ConversationSkillContextStatus? contextStatus,
     required IconData actionIcon,
     required ValueChanged<AvailableSkill> onPressed,
   }) : child = AuraTile(
@@ -280,6 +293,8 @@ class _SkillSelectorTileData {
            children: [
              AuraText(child: Text(skill.title)),
              _SkillCredentialBadge(readiness: skill.credentialReadiness),
+             if (contextStatus != null)
+               _SkillContextBadge(status: contextStatus),
              AuraText(child: Text(skill.description)),
            ],
            spacing: .xs,
@@ -293,6 +308,26 @@ class _SkillSelectorTileData {
        );
 
   final Widget child;
+}
+
+class const _SkillContextBadge({
+  required final ConversationSkillContextStatus status,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraBadge.text(
+    child: TextLocale(switch (status) {
+      .added => LocaleKeys.skills_selector_context_added,
+      .ready => LocaleKeys.skills_selector_context_ready,
+      .needsContext => LocaleKeys.skills_selector_context_needs_context,
+      .error => LocaleKeys.skills_selector_context_error,
+    }),
+    variant: switch (status) {
+      .ready => .success,
+      .needsContext => .warning,
+      .added || .error => .neutral,
+    },
+    size: .small,
+  );
 }
 
 class const _SkillCredentialBadge({

@@ -666,7 +666,11 @@
     "available_empty": "No hay habilidades disponibles",
     "credentials_ready": "Lista",
     "credentials_missing": "Faltan credenciales",
-    "credentials_unknown": "Estado de credenciales desconocido"
+    "credentials_unknown": "Estado de credenciales desconocido",
+    "context_added": "Agregada",
+    "context_ready": "Lista en el contexto",
+    "context_needs_context": "Necesita contexto",
+    "context_error": "Error de contexto"
   },
   "skills_tool": {
     "section_title": "Herramientas de plantilla",

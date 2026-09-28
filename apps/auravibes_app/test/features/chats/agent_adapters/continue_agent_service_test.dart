@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuati
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
@@ -329,16 +331,30 @@ void main() {
     test(
       'keeps fixed skill tools while refreshed context adds manifest',
       () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final skillContext = container.read(
+          conversationSkillContextRuntimeProvider.notifier,
+        );
         final tools = buildSkillCommandToolSpecs();
         final contexts = _QueuedBuildSkillContextMessagesService([
           const [],
           const [
+            ChatMessage(
+              role: .system,
+              content: '<skill_catalog />',
+              metadata: {
+                'kind': skillCatalogMetadataKind,
+                skillCatalogSelectedRevisionsMetadataKey: {'research': 'r1'},
+              },
+            ),
             ChatMessage(
               role: .user,
               content: '<skill><name>Research</name><skill_tools>{&quot;tools&quot;:[]}</skill_tools></skill>',
               metadata: {'kind': skillContextMetadataKind},
             ),
           ],
+          const [],
         ]);
         usecase = ContinueAgentService(
           chatbotService: chatbotService,
@@ -370,6 +386,7 @@ void main() {
           ),
           agentCancellationRuntime: agentCancellationRuntime,
           monitoringService: monitoringService,
+          skillContextRuntime: skillContext,
         );
         when(
           () => loadConversationToolSpecsUsecase.call(
@@ -403,12 +420,40 @@ void main() {
         });
 
         final _ = await usecase.call(conversationId: 'conversation-1');
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.selectedRevisions,
+          isEmpty,
+        );
+        skillContext.markNeedsContext('conversation-1');
         final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(origin: .toolResume),
         );
 
         expect(sentTools, hasLength(2));
+        expect(contexts.calls, 2);
+        expect(
+          sentMessages.last.first.metadata['kind'],
+          skillCatalogMetadataKind,
+        );
+        expect(
+          container.read(conversationSkillContextRuntimeProvider.notifier),
+          same(skillContext),
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.phase,
+          ConversationSkillContextPhase.ready,
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.selectedRevisions['research'],
+          'r1',
+        );
         final firstTools = sentTools.firstOrNull;
         final lastTools = sentTools.lastOrNull;
         expect(firstTools, isNotNull);
@@ -421,6 +466,22 @@ void main() {
         expect(
           sentMessages.last.map((message) => message.text).join(),
           contains('<skill_tools>'),
+        );
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenThrow(StateError('tool catalog unavailable'));
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsStateError,
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.phase,
+          ConversationSkillContextPhase.error,
         );
       },
     );

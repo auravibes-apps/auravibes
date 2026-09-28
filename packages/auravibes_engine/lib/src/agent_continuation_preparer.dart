@@ -10,6 +10,7 @@ class const AgentConversationReference({
 class const PreparedContinueAgentInput<TModel, TChatMessage, TTool>({
   required final TModel model,
   required final List<TChatMessage> chatHistory,
+  required final List<TChatMessage> requestedContextMessages,
   required final List<TTool> enabledTools,
   required final int messagesCount,
   required final List<AgentTranscriptContextEntry> transcriptContextEntries,
@@ -128,6 +129,7 @@ class const AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool>({
     return PreparedContinueAgentInput(
       model: projectedModel,
       chatHistory: chatHistory,
+      requestedContextMessages: skillContextMessages,
       enabledTools: transcriptContext.tools,
       messagesCount: messages.length,
       transcriptContextEntries: transcriptContext.entries,

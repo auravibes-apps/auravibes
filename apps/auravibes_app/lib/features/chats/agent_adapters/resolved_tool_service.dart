@@ -10,8 +10,10 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
@@ -59,6 +61,7 @@ const Set<String> _templateToolSlugs = {
 };
 
 typedef SkillsManagerToolSuccessHandler = void Function({
+  required String conversationId,
   required String workspaceId,
   required String toolSlug,
   required Object result,
@@ -830,6 +833,7 @@ void _notifySkillsManagerSuccess(
   Object result,
 ) {
   request.provider.onSkillsManagerToolSuccess?.call(
+    conversationId: request.conversationId,
     workspaceId: request.workspaceId,
     toolSlug: request.toolSlug,
     result: result,
@@ -1309,45 +1313,75 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
       },
     ),
     onSkillsManagerToolSuccess:
-        ({required workspaceId, required toolSlug, required result}) {
-          _invalidateSkillsManagerToolState(
-            .new(
-              container: container,
-              workspaceId: workspaceId,
-              toolSlug: toolSlug,
-              result: result,
-            ),
-          );
+        ({
+          required conversationId,
+          required workspaceId,
+          required toolSlug,
+          required result,
+        }) {
+          SkillsManagerToolStateInvalidator.invalidate((
+            container: container,
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+            toolSlug: toolSlug,
+            result: result,
+          ));
         },
   );
 });
 
-void _invalidateSkillsManagerToolState(
-  _SkillManagerInvalidationRequest request,
-) {
-  if (_userSkillToolSlugs.contains(request.toolSlug)) {
-    _invalidateUserSkill(request);
-
-    return;
-  }
-  if (_credentialDefinitionToolSlugs.contains(request.toolSlug)) {
-    _invalidateCredentialDefinition(request);
-
-    return;
-  }
-  if (_templateToolSlugs.contains(request.toolSlug)) {
-    _invalidateTemplateTool(request);
-  }
-}
-
-class const _SkillManagerInvalidationRequest({
-  required final ProviderContainer container,
-  required final String workspaceId,
-  required final String toolSlug,
-  required final Object result,
+typedef SkillsManagerToolInvalidationRequest = ({
+  ProviderContainer container,
+  String conversationId,
+  String workspaceId,
+  String toolSlug,
+  Object result,
 });
 
-void _invalidateUserSkill(_SkillManagerInvalidationRequest request) {
+abstract final class SkillsManagerToolStateInvalidator {
+  static void invalidate(SkillsManagerToolInvalidationRequest request) =>
+      _invalidateSkillsManagerToolState(request);
+}
+
+typedef _SkillManagerInvalidationHandler = void Function(
+  SkillsManagerToolInvalidationRequest request,
+);
+
+void _invalidateSkillsManagerToolState(
+  SkillsManagerToolInvalidationRequest request,
+) {
+  final invalidateMutation = _skillManagerInvalidationHandler(request.toolSlug);
+  if (invalidateMutation == null) return;
+  invalidateMutation(request);
+  _invalidateConversationSkillState(request);
+}
+
+_SkillManagerInvalidationHandler? _skillManagerInvalidationHandler(
+  String toolSlug,
+) => switch (toolSlug) {
+  _ when _userSkillToolSlugs.contains(toolSlug) => _invalidateUserSkill,
+  _ when _credentialDefinitionToolSlugs.contains(toolSlug) =>
+    _invalidateCredentialDefinition,
+  _ when _templateToolSlugs.contains(toolSlug) => _invalidateTemplateTool,
+  _ => null,
+};
+
+void _invalidateConversationSkillState(
+  SkillsManagerToolInvalidationRequest request,
+) {
+  if (request.conversationId.isEmpty) return;
+  request.container
+      .read(conversationSkillContextRuntimeProvider.notifier)
+      .markNeedsContext(request.conversationId);
+  request.container.invalidate(
+    conversationSkillSelectorProvider(
+      request.workspaceId,
+      request.conversationId,
+    ),
+  );
+}
+
+void _invalidateUserSkill(SkillsManagerToolInvalidationRequest request) {
   request.container.invalidate(workspaceSkillsProvider(request.workspaceId));
   final skillId = _resultValue(request.result, 'skillId');
   if (skillId is String && skillId.isNotEmpty) {
@@ -1357,7 +1391,9 @@ void _invalidateUserSkill(_SkillManagerInvalidationRequest request) {
   }
 }
 
-void _invalidateCredentialDefinition(_SkillManagerInvalidationRequest request) {
+void _invalidateCredentialDefinition(
+  SkillsManagerToolInvalidationRequest request,
+) {
   request.container
     ..invalidate(skillCredentialDefinitionsProvider(request.workspaceId))
     ..invalidate(serviceConnectionsProvider(request.workspaceId));
@@ -1368,7 +1404,7 @@ void _invalidateCredentialDefinition(_SkillManagerInvalidationRequest request) {
 }
 
 void _invalidateCredentialDefinitionDetails(
-  _SkillManagerInvalidationRequest request,
+  SkillsManagerToolInvalidationRequest request,
   String definitionId,
 ) {
   request.container
@@ -1380,7 +1416,7 @@ void _invalidateCredentialDefinitionDetails(
     );
 }
 
-void _invalidateTemplateTool(_SkillManagerInvalidationRequest request) {
+void _invalidateTemplateTool(SkillsManagerToolInvalidationRequest request) {
   final skillId = _resultValue(request.result, 'skillId');
   if (skillId is String && skillId.isNotEmpty) {
     request.container.invalidate(
