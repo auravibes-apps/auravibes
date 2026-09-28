@@ -454,7 +454,12 @@ extension on ConversationRepository {
   bool _hasValidBoundary(
     List<({MessagesTable table, bool isForkReference})> rows,
     String boundary,
-  ) => rows.any((row) => row.table.id == boundary && _isDurable(row.table));
+  ) => rows.any(
+    (row) =>
+        row.table.id == boundary &&
+        _isDurable(row.table) &&
+        !_isTranscriptContextRow(row.table),
+  );
 
   Never _throwInvalidForkBoundary() =>
       throw const ConversationValidationException(
@@ -566,7 +571,9 @@ extension on ConversationRepository {
     List<({MessagesTable table, bool isForkReference})> rows,
   ) {
     for (final row in rows.reversed) {
-      if (_isDurable(row.table)) return row.table.id;
+      if (_isDurable(row.table) && !_isTranscriptContextRow(row.table)) {
+        return row.table.id;
+      }
     }
 
     return null;
@@ -607,7 +614,11 @@ extension on ConversationRepository {
   ) {
     for (var index = turnStart - 1; index >= 0; index--) {
       final candidate = rows[index].table;
-      if (_isDurable(candidate) && !candidate.isUser) return candidate.id;
+      if (_isDurable(candidate) &&
+          !candidate.isUser &&
+          !_isTranscriptContextRow(candidate)) {
+        return candidate.id;
+      }
     }
 
     return null;
@@ -618,6 +629,12 @@ extension on ConversationRepository {
       !(MessageMetadataEntity.fromJsonString(message.metadata)
               ?.hasPendingToolCalls ??
           false);
+
+  bool _isTranscriptContextRow(MessagesTable message) =>
+      message.messageType == MessagesTableType.system &&
+      MessageMetadataEntity.fromJsonString(message.metadata)
+              ?.modelMetadata[agentTranscriptContextMetadataKey] ==
+          true;
 
   bool _isTerminalStatus(MessageTableStatus status) =>
       status == MessageTableStatus.sent || status == MessageTableStatus.error;
