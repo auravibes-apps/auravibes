@@ -594,13 +594,19 @@
       "heading": "Encabezado",
       "bullets": "Viñetas",
       "numbered_list": "Lista numerada",
+      "task_list": "Lista de tareas",
       "link": "Enlace",
       "link_text_placeholder": "Texto del enlace",
       "link_url_placeholder": "https://example.com",
       "code": "Código",
       "quote": "Cita",
-      "undo": "Deshacer"
-    }
+      "undo": "Deshacer",
+      "redo": "Rehacer"
+    },
+    "link_dialog_title": "Insertar enlace",
+    "link_text_label": "Texto del enlace",
+    "link_destination_label": "URL de destino",
+    "link_destination_required": "Introduce una URL de destino"
   },
   "skills_resource": {
     "section_title": "Recursos",
