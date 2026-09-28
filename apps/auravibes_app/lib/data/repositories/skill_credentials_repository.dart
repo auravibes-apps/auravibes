@@ -60,6 +60,27 @@ class SkillCredentialsRepository({
     return await Future.wait(rows.map(_tableToEntity));
   }
 
+  Future<List<SkillCredentialEntity>> getUsableCredentialsForDefinition({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) async {
+    final rows = await _dao.getCredentialsForDefinition(
+      workspaceId: workspaceId,
+      credentialDefinitionId: credentialDefinitionId,
+      requireSecret: true,
+    );
+
+    return await Future.wait(rows.map(_tableToEntity));
+  }
+
+  Future<int> countLinkedCredentials({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) => _dao.countLinkedCredentials(
+    workspaceId: workspaceId,
+    credentialDefinitionId: credentialDefinitionId,
+  );
+
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
     String workspaceId,
   ) {

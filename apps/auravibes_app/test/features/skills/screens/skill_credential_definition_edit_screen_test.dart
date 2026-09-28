@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 
@@ -12,7 +13,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -58,8 +59,11 @@ Future<_CredentialDefinitionEditHarness> _createHarness() async {
   );
 }
 
-Future<void> _setSurfaceSize(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(1000, 1000));
+Future<void> _setSurfaceSize(
+  WidgetTester tester, {
+  Size size = const Size(1000, 1000),
+}) async {
+  await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 }
 
@@ -336,7 +340,7 @@ void main() {
   testWidgets('shows required and duplicate variable errors inline', (
     tester,
   ) async {
-    await _setSurfaceSize(tester);
+    await _setSurfaceSize(tester, size: const Size(1000, 1200));
     final harness = await _createHarness();
     addTearDown(harness.dispose);
 
@@ -354,8 +358,10 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     await tester.enterText(_editableInputAt(0), 'Example Service');
+    await tester.ensureVisible(find.text('Add attribute'));
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Add attribute'));
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(_editableInputAt(3), 'api_key');
@@ -382,7 +388,10 @@ void main() {
     addTearDown(harness.dispose);
     final definition = await harness.repository.createDefinition(
       harness.workspaceId,
-      const .new(title: 'Example Service', attributesJson: '{}'),
+      const .new(
+        title: 'Example Service',
+        attributesJson: '{"api_key":{"description":"API key"}}',
+      ),
     );
     String? copiedText;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -425,4 +434,59 @@ void main() {
     expect(copiedText, definition.slug);
     expect(find.text('Slug copied'), findsOneWidget);
   });
+
+  testWidgets(
+    'keeps definition and explains linked-credential deletion conflict',
+    (tester) async {
+      await _setSurfaceSize(tester);
+      final harness = await _createHarness();
+      addTearDown(harness.dispose);
+      final definition = await harness.repository.createDefinition(
+        harness.workspaceId,
+        const .new(
+          title: 'Example Service',
+          attributesJson: '{"api_key":{"description":"API key"}}',
+        ),
+      );
+      final _ = await harness.database.skillCredentialsDao.createCredential(
+        .new(
+          name: const .new('Linked'),
+          serviceId: .new(definition.id),
+          kind: const Value(ServiceConnectionKindTable.skillCredential),
+          authenticationType: const Value(
+            ServiceAuthenticationTypeTable.apiKey,
+          ),
+          workspaceId: .new(harness.workspaceId),
+          isEnabled: const Value(false),
+        ),
+      );
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(
+          buildScreen(
+            container: harness.container,
+            workspaceId: harness.workspaceId,
+            home: editorLauncher(
+              harness.workspaceId,
+              definitionId: definition.id,
+            ),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Open editor'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Delete credential'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete').last);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.textContaining('1 linked credentials'), findsOneWidget);
+      expect(find.text('Manage credentials'), findsOneWidget);
+      expect(find.byType(SkillCredentialDefinitionEditScreen), findsOneWidget);
+      expect(
+        await harness.repository.getDefinitionById(definition.id),
+        isNotNull,
+      );
+    },
+  );
 }

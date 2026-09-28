@@ -224,7 +224,7 @@ extension on BuildSkillTemplateToolSpecsUsecase {
     SkillTemplateToolEntity tool,
   ) async {
     final credentials = await _skillCredentialsRepository
-        .getCredentialsForDefinition(
+        .getUsableCredentialsForDefinition(
           workspaceId: workspaceId,
           credentialDefinitionId: credentialDefinitionId,
         );

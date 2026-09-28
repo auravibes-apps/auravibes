@@ -245,7 +245,9 @@ extension on RunSkillTemplateToolUsecase {
     final normalizedCredentialId = await _credentialId(request);
     if (normalizedCredentialId == null) return null;
 
-    final credential = await _skillCredentialsRepository.getCredentialById(
+    final credential = await _findUsableCredential(
+      request,
+      credentialDefinitionId,
       normalizedCredentialId,
     );
     _ensureCredentialAvailable(
@@ -256,6 +258,16 @@ extension on RunSkillTemplateToolUsecase {
 
     return credential;
   }
+
+  Future<SkillCredentialEntity?> _findUsableCredential(
+    _CredentialResolutionRequest request,
+    String credentialDefinitionId,
+    String credentialId,
+  ) async =>
+      (await _skillCredentialsRepository.getUsableCredentialsForDefinition(
+        workspaceId: request.workspaceId,
+        credentialDefinitionId: credentialDefinitionId,
+      )).where((item) => item.id == credentialId).firstOrNull;
 
   Future<String?> _credentialId(_CredentialResolutionRequest request) {
     final normalizedCredentialId = request.credentialId?.trim();

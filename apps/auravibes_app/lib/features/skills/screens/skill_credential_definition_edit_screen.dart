@@ -5,9 +5,11 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
+import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
@@ -40,6 +42,9 @@ class _SkillCredentialDefinitionEditScreenState
   String _savedSnapshot = '';
 
   bool get _isCreate => widget.definitionId == null;
+  bool get _hasSecretAttribute => _attributeRows.any(
+    (row) => row.secret && row.variableController.text.trim().isNotEmpty,
+  );
 
   @override
   void initState() {
@@ -159,11 +164,26 @@ extension on _SkillCredentialDefinitionEditScreenState {
 
       _updateState(() => _savedSnapshot = _currentSnapshot());
       Navigator.of(context).pop();
-    } on Object {
-      if (!context.mounted) return;
-      _showSaveError(context);
+    } on Object catch (error) {
+      _handleSaveError(context, error);
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
+    }
+  }
+
+  void _handleSaveError(BuildContext context, Object error) {
+    if (!context.mounted) return;
+    if (error case final CredentialDefinitionConflictException conflict) {
+      _CredentialDefinitionConflictPresenter.show(
+        context,
+        widget.workspaceId,
+        conflict,
+      );
+    } else if (error
+        case final CredentialDefinitionValidationException validationError) {
+      _showLocalizedError(context, validationError.localizationKey);
+    } else {
+      _showSaveError(context);
     }
   }
 
@@ -374,6 +394,13 @@ extension on _SkillCredentialDefinitionEditScreenState {
     _updateState(() => _isSaving = true);
     try {
       await _deleteDefinitionAndClose(context, definitionId);
+    } on CredentialDefinitionConflictException catch (conflict) {
+      if (!context.mounted) return;
+      _CredentialDefinitionConflictPresenter.show(
+        context,
+        widget.workspaceId,
+        conflict,
+      );
     } on Object {
       if (!context.mounted) return;
       _showSaveError(context);
@@ -390,10 +417,14 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<void> _deleteDefinition(String definitionId) async {
-    await ref.read(deleteSkillCredentialDefinitionProvider(widget.workspaceId))(
-      definitionId,
-    );
-    ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+    final deleted = await ref
+        .read(
+          deleteSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
+        )
+        .call(definitionId);
+    if (deleted) {
+      ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+    }
   }
 
   Future<void> _deleteDefinitionAndClose(
@@ -408,15 +439,51 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   void _showSaveError(BuildContext context) {
+    _showLocalizedError(
+      context,
+      LocaleKeys.skill_credentials_definitions_save_error,
+    );
+  }
+
+  void _showLocalizedError(BuildContext context, String key) {
     if (!context.mounted) return;
     final _ = AuraSnackBars.show(
       context: context,
-      content: Text(
-        LocaleKeys.skill_credentials_definitions_save_error.tr(
-          context: context,
-        ),
-      ),
+      content: Text(key.tr(context: context)),
       variant: .error,
+    );
+  }
+}
+
+class _CredentialDefinitionConflictPresenter {
+  static void show(
+    BuildContext context,
+    String workspaceId,
+    CredentialDefinitionConflictException conflict,
+  ) => _showMessage(context, workspaceId, _localizedMessage(context, conflict));
+
+  static String _localizedMessage(
+    BuildContext context,
+    CredentialDefinitionConflictException conflict,
+  ) => conflict.localizationKey.tr(
+    context: context,
+    namedArgs: conflict.localizationArguments(),
+  );
+
+  static void _showMessage(
+    BuildContext context,
+    String workspaceId,
+    String message,
+  ) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(message),
+      variant: .error,
+      duration: const Duration(seconds: 8),
+      actionLabel: LocaleKeys.skill_credentials_definitions_manage_credentials
+          .tr(context: context),
+      onAction: () =>
+          ServiceConnectionsRoute(workspaceId: workspaceId).go(context),
     );
   }
 }
@@ -740,6 +807,13 @@ class const _CredentialDefinitionAttributes({
       children: [
         _CredentialDefinitionAttributesLabel(),
         _CredentialDefinitionAttributeRows(state: state),
+        if (!state._hasSecretAttribute)
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.skill_credentials_definitions_secret_required,
+            ),
+            tint: .error,
+          ),
         _CredentialDefinitionAddAttributeButton(
           onPressed: state._addAttributeRow,
         ),
