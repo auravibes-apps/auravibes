@@ -49,7 +49,7 @@ const String _cameraAttachmentErrorKey =
     LocaleKeys.chats_screens_chat_conversation_camera_attachment_error;
 const String _clearAllAttachmentsKey =
     LocaleKeys.chats_screens_chat_conversation_clear_all_attachments;
-const Duration _maxVoiceRecordingDuration = Duration(minutes: 2);
+const Duration _maxVoiceRecordingDuration = .new(minutes: 2);
 
 typedef _ChatInputActionsRequest = ({
   WidgetRef ref,
@@ -1037,13 +1037,26 @@ extension _ChatInputRecordingResultActions on _ChatInputActions {
     _recording.recordingTimer.value?.cancel();
     _recording.recordingTimer.value = null;
     final stop = _stopRecordingOnce();
-    late final Future<MessageAttachmentToCreate?> sharedStop;
-    sharedStop = stop.whenComplete(() {
+    final completer = Completer<MessageAttachmentToCreate?>();
+    final sharedStop = completer.future;
+    void clearStop() {
       if (identical(_recording.recordingStop.value, sharedStop)) {
         _recording.recordingStop.value = null;
       }
-    });
+    }
+
+    Future<void> finishStop() async {
+      try {
+        completer.complete(await stop);
+      } on Object catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      } finally {
+        clearStop();
+      }
+    }
+
     _recording.recordingStop.value = sharedStop;
+    unawaited(finishStop());
 
     return sharedStop;
   }
@@ -1922,9 +1935,9 @@ class const _ClearAllAttachmentsButton({
       icon: Icons.clear_all,
       onPressed: enabled ? onPressed : null,
       disabled: !enabled,
+      identifier: 'chat_clear_all_attachments',
       semanticLabel: label,
       tooltip: label,
-      identifier: 'chat_clear_all_attachments',
     );
   }
 }

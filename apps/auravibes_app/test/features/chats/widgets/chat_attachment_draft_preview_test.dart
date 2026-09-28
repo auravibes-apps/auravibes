@@ -45,9 +45,6 @@ void main() {
         builder: (context) => AuraThemeScope(
           theme: .light,
           child: MaterialApp(
-            locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
             home: Material(
               child: ChatAttachmentDraftPreview(
                 attachment: attachment,
@@ -56,6 +53,9 @@ void main() {
               ),
             ),
             theme: .new(),
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
           ),
         ),
       ),
@@ -227,9 +227,9 @@ void main() {
 }
 
 class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
-  final Map<String, StreamController<AudioEvent>> _eventStreams = {};
   final sources = <String>[];
   int stopCount = 0;
+  final Map<String, StreamController<AudioEvent>> _eventStreams = {};
 
   @override
   Future<void> create(String playerId) async {
@@ -238,7 +238,10 @@ class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
 
   @override
   Future<void> dispose(String playerId) async {
-    await _eventStreams.remove(playerId)?.close();
+    final eventStream = _eventStreams.remove(playerId);
+    if (eventStream != null) {
+      final _ = await eventStream.close();
+    }
   }
 
   @override
@@ -249,10 +252,10 @@ class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
   Future<int?> getCurrentPosition(String playerId) async => 0;
 
   @override
-  Future<void> release(String playerId) async {}
+  Future<void> release(String playerId) => Future.value();
 
   @override
-  Future<void> resume(String playerId) async {}
+  Future<void> resume(String playerId) => Future.value();
 
   @override
   Future<void> setSourceUrl(
@@ -263,7 +266,7 @@ class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
   }) async {
     sources.add(url);
     _eventStreams[playerId]!.add(
-      const AudioEvent(eventType: AudioEventType.prepared, isPrepared: true),
+      const AudioEvent(eventType: .prepared, isPrepared: true),
     );
   }
 
@@ -273,7 +276,7 @@ class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeGlobalAudioplayersPlatform
@@ -284,10 +287,10 @@ class _FakeGlobalAudioplayersPlatform
   Stream<GlobalAudioEvent> getGlobalEventStream() => events.stream;
 
   @override
-  Future<void> init() async {}
+  Future<void> init() => Future.value();
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void _ignoreAttachment(MessageAttachmentToCreate _) {

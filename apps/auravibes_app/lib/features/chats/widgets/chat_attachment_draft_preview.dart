@@ -31,9 +31,9 @@ class const ChatAttachmentDraftPreview({
           children: [
             if (attachment.modality == .audio) ...[
               _AttachmentDraftAudioPlayer(
-                key: ObjectKey(attachment),
                 localPath: attachment.localPath,
                 enabled: enabled,
+                key: ObjectKey(attachment),
               ),
               const SizedBox(width: 4),
             ],
@@ -85,7 +85,7 @@ class _AttachmentDraftAudioPlayerState
 
     return AuraIconButton(
       icon: _isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-      onPressed: widget.enabled ? _togglePlayback : null,
+      onPressed: widget.enabled ? () => unawaited(_togglePlayback()) : null,
       disabled: !widget.enabled,
       semanticLabel: label,
       tooltip: label,
@@ -93,7 +93,7 @@ class _AttachmentDraftAudioPlayerState
   }
 
   Future<void> _togglePlayback() async {
-    final player = _player ??= AudioPlayer();
+    final player = _player ??= .new();
     _completionSubscription ??= player.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _isPlaying = false);
     });

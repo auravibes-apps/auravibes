@@ -637,7 +637,7 @@ void main() {
 
     expect(
       find.text(
-        "The selected model doesn't support image input. "
+        '''The selected model doesn't support image input. '''
         'Switch to a model that accepts images.',
       ),
       findsOneWidget,
@@ -925,7 +925,7 @@ void main() {
     );
     expect(
       find.byTooltip(
-        "The selected model doesn't support audio input. "
+        '''The selected model doesn't support audio input. '''
         'Switch to a model that accepts audio.',
       ),
       findsOneWidget,
@@ -985,14 +985,14 @@ void main() {
 
     expect(
       find.byTooltip(
-        "The selected model doesn't support file input. "
+        '''The selected model doesn't support file input. '''
         'Switch to a model that accepts files.',
       ),
       findsOneWidget,
     );
     expect(
       find.byTooltip(
-        "The selected model doesn't support image input. "
+        '''The selected model doesn't support image input. '''
         'Switch to a model that accepts images.',
       ),
       findsOneWidget,
@@ -1146,7 +1146,7 @@ void main() {
 
     expect(
       find.text(
-        "Couldn't open the camera. Check camera permissions and try again.",
+        '''Couldn't open the camera. Check camera permissions and try again.''',
       ),
       findsNothing,
     );
@@ -1158,7 +1158,7 @@ void main() {
     final previousImagePicker = ImagePickerPlatform.instance;
     addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
     ImagePickerPlatform.instance = _FakeImagePickerPlatform(
-      error: Exception('Camera unavailable'),
+      error: .new('Camera unavailable'),
     );
 
     await pumpAndInit(
@@ -1177,7 +1177,7 @@ void main() {
 
     expect(
       find.text(
-        "Couldn't open the camera. Check camera permissions and try again.",
+        '''Couldn't open the camera. Check camera permissions and try again.''',
       ),
       findsOneWidget,
     );
@@ -1556,7 +1556,7 @@ class _FakeImagePickerPlatform({final Exception? error})
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeFilePickerPlatform(final List<fp.PlatformFile> result)
