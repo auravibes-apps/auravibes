@@ -87,8 +87,6 @@ enum CompactionKind { manual, auto }
 
 enum MessageAttachmentModality { image, audio, file }
 
-const agentTranscriptContextMetadataKey = 'agentTranscriptContextUpdate';
-
 @immutable
 @freezed
 // DCL cannot see Freezed-generated members in the part file.
@@ -128,6 +126,9 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
 // DCL cannot see Freezed-generated members in the part file.
 // ignore: weight-of-class
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
+  static const String agentTranscriptContextMetadataKey =
+      'agentTranscriptContextUpdate';
+
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
     int? promptTokens,
@@ -240,14 +241,15 @@ abstract class const MessageEntity._() with _$MessageEntity {
 
   bool isForConversation(String conversationId) =>
       this.conversationId == conversationId;
-}
 
-extension AgentTranscriptContextMessage on MessageEntity {
   bool get isAgentTranscriptContextUpdate =>
       messageType == MessageType.system &&
       !isUser &&
       status == MessageStatus.sent &&
-      metadata?.modelMetadata[agentTranscriptContextMetadataKey] == true;
+      metadata?.modelMetadata[
+            MessageMetadataEntity.agentTranscriptContextMetadataKey
+          ] ==
+          true;
 }
 
 /// Entity for creating a new message.

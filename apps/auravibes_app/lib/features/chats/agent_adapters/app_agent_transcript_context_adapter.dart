@@ -17,49 +17,78 @@ class const AppAgentTranscriptContextAdapter(
     final transcript = await _messages.getTranscriptMessagesByConversation(
       conversationId,
     );
-    final updates = [
-      for (final message in transcript)
-        if (message.isAgentTranscriptContextUpdate)
-          decodeAgentTranscriptContextUpdate(message.content),
-    ];
-    final previous = foldAgentTranscriptContext(updates);
-    final current = AgentTranscriptContextState(
-      contextMessages: contextMessages.map(_contextMessage).toList(),
-      tools: tools,
-      approvalStates: approvalStates,
+    final updates = _transcriptContextUpdates(transcript);
+    final delta = diffAgentTranscriptContext(
+      foldAgentTranscriptContext(updates),
+      _currentTranscriptContext(contextMessages, tools, approvalStates),
     );
-    final delta = diffAgentTranscriptContext(previous, current);
     final entries = _activeEntries(transcript);
-    if (delta != null) {
-      final _ = await _messages.createMessage(
-        _contextUpdateMessage(conversationId, transcript, delta),
-      );
-      updates.add(delta);
-      entries.add(
-        AgentTranscriptContextEntry(
-          afterMessageId: _lastVisibleMessageId(transcript),
-          update: delta,
-        ),
-      );
+    final entry = await _persistUpdate(
+      conversationId: conversationId,
+      transcript: transcript,
+      update: delta,
+    );
+    if (entry != null) {
+      updates.add(entry.update);
+      entries.add(entry);
     }
-    final effective = foldAgentTranscriptContext(updates);
 
-    return PreparedAgentTranscriptContext(
-      contextMessages: effective.contextMessages.map(_chatMessage).toList(),
-      tools: effective.tools,
-      entries: entries,
+    return _preparedTranscriptContext(updates, entries);
+  }
+
+  Future<AgentTranscriptContextEntry?> _persistUpdate({
+    required String conversationId,
+    required List<MessageEntity> transcript,
+    required AgentTranscriptContextUpdate? update,
+  }) async {
+    if (update == null) return null;
+    final _ = await _messages.createMessage(
+      _contextUpdateMessage(conversationId, transcript, update),
+    );
+
+    return AgentTranscriptContextEntry(
+      afterMessageId: _lastVisibleMessageId(transcript),
+      update: update,
     );
   }
 }
 
+AgentTranscriptContextState _currentTranscriptContext(
+  List<ChatMessage> contextMessages,
+  List<ToolSpec> tools,
+  Map<String, String> approvalStates,
+) => AgentTranscriptContextState(
+  contextMessages: contextMessages.map(_contextMessage).toList(),
+  tools: tools,
+  approvalStates: approvalStates,
+);
+
+List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
+  List<MessageEntity> transcript,
+) => [
+  for (final message in transcript)
+    if (message.isAgentTranscriptContextUpdate)
+      AgentTranscriptContextCodec.decodeUpdate(message.content),
+];
+
+PreparedAgentTranscriptContext<ChatMessage, ToolSpec> _preparedTranscriptContext(
+  List<AgentTranscriptContextUpdate> updates,
+  List<AgentTranscriptContextEntry> entries,
+) {
+  final effective = foldAgentTranscriptContext(updates);
+
+  return PreparedAgentTranscriptContext(
+    contextMessages: effective.contextMessages.map(_chatMessage).toList(),
+    tools: effective.tools,
+    entries: entries,
+  );
+}
+
 AgentContextMessage _contextMessage(ChatMessage message) {
-  final kind = message.metadata['kind'];
-  if (message.parts.isNotEmpty ||
-      (message.role != ChatMessageRole.system &&
-          (message.role != ChatMessageRole.user ||
-              kind != skillContextMetadataKind))) {
+  if (message.parts.isNotEmpty || !_hasTrustedContextRole(message)) {
     throw const AgentTranscriptContextException('unsupported context message');
   }
+  final kind = message.metadata['kind'];
 
   return AgentContextMessage(
     role: message.role == ChatMessageRole.system ? .system : .skill,
@@ -67,6 +96,11 @@ AgentContextMessage _contextMessage(ChatMessage message) {
     kind: kind is String ? kind : null,
   );
 }
+
+bool _hasTrustedContextRole(ChatMessage message) =>
+    message.role == ChatMessageRole.system ||
+    (message.role == ChatMessageRole.user &&
+        message.metadata['kind'] == skillContextMetadataKind);
 
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
   role: message.role == AgentContextMessageRole.system ? .system : .user,
@@ -79,25 +113,29 @@ MessageToCreate _contextUpdateMessage(
   List<MessageEntity> transcript,
   AgentTranscriptContextUpdate update,
 ) {
-  final now = DateTime.now();
-  final latest = transcript.lastOrNull?.createdAt;
-  final createdAt = latest != null && !now.isAfter(latest)
-      ? latest.add(const Duration(microseconds: 1))
-      : now;
-
   return MessageToCreate(
     conversationId: conversationId,
-    content: encodeAgentTranscriptContextUpdate(update),
+    content: AgentTranscriptContextCodec.encodeUpdate(update),
     messageType: .system,
     isUser: false,
     status: .sent,
-    createdAt: createdAt,
+    createdAt: _contextUpdateCreatedAt(transcript),
     metadata: jsonEncode(
       const MessageMetadataEntity(
-        modelMetadata: {agentTranscriptContextMetadataKey: true},
+        modelMetadata: {
+          MessageMetadataEntity.agentTranscriptContextMetadataKey: true,
+        },
       ).toJson(),
     ),
   );
+}
+
+DateTime _contextUpdateCreatedAt(List<MessageEntity> transcript) {
+  final now = DateTime.now();
+  final latest = transcript.lastOrNull?.createdAt;
+  if (latest == null || now.isAfter(latest)) return now;
+
+  return latest.add(const Duration(microseconds: 1));
 }
 
 List<AgentTranscriptContextEntry> _activeEntries(
@@ -108,37 +146,51 @@ List<AgentTranscriptContextEntry> _activeEntries(
         message.metadata?.isCompactionSummary == true &&
         message.status == .sent,
   );
-  final beforeSummary = <AgentTranscriptContextUpdate>[];
+  final beforeSummary = summaryIndex < 0
+      ? <AgentTranscriptContextUpdate>[]
+      : _updatesBeforeSummary(transcript, summaryIndex);
+  final entries = _entriesAfterSummary(transcript, summaryIndex);
+
+  if (beforeSummary.isEmpty) return entries;
+
+  return [
+    AgentTranscriptContextEntry(
+      afterMessageId: null,
+      update: snapshotAgentTranscriptContext(
+        foldAgentTranscriptContext(beforeSummary),
+      ),
+    ),
+    ...entries,
+  ];
+}
+
+List<AgentTranscriptContextUpdate> _updatesBeforeSummary(
+  List<MessageEntity> transcript,
+  int summaryIndex,
+) => [
+  for (var index = 0; index < summaryIndex; index++)
+    if (transcript[index].isAgentTranscriptContextUpdate)
+      AgentTranscriptContextCodec.decodeUpdate(transcript[index].content),
+];
+
+List<AgentTranscriptContextEntry> _entriesAfterSummary(
+  List<MessageEntity> transcript,
+  int summaryIndex,
+) {
   final entries = <AgentTranscriptContextEntry>[];
   String? previousMessageId;
   for (var index = 0; index < transcript.length; index++) {
     final message = transcript[index];
     if (!message.isAgentTranscriptContextUpdate) {
       previousMessageId = message.id;
-      continue;
-    }
-    final update = decodeAgentTranscriptContextUpdate(message.content);
-    if (summaryIndex >= 0 && index < summaryIndex) {
-      beforeSummary.add(update);
-      continue;
-    }
-    entries.add(
-      AgentTranscriptContextEntry(
-        afterMessageId: previousMessageId,
-        update: update,
-      ),
-    );
-  }
-  if (beforeSummary.isNotEmpty) {
-    entries.insert(
-      0,
-      AgentTranscriptContextEntry(
-        afterMessageId: null,
-        update: snapshotAgentTranscriptContext(
-          foldAgentTranscriptContext(beforeSummary),
+    } else if (index >= summaryIndex) {
+      entries.add(
+        AgentTranscriptContextEntry(
+          afterMessageId: previousMessageId,
+          update: AgentTranscriptContextCodec.decodeUpdate(message.content),
         ),
-      ),
-    );
+      );
+    }
   }
 
   return entries;
