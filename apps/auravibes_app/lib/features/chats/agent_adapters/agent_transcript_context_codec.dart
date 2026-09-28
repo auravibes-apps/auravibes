@@ -70,13 +70,11 @@ List<AgentContextMessage>? _decodeMessages(Object? value) => value == null
     ? null
     : [for (final item in _asObjectList(value)) _decodeMessage(item)];
 
-List<String>? _decodeToolOrder(Object? value) => value == null
-    ? null
-    : List<String>.from(_asObjectList(value));
+List<String>? _decodeToolOrder(Object? value) =>
+    value == null ? null : List<String>.from(_asObjectList(value));
 
-Map<String, String>? _decodeApprovalStates(Object? value) => value == null
-    ? null
-    : Map<String, String>.from(_asObjectMap(value));
+Map<String, String>? _decodeApprovalStates(Object? value) =>
+    value == null ? null : Map<String, String>.from(_asObjectMap(value));
 
 AgentContextMessage _decodeMessage(Object? value) {
   final data = _asObjectMap(value);

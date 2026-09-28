@@ -71,7 +71,8 @@ List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
       AgentTranscriptContextCodec.decodeUpdate(message.content),
 ];
 
-PreparedAgentTranscriptContext<ChatMessage, ToolSpec> _preparedTranscriptContext(
+PreparedAgentTranscriptContext<ChatMessage, ToolSpec>
+_preparedTranscriptContext(
   List<AgentTranscriptContextUpdate> updates,
   List<AgentTranscriptContextEntry> entries,
 ) {

@@ -246,9 +246,8 @@ abstract class const MessageEntity._() with _$MessageEntity {
       messageType == MessageType.system &&
       !isUser &&
       status == MessageStatus.sent &&
-      metadata?.modelMetadata[
-            MessageMetadataEntity.agentTranscriptContextMetadataKey
-          ] ==
+      metadata?.modelMetadata[MessageMetadataEntity
+              .agentTranscriptContextMetadataKey] ==
           true;
 }
 

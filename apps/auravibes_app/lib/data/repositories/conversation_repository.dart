@@ -635,9 +635,8 @@ extension on ConversationRepository {
   bool _isTranscriptContextRow(MessagesTable message) =>
       message.messageType == MessagesTableType.system &&
       MessageMetadataEntity.fromJsonString(message.metadata)
-              ?.modelMetadata[
-                MessageMetadataEntity.agentTranscriptContextMetadataKey
-              ] ==
+              ?.modelMetadata[MessageMetadataEntity
+              .agentTranscriptContextMetadataKey] ==
           true;
 
   bool _isTerminalStatus(MessageTableStatus status) =>
