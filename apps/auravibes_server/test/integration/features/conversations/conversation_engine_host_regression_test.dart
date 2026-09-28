@@ -351,6 +351,69 @@ void main() {
       },
     );
 
+    test('sends revision context as updated cloud prompt guidance', () async {
+      final fixture = await prepare();
+      await configureProvider(fixture);
+      final original = fixture.messages.singleWhere(
+        (message) => message.role == 'user',
+      );
+      final revision = original.copyWith(
+        id: null,
+        stableId: 'revision-1',
+        content: 'Make it a task checklist.',
+        metadataJson: jsonEncode({
+          'modelMetadata': {
+            'chatMessageIntent': 'revision',
+            'chatMessageTargetMessageId': original.stableId,
+          },
+        }),
+      );
+      final requests = <Map<String, dynamic>>[];
+      final host = ServerConversationEngineHost(
+        admissionGate: const _ImmediateAdmissionGate(),
+        lookup: (_) async => [InternetAddress('8.8.8.8')],
+        providerTransport: (body) async {
+          requests.add(body);
+          return ProviderTransportResponse(
+            statusCode: 200,
+            body: Stream.value(
+              utf8.encode(
+                'data: {"id":"response","choices":[{"delta":{"content":"Done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}\n\n'
+                'data: [DONE]\n\n',
+              ),
+            ),
+          );
+        },
+      );
+
+      await host.executeTurn(
+        fixture.database,
+        job: fixture.job,
+        turn: fixture.turn,
+        messages: [...fixture.messages, revision],
+        liveTurns: const _NoopProgressPublisher(),
+      );
+
+      final promptMessages = requests.single['messages'] as List;
+      final revisionPrompt = promptMessages.whereType<Map>().singleWhere(
+        (message) =>
+            message['role'] == 'user' &&
+            (message['content'] as String).contains('Revision from user:'),
+      );
+      expect(
+        revisionPrompt['content'],
+        contains('This user message revises an earlier request.'),
+      );
+      expect(
+        revisionPrompt['content'],
+        contains('Earlier user request:\nContinue.'),
+      );
+      expect(
+        revisionPrompt['content'],
+        contains('Revision from user:\nMake it a task checklist.'),
+      );
+    });
+
     test(
       'skill activation does not change provider tool schemas',
       () async {

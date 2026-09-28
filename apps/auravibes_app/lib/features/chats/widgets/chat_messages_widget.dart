@@ -1084,17 +1084,32 @@ class const _MessageTextContent({
   Widget build(BuildContext context) {
     if (message.isUser) {
       final colors = context.auraColors;
+      final metadata = message.metadata;
       return TextSelectionTheme(
         data: Theme.of(context).textSelectionTheme.copyWith(
           selectionColor: _userMessageSelectionColor(colors),
           selectionHandleColor: colors.onPrimary,
         ),
-        child: AuraMessageBubble(
-          content: message.content,
-          isUser: true,
-          key: ValueKey(message.id),
-          status: status,
-          timestamp: message.createdAt,
+        child: Column(
+          mainAxisSize: .min,
+          crossAxisAlignment: .end,
+          children: [
+            if (metadata?.isRevision == true)
+              TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_revision_label,
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: context.auraTheme.typography.fontSizeXs,
+                ),
+              ),
+            AuraMessageBubble(
+              content: message.content,
+              isUser: true,
+              key: ValueKey(message.id),
+              status: status,
+              timestamp: message.createdAt,
+            ),
+          ],
         ),
       );
     }

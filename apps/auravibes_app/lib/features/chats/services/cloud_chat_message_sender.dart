@@ -35,6 +35,13 @@ class const _QueueMessageInput({
       .map((object) => '${object.objectId}')
       .toList(growable: false);
 
+  ConversationMessageIntent get _intent => switch (payload.draft.intent) {
+    .message => .message,
+    .revision => .revision,
+  };
+
+  String? get _targetMessageId => payload.draft.targetMessageId;
+
   String? get _metadataJson => payload.draft.metadataJson;
 }
 
@@ -168,6 +175,8 @@ extension on CloudChatMessageSender {
     clientMessageId: _newRequestId(),
     content: input._content,
     attachmentIds: input._attachmentIds,
+    intent: input._intent,
+    targetMessageId: input._targetMessageId,
     metadataJson: input._metadataJson,
   ));
 

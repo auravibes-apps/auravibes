@@ -141,7 +141,7 @@ extension on AppAgentConversationDataProvider {
         messageType: MessageType.text,
         isUser: true,
         status: MessageStatus.sending,
-        metadata: draft.metadataJson,
+        metadata: draft.metadataJsonForPersistence,
         attachments: draft.attachments,
       );
 

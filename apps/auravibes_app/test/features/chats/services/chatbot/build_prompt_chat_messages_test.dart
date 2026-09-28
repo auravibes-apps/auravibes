@@ -181,5 +181,54 @@ void main() {
       );
       expect(entity.content, isEmpty);
     });
+
+    test(
+      'sends a revision as updated guidance for its target request',
+      () async {
+        final original = MessageEntity(
+          id: 'request-1',
+          conversationId: 'conversation-1',
+          content: 'Prepare a launch plan.',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        );
+        final unrelated = original.copyWith(
+          id: 'request-2',
+          content: 'Prepare campaign ideas.',
+        );
+        final revision = original.copyWith(
+          id: 'revision-1',
+          content: 'Include a task checklist.',
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              MessageMetadataEntity.chatMessageIntentMetadataKey: 'revision',
+              MessageMetadataEntity.chatMessageTargetIdMetadataKey: 'request-1',
+            },
+          ),
+        );
+
+        final result = await usecase.call([original, unrelated, revision]);
+
+        expect(result[0].content, 'Prepare a launch plan.');
+        expect(result[1].content, 'Prepare campaign ideas.');
+        expect(
+          result[2].content,
+          contains(
+            'This user message revises an earlier request. Treat it as updated guidance for that request, not as an answer to it.',
+          ),
+        );
+        expect(
+          result[2].content,
+          contains('Earlier user request:\nPrepare a launch plan.'),
+        );
+        expect(
+          result[2].content,
+          contains('Revision from user:\nInclude a task checklist.'),
+        );
+      },
+    );
   });
 }

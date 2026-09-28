@@ -507,6 +507,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.reasoning.restore_default';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_revision_placeholder =
+      'chats_screens.chat_conversation.revision_placeholder';
+  static const chats_screens_chat_conversation_revision_label =
+      'chats_screens.chat_conversation.revision_label';
   static const chats_screens_chat_conversation_discard_draft =
       'chats_screens.chat_conversation.discard_draft';
   static const chats_screens_chat_conversation_attach_file =
@@ -1162,7 +1166,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_allow_all = 'tool_confirmation.allow_all';
   static const tool_confirmation_deny_all = 'tool_confirmation.deny_all';
   static const tool_confirmation_skip = 'tool_confirmation.skip';
-  static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
+  static const tool_confirmation_stop_and_revise =
+      'tool_confirmation.stop_and_revise';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
   static const tool_approval_requested_change_summary =
       'tool_approval.requested_change_summary';
@@ -1177,7 +1182,8 @@ abstract class LocaleKeys {
   static const tool_approval_allow_conversation_scope =
       'tool_approval.allow_conversation_scope';
   static const tool_approval_skip_scope = 'tool_approval.skip_scope';
-  static const tool_approval_stop_all_scope = 'tool_approval.stop_all_scope';
+  static const tool_approval_stop_and_revise_scope =
+      'tool_approval.stop_and_revise_scope';
   static const tool_approval_previous = 'tool_approval.previous';
   static const tool_approval_next = 'tool_approval.next';
   static const tool_approval_submitting = 'tool_approval.submitting';

@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         A2uiChatContract,
         a2uiChatFormSubmitActionName,
         a2uiChatFormSubmitComponentId,
+        a2uiChatActionMetadataKey,
         ReasoningConfiguration,
         ReasoningOption,
         projectToolOutput;
@@ -53,6 +54,9 @@ typedef _ForkCopies = ({
   Map<int, int> messageIds,
   Map<String, String> stableMessageIds,
 });
+
+const _chatMessageIntentMetadataKey = 'chatMessageIntent';
+const _chatMessageTargetMessageIdMetadataKey = 'chatMessageTargetMessageId';
 
 class _BatchDecisionState {
   _BatchDecisionState(this.jobs);
@@ -1108,9 +1112,19 @@ class ConversationUseCases {
     required String userId,
     required QueueConversationMessageRequest request,
   }) async {
+    final intent = request.intent ?? ConversationMessageIntent.message;
+    final targetMessageId = request.targetMessageId;
     _requireId(request.requestId);
     _requireId(request.conversationId);
     _requireId(request.clientMessageId);
+    if (intent == ConversationMessageIntent.revision) {
+      if (targetMessageId == null || targetMessageId.trim().isEmpty) {
+        _fail(ConversationErrorCode.validationFailed);
+      }
+      _requireId(targetMessageId);
+    } else if (targetMessageId != null) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
     final content = request.content.trim();
     if ((content.isEmpty && request.attachmentIds.isEmpty) ||
         content.length > 100000 ||
@@ -1125,6 +1139,7 @@ class ConversationUseCases {
       _fail(ConversationErrorCode.validationFailed);
     }
     final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
+    final messageMetadataJson = _queuedMessageMetadataJson(request, intent);
     await ConversationEventWriter().write(
       session,
       workspaceId: request.workspaceId,
@@ -1143,6 +1158,20 @@ class ConversationUseCases {
         if (conversation.projectionRevision !=
             request.expectedProjectionRevision) {
           _fail(ConversationErrorCode.staleRevision);
+        }
+        if (intent == ConversationMessageIntent.revision) {
+          final targetMessage = await ConversationMessage.db.findFirstRow(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(request.workspaceId) &
+                table.conversationId.equals(conversation.id!) &
+                table.stableId.equals(targetMessageId!) &
+                table.role.equals('user'),
+            transaction: transaction,
+          );
+          if (targetMessage == null) {
+            _fail(ConversationErrorCode.validationFailed);
+          }
         }
         if (conversation.parentConversationStableId != null &&
             request.metadataJson != null) {
@@ -1173,7 +1202,7 @@ class ConversationUseCases {
           clientMessageId: request.clientMessageId,
           content: content,
           attachmentIds: attachmentIds.toList(),
-          metadataJson: request.metadataJson,
+          metadataJson: messageMetadataJson,
           now: now,
           transaction: transaction,
         );
@@ -1189,6 +1218,34 @@ class ConversationUseCases {
         conversationId: request.conversationId,
       ),
     );
+  }
+
+  String? _queuedMessageMetadataJson(
+    QueueConversationMessageRequest request,
+    ConversationMessageIntent intent,
+  ) {
+    if (intent != ConversationMessageIntent.revision) {
+      return request.metadataJson;
+    }
+
+    final modelMetadata = <String, Object?>{
+      _chatMessageIntentMetadataKey: intent.name,
+      _chatMessageTargetMessageIdMetadataKey: request.targetMessageId!,
+    };
+    if (request.metadataJson case final metadataJson?) {
+      final decoded = jsonDecode(metadataJson);
+      if (decoded is Map) {
+        final action = A2uiChatContract.decodeActionMetadata(
+          decoded.cast<String, Object?>(),
+          conversationId: request.conversationId,
+        );
+        if (action != null) {
+          modelMetadata[a2uiChatActionMetadataKey] = action.toJson();
+        }
+      }
+    }
+
+    return jsonEncode({'modelMetadata': modelMetadata});
   }
 
   Future<ConversationSnapshot> editPendingConversationMessage(

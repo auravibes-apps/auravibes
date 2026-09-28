@@ -76,6 +76,8 @@ import 'features/conversations/models/conversation_execution_view.dart'
     as _ij9w9f8d;
 import 'features/conversations/models/conversation_job.dart' as _iq1eovrr;
 import 'features/conversations/models/conversation_message.dart' as _ibea51bx;
+import 'features/conversations/models/conversation_message_intent.dart'
+    as _igvc350n;
 import 'features/conversations/models/conversation_message_view.dart'
     as _iutotoh6;
 import 'features/conversations/models/conversation_mutation_result.dart'
@@ -323,6 +325,7 @@ export 'features/conversations/models/conversation_execution.dart';
 export 'features/conversations/models/conversation_execution_view.dart';
 export 'features/conversations/models/conversation_job.dart';
 export 'features/conversations/models/conversation_message.dart';
+export 'features/conversations/models/conversation_message_intent.dart';
 export 'features/conversations/models/conversation_message_view.dart';
 export 'features/conversations/models/conversation_mutation_result.dart';
 export 'features/conversations/models/conversation_page.dart';
@@ -4573,6 +4576,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _ibea51bx.ConversationMessage) {
       return _ibea51bx.ConversationMessage.fromJson(data) as T;
     }
+    if (t == _igvc350n.ConversationMessageIntent) {
+      return _igvc350n.ConversationMessageIntent.fromJson(data) as T;
+    }
     if (t == _iutotoh6.ConversationMessageView) {
       return _iutotoh6.ConversationMessageView.fromJson(data) as T;
     }
@@ -5117,6 +5123,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_ibea51bx.ConversationMessage?>()) {
       return (data != null
               ? _ibea51bx.ConversationMessage.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_igvc350n.ConversationMessageIntent?>()) {
+      return (data != null
+              ? _igvc350n.ConversationMessageIntent.fromJson(data)
               : null)
           as T;
     }
@@ -6071,6 +6083,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ij9w9f8d.ConversationExecutionView => 'ConversationExecutionView',
       _iq1eovrr.ConversationJob => 'ConversationJob',
       _ibea51bx.ConversationMessage => 'ConversationMessage',
+      _igvc350n.ConversationMessageIntent => 'ConversationMessageIntent',
       _iutotoh6.ConversationMessageView => 'ConversationMessageView',
       _iz02ruas.ConversationMutationResult => 'ConversationMutationResult',
       _icl1rfiv.ConversationPage => 'ConversationPage',
@@ -6295,6 +6308,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ConversationJob';
       case _ibea51bx.ConversationMessage():
         return 'ConversationMessage';
+      case _igvc350n.ConversationMessageIntent():
+        return 'ConversationMessageIntent';
       case _iutotoh6.ConversationMessageView():
         return 'ConversationMessageView';
       case _iz02ruas.ConversationMutationResult():
@@ -6670,6 +6685,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'ConversationMessage') {
       return deserialize<_ibea51bx.ConversationMessage>(data['data']);
+    }
+    if (dataClassName == 'ConversationMessageIntent') {
+      return deserialize<_igvc350n.ConversationMessageIntent>(data['data']);
     }
     if (dataClassName == 'ConversationMessageView') {
       return deserialize<_iutotoh6.ConversationMessageView>(data['data']);

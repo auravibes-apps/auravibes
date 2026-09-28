@@ -1,0 +1,1 @@
+enum ChatDraftIntent { message, revision }

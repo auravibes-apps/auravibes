@@ -78,7 +78,7 @@ class SendMessageUsecase {
         messageType: .text,
         isUser: true,
         status: .sending,
-        metadata: draft.metadataJson,
+        metadata: draft.metadataJsonForPersistence,
         attachments: draft.attachments,
       ),
     );

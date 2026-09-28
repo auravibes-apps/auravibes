@@ -83,6 +83,7 @@ class const ChatToolApprovalCard({
   required final String workspaceId,
   required final String conversationId,
   final List<PendingToolCall>? pendingCalls,
+  final void Function(String messageId)? onStopAndRevise,
   super.key,
 }) extends HookConsumerWidget {
   @override
@@ -91,6 +92,7 @@ class const ChatToolApprovalCard({
       workspaceId: workspaceId,
       conversationId: conversationId,
       pendingCalls: pendingCalls,
+      onStopAndRevise: onStopAndRevise,
     );
   }
 }
@@ -99,6 +101,7 @@ class const _PendingToolCallsView({
   required final String workspaceId,
   required final String conversationId,
   required final List<PendingToolCall>? pendingCalls,
+  required final void Function(String messageId)? onStopAndRevise,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,6 +122,7 @@ class const _PendingToolCallsView({
       processingKeys: processingKeys,
       pendingCalls: pendingCalls,
       asyncCalls: asyncCalls,
+      onStopAndRevise: onStopAndRevise,
     );
   }
 }
@@ -159,6 +163,7 @@ class const _PendingToolCallsResult({
   required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall>? pendingCalls,
   required final AsyncValue<List<PendingToolCall>>? asyncCalls,
+  required final void Function(String messageId)? onStopAndRevise,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -174,6 +179,7 @@ class const _PendingToolCallsResult({
       hiddenKeys: hiddenKeys,
       processingKeys: processingKeys,
       pendingCalls: pendingCalls ?? asyncCalls?.value ?? const [],
+      onStopAndRevise: onStopAndRevise,
     );
   }
 }
@@ -184,6 +190,7 @@ class const _PendingToolCallsList({
   required final ValueNotifier<Set<String>> hiddenKeys,
   required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall> pendingCalls,
+  required final void Function(String messageId)? onStopAndRevise,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => pendingCalls.isEmpty
@@ -194,6 +201,7 @@ class const _PendingToolCallsList({
           hiddenKeys: hiddenKeys,
           processingKeys: processingKeys,
           pendingCalls: pendingCalls,
+          onStopAndRevise: onStopAndRevise,
         );
 }
 
@@ -203,6 +211,7 @@ class const _PendingToolCallsPager({
   required final ValueNotifier<Set<String>> hiddenKeys,
   required final ValueNotifier<Set<String>> processingKeys,
   required final List<PendingToolCall> pendingCalls,
+  required final void Function(String messageId)? onStopAndRevise,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -213,6 +222,7 @@ class const _PendingToolCallsPager({
       hiddenKeys: hiddenKeys,
       processingKeys: processingKeys,
       pendingCalls: pendingCalls,
+      onStopAndRevise: onStopAndRevise,
     ));
 
     return _PendingToolCallsPagerPageBuilder(request: request);
@@ -223,6 +233,7 @@ typedef _PendingToolCallsPagerPageRequest = ({
   String workspaceId,
   String conversationId,
   List<PendingToolCall> visibleCalls,
+  void Function(String messageId)? onStopAndRevise,
   Set<String> processingKeys,
   ValueNotifier<String?> selectedKey,
   List<String> previousKeys,
@@ -235,6 +246,7 @@ typedef _PendingToolCallsPagerHookRequest = ({
   ValueNotifier<Set<String>> hiddenKeys,
   ValueNotifier<Set<String>> processingKeys,
   List<PendingToolCall> pendingCalls,
+  void Function(String messageId)? onStopAndRevise,
 });
 
 typedef _PagerVisibilityCallbacks = ({
@@ -273,6 +285,7 @@ _PendingToolCallsPagerPageRequest _pagerPageRequest(
   workspaceId: request.workspaceId,
   conversationId: request.conversationId,
   visibleCalls: visible.calls,
+  onStopAndRevise: request.onStopAndRevise,
   processingKeys: request.processingKeys.value,
   selectedKey: selection.selectedKey,
   previousKeys: selection.previousKeys.value,
@@ -361,6 +374,7 @@ class const _PendingToolCallsPagerPageBuilder({
       conversationId: conversationId,
       pendingCalls: visibleCalls,
       processingKeys: request.processingKeys,
+      onStopAndRevise: request.onStopAndRevise,
       selectedKey: request.selectedKey,
       previousKeys: request.previousKeys,
       callbacks: request.callbacks,
@@ -501,6 +515,7 @@ class const _PendingToolCallsPagerPage({
   required final String conversationId,
   required final List<PendingToolCall> pendingCalls,
   required final Set<String> processingKeys,
+  required final void Function(String messageId)? onStopAndRevise,
   required final ValueNotifier<String?> selectedKey,
   required final List<String> previousKeys,
   required final _PagerVisibilityCallbacks callbacks,
@@ -512,6 +527,7 @@ class const _PendingToolCallsPagerPage({
       conversationId: conversationId,
       pendingCalls: pendingCalls,
       processingKeys: processingKeys,
+      onStopAndRevise: onStopAndRevise,
       selectedKey: selectedKey.value,
       previousKeys: previousKeys,
       selectedKeyNotifier: selectedKey,
@@ -527,6 +543,7 @@ typedef _PendingToolCallsPagerContentRequest = ({
   String conversationId,
   List<PendingToolCall> pendingCalls,
   Set<String> processingKeys,
+  void Function(String messageId)? onStopAndRevise,
   String? selectedKey,
   List<String> previousKeys,
   ValueNotifier<String?> selectedKeyNotifier,
@@ -911,6 +928,7 @@ class _ApprovalCardBodyChildren {
           onStopAllStarted: request.actions.onStopAllStarted,
           onDecisionFailed: request.actions.onDecisionFailed,
           onDecisionCompleted: request.actions.onDecisionCompleted,
+          onStopAndRevise: request.source.onStopAndRevise,
         ),
       ];
 
@@ -1818,6 +1836,7 @@ class const _ConfirmationButtons({
   required final _StartApprovalDecision onStopAllStarted,
   required final _RestoreApprovalCalls onDecisionFailed,
   required final _RestoreApprovalCalls onDecisionCompleted,
+  required final void Function(String messageId)? onStopAndRevise,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1830,6 +1849,7 @@ class const _ConfirmationButtons({
       onStopAllStarted: onStopAllStarted,
       onDecisionFailed: onDecisionFailed,
       onDecisionCompleted: onDecisionCompleted,
+      onStopAndRevise: onStopAndRevise,
     );
 
     return _ConfirmationButtonRows(
@@ -1850,6 +1870,7 @@ class const _ConfirmationActionHandler({
   required final _StartApprovalDecision onStopAllStarted,
   required final _RestoreApprovalCalls onDecisionFailed,
   required final _RestoreApprovalCalls onDecisionCompleted,
+  required final void Function(String messageId)? onStopAndRevise,
 }) {
   bool get _isCloudCall =>
       toolCall.turnId != null &&
@@ -1898,7 +1919,10 @@ extension _ConfirmationApprovalActions on _ConfirmationActionHandler {
       action: () => _stopAll(ref),
       onStarted: onStopAllStarted,
       onFailed: onDecisionFailed,
-      onCompleted: onDecisionCompleted,
+      onCompleted: (keys) {
+        onDecisionCompleted(keys);
+        onStopAndRevise?.call(messageId);
+      },
     ));
   }
 }
@@ -2225,9 +2249,9 @@ class _DecisionButtonChildren {
          ),
          Expanded(
            child: _ApprovalChoice(
-             identifier: 'tool_approval_stop_all',
-             labelKey: LocaleKeys.tool_confirmation_stop_all,
-             scopeKey: LocaleKeys.tool_approval_stop_all_scope,
+             identifier: 'tool_approval_stop_and_revise',
+             labelKey: LocaleKeys.tool_confirmation_stop_and_revise,
+             scopeKey: LocaleKeys.tool_approval_stop_and_revise_scope,
              onPressed: () => unawaited(handler.stopAll(ref, actionContext)),
              isSubmitting: isSubmitting,
              tint: .error,

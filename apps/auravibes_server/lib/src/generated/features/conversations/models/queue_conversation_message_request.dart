@@ -13,6 +13,9 @@
 import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
 
+import '../../../features/conversations/models/conversation_message_intent.dart'
+    as _isgb0d8n;
+
 abstract class QueueConversationMessageRequest
     implements _is.SerializableModel, _is.ProtocolSerialization {
   QueueConversationMessageRequest._({
@@ -23,6 +26,8 @@ abstract class QueueConversationMessageRequest
     required this.clientMessageId,
     required this.content,
     required this.attachmentIds,
+    this.intent,
+    this.targetMessageId,
     this.metadataJson,
     this.a2uiSupportedComponents,
   });
@@ -35,6 +40,8 @@ abstract class QueueConversationMessageRequest
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
+    _isgb0d8n.ConversationMessageIntent? intent,
+    String? targetMessageId,
     String? metadataJson,
     List<String>? a2uiSupportedComponents,
   }) = _QueueConversationMessageRequestImpl;
@@ -53,6 +60,12 @@ abstract class QueueConversationMessageRequest
       attachmentIds: _if5qez1k.Protocol().deserialize<List<String>>(
         jsonSerialization['attachmentIds'],
       ),
+      intent: jsonSerialization['intent'] == null
+          ? null
+          : _isgb0d8n.ConversationMessageIntent.fromJson(
+              (jsonSerialization['intent'] as String),
+            ),
+      targetMessageId: jsonSerialization['targetMessageId'] as String?,
       metadataJson: jsonSerialization['metadataJson'] as String?,
       a2uiSupportedComponents:
           jsonSerialization['a2uiSupportedComponents'] == null
@@ -77,6 +90,10 @@ abstract class QueueConversationMessageRequest
 
   List<String> attachmentIds;
 
+  _isgb0d8n.ConversationMessageIntent? intent;
+
+  String? targetMessageId;
+
   String? metadataJson;
 
   List<String>? a2uiSupportedComponents;
@@ -92,6 +109,8 @@ abstract class QueueConversationMessageRequest
     String? clientMessageId,
     String? content,
     List<String>? attachmentIds,
+    _isgb0d8n.ConversationMessageIntent? intent,
+    String? targetMessageId,
     String? metadataJson,
     List<String>? a2uiSupportedComponents,
   });
@@ -106,6 +125,8 @@ abstract class QueueConversationMessageRequest
       'clientMessageId': clientMessageId,
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
+      if (intent != null) 'intent': intent?.toJson(),
+      if (targetMessageId != null) 'targetMessageId': targetMessageId,
       if (metadataJson != null) 'metadataJson': metadataJson,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
@@ -123,6 +144,8 @@ abstract class QueueConversationMessageRequest
       'clientMessageId': clientMessageId,
       'content': content,
       'attachmentIds': attachmentIds.toJson(),
+      if (intent != null) 'intent': intent?.toJson(),
+      if (targetMessageId != null) 'targetMessageId': targetMessageId,
       if (metadataJson != null) 'metadataJson': metadataJson,
       if (a2uiSupportedComponents != null)
         'a2uiSupportedComponents': a2uiSupportedComponents?.toJson(),
@@ -147,6 +170,8 @@ class _QueueConversationMessageRequestImpl
     required String clientMessageId,
     required String content,
     required List<String> attachmentIds,
+    _isgb0d8n.ConversationMessageIntent? intent,
+    String? targetMessageId,
     String? metadataJson,
     List<String>? a2uiSupportedComponents,
   }) : super._(
@@ -157,6 +182,8 @@ class _QueueConversationMessageRequestImpl
          clientMessageId: clientMessageId,
          content: content,
          attachmentIds: attachmentIds,
+         intent: intent,
+         targetMessageId: targetMessageId,
          metadataJson: metadataJson,
          a2uiSupportedComponents: a2uiSupportedComponents,
        );
@@ -173,6 +200,8 @@ class _QueueConversationMessageRequestImpl
     String? clientMessageId,
     String? content,
     List<String>? attachmentIds,
+    Object? intent = _Undefined,
+    Object? targetMessageId = _Undefined,
     Object? metadataJson = _Undefined,
     Object? a2uiSupportedComponents = _Undefined,
   }) {
@@ -186,6 +215,12 @@ class _QueueConversationMessageRequestImpl
       content: content ?? this.content,
       attachmentIds:
           attachmentIds ?? this.attachmentIds.map((e0) => e0).toList(),
+      intent: intent is _isgb0d8n.ConversationMessageIntent?
+          ? intent
+          : this.intent,
+      targetMessageId: targetMessageId is String?
+          ? targetMessageId
+          : this.targetMessageId,
       metadataJson: metadataJson is String? ? metadataJson : this.metadataJson,
       a2uiSupportedComponents: a2uiSupportedComponents is List<String>?
           ? a2uiSupportedComponents

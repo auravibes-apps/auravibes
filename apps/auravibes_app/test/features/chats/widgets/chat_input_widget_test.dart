@@ -71,6 +71,8 @@ void main() {
     bool isCompacting = false,
     ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
+    ValueChanged<ChatDraft>? onMessageSent,
+    String? placeholderKey,
     ValueListenable<String?>? activeConversation,
   }) {
     return EasyLocalization(
@@ -98,6 +100,8 @@ void main() {
               conversationId: conversationId,
               reasoningControl: reasoningControl,
               draftToLoad: draftToLoad,
+              placeholderKey: placeholderKey,
+              onMessageSent: onMessageSent,
               modalitiesInput: modalitiesInput,
               onContinueAgent: onContinueAgent,
               continueDisabledHint: continueDisabledHint,
@@ -386,6 +390,55 @@ void main() {
     expect(attempts, 2);
   });
 
+  testWidgets('preserves revision text after send failure and retries target', (
+    tester,
+  ) async {
+    var attempts = 0;
+    ChatDraft? retriedDraft;
+    final successfulSends = <ChatDraft>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        draftToLoad: const ChatDraft(
+          text: '',
+          intent: .revision,
+          targetMessageId: 'request-1',
+        ),
+        onMessageSent: successfulSends.add,
+        onSendMessage: (draft) async {
+          attempts++;
+          if (attempts == 1) throw StateError('send failed');
+          retriedDraft = draft;
+        },
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'unsent revision');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+
+    expect(attempts, 1);
+    expect(successfulSends, isEmpty);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'unsent revision',
+    );
+
+    final sendButton = find.descendant(
+      of: find.byKey(const ValueKey<String>('chat_send_button')),
+      matching: find.byType(AuraButton),
+    );
+    tester.widget<AuraButton>(sendButton).onPressed();
+    final _ = await tester.pumpAndSettle();
+
+    expect(attempts, 2);
+    expect(retriedDraft?.text, 'unsent revision');
+    expect(retriedDraft?.intent, ChatDraftIntent.revision);
+    expect(retriedDraft?.targetMessageId, 'request-1');
+    expect(successfulSends, [retriedDraft]);
+  });
+
   testWidgets('renders without error', (tester) async {
     await pumpAndInit(
       tester,
@@ -439,6 +492,28 @@ void main() {
 
     expect(sentDraft?.text, 'Edited message');
     expect(sentDraft?.attachments, [attachment]);
+  });
+
+  testWidgets('focuses and labels a revision draft', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        draftToLoad: const ChatDraft(
+          text: '',
+          intent: .revision,
+          targetMessageId: 'request-1',
+        ),
+        placeholderKey:
+            LocaleKeys.chats_screens_chat_conversation_revision_placeholder,
+        onSendMessage: (_) => Future<void>.value(),
+      ),
+    );
+
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
+    expect(find.text('How should I revise this request?'), findsOneWidget);
   });
 
   testWidgets('exposes stable selectors for composer controls', (tester) async {

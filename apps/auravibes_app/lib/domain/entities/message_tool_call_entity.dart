@@ -145,6 +145,9 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
 abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   static const String agentTranscriptContextMetadataKey =
       'agentTranscriptContextUpdate';
+  static const String chatMessageIntentMetadataKey = 'chatMessageIntent';
+  static const String chatMessageTargetIdMetadataKey =
+      'chatMessageTargetMessageId';
 
   const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
@@ -174,6 +177,12 @@ abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
   int get usedTokens {
     return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
+
+  bool get isRevision =>
+      modelMetadata[chatMessageIntentMetadataKey] == 'revision';
+
+  String? get revisionTargetMessageId =>
+      modelMetadata[chatMessageTargetIdMetadataKey] as String?;
 
   bool get hasPendingToolCalls =>
       toolCalls.any((toolCall) => toolCall.isPending);

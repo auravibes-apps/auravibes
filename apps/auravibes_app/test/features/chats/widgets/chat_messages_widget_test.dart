@@ -590,6 +590,33 @@ void main() {
       );
     });
 
+    testWidgets('labels revision text without changing the user message', (
+      tester,
+    ) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: _messageOverrides({
+            'msg-1': _createMessage(
+              content: 'Include a task checklist.',
+              metadata: const MessageMetadataEntity(
+                modelMetadata: {
+                  MessageMetadataEntity.chatMessageIntentMetadataKey:
+                      'revision',
+                  MessageMetadataEntity.chatMessageTargetIdMetadataKey:
+                      'request-1',
+                },
+              ),
+            ),
+          }),
+        ),
+      );
+
+      expect(find.text('Revision'), findsOneWidget);
+      expect(find.text('Include a task checklist.'), findsOneWidget);
+    });
+
     testWidgets('uses a visible selection color for user messages', (
       tester,
     ) async {

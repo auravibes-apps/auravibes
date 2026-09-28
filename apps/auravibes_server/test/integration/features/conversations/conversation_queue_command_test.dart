@@ -59,6 +59,65 @@ void main() {
       },
     );
 
+    test('persists revision intent with its target message ID', () async {
+      final userId = const Uuid().v4().toString();
+      final session = sessionBuilder.copyWith(
+        authentication: AuthenticationOverride.authenticationInfo(
+          userId,
+          const {},
+        ),
+      );
+      final database = session.build();
+      await _insertUser(database, userId);
+      final workspace = await _workspace(database, userId);
+      final conversation = await _conversation(database, workspace.id!);
+
+      await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-original',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: 1,
+          clientMessageId: 'request-1',
+          content: 'Prepare a launch plan.',
+          attachmentIds: const [],
+        ),
+      );
+      final snapshot = await endpoints.conversation.queueConversationMessage(
+        session,
+        QueueConversationMessageRequest(
+          workspaceId: workspace.id!,
+          requestId: 'queue-revision',
+          conversationId: conversation.stableId,
+          expectedProjectionRevision: 2,
+          clientMessageId: 'revision-1',
+          content: 'Add a task checklist.',
+          attachmentIds: const [],
+          intent: ConversationMessageIntent.revision,
+          targetMessageId: 'request-1',
+        ),
+      );
+
+      expect(snapshot.pendingMessages.map((message) => message.id), [
+        'request-1',
+        'revision-1',
+      ]);
+      final revision = await ConversationMessage.db.findFirstRow(
+        database,
+        where: (table) => table.stableId.equals('revision-1'),
+      );
+      expect(
+        jsonDecode(revision!.metadataJson!),
+        {
+          'modelMetadata': {
+            'chatMessageIntent': 'revision',
+            'chatMessageTargetMessageId': 'request-1',
+          },
+        },
+      );
+    });
+
     test('reorders and removes only unclaimed pending messages', () async {
       final userId = const Uuid().v4().toString();
       final session = sessionBuilder.copyWith(

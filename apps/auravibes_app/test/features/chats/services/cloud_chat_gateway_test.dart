@@ -74,6 +74,8 @@ void main() {
         clientMessageId: 'message',
         content: 'Hello',
         attachmentIds: const [],
+        intent: ConversationMessageIntent.revision,
+        targetMessageId: 'request-1',
         metadataJson: '{"action":"unchanged"}',
       )),
       'stopConversation': () => gateway.stopConversation(
@@ -106,6 +108,14 @@ void main() {
     expect(
       requests['queueConversationMessage']!['metadataJson'],
       '{"action":"unchanged"}',
+    );
+    expect(
+      requests['queueConversationMessage']!['intent'],
+      ConversationMessageIntent.revision.name,
+    );
+    expect(
+      requests['queueConversationMessage']!['targetMessageId'],
+      'request-1',
     );
     expect(
       requests['restoreCompactionCheckpoint'],

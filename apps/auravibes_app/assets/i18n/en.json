@@ -373,6 +373,8 @@
         "restore_default": "Restore provider default"
       },
       "message_placeholder": "Type your message...",
+      "revision_placeholder": "How should I revise this request?",
+      "revision_label": "Revision",
       "discard_draft": "Discard draft",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",
@@ -843,7 +845,7 @@
     "allow_all": "Allow All",
     "deny_all": "Deny All",
     "skip": "Skip",
-    "stop_all": "Stop All"
+    "stop_and_revise": "Stop and revise"
   },
   "tool_approval": {
     "pending_count": "Tool approval {} of {}",
@@ -854,7 +856,7 @@
     "allow_once_scope": "Allows this call once.",
     "allow_conversation_scope": "Allows this tool for this conversation.",
     "skip_scope": "Declines this call only.",
-    "stop_all_scope": "Stops all pending tool calls.",
+    "stop_and_revise_scope": "Stops pending tool calls and opens the composer to revise the request.",
     "previous": "Previous tool approval",
     "next": "Next tool approval",
     "submitting": "Submitting decision...",

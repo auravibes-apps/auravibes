@@ -28,7 +28,12 @@ Future<List<ChatMessage>> _buildPromptMessages(
   final chatMessages = <ChatMessage>[];
   for (final message in messages) {
     chatMessages.addAll(
-      await _buildPromptMessage(agentBuilder, modalitiesInput, message),
+      await _buildPromptMessage(
+        agentBuilder,
+        modalitiesInput,
+        messages,
+        message,
+      ),
     );
   }
 
@@ -38,9 +43,12 @@ Future<List<ChatMessage>> _buildPromptMessages(
 Future<List<ChatMessage>> _buildPromptMessage(
   agent.BuildPromptChatMessages agentBuilder,
   List<String> modalitiesInput,
+  List<MessageEntity> messages,
   MessageEntity message,
 ) async => [
-  for (final chatMessage in agentBuilder.call([_toAgentPromptMessage(message)]))
+  for (final chatMessage in agentBuilder.call([
+    _toAgentPromptMessage(messages, message),
+  ]))
     await _withAttachments(
       _toChatMessage(chatMessage),
       message,
@@ -127,23 +135,47 @@ String _safeFileName(String fileName) => p
     .basename(fileName.replaceAll(String.fromCharCode(0x5C), '/'))
     .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
 
-agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {
+agent.AgentPromptMessage _toAgentPromptMessage(
+  List<MessageEntity> messages,
+  MessageEntity message,
+) {
   final metadata = message.metadata;
   final toolCalls = _toAgentToolCalls(
     metadata?.toolCalls,
     allowPending: !message.isForkReference,
   );
 
-  return _agentPromptMessage(message, metadata, toolCalls);
+  return _agentPromptMessage(
+    message,
+    metadata,
+    toolCalls,
+    _revisionTargetMessage(messages, metadata),
+  );
+}
+
+MessageEntity? _revisionTargetMessage(
+  List<MessageEntity> messages,
+  MessageMetadataEntity? metadata,
+) {
+  if (metadata?.isRevision != true) return null;
+  final targetMessageId = metadata?.revisionTargetMessageId;
+  if (targetMessageId == null) return null;
+
+  for (final candidate in messages) {
+    if (candidate.id == targetMessageId && candidate.isUser) return candidate;
+  }
+
+  return null;
 }
 
 agent.AgentPromptMessage _agentPromptMessage(
   MessageEntity message,
   MessageMetadataEntity? metadata,
   List<agent.AgentPromptToolCall> toolCalls,
+  MessageEntity? revisionTarget,
 ) {
   return agent.AgentPromptMessage(
-    content: _promptContent(message),
+    content: _promptContent(message, revisionTarget),
     isUser: message.isUser,
     type: _promptMessageType(message),
     isCompactionSummary: metadata?.isCompactionSummary ?? false,
@@ -158,7 +190,7 @@ agent.AgentPromptMessageType _promptMessageType(MessageEntity message) =>
     ? agent.AgentPromptMessageType.system
     : agent.AgentPromptMessageType.text;
 
-String _promptContent(MessageEntity message) {
+String _promptContent(MessageEntity message, MessageEntity? revisionTarget) {
   final metadata = message.metadata;
   final action = agent.A2uiChatContract.decodeActionMetadata(
     metadata?.modelMetadata,
@@ -169,7 +201,22 @@ String _promptContent(MessageEntity message) {
     action,
   );
 
-  return message.isUser ? content : _appendA2uiSurfaces(content, metadata);
+  if (message.isUser) {
+    if (metadata?.isRevision != true) return content;
+
+    return [
+      [
+        'This user message revises an earlier request.',
+        'Treat it as updated guidance for that request,',
+        'not as an answer to it.',
+      ].join(' '),
+      if (revisionTarget != null)
+        'Earlier user request:\n${revisionTarget.content}',
+      'Revision from user:\n$content',
+    ].join('\n\n');
+  }
+
+  return _appendA2uiSurfaces(content, metadata);
 }
 
 String _appendA2uiSurfaces(String content, MessageMetadataEntity? metadata) =>

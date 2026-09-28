@@ -23,6 +23,8 @@ typedef _QueueConversationMessageRequest = ({
   String clientMessageId,
   String content,
   List<String> attachmentIds,
+  ConversationMessageIntent? intent,
+  String? targetMessageId,
   String? metadataJson,
 });
 
@@ -304,6 +306,8 @@ QueueConversationMessageRequest _queueConversationMessageRequest(
   clientMessageId: request.clientMessageId,
   content: request.content,
   attachmentIds: request.attachmentIds,
+  intent: request.intent,
+  targetMessageId: request.targetMessageId,
   metadataJson: request.metadataJson,
   a2uiSupportedComponents: supportedA2uiChatComponents.toList(),
 );

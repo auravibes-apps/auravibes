@@ -17,6 +17,38 @@ import 'a2ui_protocol.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
 
+const _chatMessageIntentMetadataKey = 'chatMessageIntent';
+const _chatMessageTargetMessageIdMetadataKey = 'chatMessageTargetMessageId';
+
+String _revisionPromptContent({
+  required List<ConversationMessage> messages,
+  required Map<String, dynamic> metadata,
+  required String content,
+}) {
+  final modelMetadata = metadata['modelMetadata'];
+  if (modelMetadata is! Map ||
+      modelMetadata[_chatMessageIntentMetadataKey] != 'revision') {
+    return content;
+  }
+
+  final targetMessageId = modelMetadata[_chatMessageTargetMessageIdMetadataKey];
+  String? earlierRequest;
+  if (targetMessageId is String) {
+    for (final candidate in messages) {
+      if (candidate.stableId == targetMessageId && candidate.role == 'user') {
+        earlierRequest = candidate.content;
+        break;
+      }
+    }
+  }
+
+  return [
+    'This user message revises an earlier request. Treat it as updated guidance for that request, not as an answer to it.',
+    if (earlierRequest != null) 'Earlier user request:\n$earlierRequest',
+    'Revision from user:\n$content',
+  ].join('\n\n');
+}
+
 class const ConversationEngineResult({
   required final String content,
   required final String finishReason,
@@ -978,7 +1010,13 @@ final class const ServerConversationEngineHost({
         message.content,
         action,
       );
-      if (message.role == 'assistant') {
+      if (message.role == 'user') {
+        content = _revisionPromptContent(
+          messages: messages,
+          metadata: metadata,
+          content: content,
+        );
+      } else if (message.role == 'assistant') {
         final filteredMetadata = cloudA2uiMetadataForClient(
           message.metadataJson,
           a2uiSupportedComponents,

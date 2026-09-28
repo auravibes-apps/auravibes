@@ -1,0 +1,5 @@
+enum: ConversationMessageIntent
+serialized: byName
+values:
+  - message
+  - revision

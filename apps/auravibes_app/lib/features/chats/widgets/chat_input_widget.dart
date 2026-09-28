@@ -78,6 +78,8 @@ class const ChatInputWidget({
   final bool autofocus = false,
   final Widget? reasoningControl,
   final ChatDraft? draftToLoad,
+  final String? placeholderKey,
+  final ValueChanged<ChatDraft>? onMessageSent,
   final List<String> modalitiesInput = const [],
   final VoidCallback? onSkillsPress,
   final VoidCallback? onContinueAgent,
@@ -260,14 +262,16 @@ Dispose? _saveConversationDraft(
     conversationDraftProvider(input.workspaceId, conversationId).notifier,
   );
 
-  return _listenForConversationDraftChanges(draftNotifier, draft);
+  return _listenForConversationDraftChanges(input, draftNotifier, draft);
 }
 
 Dispose _listenForConversationDraftChanges(
+  ChatInputWidget input,
   ConversationDraft draftNotifier,
   _ChatInputDraftHooks draft,
 ) {
-  void save() => _saveCurrentConversationDraft(draftNotifier, draft);
+  void save() =>
+      _saveCurrentConversationDraft(draftNotifier, draft, input.draftToLoad);
   draft.controller.addListener(save);
   draft.attachments.addListener(save);
 
@@ -280,10 +284,14 @@ Dispose _listenForConversationDraftChanges(
 void _saveCurrentConversationDraft(
   ConversationDraft draftNotifier,
   _ChatInputDraftHooks draft,
+  ChatDraft? loadedDraft,
 ) {
   final current = ChatDraft(
     text: draft.controller.text,
     attachments: draft.attachments.value,
+    metadataJson: loadedDraft?.metadataJson,
+    intent: loadedDraft?.intent ?? .message,
+    targetMessageId: loadedDraft?.targetMessageId,
   );
   if (draft.isSending.value && current.isEmpty) return;
 
@@ -543,6 +551,7 @@ class const _ChatInputField({
       controller: state.hooks.draft.controller,
       focusNode: state.hooks.draft.focusNode,
       autofocus: state.input.autofocus,
+      placeholderKey: state.input.placeholderKey,
       footer: footer,
       header: header,
       isRecording: state.hooks.recording.isRecording.value,
@@ -556,13 +565,15 @@ class _ChatInputFieldView extends StatelessWidget {
     required TextEditingController controller,
     required FocusNode focusNode,
     required bool autofocus,
+    required String? placeholderKey,
     required Widget footer,
     required Widget header,
     required bool isRecording,
   }) : input = AuraInput(
          controller: controller,
-         placeholder: const TextLocale(
-           LocaleKeys.chats_screens_chat_conversation_message_placeholder,
+         placeholder: TextLocale(
+           placeholderKey ??
+               LocaleKeys.chats_screens_chat_conversation_message_placeholder,
          ),
          textInputAction: .send,
          readOnly: isRecording,
@@ -726,6 +737,9 @@ extension _ChatInputDraftActions on _ChatInputActions {
   Future<ChatDraft> _currentDraft() async => .new(
     text: _draft.controller.text.trim(),
     attachments: await _collectDraftAttachments(),
+    metadataJson: input.draftToLoad?.metadataJson,
+    intent: input.draftToLoad?.intent ?? .message,
+    targetMessageId: input.draftToLoad?.targetMessageId,
   );
 }
 
@@ -980,6 +994,7 @@ extension _ChatInputMessageActions on _ChatInputActions {
     _draft.attachments.value = const [];
     if (await _awaitSendResult(sendResult, draft)) {
       _clearSavedConversationDraft(savedDraft);
+      input.onMessageSent?.call(draft);
     }
   }
 

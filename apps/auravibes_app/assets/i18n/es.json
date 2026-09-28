@@ -373,6 +373,8 @@
         "restore_default": "Restaurar predeterminado del proveedor"
       },
       "message_placeholder": "Escribe tu mensaje...",
+      "revision_placeholder": "¿Qué cambios quieres hacer a esta solicitud?",
+      "revision_label": "Revisión",
       "discard_draft": "Descartar borrador",
       "attach_file": "Adjuntar archivo",
       "attach_photo": "Adjuntar foto",
@@ -843,7 +845,7 @@
     "allow_all": "Permitir todo",
     "deny_all": "Denegar todo",
     "skip": "Omitir",
-    "stop_all": "Detener todo"
+    "stop_and_revise": "Detener y modificar"
   },
   "tool_approval": {
     "pending_count": "Aprobación de herramienta {} de {}",
@@ -854,7 +856,7 @@
     "allow_once_scope": "Permite esta llamada una vez.",
     "allow_conversation_scope": "Permite usar esta herramienta en esta conversación.",
     "skip_scope": "Rechaza solo esta llamada.",
-    "stop_all_scope": "Detiene todas las llamadas pendientes.",
+    "stop_and_revise_scope": "Detiene las llamadas pendientes y abre el compositor para modificar la solicitud.",
     "previous": "Aprobación de herramienta anterior",
     "next": "Aprobación de herramienta siguiente",
     "submitting": "Enviando decisión...",

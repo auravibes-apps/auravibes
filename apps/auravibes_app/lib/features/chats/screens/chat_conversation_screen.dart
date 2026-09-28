@@ -1183,6 +1183,9 @@ class const _ChatConversationStatusAndComposer({
   Widget build(BuildContext context) {
     final draftToLoad = useState<ChatDraft?>(null);
     void editDraft(ChatDraft draft) => draftToLoad.value = draft;
+    void onMessageSent(ChatDraft draft) {
+      if (draft.intent == .revision) draftToLoad.value = null;
+    }
 
     final onEditDraft = data.showInputComposer ? editDraft : null;
 
@@ -1190,6 +1193,7 @@ class const _ChatConversationStatusAndComposer({
       data: data,
       draftToLoad: draftToLoad.value,
       onEditDraft: onEditDraft,
+      onMessageSent: onMessageSent,
     );
   }
 }
@@ -1198,6 +1202,7 @@ class const _ChatConversationStatusAndComposerView({
   required final _LoadedChatConversationData data,
   required final ChatDraft? draftToLoad,
   required final ValueChanged<ChatDraft>? onEditDraft,
+  required final ValueChanged<ChatDraft> onMessageSent,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1205,7 +1210,11 @@ class const _ChatConversationStatusAndComposerView({
       if (_hasChatConversationStatus(data))
         _ChatConversationStatus(data: data, onEditDraft: onEditDraft),
       if (data.showInputComposer)
-        _ChatComposer(data: data, draftToLoad: draftToLoad),
+        _ChatComposer(
+          data: data,
+          draftToLoad: draftToLoad,
+          onMessageSent: onMessageSent,
+        ),
     ],
     mainAxisSize: .min,
   );
@@ -1252,7 +1261,8 @@ class const _ChatConversationStatus({
           _RateLimitRetryIndicator(retryAt: retryAt),
         if (data.state.queuedDrafts.isNotEmpty)
           _QueuedMessagesStatus(data: data, onEditDraft: onEditDraft),
-        if (data.state.hasPendingApprovals) _ApprovalStatus(data: data),
+        if (data.state.hasPendingApprovals)
+          _ApprovalStatus(data: data, onEditDraft: onEditDraft),
       ],
       mainAxisSize: .min,
     );
@@ -1271,14 +1281,65 @@ class const _QueuedMessagesStatus({
   );
 }
 
-class const _ApprovalStatus({required final _LoadedChatConversationData data})
-    extends StatelessWidget {
+class const _ApprovalStatus({
+  required final _LoadedChatConversationData data,
+  required final ValueChanged<ChatDraft>? onEditDraft,
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => ChatToolApprovalCard(
-    workspaceId: data.workspaceId,
-    conversationId: data.conversation.id,
-    pendingCalls: data.state.pendingCalls,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onEditDraft = this.onEditDraft;
+    final messages =
+        ref
+            .watch(chatMessagesProvider(data.workspaceId, data.conversation.id))
+            .value ??
+        const <MessageEntity>[];
+
+    return ChatToolApprovalCard(
+      workspaceId: data.workspaceId,
+      conversationId: data.conversation.id,
+      pendingCalls: data.state.pendingCalls,
+      onStopAndRevise: onEditDraft == null
+          ? null
+          : (assistantMessageId) {
+              final targetMessageId = _revisionTargetMessageId(
+                messages,
+                assistantMessageId,
+              );
+              if (targetMessageId == null) return;
+
+              onEditDraft(
+                ChatDraft(
+                  text: '',
+                  intent: .revision,
+                  targetMessageId: targetMessageId,
+                ),
+              );
+            },
+    );
+  }
+}
+
+String? _revisionTargetMessageId(
+  List<MessageEntity> messages,
+  String assistantMessageId,
+) {
+  final assistantIndex = messages.indexWhere(
+    (message) => message.id == assistantMessageId,
   );
+  if (assistantIndex >= 0) {
+    for (var index = assistantIndex - 1; index >= 0; index--) {
+      final candidate = messages[index];
+      if (candidate.isUser) return candidate.id;
+    }
+
+    return null;
+  }
+
+  for (final message in messages.reversed) {
+    if (message.isUser) return message.id;
+  }
+
+  return null;
 }
 
 bool _hasChatConversationStatus(_LoadedChatConversationData data) {
@@ -1292,6 +1353,7 @@ bool _hasChatConversationStatus(_LoadedChatConversationData data) {
 class const _ChatComposer({
   required final _LoadedChatConversationData data,
   required final ChatDraft? draftToLoad,
+  required final ValueChanged<ChatDraft> onMessageSent,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1303,6 +1365,7 @@ class const _ChatComposer({
       reasoningControl: _reasoningControl(ref, modelStatus.reasoningOptions),
       canCompact: _canCompact(ref, modelStatus.available),
       draftToLoad: draftToLoad,
+      onMessageSent: onMessageSent,
     );
   }
 
@@ -1355,12 +1418,14 @@ class _ChatComposerView extends StatelessWidget {
     required Widget? reasoningControl,
     required bool canCompact,
     required ChatDraft? draftToLoad,
+    required ValueChanged<ChatDraft> onMessageSent,
   }) : offstage = data.state.hasPendingApprovals,
        input = _ChatComposerInput(
          data: data,
          draftToLoad: draftToLoad,
          canCompact: canCompact,
          reasoningControl: reasoningControl,
+         onMessageSent: onMessageSent,
          modelUnavailable: modelStatus.missing,
          compactDisabledHint: modelStatus.hint,
          continueDisabledHint: modelStatus.hint,
@@ -1443,6 +1508,7 @@ class _ChatComposerInput extends StatelessWidget {
     required this.draftToLoad,
     required this.canCompact,
     required this.reasoningControl,
+    required this.onMessageSent,
     required this.modelUnavailable,
     required this.compactDisabledHint,
     required this.continueDisabledHint,
@@ -1477,6 +1543,10 @@ class _ChatComposerInput extends StatelessWidget {
          conversationId: data.conversation.id,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
+         placeholderKey: draftToLoad?.intent == .revision
+             ? LocaleKeys.chats_screens_chat_conversation_revision_placeholder
+             : null,
+         onMessageSent: onMessageSent,
          modalitiesInput: data.state.modalitiesInput,
          onSkillsPress: data.callbacks.selectors.onSkillsPress,
          onContinueAgent: onContinueAgent,
@@ -1496,6 +1566,7 @@ class _ChatComposerInput extends StatelessWidget {
   final ChatDraft? draftToLoad;
   final bool canCompact;
   final Widget? reasoningControl;
+  final ValueChanged<ChatDraft> onMessageSent;
   final bool modelUnavailable;
   final String? compactDisabledHint;
   final String? continueDisabledHint;

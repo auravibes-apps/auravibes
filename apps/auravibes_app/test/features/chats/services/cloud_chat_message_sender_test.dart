@@ -9,6 +9,18 @@ import 'package:mocktail/mocktail.dart';
 class _Gateway extends Mock implements CloudChatGateway;
 class _Attachments extends Mock implements CloudChatAttachmentUsecase;
 
+typedef _QueueConversationMessageRequest = ({
+  String requestId,
+  String conversationId,
+  int expectedProjectionRevision,
+  String clientMessageId,
+  String content,
+  List<String> attachmentIds,
+  ConversationMessageIntent? intent,
+  String? targetMessageId,
+  String? metadataJson,
+});
+
 void main() {
   setUpAll(() {
     registerFallbackValue((
@@ -18,6 +30,8 @@ void main() {
       clientMessageId: '',
       content: '',
       attachmentIds: <String>[],
+      intent: ConversationMessageIntent.message,
+      targetMessageId: null,
       metadataJson: null,
     ));
   });
@@ -130,5 +144,54 @@ void main() {
         expectedProjectionRevision: any(named: 'expectedProjectionRevision'),
       ),
     );
+  });
+
+  test('queues revision intent with its target message ID', () async {
+    final gateway = _Gateway();
+    final snapshot = ConversationSnapshot(
+      conversation: .new(
+        id: 'conversation-1',
+        workspaceId: 7,
+        executionState: 'running',
+        projectionRevision: 3,
+        sequence: 4,
+        updatedAt: DateTime.utc(2026),
+      ),
+      messages: const [],
+      pendingMessages: const [],
+      toolCalls: const [],
+      sequence: 4,
+    );
+    when(() => gateway.getConversationSnapshot('conversation-1'))
+        .thenAnswer((_) async => snapshot);
+    when(() => gateway.queueConversationMessage(any()))
+        .thenAnswer((_) async => snapshot);
+
+    final invalidatedConversationIds = <String>[];
+    final sender = CloudChatMessageSender(
+      gateway: () async => gateway,
+      attachments: () async => null,
+      capabilities: .cloud,
+      invalidateMessages: invalidatedConversationIds.add,
+    );
+
+    await sender.call(
+      'conversation-1',
+      const ChatDraft(
+        text: 'Make the checklist shorter.',
+        intent: .revision,
+        targetMessageId: 'request-1',
+      ),
+    );
+
+    final request =
+        verify(() => gateway.queueConversationMessage(captureAny()))
+                .captured
+                .single
+            as _QueueConversationMessageRequest;
+    expect(request.intent, ConversationMessageIntent.revision);
+    expect(request.targetMessageId, 'request-1');
+    expect(request.content, 'Make the checklist shorter.');
+    expect(invalidatedConversationIds, ['conversation-1']);
   });
 }

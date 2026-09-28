@@ -57,6 +57,7 @@ void main() {
   Widget buildSubject({
     required List<Object> overrides,
     Locale locale = const Locale('en'),
+    void Function(String messageId)? onStopAndRevise,
   }) {
     return EasyLocalization(
       child: ProviderScope(
@@ -68,10 +69,11 @@ void main() {
                 theme: .light,
                 child: Theme(
                   data: .new(),
-                  child: const Material(
+                  child: Material(
                     child: ChatToolApprovalCard(
                       workspaceId: 'ws-1',
                       conversationId: 'conv-1',
+                      onStopAndRevise: onStopAndRevise,
                     ),
                   ),
                 ),
@@ -189,7 +191,7 @@ void main() {
         'tool_approval_allow_once',
         'tool_approval_allow_conversation',
         'tool_approval_skip',
-        'tool_approval_stop_all',
+        'tool_approval_stop_and_revise',
       ]) {
         expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
       }
@@ -609,7 +611,13 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Declines this call only.'), findsOneWidget);
-      expect(find.text('Stops all pending tool calls.'), findsOneWidget);
+      expect(
+        find.text(
+          'Stops pending tool calls and opens the composer to revise '
+          'the request.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('bounds long argument previews and expands on request', (
@@ -950,7 +958,101 @@ void main() {
 
       expect(find.text('Allow Once'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
-      expect(find.text('Stop All'), findsOneWidget);
+      expect(find.text('Stop and revise'), findsOneWidget);
+    });
+
+    testWidgets('opens revision only after pending calls stop', (tester) async {
+      final stopProvider = _MockStopPendingToolCallsProvider();
+      final agentService = _MockAuraAgentService();
+      final revisions = <String>[];
+      when(
+        () => stopProvider.stopPendingToolCalls(
+          messageId: 'msg-1',
+          conversationId: 'conv-1',
+        ),
+      ).thenAnswer((_) => Future<void>.value());
+      when(() => agentService.tools).thenReturn(
+        agent.ToolsNamespace<ResolvedTool>(
+          approvals: _MockApproveToolCallProvider(),
+          skips: _MockSkipToolCallProvider(),
+          stopPending: stopProvider,
+          resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: _MockAgentCancellationEffects(),
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onStopAndRevise: revisions.add,
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [_createPendingToolCall()],
+            ),
+            auraAgentServiceProvider.overrideWithValue(agentService),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_stop_and_revise')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(revisions, ['msg-1']);
+      verify(
+        () => stopProvider.stopPendingToolCalls(
+          messageId: 'msg-1',
+          conversationId: 'conv-1',
+        ),
+      ).called(1);
+    });
+
+    testWidgets('keeps approval visible and does not revise after stop fails', (
+      tester,
+    ) async {
+      final stopProvider = _MockStopPendingToolCallsProvider();
+      final agentService = _MockAuraAgentService();
+      final revisions = <String>[];
+      when(
+        () => stopProvider.stopPendingToolCalls(
+          messageId: 'msg-1',
+          conversationId: 'conv-1',
+        ),
+      ).thenThrow(StateError('stop failed'));
+      when(() => agentService.tools).thenReturn(
+        agent.ToolsNamespace<ResolvedTool>(
+          approvals: _MockApproveToolCallProvider(),
+          skips: _MockSkipToolCallProvider(),
+          stopPending: stopProvider,
+          resume: _MockAgentToolResumeProvider(),
+          cancellationEffects: _MockAgentCancellationEffects(),
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onStopAndRevise: revisions.add,
+          overrides: [
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => [_createPendingToolCall()],
+            ),
+            auraAgentServiceProvider.overrideWithValue(agentService),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_stop_and_revise')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(revisions, isEmpty);
+      expect(
+        find.byKey(const ValueKey<String>('tool_approval_stop_and_revise')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders SizedBox.shrink when async has error', (tester) async {
