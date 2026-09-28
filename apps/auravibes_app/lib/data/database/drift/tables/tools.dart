@@ -41,6 +41,9 @@ class Tools extends Table with TableMixin {
   /// JSON schema for the tool's input parameters (for MCP tools).
   TextColumn get inputSchema => text().nullable()();
 
+  /// Optional MCP result schema.
+  TextColumn get outputSchema => text().nullable()();
+
   /// Whether the tool is enabled for this workspace.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(false))();
 

@@ -141,8 +141,11 @@ ResolvedTool _mcpTarget(
 ) => ResolvedTool.mcp(
   tableId: workspaceTool.id,
   toolIdentifier: workspaceTool.toolId,
-  mcpServerId: mcpServerId,
-  mcpSlug: mcpSlug,
+  mcp: (
+    mcpServerId: mcpServerId,
+    mcpSlug: mcpSlug,
+    outputSchemaJson: workspaceTool.outputSchemaJson,
+  ),
 );
 
 ToolSpec _mcpSpec(WorkspaceToolEntity workspaceTool, ToolSpec originalSpec) =>

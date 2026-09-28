@@ -26,6 +26,18 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
     /// The raw response from tool execution, if successful.
     String? responseRaw,
 
+    /// The bounded response projection used in model context, when different.
+    @JsonKey(includeIfNull: false) String? responseContextRaw,
+
+    /// Whether output was truncated for model context or persistence.
+    @Default(false) bool outputTruncated,
+
+    /// Original result size before projection or persistence bounds.
+    @JsonKey(includeIfNull: false) int? originalResponseBytes,
+
+    /// Whether a justified full-output policy applies to model context.
+    @Default(false) bool fullOutputForContext,
+
     /// The result status of this tool call.
     ///
     /// Null means the tool is awaiting approval. A non-null value means the
@@ -53,7 +65,12 @@ abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
   /// Returns [responseRaw] if available, otherwise falls back to
   /// the result status's response string.
   String getResponseForAI() {
-    return responseRaw ?? resultStatus?.toResponseString() ?? '';
+    final response = responseRaw;
+    if (response == null) return resultStatus?.toResponseString() ?? '';
+
+    if (fullOutputForContext) return response;
+
+    return projectToolOutput(responseContextRaw ?? response).text;
   }
 }
 

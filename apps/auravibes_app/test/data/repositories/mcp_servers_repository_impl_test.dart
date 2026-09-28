@@ -90,6 +90,7 @@ void main() {
             toolName: 'tool1',
             description: 'Tool 1',
             inputSchema: {'type': 'object'},
+            outputSchema: {'type': 'object'},
           ),
         ];
 
@@ -112,8 +113,14 @@ void main() {
             .called(1);
         verify(() => fixture.mockToolsGroupsDao.insertToolsGroup(any()))
             .called(1);
-        verify(() => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()))
-            .called(1);
+        final inserted =
+            verify(
+                  () => fixture.mockWorkspaceToolsDao.insertToolsBatch(
+                    captureAny(),
+                  ),
+                ).captured.single
+                as List<ToolsCompanion>;
+        expect(inserted.single.outputSchema.value, '{"type":"object"}');
       });
 
       test('creates server with empty tools list', () async {
@@ -318,6 +325,8 @@ void main() {
           updatedAt: now,
           workspaceId: 'ws-1',
           toolId: 'tool1',
+          description: 'Tool 1',
+          inputSchema: '{}',
           isEnabled: true,
           permissions: .ask,
         );
@@ -351,7 +360,83 @@ void main() {
           ),
           returnsNormally,
         );
+        expect(
+          () => verifyNever(
+            () => fixture.mockWorkspaceToolsDao.updateToolMetadata(
+              id: any(named: 'id'),
+              description: any(named: 'description'),
+              inputSchema: any(named: 'inputSchema'),
+            ),
+          ),
+          returnsNormally,
+        );
       });
+
+      test(
+        'updates metadata while preserving existing permission and enablement',
+        () async {
+          final groupRow = createGroupRow(id: 'g1', mcpServerId: 'mcp-1');
+          final existingTool = ToolsTable(
+            id: 't1',
+            createdAt: now,
+            updatedAt: now,
+            workspaceId: 'ws-1',
+            toolId: 'tool1',
+            description: 'Old',
+            inputSchema: '{}',
+            outputSchema: '{"type":"object"}',
+            isEnabled: false,
+            permissions: .granted,
+          );
+          when(
+            () =>
+                fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+          ).thenAnswer((_) async => groupRow);
+          when(() => fixture.mockWorkspaceToolsDao.getToolsByGroupId('g1'))
+              .thenAnswer((_) async => [existingTool]);
+          when(
+            () => fixture.mockWorkspaceToolsDao.updateToolMetadata(
+              id: 't1',
+              description: 'New',
+              inputSchema: '{"type":"object"}',
+              outputSchema: const Value(null),
+            ),
+          ).thenAnswer((_) => Future<void>.value());
+
+          await fixture.repository.syncMcpTools(
+            mcpServerId: 'mcp-1',
+            currentTools: [
+              const McpToolInfo(
+                toolName: 'tool1',
+                description: 'New',
+                inputSchema: {'type': 'object'},
+              ),
+            ],
+          );
+
+          verify(
+            () => fixture.mockWorkspaceToolsDao.updateToolMetadata(
+              id: 't1',
+              description: 'New',
+              inputSchema: '{"type":"object"}',
+              outputSchema: const Value(null),
+            ),
+          ).called(1);
+          expect(
+            () => verifyNever(
+              () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
+            ),
+            returnsNormally,
+          );
+          expect(
+            () => verifyNever(
+              () =>
+                  fixture.mockWorkspaceToolsDao.deleteWorkspaceToolById(any()),
+            ),
+            returnsNormally,
+          );
+        },
+      );
     });
 
     group('getMcpServersForWorkspace', () {

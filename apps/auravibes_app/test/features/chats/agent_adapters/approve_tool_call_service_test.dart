@@ -179,8 +179,11 @@ void main() {
       final target = ResolvedTool.mcp(
         tableId: 'github-row',
         toolIdentifier: 'search',
-        mcpServerId: 'github-server',
-        mcpSlug: 'github',
+        mcp: (
+          mcpServerId: 'github-server',
+          mcpSlug: 'github',
+          outputSchemaJson: null,
+        ),
       );
       final catalog = agent.buildToolCatalog<ResolvedTool>([
         agent.ToolCatalogCandidate.external(
@@ -441,6 +444,10 @@ void main() {
           conversationId: conversationId,
           resultStatus: entry.key,
           responseRaw: 'response',
+          responseContextRaw: null,
+          outputTruncated: false,
+          originalResponseBytes: null,
+          fullOutputForContext: false,
         ));
       }
 
