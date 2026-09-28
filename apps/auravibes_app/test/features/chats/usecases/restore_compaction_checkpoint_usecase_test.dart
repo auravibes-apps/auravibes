@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/usecases/get_conversation_busy_state_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/restore_compaction_checkpoint_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,6 +45,7 @@ void main() {
   var conversations = _ConversationRepository();
   var messages = _MessageRepository();
   var busyState = _BusyStateUsecase();
+  var activityGate = ConversationActivityGate();
 
   RestoreCompactionCheckpointUsecase createRestore() =>
       RestoreCompactionCheckpointUsecase(
@@ -49,6 +53,7 @@ void main() {
         messageRepository: messages,
         getConversationBusyState: busyState,
         isCompacting: (_) => false,
+        conversationActivityGate: activityGate,
       );
   var restore = createRestore();
 
@@ -60,6 +65,7 @@ void main() {
     conversations = _ConversationRepository();
     messages = _MessageRepository();
     busyState = _BusyStateUsecase();
+    activityGate = ConversationActivityGate();
     restore = createRestore();
     when(() => conversations.getConversationById(conversationId))
         .thenAnswer((_) async => conversation);
@@ -92,6 +98,33 @@ void main() {
       ).called(1);
     },
   );
+
+  test('holds the restore reservation through the local busy check', () async {
+    final busyCheckStarted = Completer<void>();
+    final releaseBusyCheck = Completer<ConversationBusyState>();
+    when(() => busyState.call(conversationId: conversationId)).thenAnswer((_) {
+      busyCheckStarted.complete();
+
+      return releaseBusyCheck.future;
+    });
+
+    final restoreFuture = restore.call(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      checkpointMessageId: checkpointId,
+    );
+    await busyCheckStarted.future;
+
+    expect(activityGate.tryBeginActivity(conversationId), isFalse);
+
+    releaseBusyCheck.complete(
+      const ConversationBusyState(isStreaming: false, hasPendingTools: false),
+    );
+    await restoreFuture;
+
+    expect(activityGate.tryBeginActivity(conversationId), isTrue);
+    activityGate.endActivity(conversationId);
+  });
 
   test(
     'rejects restore during active turn and leaves pointer unchanged',
@@ -144,6 +177,7 @@ void main() {
         messageRepository: messages,
         getConversationBusyState: busyState,
         isCompacting: (_) => false,
+        conversationActivityGate: activityGate,
         restoreCloudCheckpoint:
             ({
               required workspaceId,

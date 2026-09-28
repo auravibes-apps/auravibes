@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
@@ -207,6 +208,40 @@ void main() {
       },
     );
 
+    test(
+      'holds the conversation activity gate while checking busy state',
+      () async {
+        final busyCheckStarted = Completer<void>();
+        final releaseBusyCheck = Completer<ConversationBusyState>();
+        when(
+          () => fixture.getConversationBusyStateUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer((_) {
+          busyCheckStarted.complete();
+
+          return releaseBusyCheck.future;
+        });
+
+        final sendFuture = fixture.usecase.call(
+          conversationId: 'conversation-1',
+          draft: const ChatDraft(text: 'Hello'),
+        );
+        await busyCheckStarted.future;
+
+        final gate = fixture.container.read(conversationActivityGateProvider);
+        expect(gate.tryBeginCheckpointRestore('conversation-1'), isFalse);
+
+        releaseBusyCheck.complete(
+          const ConversationBusyState(
+            isStreaming: false,
+            hasPendingTools: false,
+          ),
+        );
+        await sendFuture;
+      },
+    );
+
     test('sendFirstMessage returns after persisting user message', () async {
       final completer = Completer<void>();
       final errors = <Object>[];
@@ -271,6 +306,9 @@ class _SendMessageUsecaseFixture({
         continueAgentTurn: runAgentIterationUsecase.call,
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,
+        conversationActivityGate: container.read(
+          conversationActivityGateProvider,
+        ),
         sendQueueRuntime: ConversationSendQueueRuntime(
           enqueue: queueNotifier.enqueue,
           dequeueAll: queueNotifier.dequeueAll,

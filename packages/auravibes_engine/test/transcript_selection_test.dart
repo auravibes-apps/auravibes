@@ -137,6 +137,27 @@ void main() {
     },
   );
 
+  test('does not fall back when active checkpoint is missing', () {
+    final selection = selectAgentPromptHistory(
+      .new([
+        message('old'),
+        message('summary-1', role: .system, kind: .system, summary: true),
+        message('later-user'),
+        message('summary-2', role: .system, kind: .system, summary: true),
+        message('current-user'),
+      ]),
+      activeCompactionCheckpointId: 'missing-summary',
+    );
+
+    expect(selection.messageIds, [
+      'old',
+      'summary-1',
+      'later-user',
+      'summary-2',
+      'current-user',
+    ]);
+  });
+
   test('selects safe range and reports no-range or unresolved tool', () {
     final selected = selectAgentCompactionRange(
       .new([

@@ -152,9 +152,8 @@ class ConversationRepository(
     final effective = await _effectiveMessageRows(sourceConversationId);
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
-    final title = await _forkTitle(source.workspaceId, source.title);
-    final activeCheckpointId = _forkCheckpointId(source, effective, boundary);
-    final fork = await _createFork(source, title, boundary, activeCheckpointId);
+    final forkDetails = await _forkDetails(source, effective, boundary);
+    final fork = await _createFork(source, forkDetails);
 
     return _mapToConversation(fork);
   }
@@ -406,24 +405,43 @@ extension on ConversationRepository {
   }
 }
 
+typedef _ForkDetails = ({
+  String title,
+  String boundary,
+  String? activeCheckpointId,
+});
+
 extension on ConversationRepository {
   ConversationsCompanion _forkCompanion(
     ConversationsTable source,
-    String title,
-    String boundary,
-    String? activeCheckpointId,
-  ) => ConversationsCompanion(
-    workspaceId: .new(source.workspaceId),
-    title: .new(title),
-    modelId: .new(source.modelId),
-    agentId: .new(source.agentId),
-    reasoningConfigJson: .new(source.reasoningConfigJson),
+    _ForkDetails details,
+  ) => _forkParentSettingsCompanion(source).copyWith(
+    title: .new(details.title),
     parentConversationId: const Value(null),
     forkSourceConversationId: .new(source.id),
     forkSourceTitle: .new(source.title),
-    forkThroughMessageId: .new(boundary),
-    activeCompactionCheckpointId: .new(activeCheckpointId),
+    forkThroughMessageId: .new(details.boundary),
+    activeCompactionCheckpointId: .new(details.activeCheckpointId),
     isPinned: const Value(false),
+  );
+
+  ConversationsCompanion _forkParentSettingsCompanion(
+    ConversationsTable source,
+  ) => ConversationsCompanion(
+    workspaceId: .new(source.workspaceId),
+    modelId: .new(source.modelId),
+    agentId: .new(source.agentId),
+    reasoningConfigJson: .new(source.reasoningConfigJson),
+  );
+
+  Future<_ForkDetails> _forkDetails(
+    ConversationsTable source,
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String boundary,
+  ) async => (
+    title: await _forkTitle(source.workspaceId, source.title),
+    boundary: boundary,
+    activeCheckpointId: _forkCheckpointId(source, rows, boundary),
   );
 
   Future<ConversationsTable> _requireForkSource(String id) async {
@@ -472,19 +490,27 @@ extension on ConversationRepository {
   ) {
     final checkpointId = source.activeCompactionCheckpointId;
     if (checkpointId == null) return null;
-    final checkpointIndex = rows.indexWhere(
-      (row) =>
-          row.table.id == checkpointId &&
-          row.table.conversationId == source.id &&
-          row.table.status == MessageTableStatus.sent &&
-          MessageMetadataEntity.fromJsonString(row.table.metadata)
-                  ?.isCompactionSummary ==
-              true,
-    );
     final boundaryIndex = rows.indexWhere((row) => row.table.id == boundary);
-    if (checkpointIndex < 0 || boundaryIndex < checkpointIndex) return null;
 
-    return checkpointId;
+    return rows
+            .take(boundaryIndex + 1)
+            .any((row) => _isActiveCheckpointSummary(source, row))
+        ? checkpointId
+        : null;
+  }
+
+  bool _isActiveCheckpointSummary(
+    ConversationsTable source,
+    ({MessagesTable table, bool isForkReference}) row,
+  ) {
+    final message = row.table;
+
+    return message.id == source.activeCompactionCheckpointId &&
+        (message.conversationId == source.id || row.isForkReference) &&
+        message.status == MessageTableStatus.sent &&
+        MessageMetadataEntity.fromJsonString(message.metadata)
+                ?.isCompactionSummary ==
+            true;
   }
 
   Never _throwInvalidForkBoundary() =>
@@ -494,12 +520,10 @@ extension on ConversationRepository {
 
   Future<ConversationsTable> _createFork(
     ConversationsTable source,
-    String title,
-    String boundary,
-    String? activeCheckpointId,
+    _ForkDetails details,
   ) => _database.transaction(() async {
     final created = await _database.conversationDao.insertConversation(
-      _forkCompanion(source, title, boundary, activeCheckpointId),
+      _forkCompanion(source, details),
     );
     await _copyConversationSettings(source.id, created.id);
 
@@ -1067,14 +1091,19 @@ extension on ConversationRepository {
       reasoningConfigJson: conversation.clearReasoningConfiguration
           ? const Value(null)
           : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
-      activeCompactionCheckpointId:
-          conversation.clearActiveCompactionCheckpointId
-          ? const Value(null)
-          : Value.absentIfNull(conversation.activeCompactionCheckpointId),
+      activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
+        conversation,
+      ),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }
 }
+
+Value<String?> _activeCompactionCheckpointPatch(
+  ConversationPatch conversation,
+) => conversation.clearActiveCompactionCheckpointId
+    ? const Value(null)
+    : Value.absentIfNull(conversation.activeCompactionCheckpointId);
 
 class const ConversationException(
   final String message, [

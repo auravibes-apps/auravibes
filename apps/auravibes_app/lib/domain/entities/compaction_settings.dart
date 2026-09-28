@@ -40,6 +40,8 @@ abstract class const CompactionSettings._() with _$CompactionSettings {
 }
 
 @freezed
+// DCL cannot see Freezed-generated members in part file.
+// ignore: weight-of-class
 abstract class CompactionModelOverride with _$CompactionModelOverride {
   const factory({int? reserveTokens, int? keepRecentTokens}) =
       _CompactionModelOverride;

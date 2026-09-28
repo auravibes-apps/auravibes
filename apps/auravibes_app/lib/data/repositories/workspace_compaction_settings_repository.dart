@@ -25,12 +25,7 @@ class WorkspaceCompactionSettingsRepository(
       autoCompactEnabled: .new(overrides.autoCompactionEnabled),
       usagePercentageThreshold: .new(overrides.usagePercentageThreshold),
       remainingTokenThreshold: .new(overrides.remainingTokenThreshold),
-      modelOverridesJson: .new(
-        jsonEncode({
-          for (final entry in overrides.modelOverrides.entries)
-            entry.key: entry.value.toJson(),
-        }),
-      ),
+      modelOverridesJson: .new(jsonEncode(overrides.modelOverrides)),
     );
     final row = await _dao.upsert(workspaceId, companion);
 

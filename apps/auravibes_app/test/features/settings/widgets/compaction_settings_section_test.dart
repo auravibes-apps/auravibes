@@ -192,7 +192,7 @@ void main() {
       await tester.pump();
       expect(find.text('Provider / Model A'), findsOneWidget);
 
-      final fields = find.byType(TextField);
+      final fields = find.byType(EditableText);
       await tester.ensureVisible(fields.at(1));
       await tester.enterText(fields.at(1), '256');
       await tester.enterText(fields.at(2), '1024');

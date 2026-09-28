@@ -21,15 +21,23 @@ class const SelectPromptMessagesUsecase({
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
       activeCompactionCheckpointId: conversation?.activeCompactionCheckpointId,
     ).messageIds;
-    final messagesById = {for (final message in messages) message.id: message};
 
-    return selectedIds.map((id) => messagesById[id]!).toList();
+    return _messagesInSelectionOrder(selectedIds, messages);
   }
 
   Future<List<MessageEntity>> _promptMessages(String conversationId) async =>
       (await messageRepository.getMessagesByConversation(conversationId))
           .where((message) => !_isPromptExcludedMessage(message))
           .toList();
+}
+
+List<MessageEntity> _messagesInSelectionOrder(
+  List<String> selectedIds,
+  List<MessageEntity> messages,
+) {
+  final messagesById = {for (final message in messages) message.id: message};
+
+  return selectedIds.map((id) => messagesById[id]!).toList();
 }
 
 bool _isPromptExcludedMessage(MessageEntity message) =>

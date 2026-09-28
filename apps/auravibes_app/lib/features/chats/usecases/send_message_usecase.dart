@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
 
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -34,6 +35,7 @@ class SendMessageUsecase {
     required this.messageRepository,
     required this.getConversationBusyStateUsecase,
     required this.sendQueueRuntime,
+    required this.conversationActivityGate,
   }) : cloudSend = null;
 
   const new cloud(
@@ -42,12 +44,14 @@ class SendMessageUsecase {
   ) : continueAgentTurn = null,
       messageRepository = null,
       getConversationBusyStateUsecase = null,
-      sendQueueRuntime = null;
+      sendQueueRuntime = null,
+      conversationActivityGate = null;
 
   final ContinueAgentTurn? continueAgentTurn;
   final MessageRepository? messageRepository;
   final GetConversationBusyStateUsecase? getConversationBusyStateUsecase;
   final ConversationSendQueueRuntime? sendQueueRuntime;
+  final ConversationActivityGate? conversationActivityGate;
   final Future<void> Function(String conversationId, ChatDraft draft)?
   cloudSend;
 
@@ -83,31 +87,28 @@ class SendMessageUsecase {
   Future<void> continueFromUserMessage({
     required String conversationId,
     required String messageId,
-  }) => _continueFromUserMessage(
-    conversationId: conversationId,
-    messageId: messageId,
-    origin: .userMessage,
+  }) => _withConversationActivity(
+    conversationActivityGate,
+    conversationId,
+    () => _continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: messageId,
+      origin: .userMessage,
+    ),
   );
 
   Future<void> retryUserMessage({
     required String conversationId,
     required String messageId,
-  }) async {
-    final repository = messageRepository;
-    if (repository == null) {
-      throw StateError('Local message repository unavailable');
-    }
-    final message = await repository.getMessageById(messageId);
-    if (!_isRetryableUserMessage(message, conversationId)) {
-      throw StateError('Message cannot be retried');
-    }
-
-    await _continueFromUserMessage(
+  }) => _withConversationActivity(
+    conversationActivityGate,
+    conversationId,
+    () => _retryUserMessage(
+      this,
       conversationId: conversationId,
       messageId: messageId,
-      origin: .manualContinue,
-    );
-  }
+    ),
+  );
 
   Future<void> _continueFromUserMessage({
     required String conversationId,
@@ -135,7 +136,11 @@ class SendMessageUsecase {
       return;
     }
 
-    await _sendLocal(conversationId, draft);
+    await _withConversationActivity(
+      conversationActivityGate,
+      conversationId,
+      () => _sendLocal(conversationId, draft),
+    );
   }
 
   Future<void> _sendLocal(String conversationId, ChatDraft draft) async {
@@ -144,6 +149,7 @@ class SendMessageUsecase {
     if (getBusyState == null || queue == null) {
       throw StateError('Local send dependencies unavailable');
     }
+
     final busyState = await getBusyState.call(conversationId: conversationId);
     if (busyState.isBusy) {
       final _ = queue.enqueue(conversationId: conversationId, draft: draft);
@@ -163,9 +169,10 @@ class SendMessageUsecase {
       draft: draft,
     );
     try {
-      await continueFromUserMessage(
+      await _continueFromUserMessage(
         conversationId: conversationId,
         messageId: createdMessage.id,
+        origin: .userMessage,
       );
     } on Object catch (error, stackTrace) {
       Error.throwWithStackTrace(
@@ -177,6 +184,57 @@ class SendMessageUsecase {
       );
     }
   }
+}
+
+Future<T> _withConversationActivity<T>(
+  ConversationActivityGate? gate,
+  String conversationId,
+  Future<T> Function() action,
+) {
+  if (gate == null) {
+    throw StateError('Local conversation activity gate unavailable');
+  }
+
+  return gate.runActivity(conversationId, action);
+}
+
+Future<void> _retryUserMessage(
+  SendMessageUsecase usecase, {
+  required String conversationId,
+  required String messageId,
+}) async {
+  final repository =
+      usecase.messageRepository ??
+      (throw StateError('Local message repository unavailable'));
+  final message = await repository.getMessageById(messageId);
+  if (!_isRetryableUserMessage(message, conversationId)) {
+    throw StateError('Message cannot be retried');
+  }
+  await usecase._continueFromUserMessage(
+    conversationId: conversationId,
+    messageId: messageId,
+    origin: .manualContinue,
+  );
+}
+
+Future<void> _createAndContinueFirstMessage(
+  SendMessageUsecase usecase, {
+  required String conversationId,
+  required ChatDraft draft,
+  required void Function(Object error, StackTrace stackTrace) onContinueError,
+}) async {
+  final createdMessage = await usecase.createUserMessage(
+    conversationId: conversationId,
+    draft: draft,
+  );
+  unawaited(
+    usecase
+        .continueFromUserMessage(
+          conversationId: conversationId,
+          messageId: createdMessage.id,
+        )
+        .catchError(onContinueError),
+  );
 }
 
 bool _isRetryableUserMessage(MessageEntity? message, String conversationId) {
@@ -203,16 +261,15 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
       return;
     }
 
-    final createdMessage = await createUserMessage(
-      conversationId: conversationId,
-      draft: draft,
-    );
-
-    unawaited(
-      continueFromUserMessage(
+    await _withConversationActivity(
+      conversationActivityGate,
+      conversationId,
+      () => _createAndContinueFirstMessage(
+        this,
         conversationId: conversationId,
-        messageId: createdMessage.id,
-      ).catchError(onContinueError),
+        draft: draft,
+        onContinueError: onContinueError,
+      ),
     );
   }
 }
@@ -255,6 +312,7 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
         getConversationBusyStateUsecaseProvider,
       ),
       sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+      conversationActivityGate: ref.watch(conversationActivityGateProvider),
     );
   },
   dependencies: [auraAgentServiceProvider],

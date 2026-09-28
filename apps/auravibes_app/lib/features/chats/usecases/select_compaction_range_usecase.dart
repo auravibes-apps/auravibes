@@ -1,6 +1,7 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
+import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
@@ -11,23 +12,18 @@ import 'package:riverpod/riverpod.dart';
 class const SelectCompactionRangeUsecase() {
   CompactionRange? call(
     List<MessageEntity> messages, {
-    int? limitContext,
-    int? limitOutput,
-    int? reserveTokens,
-    int? keepRecentTokens,
+    ApiModelEntity? apiModel,
+    CompactionModelOverride? modelOverride,
   }) {
     return switch (selectAgentCompactionRange(
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
-      limitContext: limitContext,
-      limitOutput: limitOutput,
-      reserveTokens: reserveTokens,
-      keepRecentTokens: keepRecentTokens,
+      limitContext: apiModel?.limitContext,
+      limitOutput: apiModel?.limitOutput,
+      reserveTokens: modelOverride?.reserveTokens,
+      keepRecentTokens: modelOverride?.keepRecentTokens,
     )) {
-      final AgentCompactionRangeSelected range => CompactionRange(
-        fromMessageId: range.fromMessageId,
-        throughMessageId: range.throughMessageId,
-        messageIds: range.messageIds,
-        keptTailMessageIds: range.keptTailMessageIds,
+      final AgentCompactionRangeSelected range => _selectedCompactionRange(
+        range,
       ),
       AgentCompactionUnsafeUnresolvedTool() =>
         throw const CompactionUnsafeException(),
@@ -35,6 +31,14 @@ class const SelectCompactionRangeUsecase() {
     };
   }
 }
+
+CompactionRange _selectedCompactionRange(AgentCompactionRangeSelected range) =>
+    CompactionRange(
+      fromMessageId: range.fromMessageId,
+      throughMessageId: range.throughMessageId,
+      messageIds: range.messageIds,
+      keptTailMessageIds: range.keptTailMessageIds,
+    );
 
 final selectCompactionRangeUsecaseProvider =
     Provider<SelectCompactionRangeUsecase>((ref) {

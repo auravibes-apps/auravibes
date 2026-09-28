@@ -36,16 +36,13 @@ AgentPromptHistorySelection selectAgentPromptHistory(
       message.isCompactionSummary &&
       message.status == AgentTranscriptStatus.sent;
 
-  final selectedIndex = activeCompactionCheckpointId == null
+  final summaryIndex = activeCompactionCheckpointId == null
       ? messages.lastIndexWhere(isValidSummary)
       : messages.lastIndexWhere(
           (message) =>
               message.id == activeCompactionCheckpointId &&
               isValidSummary(message),
         );
-  final summaryIndex = selectedIndex >= 0
-      ? selectedIndex
-      : messages.lastIndexWhere(isValidSummary);
   if (summaryIndex == -1) {
     return AgentPromptHistorySelection(
       messages.map((message) => message.id).toList(),

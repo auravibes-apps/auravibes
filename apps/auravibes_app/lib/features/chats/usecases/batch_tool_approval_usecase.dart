@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
@@ -35,6 +36,7 @@ typedef _LocalBatchRequest = ({
 class const BatchToolApprovalUsecase({
   required final MessageRepository messageRepository,
   required final ConversationRepository conversationRepository,
+  required final ConversationActivityGate conversationActivityGate,
   required final AgentToolResumeService agentToolResumeService,
   required final ResolvedToolService runResolvedTool,
   required final AgentCancellationRuntime cancellationRuntime,
@@ -236,21 +238,15 @@ extension on BatchToolApprovalUsecase {
     );
   }
 
-  Future<BatchToolApprovalResult> _runLocal(_LocalBatchRequest request) async {
-    final claims = await _claimLocalCalls(request);
-    onToolCallChanged();
+  Future<BatchToolApprovalResult> _runLocal(_LocalBatchRequest request) {
+    final conversationIds = request.calls
+        .map((call) => _sourceConversationId(call, request.rootConversationId))
+        .toSet();
 
-    final result = _resultFromClaims(claims);
-    final claimed = claims.where(
-      (claim) => claim.status == ToolCallApprovalBatchClaimStatus.claimed,
+    return conversationActivityGate.runActivities(
+      conversationIds,
+      () => _runLocalClaims(this, request),
     );
-    await _finishLocalClaims(
-      claimed,
-      approve: request.approve,
-      workspaceId: request.workspaceId,
-    );
-
-    return result;
   }
 
   Future<List<ToolCallApprovalBatchClaim>> _claimLocalCalls(
@@ -573,6 +569,24 @@ CloudToolDecisionItem _cloudDecisionItem(
     argumentsDigest: argumentsDigest,
     turnRevision: turnRevision,
   );
+}
+
+Future<BatchToolApprovalResult> _runLocalClaims(
+  BatchToolApprovalUsecase usecase,
+  _LocalBatchRequest request,
+) async {
+  final claims = await usecase._claimLocalCalls(request);
+  usecase.onToolCallChanged();
+  final result = _resultFromClaims(claims);
+  await usecase._finishLocalClaims(
+    claims.where(
+      (claim) => claim.status == ToolCallApprovalBatchClaimStatus.claimed,
+    ),
+    approve: request.approve,
+    workspaceId: request.workspaceId,
+  );
+
+  return result;
 }
 
 String _sourceConversationId(PendingToolCall call, String fallback) =>

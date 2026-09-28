@@ -127,15 +127,13 @@ class _CompactionSettingsSectionState
     required String modelKey,
     required bool reserveTokens,
   }) {
-    final field = reserveTokens ? 'reserve' : 'recent';
-    final key = '$modelKey/$field';
     final override = _modelOverrides[modelKey];
     final value = reserveTokens
         ? override?.reserveTokens
         : override?.keepRecentTokens;
 
     return _budgetControllers.putIfAbsent(
-      key,
+      _compactionModelBudgetFieldKey(modelKey, reserveTokens),
       () => TextEditingController(text: value?.toString() ?? ''),
     );
   }
@@ -145,29 +143,83 @@ class _CompactionSettingsSectionState
     required bool reserveTokens,
     required String value,
   }) {
-    final fieldKey = '$modelKey/${reserveTokens ? 'reserve' : 'recent'}';
-    final parsed = value.isEmpty ? null : int.tryParse(value);
-    setState(() {
-      if (value.isNotEmpty && (parsed == null || parsed < 0)) {
-        final _ = _invalidModelBudgets.add(fieldKey);
+    final update = _parseCompactionModelBudgetUpdate(
+      modelKey,
+      reserveTokens,
+      value,
+    );
+    if (update == null) {
+      _markInvalidCompactionModelBudget(this, modelKey, reserveTokens);
 
-        return;
-      }
-      final _ = _invalidModelBudgets.remove(fieldKey);
-      final previous =
-          _modelOverrides[modelKey] ?? const CompactionModelOverride();
-      final updated = CompactionModelOverride(
-        reserveTokens: reserveTokens ? parsed : previous.reserveTokens,
-        keepRecentTokens: reserveTokens ? previous.keepRecentTokens : parsed,
-      );
-      _modelOverrides = {..._modelOverrides};
-      if (updated.reserveTokens == null && updated.keepRecentTokens == null) {
-        final _ = _modelOverrides.remove(modelKey);
-      } else {
-        _modelOverrides[modelKey] = updated;
-      }
+      return;
+    }
+    _updateState(() {
+      final _ = _invalidModelBudgets.remove(update.fieldKey);
+      _applyCompactionModelBudget(this, update);
     });
   }
+}
+
+typedef _CompactionModelBudgetUpdate = ({
+  String fieldKey,
+  String modelKey,
+  bool reserveTokens,
+  int? tokens,
+});
+
+String _compactionModelBudgetFieldKey(String modelKey, bool reserveTokens) =>
+    '$modelKey/${reserveTokens ? 'reserve' : 'recent'}';
+
+void _markInvalidCompactionModelBudget(
+  _CompactionSettingsSectionState state,
+  String modelKey,
+  bool reserveTokens,
+) => state._updateState(() {
+  final _ = state._invalidModelBudgets.add(
+    _compactionModelBudgetFieldKey(modelKey, reserveTokens),
+  );
+});
+
+_CompactionModelBudgetUpdate? _parseCompactionModelBudgetUpdate(
+  String modelKey,
+  bool reserveTokens,
+  String value,
+) {
+  final tokens = value.isEmpty ? null : int.tryParse(value);
+  if (value.isNotEmpty && (tokens == null || tokens < 0)) return null;
+
+  return (
+    fieldKey: _compactionModelBudgetFieldKey(modelKey, reserveTokens),
+    modelKey: modelKey,
+    reserveTokens: reserveTokens,
+    tokens: tokens,
+  );
+}
+
+void _applyCompactionModelBudget(
+  _CompactionSettingsSectionState state,
+  _CompactionModelBudgetUpdate update,
+) {
+  final previous =
+      state._modelOverrides[update.modelKey] ?? const CompactionModelOverride();
+  final updated = update.reserveTokens
+      ? previous.copyWith(reserveTokens: update.tokens)
+      : previous.copyWith(keepRecentTokens: update.tokens);
+  _applyCompactionModelOverride(state, update.modelKey, updated);
+}
+
+void _applyCompactionModelOverride(
+  _CompactionSettingsSectionState state,
+  String modelKey,
+  CompactionModelOverride updated,
+) {
+  final overrides = {...state._modelOverrides};
+  if (updated.reserveTokens == null && updated.keepRecentTokens == null) {
+    final _ = overrides.remove(modelKey);
+  } else {
+    overrides[modelKey] = updated;
+  }
+  state._modelOverrides = overrides;
 }
 
 void _listenForCompactionSettings(
@@ -306,13 +358,17 @@ void _showCompactionMessage(
 
 CompactionSettings? _compactionSettingsFromState(
   _CompactionSettingsSectionState state,
-) => _compactionSettingsFromForm(
-  autoCompactionEnabled: state._autoEnabled,
-  usagePercentageThreshold: state._usagePercentageThreshold,
-  remainingTokenText: state._remainingController.text,
-  modelOverrides: state._modelOverrides,
-  hasInvalidModelBudgets: state._invalidModelBudgets.isNotEmpty,
-);
+) {
+  final remaining = int.tryParse(state._remainingController.text);
+  if (remaining == null || state._invalidModelBudgets.isNotEmpty) return null;
+
+  return CompactionSettings(
+    autoCompactionEnabled: state._autoEnabled,
+    usagePercentageThreshold: state._usagePercentageThreshold,
+    remainingTokenThreshold: remaining,
+    modelOverrides: state._modelOverrides,
+  );
+}
 
 Future<void> _persistCompactionSettingsForState(
   _CompactionSettingsSectionState state,
@@ -330,24 +386,6 @@ void _applyCompactionSettings(
     )
     .._autoEnabled = settings.autoCompactionEnabled
     .._modelOverrides = settings.modelOverrides;
-}
-
-CompactionSettings? _compactionSettingsFromForm({
-  required bool autoCompactionEnabled,
-  required int usagePercentageThreshold,
-  required String remainingTokenText,
-  required Map<String, CompactionModelOverride> modelOverrides,
-  required bool hasInvalidModelBudgets,
-}) {
-  final remaining = int.tryParse(remainingTokenText);
-  if (remaining == null || hasInvalidModelBudgets) return null;
-
-  return CompactionSettings(
-    autoCompactionEnabled: autoCompactionEnabled,
-    usagePercentageThreshold: usagePercentageThreshold,
-    remainingTokenThreshold: remaining,
-    modelOverrides: modelOverrides,
-  );
 }
 
 Future<void> _persistCompactionSettings(
@@ -439,14 +477,9 @@ class const _CompactionModelBudgets({
     AsyncData(:final value) when value.isEmpty => const TextLocale(
       LocaleKeys.compaction_settings_models_empty,
     ),
-    AsyncData(:final value) => AuraColumn(
-      children: [
-        const TextLocale(LocaleKeys.compaction_settings_model_budgets_title),
-        const TextLocale(LocaleKeys.compaction_settings_model_budgets_hint),
-        for (final selection in value)
-          _CompactionModelBudgetFields(state: state, selection: selection),
-      ],
-      crossAxisAlignment: .stretch,
+    AsyncData(:final value) => _CompactionModelBudgetData(
+      state: state,
+      selections: value,
     ),
     AsyncError() => const TextLocale(
       LocaleKeys.compaction_settings_models_unavailable,
@@ -457,6 +490,22 @@ class const _CompactionModelBudgets({
   };
 }
 
+class const _CompactionModelBudgetData({
+  required final _CompactionSettingsSectionState state,
+  required final List<WorkspaceModelSelectionWithConnectionEntity> selections,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      const TextLocale(LocaleKeys.compaction_settings_model_budgets_title),
+      const TextLocale(LocaleKeys.compaction_settings_model_budgets_hint),
+      for (final selection in selections)
+        _CompactionModelBudgetFields(state: state, selection: selection),
+    ],
+    crossAxisAlignment: .stretch,
+  );
+}
+
 class const _CompactionModelBudgetFields({
   required final _CompactionSettingsSectionState state,
   required final WorkspaceModelSelectionWithConnectionEntity selection,
@@ -465,47 +514,72 @@ class const _CompactionModelBudgetFields({
   Widget build(BuildContext context) {
     final model = selection.workspaceModelSelection;
     final modelKey = '${selection.modelsProvider.id}/${model.modelId}';
-    final name = model.modelName ?? model.modelId;
 
     return AuraColumn(
       children: [
-        AuraText(child: Text('${selection.modelsProvider.name} / $name')),
-        AuraInput(
-          controller: state._budgetController(
+        _CompactionModelBudgetTitle(selection: selection),
+        for (final reserveTokens in const [true, false])
+          _CompactionModelBudgetInput(
+            state: state,
             modelKey: modelKey,
-            reserveTokens: true,
+            reserveTokens: reserveTokens,
           ),
-          placeholder: Text(
-            LocaleKeys.compaction_settings_budget_optional.tr(),
-          ),
-          label: Text(LocaleKeys.compaction_settings_reserve_tokens.tr()),
-          keyboardType: .number,
-          onChanged: (value) => state._updateModelBudget(
-            modelKey: modelKey,
-            reserveTokens: true,
-            value: value,
-          ),
-        ),
-        AuraInput(
-          controller: state._budgetController(
-            modelKey: modelKey,
-            reserveTokens: false,
-          ),
-          placeholder: Text(
-            LocaleKeys.compaction_settings_budget_optional.tr(),
-          ),
-          label: Text(LocaleKeys.compaction_settings_keep_recent_tokens.tr()),
-          keyboardType: .number,
-          onChanged: (value) => state._updateModelBudget(
-            modelKey: modelKey,
-            reserveTokens: false,
-            value: value,
-          ),
-        ),
       ],
       crossAxisAlignment: .stretch,
     );
   }
+}
+
+class const _CompactionModelBudgetTitle({
+  required final WorkspaceModelSelectionWithConnectionEntity selection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) {
+    final model = selection.workspaceModelSelection;
+
+    return AuraText(
+      child: Text(
+        '${selection.modelsProvider.name} / ${model.modelName ?? model.modelId}',
+      ),
+    );
+  }
+}
+
+class const _CompactionModelBudgetInput({
+  required final _CompactionSettingsSectionState state,
+  required final String modelKey,
+  required final bool reserveTokens,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CompactionBudgetTextInput(
+    controller: state._budgetController(
+      modelKey: modelKey,
+      reserveTokens: reserveTokens,
+    ),
+    label: reserveTokens
+        ? LocaleKeys.compaction_settings_reserve_tokens
+        : LocaleKeys.compaction_settings_keep_recent_tokens,
+    onChanged: (value) => state._updateModelBudget(
+      modelKey: modelKey,
+      reserveTokens: reserveTokens,
+      value: value,
+    ),
+  );
+}
+
+class const _CompactionBudgetTextInput({
+  required final TextEditingController controller,
+  required final String label,
+  required final ValueChanged<String> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: controller,
+    placeholder: Text(LocaleKeys.compaction_settings_budget_optional.tr()),
+    label: Text(label.tr()),
+    keyboardType: .number,
+    onChanged: onChanged,
+  );
 }
 
 class const _CompactionValidationError({required final String message})
