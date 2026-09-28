@@ -317,6 +317,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   var _currentState = const <McpConnectionState>[];
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
   final _preparedMcpConnections = <String, _PreparedMcpConnection>{};
+  final _activeToolRefreshes = <McpManagerClient>{};
+  final _queuedToolRefreshes = <McpManagerClient>{};
   StreamController<List<McpConnectionState>> _stateController =
       StreamController<List<McpConnectionState>>.broadcast(sync: true);
   McpManagerService? _mcpManagerService;
@@ -1147,6 +1149,9 @@ extension _McpConnectionCleanupOperations on McpConnectionNotifier {
         tools: added.tools,
       ),
     ]);
+    added.client.onToolsListChanged(
+      () => _scheduleLocalToolRefresh(added.server, added.client),
+    );
   }
 
   void _disconnectDeletedConnection(
@@ -1316,10 +1321,12 @@ extension _McpConnectionManagementOperations on McpConnectionNotifier {
     McpManagerClient client,
   ) async {
     final tools = await _requiredMcpManager.getTools(client);
-    if (_isDisposed) return;
+    if (_isDisposed) throw StateError('MCP connection disposed.');
 
-    _setConnectedState(server, client, tools);
     await _syncMcpToolsToDatabase(server, tools);
+    if (_isDisposed) throw StateError('MCP connection disposed.');
+    _setConnectedState(server, client, tools);
+    client.onToolsListChanged(() => _scheduleLocalToolRefresh(server, client));
   }
 
   void _setConnectingState(McpServerEntity server) {
@@ -1495,16 +1502,8 @@ extension _McpConnectionLifecycleOperations on McpConnectionNotifier {
     McpServerEntity server,
     List<McpToolInfo> tools,
   ) async {
-    try {
-      final repository = _repositoryFor(server.workspaceId);
-
-      await repository.syncMcpTools(
-        mcpServerId: server.id,
-        currentTools: tools,
-      );
-    } on Exception catch (e, stackTrace) {
-      _logger.warning('Failed to sync MCP tools to database', e, stackTrace);
-    }
+    final repository = _repositoryFor(server.workspaceId);
+    await repository.syncMcpTools(mcpServerId: server.id, currentTools: tools);
   }
 
   McpServersRepositoryContract _repositoryFor(String workspaceId) {
@@ -1514,6 +1513,114 @@ extension _McpConnectionLifecycleOperations on McpConnectionNotifier {
 
     return _notifierRef.read(mcpServersRepositoryProvider(session));
   }
+}
+
+extension _McpLocalToolRefreshOperations on McpConnectionNotifier {
+  bool _isCurrentLocalClient(String serverId, McpManagerClient client) {
+    if (_isDisposed || _isCloud || !client.isConnected) return false;
+    final connection = getConnection(serverId);
+
+    return connection?.status == McpConnectionStatus.connected &&
+        identical(connection?.client, client);
+  }
+
+  void _scheduleLocalToolRefresh(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) {
+    if (!_isCurrentLocalClient(server.id, client)) return;
+    if (!_activeToolRefreshes.add(client)) {
+      if (_queuedToolRefreshes.add(client)) return;
+
+      return;
+    }
+    unawaited(_refreshLocalTools(server, client));
+  }
+
+  Future<void> _refreshLocalTools(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) async {
+    try {
+      await _refreshLocalToolCatalog(server, client);
+      await _refreshQueuedLocalTools(server, client);
+    } on Exception catch (error, stackTrace) {
+      await _handleLocalToolRefreshError(server, client, (
+        error: error,
+        stackTrace: stackTrace,
+      ));
+    } finally {
+      _finishLocalToolRefresh(server, client);
+    }
+  }
+
+  Future<void> _refreshQueuedLocalTools(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) async {
+    while (_queuedToolRefreshes.remove(client) &&
+        _isCurrentLocalClient(server.id, client)) {
+      await _refreshLocalToolCatalog(server, client);
+    }
+  }
+
+  void _finishLocalToolRefresh(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) {
+    if (_queuedToolRefreshes.remove(client) &&
+        _isCurrentLocalClient(server.id, client)) {
+      unawaited(_refreshLocalTools(server, client));
+
+      return;
+    }
+
+    final wasActive = _activeToolRefreshes.remove(client);
+    assert(wasActive, 'Completed refresh must be marked active.');
+  }
+
+  Future<void> _refreshLocalToolCatalog(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) async {
+    final tools = await _requiredMcpManager.getTools(client);
+    if (!_isCurrentLocalClient(server.id, client)) return;
+    await _syncMcpToolsToDatabase(server, tools);
+    if (!_isCurrentLocalClient(server.id, client)) return;
+    _updateConnectionState(
+      server.id,
+      (connection) => connection.copyWith(tools: tools),
+    );
+  }
+
+  Future<void> _handleLocalToolRefreshError(
+    McpServerEntity server,
+    McpManagerClient client,
+    ({Exception error, StackTrace stackTrace}) failure,
+  ) async {
+    if (!_isCurrentLocalClient(server.id, client)) return;
+    _logConnectionError(server, failure.error, failure.stackTrace);
+    await _disconnectAfterLocalToolRefreshError(server, client);
+  }
+
+  Future<void> _disconnectAfterLocalToolRefreshError(
+    McpServerEntity server,
+    McpManagerClient client,
+  ) async {
+    _markLocalToolRefreshFailed(server.id);
+    final tokenSubscription = _tokenSubscriptions.remove(server.id);
+    if (tokenSubscription != null) await tokenSubscription.cancel();
+    await _requiredMcpManager.disconnect(client);
+  }
+
+  void _markLocalToolRefreshFailed(String serverId) => _updateConnectionState(
+    serverId,
+    (connection) => connection.copyWith(
+      status: .error,
+      client: null,
+      errorMessage: LocaleKeys.tools_screen_mcp_error,
+    ),
+  );
 }
 
 extension _McpConnectionCloudOperations on McpConnectionNotifier {
@@ -1633,14 +1740,19 @@ extension _McpConnectionCloudOperations on McpConnectionNotifier {
       connected ? .connected : .error;
 
   List<McpToolInfo> _cloudTools(DiscoverMcpServerResult discovery) => [
-    for (final tool in discovery.tools)
-      McpToolInfo(
-        toolName: tool.name,
-        description: tool.description ?? '',
-        inputSchema: jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
-      ),
+    for (final tool in discovery.tools) _cloudToolInfo(tool),
   ];
 }
+
+McpToolInfo _cloudToolInfo(DiscoveredMcpTool tool) => .new(
+  toolName: tool.name,
+  description: tool.description ?? '',
+  inputSchema: jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
+  outputSchema: switch (tool.outputSchemaJson) {
+    final String schema => jsonDecode(schema) as Map<String, dynamic>,
+    _ => null,
+  },
+);
 
 extension _McpConnectionCloudStateOperations on McpConnectionNotifier {
   void _upsertConnection(McpConnectionState connection) {

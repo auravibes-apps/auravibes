@@ -518,7 +518,10 @@
     "deselect_tool": "Deselect tool {}",
     "bulk_delete_title": "Delete selected tools?",
     "bulk_delete_confirm": "Selected custom tools will be removed. Selected MCP groups will remove their server and all of its tools.",
-    "bulk_delete_failures": "Could not remove: {}",
+    "bulk_delete_failures": {
+      "one": "Could not remove 1 tool: {names}",
+      "other": "Could not remove {} tools: {names}"
+    },
     "permission_always_ask": "Always Ask",
     "permission_always_allow": "Always Allow",
     "permission_label": "Permission",
@@ -564,7 +567,10 @@
     "deselect_skill": "Deselect skill {}",
     "bulk_delete_title": "Delete selected skills?",
     "bulk_delete_confirm": "Delete the selected user skills? Their conversation load state and template tools will also be removed.",
-    "bulk_delete_failures": "Could not delete: {}",
+    "bulk_delete_failures": {
+      "one": "Could not delete 1 skill: {names}",
+      "other": "Could not delete {} skills: {names}"
+    },
     "save_error": "Unable to save skill",
     "unsaved_changes_title": "Unsaved changes",
     "unsaved_changes_message": "You have unsaved changes. Discard them and leave?",
@@ -855,9 +861,18 @@
     "deselect_all": "Deselect all visible",
     "clear_selection": "Clear selection",
     "delete_selected": "Delete selected",
+    "clear_search": "Clear search",
     "selected_count": {
       "one": "1 selected",
       "other": "{} selected"
+    },
+    "hidden_selected_count": {
+      "one": "1 hidden by filters",
+      "other": "{} hidden by filters"
+    },
+    "additional_failures": {
+      "one": "; 1 more failure",
+      "other": "; {} more failures"
     },
     "show_more": "Show more",
     "show_less": "Show less",
@@ -1109,6 +1124,18 @@
       "settings_invalid": "Invalid compaction settings. Please check your values."
     }
   },
+  "workspace_archive": {
+    "export": "Export configuration",
+    "import_into": "Import configuration here",
+    "import_new": "Import as new workspace",
+    "exported": "Workspace configuration saved. Credentials and MCP server connections are not included.",
+    "imported": "Workspace configuration imported. Add credentials again to use connected services.",
+    "invalid": "This workspace configuration archive is invalid or damaged.",
+    "unsupported_version": "This workspace configuration archive uses an unsupported version.",
+    "invalid_target": "This workspace cannot receive the configuration archive.",
+    "unsupported_configuration": "This configuration references an app skill unavailable in the target workspace.",
+    "error": "Could not export or import the workspace configuration."
+  },
   "workspace_management": {
     "title": "Manage Workspaces",
     "copy_id": "Copy ID",
@@ -1118,7 +1145,11 @@
     "deselect_workspace": "Deselect workspace {}",
     "bulk_delete_title": "Delete selected workspaces?",
     "bulk_delete_confirm": "Local workspaces will be deleted from this device. Connected cloud workspaces will only be removed from this app.",
-    "bulk_delete_failures": "Could not delete or remove: {}",
+    "bulk_delete_failures": {
+      "one": "Could not delete or remove 1 workspace: {names}",
+      "other": "Could not delete or remove {} workspaces: {names}"
+    },
+    "cloud_retry": "Retry",
     "create_button": "Create Workspace",
     "duplicate": "Duplicate Workspace",
     "create_title": "Create New Workspace",

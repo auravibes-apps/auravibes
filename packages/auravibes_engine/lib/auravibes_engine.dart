@@ -18,6 +18,7 @@ export 'src/agent_stream_service.dart' hide AgentStreamService;
 export 'src/agent_tool_batch_executor.dart';
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
+export 'src/agent_transcript_context.dart';
 export 'src/attachment_modality.dart';
 export 'src/aura_agent_service.dart';
 export 'src/chat_result.dart';
@@ -89,6 +90,7 @@ export 'src/tool_catalog.dart';
 export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';
+export 'src/tool_output_policy.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';

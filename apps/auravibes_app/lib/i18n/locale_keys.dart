@@ -1160,7 +1160,10 @@ abstract class LocaleKeys {
   static const common_deselect_all = 'common.deselect_all';
   static const common_clear_selection = 'common.clear_selection';
   static const common_delete_selected = 'common.delete_selected';
+  static const common_clear_search = 'common.clear_search';
   static const common_selected_count = 'common.selected_count';
+  static const common_hidden_selected_count = 'common.hidden_selected_count';
+  static const common_additional_failures = 'common.additional_failures';
   static const common_show_more = 'common.show_more';
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
@@ -1412,6 +1415,19 @@ abstract class LocaleKeys {
       'compaction.errors.auto_blocked';
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
+  static const workspace_archive_export = 'workspace_archive.export';
+  static const workspace_archive_import_into = 'workspace_archive.import_into';
+  static const workspace_archive_import_new = 'workspace_archive.import_new';
+  static const workspace_archive_exported = 'workspace_archive.exported';
+  static const workspace_archive_imported = 'workspace_archive.imported';
+  static const workspace_archive_invalid = 'workspace_archive.invalid';
+  static const workspace_archive_unsupported_version =
+      'workspace_archive.unsupported_version';
+  static const workspace_archive_invalid_target =
+      'workspace_archive.invalid_target';
+  static const workspace_archive_unsupported_configuration =
+      'workspace_archive.unsupported_configuration';
+  static const workspace_archive_error = 'workspace_archive.error';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_copy_id = 'workspace_management.copy_id';
   static const workspace_management_id_copied =
@@ -1428,6 +1444,8 @@ abstract class LocaleKeys {
       'workspace_management.bulk_delete_confirm';
   static const workspace_management_bulk_delete_failures =
       'workspace_management.bulk_delete_failures';
+  static const workspace_management_cloud_retry =
+      'workspace_management.cloud_retry';
   static const workspace_management_create_button =
       'workspace_management.create_button';
   static const workspace_management_duplicate =

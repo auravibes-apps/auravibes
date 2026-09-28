@@ -68,7 +68,7 @@ final class TestMcpConnectionUsecaseProvider
 }
 
 String _$testMcpConnectionUsecaseHash() =>
-    r'6fda938ea292534862077373fe14febfb7434cb4';
+    r'b0301f73b922babc22a4e767e9c780d5990a599b';
 
 final class TestMcpConnectionUsecaseFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<TestMcpConnectionUsecase>, String> {
