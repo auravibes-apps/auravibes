@@ -1376,6 +1376,19 @@ abstract class LocaleKeys {
       'compaction.errors.auto_blocked';
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
+  static const workspace_archive_export = 'workspace_archive.export';
+  static const workspace_archive_import_into = 'workspace_archive.import_into';
+  static const workspace_archive_import_new = 'workspace_archive.import_new';
+  static const workspace_archive_exported = 'workspace_archive.exported';
+  static const workspace_archive_imported = 'workspace_archive.imported';
+  static const workspace_archive_invalid = 'workspace_archive.invalid';
+  static const workspace_archive_unsupported_version =
+      'workspace_archive.unsupported_version';
+  static const workspace_archive_invalid_target =
+      'workspace_archive.invalid_target';
+  static const workspace_archive_unsupported_configuration =
+      'workspace_archive.unsupported_configuration';
+  static const workspace_archive_error = 'workspace_archive.error';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_copy_id = 'workspace_management.copy_id';
   static const workspace_management_id_copied =
