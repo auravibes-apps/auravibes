@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,12 +99,18 @@ class const _Subject({
           child: Builder(
             builder: (context) {
               return MaterialApp(
-                home: Theme(
-                  data: .new(extensions: [AuraTheme.light]),
-                  child: const Scaffold(body: SizedBox.shrink()),
+                home: AuraThemeScope(
+                  theme: .light,
+                  child: Theme(
+                    data: .new(),
+                    child: const Scaffold(body: SizedBox.shrink()),
+                  ),
                 ),
-                builder: (context, child) =>
-                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                builder: (_, child) => AuraLegacyMaterialBridge(
+                  child: AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -333,12 +340,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
@@ -387,12 +399,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
@@ -448,12 +465,17 @@ void main() {
               child: Builder(
                 builder: (context) {
                   return MaterialApp(
-                    home: Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(body: SizedBox.shrink()),
+                    home: AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(body: SizedBox.shrink()),
+                      ),
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,

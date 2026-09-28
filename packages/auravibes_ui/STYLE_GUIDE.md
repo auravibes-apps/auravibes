@@ -192,7 +192,8 @@ For the underline-tab pattern:
 - accept each title as a widget so callers can compose text, icons, or other
   Aura content; provide `semanticLabel` when a custom title has no useful
   semantics;
-- use a 48px minimum tab target (`AuraSpacing.xl2`), including padding;
+- use `context.auraTheme.interactionSizes.minimumTargetSize` for the tab target
+  and include horizontal padding; default is 48px, with a 48px floor;
 - keep inactive tab backgrounds transparent;
 - keep hover/focus/pressed layers inside each tab target;
 - use `AuraBorderRadius.md` (6px) for the state layer;

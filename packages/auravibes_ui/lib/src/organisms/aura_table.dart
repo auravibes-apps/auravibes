@@ -505,9 +505,17 @@ class const _AuraTableCellInteraction({
   Widget build(BuildContext context) {
     final callback = onSort;
     if (callback == null) return content;
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return Semantics(
-      child: GestureDetector(child: content, onTap: callback),
+      child: GestureDetector(
+        child: ConstrainedBox(
+          constraints: .new(minWidth: targetSize, minHeight: targetSize),
+          child: content,
+        ),
+        onTap: callback,
+        behavior: .opaque,
+      ),
       button: true,
     );
   }

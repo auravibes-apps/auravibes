@@ -64,12 +64,15 @@ void main() {
     List<WorkspaceModelSelectionWithConnectionEntity> models = const [],
   }) {
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: const Scaffold(
-          body: SingleChildScrollView(
-            child: Material(
-              child: CompactionSettingsSection(workspaceId: testWorkspaceId),
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: const Scaffold(
+            body: SingleChildScrollView(
+              child: Material(
+                child: CompactionSettingsSection(workspaceId: testWorkspaceId),
+              ),
             ),
           ),
         ),
@@ -141,7 +144,7 @@ void main() {
       expect(toggle.value, isFalse);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
-      final remainingField = tester.widget<TextField>(find.byType(TextField));
+      final remainingField = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(slider.value, 45);
       expect(remainingField.controller?.text, '999');
     });
@@ -234,7 +237,7 @@ void main() {
 
       tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
       await tester.pump();
-      await tester.enterText(find.byType(TextField), '3000');
+      await tester.enterText(find.byType(AuraInput), '3000');
 
       await tester.tap(
         find
@@ -277,7 +280,7 @@ void main() {
 
       tester.widget<AuraSlider>(find.byType(AuraSlider)).onChanged?.call(50);
       await tester.pump();
-      await tester.enterText(find.byType(TextField), '2000');
+      await tester.enterText(find.byType(AuraInput), '2000');
 
       await tester.tap(
         find
@@ -348,7 +351,7 @@ void main() {
           .called(1);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
-      final remainingField = tester.widget<TextField>(find.byType(TextField));
+      final remainingField = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(
         slider.value,
         CompactionSettings.defaults.usagePercentageThreshold,

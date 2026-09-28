@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_oauth_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
@@ -311,6 +312,63 @@ void main() {
         expect(oauth.authorizationEndpoint, 'https://1.1.1.1/authorize');
         expect(oauth.tokenEndpoint, 'https://1.1.1.1/token');
         expect(oauth.resource, 'https://api.githubcopilot.com/mcp/');
+        final testAuth = await service.resolveMcpAuthenticationForTest(
+          credentialId,
+        );
+        expect(
+          (testAuth as McpAuthenticationTypeOAuth).token.accessToken,
+          'access-token',
+        );
+      },
+    );
+
+    test(
+      'self-test refuses expired OAuth without refreshing or saving',
+      () async {
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        var requests = 0;
+        final dio = Dio()
+          ..httpClientAdapter = _FakeHttpClientAdapter(
+            onFetch: (_) async {
+              requests++;
+
+              return ResponseBody.fromString('{}', 500);
+            },
+          );
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+          dio: dio,
+        );
+        final credentialId = await _insertOAuthCredential(
+          fixture,
+          secret: const ServiceConnectionSecretOAuth2(
+            accessToken: 'expired-access',
+            refreshToken: 'refresh-secret',
+          ),
+          metadata: const ServiceConnectionMetadata(
+            clientId: 'client-id',
+            authorizationEndpoint: 'https://1.1.1.1/authorize',
+            tokenEndpoint: 'https://1.1.1.1/token',
+          ),
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+        final before = await fixture.serviceConnectionRepository.getById(
+          credentialId,
+        );
+
+        await expectLater(
+          service.resolveMcpAuthenticationForTest(credentialId),
+          throwsA(isA<McpOAuthException>()),
+        );
+
+        final after = await fixture.serviceConnectionRepository.getById(
+          credentialId,
+        );
+        expect(requests, 0);
+        expect(after?.authStatus, before?.authStatus);
+        expect(after?.lastAuthError, before?.lastAuthError);
+        expect(after?.updatedAt, before?.updatedAt);
       },
     );
 

@@ -1,10 +1,12 @@
 // Required: Existing UI spacing uses small numeric values.
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
+import 'package:auravibes_app/features/skills/usecases/duplicate_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -52,21 +54,164 @@ class const _SkillCredentialDefinitionsBody({
 class const _CredentialDefinitionsData({
   required final List<SkillCredentialDefinitionEntity> definitions,
   required final String workspaceId,
+}) extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_CredentialDefinitionsData> createState() =>
+      _CredentialDefinitionsDataState();
+}
+
+class _CredentialDefinitionsDataState
+    extends ConsumerState<_CredentialDefinitionsData> {
+  final _duplicatingIds = <String>{};
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredDefinitions = _filteredDefinitions();
+
+    return Column(
+      children: [
+        _CredentialDefinitionsSearch(onChanged: _updateQuery),
+        Expanded(
+          child: _CredentialDefinitionsResults(
+            definitions: widget.definitions,
+            filteredDefinitions: filteredDefinitions,
+            workspaceId: widget.workspaceId,
+            duplicatingIds: _duplicatingIds,
+            onDuplicate: (definition) => _duplicate(context, definition),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<SkillCredentialDefinitionEntity> _filteredDefinitions() {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return widget.definitions;
+
+    return widget.definitions
+        .where(
+          (definition) =>
+              definition.title.toLowerCase().contains(query) ||
+              definition.slug.toLowerCase().contains(query),
+        )
+        .toList();
+  }
+
+  void _updateQuery(String value) => setState(() => _query = value);
+
+  Future<void> _duplicate(
+    BuildContext context,
+    SkillCredentialDefinitionEntity definition,
+  ) async {
+    if (!_startDuplicate(definition.id)) return;
+    final success = await _tryDuplicate(definition.id);
+    _finishDuplicate(definition.id);
+    if (!context.mounted) return;
+
+    _showDuplicateFeedback(context, success: success);
+  }
+
+  bool _startDuplicate(String definitionId) {
+    if (_duplicatingIds.contains(definitionId)) return false;
+    setState(() => _duplicatingIds.add(definitionId));
+
+    return true;
+  }
+
+  Future<bool> _tryDuplicate(String definitionId) async {
+    try {
+      final usecase = ref.read(
+        duplicateCredentialDefinitionUsecaseProvider(widget.workspaceId),
+      );
+      final _ = await usecase.call(definitionId);
+      ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
+
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  void _finishDuplicate(String definitionId) {
+    if (mounted) setState(() => _duplicatingIds.remove(definitionId));
+  }
+
+  void _showDuplicateFeedback(BuildContext context, {required bool success}) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        (success
+                ? LocaleKeys.skill_credentials_definitions_duplicate_success
+                : LocaleKeys.skill_credentials_definitions_duplicate_error)
+            .tr(context: context),
+      ),
+      variant: success ? .success : .error,
+    );
+  }
+}
+
+class const _CredentialDefinitionsSearch({
+  required final ValueChanged<String> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => definitions.isEmpty
-      ? const Center(
-          child: TextLocale(LocaleKeys.skill_credentials_definitions_empty),
-        )
-      : _CredentialDefinitionsList(
-          definitions: definitions,
-          workspaceId: workspaceId,
-        );
+  Widget build(BuildContext context) {
+    final label = LocaleKeys.skill_credentials_definitions_search.tr(
+      context: context,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: AuraInput(
+        placeholder: const TextLocale(
+          LocaleKeys.skill_credentials_definitions_search,
+        ),
+        prefixIcon: const AuraIcon(Icons.search),
+        size: .small,
+        textInputAction: .search,
+        onChanged: onChanged,
+        semanticLabel: label,
+      ),
+    );
+  }
+}
+
+class const _CredentialDefinitionsResults({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final List<SkillCredentialDefinitionEntity> filteredDefinitions,
+  required final String workspaceId,
+  required final Set<String> duplicatingIds,
+  required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (definitions.isEmpty) {
+      return const Center(
+        child: TextLocale(LocaleKeys.skill_credentials_definitions_empty),
+      );
+    }
+    if (filteredDefinitions.isEmpty) {
+      return const Center(
+        child: TextLocale(
+          LocaleKeys.skill_credentials_definitions_search_empty,
+        ),
+      );
+    }
+
+    return _CredentialDefinitionsList(
+      definitions: filteredDefinitions,
+      workspaceId: workspaceId,
+      duplicatingIds: duplicatingIds,
+      onDuplicate: onDuplicate,
+    );
+  }
 }
 
 class const _CredentialDefinitionsList({
   required final List<SkillCredentialDefinitionEntity> definitions,
   required final String workspaceId,
+  required final Set<String> duplicatingIds,
+  required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -82,6 +227,8 @@ class const _CredentialDefinitionsList({
     return _CredentialDefinitionCard(
       definition: definitions[index],
       workspaceId: workspaceId,
+      isDuplicating: duplicatingIds.contains(definitions[index].id),
+      onDuplicate: onDuplicate,
     );
   }
 
@@ -105,12 +252,16 @@ class const _CredentialDefinitionsLoading({
 class const _CredentialDefinitionCard({
   required final SkillCredentialDefinitionEntity definition,
   required final String workspaceId,
+  required final bool isDuplicating,
+  required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCard(
     child: _CredentialDefinitionTile(
       definition: definition,
       workspaceId: workspaceId,
+      isDuplicating: isDuplicating,
+      onDuplicate: onDuplicate,
     ),
     style: .border,
   );
@@ -119,6 +270,8 @@ class const _CredentialDefinitionCard({
 class const _CredentialDefinitionTile({
   required final SkillCredentialDefinitionEntity definition,
   required final String workspaceId,
+  required final bool isDuplicating,
+  required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
@@ -129,7 +282,37 @@ class const _CredentialDefinitionTile({
     ),
     variant: .ghost,
     leading: const AuraIcon(Icons.key_outlined),
-    trailing: const AuraIcon(Icons.chevron_right),
+    trailing: _CredentialDefinitionActions(
+      definition: definition,
+      isDuplicating: isDuplicating,
+      onDuplicate: onDuplicate,
+    ),
+  );
+}
+
+class const _CredentialDefinitionActions({
+  required final SkillCredentialDefinitionEntity definition,
+  required final bool isDuplicating,
+  required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      AuraPopupMenuButton(
+        items: [
+          AuraPopupMenuItem(
+            title: const TextLocale(
+              LocaleKeys.skill_credentials_definitions_duplicate,
+            ),
+            onTap: isDuplicating ? null : () => onDuplicate(definition),
+            leading: const AuraIcon(Icons.copy_outlined),
+          ),
+        ],
+        tooltip: LocaleKeys.common_show_more.tr(context: context),
+      ),
+      const AuraIcon(Icons.chevron_right),
+    ],
+    mainAxisSize: .min,
   );
 }
 

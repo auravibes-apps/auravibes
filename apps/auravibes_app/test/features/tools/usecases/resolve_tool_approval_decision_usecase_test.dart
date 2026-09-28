@@ -344,8 +344,11 @@ void main() {
           final resolvedTool = ResolvedTool.mcp(
             tableId: 'server-1',
             toolIdentifier: 'sum',
-            mcpServerId: 'server-1',
-            mcpSlug: 'server-1',
+            mcp: (
+              mcpServerId: 'server-1',
+              mcpSlug: 'server-1',
+              outputSchemaJson: null,
+            ),
           );
 
           when(
@@ -406,8 +409,11 @@ void main() {
         final resolvedTool = ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
-          mcpServerId: 'server-1',
-          mcpSlug: 'server-1',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
         );
 
         when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))
@@ -430,8 +436,11 @@ void main() {
         final resolvedTool = ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
-          mcpServerId: 'server-1',
-          mcpSlug: 'server-1',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
         );
 
         when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))
@@ -472,8 +481,11 @@ void main() {
         final resolvedTool = ResolvedTool.mcp(
           tableId: 'server-1',
           toolIdentifier: 'sum',
-          mcpServerId: 'server-1',
-          mcpSlug: 'server-1',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
         );
 
         when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))

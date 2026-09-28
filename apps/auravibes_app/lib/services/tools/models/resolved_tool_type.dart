@@ -25,6 +25,7 @@ class ResolvedTool._({
   final UserToolType? builtInTool,
   final String? mcpServerId,
   final String? mcpSlug,
+  final String? outputSchemaJson,
   final NativeToolType? nativeTool,
   final String? skillSlug,
   final String? skillToolSlug,
@@ -34,8 +35,8 @@ class ResolvedTool._({
   static const ResolvedTool Function({
     required String tableId,
     required String toolIdentifier,
-    required String mcpServerId,
-    required String mcpSlug,
+    required ({String mcpServerId, String mcpSlug, String? outputSchemaJson})
+    mcp,
   })
   mcp = _mcp;
 
@@ -96,15 +97,15 @@ class ResolvedTool._({
 ResolvedTool _mcp({
   required String tableId,
   required String toolIdentifier,
-  required String mcpServerId,
-  required String mcpSlug,
+  required ({String mcpServerId, String mcpSlug, String? outputSchemaJson}) mcp,
 }) => ResolvedTool._(
   type: .mcp,
   tableId: tableId,
   toolIdentifier: toolIdentifier,
   fullName: toolIdentifier,
-  mcpServerId: mcpServerId,
-  mcpSlug: mcpSlug,
+  mcpServerId: mcp.mcpServerId,
+  mcpSlug: mcp.mcpSlug,
+  outputSchemaJson: mcp.outputSchemaJson,
 );
 
 ResolvedTool _builtIn({

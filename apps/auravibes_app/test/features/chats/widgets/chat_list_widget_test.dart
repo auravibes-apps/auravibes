@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -12,16 +13,18 @@ import 'package:auravibes_app/features/chats/usecases/delete_conversation_usecas
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/test_app.dart';
 
 void main() {
   setUpAll(() => registerFallbackValue(_DeleteConversationRequestFake()));
@@ -29,50 +32,18 @@ void main() {
     required String workspaceId,
     required List<Object> overrides,
     Widget? content,
-  }) {
-    final session = WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: workspaceId),
-    );
-    final container = ProviderContainer(
-      overrides: [
-        workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
-        ...overrides.cast(),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    return UncontrolledProviderScope(
-      container: container,
-      child: EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: Portal(
-                  child: Material(
-                    child: content ?? ChatListWidget(workspaceId: workspaceId),
-                  ),
-                ),
-              ),
-              builder: (context, child) =>
-                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            );
-          },
+  }) => TestableApp(
+    child: Theme(
+      data: .new(),
+      child: Portal(
+        child: Material(
+          child: content ?? ChatListWidget(workspaceId: workspaceId),
         ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
       ),
-    );
-  }
+    ),
+    overrides: overrides,
+    workspaceId: workspaceId,
+  );
 
   ConversationEntity _createConversation({
     String id = 'conv-1',
@@ -97,6 +68,7 @@ void main() {
     });
     await tester.pump();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   group('ChatListWidget', () {
@@ -140,7 +112,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsOneWidget);
     });
 
     testWidgets('renders chat tiles for conversations', (tester) async {
@@ -169,6 +141,116 @@ void main() {
       expect(find.text('Chat One'), findsOneWidget);
       expect(find.text('Chat Two'), findsOneWidget);
     });
+
+    testWidgets(
+      'shows isolated live sub-agent counts and routes the selected child',
+      (tester) async {
+        final repo = _StubConversationRepository(
+          conversationsStream: .value([
+            _createConversation(title: 'Release Plan'),
+            _createConversation(id: 'conv-2', title: 'Design Brief'),
+          ]),
+        );
+        final router = GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, _) => const SizedBox.shrink()),
+            GoRoute(
+              path: '/workspaces/:workspaceId/chats/:chatId/sub-agents/:subAgentConversationId',
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        ActiveSubAgentRuntime? capturedRuntime;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            workspaceId: 'ws-1',
+            overrides: [
+              conversationRepositoryProvider.overrideWithValue(repo),
+              streamingTitleProvider.overrideWith((ref, id) => null),
+              listWorkspaceModelSelectionsProvider.overrideWith(
+                (ref, workspaceId) => Stream.value([]),
+              ),
+            ],
+            content: InheritedGoRouter(
+              child: Consumer(
+                builder: (context, ref, _) {
+                  capturedRuntime = ref.read(
+                    activeSubAgentRuntimeProvider.notifier,
+                  );
+
+                  return const ChatListWidget(workspaceId: 'ws-1');
+                },
+              ),
+              goRouter: router,
+            ),
+          ),
+        );
+        final runtime =
+            capturedRuntime ??
+            (throw StateError('Active sub-agent runtime was not captured'));
+
+        const statusKey = ValueKey<String>(
+          'chat_list_active_sub_agents_conv-1',
+        );
+        final status = find.byKey(statusKey);
+        expect(status, findsNothing);
+
+        final foreignRequest = runtime.start(
+          parentId: 'foreign-conversation',
+          childId: 'foreign-child',
+        );
+        final firstRequest = runtime.start(
+          parentId: 'conv-1',
+          childId: 'child-1',
+        );
+        await tester.pump();
+
+        expect(status, findsOneWidget);
+        expect(
+          find.descendant(of: status, matching: find.text('1')),
+          findsOneWidget,
+        );
+        final semantics = tester.ensureSemantics();
+        expect(tester.getSemantics(status).label, contains('Release Plan'));
+        expect(
+          tester.getSemantics(status).label,
+          contains('1 sub-agent running'),
+        );
+
+        final secondRequest = runtime.start(
+          parentId: 'conv-1',
+          childId: 'child-2',
+        );
+        await tester.pump();
+        expect(
+          find.descendant(of: status, matching: find.text('2')),
+          findsOneWidget,
+        );
+
+        secondRequest.finish();
+        await tester.pump();
+        expect(
+          find.descendant(of: status, matching: find.text('1')),
+          findsOneWidget,
+        );
+
+        await tester.tap(status, kind: .mouse);
+        await tester.pump();
+        expect(
+          router.routeInformationProvider.value.uri.path,
+          '/workspaces/ws-1/chats/conv-1/sub-agents/child-1',
+        );
+
+        firstRequest.finish();
+        foreignRequest.finish();
+        await tester.pump();
+        expect(status, findsNothing);
+        semantics.dispose();
+      },
+    );
 
     testWidgets('filters chats by title and restores all chats when cleared', (
       tester,

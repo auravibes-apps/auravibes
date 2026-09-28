@@ -55,6 +55,11 @@ String appendDurableSkillActivations(
       '</durable_skill_activations>';
 }
 
+String _toolResultForContext(ConversationToolCall call) {
+  final result = call.resultJson ?? call.status;
+  return projectToolOutput(result).text;
+}
+
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
@@ -367,7 +372,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
           assistantContent: assistant['content'] as String?,
           resultsByCallId: {
             for (final call in batchCalls)
-              call.stableId: call.resultJson ?? call.status,
+              call.stableId: _toolResultForContext(call),
           },
         ).map((message) => Map<String, dynamic>.from(message)),
       );
@@ -395,7 +400,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
         ],
         resultsByCallId: {
           for (final call in unbatchedCalls)
-            call.stableId: call.resultJson ?? call.status,
+            call.stableId: _toolResultForContext(call),
         },
       ).map((message) => Map<String, dynamic>.from(message)),
     );
@@ -871,7 +876,7 @@ final class const ServerConversationEngineHost({
         toolResults.add({
           'role': 'tool',
           'tool_call_id': request.id,
-          'content': call.resultJson ?? call.status,
+          'content': _toolResultForContext(call),
         });
       }
       toolExchanges

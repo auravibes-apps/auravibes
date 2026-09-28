@@ -34,7 +34,39 @@ void main() {
           },
         ],
         'nextCursor': null,
+        'hint': generalSubAgentHint,
       });
+    });
+
+    test('empty catalog still permits a general sub-agent', () async {
+      final conversations = _ConversationStore();
+      final runner = _runner(conversations: conversations);
+
+      final listing =
+          jsonDecode(await runner.listAgents('w1')) as Map<String, Object?>;
+      expect(listing['agents'], isEmpty);
+      expect(listing['hint'], contains('run_sub_agent'));
+      expect(listing['hint'], contains('omit agentId'));
+
+      final result = jsonDecode(
+        await runner.run(
+          parentConversationId: 'parent',
+          workspaceId: 'w1',
+          arguments: const {'title': 'Learn D&D', 'prompt': 'Explain D&D.'},
+        ),
+      ) as Map<String, Object?>;
+
+      expect(result['status'], 'done');
+      expect(result, isNot(contains('agentId')));
+      expect(conversations.createdChildren, ['Learn D&D']);
+      expect(runSubAgentToolSpec.description, contains('Omit agentId'));
+      final properties =
+          runSubAgentToolSpec.inputJsonSchema['properties']!
+              as Map<String, Object?>;
+      expect(
+        (properties['agentId']! as Map<String, Object?>)['description'],
+        contains('Omit for a general sub-agent'),
+      );
     });
 
     test('filters listed agents by type', () async {

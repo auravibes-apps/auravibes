@@ -123,7 +123,7 @@ extension AddModelProviderStateFields on AddModelProviderState {
 
   AddModelProviderModel _stateForModel(String? modelId) {
     final model = _modelForId(modelId);
-    final authMode = _authModeFor(modelId);
+    final authMode = ModelProviderAuthMode.forProviderId(modelId);
 
     return _value.copyWith(
       modelId: modelId,
@@ -132,9 +132,6 @@ extension AddModelProviderStateFields on AddModelProviderState {
       key: _value.authMode == authMode ? _value.key : null,
     );
   }
-
-  ModelProviderAuthMode _authModeFor(String? modelId) =>
-      ModelProviderOAuthProfiles.isCodexProvider(modelId) ? .oauth2 : .apiKey;
 
   String? _providerNameFor(String? modelId) =>
       ModelProviderOAuthProfiles.isCodexProvider(modelId)

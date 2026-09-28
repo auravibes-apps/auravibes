@@ -44,9 +44,12 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: Material(child: child),
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: Material(child: child),
+        ),
       ),
       overrides: [
         workspaceToolsProvider(_workspaceId)
@@ -91,7 +94,7 @@ void main() {
       ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
-    expect(find.byType(IconButton), findsWidgets);
+    expect(find.byType(AuraIconButton), findsWidgets);
   });
 
   testWidgets('renders disabled tool with correct toggle state', (
@@ -116,7 +119,7 @@ void main() {
       ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
@@ -147,7 +150,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsNothing);
@@ -163,7 +166,7 @@ void main() {
       ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
@@ -194,7 +197,7 @@ void main() {
       ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
-    await tester.tap(find.byType(IconButton).last);
+    await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);

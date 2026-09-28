@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
@@ -47,16 +48,20 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
 ToolsGroupWithTools _groupWithTools({
   required List<WorkspaceToolEntity> tools,
   String name = 'Test Group',
+  String id = 'group-1',
+  bool isEnabled = true,
+  String? mcpServerId,
 }) {
   return ToolsGroupWithTools(
     group: .new(
-      id: 'group-1',
+      id: id,
       workspaceId: _workspaceId,
       name: name,
-      isEnabled: true,
+      isEnabled: isEnabled,
       permissions: .ask,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+      mcpServerId: mcpServerId,
     ),
     tools: tools,
   );
@@ -72,8 +77,19 @@ class _LoadingNotifier extends GroupedToolsNotifier {
 
 class _DataNotifier(final List<ToolsGroupWithTools> groups)
     extends GroupedToolsNotifier {
+  final deletedGroupIds = <String>[];
+  final deleteInvalidations = <bool>[];
+
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
+
+  @override
+  Future<bool> deleteMcpGroup(String groupId, {bool invalidate = true}) async {
+    deletedGroupIds.add(groupId);
+    deleteInvalidations.add(invalidate);
+
+    return true;
+  }
 }
 
 class _ErrorNotifier extends GroupedToolsNotifier {
@@ -83,14 +99,37 @@ class _ErrorNotifier extends GroupedToolsNotifier {
   }
 }
 
+class _WorkspaceToolsDataNotifier extends WorkspaceToolsNotifier {
+  new(this.tools, {this.failRemoval = false});
+
+  final List<WorkspaceToolEntity> tools;
+  final bool failRemoval;
+  final removedIds = <String>[];
+
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
+
+  @override
+  Future<bool> removeToolById(String id) async {
+    removedIds.add(id);
+
+    return !failRemoval;
+  }
+}
+
 class const _ListApp({required final List<Object> overrides})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TestableApp(
-    child: Theme(
-      data: .new(extensions: [AuraTheme.light]),
-      child: const Scaffold(
-        body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+    child: AuraThemeScope(
+      theme: .light,
+      child: Portal(
+        child: Theme(
+          data: .new(),
+          child: const Scaffold(
+            body: ToolsWorkspaceListWidget(workspaceId: _workspaceId),
+          ),
+        ),
       ),
     ),
     overrides: overrides,
@@ -130,6 +169,22 @@ void main() {
     expect(find.byType(ToolsGroupCard), findsNWidgets(2));
   });
 
+  testWidgets('aligns disabled select-all with the sort field', (tester) async {
+    final groups = <ToolsGroupWithTools>[];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    final selectAll = find.byKey(const ValueKey('tools-select-all'));
+    expect(tester.widget<AuraButton>(selectAll).disabled, isTrue);
+    expect(
+      tester.getRect(selectAll).bottom,
+      tester.getRect(find.byKey(const ValueKey('tools-sort'))).bottom,
+    );
+  });
+
   testWidgets('filters tools by name or description', (tester) async {
     final groups = [
       _defaultGroup([
@@ -145,7 +200,7 @@ void main() {
 
     await tester.enterText(find.byType(AuraInput), 'local files');
     await tester.pump();
-    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(ToolItemRow), findsOneWidget);
@@ -172,7 +227,7 @@ void main() {
 
     await tester.enterText(find.byType(AuraInput), 'remote');
     await tester.pump();
-    final _ = await tester.tap(find.byType(IconButton).last);
+    final _ = await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
     final rows = tester.widgetList<ToolItemRow>(find.byType(ToolItemRow));
@@ -205,4 +260,260 @@ void main() {
 
     expect(find.byType(AppErrorWidget), findsOneWidget);
   });
+
+  testWidgets('sorts tool groups by name and enabled status', (tester) async {
+    final groups = [
+      _groupWithTools(
+        tools: [_tool(id: 'zeta-tool')],
+        name: 'Zeta Group',
+        id: 'zeta-group',
+      ),
+      _groupWithTools(
+        tools: [
+          _tool(id: 'zeta-tool', toolId: 'zeta_tool'),
+          _tool(id: 'alpha-tool', toolId: 'alpha_tool', isEnabled: false),
+        ],
+        name: 'Alpha Group',
+        id: 'alpha-group',
+        isEnabled: false,
+      ),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+    ]);
+
+    expect(
+      tester.getTopLeft(find.text('Alpha Group')).dy,
+      lessThan(tester.getTopLeft(find.text('Zeta Group')).dy),
+    );
+    final alphaGroupCard = find.ancestor(
+      of: find.text('Alpha Group'),
+      matching: find.byType(ToolsGroupCard),
+    );
+    await tester.tap(
+      find.descendant(
+        of: alphaGroupCard,
+        matching: find.byType(AuraIconButton),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.getTopLeft(find.text('alpha_tool')).dy,
+      lessThan(tester.getTopLeft(find.text('zeta_tool')).dy),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tools-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled first').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Zeta Group')).dy,
+      lessThan(tester.getTopLeft(find.text('Alpha Group')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('zeta_tool')).dy,
+      lessThan(tester.getTopLeft(find.text('alpha_tool')).dy),
+    );
+  });
+
+  testWidgets('selects filtered removable tools and confirms bulk deletion', (
+    tester,
+  ) async {
+    final alpha = _tool(id: 'alpha-id', toolId: 'alpha_tool');
+    final zeta = _tool(id: 'zeta-id', toolId: 'zeta_tool');
+    final workspaceToolsNotifier = _WorkspaceToolsDataNotifier([alpha, zeta]);
+    final groups = [
+      _defaultGroup([zeta, alpha]),
+    ];
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier(groups)),
+      workspaceToolsProvider(_workspaceId)
+          .overrideWith(() => workspaceToolsNotifier),
+    ]);
+
+    await tester.enterText(find.byType(AuraInput), 'alpha');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(AuraInput), '');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(const ValueKey('tool-selection-alpha-id')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(const ValueKey('tool-selection-zeta-id')),
+          )
+          .value,
+      isFalse,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Delete selected tools?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(workspaceToolsNotifier.removedIds, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(workspaceToolsNotifier.removedIds, [alpha.id]);
+  });
+
+  testWidgets('bulk deletes each MCP group once without early invalidation', (
+    tester,
+  ) async {
+    final groups = [
+      _groupWithTools(
+        tools: [_tool(id: 'mcp-tool-1')],
+        id: 'mcp-group-1',
+        mcpServerId: 'mcp-server-1',
+      ),
+      _groupWithTools(
+        tools: [_tool(id: 'mcp-tool-2')],
+        id: 'mcp-group-2',
+        mcpServerId: 'mcp-server-2',
+      ),
+    ];
+    final groupedToolsNotifier = _DataNotifier(groups);
+
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => groupedToolsNotifier),
+    ]);
+
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+
+    for (final groupId in ['mcp-group-1', 'mcp-group-2']) {
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(ValueKey('tools-group-selection-$groupId')),
+            )
+            .value,
+        isTrue,
+      );
+    }
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(groupedToolsNotifier.deletedGroupIds, [
+      'mcp-group-1',
+      'mcp-group-2',
+    ]);
+    expect(groupedToolsNotifier.deleteInvalidations, [false, false]);
+  });
+
+  testWidgets('shows hidden tool selections in row and confirmation', (
+    tester,
+  ) async {
+    final tools = [
+      _tool(id: 'alpha-id', toolId: 'alpha_tool'),
+      _tool(id: 'beta-id', toolId: 'beta_tool'),
+    ];
+    await _pumpListApp(tester, [
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _DataNotifier([_defaultGroup(tools)])),
+    ]);
+
+    await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(AuraInput), 'alpha');
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsOneWidget);
+    expect(find.textContaining('1 hidden by filters'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsWidgets);
+    expect(find.textContaining('1 hidden by filters'), findsWidgets);
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton && widget.tooltip == 'Clear selection',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('selected'), findsNothing);
+    await tester.enterText(find.byType(AuraInput), '');
+    final _ = await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('tools-delete-selected')), findsNothing);
+  });
+
+  for (final names in <List<String>>[
+    ['fail_one'],
+    ['fail_one', 'fail_two'],
+    [
+      'fail_very_long_tool_name_beyond_preview',
+      'fail_two',
+      'fail_three',
+      'fail_four',
+    ],
+  ]) {
+    testWidgets('bounds tool failure feedback for ${names.length} items', (
+      tester,
+    ) async {
+      final tools = [
+        for (var index = 0; index < names.length; index++)
+          _tool(id: 'fail-$index', toolId: names[index]),
+      ];
+      final notifier = _WorkspaceToolsDataNotifier(tools, failRemoval: true);
+      await _pumpListApp(tester, [
+        groupedToolsProvider(_workspaceId)
+            .overrideWith(() => _DataNotifier([_defaultGroup(tools)])),
+        workspaceToolsProvider(_workspaceId).overrideWith(() => notifier),
+      ]);
+
+      await tester.enterText(find.byType(AuraInput), 'fail');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tools-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('tools-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      final feedback =
+          tester
+              .widget<Text>(
+                find.textContaining('Could not remove ${names.length} tool'),
+              )
+              .data ??
+          fail('Expected failure feedback');
+      expect(
+        feedback,
+        contains(names.length == 4 ? 'Fail Very Long' : 'Fail One'),
+      );
+      expect(feedback, isNot(contains('Fail Three')));
+      if (names.length == 4) {
+        expect(feedback, contains('2 more failures'));
+        expect(feedback, isNot(contains('Beyond Preview')));
+      }
+      expect(find.textContaining('${names.length} selected'), findsOneWidget);
+    });
+  }
 }

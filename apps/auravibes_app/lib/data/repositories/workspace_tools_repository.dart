@@ -246,6 +246,16 @@ extension on WorkspaceToolsRepository {
   }
 
   WorkspaceToolEntity _tableToEntity(ToolsTable table) {
+    return _tableIdentity(table).copyWith(
+      config: table.config,
+      description: table.description,
+      inputSchema: table.inputSchema,
+      outputSchemaJson: table.outputSchema,
+      workspaceToolsGroupId: table.workspaceToolsGroupId,
+    );
+  }
+
+  WorkspaceToolEntity _tableIdentity(ToolsTable table) {
     return WorkspaceToolEntity(
       id: table.id,
       workspaceId: table.workspaceId,
@@ -254,10 +264,6 @@ extension on WorkspaceToolsRepository {
       permissionMode: _mapPermissionAccess(table.permissions),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
-      config: table.config,
-      description: table.description,
-      inputSchema: table.inputSchema,
-      workspaceToolsGroupId: table.workspaceToolsGroupId,
     );
   }
 

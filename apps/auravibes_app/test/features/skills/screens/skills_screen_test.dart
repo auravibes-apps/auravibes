@@ -57,9 +57,15 @@ void main() {
       ProviderContainer container,
       WorkspaceEntity workspace,
       SkillEntity skill,
+      List<SkillEntity> skills,
     })
   >
-  createFixture({bool includeAppSkill = false}) async {
+  createFixture({
+    bool includeAppSkill = false,
+    String skillTitle = 'Write Summary',
+    List<String> additionalUserSkillNames = const [],
+    bool failDeletes = false,
+  }) async {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
@@ -71,13 +77,32 @@ void main() {
     final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
-      const SkillToCreate(
+      .new(
         kind: .template,
-        title: 'Write Summary',
+        title: skillTitle,
         description: 'Summarize selected content.',
         content: 'Summarize selected content.',
       ),
     );
+    final userSkills = [skill];
+    for (final title in additionalUserSkillNames) {
+      userSkills.add(
+        await skillsRepository.createSkill(
+          workspace.id,
+          .new(
+            kind: .template,
+            title: title,
+            description: 'Test skill.',
+            content: 'Test skill.',
+          ),
+        ),
+      );
+    }
+    Future<void> deleteSkill(String id) async {
+      if (failDeletes) throw StateError('delete failed');
+      final _ = await skillsRepository.deleteSkill(id);
+    }
+
     final appSkillSettings = AppSkillWorkspaceSettingsRepository(database);
     await appSkillSettings.setAppSkillEnabled(
       workspace.id,
@@ -99,15 +124,16 @@ void main() {
         ),
         workspaceSkillsProvider(workspace.id).overrideWith(
           (_) async => [
-            WorkspaceSkill(
-              source: SkillSource.user,
-              id: skill.id,
-              slug: skill.slug,
-              title: skill.title,
-              description: skill.description,
-              kind: skill.kind,
-              isEnabled: skill.isEnabled,
-            ),
+            for (final userSkill in userSkills)
+              WorkspaceSkill(
+                source: SkillSource.user,
+                id: userSkill.id,
+                slug: userSkill.slug,
+                title: userSkill.title,
+                description: userSkill.description,
+                kind: userSkill.kind,
+                isEnabled: userSkill.isEnabled,
+              ),
             if (includeAppSkill)
               const WorkspaceSkill(
                 source: SkillSource.app,
@@ -120,8 +146,7 @@ void main() {
               ),
           ],
         ),
-        deleteSkillProvider(workspace.id)
-            .overrideWithValue(skillsRepository.deleteSkill),
+        deleteSkillProvider(workspace.id).overrideWithValue(deleteSkill),
       ],
     );
     addTearDown(container.dispose);
@@ -131,6 +156,7 @@ void main() {
       container: container,
       workspace: workspace,
       skill: skill,
+      skills: userSkills,
     );
   }
 
@@ -275,4 +301,203 @@ void main() {
     expect(find.text('No skills match these filters'), findsOneWidget);
     expect(find.text('Native Helper'), findsNothing);
   });
+
+  testWidgets('sorts skills by localized name and enabled status', (
+    tester,
+  ) async {
+    final fixture = await createFixture(includeAppSkill: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Native Helper')).dy,
+      lessThan(tester.getTopLeft(find.text('Write Summary')).dy),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-sort')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Enabled first').last);
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Write Summary')).dy,
+      lessThan(tester.getTopLeft(find.text('Native Helper')).dy),
+    );
+  });
+
+  testWidgets('aligns select-all with the sort field', (tester) async {
+    final fixture = await createFixture();
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getRect(find.byKey(const ValueKey('skills-select-all'))).bottom,
+      tester.getRect(find.byKey(const ValueKey('skills-sort'))).bottom,
+    );
+  });
+
+  testWidgets('selects filtered user skills and confirms bulk deletion', (
+    tester,
+  ) async {
+    final fixture = await createFixture(includeAppSkill: true);
+    final router = createRouter();
+    addTearDown(router.dispose);
+
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(EditableText), 'summary');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('skills-select-all')));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<AuraCheckbox>(
+            find.byKey(ValueKey('skill-selection-${fixture.skill.id}')),
+          )
+          .value,
+      isTrue,
+    );
+    expect(
+      find.byKey(const ValueKey('skill-selection-app-skill')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Delete selected skills?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(AuraButton, 'Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+      isA<SkillEntity>(),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+      null,
+    );
+  });
+
+  testWidgets('shows hidden skill selections in row and confirmation', (
+    tester,
+  ) async {
+    final fixture = await createFixture(
+      additionalUserSkillNames: ['Write Draft'],
+    );
+    final router = createRouter();
+    addTearDown(router.dispose);
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('skills-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'summary');
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsOneWidget);
+    expect(find.textContaining('1 hidden by filters'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('2 selected'), findsWidgets);
+    expect(find.textContaining('1 hidden by filters'), findsWidgets);
+    await tester.tap(find.widgetWithText(AuraButton, 'Cancel'));
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraIconButton && widget.tooltip == 'Clear selection',
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('skills-delete-selected')), findsNothing);
+    await tester.enterText(find.byType(EditableText), '');
+    final _ = await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('skills-delete-selected')), findsNothing);
+  });
+
+  for (final names in <List<String>>[
+    ['Fail One'],
+    ['Fail One', 'Fail Two'],
+    [
+      'Fail Very long skill name beyond the preview limit',
+      'Fail Two',
+      'Fail Three',
+      'Fail Four',
+    ],
+  ]) {
+    testWidgets('bounds skill failure feedback for ${names.length} items', (
+      tester,
+    ) async {
+      final fixture = await createFixture(
+        skillTitle: names.firstOrNull ?? fail('Expected a skill name'),
+        additionalUserSkillNames: names.skip(1).toList(),
+        failDeletes: true,
+      );
+      final router = createRouter();
+      addTearDown(router.dispose);
+      final _ = await tester.runAsync(
+        () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+      );
+      final _ = await tester.pumpAndSettle();
+      router.go('/workspaces/${fixture.workspace.id}/more/skills');
+      final _ = await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(EditableText), 'Fail');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('skills-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      final feedback =
+          tester
+              .widget<Text>(
+                find.textContaining('Could not delete ${names.length} skill'),
+              )
+              .data ??
+          fail('Expected failure feedback');
+      expect(
+        feedback,
+        contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),
+      );
+      expect(feedback, isNot(contains('Fail Three')));
+      if (names.length == 4) {
+        expect(feedback, contains('2 more failures'));
+        expect(feedback, isNot(contains('preview limit')));
+      }
+      expect(find.textContaining('${names.length} selected'), findsOneWidget);
+    });
+  }
 }

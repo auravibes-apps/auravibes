@@ -291,14 +291,20 @@ void main() {
         final githubSearch = ResolvedTool.mcp(
           tableId: 'github-search-row',
           toolIdentifier: 'search',
-          mcpServerId: 'github-server',
-          mcpSlug: 'github',
+          mcp: (
+            mcpServerId: 'github-server',
+            mcpSlug: 'github',
+            outputSchemaJson: null,
+          ),
         );
         final linearSearch = ResolvedTool.mcp(
           tableId: 'linear-search-row',
           toolIdentifier: 'search',
-          mcpServerId: 'linear-server',
-          mcpSlug: 'linear',
+          mcp: (
+            mcpServerId: 'linear-server',
+            mcpSlug: 'linear',
+            outputSchemaJson: null,
+          ),
         );
         final usecase = LoadConversationToolSpecsUsecase(
           conversationToolsRepository: _FakeConversationToolsRepository([]),

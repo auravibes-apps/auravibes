@@ -1,5 +1,6 @@
 // Required: Widgetbook stories use fixed example sizes.
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
@@ -117,7 +118,10 @@ abstract final class _StorybookDefinitions {
       _Scenario(
         name: 'Enters Text',
         run: (tester, args) async {
-          await tester.enterText(find.byType(TextField), 'Widgetbook input');
+          await tester.enterText(
+            find.byType(flutter.EditableText),
+            'Widgetbook input',
+          );
           await tester.pump(const Duration(milliseconds: 300));
         },
       ),

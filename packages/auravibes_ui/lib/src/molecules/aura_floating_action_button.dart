@@ -2,7 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A customizable floating action button component following the Aura design
 /// system.
@@ -134,7 +134,10 @@ class _AuraFabThemeData {
     required AuraTheme theme,
   }) : _widget = _AuraFabLayout(
          child: ConstrainedBox(
-           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+           constraints: .new(
+             minWidth: theme.interactionSizes.minimumTargetSize,
+             minHeight: theme.interactionSizes.minimumTargetSize,
+           ),
            child: Semantics(
              child: button.size == AuraFABSize.extended && button.text != null
                  ? _AuraFabExtended(

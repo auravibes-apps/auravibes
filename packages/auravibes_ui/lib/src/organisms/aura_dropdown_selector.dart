@@ -1,6 +1,7 @@
 // ignore_for_file: type=lint, type=warning
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
@@ -10,7 +11,7 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A customizable dropdown selector component following the Aura design system.
 ///
@@ -32,6 +33,7 @@ class AuraDropdownSelector<T> extends StatefulWidget {
     this.isRequired = false,
     this.isEnabled = true,
     this.focusNode,
+    this.identifier,
     this.semanticLabel,
     this.optionBuilder,
   });
@@ -71,6 +73,9 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 
   /// Defines the keyboard focus for this widget.
   final FocusNode? focusNode;
+
+  /// An optional stable identifier for the dropdown trigger.
+  final String? identifier;
 
   /// A semantic label for accessibility.
   final String? semanticLabel;
@@ -162,6 +167,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       state: state,
       focusNode: _requiredFocusNode,
       menuFocusScopeNode: _requiredMenuFocusScopeNode,
+      identifier: widget.identifier,
       semanticLabel: widget.semanticLabel,
       onChanged: widget.onChanged,
       onToggle: _toggleDropdown,
@@ -271,6 +277,7 @@ class const _DropdownSelectorShell<T>({
   required final AuraFieldState state,
   required final FocusNode focusNode,
   required final FocusScopeNode menuFocusScopeNode,
+  required final String? identifier,
   required final String? semanticLabel,
   required final ValueChanged<T?>? onChanged,
   required final VoidCallback onToggle,
@@ -346,6 +353,7 @@ class const _DropdownSelectorShell<T>({
           isFocused: isDropdownOpen || isTriggerFocused,
           onTap: isEnabled ? onToggle : null,
           onFocusChange: onFocusChange,
+          identifier: identifier,
           semanticLabel: semanticLabel,
         ),
         groupId: this,
@@ -421,65 +429,68 @@ class const _DropdownMenu<T>({
                 final leading = option.leading;
                 final trailing = option.trailing;
                 final child = option.child ?? const Text('');
+                final customOption = optionBuilder?.call(context, option);
 
-                return optionBuilder?.call(context, option) ??
-                    AuraPressable(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: context.auraTheme.fromSpacing(.sm),
-                          horizontal: context.auraTheme.fromSpacing(.md),
-                        ),
-                        child: Row(
-                          children: [
-                            if (leading != null) ...[
-                              leading,
-                              const AuraSizedBox(width: .sm),
-                            ],
-                            Expanded(
-                              child: AuraText(
-                                child: DefaultTextStyle(
-                                  style: TextStyle(
-                                    color: option.isEnabled
-                                        ? auraColors.onSurface
-                                        : auraColors.onSurface.withValues(
-                                            alpha: 0.6,
-                                          ),
-                                  ),
-                                  child: child,
-                                ),
+                if (customOption != null) {
+                  return AuraInteractionTarget(child: customOption);
+                }
+
+                return AuraPressable(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: context.auraTheme.fromSpacing(.sm),
+                      horizontal: context.auraTheme.fromSpacing(.md),
+                    ),
+                    child: Row(
+                      children: [
+                        if (leading != null) ...[
+                          leading,
+                          const AuraSizedBox(width: .sm),
+                        ],
+                        Expanded(
+                          child: AuraText(
+                            child: DefaultTextStyle(
+                              style: TextStyle(
+                                color: option.isEnabled
+                                    ? auraColors.onSurface
+                                    : auraColors.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
                               ),
+                              child: child,
                             ),
-                            if (trailing != null) ...[
-                              const AuraSizedBox(width: .sm),
-                              trailing,
-                            ] else if (isSelected) ...[
-                              const AuraSizedBox(width: .sm),
-                              const AuraIcon(
-                                Icons.check,
-                                size: AuraIconSize.small,
-                                tint: AuraTint.primary,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      color: context.auraColors.primary,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? auraColors.primary.withValues(alpha: 0.08)
-                            : DesignColors.transparent,
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
                           ),
                         ),
-                      ),
-                      onPressed: option.isEnabled
-                          ? () {
-                              onOptionSelected(option.value);
-                            }
-                          : null,
-                    );
+                        if (trailing != null) ...[
+                          const AuraSizedBox(width: .sm),
+                          trailing,
+                        ] else if (isSelected) ...[
+                          const AuraSizedBox(width: .sm),
+                          const AuraIcon(
+                            Icons.check,
+                            size: AuraIconSize.small,
+                            tint: AuraTint.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  color: context.auraColors.primary,
+                  identifier: option.identifier,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? auraColors.primary.withValues(alpha: 0.08)
+                        : DesignColors.transparent,
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
+                    ),
+                  ),
+                  onPressed: option.isEnabled
+                      ? () {
+                          onOptionSelected(option.value);
+                        }
+                      : null,
+                );
               },
               itemCount: options.length,
             ),

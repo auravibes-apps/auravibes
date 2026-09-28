@@ -1185,20 +1185,22 @@ class const _MessageActions({
     final resolve = resolveContent;
     final retry = onRetryMessage;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (resolve != null)
-          _MessageCopyAction(resolveContent: resolve, isUser: message.isUser),
-        if (retry != null)
-          _MessageRetryAction(message: message, onRetryMessage: retry),
-        if (_canForkMessage(message))
-          _MessageForkAction(
-            message: message,
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-          ),
-      ],
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (resolve != null) _MessageCopyAction(resolveContent: resolve),
+          if (retry != null)
+            _MessageRetryAction(message: message, onRetryMessage: retry),
+          if (_canForkMessage(message))
+            _MessageForkAction(
+              message: message,
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -1334,10 +1336,9 @@ class const _ForkBoundaryDivider({
 }
 
 class _MessageCopyAction extends StatefulWidget {
-  const new({required this.resolveContent, required this.isUser, super.key});
+  const new({required this.resolveContent, super.key});
 
   final String? Function() resolveContent;
-  final bool isUser;
 
   @override
   State<_MessageCopyAction> createState() => _MessageCopyActionState();
@@ -1347,17 +1348,14 @@ class _MessageCopyActionState extends State<_MessageCopyAction> {
   var _copied = false;
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: widget.isUser ? Alignment.centerRight : Alignment.centerLeft,
-    child: AuraIconButton(
-      icon: _copied ? Icons.check : Icons.copy_outlined,
-      onPressed: () => unawaited(_copy()),
-      tooltip:
-          (_copied
-                  ? LocaleKeys.chats_screens_chat_conversation_message_copied
-                  : LocaleKeys.chats_screens_chat_conversation_copy_message)
-              .tr(),
-    ),
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: _copied ? Icons.check : Icons.copy_outlined,
+    onPressed: () => unawaited(_copy()),
+    tooltip:
+        (_copied
+                ? LocaleKeys.chats_screens_chat_conversation_message_copied
+                : LocaleKeys.chats_screens_chat_conversation_copy_message)
+            .tr(),
   );
 
   Future<void> _copy() async {
@@ -1396,9 +1394,29 @@ Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
       !uri.isAbsolute ||
       !uri.hasAuthority ||
       (uri.scheme != 'http' && uri.scheme != 'https') ||
-      uri.host.isEmpty) {
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty) {
     return;
   }
+
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: Text(
+      LocaleKeys.chats_screens_chat_conversation_external_link_title.tr(),
+    ),
+    message: AuraSelectableText(
+      LocaleKeys.chats_screens_chat_conversation_external_link_message.tr(
+        namedArgs: {'host': uri.host, 'url': uri.toString()},
+      ),
+    ),
+    actions: AuraConfirmDialogActions(
+      confirmLabel: Text(
+        LocaleKeys.chats_screens_chat_conversation_external_link_open.tr(),
+      ),
+      cancelLabel: Text(LocaleKeys.common_cancel.tr()),
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
 
   try {
     await OpenSystemBrowser.call(uri);
@@ -2539,10 +2557,7 @@ class const _ErrorMessageWidget({
               Flexible(child: AuraSelectableText(visibleContent)),
             ],
           ),
-          _MessageCopyAction(
-            resolveContent: () => visibleContent,
-            isUser: false,
-          ),
+          _MessageCopyAction(resolveContent: () => visibleContent),
         ],
       ),
       padding: .medium,

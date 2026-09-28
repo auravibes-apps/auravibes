@@ -17,6 +17,10 @@ _MessageToolCallEntity _$MessageToolCallEntityFromJson(
   turnId: json['turnId'] as String?,
   turnRevision: (json['turnRevision'] as num?)?.toInt(),
   responseRaw: json['responseRaw'] as String?,
+  responseContextRaw: json['responseContextRaw'] as String?,
+  outputTruncated: json['outputTruncated'] as bool? ?? false,
+  originalResponseBytes: (json['originalResponseBytes'] as num?)?.toInt(),
+  fullOutputForContext: json['fullOutputForContext'] as bool? ?? false,
   resultStatus: _toolCallResultStatusFromJson(json['resultStatus'] as String?),
 );
 
@@ -31,6 +35,10 @@ Map<String, dynamic> _$MessageToolCallEntityToJson(
   'turnId': ?instance.turnId,
   'turnRevision': ?instance.turnRevision,
   'responseRaw': instance.responseRaw,
+  'responseContextRaw': ?instance.responseContextRaw,
+  'outputTruncated': instance.outputTruncated,
+  'originalResponseBytes': ?instance.originalResponseBytes,
+  'fullOutputForContext': instance.fullOutputForContext,
   'resultStatus': _toolCallResultStatusToJson(instance.resultStatus),
 };
 

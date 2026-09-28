@@ -6,6 +6,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
+import 'package:auravibes_engine/src/model_capabilities.dart';
 import 'package:genkit/plugin.dart';
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
@@ -23,6 +24,52 @@ class const ChatCompletionsModelDefinition({
   required final String name,
   final ModelInfo? info,
 });
+
+enum ToolSamplingPolicy {
+  /// Sends ordinary tool schemas without strict sampling fields.
+  off,
+
+  /// Uses strict sampling when both capabilities and schema allow it.
+  prefer,
+
+  /// Requires strict sampling or rejects the request before transport.
+  require;
+
+  static ToolSamplingPolicy fromJson(Object? value) {
+    if (value == null) return off;
+    if (value case final String name) {
+      for (final policy in values) {
+        if (policy.name == name) return policy;
+      }
+    }
+
+    throw const FormatException(
+      'Tool sampling policy must be "off", "prefer", or "require".',
+    );
+  }
+}
+
+/// Why a required strict tool-sampling request was rejected.
+enum ToolSamplingValidationReason {
+  unsupportedProvider,
+  unsupportedModel,
+  incompatibleSchema,
+}
+
+/// A pre-transport strict tool-sampling validation failure.
+final class ToolSamplingValidationException implements Exception {
+  const new({required this.reason, required this.detail, this.toolName});
+
+  final ToolSamplingValidationReason reason;
+  final String detail;
+  final String? toolName;
+
+  @override
+  String toString() {
+    final tool = toolName == null ? '' : ' for tool "$toolName"';
+    return 'Tool sampling validation failed$tool: $detail';
+  }
+}
 
 mixin ChatCompletionsSamplingOptions {
   double? get temperature;
@@ -56,6 +103,9 @@ class const ChatCompletionsCodec({
     Map<String, dynamic>? config,
   )
   customize,
+
+  /// Whether this provider accepts OpenAI-compatible strict tool definitions.
+  final bool supportsStrictToolSampling = false,
 }) {
   Future<ModelResponse> complete(
     ProviderTransport transport,
@@ -140,15 +190,24 @@ class const ChatCompletionsCodec({
     required String modelName,
     required ModelRequest request,
     required bool stream,
+    ModelCapabilities? modelCapabilities,
   }) {
     final custom = customize(modelName, request.config);
+    final tools = _toolsToJson(
+      request.tools,
+      policy: ToolSamplingPolicy.fromJson(
+        request.config?['toolSamplingPolicy'],
+      ),
+      providerSupportsStrict: supportsStrictToolSampling,
+      modelCapabilities: modelCapabilities,
+    );
 
     return {
       'model': custom.model,
       'messages': request.messages.expand(_messageToJson).toList(),
       'stream': stream,
       if (stream) 'stream_options': {'include_usage': true},
-      'tools': ?request.tools?.map(_toolToJson).toList(),
+      'tools': ?tools,
       ...custom.extraBody,
     };
   }
@@ -363,7 +422,50 @@ List<Map<String, dynamic>>? _toolCallsToJson(List<Part> parts) {
   return toolCalls.isEmpty ? null : toolCalls;
 }
 
-Map<String, dynamic> _toolToJson(ToolDefinition tool) {
+List<Map<String, dynamic>>? _toolsToJson(
+  List<ToolDefinition>? tools, {
+  required ToolSamplingPolicy policy,
+  required bool providerSupportsStrict,
+  required ModelCapabilities? modelCapabilities,
+}) {
+  if (tools == null) return null;
+  if (tools.isEmpty || policy == ToolSamplingPolicy.off) {
+    return tools.map(_toolToJson).toList();
+  }
+  if (!providerSupportsStrict) {
+    if (policy == ToolSamplingPolicy.require) {
+      throw const ToolSamplingValidationException(
+        reason: ToolSamplingValidationReason.unsupportedProvider,
+        detail: 'The selected provider does not support strict tool sampling.',
+      );
+    }
+    return tools.map(_toolToJson).toList();
+  }
+  if (modelCapabilities?.supportsStrictToolSampling != true) {
+    if (policy == ToolSamplingPolicy.require) {
+      throw const ToolSamplingValidationException(
+        reason: ToolSamplingValidationReason.unsupportedModel,
+        detail: 'The selected model does not support strict tool sampling.',
+      );
+    }
+    return tools.map(_toolToJson).toList();
+  }
+
+  return tools.map((tool) {
+    final issue = _strictSchemaIssue(tool.inputSchema);
+    if (issue == null) return _toolToJson(tool, strict: true);
+    if (policy == ToolSamplingPolicy.require) {
+      throw ToolSamplingValidationException(
+        reason: ToolSamplingValidationReason.incompatibleSchema,
+        detail: issue,
+        toolName: tool.name,
+      );
+    }
+    return _toolToJson(tool);
+  }).toList();
+}
+
+Map<String, dynamic> _toolToJson(ToolDefinition tool, {bool strict = false}) {
   return {
     'type': 'function',
     'function': {
@@ -375,8 +477,97 @@ Map<String, dynamic> _toolToJson(ToolDefinition tool) {
             'type': 'object',
             'properties': <String, dynamic>{},
           },
+      if (strict) 'strict': true,
     },
   };
+}
+
+String? _strictSchemaIssue(Map<String, dynamic>? schema) {
+  if (schema == null) return r'$.type must be "object".';
+
+  return _schemaNodeIssue(schema, r'$', root: true);
+}
+
+String? _schemaNodeIssue(
+  Map<String, dynamic> schema,
+  String path, {
+  bool root = false,
+}) {
+  final type = _schemaType(schema['type']);
+  if (type == null) {
+    return '$path.type must name one supported type, optionally with null.';
+  }
+  if (root && (type.name != 'object' || type.nullable)) {
+    return r'$.type must be "object".';
+  }
+
+  return switch (type.name) {
+    'object' => _objectSchemaIssue(schema, path),
+    'array' => _arraySchemaIssue(schema, path),
+    _ => null,
+  };
+}
+
+({String name, bool nullable})? _schemaType(Object? value) {
+  const supported = {
+    'array',
+    'boolean',
+    'integer',
+    'null',
+    'number',
+    'object',
+    'string',
+  };
+  if (value is String && supported.contains(value)) {
+    return (name: value, nullable: false);
+  }
+  if (value is! List || value.length != 2 || !value.contains('null')) {
+    return null;
+  }
+  final names = value.whereType<String>().toSet();
+  if (names.length != 2 || names.length != value.length) return null;
+  final name = names.singleWhere((name) => name != 'null');
+  if (!supported.contains(name)) return null;
+
+  return (name: name, nullable: true);
+}
+
+String? _objectSchemaIssue(Map<String, dynamic> schema, String path) {
+  final properties = _stringMap(schema['properties']);
+  if (properties == null) return '$path.properties must be an object.';
+  if (schema['additionalProperties'] != false) {
+    return '$path.additionalProperties must be false.';
+  }
+  final required = schema['required'];
+  if (required is! List || !required.every((name) => name is String)) {
+    return '$path.required must list every property.';
+  }
+  final requiredNames = required.cast<String>().toSet();
+  if (requiredNames.length != required.length ||
+      requiredNames.length != properties.length ||
+      !requiredNames.containsAll(properties.keys)) {
+    return '$path.required must list every property exactly once.';
+  }
+
+  for (final entry in properties.entries) {
+    final child = _stringMap(entry.value);
+    if (child == null) return '$path.properties.${entry.key} must be a schema.';
+    final issue = _schemaNodeIssue(child, '$path.properties.${entry.key}');
+    if (issue != null) return issue;
+  }
+  return null;
+}
+
+String? _arraySchemaIssue(Map<String, dynamic> schema, String path) {
+  final items = _stringMap(schema['items']);
+  if (items == null) return '$path.items must be a schema.';
+
+  return _schemaNodeIssue(items, '$path.items');
+}
+
+Map<String, dynamic>? _stringMap(Object? value) {
+  if (value is! Map || !value.keys.every((key) => key is String)) return null;
+  return Map<String, dynamic>.from(value);
 }
 
 Message _messageFromAssistant(sdk.AssistantMessage message) {

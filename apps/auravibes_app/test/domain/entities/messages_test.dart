@@ -208,6 +208,8 @@ void main() {
             'name': 'native_url_url',
             'argumentsRaw': '{"url":"https://example.com"}',
             'responseRaw': 'ok',
+            'outputTruncated': false,
+            'fullOutputForContext': false,
             'resultStatus': 'success',
           },
         ],

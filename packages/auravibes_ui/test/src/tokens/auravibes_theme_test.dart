@@ -1,8 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraTheme', () {
@@ -31,6 +31,7 @@ void main() {
       expect(theme.spacing, AuraTheme.light.spacing);
       expect(theme.borderRadius, AuraTheme.light.borderRadius);
       expect(theme.typography, AuraTheme.light.typography);
+      expect(theme.interactionSizes, AuraTheme.light.interactionSizes);
     });
 
     test('lerp returns this when other is null', () {
@@ -44,6 +45,16 @@ void main() {
       expect(result.colors, isA<AuraColorScheme>());
     });
 
+    test('copyWith replaces interaction sizes and lerp interpolates them', () {
+      final largerTargets = AuraTheme.light.copyWith(
+        interactionSizes: const AuraInteractionSizeScale(minimumTargetSize: 64),
+      );
+      final middleTheme = AuraTheme.light.lerp(largerTargets, 0.5);
+
+      expect(largerTargets.interactionSizes.minimumTargetSize, 64);
+      expect(middleTheme.interactionSizes.minimumTargetSize, 56);
+    });
+
     test('fromSpacing returns correct values', () {
       final theme = AuraTheme.light;
       expect(theme.fromSpacing(.none), 0);
@@ -55,6 +66,27 @@ void main() {
       expect(theme.fromSpacing(.xl), 32);
       expect(theme.fromSpacing(.xl2), 48);
       expect(theme.fromSpacing(.xl3), 64);
+    });
+  });
+
+  group('AuraInteractionSizeScale', () {
+    test('defaults to 48 logical pixels', () {
+      expect(const AuraInteractionSizeScale().minimumTargetSize, 48);
+      expect(AuraTheme.light.interactionSizes.minimumTargetSize, 48);
+    });
+
+    test('rejects a target size below 48 logical pixels', () {
+      expect(
+        () => AuraInteractionSizeScale(minimumTargetSize: 47),
+        throwsAssertionError,
+      );
+    });
+
+    test('lerp interpolates minimum target size', () {
+      const compact = AuraInteractionSizeScale();
+      const spacious = AuraInteractionSizeScale(minimumTargetSize: 64);
+
+      expect(compact.lerp(spacious, 0.5).minimumTargetSize, 56);
     });
   });
 
@@ -263,30 +295,36 @@ void main() {
   group('AuraThemeExtension', () {
     testWidgets('auraTheme returns theme from context', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(context.auraTheme, AuraTheme.light);
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                expect(context.auraTheme, AuraTheme.light);
 
-              return const SizedBox();
-            },
+                return const SizedBox();
+              },
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });
 
     testWidgets('auraColors returns colors from context', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) {
-              expect(context.auraColors, AuraTheme.light.colors);
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) {
+                expect(context.auraColors, AuraTheme.light.colors);
 
-              return const SizedBox();
-            },
+                return const SizedBox();
+              },
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
     });

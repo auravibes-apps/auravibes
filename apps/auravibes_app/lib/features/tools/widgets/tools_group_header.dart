@@ -8,6 +8,19 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
+typedef ToolsGroupHeaderSelection = ({
+  bool isSelected,
+  bool isWorking,
+  ValueChanged<bool>? onChanged,
+});
+
+typedef ToolsGroupHeaderActions = ({
+  ValueChanged<bool>? onToggleEnabled,
+  VoidCallback? onReconnect,
+  VoidCallback? onDelete,
+  VoidCallback? onViewError,
+});
+
 /// Header widget for a tools group card.
 ///
 /// Displays:
@@ -22,6 +35,11 @@ class const ToolsGroupHeader({
   required final ToolsGroupWithTools groupWithTools,
   required final bool isExpanded,
   required final VoidCallback onToggleExpand,
+  final bool isSelected = false,
+  final bool isWorking = false,
+
+  /// Callback when this deletable group is selected for a bulk action.
+  final ValueChanged<bool>? onSelectionChanged,
 
   /// Callback when the group is toggled on/off.
   /// Null for default group (which has no toggle).
@@ -39,22 +57,32 @@ class const ToolsGroupHeader({
   final VoidCallback? onViewError,
   super.key,
 }) extends StatelessWidget {
+  new managed({
+    required ToolsGroupWithTools groupWithTools,
+    required bool isExpanded,
+    required VoidCallback onToggleExpand,
+    required ToolsGroupHeaderSelection selection,
+    required ToolsGroupHeaderActions actions,
+    Key? key,
+  }) : this(
+         groupWithTools: groupWithTools,
+         isExpanded: isExpanded,
+         onToggleExpand: onToggleExpand,
+         isSelected: selection.isSelected,
+         isWorking: selection.isWorking,
+         onSelectionChanged: selection.onChanged,
+         onToggleEnabled: actions.onToggleEnabled,
+         onReconnect: actions.onReconnect,
+         onDelete: actions.onDelete,
+         onViewError: actions.onViewError,
+         key: key,
+       );
+
   @override
   Widget build(BuildContext context) {
     return AuraRow(
       children: [
-        // Group icon.
-        _GroupIcon(groupWithTools: groupWithTools),
-        const AuraSizedBox(width: .sm),
-
-        // Group name and status.
-        _GroupDetails(
-          groupWithTools: groupWithTools,
-          onReconnect: onReconnect,
-          onViewError: onViewError,
-        ),
-
-        // Actions row.
+        _GroupHeaderMain(header: this),
         _GroupActions(
           groupWithTools: groupWithTools,
           isExpanded: isExpanded,
@@ -66,6 +94,72 @@ class const ToolsGroupHeader({
     );
   }
 }
+
+class const _GroupHeaderMain({required final ToolsGroupHeader header})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: AuraRow(
+      children: [
+        _OptionalGroupSelection(header: header),
+        _GroupIcon(groupWithTools: header.groupWithTools),
+        const AuraSizedBox(width: .sm),
+        _GroupDetails(
+          groupWithTools: header.groupWithTools,
+          onReconnect: header.onReconnect,
+          onViewError: header.onViewError,
+        ),
+      ],
+    ),
+  );
+}
+
+class const _OptionalGroupSelection({required final ToolsGroupHeader header})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final onChanged = header.onSelectionChanged;
+    if (onChanged == null) return const SizedBox.shrink();
+
+    return _GroupSelectionCheckbox(
+      groupWithTools: header.groupWithTools,
+      isSelected: header.isSelected,
+      isWorking: header.isWorking,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class const _GroupSelectionCheckbox({
+  required final ToolsGroupWithTools groupWithTools,
+  required final bool isSelected,
+  required final bool isWorking,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckbox(
+    value: isSelected,
+    onChanged: isWorking ? null : onChanged,
+    key: ValueKey('tools-group-selection-${groupWithTools.group?.id}'),
+    disabled: isWorking,
+    semanticLabel: _groupSelectionLabel(groupWithTools, isSelected),
+  );
+}
+
+String _groupSelectionLabel(
+  ToolsGroupWithTools groupWithTools,
+  bool isSelected,
+) =>
+    (isSelected
+            ? LocaleKeys.tools_screen_deselect_group
+            : LocaleKeys.tools_screen_select_group)
+        .tr(
+          args: [
+            groupWithTools.localizedDisplayNameKey?.tr() ??
+                groupWithTools.group?.name ??
+                '',
+          ],
+        );
 
 class const _GroupDetails({
   required final ToolsGroupWithTools groupWithTools,

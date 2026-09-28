@@ -59,14 +59,15 @@ void main() {
           'description',
           'config',
           'input_schema',
+          'output_schema',
           'is_enabled',
           'permissions',
         ]),
       );
     });
 
-    test('has 11 columns', () {
-      expect(columns.length, 11);
+    test('has 12 columns', () {
+      expect(columns.length, 12);
     });
 
     test('primary key on id', () {
@@ -110,6 +111,13 @@ void main() {
     test('input_schema is nullable', () {
       final col = columns.firstWhere(
         (r) => r.read<String>('name') == 'input_schema',
+      );
+      expect(col.read<int>('notnull'), 0);
+    });
+
+    test('output_schema is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'output_schema',
       );
       expect(col.read<int>('notnull'), 0);
     });

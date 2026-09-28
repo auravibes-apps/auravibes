@@ -388,12 +388,20 @@ ToolCallExecutionBatchUpdate _executionUpdateForResolvedClaim(
     throw StateError('Resolved tool result is missing a status.');
   }
 
-  return ToolCallExecutionBatchUpdate(
-    conversationId: item.conversationId,
-    messageId: item.messageId,
-    toolCallId: item.toolCallId,
+  return ToolCallExecutionBatchUpdate.fromParts(
+    identity: (
+      conversationId: item.conversationId,
+      messageId: item.messageId,
+      toolCallId: item.toolCallId,
+    ),
     resultStatus: resultStatus,
-    responseRaw: entry.responseRaw,
+    output: (
+      responseRaw: entry.responseRaw,
+      responseContextRaw: null,
+      outputTruncated: false,
+      originalResponseBytes: null,
+      fullOutputForContext: false,
+    ),
   );
 }
 
@@ -428,18 +436,35 @@ _ResolvedBatchClaim _missingResolvedTool(
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
-) => [
-  for (final result in results)
-    ToolCallExecutionBatchUpdate(
-      conversationId: result.call.conversationId,
-      messageId: result.call.messageId,
-      toolCallId: result.call.toolCallId,
-      resultStatus: AgentToolStatusMapper.toResultStatus(
-        result.result.resultStatus,
-      ),
-      responseRaw: result.result.responseRaw,
+) => [for (final result in results) _executionUpdate(result)];
+
+ToolCallExecutionBatchUpdate _executionUpdate(
+  agent.AgentToolBatchResult<ResolvedTool> result,
+) {
+  final call = result.call;
+  final execution = result.result;
+  final output = _batchToolOutput(execution);
+
+  return ToolCallExecutionBatchUpdate.fromParts(
+    identity: (
+      conversationId: call.conversationId,
+      messageId: call.messageId,
+      toolCallId: call.toolCallId,
     ),
-];
+    resultStatus: AgentToolStatusMapper.toResultStatus(execution.resultStatus),
+    output: output,
+  );
+}
+
+ToolCallExecutionOutput _batchToolOutput(
+  agent.AgentToolExecutionResult result,
+) => (
+  responseRaw: result.responseRaw,
+  responseContextRaw: result.responseContextRaw,
+  outputTruncated: result.outputTruncated,
+  originalResponseBytes: result.originalResponseBytes,
+  fullOutputForContext: result.fullOutputForContext,
+);
 
 Map<String, List<ToolCallApprovalBatchClaim>> _groupClaimsByConversation(
   Iterable<ToolCallApprovalBatchClaim> claims,

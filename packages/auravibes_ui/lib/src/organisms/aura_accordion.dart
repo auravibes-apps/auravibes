@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 part 'aura_accordion_item.dart';
 
@@ -141,10 +141,17 @@ class const _AccordionHeaderButton({
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => InkWell(
-    child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
-    onTap: navigable ? onTap : null,
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: .new(minHeight: targetSize),
+      child: InkWell(
+        child: _AccordionHeaderContent(title: title, isExpanded: isExpanded),
+        onTap: navigable ? onTap : null,
+      ),
+    );
+  }
 }
 
 class const _AccordionHeaderContent({

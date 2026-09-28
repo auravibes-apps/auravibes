@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/sub_agents/sub_agent_tool_specs.dart';
 import 'package:auravibes_engine/src/tool_execution_dispatcher.dart';
 
 const maxSubAgentTitleLength = 160;
@@ -44,6 +45,7 @@ class const SubAgentRunner({
             },
         ],
         'nextCursor': page.nextCursor,
+        'hint': generalSubAgentHint,
       });
     } on AgentToolExecutionFailure {
       rethrow;
