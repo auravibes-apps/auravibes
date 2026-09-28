@@ -75,6 +75,7 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
     try {
       final _ = await _workspaceRepository
           .deleteCloudWorkspaceMirrorsForAccount(userId, serverUrl: origin);
+
       return true;
     } on Object {
       return false;
@@ -84,6 +85,7 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   Future<bool> _tryRemoveLocalAccount(String origin, String userId) async {
     try {
       await _removeLocalAccount(origin, userId);
+
       return true;
     } on Object {
       return false;
