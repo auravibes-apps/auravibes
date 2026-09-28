@@ -204,8 +204,12 @@ List<AgentTranscriptContextUpdate> _updatesBeforeSummary(
 List<AgentTranscriptContextEntry> _entriesAfterSummary(
   List<MessageEntity> transcript,
   int summaryIndex,
-) {
-  final entries = <AgentTranscriptContextEntry>[];
+) => _iterEntriesAfterSummary(transcript, summaryIndex).toList();
+
+Iterable<AgentTranscriptContextEntry> _iterEntriesAfterSummary(
+  List<MessageEntity> transcript,
+  int summaryIndex,
+) sync* {
   String? previousMessageId;
   for (var index = 0; index < transcript.length; index++) {
     final progress = _transcriptEntryProgress(
@@ -217,10 +221,8 @@ List<AgentTranscriptContextEntry> _entriesAfterSummary(
     previousMessageId = progress.previousMessageId;
     final entry = progress.entry;
     if (entry == null) continue;
-    entries.add(entry);
+    yield entry;
   }
-
-  return entries;
 }
 
 typedef _TranscriptEntryProgress = ({
