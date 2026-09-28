@@ -1,0 +1,47 @@
+{
+  "skill_name": "ux-task-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Audit the current service connection creation journey. I lose track of what happens after I save. Do not change code.",
+      "expected_output": "Loads ux-task-audit, maps the current task using repository evidence, distinguishes observed behavior from source-based inference, and gives testable findings without claiming user research.",
+      "files": [
+        "apps/auravibes_app/lib/features/service_connections/screens/service_connection_create_screen.dart",
+        "apps/auravibes_app/lib/features/service_connections/screens/service_connections_screen.dart"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "People say there are too many steps before they can start chatting. Find where the task loses clarity and suggest the smallest safe simplification. Do not edit files.",
+      "expected_output": "Loads ux-task-audit and maps the existing journey. It treats the report as user evidence supplied by the prompt, cites additional code or current-product evidence separately, ranks issues, and proposes checks rather than claiming an unobserved fix worked.",
+      "files": [
+        "apps/auravibes_app/lib/features/chats/screens/new_chat_screen.dart",
+        "apps/auravibes_app/lib/features/chats/screens/chats_list_screen.dart"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review this screen for color contrast and keyboard accessibility only.",
+      "expected_output": "Does not load ux-task-audit; routes to the accessibility skill because the request is limited to accessibility checks.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Make the connection card padding smaller.",
+      "expected_output": "Does not load ux-task-audit; the request is a local UI edit and should use only ux-view-clarity's brief check.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Change the repository retry backoff from 250 ms to 500 ms.",
+      "expected_output": "Does not load ux-task-audit because the request is backend behavior and does not ask to evaluate a user task.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Correct a spelling error in the architecture documentation.",
+      "expected_output": "Does not load ux-task-audit because the request is documentation-only.",
+      "files": []
+    }
+  ]
+}
