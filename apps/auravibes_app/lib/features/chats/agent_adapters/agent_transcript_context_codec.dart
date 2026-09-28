@@ -108,7 +108,7 @@ Map<String, Object?> _asObjectMap(Object? value) {
   return value;
 }
 
-List<Object?> _asObjectList(Object? value) {
+List<Object?> _asObjectList(Object value) {
   if (value is! List<Object?>) throw const FormatException();
 
   return value;
