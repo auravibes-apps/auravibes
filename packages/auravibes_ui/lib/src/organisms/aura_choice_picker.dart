@@ -11,7 +11,6 @@ part 'aura_choice_option.dart';
 part 'aura_choice_picker_variant.dart';
 part 'aura_choice_picker_presentation.dart';
 
-const _choicePickerTapTarget = 48.0;
 const _disabledOpacity = 0.6;
 
 /// A controlled list of labeled choices supporting single or multiple values.
@@ -380,9 +379,9 @@ class const _AuraChoicePickerChipContent<T>({
 class _AuraChoicePickerChipPadding<T> extends StatelessWidget {
   new(AuraTheme theme, _AuraChoicePickerOption<T> source)
     : _child = ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: _choicePickerTapTarget,
-          minHeight: _choicePickerTapTarget,
+        constraints: .new(
+          minWidth: theme.interactionSizes.minimumTargetSize,
+          minHeight: theme.interactionSizes.minimumTargetSize,
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -500,15 +499,19 @@ class const _AuraChoicePickerControlTarget<T>({
   required final _AuraChoicePickerOption<T> source,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: _choicePickerTapTarget,
-    height: _choicePickerTapTarget,
-    child: Center(
-      child: ExcludeSemantics(
-        child: _AuraChoicePickerControl<T>(source: source),
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return SizedBox(
+      width: targetSize,
+      height: targetSize,
+      child: Center(
+        child: ExcludeSemantics(
+          child: _AuraChoicePickerControl<T>(source: source),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class const _AuraChoicePickerControl<T>({
@@ -571,8 +574,10 @@ class const _AuraChoicePickerListLabelContent<T>({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: _choicePickerTapTarget),
+      constraints: .new(minHeight: targetSize),
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: Opacity(

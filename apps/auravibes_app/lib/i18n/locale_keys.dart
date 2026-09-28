@@ -258,6 +258,8 @@ abstract class LocaleKeys {
       'service_connections.action.reconnect';
   static const service_connections_action_refresh_token =
       'service_connections.action.refresh_token';
+  static const service_connections_action_test_connection =
+      'service_connections.action.test_connection';
   static const service_connections_action_reconnect_success =
       'service_connections.action.reconnect_success';
   static const service_connections_action_reconnect_error =
@@ -266,6 +268,40 @@ abstract class LocaleKeys {
       'service_connections.action.refresh_success';
   static const service_connections_action_refresh_error =
       'service_connections.action.refresh_error';
+  static const service_connections_test_success =
+      'service_connections.test.success';
+  static const service_connections_test_authentication =
+      'service_connections.test.authentication';
+  static const service_connections_test_network =
+      'service_connections.test.network';
+  static const service_connections_test_protocol =
+      'service_connections.test.protocol';
+  static const service_connections_test_unknown =
+      'service_connections.test.unknown';
+  static const service_connections_test_attempted_at =
+      'service_connections.test.attempted_at';
+  static const service_connections_test_recovery_auth =
+      'service_connections.test.recovery_auth';
+  static const service_connections_test_recovery_network =
+      'service_connections.test.recovery_network';
+  static const service_connections_test_recovery_protocol =
+      'service_connections.test.recovery_protocol';
+  static const service_connections_test_retry =
+      'service_connections.test.retry';
+  static const service_connections_test_open_tools =
+      'service_connections.test.open_tools';
+  static const service_connections_diagnostics_transport =
+      'service_connections.diagnostics.transport';
+  static const service_connections_diagnostics_category =
+      'service_connections.diagnostics.category';
+  static const service_connections_diagnostics_attempted_at =
+      'service_connections.diagnostics.attempted_at';
+  static const service_connections_diagnostics_app_version =
+      'service_connections.diagnostics.app_version';
+  static const service_connections_diagnostics_summary =
+      'service_connections.diagnostics.summary';
+  static const service_connections_diagnostics_unavailable =
+      'service_connections.diagnostics.unavailable';
   static const service_connections_create_type_label =
       'service_connections.create.type_label';
   static const service_connections_create_app_skill_label =
@@ -471,6 +507,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.reasoning.restore_default';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_discard_draft =
+      'chats_screens.chat_conversation.discard_draft';
   static const chats_screens_chat_conversation_attach_file =
       'chats_screens.chat_conversation.attach_file';
   static const chats_screens_chat_conversation_attach_photo =
@@ -829,6 +867,8 @@ abstract class LocaleKeys {
       'markdown_editor.toolbar.bullets';
   static const markdown_editor_toolbar_numbered_list =
       'markdown_editor.toolbar.numbered_list';
+  static const markdown_editor_toolbar_task_list =
+      'markdown_editor.toolbar.task_list';
   static const markdown_editor_toolbar_link = 'markdown_editor.toolbar.link';
   static const markdown_editor_toolbar_link_text_placeholder =
       'markdown_editor.toolbar.link_text_placeholder';
@@ -837,6 +877,15 @@ abstract class LocaleKeys {
   static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
   static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
   static const markdown_editor_toolbar_undo = 'markdown_editor.toolbar.undo';
+  static const markdown_editor_toolbar_redo = 'markdown_editor.toolbar.redo';
+  static const markdown_editor_link_dialog_title =
+      'markdown_editor.link_dialog_title';
+  static const markdown_editor_link_text_label =
+      'markdown_editor.link_text_label';
+  static const markdown_editor_link_destination_label =
+      'markdown_editor.link_destination_label';
+  static const markdown_editor_link_destination_required =
+      'markdown_editor.link_destination_required';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';
@@ -984,6 +1033,14 @@ abstract class LocaleKeys {
       'skill_credentials_definitions.save';
   static const skill_credentials_definitions_save_error =
       'skill_credentials_definitions.save_error';
+  static const skill_credentials_definitions_secret_required =
+      'skill_credentials_definitions.secret_required';
+  static const skill_credentials_definitions_schema_conflict =
+      'skill_credentials_definitions.schema_conflict';
+  static const skill_credentials_definitions_delete_conflict =
+      'skill_credentials_definitions.delete_conflict';
+  static const skill_credentials_definitions_manage_credentials =
+      'skill_credentials_definitions.manage_credentials';
   static const skill_credentials_definitions_duplicate =
       'skill_credentials_definitions.duplicate';
   static const skill_credentials_definitions_duplicate_success =
@@ -1124,7 +1181,10 @@ abstract class LocaleKeys {
   static const common_deselect_all = 'common.deselect_all';
   static const common_clear_selection = 'common.clear_selection';
   static const common_delete_selected = 'common.delete_selected';
+  static const common_clear_search = 'common.clear_search';
   static const common_selected_count = 'common.selected_count';
+  static const common_hidden_selected_count = 'common.hidden_selected_count';
+  static const common_additional_failures = 'common.additional_failures';
   static const common_show_more = 'common.show_more';
   static const common_show_less = 'common.show_less';
   static const common_error_title = 'common.error_title';
@@ -1376,6 +1436,19 @@ abstract class LocaleKeys {
       'compaction.errors.auto_blocked';
   static const compaction_errors_settings_invalid =
       'compaction.errors.settings_invalid';
+  static const workspace_archive_export = 'workspace_archive.export';
+  static const workspace_archive_import_into = 'workspace_archive.import_into';
+  static const workspace_archive_import_new = 'workspace_archive.import_new';
+  static const workspace_archive_exported = 'workspace_archive.exported';
+  static const workspace_archive_imported = 'workspace_archive.imported';
+  static const workspace_archive_invalid = 'workspace_archive.invalid';
+  static const workspace_archive_unsupported_version =
+      'workspace_archive.unsupported_version';
+  static const workspace_archive_invalid_target =
+      'workspace_archive.invalid_target';
+  static const workspace_archive_unsupported_configuration =
+      'workspace_archive.unsupported_configuration';
+  static const workspace_archive_error = 'workspace_archive.error';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_copy_id = 'workspace_management.copy_id';
   static const workspace_management_id_copied =
@@ -1392,6 +1465,8 @@ abstract class LocaleKeys {
       'workspace_management.bulk_delete_confirm';
   static const workspace_management_bulk_delete_failures =
       'workspace_management.bulk_delete_failures';
+  static const workspace_management_cloud_retry =
+      'workspace_management.cloud_retry';
   static const workspace_management_create_button =
       'workspace_management.create_button';
   static const workspace_management_duplicate =

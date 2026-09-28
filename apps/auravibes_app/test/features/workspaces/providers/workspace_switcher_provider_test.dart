@@ -33,6 +33,9 @@ class _PendingWorkspaceSelectionRepository
   }
 
   void completeSave(int index) => _pendingSaves[index].complete();
+
+  void failSave(int index) =>
+      _pendingSaves[index].completeError(StateError('Stale save failed.'));
 }
 
 class _FailingWorkspaceSelectionRepository
@@ -163,6 +166,62 @@ void main() {
         expect(fakeRouter.locations, ['/workspaces/ws-2/chat/new']);
       },
     );
+
+    for (final staleSaveFails in [false, true]) {
+      final result = staleSaveFails ? 'failure' : 'success';
+      test('superseded $result cannot affect the latest switch', () async {
+        container.dispose();
+        final pendingSelection = _PendingWorkspaceSelectionRepository();
+        container = ProviderContainer(
+          overrides: [
+            routerProvider.overrideWithValue(fakeRouter),
+            lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
+              pendingSelection,
+            ),
+          ],
+        );
+        final states = <WorkspaceSwitchState>[];
+        final subscription = container.listen(
+          workspaceSwitcherProvider,
+          (previous, next) => states.add(next),
+        );
+        addTearDown(subscription.close);
+        final notifier = container.read(workspaceSwitcherProvider.notifier);
+
+        notifier.switchToWorkspace('ws-1');
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        expect(pendingSelection.savedWorkspaceIds, ['ws-1']);
+        notifier.switchToWorkspace('ws-2');
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        final stateCount = states.length;
+
+        if (staleSaveFails) {
+          pendingSelection.failSave(0);
+        } else {
+          pendingSelection.completeSave(0);
+        }
+        await _waitUntil(() => pendingSelection.savedWorkspaceIds.length == 2);
+
+        expect(fakeRouter.locations, isEmpty);
+        expect(
+          states.skip(stateCount).every((state) => state.status == .loading),
+          isTrue,
+        );
+        expect(
+          container.read(workspaceSwitcherProvider).targetWorkspaceId,
+          'ws-2',
+        );
+
+        pendingSelection.completeSave(1);
+        await _waitUntil(() => fakeRouter.locations.isNotEmpty);
+
+        expect(fakeRouter.locations, ['/workspaces/ws-2/chat/new']);
+        expect(
+          container.read(workspaceSwitcherProvider).status,
+          SwitchStatus.idle,
+        );
+      });
+    }
 
     test('cancels an in-flight switch without navigating', () async {
       container.dispose();

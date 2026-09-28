@@ -189,10 +189,32 @@
     "action": {
       "reconnect": "Reconectar",
       "refresh_token": "Actualizar token",
+      "test_connection": "Probar conexión",
       "reconnect_success": "Servidor MCP reconectado",
       "reconnect_error": "No se pudo reconectar el servidor MCP",
       "refresh_success": "Token OAuth actualizado",
       "refresh_error": "No se pudo actualizar el token OAuth"
+    },
+    "test": {
+      "success": "La prueba de conexión MCP se completó",
+      "authentication": "Falló la autenticación MCP",
+      "network": "Falló la red o se agotó el tiempo de espera de MCP",
+      "protocol": "Falló el servidor MCP o su configuración",
+      "unknown": "Falló la prueba de conexión MCP",
+      "attempted_at": "Prueba realizada {time}",
+      "recovery_auth": "Reconecta este servidor MCP para restablecer el acceso.",
+      "recovery_network": "Revisa tu conexión de red y vuelve a probar el servidor.",
+      "recovery_protocol": "Revisa este servidor MCP en Herramientas. Para cambiar su URL o autenticación, agrega una conexión nueva.",
+      "retry": "Reintentar prueba",
+      "open_tools": "Abrir Herramientas"
+    },
+    "diagnostics": {
+      "transport": "Transporte",
+      "category": "Categoría del estado",
+      "attempted_at": "Hora del intento",
+      "app_version": "Versión de la app",
+      "summary": "Resumen",
+      "unavailable": "No registrado"
     },
     "create": {
       "type_label": "Tipo de conexión",
@@ -351,6 +373,7 @@
         "restore_default": "Restaurar predeterminado del proveedor"
       },
       "message_placeholder": "Escribe tu mensaje...",
+      "discard_draft": "Descartar borrador",
       "attach_file": "Adjuntar archivo",
       "attach_photo": "Adjuntar foto",
       "attach_camera": "Tomar foto",
@@ -496,7 +519,10 @@
     "deselect_tool": "Deseleccionar herramienta {}",
     "bulk_delete_title": "¿Eliminar las herramientas seleccionadas?",
     "bulk_delete_confirm": "Se quitarán las herramientas personalizadas seleccionadas. Los grupos MCP seleccionados eliminarán su servidor y todas sus herramientas.",
-    "bulk_delete_failures": "No se pudo eliminar: {}",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar 1 herramienta: {names}",
+      "other": "No se pudieron eliminar {} herramientas: {names}"
+    },
     "permission_always_ask": "Siempre Preguntar",
     "permission_always_allow": "Siempre Permitir",
     "permission_label": "Permiso",
@@ -542,7 +568,10 @@
     "deselect_skill": "Deseleccionar habilidad {}",
     "bulk_delete_title": "¿Eliminar las habilidades seleccionadas?",
     "bulk_delete_confirm": "¿Eliminar las habilidades de usuario seleccionadas? También se eliminarán su estado de carga en conversaciones y sus herramientas de plantilla.",
-    "bulk_delete_failures": "No se pudo eliminar: {}",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar 1 habilidad: {names}",
+      "other": "No se pudieron eliminar {} habilidades: {names}"
+    },
     "save_error": "No se pudo guardar la habilidad",
     "unsaved_changes_title": "Cambios sin guardar",
     "unsaved_changes_message": "Tienes cambios sin guardar. ¿Descartarlos y salir?",
@@ -594,13 +623,19 @@
       "heading": "Encabezado",
       "bullets": "Viñetas",
       "numbered_list": "Lista numerada",
+      "task_list": "Lista de tareas",
       "link": "Enlace",
       "link_text_placeholder": "Texto del enlace",
       "link_url_placeholder": "https://example.com",
       "code": "Código",
       "quote": "Cita",
-      "undo": "Deshacer"
-    }
+      "undo": "Deshacer",
+      "redo": "Rehacer"
+    },
+    "link_dialog_title": "Insertar enlace",
+    "link_text_label": "Texto del enlace",
+    "link_destination_label": "URL de destino",
+    "link_destination_required": "Introduce una URL de destino"
   },
   "skills_resource": {
     "section_title": "Recursos",
@@ -711,6 +746,10 @@
     "not_found": "Credencial no encontrada",
     "save": "Guardar",
     "save_error": "No se pudo guardar la credencial",
+    "secret_required": "Agrega al menos un campo secreto. Las definiciones que solo contienen metadatos no pueden usarse como credenciales.",
+    "schema_conflict": "No se puede cambiar {fields}: {credentials} credenciales guardadas usan esta definición. Edita o elimina esas credenciales primero.",
+    "delete_conflict": "No se puede eliminar: hay {credentials} credenciales vinculadas, {skills} habilidades y {tools} herramientas de plantilla afectadas. Elimina las credenciales primero.",
+    "manage_credentials": "Administrar credenciales",
     "duplicate": "Duplicar",
     "duplicate_success": "Credencial duplicada",
     "duplicate_error": "No se pudo duplicar la credencial",
@@ -780,7 +819,7 @@
     "agents": {
       "title": "Agentes",
       "description": "Inspecciona los agentes activos del espacio de trabajo.",
-      "content": "Usa esta habilidad para listar agentes activos y filtrarlos por tipo. Cargar esta habilidad agrega solo list_agents a la conversación. run_sub_agent es una herramienta del harness y sigue disponible sin cargar esta habilidad."
+      "content": "Usa list_agents para buscar agentes configurados; filtra por type=sub_agent al elegir un especialista. Un subagente general no requiere un agente configurado: llama a run_sub_agent con title y prompt y omite agentId. Cargar esta habilidad solo agrega list_agents; run_sub_agent sigue disponible sin cargarla."
     }
   },
   "tool_confirmation": {
@@ -833,9 +872,18 @@
     "deselect_all": "Deseleccionar todo lo visible",
     "clear_selection": "Borrar selección",
     "delete_selected": "Eliminar selección",
+    "clear_search": "Borrar búsqueda",
     "selected_count": {
       "one": "1 elemento seleccionado",
       "other": "{} elementos seleccionados"
+    },
+    "hidden_selected_count": {
+      "one": "1 elemento oculto por los filtros",
+      "other": "{} elementos ocultos por los filtros"
+    },
+    "additional_failures": {
+      "one": "; 1 fallo adicional",
+      "other": "; {} fallos adicionales"
     },
     "show_more": "Ver más",
     "show_less": "Ver menos",
@@ -1087,6 +1135,18 @@
       "settings_invalid": "Configuración de compresión inválida. Verifica tus valores."
     }
   },
+  "workspace_archive": {
+    "export": "Exportar configuración",
+    "import_into": "Importar configuración aquí",
+    "import_new": "Importar como espacio nuevo",
+    "exported": "Configuración guardada. No se incluyen credenciales ni conexiones a servidores MCP.",
+    "imported": "Configuración importada. Vuelve a añadir las credenciales para usar los servicios conectados.",
+    "invalid": "Este archivo de configuración no es válido o está dañado.",
+    "unsupported_version": "Este archivo de configuración usa una versión no compatible.",
+    "invalid_target": "Este espacio no puede recibir el archivo de configuración.",
+    "unsupported_configuration": "Esta configuración hace referencia a una habilidad de la aplicación no disponible en el espacio de destino.",
+    "error": "No se pudo exportar o importar la configuración del espacio de trabajo."
+  },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
     "copy_id": "Copiar ID",
@@ -1096,7 +1156,11 @@
     "deselect_workspace": "Deseleccionar espacio de trabajo {}",
     "bulk_delete_title": "¿Eliminar los espacios de trabajo seleccionados?",
     "bulk_delete_confirm": "Los espacios locales se eliminarán de este dispositivo. Los espacios conectados en la nube solo se quitarán de esta app.",
-    "bulk_delete_failures": "No se pudo eliminar o quitar: {}",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar o quitar 1 espacio de trabajo: {names}",
+      "other": "No se pudieron eliminar o quitar {} espacios de trabajo: {names}"
+    },
+    "cloud_retry": "Reintentar",
     "create_button": "Crear Espacio de Trabajo",
     "duplicate": "Duplicar Espacio de Trabajo",
     "create_title": "Crear Nuevo Espacio de Trabajo",

@@ -38,8 +38,9 @@ For underline tabs, preserve this hierarchy and geometry:
 - hover/focus: an 8% state layer limited to the tab hit target;
 - pressed: a 16% state layer limited to the tab hit target;
 - selected: persistent primary text plus a 2px primary indicator;
-- tab target: at least 48px high (`AuraSpacing.xl2`), including horizontal
-  padding;
+- tab target: use `context.auraTheme.interactionSizes.minimumTargetSize`,
+  including horizontal padding; default is 48px and the theme enforces a 48px
+  floor;
 - tab strip: one 1px divider below the full strip, with no per-tab border;
 - state-layer radius: `AuraBorderRadius.md` (6px); do not make the underline a
   filled pill or let the state background span the whole strip.

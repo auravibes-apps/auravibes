@@ -50,4 +50,73 @@ void main() {
     expect(snapshot.toolCalls.single.argumentCharacterCount, 7);
     expect(snapshot.toolCalls.single.resultCharacterCount, 4);
   });
+
+  test(
+    'uses bounded output for context while keeping full result persisted',
+    () {
+      final source = 'result ' * 4000;
+      final projection = projectToolOutput(source);
+      final toolCall = MessageToolCallEntity(
+        id: 'tool-1',
+        name: 'search',
+        argumentsRaw: '{}',
+        responseRaw: source,
+        responseContextRaw: projection.text,
+        outputTruncated: projection.truncated,
+        originalResponseBytes: projection.originalBytes,
+        resultStatus: .success,
+      );
+      final message = MessageEntity(
+        id: 'message-1',
+        conversationId: 'conversation-1',
+        content: '',
+        messageType: .text,
+        isUser: false,
+        status: .sent,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        metadata: .new(toolCalls: [toolCall]),
+      );
+
+      final snapshot = MessageTranscriptSnapshotMapper.toAgentContextSnapshot([
+        message,
+      ]).messages.single.toolCalls.single;
+
+      expect(toolCall.responseRaw, source);
+      expect(toolCall.getResponseForAI(), projection.text);
+      expect(snapshot.resultCharacterCount, projection.text.length);
+      expect(snapshot.resultTruncated, isTrue);
+      expect(snapshot.originalResultBytes, source.length);
+    },
+  );
+
+  test('derives bounds metadata for older raw results', () {
+    final source = 'older result ' * 2500;
+    final toolCall = MessageToolCallEntity(
+      id: 'tool-1',
+      name: 'search',
+      argumentsRaw: '{}',
+      responseRaw: source,
+      resultStatus: .success,
+    );
+    final message = MessageEntity(
+      id: 'message-1',
+      conversationId: 'conversation-1',
+      content: '',
+      messageType: .text,
+      isUser: false,
+      status: .sent,
+      createdAt: .new(2026),
+      updatedAt: .new(2026),
+      metadata: .new(toolCalls: [toolCall]),
+    );
+
+    final snapshot = MessageTranscriptSnapshotMapper.toAgentContextSnapshot([
+      message,
+    ]).messages.single.toolCalls.single;
+
+    expect(snapshot.resultCharacterCount, lessThan(source.length));
+    expect(snapshot.resultTruncated, isTrue);
+    expect(snapshot.originalResultBytes, source.length);
+  });
 }

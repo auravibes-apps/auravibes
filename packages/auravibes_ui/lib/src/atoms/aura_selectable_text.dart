@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -51,6 +52,8 @@ class AuraSelectableText extends StatelessWidget {
   final int? maxLines;
 
   /// Called when the user taps on the text.
+  ///
+  /// When non-null, the text uses the theme's minimum interaction target size.
   final GestureTapCallback? onTap;
 
   /// How thick the cursor will be.
@@ -81,9 +84,11 @@ class AuraSelectableText extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return _AuraSelectableTextContent(
+    final content = _AuraSelectableTextContent(
       .new(text: this, context: context, colors: auraColors),
     );
+
+    return onTap == null ? content : AuraInteractionTarget(child: content);
   }
 
   Color _cursorColor(AuraColorScheme colors) {

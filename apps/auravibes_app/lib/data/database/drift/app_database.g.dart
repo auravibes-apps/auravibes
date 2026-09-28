@@ -7908,6 +7908,17 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _outputSchemaMeta = const VerificationMeta(
+    'outputSchema',
+  );
+  @override
+  late final GeneratedColumn<String> outputSchema = GeneratedColumn<String>(
+    'output_schema',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -7944,6 +7955,7 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     description,
     config,
     inputSchema,
+    outputSchema,
     isEnabled,
     permissions,
   ];
@@ -8026,6 +8038,15 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         ),
       );
     }
+    if (data.containsKey('output_schema')) {
+      context.handle(
+        _outputSchemaMeta,
+        outputSchema.isAcceptableOrUnknown(
+          data['output_schema']!,
+          _outputSchemaMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_enabled')) {
       context.handle(
         _isEnabledMeta,
@@ -8077,6 +8098,10 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}input_schema'],
       ),
+      outputSchema: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}output_schema'],
+      ),
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
@@ -8127,6 +8152,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
   /// JSON schema for the tool's input parameters (for MCP tools).
   final String? inputSchema;
 
+  /// Optional MCP result schema.
+  final String? outputSchema;
+
   /// Whether the tool is enabled for this workspace.
   final bool isEnabled;
   final PermissionAccess permissions;
@@ -8140,6 +8168,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     this.description,
     this.config,
     this.inputSchema,
+    this.outputSchema,
     required this.isEnabled,
     required this.permissions,
   });
@@ -8162,6 +8191,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     }
     if (!nullToAbsent || inputSchema != null) {
       map['input_schema'] = Variable<String>(inputSchema);
+    }
+    if (!nullToAbsent || outputSchema != null) {
+      map['output_schema'] = Variable<String>(outputSchema);
     }
     map['is_enabled'] = Variable<bool>(isEnabled);
     {
@@ -8191,6 +8223,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       inputSchema: inputSchema == null && nullToAbsent
           ? const Value.absent()
           : Value(inputSchema),
+      outputSchema: outputSchema == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputSchema),
       isEnabled: Value(isEnabled),
       permissions: Value(permissions),
     );
@@ -8213,6 +8248,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       description: serializer.fromJson<String?>(json['description']),
       config: serializer.fromJson<String?>(json['config']),
       inputSchema: serializer.fromJson<String?>(json['inputSchema']),
+      outputSchema: serializer.fromJson<String?>(json['outputSchema']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
       permissions: $ToolsTable.$converterpermissions.fromJson(
         serializer.fromJson<String>(json['permissions']),
@@ -8234,6 +8270,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       'description': serializer.toJson<String?>(description),
       'config': serializer.toJson<String?>(config),
       'inputSchema': serializer.toJson<String?>(inputSchema),
+      'outputSchema': serializer.toJson<String?>(outputSchema),
       'isEnabled': serializer.toJson<bool>(isEnabled),
       'permissions': serializer.toJson<String>(
         $ToolsTable.$converterpermissions.toJson(permissions),
@@ -8251,6 +8288,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     Value<String?> description = const Value.absent(),
     Value<String?> config = const Value.absent(),
     Value<String?> inputSchema = const Value.absent(),
+    Value<String?> outputSchema = const Value.absent(),
     bool? isEnabled,
     PermissionAccess? permissions,
   }) => ToolsTable(
@@ -8265,6 +8303,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     description: description.present ? description.value : this.description,
     config: config.present ? config.value : this.config,
     inputSchema: inputSchema.present ? inputSchema.value : this.inputSchema,
+    outputSchema: outputSchema.present ? outputSchema.value : this.outputSchema,
     isEnabled: isEnabled ?? this.isEnabled,
     permissions: permissions ?? this.permissions,
   );
@@ -8287,6 +8326,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       inputSchema: data.inputSchema.present
           ? data.inputSchema.value
           : this.inputSchema,
+      outputSchema: data.outputSchema.present
+          ? data.outputSchema.value
+          : this.outputSchema,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
       permissions: data.permissions.present
           ? data.permissions.value
@@ -8306,6 +8348,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ..write('description: $description, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
+          ..write('outputSchema: $outputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions')
           ..write(')'))
@@ -8323,6 +8366,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     description,
     config,
     inputSchema,
+    outputSchema,
     isEnabled,
     permissions,
   );
@@ -8339,6 +8383,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           other.description == this.description &&
           other.config == this.config &&
           other.inputSchema == this.inputSchema &&
+          other.outputSchema == this.outputSchema &&
           other.isEnabled == this.isEnabled &&
           other.permissions == this.permissions);
 }
@@ -8353,6 +8398,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   final Value<String?> description;
   final Value<String?> config;
   final Value<String?> inputSchema;
+  final Value<String?> outputSchema;
   final Value<bool> isEnabled;
   final Value<PermissionAccess> permissions;
   final Value<int> rowid;
@@ -8366,6 +8412,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.description = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
+    this.outputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8380,6 +8427,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.description = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
+    this.outputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.permissions = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -8395,6 +8443,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Expression<String>? description,
     Expression<String>? config,
     Expression<String>? inputSchema,
+    Expression<String>? outputSchema,
     Expression<bool>? isEnabled,
     Expression<String>? permissions,
     Expression<int>? rowid,
@@ -8410,6 +8459,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       if (description != null) 'description': description,
       if (config != null) 'config': config,
       if (inputSchema != null) 'input_schema': inputSchema,
+      if (outputSchema != null) 'output_schema': outputSchema,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (permissions != null) 'permissions': permissions,
       if (rowid != null) 'rowid': rowid,
@@ -8426,6 +8476,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Value<String?>? description,
     Value<String?>? config,
     Value<String?>? inputSchema,
+    Value<String?>? outputSchema,
     Value<bool>? isEnabled,
     Value<PermissionAccess>? permissions,
     Value<int>? rowid,
@@ -8441,6 +8492,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       description: description ?? this.description,
       config: config ?? this.config,
       inputSchema: inputSchema ?? this.inputSchema,
+      outputSchema: outputSchema ?? this.outputSchema,
       isEnabled: isEnabled ?? this.isEnabled,
       permissions: permissions ?? this.permissions,
       rowid: rowid ?? this.rowid,
@@ -8479,6 +8531,9 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     if (inputSchema.present) {
       map['input_schema'] = Variable<String>(inputSchema.value);
     }
+    if (outputSchema.present) {
+      map['output_schema'] = Variable<String>(outputSchema.value);
+    }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
@@ -8505,6 +8560,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           ..write('description: $description, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
+          ..write('outputSchema: $outputSchema, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('permissions: $permissions, ')
           ..write('rowid: $rowid')
@@ -22503,6 +22559,7 @@ typedef $$ToolsTableCreateCompanionBuilder = ToolsCompanion Function({
   Value<String?> description,
   Value<String?> config,
   Value<String?> inputSchema,
+  Value<String?> outputSchema,
   Value<bool> isEnabled,
   Value<PermissionAccess> permissions,
   Value<int> rowid,
@@ -22517,6 +22574,7 @@ typedef $$ToolsTableUpdateCompanionBuilder = ToolsCompanion Function({
   Value<String?> description,
   Value<String?> config,
   Value<String?> inputSchema,
+  Value<String?> outputSchema,
   Value<bool> isEnabled,
   Value<PermissionAccess> permissions,
   Value<int> rowid,
@@ -22646,6 +22704,11 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
 
   ColumnFilters<String> get inputSchema => $composableBuilder(
     column: $table.inputSchema,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -22801,6 +22864,11 @@ class $$ToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -22889,6 +22957,11 @@ class $$ToolsTableAnnotationComposer
 
   GeneratedColumn<String> get inputSchema => $composableBuilder(
     column: $table.inputSchema,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outputSchema => $composableBuilder(
+    column: $table.outputSchema,
     builder: (column) => column,
   );
 
@@ -23041,6 +23114,7 @@ class $$ToolsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
+                Value<String?> outputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -23054,6 +23128,7 @@ class $$ToolsTableTableManager
                 description: description,
                 config: config,
                 inputSchema: inputSchema,
+                outputSchema: outputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,
@@ -23069,6 +23144,7 @@ class $$ToolsTableTableManager
                 Value<String?> description = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
+                Value<String?> outputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<PermissionAccess> permissions = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -23082,6 +23158,7 @@ class $$ToolsTableTableManager
                 description: description,
                 config: config,
                 inputSchema: inputSchema,
+                outputSchema: outputSchema,
                 isEnabled: isEnabled,
                 permissions: permissions,
                 rowid: rowid,

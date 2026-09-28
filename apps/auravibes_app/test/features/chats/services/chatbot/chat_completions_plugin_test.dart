@@ -6,8 +6,85 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
+import 'package:schemantic/schemantic.dart';
 
 void main() {
+  test('verified local model sends strict tool definition', () async {
+    Map<String, dynamic>? capturedBody;
+    List<ToolSamplingDecision>? decisions;
+    final client = _FakeClient((request) async {
+      capturedBody = jsonDecode(
+        await request.finalize().bytesToString(),
+      ) as Map<String, dynamic>;
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'ok.'},
+          },
+        ],
+      });
+    });
+    final ai = Genkit(
+      plugins: [
+        AppChatCompletionsPlugin(
+          name: 'strict-test',
+          baseUrl: 'https://api.openai.com/v1',
+          apiKey: 'key',
+          codec: .new(
+            errorLabel: 'OpenAI',
+            customize: (model, _) => (model: model, extraBody: {}),
+            supportsStrictToolSampling: true,
+          ),
+          models: const [ChatCompletionsModelDefinition(name: 'gpt-4o')],
+          httpClient: client,
+          modelSupportsStrictToolSampling: true,
+          defaultToolSamplingPolicy: .prefer,
+          onToolSamplingDecision: (value) => decisions = value,
+        ),
+      ],
+    );
+    const schema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    };
+    final tool = ai.defineTool<Map<String, Object?>, Object?>(
+      name: 'search',
+      description: 'Search.',
+      inputSchema: SchemanticType.from<Map<String, Object?>>(
+        jsonSchema: schema,
+        parse: (value) => value as Map<String, Object?>,
+      ),
+      fn: (_, _) async => const ToolResponseResult<Object?>(null),
+    );
+
+    final response = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('strict-test/gpt-4o'),
+      messages: const [],
+      tools: [tool],
+      returnToolRequests: true,
+    );
+
+    expect(response.text, 'ok.');
+    expect(capturedBody?['tools'], [
+      {
+        'type': 'function',
+        'function': {
+          'name': 'search',
+          'description': 'Search.',
+          'parameters': schema,
+          'strict': true,
+        },
+      },
+    ]);
+    expect(decisions?.single.outcome, ToolSamplingOutcome.strict);
+  });
+
   test('resolves only model actions', () {
     final plugin = AppChatCompletionsPlugin(
       name: 'resolve-test',

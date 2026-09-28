@@ -3,6 +3,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -515,19 +516,25 @@ class const _AuraSnackBarAction({
   required final VoidCallback onDismiss,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: .min,
-    children: [
-      const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
-      GestureDetector(
-        child: _AuraSnackBarActionContent.fromValues(
-          label: label,
-          foregroundColor: foregroundColor,
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
+        GestureDetector(
+          child: AuraInteractionTarget(
+            child: Center(
+              child: _AuraSnackBarActionContent.fromValues(
+                label: label,
+                foregroundColor: foregroundColor,
+              ),
+            ),
+          ),
+          onTap: _handleTap,
         ),
-        onTap: _handleTap,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   void _handleTap() {
     onAction?.call();

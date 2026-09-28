@@ -53,8 +53,11 @@ void main() {
       final tool = ResolvedTool.mcp(
         tableId: 'tool_2',
         toolIdentifier: 'read_file',
-        mcpServerId: 'server_1',
-        mcpSlug: 'server_1',
+        mcp: (
+          mcpServerId: 'server_1',
+          mcpSlug: 'server_1',
+          outputSchemaJson: null,
+        ),
       );
       expect(tool.type, ResolvedToolType.mcp);
       expect(tool.tableId, 'tool_2');
@@ -68,8 +71,11 @@ void main() {
       final tool = ResolvedTool.mcp(
         tableId: 'tool_2',
         toolIdentifier: 'read_file',
-        mcpServerId: 'server_1',
-        mcpSlug: 'server_1',
+        mcp: (
+          mcpServerId: 'server_1',
+          mcpSlug: 'server_1',
+          outputSchemaJson: null,
+        ),
       );
       expect(tool.isMcp, isTrue);
       expect(tool.isBuiltIn, isFalse);

@@ -27,6 +27,7 @@ import 'package:auravibes_app/features/chats/services/chat_attachment_modality.d
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
@@ -1163,13 +1164,20 @@ class const _ChatConversationBody({
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
-        _ChatConversationStatusAndComposer(data: data),
+        _ChatConversationStatusAndComposer(
+          data: data,
+          key: ValueKey((
+            workspaceId: data.workspaceId,
+            conversationId: data.conversation.id,
+          )),
+        ),
     ],
   );
 }
 
 class const _ChatConversationStatusAndComposer({
   required final _LoadedChatConversationData data,
+  super.key,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -1466,6 +1474,7 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
+         conversationId: data.conversation.id,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
@@ -2344,8 +2353,11 @@ bool _canStopCloudState(CloudConversationState state) {
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
     await _sendMessageUsecase(request);
-  } on Exception catch (error, stackTrace) {
+  } on MessagePersistedException catch (error) {
+    _reportSendMessageFailure(request, error, error.stackTrace);
+  } on Object catch (error, stackTrace) {
     _reportSendMessageFailure(request, error, stackTrace);
+    Error.throwWithStackTrace(error, stackTrace);
   }
 }
 
@@ -2355,7 +2367,7 @@ Future<void> _sendMessageUsecase(_SendMessageRequest request) => request.ref
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,
-  Exception error,
+  Object error,
   StackTrace stackTrace,
 ) {
   _logger.severe(

@@ -14,6 +14,7 @@ export 'aura_theme.dart'
         AuraAnimationTheme,
         AuraBorderRadiusScale,
         AuraColorScheme,
+        AuraInteractionSizeScale,
         AuraSpacingScale,
         AuraTheme,
         AuraThemeExtension,

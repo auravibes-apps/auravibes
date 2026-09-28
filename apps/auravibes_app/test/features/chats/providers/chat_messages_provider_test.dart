@@ -522,6 +522,11 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
+    String conversationId,
+  ) async => const [];
+
+  @override
   Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
     List<String> conversationIds,
   ) async {

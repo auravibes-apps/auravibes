@@ -29,6 +29,11 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<List<MessageEntity>> getTranscriptMessagesByConversation(
+    String conversationId,
+  ) async => messagesByConversation;
+
+  @override
   Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
     List<String> conversationIds,
   ) async {

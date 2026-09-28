@@ -81,6 +81,7 @@ class AgentToolExecutionService({
   resolveToolApprovalDecisionForWorkspace,
   ResolveEffectiveToolApprovalUsecase? effectiveToolApprovalUsecase,
   ResolveSkillCommandTarget? resolveSkillCommandTarget,
+  super.outputPolicyForTool,
 }) extends agent.AgentToolExecutionRunner<ResolvedTool> {
   this
     : super(
@@ -429,11 +430,23 @@ MessageToolCallEntity _toolCallWithResult(
       .firstOrNull;
   if (update == null) return toolCall;
 
-  return toolCall.copyWith(
+  final withStatus = toolCall.copyWith(
     resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
-    responseRaw: update.responseRaw,
   );
+
+  return _applyToolExecutionOutput(withStatus, update);
 }
+
+MessageToolCallEntity _applyToolExecutionOutput(
+  MessageToolCallEntity toolCall,
+  agent.AgentToolResultUpdate update,
+) => toolCall.copyWith(
+  responseRaw: update.responseRaw,
+  responseContextRaw: update.responseContextRaw,
+  outputTruncated: update.outputTruncated,
+  originalResponseBytes: update.originalResponseBytes,
+  fullOutputForContext: update.fullOutputForContext,
+);
 
 void _logToolExecutionError(_ToolExecutionErrorRequest request) {
   _logger.severe(

@@ -20,6 +20,10 @@ class const AgentToolResultUpdate({
   required final String toolCallId,
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
+  final String? responseContextRaw,
+  final bool outputTruncated = false,
+  final int? originalResponseBytes,
+  final bool fullOutputForContext = false,
 });
 
 typedef AgentToolApprovalRequest<TTool extends Object> = ({
@@ -69,6 +73,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
 
 class const AgentToolExecutionService<TTool extends Object>({
   required final AgentToolExecutionProvider<TTool> provider,
+  final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<AgentIterationDecision> call({
     required String conversationId,
@@ -204,6 +209,7 @@ class const AgentToolExecutionService<TTool extends Object>({
         runResolvedTool: provider.runResolvedTool,
         isCancellationRequested: provider.isCancellationRequested,
         logToolExecutionError: provider.logToolExecutionError,
+        outputPolicyForTool: outputPolicyForTool,
       ).call(
         grantedTools.map(
           (tool) => AgentToolBatchCall(
@@ -219,6 +225,10 @@ class const AgentToolExecutionService<TTool extends Object>({
             toolCallId: batchResult.call.toolCallId,
             resultStatus: batchResult.result.resultStatus,
             responseRaw: batchResult.result.responseRaw,
+            responseContextRaw: batchResult.result.responseContextRaw,
+            outputTruncated: batchResult.result.outputTruncated,
+            originalResponseBytes: batchResult.result.originalResponseBytes,
+            fullOutputForContext: batchResult.result.fullOutputForContext,
           ),
         ),
       );

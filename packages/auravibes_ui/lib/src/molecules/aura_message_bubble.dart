@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_message_status.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -93,11 +94,19 @@ class const _AuraMessageBubbleGesture({
   required final AuraMessageBubble message,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    child: _AuraMessageBubbleFrame(message: message),
-    onTap: message.onTap,
-    onLongPress: message.onLongPress,
-  );
+  Widget build(BuildContext context) {
+    final bubble = _AuraMessageBubbleFrame(message: message);
+    if (message.onTap == null && message.onLongPress == null) return bubble;
+
+    return AuraInteractionTarget(
+      child: GestureDetector(
+        child: bubble,
+        onTap: message.onTap,
+        onLongPress: message.onLongPress,
+        behavior: .opaque,
+      ),
+    );
+  }
 }
 
 class const _AuraMessageBubbleFrame({required final AuraMessageBubble message})

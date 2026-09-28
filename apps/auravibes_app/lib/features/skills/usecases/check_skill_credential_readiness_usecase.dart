@@ -34,7 +34,7 @@ class const CheckSkillCredentialReadinessUsecase(
     if (repository == null) {
       throw StateError('Skill credentials repository is unavailable');
     }
-    final credentials = await repository.getCredentialsForDefinition(
+    final credentials = await repository.getUsableCredentialsForDefinition(
       workspaceId: workspaceId,
       credentialDefinitionId: credentialDefinitionId,
     );

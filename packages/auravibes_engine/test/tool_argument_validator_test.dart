@@ -1,4 +1,6 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_engine/src/tool_schema_strict.dart';
+import 'package:genkit/plugin.dart';
 import 'package:test/test.dart';
 
 const schema = <String, Object?>{
@@ -18,7 +20,92 @@ const schema = <String, Object?>{
   'additionalProperties': false,
 };
 
+const recursiveSchema = <String, dynamic>{
+  'type': 'object',
+  'properties': {
+    'node': {r'$ref': r'#/$defs/node'},
+    'choice': {
+      'anyOf': [
+        {'type': 'string'},
+        {'type': 'null'},
+      ],
+    },
+  },
+  'required': ['node', 'choice'],
+  'additionalProperties': false,
+  r'$defs': {
+    'node': {
+      'type': 'object',
+      'properties': {
+        'value': {'type': 'string'},
+        'next': {
+          'anyOf': [
+            {r'$ref': r'#/$defs/node'},
+            {'type': 'null'},
+          ],
+        },
+      },
+      'required': ['value', 'next'],
+      'additionalProperties': false,
+    },
+  },
+};
+
+final strictCodec = ChatCompletionsCodec(
+  errorLabel: 'OpenAI',
+  supportsStrictToolSampling: true,
+  customize: (model, _) => (model: model, extraBody: {}),
+);
+
+final strictModel = ModelCapabilities(
+  id: 'gpt-4o',
+  name: 'GPT-4o',
+  limitContext: 128000,
+  limitOutput: 4096,
+  inputModalities: const ['text'],
+  outputModalities: const ['text'],
+  supportsStrictToolSampling: true,
+);
+
+Map<String, dynamic> strictRequest(Map<String, dynamic> inputSchema) =>
+    strictCodec.buildRequestBody(
+      modelName: strictModel.id,
+      request: ModelRequest(
+        messages: const [],
+        config: const {'toolSamplingPolicy': 'require'},
+        tools: [
+          ToolDefinition(
+            name: 'fixture',
+            description: 'Fixture.',
+            inputSchema: inputSchema,
+          ),
+        ],
+      ),
+      stream: false,
+      modelCapabilities: strictModel,
+    );
+
 void main() {
+  test('URL and empty first-party schemas are closed', () {
+    for (final candidate in [
+      urlToolSpec.inputJsonSchema,
+      skillsManagerToolSpecs.first.inputJsonSchema,
+      defaultAppSkillToolInputJsonSchema,
+    ]) {
+      expect(
+        strictToolSchemaIssue(Map<String, dynamic>.from(candidate)),
+        isNull,
+      );
+    }
+    expect(
+      () => validateToolArguments(urlToolSpec.inputJsonSchema, {
+        'input': 'https://example.test',
+        'unexpected': true,
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('accepts arguments matching supported schema subset', () {
     expect(
       () => validateToolArguments(schema, {
@@ -257,6 +344,237 @@ void main() {
           (error) => error.message,
           'message',
           r'Unsupported schema type at $: date',
+        ),
+      ),
+    );
+  });
+
+  test('strict preflight and arguments share recursive schema traversal', () {
+    final request = strictRequest(recursiveSchema);
+    final function =
+        ((request['tools'] as List<dynamic>).single
+                as Map<String, dynamic>)['function']
+            as Map<String, dynamic>;
+    expect(function['strict'], isTrue);
+    expect(function['parameters'], recursiveSchema);
+    expect(
+      () => validateToolArguments(recursiveSchema, {
+        'node': {
+          'value': 'first',
+          'next': {'value': 'second', 'next': null},
+        },
+        'choice': null,
+      }),
+      returnsNormally,
+    );
+    expect(
+      () => validateToolArguments(recursiveSchema, {
+        'node': {'value': 4, 'next': null},
+        'choice': 'text',
+      }),
+      throwsFormatException,
+    );
+  });
+
+  test('strict mode strips supported schema dialect metadata', () {
+    const schemanticSchema = <String, dynamic>{
+      r'$schema': 'http://json-schema.org/draft-07/schema#',
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    };
+    final request = strictRequest(schemanticSchema);
+    final function =
+        ((request['tools'] as List<dynamic>).single
+                as Map<String, dynamic>)['function']
+            as Map<String, dynamic>;
+
+    expect(function['strict'], isTrue);
+    expect(function['parameters'], {
+      'type': 'object',
+      'properties': {
+        'query': {'type': 'string'},
+      },
+      'required': ['query'],
+      'additionalProperties': false,
+    });
+    expect(schemanticSchema.containsKey(r'$schema'), isTrue);
+    expect(
+      strictToolSchemaIssue({
+        ...schemanticSchema,
+        r'$schema': 'https://json-schema.org/draft/2020-12/schema',
+      }),
+      isA<ToolSchemaIssue>().having(
+        (issue) => issue.reason,
+        'reason',
+        ToolSchemaIssueReason.unsupportedKeyword,
+      ),
+    );
+  });
+
+  test('nullable type accepts null and declared value', () {
+    const nullableSchema = <String, dynamic>{
+      'type': 'object',
+      'properties': {
+        'value': {
+          'type': ['null', 'string'],
+        },
+      },
+      'required': ['value'],
+      'additionalProperties': false,
+    };
+    expect(strictRequest(nullableSchema)['tools'], isNotNull);
+    expect(
+      () => validateToolArguments(nullableSchema, {'value': null}),
+      returnsNormally,
+    );
+    expect(
+      () => validateToolArguments(nullableSchema, {'value': 'text'}),
+      returnsNormally,
+    );
+    expect(
+      () => validateToolArguments(nullableSchema, {'value': 5}),
+      throwsFormatException,
+    );
+    expect(
+      () => validateToolArguments(nullableSchema, const {}),
+      returnsNormally,
+    );
+  });
+
+  test('omitted nullable refs preserve legacy optional arguments', () {
+    const optionalSchema = <String, dynamic>{
+      'type': 'object',
+      'properties': {
+        'filter': {r'$ref': r'#/$defs/nullableFilter'},
+      },
+      'required': ['filter'],
+      'additionalProperties': false,
+      r'$defs': {
+        'nullableFilter': {
+          'anyOf': [
+            {'type': 'string'},
+            {'type': 'null'},
+          ],
+        },
+      },
+    };
+
+    expect(strictRequest(optionalSchema)['tools'], isNotNull);
+    expect(
+      () => validateToolArguments(optionalSchema, const {}),
+      returnsNormally,
+    );
+  });
+
+  test('does not treat excluded null as an optional argument', () {
+    const enumSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'filter': {
+          'type': ['string', 'null'],
+          'enum': ['recent'],
+        },
+      },
+      'required': ['filter'],
+    };
+
+    expect(
+      () => validateToolArguments(enumSchema, const {}),
+      throwsFormatException,
+    );
+    expect(
+      () => validateToolArguments(enumSchema, {'filter': null}),
+      throwsFormatException,
+    );
+  });
+
+  test('strict preflight rejects missing refs and unsupported keywords', () {
+    for (final testCase in [
+      (
+        field: r'$ref',
+        node: const <String, dynamic>{r'$ref': r'#/$defs/missing'},
+      ),
+      (field: 'oneOf', node: const <String, dynamic>{'oneOf': <Object?>[]}),
+    ]) {
+      final invalid = <String, dynamic>{
+        'type': 'object',
+        'properties': {'value': testCase.node},
+        'required': ['value'],
+        'additionalProperties': false,
+      };
+      expect(
+        () => strictRequest(invalid),
+        throwsA(
+          isA<ToolSamplingValidationException>().having(
+            (error) => error.schemaPath,
+            'schemaPath',
+            contains(testCase.field),
+          ),
+        ),
+      );
+    }
+  });
+
+  test('strict preflight enforces provider property and depth limits', () {
+    final oversized = <String, dynamic>{
+      'type': 'object',
+      'properties': {
+        for (var index = 0; index < 5001; index++)
+          'p$index': {'type': 'string'},
+      },
+      'required': [for (var index = 0; index < 5001; index++) 'p$index'],
+      'additionalProperties': false,
+    };
+    expect(
+      () => strictRequest(oversized),
+      throwsA(
+        isA<ToolSamplingValidationException>().having(
+          (error) => error.schemaReason,
+          'schemaReason',
+          ToolSchemaIssueReason.providerLimit,
+        ),
+      ),
+    );
+
+    var nested = <String, dynamic>{'type': 'string'};
+    for (var depth = 0; depth < 11; depth++) {
+      nested = {
+        'type': 'object',
+        'properties': {'child': nested},
+        'required': ['child'],
+        'additionalProperties': false,
+      };
+    }
+    expect(
+      () => strictRequest(nested),
+      throwsA(
+        isA<ToolSamplingValidationException>().having(
+          (error) => error.schemaReason,
+          'schemaReason',
+          ToolSchemaIssueReason.providerLimit,
+        ),
+      ),
+    );
+
+    final longName = 'p' * 120001;
+    expect(
+      () => strictRequest({
+        'type': 'object',
+        'properties': {
+          longName: {'type': 'string'},
+        },
+        'required': [longName],
+        'additionalProperties': false,
+      }),
+      throwsA(
+        isA<ToolSamplingValidationException>().having(
+          (error) => error.schemaReason,
+          'schemaReason',
+          ToolSchemaIssueReason.providerLimit,
         ),
       ),
     );

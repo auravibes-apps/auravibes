@@ -28,7 +28,7 @@
 
 | Task                    | Command                                                                      |
 | ----------------------- | ---------------------------------------------------------------------------- |
-| Bootstrap               | `fvm dart run melos bootstrap`                                               |
+| Workspace bootstrap     | `fvm dart run melos bootstrap`                                               |
 | App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
 | App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
 | Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
@@ -44,14 +44,14 @@
 ## DCL and lint compliance
 
 - `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Read it before changing Dart; do not infer permitted patterns from nearby code.
-- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Before PR/broad refactors, run `fvm dart run melos run validate` and `fvm dart run melos run dcl:analyze`; do not run full-repository checks after every edit.
+- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Formatter runs are allowed; bare host `dart format` does not verify pinned-toolchain output. Before PR/broad refactors, run `fvm dart run melos run validate` and `fvm dart run melos run dcl:analyze`; do not run full-repository checks after every edit.
 - CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
 
 ## CI failure triage
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
-- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; commit `.vscode/settings.json` sync.
+- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default (`--skip-pub-get` skips it). Use the workspace bootstrap command above for Melos package links. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
 

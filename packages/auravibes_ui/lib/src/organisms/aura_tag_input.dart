@@ -168,10 +168,10 @@ class _AuraTagChip extends StatelessWidget {
              mainAxisSize: .min,
              children: [
                Text(tag),
-               IconButton(
-                 onPressed: enabled ? onRemove : null,
-                 tooltip: removeLabel(tag),
-                 icon: const Icon(Icons.close, size: 16),
+               _AuraTagRemoveButton(
+                 enabled: enabled,
+                 onRemove: onRemove,
+                 removeLabel: removeLabel(tag),
                ),
              ],
            ),
@@ -183,6 +183,24 @@ class _AuraTagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => child;
+}
+
+class const _AuraTagRemoveButton({
+  required final bool enabled,
+  required final VoidCallback? onRemove,
+  required final String removeLabel,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return IconButton(
+      onPressed: enabled ? onRemove : null,
+      tooltip: removeLabel,
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
+      icon: const Icon(Icons.close, size: 16),
+    );
+  }
 }
 
 class _AuraTagInputData {

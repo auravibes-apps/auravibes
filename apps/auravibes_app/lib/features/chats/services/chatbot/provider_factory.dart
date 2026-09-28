@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -12,8 +14,19 @@ import 'package:genkit/plugin.dart' show GenkitPlugin;
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';
 import 'package:http/http.dart' as http;
+import 'package:logging/logging.dart';
 
 typedef UntypedModelRef = ModelRef<Object?>;
+typedef _ProviderToolSampling = ({
+  bool officialOpenAI,
+  bool strictToolSampling,
+});
+typedef _OpenAICompatPluginOptions = ({
+  String name,
+  ChatCompletionsCodec codec,
+  bool modelSupportsStrictToolSampling,
+  http.Client? httpClient,
+});
 typedef _ProviderRequest = ({
   WorkspaceModelSelectionWithConnectionEntity config,
   String apiKey,
@@ -22,6 +35,7 @@ typedef _ProviderRequest = ({
   String modelId,
   String? sessionId,
   ReasoningConfiguration? reasoningConfiguration,
+  _ProviderToolSampling toolSampling,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -161,6 +175,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     ReasoningConfiguration? reasoningConfiguration,
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
+    final toolSampling = _providerToolSampling(config, connectionUrl);
 
     return (
       config: config,
@@ -170,7 +185,26 @@ extension _ProviderFactoryCreation on ProviderFactory {
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,
       reasoningConfiguration: reasoningConfiguration,
+      toolSampling: toolSampling,
     );
+  }
+
+  _ProviderToolSampling _providerToolSampling(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? connectionUrl,
+  ) {
+    final officialOpenAI =
+        config.modelsProvider.type == ModelProvidersType.openai &&
+        !_hasCustomUrl(config, connectionUrl);
+    final supportsStrict =
+        officialOpenAI &&
+        config.workspaceModelSelection.supportsToolCalls &&
+        verifiedStrictToolSampling(
+          'openai',
+          config.workspaceModelSelection.modelId,
+        );
+
+    return (officialOpenAI: officialOpenAI, strictToolSampling: supportsStrict);
   }
 
   Genkit _createGenkit(_ProviderRequest request) {
@@ -249,20 +283,45 @@ extension _ProviderFactoryPlugins on ProviderFactory {
   }
 
   GenkitPlugin _openAIReasoningPlugin(_ProviderRequest request) {
-    final baseUrl = request.baseUrl ?? providerProfile('openai').defaultUrl;
+    final toolSampling = request.toolSampling;
 
-    return AppChatCompletionsPlugin(
+    return _openAICompatPlugin(request, (
       name: ProviderFactory._openAIReasoningNamespace,
-      baseUrl: baseUrl,
-      apiKey: request.apiKey,
-      codec: _openAICompatReasoningCodec(),
-      models: [ChatCompletionsModelDefinition(name: request.modelId)],
-    );
+      codec: _openAICompatReasoningCodec(toolSampling.officialOpenAI),
+      modelSupportsStrictToolSampling: toolSampling.strictToolSampling,
+      httpClient: null,
+    ));
   }
 
   GenkitPlugin _openAIPlugin(_ProviderRequest request) {
-    return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    if (!request.toolSampling.strictToolSampling) {
+      return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
+    }
+
+    return _openAICompatPlugin(request, (
+      name: 'openai',
+      codec: _openAICodec(),
+      modelSupportsStrictToolSampling: true,
+      httpClient: httpClient,
+    ));
   }
+
+  AppChatCompletionsPlugin _openAICompatPlugin(
+    _ProviderRequest request,
+    _OpenAICompatPluginOptions options,
+  ) => AppChatCompletionsPlugin(
+    name: options.name,
+    baseUrl: request.baseUrl ?? providerProfile('openai').defaultUrl,
+    apiKey: request.apiKey,
+    codec: options.codec,
+    models: [ChatCompletionsModelDefinition(name: request.modelId)],
+    httpClient: options.httpClient,
+    modelSupportsStrictToolSampling: options.modelSupportsStrictToolSampling,
+    defaultToolSamplingPolicy: _strictToolSamplingPolicy(
+      options.modelSupportsStrictToolSampling,
+    ),
+    onToolSamplingDecision: _logToolSamplingDecision,
+  );
 }
 
 extension _ProviderFactoryResolution on ProviderFactory {
@@ -405,10 +464,16 @@ extension _ProviderFactoryCredentials on ProviderFactory {
   bool _hasCustomUrl(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
-  ) =>
-      connectionUrl != null ||
-      (config.modelsProvider.type == ModelProvidersType.openai &&
-          _blankToNull(config.modelsProvider.url) != null);
+  ) {
+    if (connectionUrl != null) return true;
+    if (config.modelsProvider.type != ModelProvidersType.openai) return false;
+
+    final providerUrl = _blankToNull(config.modelsProvider.url);
+
+    return providerUrl != null &&
+        providerUrl.replaceFirst(RegExp(r'/$'), '') !=
+            providerProfile('openai').defaultUrl;
+  }
 
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();
@@ -421,6 +486,20 @@ extension _ProviderFactoryCredentials on ProviderFactory {
 ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
   errorLabel: 'OpenRouter',
   customize: _customizeOpenRouter,
+);
+
+ChatCompletionsCodec _openAICodec() => const ChatCompletionsCodec(
+  errorLabel: 'OpenAI',
+  customize: _customizeOpenAI,
+  supportsStrictToolSampling: true,
+);
+
+({String model, Map<String, dynamic> extraBody}) _customizeOpenAI(
+  String modelName,
+  Map<String, dynamic>? config,
+) => (
+  model: modelName,
+  extraBody: OpenAICompatChatOptions.fromJson(config).toSamplingBody(),
 );
 
 ({String model, Map<String, dynamic> extraBody}) _customizeOpenRouter(
@@ -452,11 +531,26 @@ Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {
   };
 }
 
-ChatCompletionsCodec _openAICompatReasoningCodec() =>
-    const ChatCompletionsCodec(
+ChatCompletionsCodec _openAICompatReasoningCodec(bool officialOpenAI) =>
+    ChatCompletionsCodec(
       errorLabel: 'OpenAI-compatible',
       customize: _customizeOpenAICompatReasoning,
+      supportsStrictToolSampling: officialOpenAI,
     );
+
+final _toolSamplingLogger = Logger('tool_sampling');
+
+void _logToolSamplingDecision(List<ToolSamplingDecision> decisions) {
+  for (final decision in decisions) {
+    if (decision.policy == ToolSamplingPolicy.off) continue;
+    _toolSamplingLogger.fine(
+      'Tool sampling: ${jsonEncode(decision.toDiagnostic())}',
+    );
+  }
+}
+
+ToolSamplingPolicy _strictToolSamplingPolicy(bool supportsStrict) =>
+    supportsStrict ? .prefer : .off;
 
 ({String model, Map<String, dynamic> extraBody})
 _customizeOpenAICompatReasoning(

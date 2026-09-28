@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -171,16 +172,21 @@ class _AuraTileLayout extends StatelessWidget {
 class const _AuraTileSurface({required final _AuraTileAppearance appearance})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    padding: _tilePadding(appearance),
-    decoration: _tileDecoration(appearance),
-    child: _AuraTileContent(
-      appearance: appearance,
-      loadingColor: _tileTextColor(appearance),
-      textStyle: _tileTextStyle(appearance),
-    ),
-    duration: appearance.theme.animation.normal,
-  );
+  Widget build(BuildContext context) {
+    final tile = AnimatedContainer(
+      padding: _tilePadding(appearance),
+      decoration: _tileDecoration(appearance),
+      child: _AuraTileContent(
+        appearance: appearance,
+        loadingColor: _tileTextColor(appearance),
+        textStyle: _tileTextStyle(appearance),
+      ),
+      duration: appearance.theme.animation.normal,
+    );
+    if (appearance.tile.onTap == null) return tile;
+
+    return AuraInteractionTarget(child: tile);
+  }
 }
 
 class _AuraTileContent extends StatelessWidget {
