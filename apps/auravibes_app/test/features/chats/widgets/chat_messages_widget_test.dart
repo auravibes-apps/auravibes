@@ -1917,7 +1917,7 @@ void main() {
       final label = tester.widget<Text>(labelFinder);
       expect(
         label.textSpan?.toPlainText(),
-        contains('$skillTitle ${String.fromCharCode(0xB7)} $toolTitle'),
+        contains('$skillTitle / $toolTitle'),
       );
       expect(find.text('Completed'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);

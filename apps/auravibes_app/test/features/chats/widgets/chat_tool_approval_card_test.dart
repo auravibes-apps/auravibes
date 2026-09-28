@@ -537,12 +537,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.text(
-          'Research Assistant ${String.fromCharCode(0xB7)} Search the web',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
       expect(find.textContaining('secret-key'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
@@ -572,12 +567,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.text(
-          'Research Assistant ${String.fromCharCode(0xB7)} Search the web',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('Research Assistant / Search the web'), findsOneWidget);
       expect(find.text('Call Skill Tool'), findsNothing);
       expect(find.textContaining('secret-value'), findsNothing);
       expect(find.textContaining('****'), findsOneWidget);
