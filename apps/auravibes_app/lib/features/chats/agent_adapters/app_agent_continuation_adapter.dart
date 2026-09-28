@@ -134,16 +134,12 @@ class AppAgentContinuationAdapter({
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final result = await AppAgentTranscriptContextAdapter(
-      messageRepository,
-    ).reconcile(
+    return AppAgentTranscriptContextAdapter(messageRepository).reconcile(
       conversationId: conversationId,
       contextMessages: contextMessages,
       tools: tools,
       approvalStates: approvalStates,
     );
-
-    return result;
   }
 
   @override
