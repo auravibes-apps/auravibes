@@ -10,6 +10,8 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -20,10 +22,16 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillDefinitionKind;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -1751,6 +1759,241 @@ void main() {
       final status = tester.getRect(find.text('Completed'));
       expect(status.right, greaterThan(row.center.dx));
       expect(row.right - status.right, lessThan(100));
+    });
+
+    testWidgets('shows saved skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final semantics = tester.ensureSemantics();
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.disabledInWorkspace,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final label = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-skill')),
+      );
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('Research Assistant · Search the web'),
+      );
+      expect(find.text('Call Skill Tool'), findsNothing);
+      final status = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_status_tc-skill')),
+      );
+      expect(status.maxLines, 1);
+      expect(status.overflow, TextOverflow.ellipsis);
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
+            .label,
+        contains('Research Assistant · Search the web Disabled in workspace'),
+      );
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
+    testWidgets('shows app skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      const registry = AppSkillRegistry();
+      final appSkill = registry.getAll().firstWhere(
+        (skill) => skill.tools.isNotEmpty,
+      );
+      final tool = appSkill.tools.first;
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-app-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: jsonEncode({'skill': appSkill.slug, 'tool': tool.slug}),
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => [
+                WorkspaceSkill(
+                  source: .app,
+                  id: appSkill.identifier,
+                  slug: appSkill.slug,
+                  title: appSkill.title,
+                  description: appSkill.description,
+                  kind: appSkill.kind == AppSkillDefinitionKind.template
+                      ? .template
+                      : .native,
+                  isEnabled: true,
+                  titleKey: appSkill.titleKey,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final labelFinder = find.byKey(
+        const ValueKey('activity_tool_label_tc-app-skill'),
+      );
+      final context = tester.element(labelFinder);
+      final skillTitle =
+          appSkill.titleKey?.tr(context: context) ?? appSkill.title;
+      final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final label = tester.widget<Text>(labelFinder);
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('$skillTitle ${String.fromCharCode(0xB7)} $toolTitle'),
+      );
+      expect(find.text('Completed'), findsOneWidget);
+      expect(find.text('Call Skill Tool'), findsNothing);
+    });
+
+    testWidgets('uses slug and generic fallbacks when metadata is missing', (
+      tester,
+    ) async {
+      const skillToolCall = MessageToolCallEntity(
+        id: 'tc-missing-tool',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"missing_tool"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const malformedToolCall = MessageToolCallEntity(
+        id: 'tc-malformed-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [skillToolCall, malformedToolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  source: .user,
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  kind: .template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider(
+              'ws-1',
+              'skill-1',
+            ).overrideWith((ref) async => []),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final missingToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-missing-tool')),
+      );
+      expect(
+        missingToolLabel.textSpan?.toPlainText(),
+        contains('Research Assistant · Missing Tool'),
+      );
+      final malformedToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-malformed-skill')),
+      );
+      expect(malformedToolLabel.textSpan?.toPlainText(), 'Call Skill Tool');
     });
 
     testWidgets('reveals a finished activity run in three compact levels', (

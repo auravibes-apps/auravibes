@@ -1,10 +1,21 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_display_name_provider.g.dart';
+
+typedef SkillToolCallDisplayTitles = ({
+  String skillTitle,
+  String? skillTitleKey,
+  String? toolTitle,
+  String? toolTitleKey,
+});
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///
@@ -34,6 +45,43 @@ Future<String> toolDisplayName(
     presentationTarget,
     rawName: compositeToolId,
     mcpServerName: mcpServerName,
+  );
+}
+
+@riverpod
+Future<SkillToolCallDisplayTitles?> skillToolCallDisplayTitles(
+  Ref ref,
+  String workspaceId,
+  String skillSlug,
+  String toolSlug,
+) async {
+  final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
+  final skill = skills.where((skill) => skill.slug == skillSlug).firstOrNull;
+  if (skill == null) return null;
+
+  String? toolTitle;
+  String? toolTitleKey;
+  if (skill.source == SkillSource.app) {
+    final appSkill = ref
+        .watch(appSkillRegistryProvider)
+        .getByIdentifier(skill.id);
+    final tool = appSkill?.tools
+        .where((tool) => tool.slug == toolSlug)
+        .firstOrNull;
+    toolTitle = tool?.title;
+    toolTitleKey = tool?.titleKey;
+  } else if (skill.kind == SkillKind.template) {
+    final tools = await ref.watch(
+      skillTemplateToolsProvider(workspaceId, skill.id).future,
+    );
+    toolTitle = tools.where((tool) => tool.slug == toolSlug).firstOrNull?.title;
+  }
+
+  return (
+    skillTitle: skill.title,
+    skillTitleKey: skill.titleKey,
+    toolTitle: toolTitle,
+    toolTitleKey: toolTitleKey,
   );
 }
 
