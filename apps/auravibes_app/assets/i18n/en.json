@@ -1087,6 +1087,18 @@
       "settings_invalid": "Invalid compaction settings. Please check your values."
     }
   },
+  "workspace_archive": {
+    "export": "Export configuration",
+    "import_into": "Import configuration here",
+    "import_new": "Import as new workspace",
+    "exported": "Workspace configuration saved. Credentials and MCP server connections are not included.",
+    "imported": "Workspace configuration imported. Add credentials again to use connected services.",
+    "invalid": "This workspace configuration archive is invalid or damaged.",
+    "unsupported_version": "This workspace configuration archive uses an unsupported version.",
+    "invalid_target": "This workspace cannot receive the configuration archive.",
+    "unsupported_configuration": "This configuration references an app skill unavailable in the target workspace.",
+    "error": "Could not export or import the workspace configuration."
+  },
   "workspace_management": {
     "title": "Manage Workspaces",
     "copy_id": "Copy ID",

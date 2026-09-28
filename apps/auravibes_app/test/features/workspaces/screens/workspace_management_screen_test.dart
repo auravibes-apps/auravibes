@@ -389,6 +389,23 @@ void main() {
       );
     });
 
+    testWidgets('shows localized workspace archive actions', (tester) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace A', type: .local),
+      );
+      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('workspace_menu_ws-1')));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Export configuration'), findsOneWidget);
+      expect(find.text('Import configuration here'), findsOneWidget);
+    });
+
     testWidgets(
       'filters local and connected names, then shows no-results state',
       (tester) async {
