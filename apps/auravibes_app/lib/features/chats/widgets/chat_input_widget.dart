@@ -775,24 +775,27 @@ extension _ChatInputRecordingActions on _ChatInputActions {
 
       return;
     }
+    if (!_canAddStoppedRecording(attachment)) return;
 
-    if (_draft.isSending.value) return;
+    final attachments = _draft.attachments.value;
+    _draft.attachments.value = [
+      ...attachments,
+      _withVoiceDisplayName(attachment, attachments),
+    ];
+    _logger.fine('Added voice attachment to draft');
+  }
+
+  bool _canAddStoppedRecording(MessageAttachmentToCreate attachment) {
+    if (_draft.isSending.value) return false;
     if (!ref.context.mounted) {
       deleteUnsentAttachment(attachment);
 
-      return;
-    }
-    if (_draft.attachments.value.any(
-      (existing) => existing.localPath == attachment.localPath,
-    )) {
-      return;
+      return false;
     }
 
-    _draft.attachments.value = [
-      ..._draft.attachments.value,
-      _withVoiceDisplayName(attachment, _draft.attachments.value),
-    ];
-    _logger.fine('Added voice attachment to draft');
+    return !_draft.attachments.value.any(
+      (existing) => existing.localPath == attachment.localPath,
+    );
   }
 
   void cancelRecording() {
@@ -1036,29 +1039,39 @@ extension _ChatInputRecordingResultActions on _ChatInputActions {
 
     _recording.recordingTimer.value?.cancel();
     _recording.recordingTimer.value = null;
-    final stop = _stopRecordingOnce();
+
+    return _shareRecordingStop(_stopRecordingOnce());
+  }
+
+  Future<MessageAttachmentToCreate?> _shareRecordingStop(
+    Future<MessageAttachmentToCreate?> stop,
+  ) {
     final completer = Completer<MessageAttachmentToCreate?>();
     final sharedStop = completer.future;
-    void clearStop() {
-      if (identical(_recording.recordingStop.value, sharedStop)) {
-        _recording.recordingStop.value = null;
-      }
-    }
-
-    Future<void> finishStop() async {
-      try {
-        completer.complete(await stop);
-      } on Object catch (error, stackTrace) {
-        completer.completeError(error, stackTrace);
-      } finally {
-        clearStop();
-      }
-    }
-
     _recording.recordingStop.value = sharedStop;
-    unawaited(finishStop());
+    unawaited(_completeRecordingStop(stop, completer, sharedStop));
 
     return sharedStop;
+  }
+
+  Future<void> _completeRecordingStop(
+    Future<MessageAttachmentToCreate?> stop,
+    Completer<MessageAttachmentToCreate?> completer,
+    Future<MessageAttachmentToCreate?> sharedStop,
+  ) async {
+    try {
+      completer.complete(await stop);
+    } on Object catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
+    } finally {
+      _clearRecordingStop(sharedStop);
+    }
+  }
+
+  void _clearRecordingStop(Future<MessageAttachmentToCreate?> sharedStop) {
+    if (identical(_recording.recordingStop.value, sharedStop)) {
+      _recording.recordingStop.value = null;
+    }
   }
 
   Future<MessageAttachmentToCreate?> _stopRecordingOnce() async {
@@ -1688,19 +1701,16 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final supportsAudio = state.capabilities.attachments.supportsAudio;
-    final tooltip = supportsAudio
-        ? _recordVoiceKey.tr()
-        : _audioAttachmentReasonKey(state).tr();
-
     return Row(
       mainAxisSize: .min,
       children: [
         _RecordingButton(
           icon: Icons.mic_none_outlined,
           onPressed: state.actions.startRecording,
-          disabled: state.input.disabled || !supportsAudio,
-          tooltip: tooltip,
+          disabled:
+              state.input.disabled ||
+              !state.capabilities.attachments.supportsAudio,
+          tooltip: _audioRecordingTooltip(state),
           selectorId: 'chat_voice_button',
         ),
         const AuraSizedBox(width: .xs),
@@ -1708,6 +1718,11 @@ class const _ChatInputAudioControl({required final _ChatInputState state})
     );
   }
 }
+
+String _audioRecordingTooltip(_ChatInputState state) =>
+    state.capabilities.attachments.supportsAudio
+    ? _recordVoiceKey.tr()
+    : _audioAttachmentReasonKey(state).tr();
 
 class const _ChatInputStopControls({
   required final _ChatInputState state,

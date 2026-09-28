@@ -24,24 +24,39 @@ class const ChatAttachmentDraftPreview({
         attachment: attachment,
         size: _thumbnailSize,
       ),
-      label: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxLabelWidth),
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            if (attachment.modality == .audio) ...[
-              _AttachmentDraftAudioPlayer(
-                localPath: attachment.localPath,
-                enabled: enabled,
-                key: ObjectKey(attachment),
-              ),
-              const SizedBox(width: 4),
-            ],
-            Flexible(child: _AttachmentDraftLabel(attachment: attachment)),
-          ],
-        ),
+      label: _AttachmentDraftChipLabel(
+        attachment: attachment,
+        enabled: enabled,
+        maxWidth: _maxLabelWidth,
       ),
       onDeleted: enabled ? () => onRemove(attachment) : null,
+    );
+  }
+}
+
+class const _AttachmentDraftChipLabel({
+  required final MessageAttachmentToCreate attachment,
+  required final bool enabled,
+  required final double maxWidth,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: .new(maxWidth: maxWidth),
+      child: Row(
+        mainAxisSize: .min,
+        children: [
+          if (attachment.modality == .audio) ...[
+            _AttachmentDraftAudioPlayer(
+              localPath: attachment.localPath,
+              enabled: enabled,
+              key: ObjectKey(attachment),
+            ),
+            const SizedBox(width: 4),
+          ],
+          Flexible(child: _AttachmentDraftLabel(attachment: attachment)),
+        ],
+      ),
     );
   }
 }
@@ -92,25 +107,38 @@ class _AttachmentDraftAudioPlayerState
     );
   }
 
-  Future<void> _togglePlayback() async {
+  Future<void> _togglePlayback() =>
+      _isPlaying ? _stopPlayback() : _startPlayback();
+
+  Future<void> _startPlayback() async {
     final player = _player ??= .new();
-    _completionSubscription ??= player.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _isPlaying = false);
-    });
+    _listenForCompletion(player);
 
     try {
-      if (_isPlaying) {
-        await player.stop();
-        if (mounted) setState(() => _isPlaying = false);
-
-        return;
-      }
-
-      setState(() => _isPlaying = true);
+      _setPlaying(true);
       await player.play(DeviceFileSource(widget.localPath));
     } on Object {
-      if (mounted) setState(() => _isPlaying = false);
+      _setPlaying(false);
     }
+  }
+
+  Future<void> _stopPlayback() async {
+    try {
+      await _player?.stop();
+    } on Object {
+      // A failed stop still leaves the preview in its stopped state.
+    }
+    _setPlaying(false);
+  }
+
+  void _listenForCompletion(AudioPlayer player) {
+    _completionSubscription ??= player.onPlayerComplete.listen(
+      (_) => _setPlaying(false),
+    );
+  }
+
+  void _setPlaying(bool isPlaying) {
+    if (mounted) setState(() => _isPlaying = isPlaying);
   }
 
   Future<void> _disposePlayer(AudioPlayer player) async {
