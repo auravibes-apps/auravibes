@@ -18,8 +18,8 @@ class const AppAgentTranscriptContextAdapter(
       conversationId,
     );
     final updates = _transcriptContextUpdates(transcript);
-    final delta = diffAgentTranscriptContext(
-      foldAgentTranscriptContext(updates),
+    final delta = _diffTranscriptContext(
+      updates,
       _currentTranscriptContext(contextMessages, tools, approvalStates),
     );
     final entries = _activeEntries(transcript);
@@ -62,6 +62,11 @@ AgentTranscriptContextState _currentTranscriptContext(
   tools: tools,
   approvalStates: approvalStates,
 );
+
+AgentTranscriptContextUpdate? _diffTranscriptContext(
+  List<AgentTranscriptContextUpdate> updates,
+  AgentTranscriptContextState current,
+) => diffAgentTranscriptContext(foldAgentTranscriptContext(updates), current);
 
 List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
   List<MessageEntity> transcript,
@@ -147,22 +152,25 @@ List<AgentTranscriptContextEntry> _activeEntries(
         message.metadata?.isCompactionSummary == true &&
         message.status == .sent,
   );
-  final beforeSummary = summaryIndex < 0
-      ? <AgentTranscriptContextUpdate>[]
-      : _updatesBeforeSummary(transcript, summaryIndex);
   final entries = _entriesAfterSummary(transcript, summaryIndex);
+  final snapshot = _snapshotBeforeSummary(transcript, summaryIndex);
+  if (snapshot == null) return entries;
 
-  if (beforeSummary.isEmpty) return entries;
+  return [snapshot, ...entries];
+}
 
-  return [
-    AgentTranscriptContextEntry(
-      afterMessageId: null,
-      update: snapshotAgentTranscriptContext(
-        foldAgentTranscriptContext(beforeSummary),
-      ),
-    ),
-    ...entries,
-  ];
+AgentTranscriptContextEntry? _snapshotBeforeSummary(
+  List<MessageEntity> transcript,
+  int summaryIndex,
+) {
+  if (summaryIndex < 0) return null;
+  final updates = _updatesBeforeSummary(transcript, summaryIndex);
+  if (updates.isEmpty) return null;
+
+  return AgentTranscriptContextEntry(
+    afterMessageId: null,
+    update: snapshotAgentTranscriptContext(foldAgentTranscriptContext(updates)),
+  );
 }
 
 List<AgentTranscriptContextUpdate> _updatesBeforeSummary(
@@ -184,18 +192,22 @@ List<AgentTranscriptContextEntry> _entriesAfterSummary(
     final message = transcript[index];
     if (!message.isAgentTranscriptContextUpdate) {
       previousMessageId = message.id;
-    } else if (index >= summaryIndex) {
-      entries.add(
-        AgentTranscriptContextEntry(
-          afterMessageId: previousMessageId,
-          update: AgentTranscriptContextCodec.decodeUpdate(message.content),
-        ),
-      );
+      continue;
     }
+    if (index < summaryIndex) continue;
+    entries.add(_transcriptContextEntry(message, previousMessageId));
   }
 
   return entries;
 }
+
+AgentTranscriptContextEntry _transcriptContextEntry(
+  MessageEntity message,
+  String? previousMessageId,
+) => AgentTranscriptContextEntry(
+  afterMessageId: previousMessageId,
+  update: AgentTranscriptContextCodec.decodeUpdate(message.content),
+);
 
 String? _lastVisibleMessageId(List<MessageEntity> transcript) {
   for (final message in transcript.reversed) {

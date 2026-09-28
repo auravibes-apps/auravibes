@@ -50,20 +50,33 @@ AgentTranscriptContextUpdate? _tryDecodeUpdate(String content) {
   try {
     final data = jsonDecode(content);
     if (data is! Map<String, Object?> || data['version'] != 1) return null;
-    final added = data['toolsAdded'];
-    final removed = data['toolsRemoved'];
-    if (added is! List<Object?> || removed is! List<Object?>) return null;
 
-    return AgentTranscriptContextUpdate(
-      contextMessages: _decodeMessages(data['contextMessages']),
-      toolsAdded: [for (final value in added) _decodeTool(value)],
-      toolsRemoved: List<String>.from(removed),
-      toolOrder: _decodeToolOrder(data['toolOrder']),
-      approvalStates: _decodeApprovalStates(data['approvalStates']),
-    );
+    return _decodeUpdate(data);
   } on Object catch (_) {
     return null;
   }
+}
+
+AgentTranscriptContextUpdate _decodeUpdate(Map<String, Object?> data) =>
+    AgentTranscriptContextUpdate(
+      contextMessages: _decodeMessages(data['contextMessages']),
+      toolsAdded: _decodeTools(data['toolsAdded']),
+      toolsRemoved: _decodeRemovedTools(data['toolsRemoved']),
+      toolOrder: _decodeToolOrder(data['toolOrder']),
+      approvalStates: _decodeApprovalStates(data['approvalStates']),
+    );
+
+List<ToolSpec> _decodeTools(Object? value) => [
+  for (final item in _requiredObjectList(value)) _decodeTool(item),
+];
+
+List<String> _decodeRemovedTools(Object? value) =>
+    List<String>.from(_requiredObjectList(value));
+
+List<Object?> _requiredObjectList(Object? value) {
+  if (value is! List<Object?>) throw const FormatException();
+
+  return value;
 }
 
 List<AgentContextMessage>? _decodeMessages(Object? value) => value == null
