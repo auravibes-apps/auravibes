@@ -35,9 +35,8 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
       ..where(_linkedCredentialFilter(workspaceId, credentialDefinitionId));
 
     final row = await query.getSingle();
-    final result = row.read(count) ?? 0;
 
-    return result;
+    return await row.read(count) ?? 0;
   }
 
   Stream<List<ServiceConnectionTable>> watchCredentialsForWorkspace(

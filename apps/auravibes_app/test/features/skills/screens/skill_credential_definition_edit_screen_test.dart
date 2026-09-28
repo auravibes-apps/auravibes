@@ -59,8 +59,11 @@ Future<_CredentialDefinitionEditHarness> _createHarness() async {
   );
 }
 
-Future<void> _setSurfaceSize(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(1000, 1000));
+Future<void> _setSurfaceSize(
+  WidgetTester tester, {
+  Size size = const Size(1000, 1000),
+}) async {
+  await tester.binding.setSurfaceSize(size);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 }
 
@@ -337,7 +340,7 @@ void main() {
   testWidgets('shows required and duplicate variable errors inline', (
     tester,
   ) async {
-    await _setSurfaceSize(tester);
+    await _setSurfaceSize(tester, size: const Size(1000, 1200));
     final harness = await _createHarness();
     addTearDown(harness.dispose);
 

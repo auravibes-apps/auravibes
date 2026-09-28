@@ -67,9 +67,9 @@ void main() {
       );
       expect(await fake.store.linkedCredentialCount('definition-1'), 3);
       final skill = SkillEntity(
+        source: .user,
         id: 'skill-1',
         workspaceId: 'workspace-1',
-        source: .user,
         kind: .template,
         title: 'Service',
         slug: 'service',
