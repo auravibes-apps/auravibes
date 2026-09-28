@@ -31,7 +31,10 @@ export 'src/genkit_providers/chat_completions_provider.dart'
         ChatCompletionsModelDefinition,
         ProviderTransport,
         ProviderTransportResponse,
+        ToolSamplingDecision,
+        ToolSamplingOutcome,
         ToolSamplingPolicy,
+        ToolSamplingResult,
         ToolSamplingValidationException,
         ToolSamplingValidationReason;
 export 'src/genkit_providers/openai_codex.dart'
@@ -90,6 +93,7 @@ export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
+export 'src/tool_schema_strict.dart' show ToolSchemaIssueReason;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';
 export 'src/transcript_selection.dart';

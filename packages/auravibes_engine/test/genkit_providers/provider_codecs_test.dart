@@ -175,6 +175,84 @@ void main() {
   });
 
   group('strict tool sampling', () {
+    test('reports per-tool decisions without schema or argument values', () {
+      final codec = _toolSamplingCodec(providerSupportsStrict: true);
+      final result = codec.evaluateTools(
+        tools: [
+          _toolDefinition(),
+          ToolDefinition(
+            name: 'fallback',
+            description: 'token=sk-secret-value',
+            inputSchema: {
+              'type': 'object',
+              'description': 'password=hidden',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': <String>[],
+              'additionalProperties': false,
+            },
+          ),
+        ],
+        policy: ToolSamplingPolicy.prefer,
+        modelSupportsStrict: true,
+      );
+
+      expect(result.decisions.map((decision) => decision.outcome), [
+        ToolSamplingOutcome.strict,
+        ToolSamplingOutcome.ordinary,
+      ]);
+      expect(
+        result.decisions.last.reason,
+        ToolSamplingValidationReason.incompatibleSchema,
+      );
+      expect(result.decisions.last.schemaPath, r'$.required');
+      final diagnostics = jsonEncode([
+        for (final decision in result.decisions) decision.toDiagnostic(),
+      ]);
+      expect(diagnostics, isNot(contains('sk-secret-value')));
+      expect(diagnostics, isNot(contains('password=hidden')));
+      expect(result.definitions!.first['function']['strict'], isTrue);
+      expect(
+        (result.definitions!.last['function'] as Map).containsKey('strict'),
+        isFalse,
+      );
+    });
+
+    test('reports provider and model fallbacks separately', () {
+      for (final testCase in [
+        (
+          provider: false,
+          model: true,
+          reason: ToolSamplingValidationReason.unsupportedProvider,
+        ),
+        (
+          provider: true,
+          model: false,
+          reason: ToolSamplingValidationReason.unsupportedModel,
+        ),
+      ]) {
+        final result =
+            _toolSamplingCodec(providerSupportsStrict: testCase.provider)
+                .evaluateTools(
+                  tools: [_toolDefinition()],
+                  policy: ToolSamplingPolicy.require,
+                  modelSupportsStrict: testCase.model,
+                );
+        expect(result.decisions.single.reason, testCase.reason);
+        expect(
+          result.requireStrict,
+          throwsA(
+            isA<ToolSamplingValidationException>().having(
+              (error) => error.reason,
+              'reason',
+              testCase.reason,
+            ),
+          ),
+        );
+      }
+    });
+
     test('keeps the default request body unchanged', () {
       final body = _buildToolBody(
         codec: _toolSamplingCodec(providerSupportsStrict: true),

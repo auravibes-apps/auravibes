@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:http/http.dart' as http;
+import 'package:schemantic/schemantic.dart';
 
 void main() {
   group('ProviderFactory', () {
@@ -68,6 +69,53 @@ void main() {
 
       expect(ai, isA<Genkit>());
     });
+
+    test(
+      'official catalog URL enables strict tools for verified model',
+      () async {
+        final client = _FakeHttpClient();
+        final strictFactory = ProviderFactory(
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+          httpClient: client,
+        );
+        final config = makeConfig(
+          type: .openai,
+          providerUrl: 'https://api.openai.com/v1',
+        );
+        final ai = await strictFactory.createGenkit(config);
+        const schema = <String, Object?>{
+          'type': 'object',
+          'properties': {
+            'query': {'type': 'string'},
+          },
+          'required': ['query'],
+          'additionalProperties': false,
+        };
+        final tool = ai.defineTool<Map<String, Object?>, Object?>(
+          name: 'search',
+          description: 'Search.',
+          inputSchema: SchemanticType.from<Map<String, Object?>>(
+            jsonSchema: schema,
+            parse: (value) => value as Map<String, Object?>,
+          ),
+          fn: (_, _) async => const ToolResponseResult<Object?>(null),
+        );
+
+        await ai.generate<Object?, Object?>(
+          model: strictFactory.getModelReference(config),
+          prompt: 'Hi',
+          tools: [tool],
+          returnToolRequests: true,
+        );
+
+        final tools = client.body?['tools'] as List<dynamic>?;
+        final function =
+            (tools?.single as Map<String, dynamic>?)?['function']
+                as Map<String, dynamic>?;
+        expect(function?['strict'], isTrue);
+        expect(function?['parameters'], schema);
+      },
+    );
 
     test('creates Genkit for Codex OAuth without model discovery', () async {
       final oauthFactory = ProviderFactory(
@@ -489,12 +537,16 @@ class const _FakeServiceConnectionRepository({
 
 final class _FakeHttpClient extends http.BaseClient {
   http.BaseRequest? request;
+  Map<String, dynamic>? body;
   final requests = <http.BaseRequest>[];
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     this.request = request;
     requests.add(request);
+    body = jsonDecode(
+      await request.finalize().bytesToString(),
+    ) as Map<String, dynamic>;
 
     return http.StreamedResponse(
       .value(
