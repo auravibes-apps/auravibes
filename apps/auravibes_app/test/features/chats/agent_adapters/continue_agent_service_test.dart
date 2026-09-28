@@ -423,6 +423,24 @@ void main() {
         );
 
         expect(sentTools, hasLength(2));
+        expect(contexts.calls, 2);
+        expect(
+          sentMessages
+              .last
+              .first
+              .metadata[skillCatalogSelectedRevisionsMetadataKey],
+          {'research': 'r1'},
+        );
+        expect(
+          container.read(conversationSkillContextRuntimeProvider.notifier),
+          same(skillContext),
+        );
+        expect(
+          container
+              .read(conversationSkillContextRuntimeProvider)['conversation-1']
+              ?.phase,
+          ConversationSkillContextPhase.ready,
+        );
         expect(
           container
               .read(conversationSkillContextRuntimeProvider)['conversation-1']
