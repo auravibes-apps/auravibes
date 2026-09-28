@@ -471,6 +471,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.reasoning.restore_default';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_discard_draft =
+      'chats_screens.chat_conversation.discard_draft';
   static const chats_screens_chat_conversation_attach_file =
       'chats_screens.chat_conversation.attach_file';
   static const chats_screens_chat_conversation_attach_photo =

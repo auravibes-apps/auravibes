@@ -351,6 +351,7 @@
         "restore_default": "Restore provider default"
       },
       "message_placeholder": "Type your message...",
+      "discard_draft": "Discard draft",
       "attach_file": "Attach file",
       "attach_photo": "Attach photo",
       "attach_camera": "Take photo",

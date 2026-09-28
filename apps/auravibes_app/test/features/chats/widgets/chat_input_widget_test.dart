@@ -70,6 +70,7 @@ void main() {
     bool isCompacting = false,
     ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
+    ValueListenable<String?>? activeConversation,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -84,6 +85,33 @@ void main() {
         ],
         child: Builder(
           builder: (context) {
+            Widget chatInput(String? conversationId) => ChatInputWidget(
+              workspaceId: 'ws-1',
+              onSendMessage: onSendMessage,
+              onToolsPress: onToolsPress,
+              modelSheetControl: modelSheetControl,
+              agentSheetControl: agentSheetControl,
+              modelCompactControl: modelCompactControl,
+              agentCompactControl: agentCompactControl,
+              onDraftStatusChanged: onDraftStatusChanged,
+              conversationId: conversationId,
+              reasoningControl: reasoningControl,
+              draftToLoad: draftToLoad,
+              modalitiesInput: modalitiesInput,
+              onContinueAgent: onContinueAgent,
+              continueDisabledHint: continueDisabledHint,
+              disabledHint: disabledHint,
+              compactDisabledHint: compactDisabledHint,
+              disabled: disabled,
+              isBusy: isBusy,
+              showStopButton: showStopButton,
+              onStop: onStop,
+              onCompact: onCompact,
+              canCompact: canCompact,
+              isCompacting: isCompacting,
+              key: conversationId == null ? null : ValueKey(conversationId),
+            );
+
             return MaterialApp(
               home: AuraThemeScope(
                 theme: .light,
@@ -93,30 +121,18 @@ void main() {
                     child: AuraSnackBarHost(
                       child: Material(
                         child: Portal(
-                          child: ChatInputWidget(
-                            workspaceId: 'ws-1',
-                            onSendMessage: onSendMessage,
-                            onToolsPress: onToolsPress,
-                            modelSheetControl: modelSheetControl,
-                            agentSheetControl: agentSheetControl,
-                            modelCompactControl: modelCompactControl,
-                            agentCompactControl: agentCompactControl,
-                            onDraftStatusChanged: onDraftStatusChanged,
-                            reasoningControl: reasoningControl,
-                            draftToLoad: draftToLoad,
-                            modalitiesInput: modalitiesInput,
-                            onContinueAgent: onContinueAgent,
-                            continueDisabledHint: continueDisabledHint,
-                            disabledHint: disabledHint,
-                            compactDisabledHint: compactDisabledHint,
-                            disabled: disabled,
-                            isBusy: isBusy,
-                            showStopButton: showStopButton,
-                            onStop: onStop,
-                            onCompact: onCompact,
-                            canCompact: canCompact,
-                            isCompacting: isCompacting,
-                          ),
+                          child: activeConversation == null
+                              ? chatInput(null)
+                              : ValueListenableBuilder<String?>(
+                                  valueListenable: activeConversation,
+                                  builder: (context, conversationId, child) {
+                                    if (conversationId == null) {
+                                      return const SizedBox.shrink();
+                                    }
+
+                                    return chatInput(conversationId);
+                                  },
+                                ),
                         ),
                       ),
                     ),
@@ -222,6 +238,151 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
     await tester.pump();
     expect(draftStatuses.last, isTrue);
+  });
+
+  testWidgets('keeps conversation text and attachment across navigation', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final activeConversation = ValueNotifier<String?>('chat-1');
+    addTearDown(activeConversation.dispose);
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final previousPicker = fp.FilePickerPlatform.instance;
+    addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        activeConversation: activeConversation,
+        modalitiesInput: const ['text', 'file'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future<void>.value(),
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'first draft');
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.attach_file));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('report.pdf'), findsOneWidget);
+
+    activeConversation.value = 'chat-2';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.deletedPaths, isEmpty);
+    await tester.enterText(find.byType(EditableText), 'second draft');
+
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'first draft',
+    );
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(attachmentService.deletedPaths, isEmpty);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.text('Discard draft'));
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+
+    activeConversation.value = 'chat-2';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'second draft',
+    );
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('keeps failed send draft and clears successful send draft', (
+    tester,
+  ) async {
+    final activeConversation = ValueNotifier<String?>('chat-1');
+    addTearDown(activeConversation.dispose);
+    var attempts = 0;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        activeConversation: activeConversation,
+        onSendMessage: (_) async {
+          attempts++;
+          if (attempts == 1) throw StateError('send failed');
+        },
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'unsent message');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+    expect(attempts, 1);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'unsent message',
+    );
+
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'unsent message',
+    );
+    final sendButton = find.descendant(
+      of: find.byKey(const ValueKey<String>('chat_send_button')),
+      matching: find.byType(AuraButton),
+    );
+    expect(tester.widget<AuraButton>(sendButton).disabled, isFalse);
+
+    tester.widget<AuraButton>(sendButton).onPressed();
+    final _ = await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(attempts, 2);
   });
 
   testWidgets('renders without error', (tester) async {
