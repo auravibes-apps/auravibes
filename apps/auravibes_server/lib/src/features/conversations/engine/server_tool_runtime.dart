@@ -729,6 +729,7 @@ bool serverToolPermissionAllowsExecution({
 class const ServerResolvedTool({
   required final AgentResolvedToolName descriptor,
   required final ToolSpec spec,
+  final Map<String, Object?>? outputSchema,
 });
 
 class const ServerToolRequest({
@@ -759,8 +760,6 @@ class ServerToolRuntime({
   final ConversationCancellationProbe cancellationProbe =
       const DatabaseConversationCancellationProbe(),
 }) {
-  static const maxResultCharacters = 50000;
-
   Future<List<ServerResolvedTool>> loadTools(
     Session session, {
     required int workspaceId,
@@ -1318,6 +1317,10 @@ class ServerToolRuntime({
     final schema = data['inputSchema'] ?? data['inputJsonSchema'];
     return ServerResolvedTool(
       descriptor: descriptor,
+      outputSchema: switch (data['outputSchema']) {
+        final Map schema => Map<String, Object?>.from(schema),
+        _ => null,
+      },
       spec: ToolSpec(
         name: name,
         description: data['description'] is String
@@ -1401,6 +1404,7 @@ class ServerToolRuntime({
     String status,
     String? result,
   ) => session.db.transaction((transaction) async {
+    final projection = result == null ? null : projectToolOutput(result);
     final current = await ConversationToolCall.db.findById(
       session,
       call.id!,
@@ -1426,7 +1430,7 @@ class ServerToolRuntime({
       session,
       current.copyWith(
         status: status,
-        resultJson: result,
+        resultJson: projection?.persistedText,
         revision: current.revision + 1,
         updatedAt: DateTime.now().toUtc(),
       ),
@@ -1461,13 +1465,16 @@ class ServerToolRuntime({
       transaction: transaction,
     );
     if (turn == null || ConversationStatuses.isTerminal(turn.status)) return;
+    final projection = projectToolOutput(
+      jsonEncode({
+        'error': 'Tool execution was interrupted before completion.',
+      }),
+    );
     await ConversationToolCall.db.updateRow(
       session,
       current.copyWith(
         status: 'executionError',
-        resultJson: _boundedJson({
-          'error': 'Tool execution was interrupted before completion.',
-        }),
+        resultJson: projection.persistedText,
         revision: current.revision + 1,
         updatedAt: now,
       ),
@@ -1677,20 +1684,8 @@ class ServerToolRuntime({
       SkillResourceResult(:final value) => value,
       _ => null,
     };
-    if (specialResult != null) {
-      return specialResult.length <= maxResultCharacters
-          ? specialResult
-          : jsonEncode({'error': 'Skill content is too large.'});
-    }
-    final encoded = jsonEncode(value);
-    return encoded.length <= maxResultCharacters
-        ? encoded
-        : jsonEncode(encoded.substring(0, maxResultCharacters));
+    return specialResult ?? jsonEncode(value);
   }
 
-  String _boundedRawJson(String value) {
-    return value.length <= maxResultCharacters
-        ? value
-        : _boundedJson({'content': _subAgentFailedMessage});
-  }
+  String _boundedRawJson(String value) => value;
 }

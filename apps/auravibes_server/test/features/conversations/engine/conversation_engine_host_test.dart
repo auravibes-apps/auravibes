@@ -318,6 +318,37 @@ void main() {
     );
   });
 
+  test('bounds persisted cloud tool results before provider context', () {
+    final source = 'result ' * (defaultToolOutputBytes ~/ 7 + 1);
+    final call = ConversationToolCall(
+      workspaceId: 1,
+      conversationId: 1,
+      turnId: 1,
+      messageId: 1,
+      stableId: 'call-1',
+      name: 'search',
+      argumentsJson: '{}',
+      argumentsDigest: 'digest',
+      status: 'success',
+      resultJson: source,
+      revision: 1,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+
+    final exchange = persistedProviderToolExchanges(
+      messages: const [],
+      calls: [call],
+    );
+    final result =
+        exchange.singleWhere((message) => message['role'] == 'tool')['content']
+            as String;
+
+    expect(call.resultJson, source);
+    expect(result.length, lessThanOrEqualTo(defaultToolOutputBytes));
+    expect(result, contains('[tool output truncated]'));
+  });
+
   test(
     'resume preserves provider tool-call batch order and assistant text',
     () {

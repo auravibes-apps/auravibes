@@ -1,16 +1,145 @@
 import 'dart:collection';
 import 'dart:convert';
 
+abstract final class McpDiscoveryPolicy {
+  static const int maxTools = 100;
+  static const int maxPages = 100;
+  static const int maxCatalogBytes = 1024 * 1024;
+  static const int maxCursorBytes = 4096;
+  static const int maxNameLength = 200;
+  static const int maxDescriptionLength = 4000;
+  static const int maxSchemaBytes = 64 * 1024;
+  static const int maxSchemaDepth = 16;
+  static const int maxToolBytes = 2 * maxSchemaBytes + 16 * 1024;
+
+  static String boundedSchema(Object? schema) {
+    if (schema is! Map) {
+      throw const FormatException('Invalid MCP tool schema.');
+    }
+    _validateJson(schema, 0, maxSchemaDepth);
+    final encoded = jsonEncode(schema);
+    if (utf8.encode(encoded).length > maxSchemaBytes) {
+      throw const FormatException('MCP tool schema is too large.');
+    }
+    return encoded;
+  }
+
+  static Map<String, Object?> validateTool(Object? raw) {
+    if (raw is! Map) throw const FormatException('Invalid MCP tool.');
+    _validateJson(raw, 0, maxSchemaDepth + 2);
+    final name = raw['name'];
+    final description = raw['description'];
+    final title = raw['title'];
+    if (name is! String ||
+        name.isEmpty ||
+        name.length > maxNameLength ||
+        (description != null &&
+            (description is! String ||
+                description.length > maxDescriptionLength)) ||
+        (title != null && (title is! String || title.length > maxNameLength))) {
+      throw const FormatException('Invalid MCP tool.');
+    }
+    if ((raw['supportsProgress'] != null && raw['supportsProgress'] is! bool) ||
+        (raw['supportsCancellation'] != null &&
+            raw['supportsCancellation'] is! bool) ||
+        (raw['metadata'] != null && raw['metadata'] is! Map)) {
+      throw const FormatException('Invalid MCP tool metadata.');
+    }
+    boundedSchema(raw['inputSchema'] ?? const <String, Object?>{});
+    if (raw['outputSchema'] != null) boundedSchema(raw['outputSchema']);
+    if (utf8.encode(jsonEncode(raw)).length > maxToolBytes) {
+      throw const FormatException('MCP tool metadata is too large.');
+    }
+    return Map<String, Object?>.from(raw);
+  }
+
+  static void _validateJson(Object? value, int depth, int maxDepth) {
+    if (depth > maxDepth) {
+      throw const FormatException('MCP tool schema is too deep.');
+    }
+    switch (value) {
+      case Map<Object?, Object?>():
+        for (final entry in value.entries) {
+          if (entry.key is! String) {
+            throw const FormatException(
+              'MCP tool schema has a non-string key.',
+            );
+          }
+          _validateJson(entry.value, depth + 1, maxDepth);
+        }
+      case List<Object?>():
+        for (final item in value) {
+          _validateJson(item, depth + 1, maxDepth);
+        }
+      case null || String() || bool():
+        return;
+      case num():
+        if (!value.isFinite) {
+          throw const FormatException('MCP tool schema is not JSON.');
+        }
+        return;
+      default:
+        throw const FormatException('MCP tool schema is not JSON.');
+    }
+  }
+}
+
+Future<List<Map<String, Object?>>> collectMcpToolsCatalog(
+  Future<Map<String, Object?>> Function(String? cursor) fetchPage,
+) async {
+  final tools = <Map<String, Object?>>[];
+  final names = <String>{};
+  final cursors = <String>{};
+  var catalogBytes = 0;
+  String? cursor;
+  for (var page = 0; page < McpDiscoveryPolicy.maxPages; page++) {
+    final result = await fetchPage(cursor);
+    final rawTools = result['tools'];
+    if (rawTools is! List ||
+        rawTools.length > McpDiscoveryPolicy.maxTools - tools.length) {
+      throw const FormatException('Invalid MCP tools response.');
+    }
+    for (final raw in rawTools) {
+      final tool = McpDiscoveryPolicy.validateTool(raw);
+      final name = switch (tool['name']) {
+        final String name => name,
+        _ => throw const FormatException('Invalid MCP tool.'),
+      };
+      if (!names.add(name)) {
+        throw const FormatException('Duplicate MCP tool.');
+      }
+      catalogBytes += utf8.encode(jsonEncode(tool)).length;
+      if (catalogBytes > McpDiscoveryPolicy.maxCatalogBytes) {
+        throw const FormatException('MCP tools catalog is too large.');
+      }
+      tools.add(tool);
+    }
+    final nextCursor = result['nextCursor'];
+    if (nextCursor == null) return tools;
+    if (nextCursor is! String ||
+        nextCursor.isEmpty ||
+        utf8.encode(nextCursor).length > McpDiscoveryPolicy.maxCursorBytes ||
+        !cursors.add(nextCursor)) {
+      throw const FormatException('Invalid MCP tools cursor.');
+    }
+    cursor = nextCursor;
+  }
+  throw const FormatException('MCP tools page limit exceeded.');
+}
+
 final class McpDiscoveredTool {
   new({
     required this.name,
     required Map<String, Object?> inputSchema,
+    Map<String, Object?>? outputSchema,
     this.description,
-  }) : inputSchema = _freezeMap(inputSchema);
+  }) : inputSchema = _freezeMap(inputSchema),
+       outputSchema = outputSchema == null ? null : _freezeMap(outputSchema);
 
   final String name;
   final String? description;
   final Map<String, Object?> inputSchema;
+  final Map<String, Object?>? outputSchema;
 }
 
 List<McpDiscoveredTool> parseMcpToolsList(
@@ -24,10 +153,11 @@ List<McpDiscoveredTool> parseMcpToolsList(
   }
   return rawTools
       .map((raw) {
-        if (raw is! Map) throw const FormatException('Invalid MCP tool.');
-        final name = raw['name'];
-        final description = raw['description'];
-        final schema = raw['inputSchema'] ?? const <String, Object?>{};
+        final tool = McpDiscoveryPolicy.validateTool(raw);
+        final name = tool['name'];
+        final description = tool['description'];
+        final schema = tool['inputSchema'] ?? const <String, Object?>{};
+        final outputSchema = tool['outputSchema'];
         if (name is! String ||
             name.isEmpty ||
             (description != null && description is! String) ||
@@ -40,6 +170,9 @@ List<McpDiscoveredTool> parseMcpToolsList(
           name: name,
           description: description as String?,
           inputSchema: Map<String, Object?>.from(schema),
+          outputSchema: outputSchema is Map
+              ? Map<String, Object?>.from(outputSchema)
+              : null,
         );
       })
       .toList(growable: false);

@@ -197,14 +197,20 @@ void main() {
       final github = ResolvedTool.mcp(
         tableId: 'github-row',
         toolIdentifier: 'search',
-        mcpServerId: 'github-server',
-        mcpSlug: 'github',
+        mcp: (
+          mcpServerId: 'github-server',
+          mcpSlug: 'github',
+          outputSchemaJson: null,
+        ),
       );
       final linear = ResolvedTool.mcp(
         tableId: 'linear-row',
         toolIdentifier: 'search',
-        mcpServerId: 'linear-server',
-        mcpSlug: 'linear',
+        mcp: (
+          mcpServerId: 'linear-server',
+          mcpSlug: 'linear',
+          outputSchemaJson: null,
+        ),
       );
       final catalog = agent.buildToolCatalog<ResolvedTool>([
         _candidate('calculator', 'calculator-row-1', firstCalculator),
@@ -291,8 +297,11 @@ void main() {
       final target = ResolvedTool.mcp(
         tableId: 'github-row',
         toolIdentifier: 'search',
-        mcpServerId: 'github-server',
-        mcpSlug: 'github',
+        mcp: (
+          mcpServerId: 'github-server',
+          mcpSlug: 'github',
+          outputSchemaJson: null,
+        ),
       );
       catalog = agent.buildToolCatalog<ResolvedTool>([
         _candidate('search', 'github-server', target),

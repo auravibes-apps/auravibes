@@ -18,12 +18,14 @@ abstract class DiscoveredMcpTool
     required this.name,
     this.description,
     required this.inputSchemaJson,
+    this.outputSchemaJson,
   });
 
   factory DiscoveredMcpTool({
     required String name,
     String? description,
     required String inputSchemaJson,
+    String? outputSchemaJson,
   }) = _DiscoveredMcpToolImpl;
 
   factory DiscoveredMcpTool.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -31,6 +33,7 @@ abstract class DiscoveredMcpTool
       name: jsonSerialization['name'] as String,
       description: jsonSerialization['description'] as String?,
       inputSchemaJson: jsonSerialization['inputSchemaJson'] as String,
+      outputSchemaJson: jsonSerialization['outputSchemaJson'] as String?,
     );
   }
 
@@ -40,6 +43,8 @@ abstract class DiscoveredMcpTool
 
   String inputSchemaJson;
 
+  String? outputSchemaJson;
+
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -47,6 +52,7 @@ abstract class DiscoveredMcpTool
     String? name,
     String? description,
     String? inputSchemaJson,
+    String? outputSchemaJson,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -55,6 +61,7 @@ abstract class DiscoveredMcpTool
       'name': name,
       if (description != null) 'description': description,
       'inputSchemaJson': inputSchemaJson,
+      if (outputSchemaJson != null) 'outputSchemaJson': outputSchemaJson,
     };
   }
 
@@ -65,6 +72,7 @@ abstract class DiscoveredMcpTool
       'name': name,
       if (description != null) 'description': description,
       'inputSchemaJson': inputSchemaJson,
+      if (outputSchemaJson != null) 'outputSchemaJson': outputSchemaJson,
     };
   }
 
@@ -81,10 +89,12 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
     required String name,
     String? description,
     required String inputSchemaJson,
+    String? outputSchemaJson,
   }) : super._(
          name: name,
          description: description,
          inputSchemaJson: inputSchemaJson,
+         outputSchemaJson: outputSchemaJson,
        );
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
@@ -95,11 +105,15 @@ class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
     String? name,
     Object? description = _Undefined,
     String? inputSchemaJson,
+    Object? outputSchemaJson = _Undefined,
   }) {
     return DiscoveredMcpTool(
       name: name ?? this.name,
       description: description is String? ? description : this.description,
       inputSchemaJson: inputSchemaJson ?? this.inputSchemaJson,
+      outputSchemaJson: outputSchemaJson is String?
+          ? outputSchemaJson
+          : this.outputSchemaJson,
     );
   }
 }

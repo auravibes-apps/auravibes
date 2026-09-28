@@ -80,14 +80,45 @@ abstract final class MessageTranscriptSnapshotMapper {
   static List<AgentTranscriptToolCallSnapshot> _toolCallSnapshots(
     MessageMetadataEntity? metadata,
   ) => [
-    for (final toolCall in _toolCallsFor(metadata))
-      AgentTranscriptToolCallSnapshot(
-        id: toolCall.id,
-        lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
-        argumentCharacterCount: toolCall.argumentsRaw.length,
-        resultCharacterCount: toolCall.responseRaw?.length ?? 0,
-      ),
+    for (final toolCall in _toolCallsFor(metadata)) _toolCallSnapshot(toolCall),
   ];
+}
+
+AgentTranscriptToolCallSnapshot _toolCallSnapshot(
+  MessageToolCallEntity toolCall,
+) {
+  final response = toolCall.getResponseForAI();
+  final outputBounds = _toolCallOutputBounds(toolCall, response);
+
+  return AgentTranscriptToolCallSnapshot(
+    id: toolCall.id,
+    lifecycle: AgentToolStatusMapper.toLifecycle(toolCall.resultStatus),
+    argumentCharacterCount: toolCall.argumentsRaw.length,
+    resultCharacterCount: response.length,
+    resultTruncated: outputBounds.truncated,
+    originalResultBytes: outputBounds.originalBytes,
+  );
+}
+
+({bool truncated, int? originalBytes}) _toolCallOutputBounds(
+  MessageToolCallEntity toolCall,
+  String response,
+) {
+  if (toolCall.fullOutputForContext) {
+    return (
+      truncated: toolCall.outputTruncated,
+      originalBytes: toolCall.originalResponseBytes,
+    );
+  }
+
+  final projection = projectToolOutput(response);
+
+  return (
+    truncated: toolCall.outputTruncated || projection.truncated,
+    originalBytes:
+        toolCall.originalResponseBytes ??
+        (projection.truncated ? projection.originalBytes : null),
+  );
 }
 
 typedef _SnapshotData = ({
