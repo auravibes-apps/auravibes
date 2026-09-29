@@ -131,24 +131,37 @@ List<_Token> _tokenize(String source) {
       index += delimiter.length;
       final start = index;
       final interpolations = <List<_Token>>[];
+      var hasInterpolation = false;
       while (index < source.length && !source.startsWith(delimiter, index)) {
         if (!rawString && source.startsWith(r'${', index)) {
           final end = _interpolationEnd(source, index);
           if (end != null) {
+            hasInterpolation = true;
             interpolations.add(_tokenize(source.substring(index + 2, end)));
             index = end + 1;
             continue;
           }
         }
-        if (!rawString && source[index] == '\\') index++;
+        if (!rawString && source[index] == '\\') {
+          index += 2;
+          continue;
+        }
+        if (!rawString &&
+            source[index] == r'$' &&
+            index + 1 < source.length &&
+            _isIdentifierStart(source.codeUnitAt(index + 1))) {
+          hasInterpolation = true;
+        }
         index++;
       }
       final end = index < source.length ? index : source.length;
       final value = source.substring(start, end);
       tokens.add((
-        value: value,
+        value: rawString || hasInterpolation
+            ? value
+            : value.replaceAll(r'\$', r'$'),
         isString: true,
-        isLiteral: rawString || !value.contains(r'$'),
+        isLiteral: !hasInterpolation,
       ));
       for (final expression in interpolations) {
         tokens.add((value: ';', isString: false, isLiteral: false));

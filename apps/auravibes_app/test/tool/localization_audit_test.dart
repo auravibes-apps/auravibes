@@ -135,4 +135,26 @@ final fake = "LocaleKeys.unknown_text and tr('menu.fake')";
       },
     );
   });
+
+  test('reports escaped dollar in a literal translation key', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+final price = 'menu.\$price'.tr();
+final dynamic = 'menu.$name'.tr();
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"home":"Inicio"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': {r'menu.$price'},
+        'es': {r'menu.$price'},
+      },
+    );
+  });
 }
