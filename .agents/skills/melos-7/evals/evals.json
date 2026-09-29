@@ -1,0 +1,23 @@
+{
+  "skill_name": "melos-7",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm working in a Melos-managed package and need to check formatting. Since the instructions say formatter output should match the pinned SDK, am I supposed to avoid running a formatter? How should I check formatting?",
+      "expected_output": "The agent says formatting is allowed and recommends the repository's FVM-pinned formatter, such as `fvm dart format <paths>`, for checking or applying formatting. It does not infer a blanket formatter prohibition from the host-SDK guidance.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I cloned AuraVibes and am about to run `fvm use`. Does it run `flutter pub get` automatically, and what changes if I pass `--skip-pub-get`?",
+      "expected_output": "The agent explains that FVM selects the project SDK and runs Pub resolution by default when switching SDKs, that this repository enables Pub-get-on-SDK-change in `.fvmrc`, and that `--skip-pub-get` skips that resolution.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "The root `pubspec.yaml` declares a Dart Pub workspace. Can I skip Melos bootstrap on a fresh checkout, or does CI still use it? Explain which setup commands reproduce the repository's CI path.",
+      "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup/integrity workflow, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and explains bootstrap's dependency-resolution and ignored IntelliJ metadata outputs without claiming it is unnecessary or inventing committed artifacts.",
+      "files": []
+    }
+  ]
+}
