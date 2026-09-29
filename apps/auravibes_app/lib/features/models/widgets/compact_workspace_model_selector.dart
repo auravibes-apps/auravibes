@@ -396,6 +396,7 @@ class const _ModelSearchInput({
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
     prefixIcon: const AuraIcon(Icons.search),
+    textInputAction: .search,
     onChanged: onChanged,
   );
 }
@@ -658,6 +659,7 @@ class const _DropdownSearchHeader({
     child: TextField(
       controller: controller,
       decoration: _searchDecoration(context),
+      textInputAction: .search,
       style: .new(color: context.auraColors.onSurface),
       onChanged: onChanged,
     ),

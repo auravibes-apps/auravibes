@@ -10,6 +10,8 @@ import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.d
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/sheets/spring_bottom_sheet.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -189,6 +191,7 @@ Future<void> _duplicateAgent(_AgentActionContext action, String agentId) async {
 }
 
 Future<void> _confirmDelete(_AgentActionContext action, String agentId) async {
+  FocusManager.instance.primaryFocus?.unfocus();
   final shouldDelete = await showDialog<bool>(
     context: action.context,
     builder: (_) => const _DeleteAgentDialog(),
@@ -423,6 +426,7 @@ class const _AgentSearchInput({
     placeholder: const TextLocale(LocaleKeys.agents_search_placeholder),
     prefixIcon: const AuraIcon(Icons.search),
     size: .small,
+    textInputAction: .search,
     onChanged: onChanged,
   );
 }
@@ -589,12 +593,14 @@ class const _AgentsListView({
   required final _AgentVisibilityChanged onVisibilityChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 8)),
       itemBuilder: _itemBuilder,
       separatorBuilder: _separatorBuilder,
       itemCount: agents.length,
+      keyboardDismissBehavior: .onDrag,
     );
   }
 
@@ -838,6 +844,7 @@ class _AgentVisibilityControlState extends State<_AgentVisibilityControl> {
   Future<void> _openSheet() async {
     if (_isSaving) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
     final selected = await _showSheet();
     if (!mounted || selected == null || selected == widget.value) return;
 
@@ -845,12 +852,9 @@ class _AgentVisibilityControlState extends State<_AgentVisibilityControl> {
   }
 
   Future<AgentVisibility?> _showSheet() =>
-      showModalBottomSheet<AgentVisibility>(
+      showSpringBottomSheet<AgentVisibility>(
         context: context,
         builder: (context) => _AgentVisibilitySheet(value: widget.value),
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        useSafeArea: true,
       );
 
   Future<void> _save(AgentVisibility value) async {
@@ -967,33 +971,15 @@ class const _AgentVisibilitySheetSurface({
   required final VoidCallback onDone,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _AgentVisibilitySheetFrame(
-    maxHeight: MediaQuery.sizeOf(context).height * 0.75,
-    color: context.auraColors.surface,
-    borderRadius: .vertical(
-      top: .circular(context.auraTheme.fromBorderRadius(.xl)),
-    ),
-    child: _AgentVisibilitySheetContent(
-      selectedValue: selectedValue,
-      onChanged: onChanged,
-      onDone: onDone,
-    ),
-  );
-}
-
-class const _AgentVisibilitySheetFrame({
-  required final double maxHeight,
-  required final Color color,
-  required final BorderRadius borderRadius,
-  required final Widget child,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) => ConstrainedBox(
-    constraints: .new(maxHeight: maxHeight),
-    child: Container(
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: .new(maxHeight: MediaQuery.sizeOf(context).height * 0.75),
+    child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      decoration: BoxDecoration(color: color, borderRadius: borderRadius),
-      child: child,
+      child: _AgentVisibilitySheetContent(
+        selectedValue: selectedValue,
+        onChanged: onChanged,
+        onDone: onDone,
+      ),
     ),
   );
 }
@@ -1004,21 +990,19 @@ class const _AgentVisibilitySheetContent({
   required final VoidCallback onDone,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => SingleChildScrollView(
-    child: AuraColumn(
-      children: [
-        const _AgentVisibilitySheetTitle(),
-        const AuraSizedBox(height: .md),
-        _AgentVisibilitySheetPicker(
-          selectedValue: selectedValue,
-          onChanged: onChanged,
-        ),
-        const AuraSizedBox(height: .md),
-        _AgentVisibilitySheetDoneButton(onPressed: onDone),
-      ],
-      crossAxisAlignment: .stretch,
-      mainAxisSize: .min,
-    ),
+  Widget build(BuildContext _) => AuraColumn(
+    children: [
+      const _AgentVisibilitySheetTitle(),
+      const AuraSizedBox(height: .md),
+      _AgentVisibilitySheetPicker(
+        selectedValue: selectedValue,
+        onChanged: onChanged,
+      ),
+      const AuraSizedBox(height: .md),
+      _AgentVisibilitySheetDoneButton(onPressed: onDone),
+    ],
+    crossAxisAlignment: .stretch,
+    mainAxisSize: .min,
   );
 }
 

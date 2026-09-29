@@ -52,6 +52,32 @@ void main() {
         expect(receivedValue, 'b');
       });
 
+      testWidgets('calls onChanged when item padding is tapped', (
+        tester,
+      ) async {
+        String? receivedValue;
+
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: .ltr,
+            child: AuraButtonGroup<String>.single(
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
+              selectedValue: 'selected',
+              onChanged: (value) => receivedValue = value,
+            ),
+          ),
+        );
+
+        final itemRect = tester.getRect(find.byType(AnimatedContainer));
+        final labelRect = tester.getRect(find.text('A'));
+        expect(itemRect.left, lessThan(labelRect.left));
+
+        await tester.tapAt(.new(itemRect.left + 1, itemRect.center.dy));
+        await tester.pump();
+
+        expect(receivedValue, 'a');
+      });
+
       testWidgets('does not call onChanged when disabled item is tapped', (
         tester,
       ) async {

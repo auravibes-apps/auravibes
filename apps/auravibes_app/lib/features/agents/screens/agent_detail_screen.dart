@@ -16,9 +16,11 @@ import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dar
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show activateSkillToolName;
@@ -205,6 +207,8 @@ mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
     required List<WorkspaceSkill> disabledSkills,
     required List<AgentSkillRef> unavailableRefs,
   }) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<void>(
       context: context,
       builder: (_) => _AgentSkillsDialog(
@@ -249,6 +253,8 @@ mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
     List<WorkspaceSkill> skills,
     List<WorkspaceToolEntity> tools,
   ) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => _AgentToolPermissionsDialog(
@@ -836,7 +842,8 @@ class const _AgentFormLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(16)
+        .copyWith(bottom: BottomPadding.of(context)),
     children: [
       _PromptCard(state: state),
       const SizedBox(height: 16),
@@ -847,6 +854,7 @@ class const _AgentFormLayout({
         summary: summary,
       ),
     ],
+    keyboardDismissBehavior: .onDrag,
   );
 }
 
@@ -999,6 +1007,7 @@ class const _PromptCard({required final _AgentDetailScreenState state})
   @override
   Widget build(BuildContext context) => _PromptCardContent(
     state: state,
+    locale: Localizations.localeOf(context),
     onVisibilityChanged: _handleVisibilityChanged,
   );
 
@@ -1012,11 +1021,13 @@ class const _PromptCard({required final _AgentDetailScreenState state})
 class _PromptCardContent extends StatelessWidget {
   new({
     required _AgentDetailScreenState state,
+    required Locale locale,
     required ValueChanged<List<AgentVisibility>> onVisibilityChanged,
   }) : _child = AuraColumn(
          children: [
            _PromptCardHeader(
              completedRequiredFields: _completedRequiredFields(state),
+             locale: locale,
            ),
            KeyedSubtree(
              key: state._nameFieldKey,
@@ -1080,7 +1091,7 @@ class const _PromptCardSettings({
 }
 
 class _PromptCardHeader extends StatelessWidget {
-  new({required int completedRequiredFields})
+  new({required int completedRequiredFields, required Locale locale})
     : _child = AuraColumn(
         children: [
           const AuraText(
@@ -1094,7 +1105,7 @@ class _PromptCardHeader extends StatelessWidget {
           AuraText(
             child: TextLocale(
               LocaleKeys.agents_required_fields_status,
-              args: [completedRequiredFields.toString()],
+              args: [formatCount(completedRequiredFields, locale)],
             ),
             style: .bodySmall,
             tint: completedRequiredFields == _AgentRequiredField.values.length
@@ -1127,6 +1138,7 @@ class const _AgentNameField({
       error: errorKey == null ? null : TextLocale(errorKey),
       isRequired: true,
       state: errorKey == null ? .normal : .error,
+      textInputAction: .next,
       focusNode: focusNode,
     );
   }
@@ -1365,8 +1377,14 @@ class const _SkillsSummaryText({
       child: Text(
         LocaleKeys.agents_skills_summary.tr(
           namedArgs: {
-            'selected': selectedCount.toString(),
-            'available': availableCount.toString(),
+            'selected': formatCount(
+              selectedCount,
+              Localizations.localeOf(context),
+            ),
+            'available': formatCount(
+              availableCount,
+              Localizations.localeOf(context),
+            ),
           },
           context: context,
         ),
@@ -1386,8 +1404,14 @@ class const _SkillsWarning({
     return _WarningTile(
       label: LocaleKeys.agents_skills_warning_summary.tr(
         namedArgs: {
-          'disabled': disabledSelectedCount.toString(),
-          'unavailable': unavailableCount.toString(),
+          'disabled': formatCount(
+            disabledSelectedCount,
+            Localizations.localeOf(context),
+          ),
+          'unavailable': formatCount(
+            unavailableCount,
+            Localizations.localeOf(context),
+          ),
         },
         context: context,
       ),
@@ -1450,7 +1474,12 @@ class const _ToolPermissionsSummaryText({required final int overrideCount})
             context: context,
           )
         : LocaleKeys.agents_tool_permissions_override_summary.tr(
-            namedArgs: {'count': overrideCount.toString()},
+            namedArgs: {
+              'count': formatCount(
+                overrideCount,
+                Localizations.localeOf(context),
+              ),
+            },
             context: context,
           );
 
@@ -1466,7 +1495,12 @@ class const _ToolPermissionsWarning({
   Widget build(BuildContext context) {
     return _WarningTile(
       label: LocaleKeys.agents_tool_permissions_warning_summary.tr(
-        namedArgs: {'count': missingOverrideCount.toString()},
+        namedArgs: {
+          'count': formatCount(
+            missingOverrideCount,
+            Localizations.localeOf(context),
+          ),
+        },
         context: context,
       ),
       onTap: onManage,
@@ -1734,6 +1768,7 @@ class const _AgentSkillsDialogList({
         const SizedBox(height: 16),
         _SkillDialogSections(state: state, data: data),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -1747,6 +1782,7 @@ class const _SkillDialogSearch({
     return AuraInput(
       controller: controller,
       label: Text(LocaleKeys.agents_manage_skills_search.tr(context: context)),
+      textInputAction: .search,
       onChanged: onChanged,
     );
   }
@@ -2120,6 +2156,7 @@ class const _AgentToolPermissionsDialogList({
       const SizedBox(height: 16),
       _ToolPermissionSections(state: state, data: data),
     ],
+    keyboardDismissBehavior: .onDrag,
   );
 }
 
@@ -2148,6 +2185,7 @@ class const _ToolPermissionsSearch({
       label: Text(
         LocaleKeys.agents_manage_tool_permissions_search.tr(context: context),
       ),
+      textInputAction: .search,
       onChanged: onChanged,
     );
   }
@@ -2783,14 +2821,17 @@ class const _AgentToolPermissionSelector({
   required final ValueChanged<AgentToolPermissionMode> onChanged,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    scrollDirection: .horizontal,
-    child: AuraButtonGroup<AgentToolPermissionMode>.single(
-      items: _agentToolPermissionItems,
-      selectedValue: value,
-      onChanged: onChanged,
-      size: .sm,
+  Widget build(BuildContext context) => AuraEdgy(
+    child: SingleChildScrollView(
+      scrollDirection: .horizontal,
+      child: AuraButtonGroup<AgentToolPermissionMode>.single(
+        items: _agentToolPermissionItems,
+        selectedValue: value,
+        onChanged: onChanged,
+        size: .sm,
+      ),
     ),
+    axis: .horizontal,
   );
 }
 

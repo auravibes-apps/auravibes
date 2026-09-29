@@ -4,6 +4,8 @@
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -99,9 +101,9 @@ class const _ConversationGroupTitle({
   Widget build(BuildContext context) => Expanded(
     child: AuraText(
       child: Text(
-        groupWithTools.localizedDisplayNameKey?.tr() ??
-            groupWithTools.group?.name ??
-            '',
+        (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
+          (groupWithTools.group?.name).orPlaceholder(),
+        ),
         overflow: .ellipsis,
         maxLines: 2,
       ),
@@ -167,8 +169,14 @@ class const _ToolCount({
     child: Text(
       LocaleKeys.tools_screen_tools_count.tr(
         namedArgs: {
-          'enabled': groupWithTools.enabledToolsCount.toString(),
-          'total': groupWithTools.totalToolsCount.toString(),
+          'enabled': formatCount(
+            groupWithTools.enabledToolsCount,
+            Localizations.localeOf(context),
+          ),
+          'total': formatCount(
+            groupWithTools.totalToolsCount,
+            Localizations.localeOf(context),
+          ),
         },
       ),
     ),

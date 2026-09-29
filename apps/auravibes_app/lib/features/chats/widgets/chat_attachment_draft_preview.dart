@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -178,7 +179,10 @@ class const _AttachmentDraftLabel({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final metadata = _attachmentMetadata(attachment);
+    final metadata = _attachmentMetadata(
+      attachment,
+      Localizations.localeOf(context),
+    );
 
     return Column(
       mainAxisSize: .min,
@@ -201,25 +205,29 @@ String _attachmentFileName(MessageAttachmentToCreate attachment) {
   return attachment.displayName;
 }
 
-String _attachmentMetadata(MessageAttachmentToCreate attachment) {
+String _attachmentMetadata(
+  MessageAttachmentToCreate attachment,
+  Locale locale,
+) {
   final values = <String>[
     if (attachment.mimeType.trim().isNotEmpty) attachment.mimeType,
-    if (attachment.sizeBytes >= 0) _formatAttachmentSize(attachment.sizeBytes),
+    if (attachment.sizeBytes >= 0)
+      _formatAttachmentSize(attachment.sizeBytes, locale),
   ];
 
   return values.join(' - ');
 }
 
-String _formatAttachmentSize(int sizeBytes) {
+String _formatAttachmentSize(int sizeBytes, Locale locale) {
   const bytesPerUnit = 1024;
-  if (sizeBytes < bytesPerUnit) return '$sizeBytes B';
+  if (sizeBytes < bytesPerUnit) return '${formatCount(sizeBytes, locale)} B';
 
   final kilobytes = sizeBytes / bytesPerUnit;
   if (kilobytes < bytesPerUnit) {
-    return '${kilobytes.toStringAsFixed(1)} KB';
+    return '${formatDecimal(kilobytes, locale, 1)} KB';
   }
 
-  return '${(kilobytes / bytesPerUnit).toStringAsFixed(1)} MB';
+  return '${formatDecimal(kilobytes / bytesPerUnit, locale, 1)} MB';
 }
 
 IconData _attachmentIcon(MessageAttachmentModality modality) {

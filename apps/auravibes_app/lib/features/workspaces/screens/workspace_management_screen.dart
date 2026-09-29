@@ -17,7 +17,9 @@ import 'package:auravibes_app/features/workspaces/usecases/workspace_configurati
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -752,7 +754,8 @@ class const _WorkspaceListSections({
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16)
+          .copyWith(bottom: BottomPadding.of(context)),
       children: [
         _WorkspaceSearchInput(onChanged: onSearchChanged),
         _WorkspaceManagementRow(data: data, actions: actions),
@@ -760,6 +763,7 @@ class const _WorkspaceListSections({
           _WorkspaceSelectionActions(data: data, actions: actions),
         _WorkspaceSourceSections(data: data, actions: actions),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -845,6 +849,7 @@ class const _WorkspaceSearchField({
     prefixIcon: const AuraIcon(Icons.search),
     suffixIcon: suffixIcon,
     size: .small,
+    textInputAction: .search,
     onChanged: onChanged,
   );
 }
@@ -2266,7 +2271,11 @@ class const _ConnectedWorkspaceDetails({
         _WorkspaceName(name: workspace.name, isActive: isActive),
         TextLocale(
           'workspace_management.cloud_connected_account',
-          args: [accountEmail ?? workspace.cloudAccountId ?? ''],
+          args: [
+            accountEmail.orPlaceholder(
+              workspace.cloudAccountId.orPlaceholder(),
+            ),
+          ],
         ),
       ],
       spacing: .xs,

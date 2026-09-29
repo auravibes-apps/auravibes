@@ -61,6 +61,32 @@ void main() {
       expect(submittedValue, 'Submitted text');
     });
 
+    testWidgets('next action focuses the following AuraInput', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                AuraInput(textInputAction: TextInputAction.next),
+                AuraInput(textInputAction: TextInputAction.done),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final fields = find.byType(EditableText);
+      final nextFieldFocus = tester
+          .widget<EditableText>(fields.at(1))
+          .focusNode;
+      await tester.tap(fields.first);
+      await tester.pump();
+      await tester.testTextInput.receiveAction(TextInputAction.next);
+      await tester.pumpAndSettle();
+
+      expect(nextFieldFocus.hasFocus, isTrue);
+    });
+
     testWidgets('enforces the configured maximum length', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: AuraInput(maxLength: 5))),

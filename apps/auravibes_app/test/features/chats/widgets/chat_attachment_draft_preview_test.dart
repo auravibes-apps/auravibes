@@ -39,6 +39,7 @@ void main() {
     required MessageAttachmentToCreate attachment,
     required ValueChanged<MessageAttachmentToCreate> onRemove,
     bool enabled = true,
+    Locale locale = const Locale('en'),
   }) {
     return EasyLocalization(
       child: Builder(
@@ -54,15 +55,18 @@ void main() {
             ),
             theme: .new(),
             locale: context.locale,
-            localizationsDelegates: context.localizationDelegates,
+            localizationsDelegates: [
+              ...context.localizationDelegates,
+              ...GlobalMaterialLocalizations.delegates,
+            ],
             supportedLocales: context.supportedLocales,
           ),
         ),
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: locale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
     );
@@ -92,6 +96,19 @@ void main() {
 
     expect(find.text('report.pdf'), findsOneWidget);
     expect(find.text('application/pdf - 2.0 KB'), findsOneWidget);
+  });
+
+  testWidgets('uses Spanish separators for attachment size', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        attachment: attachment.copyWith(sizeBytes: 1536),
+        onRemove: _ignoreAttachment,
+        locale: const Locale('es'),
+      ),
+    );
+
+    expect(find.text('application/pdf - 1,5 KB'), findsOneWidget);
   });
 
   testWidgets('renders an image thumbnail when the platform supports files', (

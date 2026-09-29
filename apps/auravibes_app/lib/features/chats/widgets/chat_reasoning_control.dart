@@ -45,20 +45,23 @@ class _ChatReasoningControlState extends State<ChatReasoningControl> {
   bool _isNarrowLayout(BuildContext context) =>
       MediaQuery.sizeOf(context).width < DesignBreakpoints.sm;
 
-  Future<void> _showReasoningSheet(BuildContext context) =>
-      showModalBottomSheet<void>(
-        context: context,
-        builder: (context) => _ReasoningSheet(
-          child: ChatReasoningControls(
-            options: widget.options,
-            value: widget.value,
-            onChanged: widget.onChanged,
-          ),
+  Future<void> _showReasoningSheet(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    return showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => _ReasoningSheet(
+        child: ChatReasoningControls(
+          options: widget.options,
+          value: widget.value,
+          onChanged: widget.onChanged,
         ),
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        useSafeArea: true,
-      );
+      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+    );
+  }
 }
 
 class const _ReasoningTrigger({

@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dar
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 // Package imports:
@@ -199,6 +200,8 @@ extension on _SkillsScreenScaffold {
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<bool>(
       context: context,
       builder: (_) => _DeleteSkillDialog(),
@@ -782,13 +785,17 @@ Future<bool?> _confirmSkillsBulkDelete(
   BuildContext context,
   int selectedCount,
   int hiddenCount,
-) => showDialog<bool>(
-  context: context,
-  builder: (_) => _BulkDeleteSkillsDialog(
-    selectedCount: selectedCount,
-    hiddenCount: hiddenCount,
-  ),
-);
+) {
+  FocusManager.instance.primaryFocus?.unfocus();
+
+  return showDialog<bool>(
+    context: context,
+    builder: (_) => _BulkDeleteSkillsDialog(
+      selectedCount: selectedCount,
+      hiddenCount: hiddenCount,
+    ),
+  );
+}
 
 Future<void> _runSkillsBulkDelete(_SkillsBulkDeleteRequest request) async {
   request.isDeleting.value = true;
@@ -914,6 +921,7 @@ class const _SkillsScreenSearchInput({
     placeholder: const TextLocale(LocaleKeys.skills_screen_search_placeholder),
     prefixIcon: const AuraIcon(Icons.search),
     size: .small,
+    textInputAction: .search,
     onChanged: onChanged,
   );
 }
@@ -1428,10 +1436,13 @@ class const _SkillsListView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView.separated(
-    padding: const EdgeInsets.all(_skillScreenListPadding),
+    padding: const EdgeInsets.all(_skillScreenListPadding).copyWith(
+      bottom: BottomPadding.of(context, minimum: _skillScreenListPadding),
+    ),
     itemBuilder: itemBuilder,
     separatorBuilder: (_, _) => const SizedBox(height: _skillScreenListPadding),
     itemCount: skills.length,
+    keyboardDismissBehavior: .onDrag,
   );
 }
 

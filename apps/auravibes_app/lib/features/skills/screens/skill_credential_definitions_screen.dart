@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_definit
 import 'package:auravibes_app/features/skills/usecases/duplicate_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -214,9 +215,10 @@ class const _CredentialDefinitionsList({
   required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 8)),
       itemBuilder: _itemBuilder,
       separatorBuilder: _separatorBuilder,
       itemCount: definitions.length,

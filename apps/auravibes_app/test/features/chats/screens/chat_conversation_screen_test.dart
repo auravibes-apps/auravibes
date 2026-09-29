@@ -1046,6 +1046,13 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    final retryText = tester.widget<Text>(
+      find.textContaining('Rate limit reached'),
+    );
+    expect(
+      retryText.style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
   });

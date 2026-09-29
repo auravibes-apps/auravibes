@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 typedef TranslateFunc = String Function(String key, {List<String>? args});
@@ -7,18 +10,24 @@ abstract final class RelativeTimeFormatter {
   static String format(
     DateTime timestamp, {
     DateTime? now,
+    Locale locale = const Locale('en'),
     TranslateFunc translate = _defaultTranslate,
   }) => _translateDifference(
     (now ?? DateTime.now()).difference(timestamp),
+    locale,
     translate,
   );
 
-  static String _translateDifference(Duration diff, TranslateFunc translate) {
+  static String _translateDifference(
+    Duration diff,
+    Locale locale,
+    TranslateFunc translate,
+  ) {
     final bucket = _bucketFor(diff);
     final key = bucket.localizationKey;
     if (bucket == _RelativeTimeBucket.justNow) return translate(key);
 
-    return _translateCount(translate, key, bucket.count(diff));
+    return _translateCount(translate, key, bucket.count(diff), locale);
   }
 
   static _RelativeTimeBucket _bucketFor(Duration diff) {
@@ -35,7 +44,8 @@ abstract final class RelativeTimeFormatter {
     TranslateFunc translate,
     String key,
     int count,
-  ) => translate(key, args: [count.toString()]);
+    Locale locale,
+  ) => translate(key, args: [formatCount(count, locale)]);
 
   static String _defaultTranslate(String key, {List<String>? args}) =>
       key.tr(args: args ?? const []);

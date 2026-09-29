@@ -1189,6 +1189,7 @@ class _ChatListSearchInput extends StatelessWidget {
         prefixIcon: const AuraIcon(Icons.search),
         suffixIcon: _ChatListSearchStatus(isSearching: state.isSearching),
         size: .small,
+        textInputAction: .search,
         onChanged: state.onSearchChanged,
       );
 
@@ -1257,6 +1258,7 @@ class const _ChatListConversationList({required final _ChatListViewState state})
     itemBuilder: _buildTile,
     separatorBuilder: (context, index) => const SizedBox(height: 10),
     itemCount: state.chats.length,
+    keyboardDismissBehavior: .onDrag,
   );
 
   Widget _buildTile(BuildContext _, int index) =>
@@ -1479,7 +1481,10 @@ class const _ChatTileMetadata({
       Expanded(
         child: AuraText(
           child: Text(
-            RelativeTimeFormatter.format(chat.updatedAt),
+            RelativeTimeFormatter.format(
+              chat.updatedAt,
+              locale: Localizations.localeOf(context),
+            ),
             overflow: .ellipsis,
           ),
           style: .bodySmall,

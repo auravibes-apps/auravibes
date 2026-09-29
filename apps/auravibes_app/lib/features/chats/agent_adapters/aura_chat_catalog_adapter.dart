@@ -6,11 +6,14 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_dashboard_catal
 import 'package:auravibes_app/features/chats/agent_adapters/aura_extended_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_adapter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
+import 'package:intl/intl.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -413,13 +416,14 @@ Uri? _httpsUri(Object? value) {
 
 String _formatSliderValue(
   double value, {
+  required Locale locale,
   required int precision,
   required String unit,
   required String? format,
 }) {
   final rendered = format == 'percent'
-      ? '${(value * 100).toStringAsFixed(precision)}%'
-      : value.toStringAsFixed(precision);
+      ? '${formatDecimal(value * 100, locale, precision)}%'
+      : formatDecimal(value, locale, precision);
   return unit.isEmpty ? rendered : '$rendered $unit';
 }
 
@@ -539,7 +543,7 @@ Widget _text(CatalogItemContext context) {
     value: data['text'],
     builder: (_, value) => AuraText(
       child: Text(
-        value ?? '',
+        value.orPlaceholder(),
         maxLines: data['maxLines'] as int?,
         overflow: data['truncation'] == 'ellipsis'
             ? TextOverflow.ellipsis
@@ -782,18 +786,21 @@ Widget _column(CatalogItemContext context) {
 
 Widget _list(CatalogItemContext context) {
   final data = _data(context);
+  final direction = data['direction'] == 'horizontal'
+      ? Axis.horizontal
+      : Axis.vertical;
 
-  return _children(
-    context,
-    data['children'],
-    (children) => AuraList(
+  return _children(context, data['children'], (children) {
+    final list = AuraList(
       children: children,
-      direction: data['direction'] == 'horizontal'
-          ? Axis.horizontal
-          : Axis.vertical,
+      direction: direction,
       alignment: _crossAxis(data['align'] as String?),
-    ),
-  );
+    );
+
+    return direction == Axis.horizontal
+        ? AuraEdgy(child: list, axis: direction)
+        : list;
+  });
 }
 
 Widget _button(CatalogItemContext context) {
@@ -878,7 +885,7 @@ Widget _slider(CatalogItemContext context) {
       builder: (_, value) => BoundString(
         dataContext: context.dataContext,
         value: data['label'],
-        builder: (_, label) => AuraLabeledSlider(
+        builder: (widgetContext, label) => AuraLabeledSlider(
           value: _sliderValue(value, valueReference, min, max),
           onChanged: (next) => _updateData(context, path, next),
           min: min,
@@ -890,6 +897,7 @@ Widget _slider(CatalogItemContext context) {
           enabled: data['disabled'] != true,
           valueFormatter: (next) => _formatSliderValue(
             next,
+            locale: Localizations.localeOf(widgetContext),
             precision: precision,
             unit: _string(data['unit']),
             format: data['valueFormat'] as String?,
@@ -963,6 +971,9 @@ Widget _dateTimeInput(CatalogItemContext context) {
   final data = _data(context);
   final path = _path(data['value'], '/${context.id}');
   final variant = data['variant'];
+  final locale = Localizations.localeOf(context.buildContext).toLanguageTag();
+  final dateFormatter = DateFormat.yMMMd(locale);
+  final timeFormatter = DateFormat.jm(locale);
 
   return _fieldScope(
     data,
@@ -995,6 +1006,8 @@ Widget _dateTimeInput(CatalogItemContext context) {
                 path,
                 _formatDateTimeValue(next, variant as String?),
               ),
+              dateFormatter: dateFormatter.format,
+              timeFormatter: timeFormatter.format,
             ),
           ],
         ),
@@ -1135,7 +1148,7 @@ Widget _buildTemplateTabs(
               DataPath('$path/${keys[index]}'),
             ),
             value: label,
-            builder: (_, value) => AuraText(child: Text(value ?? '')),
+            builder: (_, value) => AuraText(child: Text(value.orPlaceholder())),
           ),
           child: context.buildChild(
             content,
@@ -1180,7 +1193,7 @@ Widget _literalTabs(
         title: BoundString(
           dataContext: context.dataContext,
           value: tab['label'],
-          builder: (_, label) => AuraText(child: Text(label ?? '')),
+          builder: (_, label) => AuraText(child: Text(label.orPlaceholder())),
         ),
         child: context.buildChild(_string(tab['content'])),
       ),

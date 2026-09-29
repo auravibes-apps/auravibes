@@ -459,14 +459,37 @@ class const _ReasoningBudgetInput({
       null => null,
     },
     keyboardType: .number,
+    textInputAction: .done,
     enabled: enabled,
-    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+    inputFormatters: [
+      FilteringTextInputFormatter.digitsOnly,
+      _MaxBudgetTokensInputFormatter(maximum: option.max),
+    ],
     onChanged: onChanged,
     semanticLabel: _semanticLabel(),
   );
 
   String _semanticLabel() =>
       LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens.tr();
+}
+
+class const _MaxBudgetTokensInputFormatter({required final int? maximum})
+    extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final value = int.tryParse(newValue.text);
+    final maxValue = maximum;
+    if (value == null || (maxValue != null && value > maxValue)) {
+      return oldValue;
+    }
+
+    return newValue;
+  }
 }
 
 class const _ReasoningBudgetHint({required final ReasoningOption option})

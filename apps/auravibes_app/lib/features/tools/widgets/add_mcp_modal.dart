@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -27,6 +28,8 @@ class const AddMcpModal({required final String workspaceId, super.key})
     BuildContext context, {
     required String workspaceId,
   }) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<void>(
       context: context,
       builder: (context) => AddMcpModal(workspaceId: workspaceId),
@@ -58,7 +61,7 @@ class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
     return PopScope<Object?>(
       child: _AddMcpDialogContent(
         workspaceId: workspaceId,
-        onSubmitSuccess: _popAfterSubmit,
+        onSubmit: () => unawaited(_submitForm(context)),
       ),
       canPop: !hasUnsavedChanges || _allowPop,
       onPopInvokedWithResult: _onPopInvoked,
@@ -82,6 +85,14 @@ class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
   }
 
   void _popAfterSubmit() => _allowAndPop();
+
+  Future<void> _submitForm(BuildContext context) async {
+    final success = await _submitMcpForm(ref, widget.workspaceId);
+    if (!success || !context.mounted) return;
+
+    _showMcpSaveSuccess(context);
+    _popAfterSubmit();
+  }
 }
 
 bool _hasUnsavedMcpFormChanges(McpFormState state) =>
@@ -100,15 +111,12 @@ bool _hasMcpTextChanges(McpFormState state) => [
 
 class const _AddMcpDialogContent({
   required final String workspaceId,
-  required final VoidCallback onSubmitSuccess,
+  required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Dialog(
     shape: _dialogShape(context),
-    child: _AddMcpDialogLayout(
-      workspaceId: workspaceId,
-      onSubmitSuccess: onSubmitSuccess,
-    ),
+    child: _AddMcpDialogLayout(workspaceId: workspaceId, onSubmit: onSubmit),
   );
 
   RoundedRectangleBorder _dialogShape(BuildContext context) =>
@@ -121,7 +129,7 @@ class const _AddMcpDialogContent({
 
 class const _AddMcpDialogLayout({
   required final String workspaceId,
-  required final VoidCallback onSubmitSuccess,
+  required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
@@ -130,60 +138,77 @@ class const _AddMcpDialogLayout({
       maxWidth: 450,
       maxHeight: MediaQuery.sizeOf(context).height * 0.85,
     ),
-    child: _AddMcpDialogColumn(
-      workspaceId: workspaceId,
-      onSubmitSuccess: onSubmitSuccess,
-    ),
+    child: _AddMcpDialogColumn(workspaceId: workspaceId, onSubmit: onSubmit),
   );
 }
 
 class const _AddMcpDialogColumn({
   required final String workspaceId,
-  required final VoidCallback onSubmitSuccess,
+  required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
     children: [
       const _AddMcpModalHeader(),
-      Flexible(child: _AddMcpForm(workspaceId: workspaceId)),
-      _Footer(workspaceId: workspaceId, onSubmitSuccess: onSubmitSuccess),
+      Flexible(
+        child: _AddMcpForm(workspaceId: workspaceId, onSubmit: onSubmit),
+      ),
+      _Footer(workspaceId: workspaceId, onSubmit: onSubmit),
     ],
   );
 }
 
-class const _AddMcpForm({required final String workspaceId})
-    extends StatelessWidget {
+class const _AddMcpForm({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
-      _McpFormScrollView(workspaceId: workspaceId);
+      _McpFormScrollView(workspaceId: workspaceId, onSubmit: onSubmit);
 }
 
-class const _McpFormScrollView({required final String workspaceId})
-    extends StatelessWidget {
+class const _McpFormScrollView({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-    child: _McpFormStack(workspaceId: workspaceId),
+    child: _McpFormStack(workspaceId: workspaceId, onSubmit: onSubmit),
+    keyboardDismissBehavior: .onDrag,
   );
 }
 
-class const _McpFormStack({required final String workspaceId})
-    extends StatelessWidget {
+class const _McpFormStack({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      _McpFormFields(workspaceId: workspaceId),
+      _McpFormFields(workspaceId: workspaceId, onSubmit: onSubmit),
       _LoadingOverlay(workspaceId: workspaceId),
     ],
   );
 }
 
-class const _McpFormFields({required final String workspaceId})
-    extends ConsumerWidget {
+class const _McpFormFields({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => _McpFormFieldsLayout(
     workspaceId: workspaceId,
+    onSubmit: onSubmit,
+    canSubmit: ref.watch(
+      mcpFormProvider(workspaceId).select(
+        (value) =>
+            value.isConnectionVerified &&
+            !value.isSubmitting &&
+            !value.isTestingConnection,
+      ),
+    ),
     oauthDeviceCode: ref.watch(
       mcpFormProvider(workspaceId).select((value) => value.oauthDeviceCode),
     ),
@@ -199,6 +224,8 @@ class const _McpFormFields({required final String workspaceId})
 
 class const _McpFormFieldsLayout({
   required final String workspaceId,
+  required final VoidCallback onSubmit,
+  required final bool canSubmit,
   required final McpOAuthDeviceCode? oauthDeviceCode,
   required final bool showBearerTokenField,
   required final bool showOAuthFields,
@@ -207,6 +234,8 @@ class const _McpFormFieldsLayout({
   Widget build(BuildContext context) => AuraColumn(
     children: _McpFormFieldChildren(
       workspaceId: workspaceId,
+      onSubmit: onSubmit,
+      canSubmit: canSubmit,
       oauthDeviceCode: oauthDeviceCode,
       showBearerTokenField: showBearerTokenField,
       showOAuthFields: showOAuthFields,
@@ -219,6 +248,8 @@ class const _McpFormFieldsLayout({
 class _McpFormFieldChildren {
   new({
     required String workspaceId,
+    required VoidCallback onSubmit,
+    required bool canSubmit,
     required McpOAuthDeviceCode? oauthDeviceCode,
     required bool showBearerTokenField,
     required bool showOAuthFields,
@@ -226,14 +257,30 @@ class _McpFormFieldChildren {
          _ErrorBanner(workspaceId: workspaceId),
          _NameInput(workspaceId: workspaceId),
          _DescriptionInput(workspaceId: workspaceId),
-         _UrlInput(workspaceId: workspaceId),
+         _UrlInput(
+           workspaceId: workspaceId,
+           textInputAction: showOAuthFields || showBearerTokenField
+               ? .next
+               : .done,
+           onSubmitted: !showOAuthFields && !showBearerTokenField && canSubmit
+               ? onSubmit
+               : null,
+         ),
          _TransportSelector(workspaceId: workspaceId),
          _AuthenticationSelector(workspaceId: workspaceId),
-         if (showOAuthFields) _OAuthAdvancedSettings(workspaceId: workspaceId),
+         if (showOAuthFields)
+           _OAuthAdvancedSettings(
+             workspaceId: workspaceId,
+             textInputAction: showBearerTokenField ? .next : .done,
+             onSubmitted: !showBearerTokenField && canSubmit ? onSubmit : null,
+           ),
          if (oauthDeviceCode case final value?)
            _McpOAuthDeviceCodePanel(deviceCode: value),
          Visibility(
-           child: _BearerTokenField(workspaceId: workspaceId),
+           child: _BearerTokenField(
+             workspaceId: workspaceId,
+             onSubmitted: canSubmit ? onSubmit : null,
+           ),
            visible: showBearerTokenField,
          ),
          _VerificationStatus(workspaceId: workspaceId),
@@ -471,7 +518,7 @@ class const _VerificationStatusContent({
           const AuraIcon(Icons.check_circle, size: .small),
           Text(
             LocaleKeys.mcp_modal_verification_success.tr(
-              args: [toolCount.toString()],
+              args: [formatCount(toolCount, Localizations.localeOf(context))],
             ),
           ),
         ],
@@ -485,7 +532,7 @@ class const _VerificationStatusContent({
 
 class const _Footer({
   required final String workspaceId,
-  required final VoidCallback onSubmitSuccess,
+  required final VoidCallback onSubmit,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -497,7 +544,7 @@ class const _Footer({
       isConnectionVerified: state.isConnectionVerified,
       onTestConnection: () =>
           unawaited(_testConnection(context, ref, workspaceId)),
-      onSubmit: () => unawaited(_submit(context, ref)),
+      onSubmit: onSubmit,
     );
   }
 
@@ -512,14 +559,6 @@ class const _Footer({
     if (!success || !context.mounted) return;
 
     _showMcpConnectionTestSuccess(context);
-  }
-
-  Future<void> _submit(BuildContext context, WidgetRef ref) async {
-    final success = await _submitMcpForm(ref, workspaceId);
-    if (!success || !context.mounted) return;
-
-    _showMcpSaveSuccess(context);
-    onSubmitSuccess();
   }
 }
 
@@ -834,21 +873,31 @@ class _AuthenticationSelectorChildren {
   final List<Widget> values;
 }
 
-class const _OAuthAdvancedSettings({required final String workspaceId})
-    extends StatelessWidget {
+class const _OAuthAdvancedSettings({
+  required final String workspaceId,
+  required final TextInputAction textInputAction,
+  required final VoidCallback? onSubmitted,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraAccordion(
     items: [
       AuraAccordionItem(
         title: LocaleKeys.mcp_modal_advanced_settings.tr(context: context),
-        child: _OAuthClientIdField(workspaceId: workspaceId),
+        child: _OAuthClientIdField(
+          workspaceId: workspaceId,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
+        ),
       ),
     ],
   );
 }
 
-class const _OAuthClientIdField({required final String workspaceId})
-    extends StatelessWidget {
+class const _OAuthClientIdField({
+  required final String workspaceId,
+  required final TextInputAction textInputAction,
+  required final VoidCallback? onSubmitted,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _McpTextInput(
     workspaceId: workspaceId,
@@ -859,6 +908,8 @@ class const _OAuthClientIdField({required final String workspaceId})
     ),
     label: const TextLocale(LocaleKeys.mcp_modal_fields_client_id_label),
     hint: const TextLocale(LocaleKeys.mcp_modal_fields_client_id_hint),
+    textInputAction: textInputAction,
+    onSubmitted: onSubmitted,
   );
 }
 
@@ -903,8 +954,11 @@ class const _DescriptionInput({required final String workspaceId})
   );
 }
 
-class const _UrlInput({required final String workspaceId})
-    extends StatelessWidget {
+class const _UrlInput({
+  required final String workspaceId,
+  required final TextInputAction textInputAction,
+  required final VoidCallback? onSubmitted,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _McpTextInput(
     workspaceId: workspaceId,
@@ -913,11 +967,15 @@ class const _UrlInput({required final String workspaceId})
     placeholder: const TextLocale(LocaleKeys.mcp_modal_fields_url_placeholder),
     label: const TextLocale(LocaleKeys.mcp_modal_fields_url_label),
     hint: const TextLocale(LocaleKeys.mcp_modal_fields_url_hint),
+    textInputAction: textInputAction,
+    onSubmitted: onSubmitted,
   );
 }
 
-class const _BearerTokenField({required final String workspaceId})
-    extends StatelessWidget {
+class const _BearerTokenField({
+  required final String workspaceId,
+  required final VoidCallback? onSubmitted,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _McpTextInput(
     workspaceId: workspaceId,
@@ -929,6 +987,8 @@ class const _BearerTokenField({required final String workspaceId})
     label: const TextLocale(LocaleKeys.mcp_modal_fields_bearer_token_label),
     hint: const TextLocale(LocaleKeys.mcp_modal_fields_bearer_token_hint),
     obscureText: true,
+    textInputAction: .done,
+    onSubmitted: onSubmitted,
   );
 }
 
@@ -941,6 +1001,8 @@ class const _McpTextInput({
   required final Widget label,
   final Widget? hint,
   final bool obscureText = false,
+  final TextInputAction textInputAction = .next,
+  final VoidCallback? onSubmitted,
 }) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -955,6 +1017,8 @@ class const _McpTextInput({
       label: label,
       hint: hint,
       obscureText: obscureText,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
     );
   }
 }
@@ -991,13 +1055,17 @@ class _McpTextInputView extends StatelessWidget {
     required Widget label,
     Widget? hint,
     bool obscureText = false,
+    TextInputAction textInputAction = .next,
+    VoidCallback? onSubmitted,
   }) : input = AuraInput(
          controller: state.controller,
          placeholder: placeholder,
          label: label,
          hint: hint,
+         textInputAction: textInputAction,
          obscureText: obscureText,
          onChanged: state.onChanged,
+         onSubmitted: onSubmitted == null ? null : (_) => onSubmitted(),
        );
 
   final AuraInput input;

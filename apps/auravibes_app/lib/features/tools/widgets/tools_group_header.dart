@@ -4,6 +4,8 @@
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
@@ -155,9 +157,9 @@ String _groupSelectionLabel(
             : LocaleKeys.tools_screen_select_group)
         .tr(
           args: [
-            groupWithTools.localizedDisplayNameKey?.tr() ??
-                groupWithTools.group?.name ??
-                '',
+            (groupWithTools.localizedDisplayNameKey?.tr() ??
+                    groupWithTools.group?.name)
+                .orPlaceholder(),
           ],
         );
 
@@ -207,7 +209,9 @@ class const _GroupName({
   @override
   Widget build(BuildContext context) => AuraText(
     child: Text(
-      groupWithTools.localizedDisplayNameKey?.tr() ?? fallbackName ?? '',
+      (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
+        fallbackName.orPlaceholder(),
+      ),
       overflow: .ellipsis,
     ),
     style: .heading6,
@@ -221,8 +225,14 @@ class const _GroupToolCount({required final ToolsGroupWithTools groupWithTools})
     child: Text(
       LocaleKeys.tools_screen_tools_count.tr(
         namedArgs: {
-          'enabled': groupWithTools.enabledToolsCount.toString(),
-          'total': groupWithTools.totalToolsCount.toString(),
+          'enabled': formatCount(
+            groupWithTools.enabledToolsCount,
+            Localizations.localeOf(context),
+          ),
+          'total': formatCount(
+            groupWithTools.totalToolsCount,
+            Localizations.localeOf(context),
+          ),
         },
       ),
     ),

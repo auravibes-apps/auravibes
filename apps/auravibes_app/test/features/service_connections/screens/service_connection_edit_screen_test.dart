@@ -22,6 +22,34 @@ const _credentialId = 'credential-1';
 const _definitionId = 'definition-1';
 
 void main() {
+  testWidgets('generic connection secret submits once from keyboard action', (
+    tester,
+  ) async {
+    var saveCount = 0;
+    await _pumpEditor(
+      tester,
+      connectionId: _genericConnectionId,
+      genericConnection: _genericConnection(),
+      onGenericUpdate: (_) => saveCount++,
+    );
+    await _openEditor(tester);
+
+    final inputs = tester
+        .widgetList<AuraInput>(
+          find.byWidgetPredicate((widget) => widget is AuraInput),
+        )
+        .toList();
+    expect(inputs.map((input) => input.textInputAction), <TextInputAction>[
+      .next,
+      .done,
+    ]);
+    await tester.enterText(find.byType(EditableText).last, 'replacement');
+    await tester.testTextInput.receiveAction(.done);
+    final _ = await tester.pumpAndSettle();
+
+    expect(saveCount, 1);
+  });
+
   testWidgets('model provider key replacement prompts without exposing value', (
     tester,
   ) async {

@@ -44,6 +44,7 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -1133,11 +1134,13 @@ class const _LoadedChatConversationView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _ChatConversationBody(data: data),
-      appBar: _ChatConversationAppBar(
-        title: data.conversation.title,
-        leading: data.leading,
+    return ChatPrimaryScrollController(
+      child: AuraScreen(
+        child: _ChatConversationBody(data: data),
+        appBar: _ChatConversationAppBar(
+          title: data.conversation.title,
+          leading: data.leading,
+        ),
       ),
     );
   }
@@ -1723,8 +1726,14 @@ class const _RateLimitRetryText({required final int remainingSeconds})
   Widget build(BuildContext context) => AuraText(
     child: Text(
       LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
-        namedArgs: {'seconds': remainingSeconds.toString()},
+        namedArgs: {
+          'seconds': formatCount(
+            remainingSeconds,
+            Localizations.localeOf(context),
+          ),
+        },
       ),
+      style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
     ),
     style: .bodySmall,
   );
@@ -1747,6 +1756,7 @@ void _showSkillsModal({
 }) {
   if (!context.mounted) return;
 
+  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,
@@ -1765,6 +1775,7 @@ void _showToolsModal({
 }) {
   if (!context.mounted) return;
 
+  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,
@@ -1881,6 +1892,7 @@ Future<bool> _confirmModelSwitch(
   Set<String> missing,
 ) async {
   if (missing.isEmpty || !context.mounted) return true;
+  FocusManager.instance.primaryFocus?.unfocus();
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => _ConfirmModelSwitchDialog(missing: missing),

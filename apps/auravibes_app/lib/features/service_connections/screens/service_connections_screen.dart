@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -603,6 +604,7 @@ class const _ConnectionSearchInput({
       ),
       prefixIcon: const AuraIcon(Icons.search),
       size: .small,
+      textInputAction: .search,
       onChanged: onChanged,
     ),
   );
@@ -795,11 +797,13 @@ class const _ConnectionsListView({
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
       itemBuilder: (context, index) =>
           _ConnectionTile(connection: connections[index]),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemCount: connections.length,
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }

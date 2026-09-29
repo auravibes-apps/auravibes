@@ -117,6 +117,7 @@ class const _ChatCatalogTextFieldInput({
     error: values.error,
     isRequired: isRequired,
     keyboardType: values.keyboardType,
+    textInputAction: values.maxLines > 1 ? .newline : .done,
     obscureText: values.obscureText,
     maxLines: values.maxLines,
     maxLength: maxLength,

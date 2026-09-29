@@ -1,5 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:ui';
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -141,6 +143,18 @@ void main() {
         translate: mockTranslate,
       );
       expect(result, contains('7'));
+    });
+
+    test('groups large counts with the requested locale', () {
+      final timestamp = now.subtract(const Duration(days: 1234));
+      final result = RelativeTimeFormatter.format(
+        timestamp,
+        now: now,
+        locale: const Locale('es'),
+        translate: mockTranslate,
+      );
+
+      expect(result, contains('1.234'));
     });
   });
 }

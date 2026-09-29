@@ -5,6 +5,7 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/compaction_checkpoint_history_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -99,7 +100,10 @@ class const _CompactionCreatedRow({
   Widget build(BuildContext context) => _DetailRow(
     label: LocaleKeys.compaction_compacted_details_created.tr(),
     value: switch (metadata?.compactionCreatedAt) {
-      final createdAt? => RelativeTimeFormatter.format(createdAt),
+      final createdAt? => RelativeTimeFormatter.format(
+        createdAt,
+        locale: Localizations.localeOf(context),
+      ),
       _ => '',
     },
   );
@@ -111,7 +115,10 @@ class const _CompactionMessagesRow({
   @override
   Widget build(BuildContext context) => _DetailRow(
     label: LocaleKeys.compaction_compacted_details_messages.tr(),
-    value: '${metadata?.compactedMessageIds.length ?? 0}',
+    value: formatCount(
+      metadata?.compactedMessageIds.length ?? 0,
+      Localizations.localeOf(context),
+    ),
   );
 }
 

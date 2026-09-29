@@ -333,6 +333,41 @@ void main() {
       expect(focusNode.hasFocus, isTrue);
     });
 
+    testWidgets('dragging conversation results dismisses search focus', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          for (var index = 0; index < 20; index++)
+            _createConversation(id: 'conv-$index', title: 'Chat $index'),
+        ]),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      final search = find.byType(EditableText);
+      await tester.tap(search);
+      await tester.pump();
+      final focusNode = tester.widget<EditableText>(search).focusNode;
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.pump();
+
+      expect(focusNode.hasFocus, isFalse);
+    });
+
     testWidgets('shows a no-results state for an unmatched title', (
       tester,
     ) async {

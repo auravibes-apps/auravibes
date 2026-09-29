@@ -253,21 +253,36 @@ class _AuraIconButtonButtonData {
          padding: EdgeInsets.zero,
          alignment: Alignment.center,
          onPressed: _iconButtonOnPressed(button),
-         style: IconButton.styleFrom(
-           alignment: Alignment.center,
-           padding: EdgeInsets.zero,
-           foregroundColor: values.foregroundColor,
-           backgroundColor: values.backgroundColor,
-           elevation: button.variant == AuraIconButtonVariant.elevated ? 2 : 0,
-           shape: RoundedRectangleBorder(
-             side: button.variant == AuraIconButtonVariant.outlined
-                 ? BorderSide(color: colors.outline)
-                 : BorderSide.none,
-             borderRadius: BorderRadius.circular(
-               theme.fromBorderRadius(values.borderRadius),
+         style:
+             IconButton.styleFrom(
+               alignment: Alignment.center,
+               padding: EdgeInsets.zero,
+               foregroundColor: values.foregroundColor,
+               backgroundColor: values.backgroundColor,
+               elevation: button.variant == AuraIconButtonVariant.elevated
+                   ? 2
+                   : 0,
+               shape: RoundedRectangleBorder(
+                 side: button.variant == AuraIconButtonVariant.outlined
+                     ? BorderSide(color: colors.outline)
+                     : BorderSide.none,
+                 borderRadius: BorderRadius.circular(
+                   theme.fromBorderRadius(values.borderRadius),
+                 ),
+               ),
+               splashFactory: NoSplash.splashFactory,
+             ).copyWith(
+               overlayColor: .resolveWith((states) {
+                 if (states.contains(WidgetState.pressed)) {
+                   return Colors.transparent;
+                 }
+                 if (states.contains(WidgetState.focused)) {
+                   return colors.surfaceVariant;
+                 }
+
+                 return Colors.transparent;
+               }),
              ),
-           ),
-         ),
          icon: _AuraIconButtonIconContent(
            button: button,
            size: values.iconSize,

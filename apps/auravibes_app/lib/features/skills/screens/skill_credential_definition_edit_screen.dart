@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_credential_d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -410,6 +411,8 @@ extension on _SkillCredentialDefinitionEditScreenState {
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<bool>(
       context: context,
       builder: (_) => _CredentialDefinitionDeleteDialog(),
@@ -705,10 +708,12 @@ class const _SkillCredentialDefinitionForm({
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
       children: [
         _CredentialDefinitionFormCard(state: state, definition: definition),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -794,6 +799,7 @@ class const _CredentialDefinitionTitleField({
     return AuraInput(
       controller: controller,
       label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
+      textInputAction: .next,
     );
   }
 }
@@ -840,10 +846,16 @@ class const _CredentialDefinitionAttributeRows({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final rows = state._attributeRows;
+
     return AuraColumn(
       children: [
-        for (final row in state._attributeRows)
-          _CredentialDefinitionAttributeRow(state: state, row: row),
+        for (var index = 0; index < rows.length; index++)
+          _CredentialDefinitionAttributeRow(
+            state: state,
+            row: rows[index],
+            isLast: index == rows.length - 1,
+          ),
       ],
       spacing: .sm,
       crossAxisAlignment: .start,
@@ -854,13 +866,22 @@ class const _CredentialDefinitionAttributeRows({
 class const _CredentialDefinitionAttributeRow({
   required final _SkillCredentialDefinitionEditScreenState state,
   required final _AttributeFormRow row,
+  required final bool isLast,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _AttributeRowEditor(
-    row: row,
-    controls: .new(state: state, row: row),
-    key: ValueKey(row),
-  );
+  Widget build(BuildContext context) {
+    final onSubmitted = isLast && !state._isSaving
+        ? (_) => unawaited(state._save(context))
+        : null;
+
+    return _AttributeRowEditor(
+      row: row,
+      controls: .new(state: state, row: row),
+      descriptionTextInputAction: isLast ? .done : .next,
+      onDescriptionSubmitted: onSubmitted,
+      key: ValueKey(row),
+    );
+  }
 }
 
 class const _CredentialDefinitionAddAttributeButton({
@@ -925,17 +946,26 @@ class const _AttributeRowControls({
 class const _AttributeRowEditor({
   required final _AttributeFormRow row,
   required final _AttributeRowControls controls,
+  required final TextInputAction descriptionTextInputAction,
+  required final ValueChanged<String>? onDescriptionSubmitted,
   super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _AttributeRowCard(row: row, controls: controls);
+    return _AttributeRowCard(
+      row: row,
+      controls: controls,
+      descriptionTextInputAction: descriptionTextInputAction,
+      onDescriptionSubmitted: onDescriptionSubmitted,
+    );
   }
 }
 
 class const _AttributeRowCard({
   required final _AttributeFormRow row,
   required final _AttributeRowControls controls,
+  required final TextInputAction descriptionTextInputAction,
+  required final ValueChanged<String>? onDescriptionSubmitted,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -943,7 +973,12 @@ class const _AttributeRowCard({
       decoration: _attributeRowDecoration(context),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: _AttributeRowContent(row: row, controls: controls),
+        child: _AttributeRowContent(
+          row: row,
+          controls: controls,
+          descriptionTextInputAction: descriptionTextInputAction,
+          onDescriptionSubmitted: onDescriptionSubmitted,
+        ),
       ),
     );
   }
@@ -955,15 +990,24 @@ BoxDecoration _attributeRowDecoration(BuildContext context) => BoxDecoration(
 );
 
 class _AttributeRowContent extends StatelessWidget {
-  new({required _AttributeFormRow row, required _AttributeRowControls controls})
-    : _child = AuraColumn(
-        children: [
-          _AttributeRowFields(row: row, controls: controls),
-          _AttributeRowToggles(row: row, onChanged: controls.onChanged),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: .start,
-      );
+  new({
+    required _AttributeFormRow row,
+    required _AttributeRowControls controls,
+    required TextInputAction descriptionTextInputAction,
+    required ValueChanged<String>? onDescriptionSubmitted,
+  }) : _child = AuraColumn(
+         children: [
+           _AttributeRowFields(
+             row: row,
+             controls: controls,
+             descriptionTextInputAction: descriptionTextInputAction,
+             onDescriptionSubmitted: onDescriptionSubmitted,
+           ),
+           _AttributeRowToggles(row: row, onChanged: controls.onChanged),
+         ],
+         spacing: .sm,
+         crossAxisAlignment: .start,
+       );
 
   final Widget _child;
 
@@ -1019,16 +1063,22 @@ class const _AttributeSecretToggle({
 }
 
 class _AttributeRowFields extends StatelessWidget {
-  new({required _AttributeFormRow row, required _AttributeRowControls controls})
-    : _child = AuraColumn(
-        children: [
-          _AttributeRowFieldLine(row: row, controls: controls),
-          _AttributeDescriptionField(
-            controller: row.descriptionController,
-            onChanged: controls.onChanged,
-          ),
-        ],
-      );
+  new({
+    required _AttributeFormRow row,
+    required _AttributeRowControls controls,
+    required TextInputAction descriptionTextInputAction,
+    required ValueChanged<String>? onDescriptionSubmitted,
+  }) : _child = AuraColumn(
+         children: [
+           _AttributeRowFieldLine(row: row, controls: controls),
+           _AttributeDescriptionField(
+             controller: row.descriptionController,
+             onChanged: controls.onChanged,
+             textInputAction: descriptionTextInputAction,
+             onSubmitted: onDescriptionSubmitted,
+           ),
+         ],
+       );
 
   final Widget _child;
 
@@ -1049,6 +1099,7 @@ class const _AttributeRowFieldLine({
           controller: row.variableController,
           errorKey: row.variableErrorKey,
           onChanged: controls.onChanged,
+          textInputAction: .next,
         ),
       ),
       const SizedBox(width: 8),
@@ -1065,6 +1116,7 @@ class const _AttributeVariableField({
   required final TextEditingController controller,
   required final String? errorKey,
   required final VoidCallback onChanged,
+  required final TextInputAction textInputAction,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1078,6 +1130,7 @@ class const _AttributeVariableField({
       label: Text(label),
       error: errorKey == null ? null : TextLocale(errorKey),
       state: errorKey == null ? .normal : .error,
+      textInputAction: textInputAction,
       onChanged: (_) => onChanged(),
     );
   }
@@ -1141,6 +1194,8 @@ class const _AttributeDeleteButton({
 class const _AttributeDescriptionField({
   required final TextEditingController controller,
   required final VoidCallback onChanged,
+  required final TextInputAction textInputAction,
+  required final ValueChanged<String>? onSubmitted,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1151,7 +1206,9 @@ class const _AttributeDescriptionField({
     return AuraInput(
       controller: controller,
       label: Text(label),
+      textInputAction: textInputAction,
       onChanged: (_) => onChanged(),
+      onSubmitted: onSubmitted,
     );
   }
 }

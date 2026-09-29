@@ -5,7 +5,9 @@ import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspac
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -76,7 +78,8 @@ class const _DetailBody({
     final workspace = detail.workspace;
     final capabilities = detail.capabilities;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16)
+          .copyWith(bottom: BottomPadding.of(context)),
       children: [
         AuraText(child: Text(workspace.name), style: AuraTextStyle.heading4),
         Text(_roleLabel(workspace.role).tr()),
@@ -282,7 +285,10 @@ class const _MemberTile({
     child: AuraColumn(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: .xs,
-      children: [Text(member.email ?? member.userId), Text(member.role)],
+      children: [
+        Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
+        Text(member.role),
+      ],
     ),
     trailing: Row(
       mainAxisSize: MainAxisSize.min,
@@ -429,22 +435,32 @@ Future<String?> _prompt(
   String? initialValue,
 }) {
   final controller = TextEditingController(text: initialValue);
+  FocusManager.instance.primaryFocus?.unfocus();
   return showDialog<String>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: TextField(controller: controller, autofocus: true),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const TextLocale(LocaleKeys.common_cancel),
+    builder: (context) {
+      void submit() => Navigator.of(context).pop(controller.text);
+
+      return AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: .done,
+          onSubmitted: (_) => submit(),
         ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(controller.text),
-          child: const TextLocale(LocaleKeys.common_confirm),
-        ),
-      ],
-    ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+          TextButton(
+            onPressed: submit,
+            child: const TextLocale(LocaleKeys.common_confirm),
+          ),
+        ],
+      );
+    },
   ).whenComplete(controller.dispose);
 }
 
@@ -453,6 +469,7 @@ Future<bool> _confirm(
   String key, {
   Map<String, String>? namedArgs,
 }) async {
+  FocusManager.instance.primaryFocus?.unfocus();
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
@@ -481,51 +498,61 @@ Future<_InviteRequest?> _invitePrompt(
 }) async {
   final controller = TextEditingController();
   var role = 'member';
+  FocusManager.instance.primaryFocus?.unfocus();
   final result = await showDialog<_InviteRequest>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text(title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: controller, autofocus: true),
-            if (allowAdmin)
-              AuraChoicePicker<String>(
-                options: const [
-                  AuraChoiceOption(
-                    value: 'member',
-                    label: TextLocale(
-                      LocaleKeys.workspace_management_cloud_role_member,
-                    ),
-                  ),
-                  AuraChoiceOption(
-                    value: 'admin',
-                    label: TextLocale(
-                      LocaleKeys.workspace_management_cloud_role_admin,
-                    ),
-                  ),
-                ],
-                value: [role],
-                onChanged: (values) {
-                  if (values.isEmpty) return;
-                  setState(() => role = values.first);
-                },
+      builder: (context, setState) {
+        void submit() =>
+            Navigator.of(context).pop((email: controller.text, role: role));
+
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                textInputAction: .done,
+                onSubmitted: (_) => submit(),
               ),
+              if (allowAdmin)
+                AuraChoicePicker<String>(
+                  options: const [
+                    AuraChoiceOption(
+                      value: 'member',
+                      label: TextLocale(
+                        LocaleKeys.workspace_management_cloud_role_member,
+                      ),
+                    ),
+                    AuraChoiceOption(
+                      value: 'admin',
+                      label: TextLocale(
+                        LocaleKeys.workspace_management_cloud_role_admin,
+                      ),
+                    ),
+                  ],
+                  value: [role],
+                  onChanged: (values) {
+                    if (values.isEmpty) return;
+                    setState(() => role = values.first);
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const TextLocale(LocaleKeys.common_cancel),
+            ),
+            TextButton(
+              onPressed: submit,
+              child: const TextLocale(LocaleKeys.common_add),
+            ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop((email: controller.text, role: role)),
-            child: const TextLocale(LocaleKeys.common_add),
-          ),
-        ],
-      ),
+        );
+      },
     ),
   );
   controller.dispose();

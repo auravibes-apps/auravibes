@@ -6,13 +6,18 @@ import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notif
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_app/widgets/friendly_build_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' as foundation show visibleForTesting;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
@@ -39,6 +44,7 @@ Future<void> main() async {
     );
   }
 
+  ErrorWidget.builder = (details) => FriendlyBuildErrorWidget(details: details);
   _runApp(container);
   _scheduleModelSync(container);
 }
@@ -193,6 +199,11 @@ ThemeData _auraThemeData(double hue, Brightness brightness) {
   return _auraMaterialTheme(_auraThemeFor(hue, brightness), brightness);
 }
 
+/// Builds the app theme for focused theme tests.
+@foundation.visibleForTesting
+ThemeData auraThemeDataForTesting(double hue, Brightness brightness) =>
+    _auraThemeData(hue, brightness);
+
 AuraTheme _auraThemeFor(double hue, Brightness brightness) {
   final baseTheme = brightness == Brightness.light
       ? AuraTheme.light
@@ -296,10 +307,14 @@ class _AuraMaterialApp extends MaterialApp {
            duration: kThemeAnimationDuration,
            builder: (context, theme, _) => AuraThemeScope(
              theme: theme,
-             child: _snackBarBuilder(context, child),
+             child: _RouteTitle(
+               router: routerConfig,
+               child: _snackBarBuilder(context, child),
+             ),
            ),
          ),
          title: AppFlavorConfig.instance.title,
+         scrollBehavior: const _AuraScrollBehavior(),
          theme: lightTheme,
          darkTheme: darkTheme,
          themeMode: themeMode,
@@ -308,6 +323,77 @@ class _AuraMaterialApp extends MaterialApp {
          supportedLocales: locales,
          debugShowCheckedModeBanner: _showDebugBanner,
        );
+}
+
+class const _RouteTitle({
+  required final GoRouter router,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: .merge([
+      router.routerDelegate,
+      router.routeInformationProvider,
+    ]),
+    builder: (context, _) {
+      final key = titleKeyForPath(
+        router.routeInformationProvider.value.uri.path,
+      );
+      final appTitle = AppFlavorConfig.instance.title;
+      final title = key == null
+          ? appTitle
+          : '${key.tr(context: context)} - $appTitle';
+
+      return Title(
+        title: title,
+        color: Theme.of(context).colorScheme.surface,
+        child: child,
+      );
+    },
+  );
+}
+
+String? titleKeyForPath(String path) {
+  final segments = Uri.parse(path).pathSegments;
+  if (path == '/') return LocaleKeys.intro_flow_welcome_title;
+  if (segments case ['intro', ...]) {
+    return LocaleKeys.intro_flow_welcome_title;
+  }
+  if (segments.length < 3 || segments.firstOrNull != 'workspaces') return null;
+
+  if (segments[2] == 'chat') return LocaleKeys.menu_new_chat;
+  if (segments[2] == 'chats') return LocaleKeys.menu_chats;
+  if (segments[2] == 'settings') return LocaleKeys.settings_screen_title;
+  if (segments[2] != 'more') return null;
+  if (segments.length < 4) return LocaleKeys.more_screen_title;
+
+  return switch (segments[3]) {
+    'manage-workspaces' => LocaleKeys.workspace_management_title,
+    'cloud-accounts' when segments.length > 4 => switch (segments[4]) {
+      'login' => LocaleKeys.cloud_accounts_login_existing,
+      'register' => LocaleKeys.cloud_accounts_register,
+      'forgot-password' => LocaleKeys.cloud_accounts_forgot_password,
+      _ => LocaleKeys.cloud_accounts_title,
+    },
+    'cloud-accounts' => LocaleKeys.cloud_accounts_title,
+    'tools' => LocaleKeys.tools_screen_title,
+    'models' => LocaleKeys.models_screens_title,
+    'service-connections' => LocaleKeys.service_connections_title,
+    'skills' => LocaleKeys.skills_screen_title,
+    'skill-credential-definitions' =>
+      LocaleKeys.skill_credentials_definitions_title,
+    'agents' => LocaleKeys.agents_title,
+    _ => null,
+  };
+}
+
+class const _AuraScrollBehavior() extends MaterialScrollBehavior {
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => Scrollbar(child: child, controller: details.controller);
 }
 
 ({
@@ -408,12 +494,63 @@ ThemeData _auraBaseMaterialTheme(_AuraThemeParts parts) {
 ThemeData _buildBaseTheme(_AuraThemeParts parts) =>
     _buildBaseThemeDetails(_buildBaseThemeCore(parts), parts);
 
+const _noPageTransitionsBuilder = _NoPageTransitionsBuilder();
+
+final _auraPageTransitionsTheme = PageTransitionsTheme(
+  builders: {
+    ...const PageTransitionsTheme().builders,
+    if (kIsWeb) .android: _noPageTransitionsBuilder,
+    if (kIsWeb) .iOS: _noPageTransitionsBuilder,
+    .macOS: _noPageTransitionsBuilder,
+    .windows: _noPageTransitionsBuilder,
+    .linux: _noPageTransitionsBuilder,
+    .fuchsia: _noPageTransitionsBuilder,
+  },
+);
+
 ThemeData _buildBaseThemeCore(_AuraThemeParts parts) => ThemeData(
+  pageTransitionsTheme: _auraPageTransitionsTheme,
+  splashFactory: NoSplash.splashFactory,
   useMaterial3: true,
   colorScheme: _auraColorScheme(parts.colors, parts.brightness),
   brightness: parts.brightness,
+  focusColor: parts.colors.surfaceVariant,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+  splashColor: Colors.transparent,
   fontFamily: parts.auraTheme.typography.bodyFontFamily,
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    splashColor: Colors.transparent,
+  ),
+  textButtonTheme: .new(
+    style: .new(
+      overlayColor: _focusOnlyOverlay(parts.colors.surfaceVariant),
+      splashFactory: NoSplash.splashFactory,
+    ),
+  ),
+  textSelectionTheme: .new(
+    cursorColor: parts.colors.primary,
+    selectionColor: parts.colors.primary.withValues(alpha: 0.24),
+    selectionHandleColor: parts.colors.primary,
+  ),
 );
+
+class const _NoPageTransitionsBuilder() extends PageTransitionsBuilder {
+  @override
+  Duration get transitionDuration => Duration.zero;
+
+  @override
+  Duration get reverseTransitionDuration => Duration.zero;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => child;
+}
 
 ThemeData _buildBaseThemeDetails(ThemeData theme, _AuraThemeParts parts) =>
     theme.copyWith(
@@ -603,12 +740,18 @@ IconButtonThemeData _auraIconButtonTheme(AuraColorScheme colors) {
     style: IconButton.styleFrom(
       foregroundColor: colors.onSurfaceVariant,
       disabledForegroundColor: colors.outline,
-      hoverColor: colors.surfaceVariant,
-      focusColor: colors.surfaceVariant,
-      highlightColor: colors.outlineVariant,
-    ),
+      splashFactory: NoSplash.splashFactory,
+    ).copyWith(overlayColor: _focusOnlyOverlay(colors.surfaceVariant)),
   );
 }
+
+WidgetStateProperty<Color?> _focusOnlyOverlay(Color focusColor) =>
+    WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.pressed)) return Colors.transparent;
+      if (states.contains(WidgetState.focused)) return focusColor;
+
+      return Colors.transparent;
+    });
 
 ProgressIndicatorThemeData _auraProgressIndicatorTheme(AuraColorScheme colors) {
   return ProgressIndicatorThemeData(

@@ -36,6 +36,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
 import 'package:go_router/go_router.dart';
@@ -55,6 +57,7 @@ Widget buildSubject({
   Future<void> Function(MessageEntity message)? onRetryMessage,
   ConversationEntity? conversation,
   AuraTheme? theme,
+  Locale locale = const Locale('en'),
   Widget Function(BuildContext context, Widget child)? appBuilder,
 }) {
   return _ChatMessagesTestSubject(
@@ -67,12 +70,13 @@ Widget buildSubject({
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
+    locale: locale,
     appBuilder: appBuilder,
   );
 }
 
 Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
-  home: Scaffold(body: child),
+  home: ChatPrimaryScrollController(child: Scaffold(body: child)),
   locale: context.locale,
   localizationsDelegates: context.localizationDelegates,
   supportedLocales: context.supportedLocales,
@@ -443,6 +447,7 @@ void main() {
         buildSubject(
           messages: [for (final message in messages) message.id],
           messageEntitiesById: messageEntitiesById,
+          appBuilder: _scaffoldedApp,
           overrides: [
             messageConversationByIdProvider.overrideWith(
               (ref, id) => messageEntitiesById[id.messageId],
@@ -459,6 +464,13 @@ void main() {
       );
 
       final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+      final primaryController = PrimaryScrollController.maybeOf(
+        tester.element(find.byType(Scaffold)),
+      );
+      expect(
+        primaryController,
+        same(tester.widget<ListView>(find.byType(ListView)).controller),
+      );
       expect(scrollable.position.maxScrollExtent, greaterThan(64));
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
 
@@ -475,6 +487,66 @@ void main() {
         closeTo(scrollable.position.minScrollExtent, .5),
       );
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+    });
+
+    testWidgets('dragging chat history retains composer focus', (tester) async {
+      final composerFocus = FocusNode();
+      addTearDown(composerFocus.dispose);
+      final messages = [
+        for (var index = 0; index < 20; index++)
+          _createMessage(
+            id: 'message-$index',
+            content: List.filled(8, 'Message $index').join('\n'),
+          ),
+      ];
+      final entities = {for (final message in messages) message.id: message};
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [for (final message in messages) message.id],
+          messageEntitiesById: entities,
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => entities[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+          appBuilder: (context, child) => MaterialApp(
+            home: ChatPrimaryScrollController(
+              child: Scaffold(
+                body: Column(
+                  children: [
+                    Expanded(child: child),
+                    TextField(
+                      key: const ValueKey('chat_composer'),
+                      focusNode: composerFocus,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+          ),
+        ),
+      );
+
+      final composer = find.byKey(const ValueKey('chat_composer'));
+      await tester.tap(composer);
+      await tester.pump();
+      expect(composerFocus.hasFocus, isTrue);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.pump();
+
+      expect(composerFocus.hasFocus, isTrue);
     });
 
     for (final status in [MessageStatus.error, MessageStatus.unfinished]) {
@@ -919,6 +991,20 @@ void main() {
     });
 
     testWidgets('shows link exception feedback', (tester) async {
+      const hapticsChannel = MethodChannel('haptic_feedback');
+      final hapticMethods = <String>[];
+      final messenger = tester.binding.defaultBinaryMessenger;
+      AuraHaptics.resetForTesting();
+      messenger.setMockMethodCallHandler(hapticsChannel, (call) async {
+        hapticMethods.add(call.method);
+        if (call.method == 'canVibrate') return true;
+
+        return null;
+      });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(hapticsChannel, null);
+        AuraHaptics.resetForTesting();
+      });
       _mockUrlLauncher(
         tester,
         (_) async => throw PlatformException(code: 'launch-failed'),
@@ -943,6 +1029,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Could not open link'), findsOneWidget);
+      expect(hapticMethods, ['canVibrate', 'error']);
     });
 
     testWidgets('uses text cursor for user messages', (tester) async {
@@ -3127,6 +3214,56 @@ void main() {
       );
     });
 
+    testWidgets('formats hidden tool-call counts using the active locale', (
+      tester,
+    ) async {
+      final toolCalls = List.generate(
+        1002,
+        (index) => MessageToolCallEntity(
+          id: 'tc-$index',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          resultStatus: ToolCallResultStatus.success,
+        ),
+      );
+      final message = _createMessage(
+        content: 'Final answer',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          thinking: 'Need to inspect the file first',
+          toolCalls: toolCalls,
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          locale: const Locale('es'),
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final traceToggle = find.byKey(
+        const ValueKey('activity_trace_toggle_msg-1'),
+      );
+      await tester.tap(traceToggle);
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+      );
+
+      expect(find.textContaining('+1.000'), findsOneWidget);
+    });
+
     testWidgets('flushes tool activity at timeline boundaries', (tester) async {
       const firstTool = MessageToolCallEntity(
         id: 'boundary-tool-1',
@@ -3458,7 +3595,7 @@ void main() {
             ),
           ],
           appBuilder: (context, child) {
-            mainChat = child;
+            mainChat = ChatPrimaryScrollController(child: child);
 
             return MaterialApp.router(
               routerConfig: router,
@@ -4211,6 +4348,7 @@ class const _ChatMessagesTestSubject({
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
+  final Locale locale = const Locale('en'),
   final Widget Function(BuildContext context, Widget child)? appBuilder,
 }) extends StatelessWidget {
   @override
@@ -4260,17 +4398,21 @@ class const _ChatMessagesTestSubject({
 
             return appBuilder?.call(context, child) ??
                 MaterialApp(
-                  home: child,
+                  home: ChatPrimaryScrollController(child: child),
                   locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
                   supportedLocales: context.supportedLocales,
                 );
           },
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: locale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),

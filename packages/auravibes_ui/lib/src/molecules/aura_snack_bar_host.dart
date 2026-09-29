@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
+import 'package:auravibes_ui/src/aura_haptics.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -193,8 +194,14 @@ class _AuraSnackBarShowRequest {
 
 AuraSnackBarController _showSnackBar(_AuraSnackBarShowRequest request) {
   final host = _requiredSnackBarHost(request.context);
+  final controller = host.show(_AuraSnackBarRequestData(request).value);
+  if (request.variant == .success) {
+    unawaited(AuraHaptics.success());
+  } else if (request.variant == .error) {
+    unawaited(AuraHaptics.error());
+  }
 
-  return host.show(_AuraSnackBarRequestData(request).value);
+  return controller;
 }
 
 class _AuraSnackBarRequestData {
@@ -531,6 +538,7 @@ class const _AuraSnackBarAction({
             ),
           ),
           onTap: _handleTap,
+          behavior: .opaque,
         ),
       ],
     );

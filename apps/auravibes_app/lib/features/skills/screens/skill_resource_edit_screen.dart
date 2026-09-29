@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/skills/providers/skill_resources_provider
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition;
@@ -230,6 +231,7 @@ extension on _SkillResourceEditScreenState {
   }
 
   Future<bool> _confirmDelete(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     final result = await showDialog<bool>(
       context: context,
       builder: (_) => const _SkillResourceDeleteDialog(),
@@ -303,7 +305,8 @@ class const _SkillResourceForm({
     final slug = resource?.slug ?? staticResource?.slug;
 
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
       children: [
         _SkillResourceFormCard(
           state: state,
@@ -311,6 +314,7 @@ class const _SkillResourceForm({
           slug: slug,
         ),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -352,7 +356,11 @@ class const _SkillResourceIdentityFields({
         label: Text(
           LocaleKeys.skills_resource_title_label.tr(context: context),
         ),
+        textInputAction: isReadOnly ? null : .done,
         enabled: !isReadOnly,
+        onSubmitted: !isReadOnly && !state._isSaving
+            ? (_) => state._save(context)
+            : null,
       ),
     ],
     spacing: .md,

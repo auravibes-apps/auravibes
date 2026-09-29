@@ -879,6 +879,11 @@ void main() {
 
       expect(find.textContaining('1'), findsOneWidget);
       expect(find.textContaining('2'), findsOneWidget);
+      final countText = tester.widget<Text>(find.textContaining('1'));
+      expect(
+        countText.style?.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
     });
 
     testWidgets('shows SizedBox.shrink when pending calls empty list', (
