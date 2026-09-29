@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_formatter.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -26,7 +27,9 @@ class const MarkdownEditorScreen({
 class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   final _controller = TextfEditingController();
   final _focusNode = FocusNode();
+  TextEditingValue? _sourceValue;
   bool _isFocused = false;
+  bool _isPreview = false;
   bool _allowPop = false;
 
   bool get _isDirty => _controller.text != widget.initialMarkdown;
@@ -70,6 +73,26 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     });
   }
 
+  void _togglePreview() {
+    final isPreview = !_isPreview;
+    if (isPreview) {
+      _sourceValue = _controller.value;
+      _focusNode.unfocus();
+    } else {
+      final sourceValue = _sourceValue;
+      if (sourceValue != null && _controller.value != sourceValue) {
+        _controller.value = sourceValue;
+      }
+      _sourceValue = null;
+    }
+    setState(() => _isPreview = isPreview);
+    if (!isPreview) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
+  }
+
   KeyEventResult _onEditorKey(FocusNode _, KeyEvent event) {
     if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.tab) {
       return .ignored;
@@ -104,7 +127,9 @@ extension on _MarkdownEditorScreenState {
     controller: _controller,
     focusNode: _focusNode,
     isFocused: _isFocused,
+    isPreview: _isPreview,
     maxCharacters: widget.maxCharacters,
+    onTogglePreview: _togglePreview,
     onUnfocus: _unfocusInput,
     onCancel: () => _cancel(context),
     onSave: () => _save(context),
@@ -133,7 +158,9 @@ class const _MarkdownEditorView({
   required final TextEditingController controller,
   required final FocusNode focusNode,
   required final bool isFocused,
+  required final bool isPreview,
   required final int? maxCharacters,
+  required final VoidCallback onTogglePreview,
   required final VoidCallback onUnfocus,
   required final VoidCallback onCancel,
   required final VoidCallback onSave,
@@ -149,12 +176,39 @@ class const _MarkdownEditorBody({required final _MarkdownEditorView view})
     extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
+    if (view.isPreview) {
+      return _MarkdownEditorPreview(controller: view.controller);
+    }
+
     return TextFieldTapRegion(
       child: _MarkdownEditorSurface(
         controller: view.controller,
         focusNode: view.focusNode,
         isFocused: view.isFocused,
       ),
+    );
+  }
+}
+
+class const _MarkdownEditorPreview({
+  required final TextEditingController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final text = controller.text;
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: text.trim().isEmpty
+              ? const EmptyMarkdownPreview(
+                  label: LocaleKeys.markdown_editor_empty,
+                )
+              : GptMarkdown(text),
+        ),
+      ],
     );
   }
 }
@@ -350,6 +404,10 @@ class _MarkdownEditorAppBar extends StatelessWidget
       _appBar = AuraAppBar(
         title: _MarkdownEditorTitle(onUnfocus: view.onUnfocus),
         actions: [
+          _MarkdownPreviewToggle(
+            isPreview: view.isPreview,
+            onToggle: view.onTogglePreview,
+          ),
           _MarkdownSaveButton(
             controller: view.controller,
             maxCharacters: view.maxCharacters,
@@ -374,6 +432,34 @@ class _MarkdownEditorAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) => _appBar;
+}
+
+class const _MarkdownPreviewToggle({
+  required final bool isPreview,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final label =
+        (isPreview
+                ? LocaleKeys.markdown_editor_editor_label
+                : LocaleKeys.markdown_editor_preview_label)
+            .tr(context: context);
+
+    return Semantics(
+      label: label,
+      button: true,
+      toggled: isPreview,
+      onTap: onToggle,
+      child: ExcludeSemantics(
+        child: AuraIconButton(
+          icon: isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
+          onPressed: onToggle,
+          tooltip: label,
+        ),
+      ),
+    );
+  }
 }
 
 class const _MarkdownSaveButton({

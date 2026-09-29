@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -182,6 +184,96 @@ void main() {
     expect(result, _editedMarkdown);
   });
 
+  testWidgets('preview renders the latest unsaved markdown and empty drafts', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(tester, onResult: (_) {});
+    await tester.enterText(_markdownEditorInput, '# Latest unsaved draft');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GptMarkdown), findsOneWidget);
+    expect(
+      tester.widget<GptMarkdown>(find.byType(GptMarkdown)).data,
+      '# Latest unsaved draft',
+    );
+    expect(_markdownEditorInput, findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('Markdown'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_markdownEditorInput, '');
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nothing to preview yet'), findsOneWidget);
+  });
+
+  testWidgets(
+    'source preview round trip restores the selection and accessible toggle state',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await _openMarkdownEditor(tester, onResult: (_) {});
+        await tester.showKeyboard(_markdownEditorInput);
+        final editable = tester.widget<EditableText>(_markdownEditorInput);
+        final controller = editable.controller
+          ..value = const TextEditingValue(
+            text: 'before selected after',
+            selection: TextSelection(baseOffset: 7, extentOffset: 15),
+          );
+        final focusNode = editable.focusNode;
+        final sourceValue = controller.value;
+        await tester.pumpAndSettle();
+
+        final sourceToggle = tester
+            .getSemantics(find.bySemanticsLabel('Preview'))
+            .getSemanticsData();
+        expect(sourceToggle.flagsCollection.isToggled, ui.Tristate.isFalse);
+        expect(focusNode.hasFocus, isTrue);
+
+        await tester.tap(find.bySemanticsLabel('Preview'));
+        await tester.pumpAndSettle();
+
+        final previewToggle = tester
+            .getSemantics(find.bySemanticsLabel('Markdown'))
+            .getSemanticsData();
+        expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
+        expect(controller.value, sourceValue);
+        expect(focusNode.hasFocus, isFalse);
+
+        await tester.tap(find.bySemanticsLabel('Markdown'));
+        await tester.pumpAndSettle();
+
+        expect(controller.value, sourceValue);
+        expect(focusNode.hasFocus, isTrue);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets('preview does not change the draft returned by Save', (
+    tester,
+  ) async {
+    String? result;
+    await _openMarkdownEditor(tester, onResult: (value) => result = value);
+    await tester.enterText(_markdownEditorInput, '# Saved after preview');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Markdown'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.save_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MarkdownEditorScreen), findsNothing);
+    expect(result, '# Saved after preview');
+  });
+
   testWidgets('numbered lists continue and native undo restores', (
     tester,
   ) async {
@@ -296,6 +388,7 @@ Future<void> _openMarkdownEditor(
   WidgetTester tester, {
   required void Function(String?) onResult,
   FocusNode? sourceFocusNode,
+  String initialMarkdown = _initialMarkdown,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -308,7 +401,11 @@ Future<void> _openMarkdownEditor(
                   TextField(focusNode: sourceFocusNode),
                 TextButton(
                   onPressed: () {
-                    final _ = _showMarkdownEditor(context, onResult: onResult);
+                    final _ = _showMarkdownEditor(
+                      context,
+                      initialMarkdown: initialMarkdown,
+                      onResult: onResult,
+                    );
                   },
                   child: const Text('Open editor'),
                 ),
@@ -338,11 +435,12 @@ Finder get _markdownEditorInput => find.descendant(
 
 Future<void> _showMarkdownEditor(
   BuildContext context, {
+  required String initialMarkdown,
   required void Function(String?) onResult,
 }) async {
   final result = await MarkdownEditorLauncher.show(
     context,
-    initialMarkdown: _initialMarkdown,
+    initialMarkdown: initialMarkdown,
   );
   onResult(result);
 }
