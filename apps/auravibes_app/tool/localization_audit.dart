@@ -16,13 +16,6 @@ Map<String, Set<String>> findMissingTranslations({
   }
 
   final usedKeys = <String>{};
-  final reference = RegExp(r'LocaleKeys\.(\w+)');
-  final literalCall = RegExp(
-    r'''(['"])([^'"]+)\1\s*\.\s*(?:tr|plural)\s*\(''',
-  );
-  final literalFunction = RegExp(
-    r'''\b(?:tr|plural)\s*\(\s*(['"])([^'"]+)\1''',
-  );
   final sourceFiles = sourceDir
       .listSync(recursive: true)
       .whereType<File>()
@@ -30,21 +23,7 @@ Map<String, Set<String>> findMissingTranslations({
       .toList()
     ..sort((a, b) => a.path.compareTo(b.path));
   for (final file in sourceFiles) {
-    final source = file.readAsStringSync();
-    for (final match in reference.allMatches(source)) {
-      final symbol = match.group(1)!;
-      final key = generatedKeys[symbol];
-      if (key == null) {
-        throw StateError('Unknown LocaleKeys symbol: $symbol');
-      }
-      usedKeys.add(key);
-    }
-    for (final match in literalCall.allMatches(source)) {
-      usedKeys.add(match.group(2)!);
-    }
-    for (final match in literalFunction.allMatches(source)) {
-      usedKeys.add(match.group(2)!);
-    }
+    _collectUsedKeys(file.readAsStringSync(), generatedKeys, usedKeys);
   }
 
   final localeFiles = translationsDir
@@ -70,6 +49,122 @@ Map<String, Set<String>> findMissingTranslations({
   }
   return missing;
 }
+
+typedef _Token = ({String value, bool isString, bool isLiteral});
+
+void _collectUsedKeys(
+  String source,
+  Map<String, String> generatedKeys,
+  Set<String> usedKeys,
+) {
+  final tokens = _tokenize(source);
+  for (var index = 0; index < tokens.length; index++) {
+    final token = tokens[index];
+    if (token.value == 'LocaleKeys' &&
+        !token.isString &&
+        index + 2 < tokens.length &&
+        tokens[index + 1].value == '.' &&
+        !tokens[index + 2].isString) {
+      final symbol = tokens[index + 2].value;
+      final key = generatedKeys[symbol];
+      if (key == null) {
+        throw StateError('Unknown LocaleKeys symbol: $symbol');
+      }
+      usedKeys.add(key);
+    }
+    if (token.isLiteral &&
+        index + 3 < tokens.length &&
+        tokens[index + 1].value == '.' &&
+        _isTranslationCall(tokens[index + 2]) &&
+        tokens[index + 3].value == '(') {
+      usedKeys.add(token.value);
+    }
+    if (_isTranslationCall(token) &&
+        index + 2 < tokens.length &&
+        tokens[index + 1].value == '(' &&
+        tokens[index + 2].isLiteral) {
+      usedKeys.add(tokens[index + 2].value);
+    }
+  }
+}
+
+bool _isTranslationCall(_Token token) =>
+    !token.isString && (token.value == 'tr' || token.value == 'plural');
+
+List<_Token> _tokenize(String source) {
+  final tokens = <_Token>[];
+  var index = 0;
+  while (index < source.length) {
+    if (source.startsWith('//', index)) {
+      final end = source.indexOf('\n', index + 2);
+      index = end < 0 ? source.length : end;
+      continue;
+    }
+    if (source.startsWith('/*', index)) {
+      var depth = 1;
+      index += 2;
+      while (index < source.length && depth > 0) {
+        if (source.startsWith('/*', index)) {
+          depth++;
+          index += 2;
+        } else if (source.startsWith('*/', index)) {
+          depth--;
+          index += 2;
+        } else {
+          index++;
+        }
+      }
+      continue;
+    }
+    final character = source[index];
+    if (character == "'" || character == '"') {
+      final quote = character;
+      final tripleQuote = '$quote$quote$quote';
+      final triple = source.startsWith(tripleQuote, index);
+      final delimiter = triple ? tripleQuote : quote;
+      index += delimiter.length;
+      final start = index;
+      while (index < source.length && !source.startsWith(delimiter, index)) {
+        if (source[index] == '\\') index++;
+        index++;
+      }
+      final end = index < source.length ? index : source.length;
+      final value = source.substring(start, end);
+      tokens.add((
+        value: value,
+        isString: true,
+        isLiteral: !value.contains(r'$'),
+      ));
+      index += delimiter.length;
+      continue;
+    }
+    final code = source.codeUnitAt(index);
+    if (_isIdentifierStart(code)) {
+      final start = index++;
+      while (index < source.length &&
+          _isIdentifierPart(source.codeUnitAt(index))) {
+        index++;
+      }
+      tokens.add((
+        value: source.substring(start, index),
+        isString: false,
+        isLiteral: false,
+      ));
+      continue;
+    }
+    if (character.trim().isNotEmpty) {
+      tokens.add((value: character, isString: false, isLiteral: false));
+    }
+    index++;
+  }
+  return tokens;
+}
+
+bool _isIdentifierStart(int code) =>
+    code == 95 || (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
+
+bool _isIdentifierPart(int code) =>
+    _isIdentifierStart(code) || (code >= 48 && code <= 57);
 
 void _collectKeys(
   Map<String, dynamic> values,

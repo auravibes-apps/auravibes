@@ -88,4 +88,28 @@ final other = tr('menu.other');
       },
     );
   });
+
+  test('ignores comments and code-looking text inside strings', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
+// LocaleKeys.unknown_line and 'menu.fake_line'.tr()
+/* LocaleKeys.unknown_block and 'menu.fake_block'.plural(2)
+   /* tr('menu.fake_nested') */ */
+final example = "LocaleKeys.unknown_string and 'menu.fake_string'.tr()";
+final more = """plural('menu.fake_multiline')""";
+final title = LocaleKeys.menu_new_chat;
+final home = 'menu.home'.tr();
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"new_chat":"Nuevo chat","home":"Inicio"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {'en': <String>{}, 'es': <String>{}},
+    );
+  });
 }
