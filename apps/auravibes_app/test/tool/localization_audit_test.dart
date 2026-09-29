@@ -113,4 +113,26 @@ final home = 'menu.home'.tr();
       {'en': <String>{}, 'es': <String>{}},
     );
   });
+
+  test('scans LocaleKeys references inside string interpolation', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+final label = '${LocaleKeys.menu_new_chat.tr()}';
+final fake = "LocaleKeys.unknown_text and tr('menu.fake')";
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"home":"Inicio"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': <String>{},
+        'es': {'menu.new_chat'},
+      },
+    );
+  });
 }

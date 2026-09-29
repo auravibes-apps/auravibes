@@ -130,7 +130,16 @@ List<_Token> _tokenize(String source) {
       final delimiter = triple ? tripleQuote : quote;
       index += delimiter.length;
       final start = index;
+      final interpolations = <List<_Token>>[];
       while (index < source.length && !source.startsWith(delimiter, index)) {
+        if (!rawString && source.startsWith(r'${', index)) {
+          final end = _interpolationEnd(source, index);
+          if (end != null) {
+            interpolations.add(_tokenize(source.substring(index + 2, end)));
+            index = end + 1;
+            continue;
+          }
+        }
         if (!rawString && source[index] == '\\') index++;
         index++;
       }
@@ -141,6 +150,11 @@ List<_Token> _tokenize(String source) {
         isString: true,
         isLiteral: rawString || !value.contains(r'$'),
       ));
+      for (final expression in interpolations) {
+        tokens.add((value: ';', isString: false, isLiteral: false));
+        tokens.addAll(expression);
+        tokens.add((value: ';', isString: false, isLiteral: false));
+      }
       index += delimiter.length;
       continue;
     }
@@ -164,6 +178,58 @@ List<_Token> _tokenize(String source) {
     index++;
   }
   return tokens;
+}
+
+int? _interpolationEnd(String source, int start) {
+  var depth = 1;
+  var index = start + 2;
+  while (index < source.length) {
+    if (source.startsWith('//', index)) {
+      final end = source.indexOf('\n', index + 2);
+      index = end < 0 ? source.length : end;
+      continue;
+    }
+    if (source.startsWith('/*', index)) {
+      var commentDepth = 1;
+      index += 2;
+      while (index < source.length && commentDepth > 0) {
+        if (source.startsWith('/*', index)) {
+          commentDepth++;
+          index += 2;
+        } else if (source.startsWith('*/', index)) {
+          commentDepth--;
+          index += 2;
+        } else {
+          index++;
+        }
+      }
+      continue;
+    }
+    var character = source[index];
+    final rawString =
+        (character == 'r' || character == 'R') &&
+        index + 1 < source.length &&
+        (source[index + 1] == "'" || source[index + 1] == '"') &&
+        (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
+    if (rawString) character = source[++index];
+    if (character == "'" || character == '"') {
+      final tripleQuote = '$character$character$character';
+      final delimiter = source.startsWith(tripleQuote, index)
+          ? tripleQuote
+          : character;
+      index += delimiter.length;
+      while (index < source.length && !source.startsWith(delimiter, index)) {
+        if (!rawString && source[index] == '\\') index++;
+        index++;
+      }
+      index += delimiter.length;
+      continue;
+    }
+    if (character == '{') depth++;
+    if (character == '}' && --depth == 0) return index;
+    index++;
+  }
+  return null;
 }
 
 bool _isIdentifierStart(int code) =>
