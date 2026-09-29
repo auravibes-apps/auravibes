@@ -40,7 +40,7 @@ fvm dart pub run easy_localization:generate \
   -o locale_keys.dart \
   --skip-unnecessary-keys && fvm dart format lib/i18n/locale_keys.dart
 
-# Audit missing keys in code vs translations
+# From apps/auravibes_app: audit missing keys in code vs translations
 fvm dart run tool/localization_audit.dart
 ```
 
@@ -582,6 +582,7 @@ EasyLocalization(
 Find keys used in Dart code but missing from translation files:
 
 ```bash
+# Run from apps/auravibes_app.
 fvm dart run tool/localization_audit.dart
 ```
 
@@ -648,7 +649,7 @@ Without this, iOS may not recognize supported languages.
 3. **Use keys** via `LocaleKeys.*` in widgets and logic.
 4. **Render text** with `TextLocale(LocaleKeys.your_key)` or `.tr()` directly.
 5. **Test** unit logic with `LocaleKeys` constants; widget tests with `testableApp`.
-6. **Audit** periodically: `fvm dart run tool/localization_audit.dart`
+6. **Audit** periodically from `apps/auravibes_app`: `fvm dart run tool/localization_audit.dart`
 
 ## Common Pitfalls
 
