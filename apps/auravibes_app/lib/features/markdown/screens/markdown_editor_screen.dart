@@ -175,19 +175,19 @@ class const _MarkdownEditorView({
 class const _MarkdownEditorBody({required final _MarkdownEditorView view})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    if (view.isPreview) {
-      return _MarkdownEditorPreview(controller: view.controller);
-    }
-
-    return TextFieldTapRegion(
-      child: _MarkdownEditorSurface(
-        controller: view.controller,
-        focusNode: view.focusNode,
-        isFocused: view.isFocused,
+  Widget build(BuildContext _) => IndexedStack(
+    index: view.isPreview ? 1 : 0,
+    children: [
+      TextFieldTapRegion(
+        child: _MarkdownEditorSurface(
+          controller: view.controller,
+          focusNode: view.focusNode,
+          isFocused: view.isFocused,
+        ),
       ),
-    );
-  }
+      _MarkdownEditorPreview(controller: view.controller),
+    ],
+  );
 }
 
 class const _MarkdownEditorPreview({

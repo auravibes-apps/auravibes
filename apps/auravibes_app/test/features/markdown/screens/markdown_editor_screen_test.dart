@@ -199,7 +199,7 @@ void main() {
       tester.widget<GptMarkdown>(find.byType(GptMarkdown)).data,
       '# Latest unsaved draft',
     );
-    expect(_markdownEditorInput, findsNothing);
+    expect(_markdownEditorInput.hitTestable(), findsNothing);
 
     await tester.tap(find.bySemanticsLabel('Preview'));
     await tester.pumpAndSettle();
@@ -255,6 +255,51 @@ void main() {
       }
     },
   );
+
+  testWidgets('preview round trip preserves toolbar undo history', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _openMarkdownEditor(
+        tester,
+        onResult: (value) => fail('Unexpected editor close: $value'),
+      );
+      await tester.showKeyboard(_markdownEditorInput);
+      final editable = tester.widget<EditableText>(_markdownEditorInput);
+      final controller = editable.controller
+        ..value = const TextEditingValue(
+          text: 'text',
+          selection: TextSelection(baseOffset: 0, extentOffset: 4),
+        );
+      final focusNode = editable.focusNode;
+      final originalValue = controller.value;
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pumpAndSettle();
+      final boldValue = controller.value;
+      expect(boldValue.text, '**text**');
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+      expect(find.byIcon(Icons.format_bold).hitTestable(), findsNothing);
+      expect(find.bySemanticsLabel('Bold'), findsNothing);
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      await tester.pumpAndSettle();
+      expect(controller.value, boldValue);
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      await tester.pumpAndSettle();
+
+      expect(controller.value, originalValue);
+    } finally {
+      semantics.dispose();
+    }
+  });
 
   testWidgets('preview does not change the draft returned by Save', (
     tester,
