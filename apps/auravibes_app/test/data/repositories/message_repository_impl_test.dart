@@ -93,7 +93,7 @@ void main() {
         ],
       );
       final created = await repository.createMessage(
-        MessageToCreate(
+        .new(
           conversationId: 'conv-1',
           content: 'Tool result',
           messageType: .text,
