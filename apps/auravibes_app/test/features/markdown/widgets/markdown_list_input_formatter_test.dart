@@ -298,4 +298,16 @@ void main() {
     expect(result?.text, '  - parent\n  continuation\n    - child');
     expect(result?.selection, const TextSelection.collapsed(offset: 5));
   });
+
+  test('outdent removes one existing tab indentation level', () {
+    const original = TextEditingValue(
+      text: '\t- child',
+      selection: .collapsed(offset: 5),
+    );
+
+    expect(
+      MarkdownListInputFormatter.adjustIndentation(original, outdent: true),
+      const TextEditingValue(text: '- child', selection: .collapsed(offset: 4)),
+    );
+  });
 }

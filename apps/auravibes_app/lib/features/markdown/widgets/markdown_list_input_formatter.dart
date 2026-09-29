@@ -32,7 +32,7 @@ class MarkdownListInputFormatter extends TextInputFormatter {
       final marker = _listMarker.firstMatch(lines[index]);
       if (marker == null) continue;
       final indentation = marker.group(1)?.length ?? 0;
-      if (outdent && indentation < 2) continue;
+      if (outdent && _outdentWidth(marker.group(1) ?? '') == 0) continue;
       affected.add(index);
       for (var child = index + 1; child < lines.length; child++) {
         final childMarker = _listMarker.firstMatch(lines[child]);
@@ -54,9 +54,12 @@ class MarkdownListInputFormatter extends TextInputFormatter {
     final edits = <_NumberEdit>[];
     for (final index in affected.toList()..sort()) {
       final start = _lineOffset(lines, index);
+      final width = _outdentWidth(
+        _listMarker.firstMatch(lines[index])?.group(1) ?? '',
+      );
       edits.add(
         outdent
-            ? (start: start, end: start + 2, replacement: '')
+            ? (start: start, end: start + width, replacement: '')
             : (start: start, end: start, replacement: '  '),
       );
     }
@@ -75,6 +78,12 @@ class MarkdownListInputFormatter extends TextInputFormatter {
     return _listEdit(oldValue, newValue) ??
         _renumberAfterLineChange(oldValue, newValue);
   }
+}
+
+int _outdentWidth(String indentation) {
+  if (indentation.startsWith('\t')) return 1;
+
+  return indentation.length >= 2 ? 2 : 0;
 }
 
 TextEditingValue _renumberIndentedBlock(
