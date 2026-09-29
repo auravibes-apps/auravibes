@@ -65,6 +65,10 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
 
     /// Whether models.dev reports tool-call support for this model.
     @Default(false) bool supportsToolCalls,
+    @Default(false) bool supportsPromptCacheMarkers,
+    @Default(false) bool supportsMidConversationSystemMessages,
+    @Default(false) bool supportsToolDeltas,
+    @Default(false) bool supportsDeferredTools,
   }) = _ApiModelEntity;
 
   factory fromJson(
@@ -140,6 +144,11 @@ ApiModelEntity _applyModelFlags(
   isCanonical: capabilities.isCanonical,
   supportsPriorityMode: capabilities.supportsPriorityMode,
   supportsToolCalls: capabilities.supportsToolCalls,
+  supportsPromptCacheMarkers: capabilities.supportsPromptCacheMarkers,
+  supportsMidConversationSystemMessages:
+      capabilities.supportsMidConversationSystemMessages,
+  supportsToolDeltas: capabilities.supportsToolDeltas,
+  supportsDeferredTools: capabilities.supportsDeferredTools,
 );
 
 extension ApiModelEntityCapabilities on ApiModelEntity {

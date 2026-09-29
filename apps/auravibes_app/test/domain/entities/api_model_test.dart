@@ -3,6 +3,27 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('maps independent advanced capabilities from the engine', () {
+    for (final id in ['claude-sonnet-5', 'claude-sonnet-5-5', 'unknown']) {
+      final model = ApiModelEntity.fromJson('anthropic', {
+        'id': id,
+        'name': id,
+        'limit': {'context': 1000, 'output': 100},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      });
+      expect(model.supportsPromptCacheMarkers, id != 'unknown');
+      expect(
+        model.supportsMidConversationSystemMessages,
+        id == 'claude-sonnet-5-5',
+      );
+      expect(model.supportsToolDeltas, id == 'claude-sonnet-5-5');
+      expect(model.supportsDeferredTools, id == 'claude-sonnet-5-5');
+    }
+  });
+
   group('ApiModelEntity.fromJson', () {
     final baseJson = <String, dynamic>{
       'id': 'gpt-4',

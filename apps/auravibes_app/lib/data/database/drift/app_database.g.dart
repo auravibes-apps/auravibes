@@ -2488,6 +2488,65 @@ class $ApiModelsTable extends ApiModels
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _supportsPromptCacheMarkersMeta =
+      const VerificationMeta('supportsPromptCacheMarkers');
+  @override
+  late final GeneratedColumn<bool> supportsPromptCacheMarkers =
+      GeneratedColumn<bool>(
+        'supports_prompt_cache_markers',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_prompt_cache_markers" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _supportsMidConversationSystemMessagesMeta =
+      const VerificationMeta('supportsMidConversationSystemMessages');
+  @override
+  late final GeneratedColumn<bool> supportsMidConversationSystemMessages =
+      GeneratedColumn<bool>(
+        'supports_mid_conversation_system_messages',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_mid_conversation_system_messages" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _supportsToolDeltasMeta =
+      const VerificationMeta('supportsToolDeltas');
+  @override
+  late final GeneratedColumn<bool> supportsToolDeltas = GeneratedColumn<bool>(
+    'supports_tool_deltas',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("supports_tool_deltas" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _supportsDeferredToolsMeta =
+      const VerificationMeta('supportsDeferredTools');
+  @override
+  late final GeneratedColumn<bool> supportsDeferredTools =
+      GeneratedColumn<bool>(
+        'supports_deferred_tools',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_deferred_tools" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   static const VerificationMeta _costInputMeta = const VerificationMeta(
     'costInput',
   );
@@ -2557,6 +2616,10 @@ class $ApiModelsTable extends ApiModels
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
+    supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages,
+    supportsToolDeltas,
+    supportsDeferredTools,
     costInput,
     costOutput,
     costCacheRead,
@@ -2656,6 +2719,42 @@ class $ApiModelsTable extends ApiModels
         supportsToolCalls.isAcceptableOrUnknown(
           data['supports_tool_calls']!,
           _supportsToolCallsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_prompt_cache_markers')) {
+      context.handle(
+        _supportsPromptCacheMarkersMeta,
+        supportsPromptCacheMarkers.isAcceptableOrUnknown(
+          data['supports_prompt_cache_markers']!,
+          _supportsPromptCacheMarkersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_mid_conversation_system_messages')) {
+      context.handle(
+        _supportsMidConversationSystemMessagesMeta,
+        supportsMidConversationSystemMessages.isAcceptableOrUnknown(
+          data['supports_mid_conversation_system_messages']!,
+          _supportsMidConversationSystemMessagesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_tool_deltas')) {
+      context.handle(
+        _supportsToolDeltasMeta,
+        supportsToolDeltas.isAcceptableOrUnknown(
+          data['supports_tool_deltas']!,
+          _supportsToolDeltasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_deferred_tools')) {
+      context.handle(
+        _supportsDeferredToolsMeta,
+        supportsDeferredTools.isAcceptableOrUnknown(
+          data['supports_deferred_tools']!,
+          _supportsDeferredToolsMeta,
         ),
       );
     }
@@ -2763,6 +2862,22 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.bool,
         data['${effectivePrefix}supports_tool_calls'],
       )!,
+      supportsPromptCacheMarkers: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_prompt_cache_markers'],
+      )!,
+      supportsMidConversationSystemMessages: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_mid_conversation_system_messages'],
+      )!,
+      supportsToolDeltas: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_tool_deltas'],
+      )!,
+      supportsDeferredTools: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_deferred_tools'],
+      )!,
       costInput: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cost_input'],
@@ -2823,6 +2938,10 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
+  final bool supportsPromptCacheMarkers;
+  final bool supportsMidConversationSystemMessages;
+  final bool supportsToolDeltas;
+  final bool supportsDeferredTools;
   final double? costInput;
   final double? costOutput;
   final double? costCacheRead;
@@ -2841,6 +2960,10 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
+    required this.supportsPromptCacheMarkers,
+    required this.supportsMidConversationSystemMessages,
+    required this.supportsToolDeltas,
+    required this.supportsDeferredTools,
     this.costInput,
     this.costOutput,
     this.costCacheRead,
@@ -2876,6 +2999,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     map['is_canonical'] = Variable<bool>(isCanonical);
     map['supports_priority_mode'] = Variable<bool>(supportsPriorityMode);
     map['supports_tool_calls'] = Variable<bool>(supportsToolCalls);
+    map['supports_prompt_cache_markers'] = Variable<bool>(
+      supportsPromptCacheMarkers,
+    );
+    map['supports_mid_conversation_system_messages'] = Variable<bool>(
+      supportsMidConversationSystemMessages,
+    );
+    map['supports_tool_deltas'] = Variable<bool>(supportsToolDeltas);
+    map['supports_deferred_tools'] = Variable<bool>(supportsDeferredTools);
     if (!nullToAbsent || costInput != null) {
       map['cost_input'] = Variable<double>(costInput);
     }
@@ -2914,6 +3045,12 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       isCanonical: Value(isCanonical),
       supportsPriorityMode: Value(supportsPriorityMode),
       supportsToolCalls: Value(supportsToolCalls),
+      supportsPromptCacheMarkers: Value(supportsPromptCacheMarkers),
+      supportsMidConversationSystemMessages: Value(
+        supportsMidConversationSystemMessages,
+      ),
+      supportsToolDeltas: Value(supportsToolDeltas),
+      supportsDeferredTools: Value(supportsDeferredTools),
       costInput: costInput == null && nullToAbsent
           ? const Value.absent()
           : Value(costInput),
@@ -2954,6 +3091,16 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         json['supportsPriorityMode'],
       ),
       supportsToolCalls: serializer.fromJson<bool>(json['supportsToolCalls']),
+      supportsPromptCacheMarkers: serializer.fromJson<bool>(
+        json['supportsPromptCacheMarkers'],
+      ),
+      supportsMidConversationSystemMessages: serializer.fromJson<bool>(
+        json['supportsMidConversationSystemMessages'],
+      ),
+      supportsToolDeltas: serializer.fromJson<bool>(json['supportsToolDeltas']),
+      supportsDeferredTools: serializer.fromJson<bool>(
+        json['supportsDeferredTools'],
+      ),
       costInput: serializer.fromJson<double?>(json['costInput']),
       costOutput: serializer.fromJson<double?>(json['costOutput']),
       costCacheRead: serializer.fromJson<double?>(json['costCacheRead']),
@@ -2981,6 +3128,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       'isCanonical': serializer.toJson<bool>(isCanonical),
       'supportsPriorityMode': serializer.toJson<bool>(supportsPriorityMode),
       'supportsToolCalls': serializer.toJson<bool>(supportsToolCalls),
+      'supportsPromptCacheMarkers': serializer.toJson<bool>(
+        supportsPromptCacheMarkers,
+      ),
+      'supportsMidConversationSystemMessages': serializer.toJson<bool>(
+        supportsMidConversationSystemMessages,
+      ),
+      'supportsToolDeltas': serializer.toJson<bool>(supportsToolDeltas),
+      'supportsDeferredTools': serializer.toJson<bool>(supportsDeferredTools),
       'costInput': serializer.toJson<double?>(costInput),
       'costOutput': serializer.toJson<double?>(costOutput),
       'costCacheRead': serializer.toJson<double?>(costCacheRead),
@@ -3002,6 +3157,10 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
+    bool? supportsPromptCacheMarkers,
+    bool? supportsMidConversationSystemMessages,
+    bool? supportsToolDeltas,
+    bool? supportsDeferredTools,
     Value<double?> costInput = const Value.absent(),
     Value<double?> costOutput = const Value.absent(),
     Value<double?> costCacheRead = const Value.absent(),
@@ -3026,6 +3185,13 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     isCanonical: isCanonical ?? this.isCanonical,
     supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
     supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
+    supportsPromptCacheMarkers:
+        supportsPromptCacheMarkers ?? this.supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages:
+        supportsMidConversationSystemMessages ??
+        this.supportsMidConversationSystemMessages,
+    supportsToolDeltas: supportsToolDeltas ?? this.supportsToolDeltas,
+    supportsDeferredTools: supportsDeferredTools ?? this.supportsDeferredTools,
     costInput: costInput.present ? costInput.value : this.costInput,
     costOutput: costOutput.present ? costOutput.value : this.costOutput,
     costCacheRead: costCacheRead.present
@@ -3066,6 +3232,19 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       supportsToolCalls: data.supportsToolCalls.present
           ? data.supportsToolCalls.value
           : this.supportsToolCalls,
+      supportsPromptCacheMarkers: data.supportsPromptCacheMarkers.present
+          ? data.supportsPromptCacheMarkers.value
+          : this.supportsPromptCacheMarkers,
+      supportsMidConversationSystemMessages:
+          data.supportsMidConversationSystemMessages.present
+          ? data.supportsMidConversationSystemMessages.value
+          : this.supportsMidConversationSystemMessages,
+      supportsToolDeltas: data.supportsToolDeltas.present
+          ? data.supportsToolDeltas.value
+          : this.supportsToolDeltas,
+      supportsDeferredTools: data.supportsDeferredTools.present
+          ? data.supportsDeferredTools.value
+          : this.supportsDeferredTools,
       costInput: data.costInput.present ? data.costInput.value : this.costInput,
       costOutput: data.costOutput.present
           ? data.costOutput.value
@@ -3097,6 +3276,12 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
+          ..write('supportsPromptCacheMarkers: $supportsPromptCacheMarkers, ')
+          ..write(
+            'supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, ',
+          )
+          ..write('supportsToolDeltas: $supportsToolDeltas, ')
+          ..write('supportsDeferredTools: $supportsDeferredTools, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -3107,7 +3292,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     modelProvider,
     id,
     name,
@@ -3120,12 +3305,16 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
+    supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages,
+    supportsToolDeltas,
+    supportsDeferredTools,
     costInput,
     costOutput,
     costCacheRead,
     limitContext,
     limitOutput,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3142,6 +3331,11 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.isCanonical == this.isCanonical &&
           other.supportsPriorityMode == this.supportsPriorityMode &&
           other.supportsToolCalls == this.supportsToolCalls &&
+          other.supportsPromptCacheMarkers == this.supportsPromptCacheMarkers &&
+          other.supportsMidConversationSystemMessages ==
+              this.supportsMidConversationSystemMessages &&
+          other.supportsToolDeltas == this.supportsToolDeltas &&
+          other.supportsDeferredTools == this.supportsDeferredTools &&
           other.costInput == this.costInput &&
           other.costOutput == this.costOutput &&
           other.costCacheRead == this.costCacheRead &&
@@ -3162,6 +3356,10 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<bool> isCanonical;
   final Value<bool> supportsPriorityMode;
   final Value<bool> supportsToolCalls;
+  final Value<bool> supportsPromptCacheMarkers;
+  final Value<bool> supportsMidConversationSystemMessages;
+  final Value<bool> supportsToolDeltas;
+  final Value<bool> supportsDeferredTools;
   final Value<double?> costInput;
   final Value<double?> costOutput;
   final Value<double?> costCacheRead;
@@ -3181,6 +3379,10 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
+    this.supportsPromptCacheMarkers = const Value.absent(),
+    this.supportsMidConversationSystemMessages = const Value.absent(),
+    this.supportsToolDeltas = const Value.absent(),
+    this.supportsDeferredTools = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -3201,6 +3403,10 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
+    this.supportsPromptCacheMarkers = const Value.absent(),
+    this.supportsMidConversationSystemMessages = const Value.absent(),
+    this.supportsToolDeltas = const Value.absent(),
+    this.supportsDeferredTools = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
@@ -3225,6 +3431,10 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<bool>? isCanonical,
     Expression<bool>? supportsPriorityMode,
     Expression<bool>? supportsToolCalls,
+    Expression<bool>? supportsPromptCacheMarkers,
+    Expression<bool>? supportsMidConversationSystemMessages,
+    Expression<bool>? supportsToolDeltas,
+    Expression<bool>? supportsDeferredTools,
     Expression<double>? costInput,
     Expression<double>? costOutput,
     Expression<double>? costCacheRead,
@@ -3247,6 +3457,15 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (supportsPriorityMode != null)
         'supports_priority_mode': supportsPriorityMode,
       if (supportsToolCalls != null) 'supports_tool_calls': supportsToolCalls,
+      if (supportsPromptCacheMarkers != null)
+        'supports_prompt_cache_markers': supportsPromptCacheMarkers,
+      if (supportsMidConversationSystemMessages != null)
+        'supports_mid_conversation_system_messages':
+            supportsMidConversationSystemMessages,
+      if (supportsToolDeltas != null)
+        'supports_tool_deltas': supportsToolDeltas,
+      if (supportsDeferredTools != null)
+        'supports_deferred_tools': supportsDeferredTools,
       if (costInput != null) 'cost_input': costInput,
       if (costOutput != null) 'cost_output': costOutput,
       if (costCacheRead != null) 'cost_cache_read': costCacheRead,
@@ -3269,6 +3488,10 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<bool>? isCanonical,
     Value<bool>? supportsPriorityMode,
     Value<bool>? supportsToolCalls,
+    Value<bool>? supportsPromptCacheMarkers,
+    Value<bool>? supportsMidConversationSystemMessages,
+    Value<bool>? supportsToolDeltas,
+    Value<bool>? supportsDeferredTools,
     Value<double?>? costInput,
     Value<double?>? costOutput,
     Value<double?>? costCacheRead,
@@ -3289,6 +3512,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
+      supportsPromptCacheMarkers:
+          supportsPromptCacheMarkers ?? this.supportsPromptCacheMarkers,
+      supportsMidConversationSystemMessages:
+          supportsMidConversationSystemMessages ??
+          this.supportsMidConversationSystemMessages,
+      supportsToolDeltas: supportsToolDeltas ?? this.supportsToolDeltas,
+      supportsDeferredTools:
+          supportsDeferredTools ?? this.supportsDeferredTools,
       costInput: costInput ?? this.costInput,
       costOutput: costOutput ?? this.costOutput,
       costCacheRead: costCacheRead ?? this.costCacheRead,
@@ -3347,6 +3578,24 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (supportsToolCalls.present) {
       map['supports_tool_calls'] = Variable<bool>(supportsToolCalls.value);
     }
+    if (supportsPromptCacheMarkers.present) {
+      map['supports_prompt_cache_markers'] = Variable<bool>(
+        supportsPromptCacheMarkers.value,
+      );
+    }
+    if (supportsMidConversationSystemMessages.present) {
+      map['supports_mid_conversation_system_messages'] = Variable<bool>(
+        supportsMidConversationSystemMessages.value,
+      );
+    }
+    if (supportsToolDeltas.present) {
+      map['supports_tool_deltas'] = Variable<bool>(supportsToolDeltas.value);
+    }
+    if (supportsDeferredTools.present) {
+      map['supports_deferred_tools'] = Variable<bool>(
+        supportsDeferredTools.value,
+      );
+    }
     if (costInput.present) {
       map['cost_input'] = Variable<double>(costInput.value);
     }
@@ -3383,6 +3632,12 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
+          ..write('supportsPromptCacheMarkers: $supportsPromptCacheMarkers, ')
+          ..write(
+            'supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, ',
+          )
+          ..write('supportsToolDeltas: $supportsToolDeltas, ')
+          ..write('supportsDeferredTools: $supportsDeferredTools, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
@@ -17224,6 +17479,10 @@ typedef $$ApiModelsTableCreateCompanionBuilder = ApiModelsCompanion Function({
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
+  Value<bool> supportsPromptCacheMarkers,
+  Value<bool> supportsMidConversationSystemMessages,
+  Value<bool> supportsToolDeltas,
+  Value<bool> supportsDeferredTools,
   Value<double?> costInput,
   Value<double?> costOutput,
   Value<double?> costCacheRead,
@@ -17244,6 +17503,10 @@ typedef $$ApiModelsTableUpdateCompanionBuilder = ApiModelsCompanion Function({
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
+  Value<bool> supportsPromptCacheMarkers,
+  Value<bool> supportsMidConversationSystemMessages,
+  Value<bool> supportsToolDeltas,
+  Value<bool> supportsDeferredTools,
   Value<double?> costInput,
   Value<double?> costOutput,
   Value<double?> costCacheRead,
@@ -17338,6 +17601,27 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<bool> get supportsToolCalls => $composableBuilder(
     column: $table.supportsToolCalls,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  ColumnFilters<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17454,6 +17738,27 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get costInput => $composableBuilder(
     column: $table.costInput,
     builder: (column) => ColumnOrderings(column),
@@ -17563,6 +17868,27 @@ class $$ApiModelsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get costInput =>
       $composableBuilder(column: $table.costInput, builder: (column) => column);
 
@@ -17651,6 +17977,11 @@ class $$ApiModelsTableTableManager
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
+                Value<bool> supportsPromptCacheMarkers = const Value.absent(),
+                Value<bool> supportsMidConversationSystemMessages =
+                    const Value.absent(),
+                Value<bool> supportsToolDeltas = const Value.absent(),
+                Value<bool> supportsDeferredTools = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -17670,6 +18001,11 @@ class $$ApiModelsTableTableManager
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
+                supportsPromptCacheMarkers: supportsPromptCacheMarkers,
+                supportsMidConversationSystemMessages:
+                    supportsMidConversationSystemMessages,
+                supportsToolDeltas: supportsToolDeltas,
+                supportsDeferredTools: supportsDeferredTools,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,
@@ -17691,6 +18027,11 @@ class $$ApiModelsTableTableManager
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
+                Value<bool> supportsPromptCacheMarkers = const Value.absent(),
+                Value<bool> supportsMidConversationSystemMessages =
+                    const Value.absent(),
+                Value<bool> supportsToolDeltas = const Value.absent(),
+                Value<bool> supportsDeferredTools = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
@@ -17710,6 +18051,11 @@ class $$ApiModelsTableTableManager
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
+                supportsPromptCacheMarkers: supportsPromptCacheMarkers,
+                supportsMidConversationSystemMessages:
+                    supportsMidConversationSystemMessages,
+                supportsToolDeltas: supportsToolDeltas,
+                supportsDeferredTools: supportsDeferredTools,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,

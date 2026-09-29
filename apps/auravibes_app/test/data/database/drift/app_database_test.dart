@@ -47,7 +47,30 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 19);
+      expect(fixture.database.schemaVersion, 20);
+    });
+
+    test('migration defaults advanced capabilities to false', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 19
+        ..execute('CREATE TABLE api_models (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO api_models VALUES (?)', ['existing']);
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final row = await fixture.database
+          .customSelect(
+            'SELECT * FROM api_models WHERE id = ?',
+            variables: [const Variable<String>('existing')],
+          )
+          .getSingle();
+      for (final column in [
+        'supports_prompt_cache_markers',
+        'supports_mid_conversation_system_messages',
+        'supports_tool_deltas',
+        'supports_deferred_tools',
+      ]) {
+        expect(row.read<bool>(column), isFalse, reason: column);
+      }
     });
 
     test('creates successfully with in-memory connection', () {

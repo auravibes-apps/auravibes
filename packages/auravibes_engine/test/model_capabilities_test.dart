@@ -2,6 +2,66 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('gates mid-conversation features by exact provider and model', () {
+    for (final id in [
+      'claude-fable-5-1',
+      'claude-mythos-5-1',
+      'claude-fable-5',
+      'claude-opus-5-5',
+      'claude-opus-4-8',
+      'claude-opus-5',
+      'claude-sonnet-5-5',
+      'claude-sonnet-5',
+      'claude-unknown',
+    ]) {
+      for (final provider in ['anthropic', 'openrouter', 'custom']) {
+        final model = ModelCapabilities.fromJson(provider, {
+          'id': id,
+          'name': id,
+          'tool_call': true,
+          'cost': {'cache_read': 0.1},
+          'limit': {'context': 1000, 'output': 100},
+          'modalities': {
+            'input': ['text'],
+            'output': ['text'],
+          },
+        });
+        final supported =
+            provider == 'anthropic' &&
+            id != 'claude-sonnet-5' &&
+            id != 'claude-unknown';
+        expect(
+          model.supportsMidConversationSystemMessages,
+          supported,
+          reason: '$provider/$id',
+        );
+        expect(model.supportsToolDeltas, supported, reason: '$provider/$id');
+        expect(model.supportsDeferredTools, supported, reason: '$provider/$id');
+        expect(
+          model.supportsPromptCacheMarkers,
+          provider == 'anthropic' && id != 'claude-unknown',
+          reason: '$provider/$id',
+        );
+      }
+    }
+  });
+
+  test('advanced capabilities default false and remain independent', () {
+    final model = ModelCapabilities(
+      id: 'unknown',
+      name: 'Unknown',
+      limitContext: 1000,
+      limitOutput: 100,
+      inputModalities: ['text'],
+      outputModalities: ['text'],
+      supportsPromptCacheMarkers: true,
+    );
+    expect(model.supportsPromptCacheMarkers, isTrue);
+    expect(model.supportsMidConversationSystemMessages, isFalse);
+    expect(model.supportsToolDeltas, isFalse);
+    expect(model.supportsDeferredTools, isFalse);
+  });
+
   test('parses model capabilities and eligibility', () {
     final model = ModelCapabilities.fromJson(
       'openai',

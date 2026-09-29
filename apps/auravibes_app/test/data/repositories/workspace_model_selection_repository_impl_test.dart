@@ -32,6 +32,96 @@ void main() {
 
     final now = DateTime(2026);
 
+    test(
+      'projects persisted flags only for official Anthropic transport',
+      () async {
+        for (final scenario in [
+          (
+            connectionUrl: null,
+            providerUrl: 'https://api.anthropic.com/v1',
+            allowed: true,
+          ),
+          (
+            connectionUrl: 'https://custom.example/v1',
+            providerUrl: 'https://api.anthropic.com/v1',
+            allowed: false,
+          ),
+          (
+            connectionUrl: null,
+            providerUrl: 'https://custom.example/v1',
+            allowed: false,
+          ),
+        ]) {
+          for (var index = 0; index < 4; index++) {
+            final source = WorkspaceModelSelectionWithConnection(
+              model: .new(
+                id: 'sel',
+                createdAt: now,
+                updatedAt: now,
+                modelId: 'claude-sonnet-5',
+                modelConnectionId: 'conn',
+              ),
+              modelConnection: .new(
+                id: 'conn',
+                createdAt: now,
+                updatedAt: now,
+                name: 'Connection',
+                serviceId: 'anthropic',
+                kind: ServiceConnectionKindTable.modelProvider,
+                authenticationType: ServiceAuthenticationTypeTable.apiKey,
+                workspaceId: 'ws',
+                isEnabled: true,
+                url: scenario.connectionUrl,
+              ),
+              modelProvider: .new(
+                id: 'anthropic',
+                name: 'Anthropic',
+                type: .anthropic,
+                url: scenario.providerUrl,
+              ),
+              apiModel: .new(
+                modelProvider: 'anthropic',
+                id: 'claude-sonnet-5',
+                name: 'Sonnet',
+                supportsReasoning: false,
+                isCanonical: true,
+                supportsPriorityMode: false,
+                supportsToolCalls: true,
+                supportsPromptCacheMarkers: index == 0,
+                supportsMidConversationSystemMessages: index == 1,
+                supportsToolDeltas: index == 2,
+                supportsDeferredTools: index == 3,
+                limitContext: 1000,
+                limitOutput: 100,
+              ),
+            );
+            when(() => mockDao.getWorkspaceModelSelectionById('sel'))
+                .thenAnswer((_) async => source);
+            final result = await repository.getWorkspaceModelSelectionById(
+              'sel',
+            );
+            final selection = result?.workspaceModelSelection;
+            expect(
+              selection?.supportsPromptCacheMarkers,
+              scenario.allowed && index == 0,
+            );
+            expect(
+              selection?.supportsMidConversationSystemMessages,
+              scenario.allowed && index == 1,
+            );
+            expect(
+              selection?.supportsToolDeltas,
+              scenario.allowed && index == 2,
+            );
+            expect(
+              selection?.supportsDeferredTools,
+              scenario.allowed && index == 3,
+            );
+          }
+        }
+      },
+    );
+
     group('createWorkspaceModelSelections', () {
       test('delegates to dao with companions', () async {
         when(() => mockDao.insertWorkspaceModelSelections(any()))
@@ -113,6 +203,11 @@ void main() {
             isCanonical: true,
             supportsPriorityMode: false,
             supportsToolCalls: false,
+            supportsPromptCacheMarkers: false,
+            supportsMidConversationSystemMessages: false,
+            supportsToolDeltas: false,
+            supportsDeferredTools: false,
+
             limitContext: 128000,
             limitOutput: 4096,
           ),
@@ -199,6 +294,16 @@ void main() {
           'sel-1',
         );
         expect(result.modelConnection.id, 'conn-1');
+        expect(
+          result.workspaceModelSelection.supportsPromptCacheMarkers,
+          isFalse,
+        );
+        expect(
+          result.workspaceModelSelection.supportsMidConversationSystemMessages,
+          isFalse,
+        );
+        expect(result.workspaceModelSelection.supportsToolDeltas, isFalse);
+        expect(result.workspaceModelSelection.supportsDeferredTools, isFalse);
       });
 
       test('returns null when not found', () async {

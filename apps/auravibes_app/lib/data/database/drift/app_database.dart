@@ -151,7 +151,9 @@ class AppDatabase extends _$AppDatabase {
       _mcpOutputSchemaVersion + 1;
   static const int _compactionCheckpointSchemaVersion =
       _compactionBudgetsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _compactionCheckpointSchemaVersion;
+  static const int _modelCapabilitiesSchemaVersion =
+      _compactionCheckpointSchemaVersion + 1;
+  static const int _currentSchemaVersion = _modelCapabilitiesSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -194,6 +196,23 @@ extension on AppDatabase {
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
+    await _upgradeModelCapabilitiesSchema(m, from);
+  }
+
+  Future<void> _upgradeModelCapabilitiesSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._modelCapabilitiesSchemaVersion ||
+        !await _tableExists('api_models')) {
+      return;
+    }
+    for (final column in [
+      apiModels.supportsPromptCacheMarkers,
+      apiModels.supportsMidConversationSystemMessages,
+      apiModels.supportsToolDeltas,
+      apiModels.supportsDeferredTools,
+    ]) {
+      if (await _columnExists('api_models', column.name)) continue;
+      await m.addColumn(apiModels, column);
+    }
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {

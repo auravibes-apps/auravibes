@@ -263,6 +263,11 @@ extension ApiModelRepositoryModelMappings on ApiModelRepository {
     isCanonical: modelTable.isCanonical,
     supportsPriorityMode: modelTable.supportsPriorityMode,
     supportsToolCalls: modelTable.supportsToolCalls,
+    supportsPromptCacheMarkers: modelTable.supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages:
+        modelTable.supportsMidConversationSystemMessages,
+    supportsToolDeltas: modelTable.supportsToolDeltas,
+    supportsDeferredTools: modelTable.supportsDeferredTools,
   );
 
   ApiModelsCompanion? _mapEntityToCompanion(ApiModelEntity? entity) {
@@ -313,6 +318,12 @@ ApiModelsCompanion _addModelCapabilityMetadata(
   isCanonical: .new(entity.isCanonical),
   supportsPriorityMode: .new(entity.supportsPriorityMode),
   supportsToolCalls: .new(entity.supportsToolCalls),
+  supportsPromptCacheMarkers: .new(entity.supportsPromptCacheMarkers),
+  supportsMidConversationSystemMessages: .new(
+    entity.supportsMidConversationSystemMessages,
+  ),
+  supportsToolDeltas: .new(entity.supportsToolDeltas),
+  supportsDeferredTools: .new(entity.supportsDeferredTools),
 );
 
 ApiModelsCompanion _addModelCostMetadata(

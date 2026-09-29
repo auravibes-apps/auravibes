@@ -48,6 +48,18 @@ class ApiModels extends Table {
   BoolColumn get supportsToolCalls =>
       boolean().withDefault(const Constant(false))();
 
+  BoolColumn get supportsPromptCacheMarkers =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get supportsMidConversationSystemMessages =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get supportsToolDeltas =>
+      boolean().withDefault(const Constant(false))();
+
+  BoolColumn get supportsDeferredTools =>
+      boolean().withDefault(const Constant(false))();
+
   // Cost.
   RealColumn get costInput => real().nullable()();
   RealColumn get costOutput => real().nullable()();

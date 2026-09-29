@@ -201,7 +201,10 @@ extension on WorkspaceModelSelectionRepository {
       modelConnectionId: withProvider.model.modelConnectionId,
     );
 
-    return _withModelCapabilities(selection, apiModel);
+    return _withAdvancedCapabilities(
+      _withModelCapabilities(selection, apiModel),
+      withProvider,
+    );
   }
 
   WorkspaceModelSelectionEntity _withModelCapabilities(
@@ -217,6 +220,35 @@ extension on WorkspaceModelSelectionRepository {
       supportsReasoning: capabilities.supportsReasoning,
       reasoningOptions: capabilities.reasoningOptions,
       supportsToolCalls: capabilities.supportsToolCalls,
+    );
+  }
+
+  WorkspaceModelSelectionEntity _withAdvancedCapabilities(
+    WorkspaceModelSelectionEntity selection,
+    WorkspaceModelSelectionWithConnection source,
+  ) {
+    final connectionUrl = source.modelConnection.url?.trim();
+    final providerUrl = source.modelProvider?.url?.trim();
+    final officialTransport =
+        source.modelConnection.serviceId == 'anthropic' &&
+        source.modelProvider?.type == ModelProvidersTableType.anthropic &&
+        (connectionUrl == null || connectionUrl.isEmpty) &&
+        (providerUrl == null ||
+            providerUrl.isEmpty ||
+            providerUrl.replaceFirst(RegExp(r'/$'), '') ==
+                providerProfile('anthropic').defaultUrl);
+    final model = source.apiModel;
+
+    return selection.copyWith(
+      supportsPromptCacheMarkers:
+          officialTransport && (model?.supportsPromptCacheMarkers ?? false),
+      supportsMidConversationSystemMessages:
+          officialTransport &&
+          (model?.supportsMidConversationSystemMessages ?? false),
+      supportsToolDeltas:
+          officialTransport && (model?.supportsToolDeltas ?? false),
+      supportsDeferredTools:
+          officialTransport && (model?.supportsDeferredTools ?? false),
     );
   }
 

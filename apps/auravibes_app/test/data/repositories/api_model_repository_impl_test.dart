@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
@@ -10,6 +12,56 @@ import 'package:mocktail/mocktail.dart';
 import '../../test_mocks.dart';
 
 void main() {
+  test(
+    'advanced capabilities survive database close and reload independently',
+    () async {
+      final directory = Directory.systemTemp.createTempSync(
+        'model-capabilities',
+      );
+      final file = File('${directory.path}/models.sqlite');
+      var database = AppDatabase(connection: NativeDatabase(file));
+      try {
+        final repository = ApiModelRepository(database);
+        final _ = await repository.batchUpsertProviders([
+          const ApiModelProviderEntity(
+            id: 'anthropic',
+            name: 'Anthropic',
+            type: .anthropic,
+          ),
+        ]);
+        final _ = await repository.batchUpsertModels([
+          for (var index = 0; index < 4; index++)
+            ApiModelEntity(
+              modelProvider: 'anthropic',
+              id: '$index',
+              name: 'Persisted',
+              limitContext: 1000,
+              limitOutput: 100,
+              modalitiesInput: ['text'],
+              modalitiesOutput: ['text'],
+              supportsPromptCacheMarkers: index == 0,
+              supportsMidConversationSystemMessages: index == 1,
+              supportsToolDeltas: index == 2,
+              supportsDeferredTools: index == 3,
+            ),
+        ]);
+        await database.close();
+        database = AppDatabase(connection: NativeDatabase(file));
+        final models = await ApiModelRepository(database).getAllModels();
+        expect(models, hasLength(4));
+        for (final model in models) {
+          expect(model.supportsPromptCacheMarkers, model.id == '0');
+          expect(model.supportsMidConversationSystemMessages, model.id == '1');
+          expect(model.supportsToolDeltas, model.id == '2');
+          expect(model.supportsDeferredTools, model.id == '3');
+        }
+      } finally {
+        await database.close();
+        directory.deleteSync(recursive: true);
+      }
+    },
+  );
+
   setUpAll(registerTestFallbackValues);
 
   group('ApiModelRepository', () {
@@ -38,6 +90,11 @@ void main() {
       isCanonical: true,
       supportsPriorityMode: false,
       supportsToolCalls: false,
+      supportsPromptCacheMarkers: false,
+      supportsMidConversationSystemMessages: false,
+      supportsToolDeltas: false,
+      supportsDeferredTools: false,
+
       costInput: 30,
       costOutput: 60,
       limitContext: 128000,
