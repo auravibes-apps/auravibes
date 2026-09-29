@@ -154,6 +154,30 @@ void main() {
       );
     });
 
+    testWidgets('bold wrapping does not cross-pair existing spans', (
+      tester,
+    ) async {
+      const text = '**one** and **two**';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf(' and ');
+      controller.selection = TextSelection(
+        baseOffset: selectionStart,
+        extentOffset: selectionStart + ' and '.length,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+
+      expect(controller.text, '**one**** and ****two**');
+    });
+
     testWidgets(
       'bold italic and inline code actions unwrap selected matching spans',
       (tester) async {

@@ -223,7 +223,7 @@ extension on _MarkdownEditorToolbarState {
           }
         }
 
-        searchOffset = start + marker.length;
+        searchOffset = end;
       }
     }
 
