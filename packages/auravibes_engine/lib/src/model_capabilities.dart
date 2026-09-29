@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:auravibes_engine/src/reasoning_configuration.dart';
+import 'package:auravibes_engine/src/strict_tool_sampling_profile.dart';
 
 final class ModelCapabilities {
   new({
@@ -102,18 +103,6 @@ final class ModelCapabilities {
       outputModalities.contains('text') &&
       limitOutput > 0;
 }
-
-// OpenAI documents strict function calling for these model IDs. models.dev's
-// structured_output describes response formatting, not strict function tools.
-// https://developers.openai.com/api/docs/guides/function-calling
-bool verifiedStrictToolSampling(String providerId, String modelId) =>
-    providerId == 'openai' &&
-    const {
-      'gpt-4o',
-      'gpt-4o-2024-08-06',
-      'gpt-4o-mini',
-      'gpt-4o-mini-2024-07-18',
-    }.contains(modelId);
 
 List<ReasoningOption> _reasoningOptions(Object? value) {
   if (value is! List) return const [];

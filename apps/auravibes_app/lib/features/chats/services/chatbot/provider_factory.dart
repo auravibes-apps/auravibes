@@ -20,6 +20,7 @@ typedef UntypedModelRef = ModelRef<Object?>;
 typedef _ProviderToolSampling = ({
   bool officialOpenAI,
   bool strictToolSampling,
+  StrictToolSamplingProfile? profile,
 });
 typedef _OpenAICompatPluginOptions = ({
   String name,
@@ -196,15 +197,23 @@ extension _ProviderFactoryCreation on ProviderFactory {
     final officialOpenAI =
         config.modelsProvider.type == ModelProvidersType.openai &&
         !_hasCustomUrl(config, connectionUrl);
+    final providerId = config.modelsProvider.type?.name ?? '';
+    final baseUrl =
+        resolvedBaseUrl(config) ??
+        (providerId == 'openai' ? providerProfile('openai').defaultUrl : null);
+    final profile = strictToolSamplingProfile(
+      providerId,
+      config.workspaceModelSelection.modelId,
+      baseUrl,
+    );
     final supportsStrict =
-        officialOpenAI &&
-        config.workspaceModelSelection.supportsToolCalls &&
-        verifiedStrictToolSampling(
-          'openai',
-          config.workspaceModelSelection.modelId,
-        );
+        config.workspaceModelSelection.supportsToolCalls && profile != null;
 
-    return (officialOpenAI: officialOpenAI, strictToolSampling: supportsStrict);
+    return (
+      officialOpenAI: officialOpenAI,
+      strictToolSampling: supportsStrict,
+      profile: supportsStrict ? profile : null,
+    );
   }
 
   Genkit _createGenkit(_ProviderRequest request) {
@@ -287,20 +296,24 @@ extension _ProviderFactoryPlugins on ProviderFactory {
 
     return _openAICompatPlugin(request, (
       name: ProviderFactory._openAIReasoningNamespace,
-      codec: _openAICompatReasoningCodec(toolSampling.officialOpenAI),
+      codec: _openAICompatReasoningCodec(
+        toolSampling.officialOpenAI,
+        toolSampling.profile,
+      ),
       modelSupportsStrictToolSampling: toolSampling.strictToolSampling,
       httpClient: null,
     ));
   }
 
   GenkitPlugin _openAIPlugin(_ProviderRequest request) {
-    if (!request.toolSampling.strictToolSampling) {
+    final profile = request.toolSampling.profile;
+    if (profile == null) {
       return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
     }
 
     return _openAICompatPlugin(request, (
       name: 'openai',
-      codec: _openAICodec(),
+      codec: _openAICodec(profile),
       modelSupportsStrictToolSampling: true,
       httpClient: httpClient,
     ));
@@ -488,11 +501,13 @@ ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
   customize: _customizeOpenRouter,
 );
 
-ChatCompletionsCodec _openAICodec() => const ChatCompletionsCodec(
-  errorLabel: 'OpenAI',
-  customize: _customizeOpenAI,
-  supportsStrictToolSampling: true,
-);
+ChatCompletionsCodec _openAICodec(StrictToolSamplingProfile profile) =>
+    ChatCompletionsCodec(
+      errorLabel: 'OpenAI',
+      customize: _customizeOpenAI,
+      supportsStrictToolSampling: true,
+      strictToolSamplingProfile: profile,
+    );
 
 ({String model, Map<String, dynamic> extraBody}) _customizeOpenAI(
   String modelName,
@@ -531,12 +546,15 @@ Map<String, dynamic>? _openRouterReasoningBody(OpenRouterOptions options) {
   };
 }
 
-ChatCompletionsCodec _openAICompatReasoningCodec(bool officialOpenAI) =>
-    ChatCompletionsCodec(
-      errorLabel: 'OpenAI-compatible',
-      customize: _customizeOpenAICompatReasoning,
-      supportsStrictToolSampling: officialOpenAI,
-    );
+ChatCompletionsCodec _openAICompatReasoningCodec(
+  bool officialOpenAI,
+  StrictToolSamplingProfile? profile,
+) => ChatCompletionsCodec(
+  errorLabel: 'OpenAI-compatible',
+  customize: _customizeOpenAICompatReasoning,
+  supportsStrictToolSampling: officialOpenAI || profile != null,
+  strictToolSamplingProfile: profile,
+);
 
 final _toolSamplingLogger = Logger('tool_sampling');
 

@@ -118,6 +118,55 @@ void main() {
       },
     );
 
+    test(
+      'exact xAI model profile uses implicit strict tool sampling',
+      () async {
+        final client = _FakeHttpClient();
+        final xaiFactory = ProviderFactory(
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+          httpClient: client,
+        );
+        final config = makeConfig(
+          type: .openai,
+          modelId: 'grok-4.7',
+          providerUrl: 'https://api.x.ai/v1',
+        );
+        final ai = await xaiFactory.createGenkit(config);
+        const schema = <String, Object?>{
+          'type': 'object',
+          'properties': {
+            'query': {'type': 'string'},
+          },
+          'required': ['query'],
+          'additionalProperties': false,
+        };
+        final tool = ai.defineTool<Map<String, Object?>, Object?>(
+          name: 'search',
+          description: 'Search.',
+          inputSchema: SchemanticType.from<Map<String, Object?>>(
+            jsonSchema: schema,
+            parse: (value) => value as Map<String, Object?>,
+          ),
+          fn: (_, _) async => const ToolResponseResult<Object?>(null),
+        );
+
+        final response = await ai.generate<Object?, Object?>(
+          model: xaiFactory.getModelReference(config),
+          prompt: 'Hi',
+          tools: [tool],
+          returnToolRequests: true,
+        );
+
+        expect(response.text, 'ok.');
+        final tools = client.body?['tools'] as List<dynamic>?;
+        final function =
+            (tools?.single as Map<String, dynamic>?)?['function']
+                as Map<String, dynamic>?;
+        expect(function?.containsKey('strict'), isFalse);
+        expect(function?['parameters'], schema);
+      },
+    );
+
     test('creates Genkit for Codex OAuth without model discovery', () async {
       final oauthFactory = ProviderFactory(
         serviceConnectionRepository: const _FakeServiceConnectionRepository(),

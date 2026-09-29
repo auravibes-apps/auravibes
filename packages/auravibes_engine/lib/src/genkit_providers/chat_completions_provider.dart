@@ -7,6 +7,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:auravibes_engine/src/model_capabilities.dart';
+import 'package:auravibes_engine/src/strict_tool_sampling_profile.dart';
 import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:genkit/plugin.dart';
 import 'package:openai_dart/openai_dart.dart' as sdk;
@@ -161,6 +162,7 @@ class const ChatCompletionsCodec({
 
   /// Whether this provider accepts OpenAI-compatible strict tool definitions.
   final bool supportsStrictToolSampling = false,
+  final StrictToolSamplingProfile? strictToolSamplingProfile,
 }) {
   Future<ModelResponse> complete(
     ProviderTransport transport,
@@ -282,8 +284,10 @@ class const ChatCompletionsCodec({
   }) => _evaluateTools(
     tools,
     policy: policy,
-    providerSupportsStrict: supportsStrictToolSampling,
+    providerSupportsStrict:
+        supportsStrictToolSampling || strictToolSamplingProfile != null,
     modelSupportsStrict: modelSupportsStrict,
+    strictToolSamplingProfile: strictToolSamplingProfile,
   );
 
   void _throwIfRawError(int statusCode, String responseBody) {
@@ -501,6 +505,7 @@ ToolSamplingResult _evaluateTools(
   required ToolSamplingPolicy policy,
   required bool providerSupportsStrict,
   required bool modelSupportsStrict,
+  required StrictToolSamplingProfile? strictToolSamplingProfile,
 }) {
   if (tools == null) {
     return const ToolSamplingResult(definitions: null, decisions: []);
@@ -516,7 +521,12 @@ ToolSamplingResult _evaluateTools(
         ? ToolSamplingValidationReason.unsupportedModel
         : null;
     final issue = reason == null
-        ? strictToolSchemaIssue(tool.inputSchema)
+        ? strictToolSchemaIssue(
+            tool.inputSchema,
+            limits:
+                strictToolSamplingProfile?.schemaLimits ??
+                const StrictToolSchemaLimits(),
+          )
         : null;
     final strict = reason == null && issue == null;
     final fallback =
@@ -524,7 +534,15 @@ ToolSamplingResult _evaluateTools(
         (issue == null
             ? null
             : ToolSamplingValidationReason.incompatibleSchema);
-    definitions.add(_toolToJson(tool, strict: strict));
+    definitions.add(
+      _toolToJson(
+        tool,
+        strict: strict,
+        wireMode:
+            strictToolSamplingProfile?.wireMode ??
+            StrictToolSamplingWireMode.explicitStrictFlag,
+      ),
+    );
     decisions.add(
       ToolSamplingDecision(
         policy: policy,
@@ -548,7 +566,12 @@ ToolSamplingResult _evaluateTools(
   return ToolSamplingResult(definitions: definitions, decisions: decisions);
 }
 
-Map<String, dynamic> _toolToJson(ToolDefinition tool, {bool strict = false}) {
+Map<String, dynamic> _toolToJson(
+  ToolDefinition tool, {
+  bool strict = false,
+  StrictToolSamplingWireMode wireMode =
+      StrictToolSamplingWireMode.explicitStrictFlag,
+}) {
   var parameters =
       tool.inputSchema ??
       <String, dynamic>{'type': 'object', 'properties': <String, dynamic>{}};
@@ -561,7 +584,7 @@ Map<String, dynamic> _toolToJson(ToolDefinition tool, {bool strict = false}) {
       'name': tool.name,
       'description': tool.description,
       'parameters': parameters,
-      if (strict) 'strict': true,
+      if (strict && wireMode == .explicitStrictFlag) 'strict': true,
     },
   };
 }

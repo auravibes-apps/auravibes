@@ -199,6 +199,127 @@ void main() {
     },
   );
 
+  test('resolves versioned strict profiles from exact provider tuples', () {
+    for (final modelId in [
+      'gpt-4o',
+      'gpt-4o-2024-08-06',
+      'gpt-4o-mini',
+      'gpt-4o-mini-2024-07-18',
+    ]) {
+      expect(
+        strictToolSamplingProfile(
+          'openai',
+          modelId,
+          'https://api.openai.com/v1',
+        ),
+        isNotNull,
+      );
+    }
+    expect(
+      strictToolSamplingProfile(
+        'openai',
+        'gpt-4o',
+        'https://api.openai.com/v1/',
+      ),
+      isNotNull,
+    );
+
+    final xai = strictToolSamplingProfile(
+      'openai',
+      'grok-4.7',
+      'https://api.x.ai/v1',
+    );
+    expect(xai, isNotNull);
+    expect(xai!.id, 'xai-grok-4.7-chat-completions-strict');
+    expect(xai.version, 1);
+    expect(xai.exactMatch, (
+      providerId: 'openai',
+      modelId: 'grok-4.7',
+      baseUrl: 'https://api.x.ai/v1',
+    ));
+    expect(xai.wireMode, StrictToolSamplingWireMode.implicitStrict);
+    expect(xai.schemaLimits.maxPropertiesConstraint, 64);
+    expect(xai.schemaLimits.maxStringLength, 2048);
+    expect(xai.schemaLimits.maxArrayItems, 256);
+    expect(xai.evidenceUrl, contains('docs.x.ai'));
+    expect(xai.verificationDate, '2026-09-29');
+
+    expect(verifiedStrictToolSampling('openai', 'gpt-4o'), isTrue);
+    expect(verifiedStrictToolSampling('openai', 'grok-4.7'), isFalse);
+    for (final testCase in [
+      (
+        providerId: 'openai',
+        modelId: 'grok-4.7',
+        baseUrl: 'https://api.proxy.example/v1',
+      ),
+      (
+        providerId: 'openai',
+        modelId: 'grok-4.8',
+        baseUrl: 'https://api.x.ai/v1',
+      ),
+      (providerId: 'openai', modelId: 'gpt-4o', baseUrl: 'https://api.x.ai/v1'),
+      (
+        providerId: 'openai',
+        modelId: 'grok-4.7',
+        baseUrl: 'https://api.openai.com/v1',
+      ),
+      (providerId: 'xai', modelId: 'grok-4.7', baseUrl: 'https://api.x.ai/v1'),
+    ]) {
+      expect(
+        strictToolSamplingProfile(
+          testCase.providerId,
+          testCase.modelId,
+          testCase.baseUrl,
+        ),
+        isNull,
+      );
+    }
+  });
+
+  test('strict profile limits reject constraints outside guarantees', () {
+    final limits = strictToolSamplingProfile(
+      'openai',
+      'grok-4.7',
+      'https://api.x.ai/v1',
+    )!.schemaLimits;
+    for (final schema in [
+      {
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'value': {'type': 'string', 'maxLength': 2049},
+        },
+        'required': ['value'],
+        'additionalProperties': false,
+      },
+      {
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'value': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'maxItems': 257,
+          },
+        },
+        'required': ['value'],
+        'additionalProperties': false,
+      },
+      {
+        'type': 'object',
+        'properties': <String, dynamic>{
+          'value': {'type': 'string'},
+        },
+        'required': ['value'],
+        'additionalProperties': false,
+        'maxProperties': 65,
+      },
+    ]) {
+      expect(
+        strictToolSchemaIssue(schema, limits: limits)?.reason,
+        ToolSchemaIssueReason.providerLimit,
+      );
+    }
+  });
+
   test('rejects malformed structured output capability clearly', () {
     expect(
       () => ModelCapabilities.fromJson('openai', {

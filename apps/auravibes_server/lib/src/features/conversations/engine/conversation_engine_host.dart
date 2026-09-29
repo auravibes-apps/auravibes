@@ -510,6 +510,7 @@ final class const ServerConversationEngineHost({
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
+      strictToolSamplingProfile: config.strictToolSamplingProfile,
       customize: (modelName, _) => (
         model: modelName,
         extraBody: reasoningRequestBody(
@@ -1506,20 +1507,20 @@ final class const ServerConversationEngineHost({
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
-    final providerSupportsStrict =
-        connection.providerId == 'openai' && connection.url == null;
+    final profile = strictToolSamplingProfile(
+      connection.providerId,
+      selection.model.modelId,
+      validated.uri.toString(),
+    );
+    final providerSupportsStrict = profile != null;
     final modelSupportsStrict =
-        providerSupportsStrict &&
-        selection.model.supportsToolCalls &&
-        verifiedStrictToolSampling(
-          connection.providerId,
-          selection.model.modelId,
-        );
+        providerSupportsStrict && selection.model.supportsToolCalls;
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
       providerSupportsStrictToolSampling: providerSupportsStrict,
       modelSupportsStrictToolSampling: modelSupportsStrict,
+      strictToolSamplingProfile: profile,
       toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
           ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
           : modelSupportsStrict
@@ -1826,6 +1827,7 @@ class const _ProviderConfig({
   required final String modelId,
   required final bool providerSupportsStrictToolSampling,
   required final bool modelSupportsStrictToolSampling,
+  required final StrictToolSamplingProfile? strictToolSamplingProfile,
   required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,

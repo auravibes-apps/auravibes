@@ -59,6 +59,7 @@ export 'src/public_url_classifier.dart';
 export 'src/reasoning_configuration.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
+export 'src/strict_tool_sampling_profile.dart';
 export 'src/skills/execution/app_skill_executor.dart';
 export 'src/skills/execution/resolve_skill_url_template.dart';
 export 'src/skills/execution/run_skill_url_template.dart';

@@ -89,6 +89,85 @@ void main() {
     );
   });
 
+  test('cloud xAI tools use the exact implicit strict profile', () {
+    final profile = strictToolSamplingProfile(
+      'openai',
+      'grok-4.7',
+      'https://api.x.ai/v1',
+    );
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'xAI',
+      strictToolSamplingProfile: profile,
+      customize: (model, _) => (model: model, extraBody: {}),
+    );
+    final descriptor = AgentResolvedToolName.skillTemplate(
+      tableId: 'cloud-search',
+      skillSlug: 'fixture',
+      toolIdentifier: 'search',
+    );
+    final tool = ServerResolvedTool(
+      descriptor: descriptor,
+      spec: ToolSpec(
+        name: descriptor.fullName,
+        description: 'Fixture.',
+        inputJsonSchema: const {
+          'type': 'object',
+          'properties': {
+            'query': {'type': 'string'},
+          },
+          'required': ['query'],
+          'additionalProperties': false,
+        },
+      ),
+    );
+
+    final result = evaluateCloudToolSampling(
+      codec,
+      [tool],
+      policy: ToolSamplingPolicy.require,
+      modelSupportsStrict: profile != null,
+    );
+
+    expect(profile?.wireMode, StrictToolSamplingWireMode.implicitStrict);
+    expect(result.decisions.single.outcome, ToolSamplingOutcome.strict);
+    expect(
+      (result.definitions!.single['function'] as Map).containsKey('strict'),
+      isFalse,
+    );
+
+    for (final unavailable in [
+      strictToolSamplingProfile('openai', 'unknown', 'https://api.x.ai/v1'),
+      strictToolSamplingProfile(
+        'openai',
+        'grok-4.7',
+        'https://proxy.example/v1',
+      ),
+    ]) {
+      final ordinaryCodec = ChatCompletionsCodec(
+        errorLabel: 'OpenAI-compatible',
+        strictToolSamplingProfile: unavailable,
+        customize: (model, _) => (model: model, extraBody: {}),
+      );
+      final ordinary = evaluateCloudToolSampling(
+        ordinaryCodec,
+        [tool],
+        policy: ToolSamplingPolicy.prefer,
+        modelSupportsStrict: unavailable != null,
+      );
+      expect(ordinary.decisions.single.outcome, ToolSamplingOutcome.ordinary);
+      expect(
+        ordinary.decisions.single.reason,
+        ToolSamplingValidationReason.unsupportedProvider,
+      );
+      expect(
+        (ordinary.definitions!.single['function'] as Map).containsKey(
+          'strict',
+        ),
+        isFalse,
+      );
+    }
+  });
+
   test('maps OpenAI reasoning config for Chat Completions', () {
     expect(
       reasoningRequestBody(

@@ -296,6 +296,56 @@ void main() {
       }
     });
 
+    test(
+      'xAI profile uses implicit strict wire mode and preflights limits',
+      () {
+        final profile = strictToolSamplingProfile(
+          'openai',
+          'grok-4.7',
+          'https://api.x.ai/v1',
+        )!;
+        final codec = _toolSamplingCodec(
+          providerSupportsStrict: false,
+          profile: profile,
+        );
+        final body = _buildToolBody(
+          codec: codec,
+          modelSupportsStrict: true,
+          policy: ToolSamplingPolicy.require,
+        );
+        final function = _singleFunction(body);
+
+        expect(function.containsKey('strict'), isFalse);
+        expect(function['parameters'], _strictToolSchema);
+        expect(
+          () => _buildToolBody(
+            codec: codec,
+            modelSupportsStrict: true,
+            policy: ToolSamplingPolicy.require,
+            tools: [
+              _toolDefinition(
+                schema: {
+                  'type': 'object',
+                  'properties': {
+                    'value': {'type': 'string', 'maxLength': 2049},
+                  },
+                  'required': ['value'],
+                  'additionalProperties': false,
+                },
+              ),
+            ],
+          ),
+          throwsA(
+            isA<ToolSamplingValidationException>().having(
+              (error) => error.schemaReason,
+              'schemaReason',
+              ToolSchemaIssueReason.providerLimit,
+            ),
+          ),
+        );
+      },
+    );
+
     test('prefer falls back when provider or model lacks support', () {
       for (final testCase in [
         (provider: false, model: true),
@@ -839,9 +889,11 @@ ChatCompletionsCodec _testCodec() => ChatCompletionsCodec(
 
 ChatCompletionsCodec _toolSamplingCodec({
   required bool providerSupportsStrict,
+  StrictToolSamplingProfile? profile,
 }) => ChatCompletionsCodec(
   errorLabel: 'Provider',
   supportsStrictToolSampling: providerSupportsStrict,
+  strictToolSamplingProfile: profile,
   customize: (modelName, config) => (model: modelName, extraBody: {}),
 );
 
