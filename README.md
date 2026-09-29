@@ -1,37 +1,26 @@
 # AuraVibes
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47.0+-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.13.0+-0175C2?style=flat-square&logo=dart)](https://dart.dev)
-[![Melos](https://img.shields.io/badge/Melos-7.3.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47.5-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-%5E3.13.0-0175C2?style=flat-square&logo=dart)](https://dart.dev)
+[![Melos](https://img.shields.io/badge/Melos-%5E8.7.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Web%20%7C%20Linux%20%7C%20Windows-lightgrey)](#)
+![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Web%20%7C%20Linux%20%7C%20Windows-lightgrey)
 
-> A powerful AI-powered Flutter application with multi-agent support, featuring intelligent conversations, workspace management, and seamless cross-platform experience.
+> An AI-powered Flutter app for conversations, agents, and workspace management across mobile, desktop, and Web targets.
 
-[Demo Video](#) • [Architecture Guide](docs/monorepo-architecture-guide.md) • [Design System](packages/auravibes_ui/README.md)
-
-## 📸 Screenshots
-
-<div align="center">
-  <img src="assets/screenshots/home.png" width="250" alt="Home Screen">
-  <img src="assets/screenshots/chat.png" width="250" alt="Chat Screen">
-  <img src="assets/screenshots/agents.png" width="250" alt="Agents Screen">
-  <img src="assets/screenshots/settings.png" width="250" alt="Settings Screen">
-</div>
-
-_TODO: Add actual screenshots showing key app features_
+[Architecture docs](doc/architecture/README.md) • [Design System](packages/auravibes_ui/README.md)
 
 ## ✨ Features
 
-- 🤖 **Multi-Agent System**: Intelligent AI agents powered by Anthropic, OpenAI, and more
-- 💬 **Rich Conversations**: Threaded chat with history and context preservation
-- 📁 **Workspace Management**: Organize chats and agents into workspaces
-- 🛠️ **MCPs**: Extend capabilities with http/sse MCPs
-- 🌍 **Cross-Platform**: Native apps for iOS, Android, macOS, Windows, Linux, and Web
-- 🌐 **Multi-Language**: Support for English and Spanish with easy localization
-- 🔒 **Secure Storage**: Secure local storage for API keys and sensitive data
+- 🤖 **AI agents and model providers**: Configure model providers and run agents
+- 💬 **Conversations**: Keep chat history and conversation context
+- 📁 **Workspaces**: Organize chats and agents into workspaces
+- 🛠️ **MCP connections**: Connect workspace tools over Streamable HTTP or SSE
+- 🌍 **Platform targets**: Android, iOS, macOS, Web, Windows, and Linux
+- 🌐 **English and Spanish**: Switch between the supported interface locales
 
-_TODO: Verify feature list is current and accurate_
+Chat attachments are unavailable on Web. Support is tracked in
+[issue #1063](https://github.com/auravibes-apps/auravibes/issues/1063).
 
 ## 🚀 Getting Started
 
@@ -41,21 +30,13 @@ Before you begin, ensure you have the following installed:
 
 #### Required Software
 
-- **Flutter SDK**: 3.47.0 or higher (managed via FVM)
-  - Download from [flutter.dev](https://flutter.dev/docs/get-started/install)
+- **Flutter SDK**: 3.47.5, pinned in `.fvmrc`
+  - Download from [Flutter](https://docs.flutter.dev/install)
   - Install [FVM](https://fvm.app) first: `dart pub global activate fvm`
 
-- **Dart SDK**: 3.13.0 or higher (included with Flutter)
+- **Dart SDK**: `^3.13.0` (included with the pinned Flutter SDK)
 - **FVM (Flutter Version Management)**: 4.0.5 or higher
-
-  ```bash
-  dart pub global activate fvm
-  ```
-
-- **Melos**: 7.3.0 or higher (for monorepo management)
-  ```bash
-  dart pub global activate melos
-  ```
+- **Melos**: `^8.7.0`, provided by the root `pubspec.yaml`; run it through FVM
   <details>
 
 <summary>Platform-Specific Requirements</summary>
@@ -78,12 +59,12 @@ Before you begin, ensure you have the following installed:
 **Linux Development**
 
 - GTK 3.0 development libraries
-- See [Linux setup guide](https://flutter.dev/docs/desktop#additional-linux-requirements)
+- See the [Linux setup guide](https://docs.flutter.dev/platform-integration/linux/setup)
 
 **Windows Development**
 
 - Visual Studio 2022 with C++ desktop development
-- See [Windows setup guide](https://flutter.dev/docs/desktop#additional-windows-requirements)
+- See the [Windows setup guide](https://docs.flutter.dev/platform-integration/windows/setup)
 
 **Web Development**
 
@@ -105,28 +86,39 @@ cd auravibes
 #### 2. Install Flutter Version via FVM
 
 ```bash
-# Install and use this version for the project
+# Select the Flutter SDK pinned in .fvmrc
 fvm use
 
 # Verify installation
 fvm flutter --version
 ```
 
+FVM selects the SDK pinned in `.fvmrc`, updates the local SDK link and VS Code
+setting, and runs `flutter pub get` by default when the SDK changes. This
+repository enables Pub resolution on SDK changes; pass `--skip-pub-get` to
+skip it.
+
 #### 3. Bootstrap the Workspace
 
-This installs all dependencies across all packages in the monorepo:
+Run the repository's Melos workspace bootstrap with the pinned SDK:
 
 ```bash
-# Install dependencies and link packages
-melos bootstrap
+fvm dart run melos bootstrap
 ```
+
+The root Pub workspace declares its member packages. Melos bootstrap resolves
+the workspace and generates ignored IntelliJ module files for its six
+packages. CI's setup action runs Melos bootstrap before its integrity check
+looks for dependency artifact drift. Keep the step in the fresh-checkout
+sequence even though Pub handles workspace package resolution; a clean setup
+should leave no tracked or untracked dependency changes.
 
 #### 4. Run Code Generation
 
 Generate required code for Riverpod, Freezed, and JSON serialization:
 
 ```bash
-melos run generate
+fvm dart run melos run generate
 ```
 
 ### Running the App
@@ -181,7 +173,7 @@ fvm flutter run -d linux --flavor prod
 ### Key Technologies
 
 - **State Management**: [Riverpod](https://riverpod.dev) with code generation
-- **Navigation**: [GoRouter](https://gorouter.dev) for declarative routing
+- **Navigation**: [go_router](https://pub.dev/packages/go_router) for declarative routing
 - **Database**: [Drift](https://drift.simonbinder.eu) for local SQLite database
 - **Networking**: [Dio](https://pub.dev/packages/dio) for HTTP requests
 - **Localization**: [Easy Localization](https://pub.dev/packages/easy_localization)
