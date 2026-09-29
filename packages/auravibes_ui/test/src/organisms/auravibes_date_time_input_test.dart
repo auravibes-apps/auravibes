@@ -8,6 +8,36 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraDateTimeInput', () {
+    testWidgets('opening and closing the picker does not restore field focus', (
+      tester,
+    ) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                TextField(focusNode: focusNode),
+                AuraDateTimeInput(value: .new(2024, 1, 15)),
+              ],
+            ),
+          ),
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byType(AuraDateTimeInput));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+    });
+
     testWidgets('propagates a date-only selection', (tester) async {
       DateTime? changedValue;
       final initialValue = DateTime(2024, 1, 15);

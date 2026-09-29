@@ -585,6 +585,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   fake_async:
     dependency: transitive
     description:
@@ -991,6 +999,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  haptic_feedback:
+    dependency: transitive
+    description:
+      name: haptic_feedback
+      sha256: "36e82acb24dba60c85f046ef4ddc1df1ef4fdc190d8f6fd907a030c896de3ebb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.8.0"
   hex:
     dependency: transitive
     description:
@@ -1391,6 +1407,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  motor:
+    dependency: transitive
+    description:
+      name: motor
+      sha256: cbd49f21b00e568c2b1a55f134ed803614a107782f4fea7769693bca32940c58
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   mustache_template:
     dependency: transitive
     description:
@@ -1863,6 +1887,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.3"
+  scroll_drag_detector:
+    dependency: transitive
+    description:
+      name: scroll_drag_detector
+      sha256: "461eeb53e2a82cbaf91e60679410397cc581d0f066cf2768c68111165de4d62e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0-dev.0"
   serverpod:
     dependency: transitive
     description:
@@ -2220,6 +2252,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  stupid_simple_sheet:
+    dependency: transitive
+    description:
+      name: stupid_simple_sheet
+      sha256: "13ebc967c9a9fd2f60c675f9dafe4e0cfedb1d1dfd50256d408903a01bfb87ad"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0-dev.4"
   sync_http:
     dependency: transitive
     description:
@@ -2622,4 +2662,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.13.0 <4.0.0"
-  flutter: ">=3.44.0 <4.0.0"
+  flutter: ">=3.47.0 <4.0.0"

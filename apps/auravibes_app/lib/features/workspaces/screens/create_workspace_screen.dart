@@ -2,6 +2,7 @@ import 'package:auravibes_app/features/workspaces/screens/create_workspace_form.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:go_router/go_router.dart';
@@ -29,18 +30,20 @@ class CreateWorkspaceScreen extends StatelessWidget {
 class const _CreateWorkspaceContent({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        CreateWorkspaceForm(
-          onCreated: (workspace) =>
-              context.go(NewChatRoute(workspaceId: workspace.id).location),
-          onAddCloudAccount: () => _addCloudAccount(context),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(16)
+        .copyWith(bottom: BottomPadding.of(context)),
+    children: [
+      CreateWorkspaceForm(
+        onCreated: (workspace) => _openWorkspace(context, workspace.id),
+        onAddCloudAccount: () => _addCloudAccount(context),
+      ),
+    ],
+    keyboardDismissBehavior: .onDrag,
+  );
+
+  void _openWorkspace(BuildContext context, String workspaceId) =>
+      context.go(NewChatRoute(workspaceId: workspaceId).location);
 
   void _addCloudAccount(BuildContext context) {
     context.go(

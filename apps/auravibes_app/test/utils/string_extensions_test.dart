@@ -2,6 +2,22 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('orPlaceholder', () {
+    test('replaces missing and unusable values', () {
+      const String? missing = null;
+
+      expect(missing.orPlaceholder(), '-');
+      expect(''.orPlaceholder(), '-');
+      expect('  '.orPlaceholder(), '-');
+      expect('nUlL'.orPlaceholder(), '-');
+    });
+
+    test('trims valid values and accepts a custom placeholder', () {
+      expect('  David  '.orPlaceholder(), 'David');
+      expect(' null '.orPlaceholder('Unknown'), 'Unknown');
+    });
+  });
+
   group('toHumanReadable', () {
     test('converts snake_case to human readable', () {
       expect('read_file'.toHumanReadable(), 'Read File');

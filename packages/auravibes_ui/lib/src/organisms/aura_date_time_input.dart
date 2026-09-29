@@ -193,13 +193,16 @@ extension on AuraDateTimeInput {
     return InheritedTheme.capture(from: context, to: navigator.context);
   }
 
-  Future<DateTime?> _openPickerDialog(_PickerDialogRequest request) =>
-      showGeneralDialog<DateTime>(
-        context: request.parentContext,
-        pageBuilder: (_, _, _) => _AuraDateTimePickerPage(request: request),
-        barrierColor: request.parentContext.auraColors.scrim,
-        useRootNavigator: false,
-      );
+  Future<DateTime?> _openPickerDialog(_PickerDialogRequest request) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    return showGeneralDialog<DateTime>(
+      context: request.parentContext,
+      pageBuilder: (_, _, _) => _AuraDateTimePickerPage(request: request),
+      barrierColor: request.parentContext.auraColors.scrim,
+      useRootNavigator: false,
+    );
+  }
 }
 
 extension on AuraDateTimeInput {

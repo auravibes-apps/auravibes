@@ -1125,6 +1125,8 @@ Future<void> _showSelectorSheet({
   required Widget title,
   required Widget child,
 }) {
+  FocusManager.instance.primaryFocus?.unfocus();
+
   return showModalBottomSheet<void>(
     context: context,
     builder: (context) => _SelectorSheet(title: title, child: child),
@@ -1773,6 +1775,7 @@ class const _ModelSelectorButton({required final _ChatInputState state})
           title: const TextLocale(LocaleKeys.models_screens_select_model),
           child: state.input.modelSheetControl,
         ),
+        behavior: .opaque,
       ),
     );
   }
@@ -1977,6 +1980,9 @@ class const _RecordingIndicatorRow({required final Duration elapsed})
         Expanded(
           child: Text(
             '${_recordingStatusKey.tr()} ${_formatElapsed(elapsed)} / ${_formatElapsed(_maxVoiceRecordingDuration)}',
+            style: const TextStyle(
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
             overflow: .ellipsis,
           ),
         ),

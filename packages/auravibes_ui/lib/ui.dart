@@ -11,6 +11,7 @@ export 'package:gpt_markdown/gpt_markdown.dart' show GptMarkdown;
 
 // Export atomic design components.
 export 'src/atoms/atoms.dart';
+export 'src/aura_haptics.dart';
 export 'src/molecules/molecules.dart';
 export 'src/organisms/organisms.dart';
 // Export design tokens.

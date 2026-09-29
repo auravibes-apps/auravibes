@@ -1,6 +1,9 @@
+import 'dart:async' show unawaited;
+
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
+import 'package:auravibes_ui/src/aura_haptics.dart';
 import 'package:auravibes_ui/src/molecules/aura_checkbox.dart';
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -257,6 +260,7 @@ class const _AuraChoicePickerOption<T>({
     final nextValues = _nextChoiceValues();
     if (nextValues == null) return;
 
+    unawaited(AuraHaptics.selection());
     onChanged?.call(nextValues);
   }
 

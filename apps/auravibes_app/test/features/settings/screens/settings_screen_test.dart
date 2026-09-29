@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
+import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -56,6 +57,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
+      expect(find.byType(AppVersionIndicator), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('app_drawer_menu')),

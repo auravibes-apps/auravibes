@@ -28,6 +28,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition, AppSkillToolDefinition;
@@ -415,6 +416,8 @@ extension on _SkillDetailScreenState {
   }
 
   Future<bool?> _showDeleteConfirmation(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<bool>(
       context: context,
       builder: (_) => _SkillDeleteDialog(),
@@ -710,10 +713,14 @@ class const _SkillDetailForm({
   required final _SkillDetailScreenState state,
   required final SkillDetail? detail,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
         AuraCard(
           child: _SkillDetailFormFields(state: state, detail: detail),
@@ -723,6 +730,7 @@ class const _SkillDetailForm({
           detail: detail,
         ),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -798,7 +806,12 @@ class _SkillIdentityFields {
            label: Text(
              LocaleKeys.skills_screen_title_label.tr(context: context),
            ),
+           textInputAction: detail == null || detail.isUserSkill ? .done : null,
            enabled: detail == null || detail.isUserSkill,
+           onSubmitted:
+               (detail == null || detail.isUserSkill) && !state._isSaving
+               ? (_) => state._save(context)
+               : null,
          ),
        ];
 
@@ -1375,12 +1388,22 @@ class _SkillToolsCardActions {
   }
 
   Future<void> _delete(SkillTemplateToolEntity tool) async {
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete = await _confirmDelete();
+    if (shouldDelete != true) return;
+
+    await _deleteTool(tool);
+  }
+
+  Future<bool?> _confirmDelete() {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    return showDialog<bool>(
       context: context,
       builder: (_) => const _SkillToolDeleteDialog(),
     );
-    if (shouldDelete != true) return;
+  }
 
+  Future<void> _deleteTool(SkillTemplateToolEntity tool) async {
     await ref.read(deleteSkillTemplateToolProvider(workspaceId))(tool.id);
     ref.invalidate(skillTemplateToolsProvider(workspaceId, skillId));
   }

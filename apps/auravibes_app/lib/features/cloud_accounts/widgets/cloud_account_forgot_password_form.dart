@@ -1,5 +1,7 @@
 // ignore_for_file: type=lint
 
+import 'dart:async' show unawaited;
+
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_login_form.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -61,6 +63,7 @@ class _CloudAccountForgotPasswordFormState
             controller: _code,
             label: Text(LocaleKeys.workspace_management_cloud_code.tr()),
             placeholder: Text(LocaleKeys.workspace_management_cloud_code.tr()),
+            textInputAction: .next,
             enabled: !_isSubmitting,
           ),
           AuraInput(
@@ -69,6 +72,8 @@ class _CloudAccountForgotPasswordFormState
             placeholder: Text(LocaleKeys.cloud_accounts_new_password.tr()),
             hint: const TextLocale(LocaleKeys.cloud_accounts_password_hint),
             obscureText: true,
+            textInputAction: .done,
+            onSubmitted: (_) => _submit(),
             enabled: !_isSubmitting,
           ),
         ] else ...[
@@ -79,6 +84,9 @@ class _CloudAccountForgotPasswordFormState
             controller: _email,
             label: Text(LocaleKeys.workspace_management_cloud_email.tr()),
             placeholder: Text(LocaleKeys.workspace_management_cloud_email.tr()),
+            autofocus: true,
+            textInputAction: .done,
+            onSubmitted: (_) => _submit(),
             enabled: !_isSubmitting,
           ),
         ],
@@ -150,9 +158,11 @@ class _CloudAccountForgotPasswordFormState
         newPassword: _password.text,
       );
       if (!mounted) return;
+      unawaited(AuraHaptics.success());
       widget.onFinished();
     } on Object catch (error) {
       if (!mounted) return;
+      unawaited(AuraHaptics.error());
       setState(() => _errorKey = _passwordResetErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

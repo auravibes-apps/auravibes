@@ -160,13 +160,18 @@ void main() {
     await tester.tap(find.text('Add attribute'));
     final _ = await tester.pumpAndSettle();
     await tester.enterText(_editableInputAt(3), 'user_id');
-    await tester.enterText(_editableInputAt(4), 'User id');
     await tester.ensureVisible(find.text('Optional').last);
     await tester.tap(find.byType(AuraSwitch).at(2));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.byType(AuraSwitch).at(3));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    final inputActions = tester
+        .widgetList<AuraInput>(find.byType(AuraInput))
+        .map((input) => input.textInputAction)
+        .toList();
+    expect(inputActions, <TextInputAction>[.next, .next, .next, .next, .done]);
+    await tester.enterText(_editableInputAt(4), 'User id');
+    await tester.testTextInput.receiveAction(.done);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Open editor'), findsOneWidget);

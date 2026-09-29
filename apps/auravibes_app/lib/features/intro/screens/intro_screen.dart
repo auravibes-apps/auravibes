@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_repository
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
@@ -121,6 +122,7 @@ class const _IntroContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
+    bottom: false,
     child: _IntroContentContainer(
       slide: slide,
       titleKey: titleKey,
@@ -160,6 +162,8 @@ class const _IntroContentLayout({required final _IntroContentContainer content})
 }
 
 class _IntroContentList extends StatelessWidget {
+  static const _contentPadding = 24.0;
+
   new({required _IntroContentContainer content})
     : _children = [
         _ProgressIndicator(activeSlide: content.slide),
@@ -182,8 +186,11 @@ class _IntroContentList extends StatelessWidget {
   final List<Widget> _children;
 
   @override
-  Widget build(BuildContext context) =>
-      ListView(padding: const EdgeInsets.all(24), children: _children);
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(_contentPadding)
+        .copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
+    children: _children,
+  );
 }
 
 enum _IntroSlide {

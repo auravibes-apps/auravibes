@@ -114,6 +114,7 @@ class _AuraModalState extends State<AuraModal> {
       return;
     }
 
+    FocusManager.instance.primaryFocus?.unfocus();
     _isShowing = true;
     try {
       await _showAuraModal(context, widget);

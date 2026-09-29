@@ -270,8 +270,11 @@ Future<void> _showAlertDialog(_AuraAlertRequest request) =>
 Future<T?> _showAuraDialog<T>(_AuraDialogRequest request) =>
     _showGeneralDialog(request);
 
-Future<T?> _showGeneralDialog<T>(_AuraDialogRequest request) =>
-    _AuraGeneralDialogData<T>(request).future;
+Future<T?> _showGeneralDialog<T>(_AuraDialogRequest request) {
+  FocusManager.instance.primaryFocus?.unfocus();
+
+  return _AuraGeneralDialogData<T>(request).future;
+}
 
 class _AuraGeneralDialogData<T> {
   new(_AuraDialogRequest request)

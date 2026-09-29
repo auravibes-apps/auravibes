@@ -122,6 +122,7 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
       bool initiallyOpen = false,
+      TargetPlatform? platform,
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) {
@@ -138,7 +139,7 @@ void main() {
                   controller: controller,
                   initiallyOpen: initiallyOpen,
                 ),
-                theme: .new(),
+                theme: .new(platform: platform),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -160,6 +161,7 @@ void main() {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
       bool initiallyOpen = false,
+      TargetPlatform? platform,
       Widget drawer = const Text('Drawer'),
       Widget body = const Text('Body'),
     }) async {
@@ -169,6 +171,7 @@ void main() {
             controller: controller,
             isDarkMode: isDarkMode,
             initiallyOpen: initiallyOpen,
+            platform: platform,
             drawer: drawer,
             body: body,
           ),
@@ -383,6 +386,92 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
+    });
+
+    testWidgets('mobile drawer opens from blank body space', (tester) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        initiallyOpen: true,
+        platform: .iOS,
+        body: const SizedBox.expand(
+          child: Align(alignment: .topLeft, child: Text('Body')),
+        ),
+      );
+
+      final bodyGestureFinder = find.ancestor(
+        of: find.text('Body'),
+        matching: find.byType(GestureDetector),
+      );
+      final bodyGesture = tester.widget<GestureDetector>(
+        bodyGestureFinder.first,
+      );
+      expect(bodyGesture.behavior, HitTestBehavior.opaque);
+
+      final bodyRect = tester.getRect(bodyGestureFinder.first);
+      final gesture = await tester.startGesture(
+        .new(bodyRect.center.dx, bodyRect.bottom - 16),
+      );
+      await gesture.moveBy(const Offset(150, 0));
+      await gesture.up();
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Body')).dx, greaterThan(0));
+    });
+
+    testWidgets('mobile drawer closes from blank panel space', (tester) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        platform: .iOS,
+        drawer: const SizedBox.expand(
+          child: Align(alignment: .topLeft, child: Text('Drawer')),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(300, 700));
+      await gesture.moveBy(const Offset(-240, 0));
+      await gesture.up();
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
+    });
+
+    testWidgets('desktop drawer closes from blank panel space', (tester) async {
+      final controller = ResponsiveSlidingDrawerController();
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        drawer: const SizedBox.expand(
+          child: Align(alignment: .topLeft, child: Text('Drawer')),
+        ),
+      );
+
+      final gesture = await tester.startGesture(const Offset(220, 500));
+      await gesture.moveBy(const Offset(-180, 0));
+      await gesture.up();
+      final _ = await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
     });
 
     testWidgets('divider hover changes state on desktop', (tester) async {
