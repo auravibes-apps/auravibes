@@ -200,22 +200,14 @@ List<_Token> _tokenize(String source) {
         isLiteral: !hasInterpolation,
         followsString: previousWasString,
       ));
+      const boundary = (
+        value: ';',
+        isString: false,
+        isLiteral: false,
+        followsString: false,
+      );
       for (final expression in interpolations) {
-        tokens.addAll([
-          (
-            value: ';',
-            isString: false,
-            isLiteral: false,
-            followsString: false,
-          ),
-          ...expression,
-          (
-            value: ';',
-            isString: false,
-            isLiteral: false,
-            followsString: false,
-          ),
-        ]);
+        tokens.addAll([boundary, ...expression, boundary]);
       }
       previousWasString = true;
       index += delimiter.length;
