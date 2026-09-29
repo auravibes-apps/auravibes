@@ -41,7 +41,7 @@ fvm dart pub run easy_localization:generate \
   --skip-unnecessary-keys && fvm dart format lib/i18n/locale_keys.dart
 
 # Audit missing keys in code vs translations
-fvm dart pub run easy_localization:audit -t assets/i18n -s lib
+fvm dart run tool/localization_audit.dart
 ```
 
 ## File Structure
@@ -582,7 +582,7 @@ EasyLocalization(
 Find keys used in Dart code but missing from translation files:
 
 ```bash
-fvm dart pub run easy_localization:audit -t assets/i18n -s lib
+fvm dart run tool/localization_audit.dart
 ```
 
 Output shows which keys are referenced in code but not found in JSON files.
@@ -648,7 +648,7 @@ Without this, iOS may not recognize supported languages.
 3. **Use keys** via `LocaleKeys.*` in widgets and logic.
 4. **Render text** with `TextLocale(LocaleKeys.your_key)` or `.tr()` directly.
 5. **Test** unit logic with `LocaleKeys` constants; widget tests with `testableApp`.
-6. **Audit** periodically: `fvm dart pub run easy_localization:audit`
+6. **Audit** periodically: `fvm dart run tool/localization_audit.dart`
 
 ## Common Pitfalls
 
