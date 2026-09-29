@@ -45,7 +45,7 @@ abstract final class RelativeTimeFormatter {
     String key,
     int count,
     Locale locale,
-  ) => translate(key, args: [formatCount(count, locale)]);
+  ) => translate(key, args: [NumberFormatter.count(count, locale)]);
 
   static String _defaultTranslate(String key, {List<String>? args}) =>
       key.tr(args: args ?? const []);

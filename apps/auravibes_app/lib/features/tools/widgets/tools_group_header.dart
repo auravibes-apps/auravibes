@@ -225,11 +225,11 @@ class const _GroupToolCount({required final ToolsGroupWithTools groupWithTools})
     child: Text(
       LocaleKeys.tools_screen_tools_count.tr(
         namedArgs: {
-          'enabled': formatCount(
+          'enabled': NumberFormatter.count(
             groupWithTools.enabledToolsCount,
             Localizations.localeOf(context),
           ),
-          'total': formatCount(
+          'total': NumberFormatter.count(
             groupWithTools.totalToolsCount,
             Localizations.localeOf(context),
           ),

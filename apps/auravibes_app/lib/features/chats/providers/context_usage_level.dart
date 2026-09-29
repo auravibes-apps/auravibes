@@ -104,17 +104,19 @@ class const ContextUsageData({
   }
 
   String percentLabelFor(Locale locale) =>
-      hasLimit ? '${formatCount(percent, locale)}%' : '--';
+      hasLimit ? '${NumberFormatter.count(percent, locale)}%' : '--';
 
-  String percentValueFor(Locale locale) => formatCount(percent, locale);
+  String percentValueFor(Locale locale) =>
+      NumberFormatter.count(percent, locale);
 
   Map<String, String> tooltipArgsFor(Locale locale) => {
-    'used': formatCount(usedTokens, locale),
-    'limit': formatCount(normalizedLimit, locale),
-    'percent': formatCount(percent, locale),
+    'used': NumberFormatter.count(usedTokens, locale),
+    'limit': NumberFormatter.count(normalizedLimit, locale),
+    'percent': NumberFormatter.count(percent, locale),
   };
 
-  String overflowCountFor(Locale locale) => formatCount(overflowTokens, locale);
+  String overflowCountFor(Locale locale) =>
+      NumberFormatter.count(overflowTokens, locale);
 }
 
 int _normalizeLimit(int? limitTokens) {

@@ -42,7 +42,7 @@ class _SubjectState extends State<_Subject> {
   );
 
   Future<void> _openSheet(BuildContext context) async {
-    final result = await showSpringBottomSheet<String>(
+    final result = await SpringBottomSheet.show<String>(
       context: context,
       builder: (context) => const _Sheet(),
     );

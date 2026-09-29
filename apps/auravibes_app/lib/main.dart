@@ -613,21 +613,15 @@ ThemeData _baseThemeInputStyle(ThemeData theme, AuraColorScheme colors) {
   );
 }
 
-class const _NoPageTransitionsBuilder() extends PageTransitionsBuilder {
-  @override
-  Duration get transitionDuration => Duration.zero;
+class const _NoPageTransitionsBuilder()
+    extends FadeUpwardsPageTransitionsBuilder {
+  static Duration noTransitionDuration() => Duration.zero;
 
   @override
-  Duration get reverseTransitionDuration => Duration.zero;
+  Duration get transitionDuration => noTransitionDuration();
 
   @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) => child;
+  Duration get reverseTransitionDuration => noTransitionDuration();
 }
 
 ThemeData _buildBaseThemeDetails(ThemeData theme, _AuraThemeParts parts) =>

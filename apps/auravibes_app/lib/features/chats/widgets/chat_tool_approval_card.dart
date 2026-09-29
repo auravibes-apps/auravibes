@@ -922,8 +922,8 @@ class const _NavigationCount({
 String _navigationCountText(int currentIndex, int totalCount, Locale locale) =>
     LocaleKeys.tool_approval_pending_count.tr(
       args: [
-        formatCount(currentIndex + 1, locale),
-        formatCount(totalCount, locale),
+        NumberFormatter.count(currentIndex + 1, locale),
+        NumberFormatter.count(totalCount, locale),
       ],
     );
 

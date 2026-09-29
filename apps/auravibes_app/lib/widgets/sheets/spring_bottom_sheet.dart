@@ -2,11 +2,13 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/physics.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// Shows a modal sheet anchored to the bottom edge of the screen.
-Future<T?> showSpringBottomSheet<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-}) => Navigator.of(context).push(_SpringBottomSheet<T>(builder: builder));
+abstract final class SpringBottomSheet {
+  /// Shows a modal sheet anchored to the bottom edge of the screen.
+  static Future<T?> show<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+  }) => Navigator.of(context).push(_SpringBottomSheet<T>(builder: builder));
+}
 
 class _SpringBottomSheet<T>({required final WidgetBuilder builder})
     extends PopupRoute<T> {
@@ -108,7 +110,9 @@ class _ClampedAnimation(@override final Animation<double> parent)
     extends Animation<double>
     with AnimationWithParentMixin<double> {
   @override
-  double get value => parent.value.clamp(0, 1);
+  double get value => clampedValue();
+
+  double clampedValue() => parent.value.clamp(0, 1);
 }
 
 extension _SpringBottomSheetDrag<T> on _SpringBottomSheet<T> {

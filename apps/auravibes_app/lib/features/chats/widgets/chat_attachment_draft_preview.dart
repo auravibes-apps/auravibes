@@ -220,14 +220,15 @@ String _attachmentMetadata(
 
 String _formatAttachmentSize(int sizeBytes, Locale locale) {
   const bytesPerUnit = 1024;
-  if (sizeBytes < bytesPerUnit) return '${formatCount(sizeBytes, locale)} B';
+  if (sizeBytes < bytesPerUnit)
+    return '${NumberFormatter.count(sizeBytes, locale)} B';
 
   final kilobytes = sizeBytes / bytesPerUnit;
   if (kilobytes < bytesPerUnit) {
-    return '${formatDecimal(kilobytes, locale, 1)} KB';
+    return '${NumberFormatter.decimal(kilobytes, locale, 1)} KB';
   }
 
-  return '${formatDecimal(kilobytes / bytesPerUnit, locale, 1)} MB';
+  return '${NumberFormatter.decimal(kilobytes / bytesPerUnit, locale, 1)} MB';
 }
 
 IconData _attachmentIcon(MessageAttachmentModality modality) {

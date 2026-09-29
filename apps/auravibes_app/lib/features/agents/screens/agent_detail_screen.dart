@@ -1105,7 +1105,7 @@ class _PromptCardHeader extends StatelessWidget {
           AuraText(
             child: TextLocale(
               LocaleKeys.agents_required_fields_status,
-              args: [formatCount(completedRequiredFields, locale)],
+              args: [NumberFormatter.count(completedRequiredFields, locale)],
             ),
             style: .bodySmall,
             tint: completedRequiredFields == _AgentRequiredField.values.length
@@ -1377,11 +1377,11 @@ class const _SkillsSummaryText({
       child: Text(
         LocaleKeys.agents_skills_summary.tr(
           namedArgs: {
-            'selected': formatCount(
+            'selected': NumberFormatter.count(
               selectedCount,
               Localizations.localeOf(context),
             ),
-            'available': formatCount(
+            'available': NumberFormatter.count(
               availableCount,
               Localizations.localeOf(context),
             ),
@@ -1404,11 +1404,11 @@ class const _SkillsWarning({
     return _WarningTile(
       label: LocaleKeys.agents_skills_warning_summary.tr(
         namedArgs: {
-          'disabled': formatCount(
+          'disabled': NumberFormatter.count(
             disabledSelectedCount,
             Localizations.localeOf(context),
           ),
-          'unavailable': formatCount(
+          'unavailable': NumberFormatter.count(
             unavailableCount,
             Localizations.localeOf(context),
           ),
@@ -1475,7 +1475,7 @@ class const _ToolPermissionsSummaryText({required final int overrideCount})
           )
         : LocaleKeys.agents_tool_permissions_override_summary.tr(
             namedArgs: {
-              'count': formatCount(
+              'count': NumberFormatter.count(
                 overrideCount,
                 Localizations.localeOf(context),
               ),
@@ -1496,7 +1496,7 @@ class const _ToolPermissionsWarning({
     return _WarningTile(
       label: LocaleKeys.agents_tool_permissions_warning_summary.tr(
         namedArgs: {
-          'count': formatCount(
+          'count': NumberFormatter.count(
             missingOverrideCount,
             Localizations.localeOf(context),
           ),

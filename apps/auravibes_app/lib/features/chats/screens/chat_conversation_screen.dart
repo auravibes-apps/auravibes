@@ -1727,7 +1727,7 @@ class const _RateLimitRetryText({required final int remainingSeconds})
     child: Text(
       LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
         namedArgs: {
-          'seconds': formatCount(
+          'seconds': NumberFormatter.count(
             remainingSeconds,
             Localizations.localeOf(context),
           ),

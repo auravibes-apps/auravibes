@@ -115,7 +115,7 @@ class const _CompactionMessagesRow({
   @override
   Widget build(BuildContext context) => _DetailRow(
     label: LocaleKeys.compaction_compacted_details_messages.tr(),
-    value: formatCount(
+    value: NumberFormatter.count(
       metadata?.compactedMessageIds.length ?? 0,
       Localizations.localeOf(context),
     ),

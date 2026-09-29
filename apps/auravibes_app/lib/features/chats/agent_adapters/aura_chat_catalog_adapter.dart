@@ -422,8 +422,8 @@ String _formatSliderValue(
   required String? format,
 }) {
   final rendered = format == 'percent'
-      ? '${formatDecimal(value * 100, locale, precision)}%'
-      : formatDecimal(value, locale, precision);
+      ? '${NumberFormatter.decimal(value * 100, locale, precision)}%'
+      : NumberFormatter.decimal(value, locale, precision);
   return unit.isEmpty ? rendered : '$rendered $unit';
 }
 

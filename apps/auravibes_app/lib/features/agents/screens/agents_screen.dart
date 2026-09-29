@@ -855,7 +855,7 @@ class _AgentVisibilityControlState extends State<_AgentVisibilityControl> {
   }
 
   Future<AgentVisibility?> _showSheet() =>
-      showSpringBottomSheet<AgentVisibility>(
+      SpringBottomSheet.show<AgentVisibility>(
         context: context,
         builder: (context) => _AgentVisibilitySheet(value: widget.value),
       );

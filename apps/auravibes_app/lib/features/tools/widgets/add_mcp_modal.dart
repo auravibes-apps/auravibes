@@ -536,7 +536,12 @@ class const _VerificationStatusContent({
           const AuraIcon(Icons.check_circle, size: .small),
           Text(
             LocaleKeys.mcp_modal_verification_success.tr(
-              args: [formatCount(toolCount, Localizations.localeOf(context))],
+              args: [
+                NumberFormatter.count(
+                  toolCount,
+                  Localizations.localeOf(context),
+                ),
+              ],
             ),
           ),
         ],
