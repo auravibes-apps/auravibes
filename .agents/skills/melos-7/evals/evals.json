@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "I'm working in a Melos-managed package and need to check formatting. Since the instructions say formatter output should match the pinned SDK, am I supposed to avoid running a formatter? How should I check formatting?",
-      "expected_output": "The agent says formatting is allowed and recommends the repository's FVM-pinned formatter, such as `fvm dart format <paths>`, for checking or applying formatting. It does not infer a blanket formatter prohibition from the host-SDK guidance.",
+      "expected_output": "The agent says formatting is allowed and recommends `fvm dart run melos run format:check` as the repository's pinned, non-mutating check. It may distinguish that check from applying formatting with `fvm dart format <paths>`. It does not infer a blanket formatter prohibition from the host-SDK guidance.",
       "files": []
     },
     {
