@@ -24,22 +24,24 @@ Map<String, Set<String>> findMissingTranslations({
   }
 
   final usedKeys = <String>{};
-  final sourceFiles = sourceDir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.dart'))
-      .toList()
-    ..sort((a, b) => a.path.compareTo(b.path));
+  final sourceFiles =
+      sourceDir
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
   for (final file in sourceFiles) {
     _collectUsedKeys(file.readAsStringSync(), generatedKeys, usedKeys);
   }
 
-  final localeFiles = translationsDir
-      .listSync()
-      .whereType<File>()
-      .where((file) => file.path.endsWith('.json'))
-      .toList()
-    ..sort((a, b) => a.path.compareTo(b.path));
+  final localeFiles =
+      translationsDir
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.json'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
   final missing = <String, Set<String>>{};
   for (final file in localeFiles) {
     final locale = file.uri.pathSegments.last.replaceFirst(
@@ -321,8 +323,7 @@ int? _interpolationEnd(String source, int start) {
             source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
     if (rawString) character = source[++index];
-    if (character.codeUnitAt(0) == _singleQuoteCodeUnit ||
-        character == '"') {
+    if (character.codeUnitAt(0) == _singleQuoteCodeUnit || character == '"') {
       final tripleQuote = '$character$character$character';
       final delimiter = source.startsWith(tripleQuote, index)
           ? tripleQuote
