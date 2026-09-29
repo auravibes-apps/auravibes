@@ -126,6 +126,23 @@ void main() {
       expect(find.text('5m ago'), findsOneWidget);
     });
 
+    testWidgets('displays a supplied timestamp label', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraMessageBubble(
+              content: 'Mensaje',
+              isUser: true,
+              timestamp: .new(2026, 9, 26),
+              timestampLabel: 'Ahora mismo',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Ahora mismo'), findsOneWidget);
+    });
+
     testWidgets('uses the supplied clock for deterministic timestamps', (
       tester,
     ) async {

@@ -671,7 +671,31 @@ class const _FooterButtons({
   required final VoidCallback onSubmit,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        constraints.maxWidth < 430 ? _buildCompact() : _buildWide(),
+  );
+
+  Widget _buildCompact() => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      _FooterTestConnectionButton(
+        isTestingConnection: isTestingConnection,
+        onTestConnection: onTestConnection,
+      ),
+      const AuraSizedBox(height: .sm),
+      _FooterSaveButton(
+        isSubmitting: isSubmitting,
+        disabled: isTestingConnection || !isConnectionVerified,
+        onSubmit: onSubmit,
+      ),
+      const AuraSizedBox(height: .sm),
+      const _FooterCancelButton(),
+    ],
+  );
+
+  Widget _buildWide() => Row(
     children: [
       const Expanded(child: _FooterCancelButton()),
       const AuraSizedBox(width: .sm),
@@ -886,10 +910,14 @@ class _AuthenticationSelectorChildren {
            child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
            style: .bodySmall,
          ),
-         AuraButtonGroup<McpAuthenticationTypeOptions>.single(
-           items: items,
-           selectedValue: selectedValue,
-           onChanged: onChanged,
+         FittedBox(
+           fit: .scaleDown,
+           alignment: .centerLeft,
+           child: AuraButtonGroup<McpAuthenticationTypeOptions>.single(
+             items: items,
+             selectedValue: selectedValue,
+             onChanged: onChanged,
+           ),
          ),
        ];
 
