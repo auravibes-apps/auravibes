@@ -182,7 +182,7 @@ void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
   String? details;
   if (causeDetails != null && causeDetails.isNotEmpty) {
     details = causeDetails;
-  } else if (responseDetails != null) {
+  } else if (responseDetails != null && responseDetails.isNotEmpty) {
     details = jsonEncode(responseDetails);
   }
   throw GenkitException(

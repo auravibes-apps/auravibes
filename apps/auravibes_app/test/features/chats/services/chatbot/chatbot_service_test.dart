@@ -484,6 +484,37 @@ void main() {
       );
     });
 
+    test(
+      'leaves empty final response details absent for message fallback',
+      () async {
+        final responseError = genkit.RuntimeError(
+          message: 'Provider temporarily unavailable',
+          details: {},
+        );
+        final service = _createService(
+          providerFactory: _FakeProviderFactory(
+            response: genkit.ModelResponse(
+              finishReason: genkit.FinishReason.failed,
+              error: responseError,
+            ),
+          ),
+        );
+
+        await expectLater(
+          service.sendMessage(_makeConfig(), []).toList(),
+          throwsA(
+            isA<genkit.GenkitException>()
+                .having(
+                  (error) => error.message,
+                  'message for persistence',
+                  responseError.message,
+                )
+                .having((error) => error.details, 'absent details', isNull),
+          ),
+        );
+      },
+    );
+
     test('preserves provider details from a final response error', () async {
       final providerError = genkit.GenkitException(
         'Provider request failed',
