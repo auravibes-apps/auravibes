@@ -190,6 +190,7 @@ String? _responseErrorDetails(GenerateResponseHelper<Object?> finalResponse) {
   if (causeDetails?.isNotEmpty == true) return causeDetails;
 
   final responseDetails = finalResponse.error?.details;
+
   return responseDetails?.isNotEmpty == true
       ? jsonEncode(responseDetails)
       : null;

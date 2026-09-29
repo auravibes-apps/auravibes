@@ -539,6 +539,7 @@ String? _firstNonEmptyProviderDetail(Iterable<String?> candidates) {
     final detail = candidate?.trim();
     if (detail != null && detail.isNotEmpty) return detail;
   }
+
   return null;
 }
 
