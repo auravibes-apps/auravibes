@@ -440,14 +440,17 @@ class const _MarkdownPreviewToggle({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final label =
+    final semanticLabel = LocaleKeys.markdown_editor_preview_label.tr(
+      context: context,
+    );
+    final tooltip =
         (isPreview
                 ? LocaleKeys.markdown_editor_editor_label
                 : LocaleKeys.markdown_editor_preview_label)
             .tr(context: context);
 
     return Semantics(
-      label: label,
+      label: semanticLabel,
       button: true,
       toggled: isPreview,
       onTap: onToggle,
@@ -455,7 +458,7 @@ class const _MarkdownPreviewToggle({
         child: AuraIconButton(
           icon: isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
           onPressed: onToggle,
-          tooltip: label,
+          tooltip: tooltip,
         ),
       ),
     );

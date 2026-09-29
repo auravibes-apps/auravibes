@@ -201,7 +201,7 @@ void main() {
     );
     expect(_markdownEditorInput, findsNothing);
 
-    await tester.tap(find.bySemanticsLabel('Markdown'));
+    await tester.tap(find.bySemanticsLabel('Preview'));
     await tester.pumpAndSettle();
     await tester.enterText(_markdownEditorInput, '');
     await tester.pumpAndSettle();
@@ -238,13 +238,14 @@ void main() {
         await tester.pumpAndSettle();
 
         final previewToggle = tester
-            .getSemantics(find.bySemanticsLabel('Markdown'))
+            .getSemantics(find.bySemanticsLabel('Preview'))
             .getSemanticsData();
         expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
+        expect(find.byTooltip('Markdown'), findsOneWidget);
         expect(controller.value, sourceValue);
         expect(focusNode.hasFocus, isFalse);
 
-        await tester.tap(find.bySemanticsLabel('Markdown'));
+        await tester.tap(find.bySemanticsLabel('Preview'));
         await tester.pumpAndSettle();
 
         expect(controller.value, sourceValue);
@@ -265,7 +266,7 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('Preview'));
     await tester.pumpAndSettle();
-    await tester.tap(find.bySemanticsLabel('Markdown'));
+    await tester.tap(find.bySemanticsLabel('Preview'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));
     await tester.pumpAndSettle();
