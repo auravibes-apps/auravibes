@@ -1246,7 +1246,7 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   @override
   Future<McpManagerClient> connectMcpWithAutoTransport(
     McpConnectionRequest request,
-  ) async {
+  ) {
     final serverInfo = McpServerToCreate(
       name: request.name,
       url: request.url,
