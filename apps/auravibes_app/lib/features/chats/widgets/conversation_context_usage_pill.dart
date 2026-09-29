@@ -120,31 +120,39 @@ class const _ConversationContextUsageLabels({
   required final ContextUsageData data,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    if (!data.hasLimit) {
-      return AuraText(
-        child: Text(
-          LocaleKeys
-              .chats_screens_chat_conversation_context_usage_label_unavailable
-              .tr(namedArgs: {'used': data.usageLabel}),
-        ),
-        style: .caption,
-      );
-    }
+  Widget build(BuildContext context) => data.hasLimit
+      ? _LimitedContextUsageLabels(data: data)
+      : _UnavailableContextUsageLabel(data: data);
+}
 
-    return AuraRow(
-      children: [
-        AuraText(child: Text(data.usageLabel), style: .caption),
-        AuraBadge.text(
-          child: Text(data.percentLabel),
-          variant: data.level.badgeVariant,
-          size: .small,
-        ),
-      ],
-      spacing: .xs,
-      mainAxisSize: .min,
-    );
-  }
+class const _UnavailableContextUsageLabel({
+  required final ContextUsageData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      LocaleKeys.chats_screens_chat_conversation_context_usage_label_unavailable
+          .tr(namedArgs: {'used': data.usageLabel}),
+    ),
+    style: .caption,
+  );
+}
+
+class const _LimitedContextUsageLabels({required final ContextUsageData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      AuraText(child: Text(data.usageLabel), style: .caption),
+      AuraBadge.text(
+        child: Text(data.percentLabel),
+        variant: data.level.badgeVariant,
+        size: .small,
+      ),
+    ],
+    spacing: .xs,
+    mainAxisSize: .min,
+  );
 }
 
 String _tooltip(ContextUsageData data) {
