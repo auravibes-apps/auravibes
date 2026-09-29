@@ -364,7 +364,7 @@ void main() {
           );
           expect(
             ResponsiveShellLayout.isDesktop(screen.width),
-            target.name == 'ipad' || target.name == 'android-tablet',
+            screen.width >= ResponsiveShellLayout.desktopBreakpoint,
           );
           expect(tester.takeException(), isNull);
 
