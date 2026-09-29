@@ -63,12 +63,12 @@ void main() {
   test('redacts structured provider credential headers', () {
     expect(
       LogRedaction.redact(
-        '{"headers":{"x-api-key":"fixture-provider-credential",'
-        '"Authorization":"Basic fixture-auth-secret"},'
+        '{"headers":{"x-api-key":"fixture-provider-credential", '
+        '"Authorization":"Basic fixture-auth-secret"}, '
         '"reason":"Quota exceeded"}',
       ),
-      '{"headers":{"x-api-key":"[REDACTED]",'
-      '"Authorization":"[REDACTED]"},'
+      '{"headers":{"x-api-key":"[REDACTED]", '
+      '"Authorization":"[REDACTED]"}, '
       '"reason":"Quota exceeded"}',
     );
   });
