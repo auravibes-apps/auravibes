@@ -672,49 +672,48 @@ class const _FooterButtons({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      if (constraints.maxWidth < 430) {
-        return Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .stretch,
-          children: [
-            _FooterTestConnectionButton(
-              isTestingConnection: isTestingConnection,
-              onTestConnection: onTestConnection,
-            ),
-            const AuraSizedBox(height: .sm),
-            _FooterSaveButton(
-              isSubmitting: isSubmitting,
-              disabled: isTestingConnection || !isConnectionVerified,
-              onSubmit: onSubmit,
-            ),
-            const AuraSizedBox(height: .sm),
-            const _FooterCancelButton(),
-          ],
-        );
-      }
+    builder: (context, constraints) =>
+        constraints.maxWidth < 430 ? _buildCompact() : _buildWide(),
+  );
 
-      return Row(
-        children: [
-          const Expanded(child: _FooterCancelButton()),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: _FooterTestConnectionButton(
-              isTestingConnection: isTestingConnection,
-              onTestConnection: onTestConnection,
-            ),
-          ),
-          const AuraSizedBox(width: .sm),
-          Expanded(
-            child: _FooterSaveButton(
-              isSubmitting: isSubmitting,
-              disabled: isTestingConnection || !isConnectionVerified,
-              onSubmit: onSubmit,
-            ),
-          ),
-        ],
-      );
-    },
+  Widget _buildCompact() => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      _FooterTestConnectionButton(
+        isTestingConnection: isTestingConnection,
+        onTestConnection: onTestConnection,
+      ),
+      const AuraSizedBox(height: .sm),
+      _FooterSaveButton(
+        isSubmitting: isSubmitting,
+        disabled: isTestingConnection || !isConnectionVerified,
+        onSubmit: onSubmit,
+      ),
+      const AuraSizedBox(height: .sm),
+      const _FooterCancelButton(),
+    ],
+  );
+
+  Widget _buildWide() => Row(
+    children: [
+      const Expanded(child: _FooterCancelButton()),
+      const AuraSizedBox(width: .sm),
+      Expanded(
+        child: _FooterTestConnectionButton(
+          isTestingConnection: isTestingConnection,
+          onTestConnection: onTestConnection,
+        ),
+      ),
+      const AuraSizedBox(width: .sm),
+      Expanded(
+        child: _FooterSaveButton(
+          isSubmitting: isSubmitting,
+          disabled: isTestingConnection || !isConnectionVerified,
+          onSubmit: onSubmit,
+        ),
+      ),
+    ],
   );
 }
 

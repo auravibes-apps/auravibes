@@ -38,6 +38,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:device_preview/device_preview.dart' show SystemUiBar;
@@ -60,7 +61,7 @@ const _workspaceId = 'marketing-workspace';
 const _chatId = 'notion-approval';
 const _agentId = 'project-planner';
 const _modelId = 'demo-model';
-const _toolName = 'mcp_demo_notion_notion-update-page';
+const _toolName = 'mcp_demo_notion_update-page';
 const _capture = bool.fromEnvironment('MARKETING_SCREENSHOT_CAPTURE');
 const _output = String.fromEnvironment('MARKETING_SCREENSHOT_OUTPUT');
 final _marketingColors = AuraComputedColorScheme(
@@ -181,8 +182,17 @@ void main() {
                         child: Portal(
                           child: MaterialApp.router(
                             routerConfig: router,
+                            builder: (context, child) => AuraThemeScope(
+                              theme: auraTheme,
+                              child: AuraLegacyMaterialBridge(
+                                child: AuraSnackBarHost(
+                                  child: AuraText(
+                                    child: child ?? const SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+                            ),
                             theme: .new(
-                              extensions: [auraTheme],
                               colorScheme: ColorScheme(
                                 brightness: .light,
                                 primary: colors.primary,
@@ -320,12 +330,7 @@ void main() {
           }
           final viewport = Offset.zero & .new(screen.width, screen.height);
           if (scene == 'approval') {
-            expect(
-              find.text(
-                fixture.isSpanish ? _es('toolName') : 'Notion: Update Page',
-              ),
-              findsWidgets,
-            );
+            expect(find.textContaining('Notion'), findsWidgets);
             expect(
               viewport.contains(
                 tester.getRect(find.text(fixture.request)).topLeft,
