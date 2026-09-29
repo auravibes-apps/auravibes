@@ -1,11 +1,11 @@
-import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -265,5 +265,5 @@ Future<void> _pumpLocalizedMenu(WidgetTester tester, Locale locale) async {
       ),
     );
   });
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }

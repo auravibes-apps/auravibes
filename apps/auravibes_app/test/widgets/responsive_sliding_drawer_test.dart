@@ -298,7 +298,7 @@ void main() {
         await pumpDrawer(
           tester,
           controller: controller,
-          viewSize: Size(width, 800),
+          viewSize: .new(width, 800),
           initiallyOpen: true,
         );
 
@@ -307,8 +307,8 @@ void main() {
             .ancestor(of: find.text('Drawer'), matching: find.byType(SizedBox))
             .first;
         final expectedWidth = width >= 960
-            ? (width * 0.3).clamp(150.0, 400.0).toDouble()
-            : (width * 0.8).clamp(0.0, 400.0).toDouble();
+            ? (width * 0.3).clamp(150.0, 400.0)
+            : (width * 0.8).clamp(0.0, 400.0);
         expect(tester.getSize(panel).width, closeTo(expectedWidth, 0.1));
       }
     });
@@ -401,27 +401,27 @@ void main() {
         controller: controller,
         viewSize: const Size(599, 800),
         drawer: TextButton(
+          onPressed: () => fail('Drawer action should not be activated'),
           focusNode: drawerFocus,
-          onPressed: () {},
           child: const Text('Drawer action'),
         ),
       );
 
       drawerFocus.requestFocus();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
 
       controller.open();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       drawerFocus.requestFocus();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(FocusManager.instance.primaryFocus, same(drawerFocus));
 
       controller.close();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       drawerFocus.unfocus();
       drawerFocus.requestFocus();
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(FocusManager.instance.primaryFocus, isNot(drawerFocus));
     });
 
