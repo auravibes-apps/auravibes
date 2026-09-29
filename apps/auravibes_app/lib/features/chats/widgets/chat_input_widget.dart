@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -17,7 +18,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
-
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1604,10 +1604,68 @@ class const _ChatInputControlRow({required final _ChatInputState state})
     return Row(
       children: [
         _ChatInputModeControls(state: state),
+        if (input.onSkillsPress case final onSkillsPress?) ...[
+          const AuraSizedBox(width: .xs),
+          _ChatInputSkillsControl(
+            workspaceId: input.workspaceId,
+            conversationId: input.conversationId,
+            onPressed: onSkillsPress,
+          ),
+        ],
         if (input.onStop case final onStop?)
           _ChatInputStopControls(state: state, onStop: onStop),
         _ChatInputSendButton(state: state),
       ],
+    );
+  }
+}
+
+class const _ChatInputSkillsControl({
+  required final String workspaceId,
+  required final String? conversationId,
+  required final VoidCallback onPressed,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentConversationId = conversationId;
+    final count = currentConversationId == null
+        ? 0
+        : switch (ref.watch(
+            conversationSkillSelectorProvider(
+              workspaceId,
+              currentConversationId,
+            ),
+          )) {
+            AsyncData(:final value) => value.loaded.length,
+            AsyncLoading(:final value?, hasValue: true) => value.loaded.length,
+            AsyncLoading() || AsyncError() => 0,
+          };
+    final semanticLabel = LocaleKeys.chat_input_skills_control_count.tr(
+      context: context,
+      namedArgs: {'count': '$count'},
+    );
+
+    return AuraTooltip(
+      message: semanticLabel,
+      child: Semantics(
+        key: const ValueKey<String>('chat_skills_button'),
+        child: AuraButton(
+          onPressed: onPressed,
+          child: Row(
+            mainAxisSize: .min,
+            children: [
+              const AuraIcon(Icons.psychology_alt_outlined, size: .small),
+              const SizedBox(width: 4),
+              Text('$count'),
+            ],
+          ),
+          variant: .outlined,
+          size: .small,
+        ),
+        button: true,
+        identifier: 'chat_skills_button',
+        label: semanticLabel,
+      ),
     );
   }
 }

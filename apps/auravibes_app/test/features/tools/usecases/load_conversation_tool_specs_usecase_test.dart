@@ -242,6 +242,27 @@ void main() {
       },
     );
 
+    test('preview builds specs without syncing skill permissions', () async {
+      final syncUsecase = MockSyncSkillToolPermissionsUsecase();
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase([]),
+        syncSkillToolPermissionsUsecase: syncUsecase,
+      );
+
+      final result = await usecase.preview(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+
+      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
+      final _ = verifyNever(
+        () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
+      );
+    });
+
     test('returns tool specs from build combined usecase', () async {
       final specs = [
         ToolSpec(name: 'tool-1', description: 'desc', inputJsonSchema: {}),

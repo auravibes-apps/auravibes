@@ -40,6 +40,12 @@ class const LoadConversationToolSpecsUsecase({
     workspaceId: workspaceId,
   )).specs;
 
+  Future<List<ToolSpec>> preview({
+    required String conversationId,
+    required String workspaceId,
+  }) async =>
+      (await _buildCatalogForConversation(conversationId, workspaceId)).specs;
+
   Future<agent.ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,

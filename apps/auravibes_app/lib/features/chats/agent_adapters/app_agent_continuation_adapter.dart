@@ -90,6 +90,17 @@ class AppAgentContinuationAdapter({
     return _projectSelectedModel(apiModelRepository, model);
   }
 
+  Future<bool> supportsToolsForConversation(String conversationId) async {
+    final conversation = await loadConversation(conversationId);
+    final modelId = conversation?.modelId;
+    if (modelId == null) return false;
+
+    final model = await loadSelectedModel(modelId);
+    if (model == null) return false;
+
+    return !shouldDisableTools(await projectSelectedModel(model));
+  }
+
   @override
   Future<List<MessageEntity>> selectPromptMessages(String conversationId) {
     return selectPromptMessagesUsecase.call(conversationId);

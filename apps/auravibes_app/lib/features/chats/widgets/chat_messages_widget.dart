@@ -13,6 +13,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
@@ -23,11 +24,17 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
+import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -91,6 +98,42 @@ class const ChatMessagesWidget({
         .value;
     final a2uiRuntime = ref.watch(chatA2uiRuntimeProvider(conversationId));
     final _ = useListenable(a2uiRuntime);
+    final AsyncValue<ConversationSkillSelectorState>? skillSelectorAsync =
+        a2uiRuntime.hasSkillSuggestions
+        ? ref.watch(
+            conversationSkillSelectorProvider(workspaceId, conversationId),
+          )
+        : null;
+    final ConversationSkillSelectorState? skillSelectorState =
+        switch (skillSelectorAsync) {
+          AsyncData<ConversationSkillSelectorState>(:final value) => value,
+          AsyncLoading<ConversationSkillSelectorState>(
+            :final value?,
+            hasValue: true,
+          ) =>
+            value,
+          null ||
+          AsyncLoading<ConversationSkillSelectorState>() ||
+          AsyncError<ConversationSkillSelectorState>() => null,
+        };
+    final List<AvailableSkill> loadedSkills =
+        skillSelectorState?.loaded ?? const <AvailableSkill>[];
+    final List<AvailableSkill> loadableSkills =
+        skillSelectorState?.loadable ?? const <AvailableSkill>[];
+    final skillsBySlug = useMemoized(
+      () => <String, AvailableSkill>{
+        for (final skill in loadedSkills) skill.slug: skill,
+        for (final skill in loadableSkills) skill.slug: skill,
+      },
+      [loadedSkills, loadableSkills],
+    );
+    useEffect(() {
+      a2uiRuntime
+        ..setWorkspaceId(workspaceId)
+        ..setSkillCatalog(skillsBySlug);
+
+      return null;
+    }, [a2uiRuntime, workspaceId, skillsBySlug]);
     final isTopLevelConversation = _isTopLevelConversation(
       conversation,
       a2uiRuntime,
@@ -123,13 +166,20 @@ class const ChatMessagesWidget({
     );
     useEffect(
       () => _listenToA2uiActionsEffect(
+        context: context,
         isTopLevelConversation: isTopLevelConversation,
         runtime: a2uiRuntime,
         ref: ref,
         workspaceId: workspaceId,
         conversationId: conversationId,
       ),
-      [a2uiRuntime, conversationId, isTopLevelConversation, workspaceId],
+      [
+        a2uiRuntime,
+        context,
+        conversationId,
+        isTopLevelConversation,
+        workspaceId,
+      ],
     );
     final childConversations =
         ref
@@ -297,6 +347,14 @@ void _restoreA2uiMessages({
           message.status == MessageStatus.unfinished,
     );
   }
+  final latestMessage = latestA2uiMessageId == null
+      ? null
+      : messageEntitiesById[latestA2uiMessageId];
+  runtime.restoreCurrentSkillSuggestionMessage(
+    latestMessage != null && latestMessage.status == MessageStatus.sent
+        ? latestMessage.id
+        : null,
+  );
 }
 
 void _restoreA2uiMessage({
@@ -343,6 +401,7 @@ bool _hasA2uiState(
     diagnosticPayloads is List;
 
 void Function()? _listenToA2uiActionsEffect({
+  required BuildContext context,
   required bool isTopLevelConversation,
   required ChatA2uiRuntime runtime,
   required WidgetRef ref,
@@ -361,7 +420,93 @@ void Function()? _listenToA2uiActionsEffect({
       ),
     ),
   );
-  return () => unawaited(subscription.cancel());
+  final skillSubscription = runtime.skillSuggestions.listen(
+    (intent) => unawaited(
+      _submitSkillSuggestion(
+        context,
+        ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        intent: intent,
+      ),
+    ),
+  );
+  return () {
+    unawaited(subscription.cancel());
+    unawaited(skillSubscription.cancel());
+  };
+}
+
+Future<void> _submitSkillSuggestion(
+  BuildContext context,
+  WidgetRef ref, {
+  required String workspaceId,
+  required String conversationId,
+  required ChatSkillSuggestionIntent intent,
+}) async {
+  if (!context.mounted ||
+      intent.workspaceId != workspaceId ||
+      intent.conversationId != conversationId) {
+    return;
+  }
+
+  final ConversationSkillActionResult result;
+  try {
+    result = await ref
+        .read(applyConversationSkillActionUsecaseProvider)
+        .call(
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+          slug: intent.slug,
+          action: switch (intent.action) {
+            .add => .add,
+            .useNow => .useNow,
+          },
+          expectedCatalogRevision: intent.catalogRevision,
+          userRequestForSkill: (title) => LocaleKeys
+              .skills_selector_use_now_request
+              .tr(namedArgs: {'skill': title}),
+        );
+  } on Object {
+    if (!context.mounted) return;
+    _showConversationSkillPicker(context, workspaceId, conversationId);
+
+    return;
+  }
+
+  if (!context.mounted) return;
+  switch (result) {
+    case .added || .alreadyAdded:
+      ref.invalidate(
+        conversationSkillSelectorProvider(workspaceId, conversationId),
+      );
+      return;
+    case .used || .inProgress:
+      return;
+    case .stale ||
+        .unavailable ||
+        .unauthorized ||
+        .credentialsMissing ||
+        .credentialsUnknown:
+      _showConversationSkillPicker(context, workspaceId, conversationId);
+  }
+}
+
+void _showConversationSkillPicker(
+  BuildContext context,
+  String workspaceId,
+  String conversationId,
+) {
+  FocusManager.instance.primaryFocus?.unfocus();
+  unawaited(
+    showDialog<void>(
+      context: context,
+      builder: (context) => ConversationSkillSelectorModal(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ),
+  );
 }
 
 Widget _buildChatTimelineItem({

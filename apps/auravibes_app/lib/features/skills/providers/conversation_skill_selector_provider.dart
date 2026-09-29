@@ -107,34 +107,72 @@ Future<Map<String, String>> _currentSkillRevisions(
 
 ConversationSkillSelectorState _selectorState(
   _SkillSelectorStateRequest request,
-) => ConversationSkillSelectorState(
-  loaded: request.loaded,
-  loadable: request.loadable,
-  contextStatusBySlug: {
-    for (final skill in request.loaded)
-      skill.slug: _contextStatus(
-        skill,
-        request.snapshot,
-        request.revisions[skill.slug],
-      ),
-  },
-);
+) {
+  final failures = <String, ConversationSkillContextFailure>{};
+  final statuses = <String, ConversationSkillContextStatus>{};
+  for (final skill in request.loaded) {
+    final revision = request.revisions[skill.slug];
+    final failure = _contextFailure(skill, request.snapshot, revision);
+    if (failure != null) failures[skill.slug] = failure;
+    statuses[skill.slug] = _contextStatus(
+      skill,
+      request.snapshot,
+      revision,
+      failure,
+    );
+  }
+
+  return ConversationSkillSelectorState(
+    loaded: request.loaded,
+    loadable: request.loadable,
+    contextStatusBySlug: statuses,
+    failureBySlug: failures,
+  );
+}
 
 ConversationSkillContextStatus _contextStatus(
   AvailableSkill skill,
   ConversationSkillContextSnapshot? snapshot,
   String? currentRevision,
+  ConversationSkillContextFailure? failure,
 ) {
-  if (skill.credentialReadiness == .missing || currentRevision == null) {
+  if (failure != null) {
     return .error;
   }
   if (snapshot == null) return .added;
 
   return switch (snapshot.phase) {
-    .preparing || .needsContext => .needsContext,
+    .preparing => .preparing,
+    .needsContext => .needsContext,
     .error => .error,
-    .ready => _readyStatus(skill, snapshot, currentRevision),
+    .ready =>
+      currentRevision == null
+          ? .error
+          : _readyStatus(skill, snapshot, currentRevision),
   };
+}
+
+ConversationSkillContextFailure? _contextFailure(
+  AvailableSkill skill,
+  ConversationSkillContextSnapshot? snapshot,
+  String? currentRevision,
+) {
+  if (skill.credentialReadiness == .missing) {
+    return .missingCredentials;
+  }
+  if (skill.credentialReadiness == .unknown) {
+    return .preparationFailed;
+  }
+  if (currentRevision == null) return .unavailableMetadata;
+  if (snapshot == null) return null;
+  if (snapshot.phase == .error) {
+    return snapshot.failure ?? .preparationFailed;
+  }
+  if (snapshot.phase == .ready && !snapshot.canActivate) {
+    return .preparationFailed;
+  }
+
+  return null;
 }
 
 ConversationSkillContextStatus _readyStatus(
