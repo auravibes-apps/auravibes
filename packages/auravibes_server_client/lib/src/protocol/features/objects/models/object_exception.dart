@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-
 import '../../../features/objects/models/object_error_code.dart' as _isve5p20;
 
 abstract class ObjectException

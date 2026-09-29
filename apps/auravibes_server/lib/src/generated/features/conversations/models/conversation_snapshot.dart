@@ -12,7 +12,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
-
 import '../../../features/conversations/models/conversation_execution_view.dart'
     as _iid4e7gg;
 import '../../../features/conversations/models/conversation_message_view.dart'

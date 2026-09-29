@@ -12,7 +12,6 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
-
 import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
     as _iwu19n1x;
 import '../../../features/workspaces/models/cloud_workspace_summary.dart'

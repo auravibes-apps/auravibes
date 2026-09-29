@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _is;
-
 import '../../../features/agents/models/agent_catalog_status.dart' as _iu7mkbq9;
 import '../../../features/agents/models/agent_catalog_type.dart' as _iqmsiiah;
 

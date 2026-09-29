@@ -1,0 +1,6 @@
+class: McpCatalogConnectionOption
+fields:
+  key: String
+  name: String
+  authType: String
+  fields: List<McpCatalogCredentialField>

@@ -13,7 +13,6 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-
 import '../../../features/agents/models/agent_catalog_item.dart' as _ij3q200n;
 
 abstract class AgentCatalogPage

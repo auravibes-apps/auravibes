@@ -13,7 +13,6 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-
 import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
     as _iwu19n1x;
 import '../../../features/workspaces/models/cloud_workspace_summary.dart'

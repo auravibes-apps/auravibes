@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
-
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
     as _iffvdh0v;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
