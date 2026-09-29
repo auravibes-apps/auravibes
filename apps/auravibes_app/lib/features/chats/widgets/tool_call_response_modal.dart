@@ -26,6 +26,8 @@ class const ToolCallResponseModal({
     required String toolName,
     required String content,
   }) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<void>(
       context: context,
       builder: (context) =>

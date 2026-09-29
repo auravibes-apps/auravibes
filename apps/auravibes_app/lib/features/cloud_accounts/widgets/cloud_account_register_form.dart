@@ -1,5 +1,7 @@
 // ignore_for_file: type=lint
 
+import 'dart:async' show unawaited;
+
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_login_form.dart';
@@ -64,6 +66,9 @@ class _CloudAccountRegisterFormState
             controller: _code,
             label: Text(LocaleKeys.workspace_management_cloud_code.tr()),
             placeholder: Text(LocaleKeys.workspace_management_cloud_code.tr()),
+            textInputAction: .done,
+            onSubmitted: (_) => _registerStep(),
+            autofocus: true,
             enabled: !_isSubmitting,
           ),
         ] else ...[
@@ -71,6 +76,7 @@ class _CloudAccountRegisterFormState
             controller: _email,
             label: Text(LocaleKeys.workspace_management_cloud_email.tr()),
             placeholder: Text(LocaleKeys.workspace_management_cloud_email.tr()),
+            textInputAction: .next,
             enabled: !_isSubmitting,
           ),
           AuraInput(
@@ -81,6 +87,8 @@ class _CloudAccountRegisterFormState
             ),
             hint: const TextLocale(LocaleKeys.cloud_accounts_password_hint),
             obscureText: true,
+            textInputAction: .done,
+            onSubmitted: (_) => _registerStep(),
             enabled: !_isSubmitting,
           ),
         ],
@@ -151,10 +159,12 @@ class _CloudAccountRegisterFormState
           password: _password.text,
         );
         ref.invalidate(cloudAccountsProvider);
+        unawaited(AuraHaptics.success());
         widget.onSignedIn(account);
       });
     } on Object catch (error) {
       if (!mounted) return;
+      unawaited(AuraHaptics.error());
       setState(() => _errorKey = _registrationErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

@@ -444,7 +444,9 @@ void main() {
       expect(find.text('Name is required.\nURL is required.'), findsOneWidget);
     });
 
-    testWidgets('save shows success message and closes dialog', (tester) async {
+    testWidgets('verified URL submits from keyboard and closes dialog', (
+      tester,
+    ) async {
       await _pumpAndInit(
         tester,
         EasyLocalization(
@@ -499,7 +501,18 @@ void main() {
         find.byType(AuraButton).last,
       );
       expect(saveButton.disabled, isFalse);
-      await tester.tap(find.byType(AuraButton).last);
+
+      final inputFinder = find.byType(AuraInput);
+      final inputs = tester.widgetList<AuraInput>(inputFinder).toList();
+      expect(inputs.map((input) => input.textInputAction), <TextInputAction>[
+        .next,
+        .next,
+        .done,
+      ]);
+
+      await tester.ensureVisible(inputFinder.last);
+      await tester.tap(inputFinder.last);
+      await tester.testTextInput.receiveAction(.done);
       await tester.pump();
       await tester.pump();
 

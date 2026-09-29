@@ -50,7 +50,10 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   }
 
   @override
-  Widget build(BuildContext context) => _ToolbarActions(toolbar: this);
+  Widget build(BuildContext context) => AuraEdgy(
+    child: _ToolbarActions(toolbar: this),
+    axis: .horizontal,
+  );
 
   void _rememberAction(TextEditingValue before) {
     final after = _controller.value;

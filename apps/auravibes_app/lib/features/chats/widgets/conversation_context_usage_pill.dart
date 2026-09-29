@@ -26,13 +26,16 @@ class const _ConversationContextUsagePillView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
+
     return Padding(
       padding: EdgeInsets.only(right: context.auraTheme.fromSpacing(.sm)),
       child: AuraTooltip(
-        message: _tooltip(data),
+        message: _tooltip(data, locale),
         child: _ConversationContextUsageSemantics(
           data: data,
-          semanticValue: _semanticValue(data),
+          locale: locale,
+          semanticValue: _semanticValue(data, locale),
         ),
       ),
     );
@@ -41,6 +44,7 @@ class const _ConversationContextUsagePillView({
 
 class const _ConversationContextUsageSemantics({
   required final ContextUsageData data,
+  required final Locale locale,
   required final String semanticValue,
 }) extends StatelessWidget {
   @override
@@ -50,6 +54,7 @@ class const _ConversationContextUsageSemantics({
     return Semantics(
       child: _ConversationContextUsageContainer(
         data: data,
+        locale: locale,
         outlineColor: auraColors.outlineVariant,
       ),
       container: true,
@@ -63,11 +68,12 @@ class const _ConversationContextUsageSemantics({
 
 class const _ConversationContextUsageContainer({
   required final ContextUsageData data,
+  required final Locale locale,
   required final Color outlineColor,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraContainer(
-    child: _ConversationContextUsageRow(data: data),
+    child: _ConversationContextUsageRow(data: data, locale: locale),
     padding: const AuraEdgeInsetsGeometry.symmetric(
       horizontal: .sm,
       vertical: .xs,
@@ -78,15 +84,17 @@ class const _ConversationContextUsageContainer({
   );
 }
 
-class const _ConversationContextUsageRow({required final ContextUsageData data})
-    extends StatelessWidget {
+class const _ConversationContextUsageRow({
+  required final ContextUsageData data,
+  required final Locale locale,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
       children: [
         _ConversationContextUsageIcon(data: data),
         if (data.hasLimit) _ConversationContextUsageProgress(data: data),
-        _ConversationContextUsageLabels(data: data),
+        _ConversationContextUsageLabels(data: data, locale: locale),
       ],
       spacing: .xs,
       mainAxisSize: .min,
@@ -118,34 +126,38 @@ class const _ConversationContextUsageProgress({
 
 class const _ConversationContextUsageLabels({
   required final ContextUsageData data,
+  required final Locale locale,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => data.hasLimit
-      ? _LimitedContextUsageLabels(data: data)
-      : _UnavailableContextUsageLabel(data: data);
+      ? _LimitedContextUsageLabels(data: data, locale: locale)
+      : _UnavailableContextUsageLabel(data: data, locale: locale);
 }
 
 class const _UnavailableContextUsageLabel({
   required final ContextUsageData data,
+  required final Locale locale,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
     child: Text(
       LocaleKeys.chats_screens_chat_conversation_context_usage_label_unavailable
-          .tr(namedArgs: {'used': data.usageLabel}),
+          .tr(namedArgs: {'used': data.usageLabelFor(locale)}),
     ),
     style: .caption,
   );
 }
 
-class const _LimitedContextUsageLabels({required final ContextUsageData data})
-    extends StatelessWidget {
+class const _LimitedContextUsageLabels({
+  required final ContextUsageData data,
+  required final Locale locale,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      AuraText(child: Text(data.usageLabel), style: .caption),
+      AuraText(child: Text(data.usageLabelFor(locale)), style: .caption),
       AuraBadge.text(
-        child: Text(data.percentLabel),
+        child: Text(data.percentLabelFor(locale)),
         variant: data.level.badgeVariant,
         size: .small,
       ),
@@ -155,13 +167,13 @@ class const _LimitedContextUsageLabels({required final ContextUsageData data})
   );
 }
 
-String _tooltip(ContextUsageData data) {
+String _tooltip(ContextUsageData data, Locale locale) {
   if (!data.hasLimit) return _contextUsageLimitUnavailable();
 
-  final tooltipArgs = data.tooltipArgs();
+  final tooltipArgs = data.tooltipArgsFor(locale);
 
   return switch (data.level) {
-    .overflow => _overflowTooltip(data, tooltipArgs),
+    .overflow => _overflowTooltip(data, tooltipArgs, locale),
     .unknown => _contextUsageLimitUnavailable(),
     _ => _standardTooltip(data.level, tooltipArgs),
   };
@@ -193,16 +205,19 @@ String _standardTooltip(
 String _overflowTooltip(
   ContextUsageData data,
   Map<String, String> tooltipArgs,
+  Locale locale,
 ) => LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_overflow
-    .tr(namedArgs: {...tooltipArgs, 'overflow': '${data.overflowTokens}'});
+    .tr(namedArgs: {...tooltipArgs, 'overflow': data.overflowCountFor(locale)});
 
-String _semanticValue(ContextUsageData data) {
-  if (!data.hasLimit) return _semanticLimitUnavailable(data.usageLabel);
+String _semanticValue(ContextUsageData data, Locale locale) {
+  if (!data.hasLimit) {
+    return _semanticLimitUnavailable(data.usageLabelFor(locale));
+  }
 
   return switch (data.level) {
-    .overflow => _overflowSemanticValue(data),
-    .unknown => _semanticLimitUnavailable(data.usageLabel),
-    _ => _standardSemanticValue(data.level, data),
+    .overflow => _overflowSemanticValue(data, locale),
+    .unknown => _semanticLimitUnavailable(data.usageLabelFor(locale)),
+    _ => _standardSemanticValue(data.level, data, locale),
   };
 }
 
@@ -210,7 +225,11 @@ String _semanticLimitUnavailable(String usage) => LocaleKeys
     .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable
     .tr(namedArgs: {'usage': usage});
 
-String _standardSemanticValue(ContextUsageLevel level, ContextUsageData data) {
+String _standardSemanticValue(
+  ContextUsageLevel level,
+  ContextUsageData data,
+  Locale locale,
+) {
   final key = switch (level) {
     .normal =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_normal,
@@ -222,19 +241,24 @@ String _standardSemanticValue(ContextUsageLevel level, ContextUsageData data) {
     .overflow || .unknown => null,
   };
 
-  if (key == null) return _semanticLimitUnavailable(data.usageLabel);
+  if (key == null) {
+    return _semanticLimitUnavailable(data.usageLabelFor(locale));
+  }
 
   return key.tr(
-    namedArgs: {'usage': data.usageLabel, 'percent': '${data.percent}'},
+    namedArgs: {
+      'usage': data.usageLabelFor(locale),
+      'percent': data.percentValueFor(locale),
+    },
   );
 }
 
-String _overflowSemanticValue(ContextUsageData data) => LocaleKeys
-    .chats_screens_chat_conversation_context_usage_semantic_overflow
-    .tr(
-      namedArgs: {
-        'usage': data.usageLabel,
-        'percent': '${data.percent}',
-        'overflow': '${data.overflowTokens}',
-      },
-    );
+String _overflowSemanticValue(ContextUsageData data, Locale locale) =>
+    LocaleKeys.chats_screens_chat_conversation_context_usage_semantic_overflow
+        .tr(
+          namedArgs: {
+            'usage': data.usageLabelFor(locale),
+            'percent': data.percentValueFor(locale),
+            'overflow': data.overflowCountFor(locale),
+          },
+        );

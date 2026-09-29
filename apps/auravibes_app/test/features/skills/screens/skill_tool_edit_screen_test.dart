@@ -226,7 +226,18 @@ void main() {
     await enterLabeledField('Description', 'Company id');
     await tester.tap(find.text('Requires credential'));
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.save_outlined));
+    final finalInput = find.byType(AuraInput).last;
+    expect(
+      tester.widget<AuraInput>(finalInput).textInputAction,
+      TextInputAction.done,
+    );
+    final finalEditable = find.descendant(
+      of: finalInput,
+      matching: find.byType(EditableText),
+    );
+    await tester.ensureVisible(finalEditable);
+    await tester.tap(finalEditable);
+    await tester.testTextInput.receiveAction(.done);
     final _ = await tester.pumpAndSettle();
 
     final tool = await SkillTemplateToolsRepository(database)

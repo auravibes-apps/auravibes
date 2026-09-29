@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -100,6 +101,7 @@ class const _NewChatActions({
   void onToolsPress() {
     if (workspaceId.isEmpty || !context.mounted) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
     unawaited(
       showDialog<void>(
         context: context,
@@ -879,6 +881,7 @@ class const _NoModelProviderPromptScroll({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.only(bottom: BottomPadding.of(context)),
     child: ConstrainedBox(
       constraints: .new(minHeight: minHeight),
       child: _NoModelProviderPromptCenter(workspaceId: workspaceId),

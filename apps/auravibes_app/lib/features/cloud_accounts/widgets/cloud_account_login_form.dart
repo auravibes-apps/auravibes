@@ -1,5 +1,7 @@
 // ignore_for_file: type=lint
 
+import 'dart:async' show unawaited;
+
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
@@ -43,6 +45,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
           controller: _email,
           label: Text(LocaleKeys.workspace_management_cloud_email.tr()),
           placeholder: Text(LocaleKeys.workspace_management_cloud_email.tr()),
+          textInputAction: .next,
           enabled: !_isSubmitting,
         ),
         AuraInput(
@@ -52,6 +55,8 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
             LocaleKeys.workspace_management_cloud_password.tr(),
           ),
           obscureText: true,
+          textInputAction: .done,
+          onSubmitted: (_) => _login(),
           enabled: !_isSubmitting,
         ),
         if (_errorKey case final errorKey?)
@@ -80,10 +85,12 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
             .read(cloudAccountUseCasesProvider)
             .login(email: _email.text.trim(), password: _password.text);
         ref.invalidate(cloudAccountsProvider);
+        unawaited(AuraHaptics.success());
         widget.onSignedIn(account);
       });
     } on Object catch (error) {
       if (!mounted) return;
+      unawaited(AuraHaptics.error());
       setState(() => _errorKey = cloudAccountErrorKey(error));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

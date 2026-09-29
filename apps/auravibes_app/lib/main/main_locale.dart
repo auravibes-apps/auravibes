@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 
 export 'package:easy_localization/easy_localization.dart'
@@ -9,8 +10,9 @@ export 'package:easy_localization/easy_localization.dart'
 class const MainLocale({required final Widget child, super.key})
     extends StatelessWidget {
   static const supportedLocales = [Locale('en'), Locale('es')];
-  static Future<void> ensureInitialized() {
-    return EasyLocalization.ensureInitialized();
+  static Future<void> ensureInitialized() async {
+    await EasyLocalization.ensureInitialized();
+    await initializeDateFormatting();
   }
 
   @override

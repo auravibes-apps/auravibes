@@ -402,6 +402,33 @@ void main() {
   });
 
   group('Custom Dialog Implementation', () {
+    testWidgets('opening and closing a dialog does not restore field focus', (
+      tester,
+    ) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      await tester.pumpWidget(
+        AuraThemeWrapper(child: TextField(focusNode: focusNode)),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+      expect(focusNode.hasFocus, isTrue);
+
+      unawaited(
+        AuraDialogs.alert(
+          context: tester.element(find.byType(TextField)),
+          title: const Text('Alert'),
+          message: const Text('Message'),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+
+      await tester.tap(find.text('OK'));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+    });
+
     testWidgets('showAuraConfirmDialog does NOT use AlertDialog', (
       tester,
     ) async {

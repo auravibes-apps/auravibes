@@ -15,6 +15,7 @@ class const ToolsSearchInput({
       placeholder: const TextLocale(LocaleKeys.tools_screen_search_tools),
       prefixIcon: const AuraIcon(Icons.search),
       size: .small,
+      textInputAction: .search,
       onChanged: onChanged,
     ),
   );

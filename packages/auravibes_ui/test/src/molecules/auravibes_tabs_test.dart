@@ -211,6 +211,154 @@ void main() {
       expect(find.text('First content'), findsOneWidget);
     });
 
+    testWidgets('reveals an initially selected edge tab without moving page', (
+      tester,
+    ) async {
+      final pageController = ScrollController();
+      addTearDown(pageController.dispose);
+      await tester.pumpWidget(
+        _host(
+          ListView(
+            controller: pageController,
+            children: const [
+              SizedBox(height: 120),
+              Align(
+                alignment: .centerLeft,
+                child: SizedBox(
+                  width: 160,
+                  height: 200,
+                  child: AuraTabs<void>(items: _wideItems, initialIndex: 4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(AuraTabs<void>),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(horizontal.position.pixels, greaterThan(0));
+      expect(pageController.offset, 0);
+    });
+
+    testWidgets('reveals a controlled selection after it changes', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(
+            width: 160,
+            child: AuraTabs<void>(items: _wideItems, selectedIndex: 0),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(
+            width: 160,
+            child: AuraTabs<void>(items: _wideItems, selectedIndex: 4),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(AuraTabs<void>),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(horizontal.position.pixels, greaterThan(0));
+      expect(find.text('Fifth content'), findsOneWidget);
+    });
+
+    testWidgets('reveals a partially visible tab after a tap', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(width: 160, child: AuraTabs<void>(items: _wideItems)),
+        ),
+      );
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(AuraTabs<void>),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      horizontal.position.jumpTo(horizontal.position.maxScrollExtent - 40);
+      await tester.pump();
+      final before = horizontal.position.pixels;
+      final viewport = tester.getRect(find.byType(SingleChildScrollView));
+      final lastTab = tester.getRect(find.byType(AuraPressable).last);
+      final visiblePart = lastTab.intersect(viewport);
+      expect(visiblePart.width, greaterThan(0));
+      expect(visiblePart.width, lessThan(lastTab.width));
+
+      await tester.tapAt(visiblePart.center);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Fifth content'), findsOneWidget);
+      expect(horizontal.position.pixels, greaterThan(before));
+    });
+
+    testWidgets('does not move a tab strip that already fits', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(
+            width: 800,
+            child: AuraTabs<void>(items: _wideItems, initialIndex: 4),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(AuraTabs<void>),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(horizontal.position.pixels, 0);
+      expect(horizontal.position.maxScrollExtent, 0);
+    });
+
+    testWidgets('keeps a selected tab visible when items shrink in RTL', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const Directionality(
+            textDirection: .rtl,
+            child: SizedBox(
+              width: 160,
+              child: AuraTabs<void>(items: _wideItems, selectedIndex: 4),
+            ),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        _host(
+          const Directionality(
+            textDirection: .rtl,
+            child: SizedBox(
+              width: 160,
+              child: AuraTabs<void>(items: _items, selectedIndex: 1),
+            ),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Second content'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('uses initial selection when items become available', (
       tester,
     ) async {
@@ -378,6 +526,14 @@ void main() {
 const _items = [
   AuraTabItem(title: Text('First'), child: Text('First content')),
   AuraTabItem(title: Text('Second'), child: Text('Second content')),
+];
+
+const _wideItems = [
+  AuraTabItem(title: Text('First'), child: Text('First content')),
+  AuraTabItem(title: Text('Second'), child: Text('Second content')),
+  AuraTabItem(title: Text('Third'), child: Text('Third content')),
+  AuraTabItem(title: Text('Fourth'), child: Text('Fourth content')),
+  AuraTabItem(title: Text('Fifth'), child: Text('Fifth content')),
 ];
 
 Widget _host(Widget child) {

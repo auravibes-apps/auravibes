@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_logi
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:go_router/go_router.dart';
@@ -22,7 +23,8 @@ class const CloudAccountLoginScreen({
         title: TextLocale(LocaleKeys.workspace_management_cloud_login),
       ),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16)
+            .copyWith(bottom: BottomPadding.of(context)),
         children: [
           CloudAccountLoginForm(
             onSignedIn: (account) => _complete(context, account),
@@ -49,6 +51,7 @@ class const CloudAccountLoginScreen({
             variant: AuraButtonVariant.outlined,
           ),
         ],
+        keyboardDismissBehavior: .onDrag,
       ),
     );
   }

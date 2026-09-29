@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
@@ -85,8 +86,6 @@ class const ContextUsageData({
   required final double progress,
   required final ContextUsageLevel level,
   required final int overflowTokens,
-  required final String usageLabel,
-  required final String percentLabel,
 }) {
   factory compute({required int usedTokens, required int? limitTokens}) {
     final normalizedLimit = _normalizeLimit(limitTokens);
@@ -97,11 +96,28 @@ class const ContextUsageData({
     return _withLimit(usedTokens, normalizedLimit);
   }
 
-  Map<String, String> tooltipArgs() => {
-    'used': '$usedTokens',
-    'limit': '$normalizedLimit',
-    'percent': '$percent',
+  String usageLabelFor(Locale locale) {
+    final formatter = NumberFormat.compact(locale: locale.toLanguageTag());
+    final used = formatter.format(usedTokens);
+    if (!hasLimit) return used;
+
+    return '$used/${formatter.format(normalizedLimit)}';
+  }
+
+  String percentLabelFor(Locale locale) =>
+      hasLimit ? '${NumberFormatter.count(percent, locale)}%' : '';
+
+  String percentValueFor(Locale locale) =>
+      NumberFormatter.count(percent, locale);
+
+  Map<String, String> tooltipArgsFor(Locale locale) => {
+    'used': NumberFormatter.count(usedTokens, locale),
+    'limit': NumberFormatter.count(normalizedLimit, locale),
+    'percent': NumberFormatter.count(percent, locale),
   };
+
+  String overflowCountFor(Locale locale) =>
+      NumberFormatter.count(overflowTokens, locale);
 }
 
 int _normalizeLimit(int? limitTokens) {
@@ -119,8 +135,6 @@ ContextUsageData _withoutLimit(int usedTokens, int normalizedLimit) =>
       progress: 0,
       level: .unknown,
       overflowTokens: 0,
-      usageLabel: _compactFormat.format(usedTokens),
-      percentLabel: '',
     );
 
 ContextUsageData _withLimit(int usedTokens, int normalizedLimit) {
@@ -144,9 +158,6 @@ ContextUsageData _limitedUsageData(
         _maximumUsagePercent,
     level: _usageLevel(usedTokens, normalizedLimit),
     overflowTokens: usedTokens - normalizedLimit,
-    usageLabel:
-        '${_compactFormat.format(usedTokens)}/${_compactFormat.format(normalizedLimit)}',
-    percentLabel: '$percent%',
   );
 }
 
@@ -155,8 +166,3 @@ ContextUsageLevel _usageLevel(int usedTokens, int normalizedLimit) =>
       usedTokens: usedTokens,
       limitTokens: normalizedLimit,
     );
-
-// Ponytail. Top-level compact format; default locale follows Intl.systemLocale.
-// Upgrade path. Thread the app locale through a provider if the device locale
-// differs from the app locale.
-final NumberFormat _compactFormat = .compact();

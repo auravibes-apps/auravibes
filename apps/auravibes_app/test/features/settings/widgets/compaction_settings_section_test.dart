@@ -147,6 +147,7 @@ void main() {
       final remainingField = tester.widget<AuraInput>(find.byType(AuraInput));
       expect(slider.value, 45);
       expect(remainingField.controller?.text, '999');
+      expect(remainingField.textInputAction, TextInputAction.done);
     });
   });
 
@@ -257,6 +258,33 @@ void main() {
               usagePercentageThreshold: 50,
               remainingTokenThreshold: 3000,
             ),
+          ),
+        ).called(1),
+        returnsNormally,
+      );
+    });
+
+    testWidgets('saves remaining threshold from done keyboard action', (
+      tester,
+    ) async {
+      when(
+        () => readMockSave()(
+          workspaceId: testWorkspaceId,
+          settings: any(named: 'settings'),
+        ),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
+
+      readSettingsController().add(CompactionSettings.defaults);
+      await pumpSubject(tester);
+      await tester.enterText(find.byType(AuraInput), '3000');
+      await tester.testTextInput.receiveAction(.done);
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        () => verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: const CompactionSettings(remainingTokenThreshold: 3000),
           ),
         ).called(1),
         returnsNormally,

@@ -293,6 +293,7 @@ class _AgentSheetBody extends StatelessWidget {
            AuraInput(
              controller: controller,
              prefixIcon: const AuraIcon(Icons.search),
+             textInputAction: .search,
              onChanged: onSearchChanged,
            ),
            const AuraSizedBox(height: .sm),
@@ -328,6 +329,7 @@ class _AgentSheetList extends StatelessWidget {
         ),
         separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
         itemCount: agents.length + 1,
+        keyboardDismissBehavior: .onDrag,
       );
 
   final List<AgentEntity> agents;

@@ -54,6 +54,22 @@ void main() {
   }
 
   group('MarkdownEditorToolbar', () {
+    testWidgets('wraps overflowing actions in only one horizontal scroll', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
     testWidgets('keeps editor focus when formatting selected text', (
       tester,
     ) async {

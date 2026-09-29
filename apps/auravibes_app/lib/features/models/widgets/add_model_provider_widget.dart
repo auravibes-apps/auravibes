@@ -790,6 +790,7 @@ class const _AddModelProviderFormScroll({
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
       controller: controls.scrollController,
       child: _AddModelProviderFormBody(data: data),
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -2210,6 +2211,7 @@ class const _ModelProviderSearchInput({
       ),
     ),
     prefixIcon: Icon(Icons.search, color: context.auraColors.onSurfaceVariant),
+    textInputAction: .search,
     onChanged: onSearchChanged,
   );
 }
@@ -2228,6 +2230,7 @@ class const _ModelProviderResults({
         onSelected: onModelSelected,
       ),
       itemCount: models.length,
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }

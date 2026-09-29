@@ -1,5 +1,7 @@
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('ContextUsageLevel', () {
@@ -88,8 +90,8 @@ void main() {
         expect(data.percent, 0);
         expect(data.progress, 0);
         expect(data.overflowTokens, 0);
-        expect(data.usageLabel, '500');
-        expect(data.percentLabel, isEmpty);
+        expect(data.usageLabelFor(const Locale('en')), '500');
+        expect(data.percentLabelFor(const Locale('en')), isEmpty);
       });
 
       test('returns unknown level when limit is 0', () {
@@ -112,8 +114,8 @@ void main() {
         expect(data.percent, 50);
         expect(data.progress, 0.5);
         expect(data.overflowTokens, -50);
-        expect(data.usageLabel, '50/100');
-        expect(data.percentLabel, '50%');
+        expect(data.usageLabelFor(const Locale('en')), '50/100');
+        expect(data.percentLabelFor(const Locale('en')), '50%');
       });
 
       test('computes elevated usage correctly', () {
@@ -158,9 +160,9 @@ void main() {
           usedTokens: 500,
           limitTokens: 1000,
         );
-        expect(data.tooltipArgs(), {
+        expect(data.tooltipArgsFor(const Locale('en')), {
           'used': '500',
-          'limit': '1000',
+          'limit': '1,000',
           'percent': '50',
         });
       });
@@ -170,7 +172,7 @@ void main() {
           usedTokens: 1500,
           limitTokens: 10000,
         );
-        expect(data.usageLabel, contains('K'));
+        expect(data.usageLabelFor(const Locale('en')), contains('K'));
       });
 
       test('formats compact tokens for millions', () {
@@ -178,7 +180,7 @@ void main() {
           usedTokens: 1500000,
           limitTokens: 2000000,
         );
-        expect(data.usageLabel, contains('M'));
+        expect(data.usageLabelFor(const Locale('en')), contains('M'));
       });
 
       test('formats compact tokens for exact thousands', () {
@@ -186,7 +188,7 @@ void main() {
           usedTokens: 1000,
           limitTokens: 10000,
         );
-        expect(data.usageLabel, '1K/10K');
+        expect(data.usageLabelFor(const Locale('en')), '1K/10K');
       });
 
       test('formats compact tokens for exact millions', () {
@@ -194,7 +196,7 @@ void main() {
           usedTokens: 1000000,
           limitTokens: 2000000,
         );
-        expect(data.usageLabel, '1M/2M');
+        expect(data.usageLabelFor(const Locale('en')), '1M/2M');
       });
 
       test('formats compact tokens for values under 1000', () {
@@ -202,7 +204,27 @@ void main() {
           usedTokens: 999,
           limitTokens: 999,
         );
-        expect(data.usageLabel, '999/999');
+        expect(data.usageLabelFor(const Locale('en')), '999/999');
+      });
+
+      test('formats usage and tooltip numbers for the requested locale', () {
+        final data = ContextUsageData.compute(
+          usedTokens: 1500000,
+          limitTokens: 2000000,
+        );
+        const locale = Locale('es');
+        final compact = NumberFormat.compact(locale: locale.toLanguageTag());
+
+        expect(
+          data.usageLabelFor(locale),
+          '${compact.format(1500000)}/${compact.format(2000000)}',
+        );
+        expect(data.percentLabelFor(locale), '75%');
+        expect(data.tooltipArgsFor(locale), {
+          'used': '1.500.000',
+          'limit': '2.000.000',
+          'percent': '75',
+        });
       });
     });
   });

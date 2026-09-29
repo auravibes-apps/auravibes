@@ -55,7 +55,7 @@ void main() {
         ),
         supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
+        fallbackLocale: locale,
         startLocale: locale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
@@ -100,6 +100,23 @@ void main() {
 
     expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
     expect(find.text('85%'), findsOneWidget);
+  });
+
+  testWidgets('formats compact token counts with the app locale', (
+    tester,
+  ) async {
+    final data = ContextUsageData.compute(
+      usedTokens: 1500000,
+      limitTokens: 2000000,
+    );
+
+    await tester.pumpWidget(
+      buildSubject(data: data, locale: const Locale('es')),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text(data.usageLabelFor(const Locale('es'))), findsOneWidget);
   });
 
   testWidgets('renders overflow usage level', (tester) async {

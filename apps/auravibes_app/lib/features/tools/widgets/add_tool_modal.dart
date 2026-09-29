@@ -25,6 +25,8 @@ class const AddToolModal({required final String workspaceId, super.key})
     BuildContext context, {
     required String workspaceId,
   }) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<void>(
       context: context,
       builder: (context) => AddToolModal(workspaceId: workspaceId),
@@ -175,6 +177,7 @@ class const _AddToolModalSearch({
       placeholder: const TextLocale(LocaleKeys.tools_screen_search_tools),
       prefixIcon: const AuraIcon(Icons.search),
       size: .small,
+      textInputAction: .search,
     ),
   );
 }
@@ -280,6 +283,7 @@ class const _FilteredToolsList({
     itemBuilder: _itemBuilder,
     separatorBuilder: _separatorBuilder,
     itemCount: tools.length,
+    keyboardDismissBehavior: .onDrag,
   );
 
   Widget _itemBuilder(BuildContext _, int index) =>

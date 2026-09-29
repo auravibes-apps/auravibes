@@ -239,6 +239,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
     await tester.pump();
     expect(draftStatuses.last, isTrue);
+    final recordingText = tester.widget<Text>(find.textContaining('00:00'));
+    expect(
+      recordingText.style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
   });
 
   testWidgets('keeps conversation text and attachment across navigation', (
@@ -1397,6 +1402,42 @@ void main() {
     expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
 
     await tester.tap(find.text('compact model'));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+  });
+
+  testWidgets('model selector opens from blank space inside its target', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const SizedBox(
+          width: 200,
+          height: 48,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('compact model'),
+          ),
+        ),
+        modelSheetControl: const Text('sheet model'),
+      ),
+    );
+
+    final target = tester.getRect(
+      find.byKey(const ValueKey<String>('chat_model_selector')),
+    );
+    await tester.tapAt(.new(target.right - 8, target.center.dy));
     final pumpCount = await tester.pumpAndSettle();
     expect(pumpCount, greaterThanOrEqualTo(0));
 

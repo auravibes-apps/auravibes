@@ -31,8 +31,21 @@
 
   <title>auravibes</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div
+    class="progress-container"
+    data-flutter-loader
+    data-flutter-progress
+    role="progressbar"
+    aria-label="AuraVibes"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+  >
+    <div class="progress-bar" data-flutter-progress-bar></div>
+  </div>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
