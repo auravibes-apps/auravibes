@@ -177,19 +177,22 @@ void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
   if (responseError == null) return;
   final cause = finalResponse.cause;
   if (cause is AgentRateLimitRetryException) throw cause;
-  final causeDetails = cause is GenkitException ? cause.details?.trim() : null;
-  final responseDetails = responseError.details;
-  String? details;
-  if (causeDetails != null && causeDetails.isNotEmpty) {
-    details = causeDetails;
-  } else if (responseDetails != null && responseDetails.isNotEmpty) {
-    details = jsonEncode(responseDetails);
-  }
   throw GenkitException(
     responseError.message,
-    details: details,
+    details: _responseErrorDetails(finalResponse),
     underlyingException: cause,
   );
+}
+
+String? _responseErrorDetails(GenerateResponseHelper<Object?> finalResponse) {
+  final cause = finalResponse.cause;
+  final causeDetails = cause is GenkitException ? cause.details?.trim() : null;
+  if (causeDetails?.isNotEmpty == true) return causeDetails;
+
+  final responseDetails = finalResponse.error?.details;
+  return responseDetails?.isNotEmpty == true
+      ? jsonEncode(responseDetails)
+      : null;
 }
 
 Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(

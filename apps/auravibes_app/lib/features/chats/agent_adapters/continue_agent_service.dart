@@ -523,15 +523,23 @@ AgentIterationContext? _contextWithRetryUsers(
 
 String? _providerErrorDetail(Object error) {
   if (error is! GenkitException) return null;
-  var content = error.details?.trim();
   final cause = error.underlyingException;
-  if (content == null || content.isEmpty) {
-    content = cause is GenkitException ? cause.details?.trim() : null;
-  }
-  if (content == null || content.isEmpty) content = error.message.trim();
-  if (content.isEmpty) return null;
+  final content = _firstNonEmptyProviderDetail([
+    error.details,
+    if (cause is GenkitException) cause.details,
+    error.message,
+  ]);
+  if (content == null) return null;
 
   return LogRedaction.redact(content);
+}
+
+String? _firstNonEmptyProviderDetail(Iterable<String?> candidates) {
+  for (final candidate in candidates) {
+    final detail = candidate?.trim();
+    if (detail != null && detail.isNotEmpty) return detail;
+  }
+  return null;
 }
 
 String? _providerErrorMetadataJson() => JsonCodec.encode(
