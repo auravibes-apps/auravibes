@@ -1,6 +1,8 @@
 // Required: UI callbacks stay local to their widgets.
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const AuraAppBarWithDrawer({
@@ -59,7 +61,12 @@ class const _DrawerMenuButton({required final VoidCallback onPressed})
   @override
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('app_drawer_menu'),
-    child: AuraIconButton(icon: Icons.menu, onPressed: onPressed),
+    child: AuraIconButton(
+      icon: Icons.menu,
+      onPressed: onPressed,
+      semanticLabel: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
+      tooltip: LocaleKeys.navigation_drawer_toggle_tooltip.tr(),
+    ),
     identifier: 'app_drawer_menu',
   );
 }
