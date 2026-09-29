@@ -1182,21 +1182,29 @@ class const _ChatConversationStatusAndComposer({
   @override
   Widget build(BuildContext context) {
     final draftToLoad = useState<ChatDraft?>(null);
-    void editDraft(ChatDraft draft) => draftToLoad.value = draft;
-    void onMessageSent(ChatDraft draft) {
-      if (draft.intent == .revision) draftToLoad.value = null;
-    }
-
-    final onEditDraft = data.showInputComposer ? editDraft : null;
+    final onEditDraft = data.showInputComposer
+        ? _editChatDraftCallback(draftToLoad)
+        : null;
 
     return _ChatConversationStatusAndComposerView(
       data: data,
       draftToLoad: draftToLoad.value,
       onEditDraft: onEditDraft,
-      onMessageSent: onMessageSent,
+      onMessageSent: _clearRevisionDraftAfterSend(draftToLoad),
     );
   }
 }
+
+ValueChanged<ChatDraft> _editChatDraftCallback(
+  ValueNotifier<ChatDraft?> draftToLoad,
+) =>
+    (draft) => draftToLoad.value = draft;
+
+ValueChanged<ChatDraft> _clearRevisionDraftAfterSend(
+  ValueNotifier<ChatDraft?> draftToLoad,
+) => (draft) {
+  if (draft.intent == .revision) draftToLoad.value = null;
+};
 
 class const _ChatConversationStatusAndComposerView({
   required final _LoadedChatConversationData data,
@@ -1252,21 +1260,15 @@ class const _ChatConversationStatus({
   required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final retryAt = data.state.rateLimitRetryAt;
-
-    return AuraColumn(
-      children: [
-        if (retryAt != null && !data.hidesStoppedRun)
-          _RateLimitRetryIndicator(retryAt: retryAt),
-        if (data.state.queuedDrafts.isNotEmpty)
-          _QueuedMessagesStatus(data: data, onEditDraft: onEditDraft),
-        if (data.state.hasPendingApprovals)
-          _ApprovalStatus(data: data, onEditDraft: onEditDraft),
-      ],
-      mainAxisSize: .min,
-    );
-  }
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _RateLimitRetryStatus(data: data),
+      _QueuedMessagesStatus(data: data, onEditDraft: onEditDraft),
+      if (data.state.hasPendingApprovals)
+        _ApprovalStatus(data: data, onEditDraft: onEditDraft),
+    ],
+    mainAxisSize: .min,
+  );
 }
 
 class const _QueuedMessagesStatus({
@@ -1274,11 +1276,15 @@ class const _QueuedMessagesStatus({
   required final ValueChanged<ChatDraft>? onEditDraft,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ChatQueuedMessagesIndicator(
-    conversationId: data.conversation.id,
-    queuedDrafts: data.state.queuedDrafts,
-    onEditDraft: onEditDraft,
-  );
+  Widget build(BuildContext context) {
+    if (data.state.queuedDrafts.isEmpty) return const SizedBox.shrink();
+
+    return ChatQueuedMessagesIndicator(
+      conversationId: data.conversation.id,
+      queuedDrafts: data.state.queuedDrafts,
+      onEditDraft: onEditDraft,
+    );
+  }
 }
 
 class const _ApprovalStatus({
@@ -1287,7 +1293,6 @@ class const _ApprovalStatus({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final onEditDraft = this.onEditDraft;
     final messages =
         ref
             .watch(chatMessagesProvider(data.workspaceId, data.conversation.id))
@@ -1298,25 +1303,39 @@ class const _ApprovalStatus({
       workspaceId: data.workspaceId,
       conversationId: data.conversation.id,
       pendingCalls: data.state.pendingCalls,
-      onStopAndRevise: onEditDraft == null
-          ? null
-          : (assistantMessageId) {
-              final targetMessageId = _revisionTargetMessageId(
-                messages,
-                assistantMessageId,
-              );
-              if (targetMessageId == null) return;
-
-              onEditDraft(
-                ChatDraft(
-                  text: '',
-                  intent: .revision,
-                  targetMessageId: targetMessageId,
-                ),
-              );
-            },
+      onStopAndRevise: _stopAndReviseCallback(messages, onEditDraft),
     );
   }
+}
+
+ValueChanged<String>? _stopAndReviseCallback(
+  List<MessageEntity> messages,
+  ValueChanged<ChatDraft>? onEditDraft,
+) => onEditDraft == null ? null : _applyRevisionToDraft(messages, onEditDraft);
+
+ValueChanged<String> _applyRevisionToDraft(
+  List<MessageEntity> messages,
+  ValueChanged<ChatDraft> onEditDraft,
+) => (assistantMessageId) {
+  final draft = _revisionDraft(messages, assistantMessageId);
+  if (draft != null) onEditDraft(draft);
+};
+
+ChatDraft? _revisionDraft(
+  List<MessageEntity> messages,
+  String assistantMessageId,
+) {
+  final targetMessageId = _revisionTargetMessageId(
+    messages,
+    assistantMessageId,
+  );
+  if (targetMessageId == null) return null;
+
+  return ChatDraft(
+    text: '',
+    intent: .revision,
+    targetMessageId: targetMessageId,
+  );
 }
 
 String? _revisionTargetMessageId(
@@ -1711,6 +1730,20 @@ class const _ChatControlsAlignment({
       ],
     ),
   );
+}
+
+class const _RateLimitRetryStatus({
+  required final _LoadedChatConversationData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final retryAt = data.state.rateLimitRetryAt;
+    if (retryAt == null || data.hidesStoppedRun) {
+      return const SizedBox.shrink();
+    }
+
+    return _RateLimitRetryIndicator(retryAt: retryAt);
+  }
 }
 
 class const _RateLimitRetryIndicator({required final DateTime retryAt})

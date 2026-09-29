@@ -108,12 +108,6 @@ class const _PendingToolCallsView({
     final hiddenKeys = useState(<String>{});
     final processingKeys = useState(<String>{});
     _useApprovalStateReset(conversationId, hiddenKeys, processingKeys);
-    final asyncCalls = _pendingToolCallsAsync(
-      ref,
-      workspaceId,
-      conversationId,
-      pendingCalls,
-    );
 
     return _PendingToolCallsResult(
       workspaceId: workspaceId,
@@ -121,7 +115,12 @@ class const _PendingToolCallsView({
       hiddenKeys: hiddenKeys,
       processingKeys: processingKeys,
       pendingCalls: pendingCalls,
-      asyncCalls: asyncCalls,
+      asyncCalls: _pendingToolCallsAsync(
+        ref,
+        workspaceId,
+        conversationId,
+        pendingCalls,
+      ),
       onStopAndRevise: onStopAndRevise,
     );
   }
@@ -928,7 +927,7 @@ class _ApprovalCardBodyChildren {
           onStopAllStarted: request.actions.onStopAllStarted,
           onDecisionFailed: request.actions.onDecisionFailed,
           onDecisionCompleted: request.actions.onDecisionCompleted,
-          onStopAndRevise: request.source.onStopAndRevise,
+          onStopAndRevise: request.content.source.onStopAndRevise,
         ),
       ];
 

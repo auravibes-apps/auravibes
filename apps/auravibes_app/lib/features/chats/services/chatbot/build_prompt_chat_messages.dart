@@ -202,9 +202,22 @@ String _promptContent(MessageEntity message, MessageEntity? revisionTarget) {
   );
 
   if (message.isUser) {
-    if (metadata?.isRevision != true) return content;
+    return _userPromptContent(content, metadata, revisionTarget);
+  }
 
-    return [
+  return _appendA2uiSurfaces(content, metadata);
+}
+
+String _userPromptContent(
+  String content,
+  MessageMetadataEntity? metadata,
+  MessageEntity? revisionTarget,
+) => metadata?.isRevision == true
+    ? _revisionPromptContent(content, revisionTarget)
+    : content;
+
+String _revisionPromptContent(String content, MessageEntity? revisionTarget) =>
+    [
       [
         'This user message revises an earlier request.',
         'Treat it as updated guidance for that request,',
@@ -214,10 +227,6 @@ String _promptContent(MessageEntity message, MessageEntity? revisionTarget) {
         'Earlier user request:\n${revisionTarget.content}',
       'Revision from user:\n$content',
     ].join('\n\n');
-  }
-
-  return _appendA2uiSurfaces(content, metadata);
-}
 
 String _appendA2uiSurfaces(String content, MessageMetadataEntity? metadata) =>
     agent.appendA2uiSurfacesToPrompt(content, {

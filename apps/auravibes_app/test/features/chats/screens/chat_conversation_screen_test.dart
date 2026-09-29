@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
@@ -32,8 +33,10 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -542,9 +545,26 @@ void main() {
     expect(entity.isPinned, isTrue);
   });
 
-  testWidgets('renders ChatConversationScreen when ConversationFound', (
+  testWidgets('revises the latest user request before a pending tool call', (
     tester,
   ) async {
+    final stopProvider = _MockStopPendingToolCallsProvider();
+    final agentService = _MockAuraAgentService();
+    when(
+      () => stopProvider.stopPendingToolCalls(
+        messageId: 'assistant-1',
+        conversationId: _chatId,
+      ),
+    ).thenAnswer((_) => Future<void>.value());
+    when(() => agentService.tools).thenReturn(
+      agent.ToolsNamespace<ResolvedTool>(
+        approvals: _MockApproveToolCallProvider(),
+        skips: _MockSkipToolCallProvider(),
+        stopPending: stopProvider,
+        resume: _MockAgentToolResumeProvider(),
+        cancellationEffects: _MockAgentCancellationEffects(),
+      ),
+    );
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -552,6 +572,20 @@ void main() {
       isPinned: false,
       createdAt: .new(2026),
       updatedAt: .new(2026),
+    );
+    final messages = [
+      _chatMessage(id: 'request-1', content: 'Older request', isUser: true),
+      _chatMessage(id: 'request-2', content: 'Latest request', isUser: true),
+      _chatMessage(id: 'assistant-1', content: 'Calling a tool', isUser: false),
+    ];
+    const pendingCall = PendingToolCall(
+      toolCall: .new(
+        id: 'tool-call-1',
+        name: 'update_page',
+        argumentsRaw: '{}',
+      ),
+      messageId: 'assistant-1',
+      sourceConversationId: _chatId,
     );
 
     await tester.runAsync(() async {
@@ -583,7 +617,7 @@ void main() {
                     ),
                   ),
                   chatMessagesProvider.overrideWith(
-                    (ref, _) => Stream.value(const <MessageEntity>[]),
+                    (ref, _) => Stream.value(messages),
                   ),
                   chatMessageIdsProvider.overrideWith(
                     (ref, _) => const <String>[],
@@ -595,8 +629,9 @@ void main() {
                     ),
                   ),
                   pendingToolCallsProvider.overrideWith(
-                    (ref, _) async => const <PendingToolCall>[],
+                    (ref, _) async => [pendingCall],
                   ),
+                  auraAgentServiceProvider.overrideWithValue(agentService),
                   listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
                       .overrideWith((ref) => Stream.value(const {})),
                   agentsProvider(_workspaceId)
@@ -629,6 +664,22 @@ void main() {
     await tester.pump();
 
     expect(find.text('Chat'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('tool_approval_stop_and_revise')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final input = tester.widget<ChatInputWidget>(
+      find.byType(ChatInputWidget, skipOffstage: false),
+    );
+    expect(input.draftToLoad?.intent.name, 'revision');
+    expect(input.draftToLoad?.targetMessageId, 'request-2');
+    verify(
+      () => stopProvider.stopPendingToolCalls(
+        messageId: 'assistant-1',
+        conversationId: _chatId,
+      ),
+    ).called(1);
   });
 
   testWidgets('passes running compaction state to chat input', (tester) async {
@@ -1579,6 +1630,21 @@ class _CloudConversationEndpoint extends Mock implements EndpointConversation;
 class _ContinueConversationRequestFake extends Fake
     implements ContinueConversationRequest;
 
+MessageEntity _chatMessage({
+  required String id,
+  required String content,
+  required bool isUser,
+}) => MessageEntity(
+  id: id,
+  conversationId: _chatId,
+  content: content,
+  messageType: .text,
+  isUser: isUser,
+  status: .sent,
+  createdAt: .new(2026),
+  updatedAt: .new(2026),
+);
+
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
   @override
   Future<ConversationResult> build(String workspaceId, String conversationId) {
@@ -1681,3 +1747,21 @@ class _StubConversationRepository({
     String? throughMessageId,
   }) => throw UnimplementedError();
 }
+
+class _MockAuraAgentService extends Mock
+    implements agent.AuraAgentService<ResolvedTool>;
+
+class _MockApproveToolCallProvider extends Mock
+    implements agent.ApproveToolCallProvider<ResolvedTool>;
+
+class _MockSkipToolCallProvider extends Mock
+    implements agent.SkipToolCallProvider;
+
+class _MockStopPendingToolCallsProvider extends Mock
+    implements agent.StopPendingToolCallsProvider;
+
+class _MockAgentToolResumeProvider extends Mock
+    implements agent.AgentToolResumeProvider;
+
+class _MockAgentCancellationEffects extends Mock
+    implements agent.AgentCancellationEffects;
