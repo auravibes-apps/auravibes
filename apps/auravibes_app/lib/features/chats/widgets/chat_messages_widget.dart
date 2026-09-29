@@ -1919,8 +1919,9 @@ String _toolCallsSummary(Iterable<String> displayNames, Locale locale) {
   final names = displayNames.toList(growable: false);
   final summary = names.take(maximumNames).toList();
   final remaining = names.length - summary.length;
-  if (remaining > 0)
+  if (remaining > 0) {
     summary.add('+${NumberFormatter.count(remaining, locale)}');
+  }
 
   return summary.join(', ');
 }

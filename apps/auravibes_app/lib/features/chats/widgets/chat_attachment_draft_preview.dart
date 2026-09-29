@@ -220,8 +220,9 @@ String _attachmentMetadata(
 
 String _formatAttachmentSize(int sizeBytes, Locale locale) {
   const bytesPerUnit = 1024;
-  if (sizeBytes < bytesPerUnit)
+  if (sizeBytes < bytesPerUnit) {
     return '${NumberFormatter.count(sizeBytes, locale)} B';
+  }
 
   final kilobytes = sizeBytes / bytesPerUnit;
   if (kilobytes < bytesPerUnit) {

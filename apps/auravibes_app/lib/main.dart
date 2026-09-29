@@ -615,13 +615,13 @@ ThemeData _baseThemeInputStyle(ThemeData theme, AuraColorScheme colors) {
 
 class const _NoPageTransitionsBuilder()
     extends FadeUpwardsPageTransitionsBuilder {
-  static Duration noTransitionDuration() => Duration.zero;
-
   @override
   Duration get transitionDuration => noTransitionDuration();
 
   @override
   Duration get reverseTransitionDuration => noTransitionDuration();
+
+  static Duration noTransitionDuration() => Duration.zero;
 }
 
 ThemeData _buildBaseThemeDetails(ThemeData theme, _AuraThemeParts parts) =>
