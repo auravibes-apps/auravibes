@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -74,21 +75,6 @@ abstract class const McpFormState._() with _$McpFormState {
 }
 
 extension McpFormStateExtensions on McpFormState {
-  /// Get available authentication types based on current transport.
-  List<McpAuthenticationTypeOptions> get availableAuthTypes {
-    switch (transport) {
-      case .sse:
-        // SSE supports: none, oauth, bearer token.
-        return McpAuthenticationTypeOptions.values;
-      case .streamableHttp:
-        // Streamable HTTP supports: none, oauth (no bearer token).
-        return [
-          McpAuthenticationTypeOptions.none,
-          McpAuthenticationTypeOptions.oauth,
-        ];
-    }
-  }
-
   /// Whether to show OAuth fields.
   bool get showOAuthFields => authenticationType == .oauth;
 
@@ -101,10 +87,6 @@ extension McpFormStateExtensions on McpFormState {
         return const McpTransportTypeSSE();
     }
   }
-
-  /// Whether the selected authentication type is available for this transport.
-  bool isAuthenticationTypeAvailable(McpAuthenticationTypeOptions value) =>
-      availableAuthTypes.contains(value);
 }
 
 /// Notifier for managing MCP form state.
@@ -192,10 +174,13 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
     if (discard && verificationId != null) {
       unawaited(_discardPreparedVerification(verificationId));
     }
-    if (_formState.isConnectionVerified || _formState.verifiedToolCount != 0) {
+    if (_formState.isConnectionVerified ||
+        _formState.verifiedToolCount != 0 ||
+        _formState.transport == .sse) {
       _formState = _formState.copyWith(
         isConnectionVerified: false,
         verifiedToolCount: 0,
+        transport: .streamableHttp,
       );
     }
   }
@@ -212,6 +197,7 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
     _formState = _formState.copyWith(
       isConnectionVerified: false,
       verifiedToolCount: 0,
+      transport: .streamableHttp,
       errorMessage: LocaleKeys.mcp_modal_verification_expired,
     );
   }
@@ -224,15 +210,6 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
 }
 
 extension McpFormNotifierConnectionActions on McpFormNotifier {
-  /// Update the transport type.
-  void setTransport(McpTransportTypeOptions? value) {
-    if (value == null) return;
-    _requireTransportCapability(value);
-    if (value == _formState.transport) return;
-    _formState = _nextTransportState(value);
-    _invalidateConnectionVerification();
-  }
-
   /// Update the authentication type.
   void setAuthenticationType(McpAuthenticationTypeOptions value) {
     _requireAuthenticationCapability(value);
@@ -436,11 +413,11 @@ extension McpFormNotifierCapabilityChecks on McpFormNotifier {
     _requireAuthenticationCapability();
   }
 
-  void _requireTransportCapability([McpTransportTypeOptions? value]) {
+  void _requireTransportCapability() {
     final capabilities = _capabilities;
     capabilities.require(
       supported: capabilities.mcpTransports.contains(
-        _mcpTransportCapability(value ?? _formState.transport),
+        _mcpTransportCapability(_formState.transport),
       ),
     );
   }
@@ -452,18 +429,6 @@ extension McpFormNotifierCapabilityChecks on McpFormNotifier {
         _mcpAuthenticationCapability(value ?? _formState.authenticationType),
       ),
     );
-  }
-
-  McpFormState _nextTransportState(McpTransportTypeOptions value) {
-    var newState = _formState.copyWith(transport: value);
-    if (value != .streamableHttp) {
-      newState = newState.copyWith(useHttp2: false);
-    }
-    if (!newState.isAuthenticationTypeAvailable(newState.authenticationType)) {
-      newState = newState.copyWith(authenticationType: .none);
-    }
-
-    return newState;
   }
 }
 
@@ -556,10 +521,25 @@ bool _setMcpVerification(
     return false;
   }
   _scheduleMcpVerificationExpiry(notifier, verification.id, remaining);
+  notifier._formState = _formStateWithDetectedTransport(
+    notifier._formState,
+    verification.transport,
+  );
   _markMcpVerification(notifier, verification.toolCount);
 
   return true;
 }
+
+McpFormState _formStateWithDetectedTransport(
+  McpFormState state,
+  McpTransportType transport,
+) => switch (transport) {
+  McpTransportTypeSSE() => state.copyWith(transport: .sse, useHttp2: false),
+  McpTransportTypeStreamableHttp(:final useHttp2) => state.copyWith(
+    transport: .streamableHttp,
+    useHttp2: useHttp2,
+  ),
+};
 
 void _scheduleMcpVerificationExpiry(
   McpFormNotifier notifier,
@@ -582,6 +562,9 @@ void _markMcpVerification(McpFormNotifier notifier, int toolCount) {
 
 String _redactedConnectionTestError(Object error) {
   if (error case McpOAuthException(:final localizationKey)) {
+    return localizationKey;
+  }
+  if (error case McpLegacySseUnavailableException(:final localizationKey)) {
     return localizationKey;
   }
   final message = LogRedaction.redact(error.toString()).trim();

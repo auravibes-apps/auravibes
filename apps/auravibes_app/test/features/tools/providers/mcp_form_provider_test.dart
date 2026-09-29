@@ -12,6 +12,7 @@ import 'package:riverpod/riverpod.dart';
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   bool Function()? _oauthCancellationCheck;
   final _discardedVerificationIds = <String>[];
+  McpTransportType? _committedTransport;
 
   @override
   Future<McpConnectionVerification> prepareMcpConnection(
@@ -26,6 +27,7 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
       id: 'verification-id',
       toolCount: 2,
       expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      transport: const McpTransportTypeSSE(),
     );
   }
 
@@ -34,7 +36,9 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
     required String verificationId,
-  }) => Future<void>.value();
+  }) async {
+    _committedTransport = serverToCreate.transport;
+  }
 
   @override
   Future<void> discardPreparedMcpConnection(String verificationId) async {
@@ -53,6 +57,7 @@ class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
     id: 'verification-id',
     toolCount: 1,
     expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+    transport: const McpTransportTypeStreamableHttp(),
   );
 
   @override
@@ -97,6 +102,7 @@ class _ExpiredMcpConnectionNotifier extends McpConnectionNotifier {
     id: 'expired-verification-id',
     toolCount: 1,
     expiresAt: DateTime.now().toUtc().subtract(const Duration(seconds: 1)),
+    transport: const McpTransportTypeSSE(),
   );
 }
 
@@ -118,21 +124,6 @@ void main() {
       expect(state.isConnectionVerified, isFalse);
       expect(state.verifiedToolCount, 0);
       expect(state.errorMessage, isNull);
-    });
-
-    group('availableAuthTypes', () {
-      test('streamableHttp returns none and oauth', () {
-        const state = McpFormState();
-        expect(state.availableAuthTypes, [
-          McpAuthenticationTypeOptions.none,
-          McpAuthenticationTypeOptions.oauth,
-        ]);
-      });
-
-      test('sse returns all auth types', () {
-        const state = McpFormState(transport: .sse);
-        expect(state.availableAuthTypes, McpAuthenticationTypeOptions.values);
-      });
     });
 
     group('showOAuthFields', () {
@@ -346,40 +337,6 @@ void main() {
       );
     });
 
-    test('setTransport resets http2 when switching to sse', () {
-      readNotifier().setUseHttp2(value: true);
-      expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isTrue);
-
-      readNotifier().setTransport(.sse);
-      expect(readContainer().read(mcpFormProvider('ws1')).useHttp2, isFalse);
-    });
-
-    test('setTransport resets auth when switching to streamableHttp', () {
-      readNotifier()
-        ..setTransport(.sse)
-        ..setAuthenticationType(.bearerToken);
-
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).authenticationType,
-        McpAuthenticationTypeOptions.bearerToken,
-      );
-
-      readNotifier().setTransport(.streamableHttp);
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).authenticationType,
-        McpAuthenticationTypeOptions.none,
-      );
-    });
-
-    test('setTransport does nothing when value is null', () {
-      final original = readContainer().read(mcpFormProvider('ws1'));
-      readNotifier().setTransport(null);
-      expect(
-        readContainer().read(mcpFormProvider('ws1')).transport,
-        original.transport,
-      );
-    });
-
     test('setAuthenticationType updates auth type', () {
       readNotifier().setAuthenticationType(.bearerToken);
       expect(
@@ -492,6 +449,58 @@ void main() {
         readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
         isTrue,
       );
+    });
+
+    test(
+      'stores detected transport and resets it when inputs change',
+      () async {
+        readNotifier()
+          ..setName('Test')
+          ..setUrl('https://example.com')
+          ..setAuthenticationType(.none);
+
+        expect(await readNotifier().testConnection(), isTrue);
+        expect(
+          readContainer().read(mcpFormProvider('ws1')).transport,
+          McpTransportTypeOptions.sse,
+        );
+
+        readNotifier().setUrl('https://other.example.com');
+        expect(
+          readContainer().read(mcpFormProvider('ws1')).transport,
+          McpTransportTypeOptions.streamableHttp,
+        );
+        expect(
+          readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+          isFalse,
+        );
+
+        expect(await readNotifier().testConnection(), isTrue);
+        readNotifier().setAuthenticationType(.oauth);
+        expect(
+          readContainer().read(mcpFormProvider('ws1')).transport,
+          McpTransportTypeOptions.streamableHttp,
+        );
+        expect(
+          readContainer().read(mcpFormProvider('ws1')).isConnectionVerified,
+          isFalse,
+        );
+      },
+    );
+
+    test('commits the detected concrete transport', () async {
+      readNotifier()
+        ..setName('Test')
+        ..setUrl('https://example.com')
+        ..setAuthenticationType(.none);
+
+      expect(await readNotifier().testConnection(), isTrue);
+      expect(await readNotifier().submit(), isTrue);
+
+      final connection = readContainer().read(
+        mcpConnectionProvider.notifier,
+      ) as _FakeMcpConnectionNotifier;
+      expect(connection._committedTransport, isA<McpTransportTypeSSE>());
     });
 
     test('name and description edits keep verification valid', () async {

@@ -1274,6 +1274,9 @@ class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
   bool get isConnected => connected;
 
   @override
+  McpTransportType get resolvedTransport => const McpTransportTypeSSE();
+
+  @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;
 
   @override
