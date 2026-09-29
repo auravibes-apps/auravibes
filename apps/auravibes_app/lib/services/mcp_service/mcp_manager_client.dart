@@ -22,6 +22,12 @@ typedef McpConnectionRequest = ({
   String? description,
 });
 
+typedef _StreamableHttpAuthConfig = ({
+  mcp.OAuthConfig? oauthConfig,
+  Map<String, String> headers,
+  mcp.RequestHeadersProvider? headersProvider,
+});
+
 class McpManagerClient._(
   final mcp.Client _client,
   final mcp.ClientTransport _transport,
@@ -339,18 +345,36 @@ Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
   required OAuthCredentialService? oauthCredentialService,
   http.Client? httpClient,
 }) {
-  final authType = server.authenticationType;
-  final isOAuth = authType is McpAuthenticationTypeOAuth;
+  final authConfig = _streamableHttpAuthConfig(server, oauthCredentialService);
 
   return mcp.StreamableHttpClientTransport.create(
     baseUrl: server.url,
-    oauthConfig: isOAuth ? null : _getOauthConfig(authType),
-    headers: isOAuth ? const {} : _httpHeaders(authType),
-    headersProvider: isOAuth
-        ? (_) => _oauthHeaders(server, authType, oauthCredentialService)
-        : null,
+    oauthConfig: authConfig.oauthConfig,
+    headers: authConfig.headers,
+    headersProvider: authConfig.headersProvider,
     useHttp2: transportType.useHttp2,
     httpClient: httpClient,
+  );
+}
+
+_StreamableHttpAuthConfig _streamableHttpAuthConfig(
+  McpServerToCreate server,
+  OAuthCredentialService? oauthCredentialService,
+) {
+  final authType = server.authenticationType;
+  if (authType is McpAuthenticationTypeOAuth) {
+    return (
+      oauthConfig: null,
+      headers: const {},
+      headersProvider: (_) =>
+          _oauthHeaders(server, authType, oauthCredentialService),
+    );
+  }
+
+  return (
+    oauthConfig: _getOauthConfig(authType),
+    headers: _httpHeaders(authType),
+    headersProvider: null,
   );
 }
 
