@@ -158,9 +158,9 @@ List<_Token> _tokenize(String source) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == '\'' || source[index + 1] == '"') &&
+        (source[index + 1] == '\u0027' || source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
-    if (rawString || character == '\'' || character == '"') {
+    if (rawString || character == '\u0027' || character == '"') {
       if (rawString) index++;
       final quote = source[index];
       final tripleQuote = '$quote$quote$quote';
@@ -201,20 +201,21 @@ List<_Token> _tokenize(String source) {
         followsString: previousWasString,
       ));
       for (final expression in interpolations) {
-        tokens
-          ..add((
+        tokens.addAll([
+          (
             value: ';',
             isString: false,
             isLiteral: false,
             followsString: false,
-          ))
-          ..addAll(expression)
-          ..add((
+          ),
+          ...expression,
+          (
             value: ';',
             isString: false,
             isLiteral: false,
             followsString: false,
-          ));
+          ),
+        ]);
       }
       previousWasString = true;
       index += delimiter.length;
@@ -321,10 +322,10 @@ int? _interpolationEnd(String source, int start) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == '\'' || source[index + 1] == '"') &&
+        (source[index + 1] == '\u0027' || source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
     if (rawString) character = source[++index];
-    if (character == '\'' || character == '"') {
+    if (character == '\u0027' || character == '"') {
       final tripleQuote = '$character$character$character';
       final delimiter = source.startsWith(tripleQuote, index)
           ? tripleQuote

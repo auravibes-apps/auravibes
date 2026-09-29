@@ -155,13 +155,13 @@ final dynamic = 'menu.$name'.tr();
       {
         'en': {
           r'menu.$price',
-          'menu.quo\'te',
+          'menu.quo\u0027te',
           r'menu.back\slash',
           'menu.vertical\u000Btab',
         },
         'es': {
           r'menu.$price',
-          'menu.quo\'te',
+          'menu.quo\u0027te',
           r'menu.back\slash',
           'menu.vertical\u000Btab',
         },
