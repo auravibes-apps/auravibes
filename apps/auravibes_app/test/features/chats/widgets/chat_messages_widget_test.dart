@@ -90,6 +90,7 @@ void main() {
     MessageStatus status = MessageStatus.sent,
     MessageMetadataEntity? metadata,
     MessageType messageType = MessageType.text,
+    List<MessageAttachmentEntity> attachments = const [],
   }) {
     return MessageEntity(
       id: id,
@@ -101,6 +102,7 @@ void main() {
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
       metadata: metadata,
+      attachments: attachments,
     );
   }
 
@@ -2761,6 +2763,213 @@ void main() {
       expect(find.byKey(const ValueKey('activity_tool_tc-4')), findsOneWidget);
     });
 
+    testWidgets(
+      'renders_non_final_rich_responses_inside_expanded_activity_without_actions',
+      (tester) async {
+        final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+        addTearDown(runtime.dispose);
+        final rich = _createMessage(
+          id: 'rich',
+          content: 'Intermediate detail',
+          isUser: false,
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-1',
+              messageId: 'rich',
+              localPath: '/missing/report.txt',
+              fileName: 'report.txt',
+              displayName: 'report.txt',
+              mimeType: 'text/plain',
+              modality: MessageAttachmentModality.file,
+              sizeBytes: 6,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            ),
+          ],
+          metadata: MessageMetadataEntity(
+            a2uiMessages: [
+              for (final operation in [
+                {
+                  'createSurface': {
+                    'surfaceId': 'main',
+                    'catalogId': 'urn:auravibes:a2ui:chat:v1',
+                  },
+                },
+                {
+                  'updateComponents': {
+                    'surfaceId': 'main',
+                    'components': [
+                      {
+                        'id': 'root',
+                        'component': 'Text',
+                        'text': 'Replay detail',
+                      },
+                    ],
+                  },
+                },
+              ])
+                jsonEncode({
+                  'protocolVersion': 'v1',
+                  'interactionMode': 'passive',
+                  'message': {'version': 'v0.9', ...operation},
+                }),
+            ],
+          ),
+        );
+        final tool = _createMessage(
+          id: 'tool',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc-rich',
+                name: 'built_in_1_read_file',
+                argumentsRaw: '{}',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        );
+        final messagesById = {'rich': rich, 'tool': tool};
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['rich', 'tool'],
+            messageEntitiesById: messagesById,
+            conversation: ConversationEntity(
+              id: 'conv-1',
+              title: 'Chat',
+              workspaceId: 'ws-1',
+              isPinned: false,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            ),
+            overrides: [
+              chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+              ..._messageOverrides(messagesById),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final disclosure = find.byKey(
+          const ValueKey('activity_trace_toggle_rich'),
+        );
+        expect(disclosure, findsOneWidget);
+        expect(find.text('Intermediate detail'), findsNothing);
+        expect(find.text('report.txt'), findsNothing);
+        expect(find.text('Replay detail'), findsNothing);
+        expect(find.byKey(const ValueKey('a2ui_rich')), findsNothing);
+        expect(find.byIcon(Icons.copy_outlined), findsNothing);
+        expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+        expect(find.byKey(const ValueKey('retry_message_rich')), findsNothing);
+        expect(find.byKey(const ValueKey('message_footer_rich')), findsNothing);
+
+        await tester.tap(disclosure);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Intermediate detail'), findsOneWidget);
+        expect(find.text('report.txt'), findsOneWidget);
+        expect(find.text('Replay detail'), findsOneWidget);
+        expect(find.byKey(const ValueKey('a2ui_rich')), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_tool_tc-rich')),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.copy_outlined), findsNothing);
+        expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+        expect(find.byKey(const ValueKey('retry_message_rich')), findsNothing);
+        expect(find.byKey(const ValueKey('message_footer_rich')), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets('hides_response_actions_until_streamed_turn_is_final', (
+      tester,
+    ) async {
+      final messagesById = {
+        'intermediate': _createMessage(
+          id: 'intermediate',
+          content: 'Streaming answer',
+          isUser: false,
+        ),
+        'tool': _createMessage(
+          id: 'tool',
+          content: '',
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tc-stream',
+                name: 'built_in_1_read_file',
+                argumentsRaw: '{}',
+                resultStatus: ToolCallResultStatus.success,
+              ),
+            ],
+          ),
+        ),
+        'final': _createMessage(
+          id: 'final',
+          content: 'Terminal answer',
+          isUser: false,
+        ),
+      };
+      var visibleIds = ['intermediate'];
+      var streaming = true;
+      late StateSetter updateTimeline;
+      await pumpAndInit(
+        tester,
+        StatefulBuilder(
+          builder: (context, setState) {
+            updateTimeline = setState;
+            return buildSubject(
+              messages: visibleIds,
+              overrides: [
+                messageConversationByIdProvider.overrideWith(
+                  (ref, id) => messagesById[id.messageId],
+                ),
+                isMessageStreamingProvider.overrideWith(
+                  (ref, id) => streaming && id == 'intermediate',
+                ),
+                conversationBusyStateProvider.overrideWith(
+                  (ref, _) async => const ConversationBusyState(
+                    isStreaming: false,
+                    hasPendingTools: false,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
+      expect(
+        find.byKey(const ValueKey('message_footer_intermediate')),
+        findsNothing,
+      );
+
+      updateTimeline(() {
+        visibleIds = ['intermediate', 'tool'];
+        streaming = false;
+      });
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
+      expect(
+        find.byKey(const ValueKey('message_footer_intermediate')),
+        findsNothing,
+      );
+
+      updateTimeline(() => visibleIds = ['intermediate', 'tool', 'final']);
+      await tester.pumpAndSettle();
+      expect(find.text('Terminal answer'), findsOneWidget);
+      expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('message_footer_intermediate')),
+        findsNothing,
+      );
+    });
+
     testWidgets('preserves rich responses before later assistant activity', (
       tester,
     ) async {
@@ -2849,12 +3058,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      final disclosure =
+          find.byKey(const ValueKey('activity_trace_toggle_rich-response'));
+      expect(disclosure, findsOneWidget);
+      expect(find.byKey(const ValueKey('a2ui_rich-response')), findsNothing);
+      expect(find.text('Rich answer'), findsNothing);
+      await tester.tap(disclosure);
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('a2ui_rich-response')), findsOneWidget);
       expect(find.text('Rich answer'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('activity_trace_later-activity')),
-        findsOneWidget,
-      );
       expect(tester.takeException(), isNull);
     });
 
