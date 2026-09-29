@@ -216,6 +216,33 @@ void main() {
     expect(controller.text, '1. first\n2. second');
   });
 
+  testWidgets('Tab indentation can be undone in the editor', (tester) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    const original = TextEditingValue(
+      text: '- parent\n- sibling',
+      selection: .collapsed(offset: 3),
+    );
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = original;
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final _ = await tester.sendKeyEvent(.tab);
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(controller.text, '  - parent\n- sibling');
+    expect(controller.selection, const TextSelection.collapsed(offset: 5));
+
+    final _ = await tester.sendKeyDownEvent(.controlLeft);
+    final _ = await tester.sendKeyEvent(.keyZ);
+    final _ = await tester.sendKeyUpEvent(.controlLeft);
+    await tester.pump();
+    expect(controller.value, original);
+  });
+
   testWidgets('editor input exits empty bullet on Enter', (tester) async {
     await _openMarkdownEditor(
       tester,

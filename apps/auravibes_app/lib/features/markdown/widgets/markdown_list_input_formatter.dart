@@ -12,6 +12,52 @@ typedef _NumberedBlock = ({int start, String indentation, int firstNumber});
 class MarkdownListInputFormatter extends TextInputFormatter {
   const new();
 
+  static TextEditingValue? adjustIndentation(
+    TextEditingValue value, {
+    required bool outdent,
+  }) {
+    if (!value.selection.isValid || !value.composing.isCollapsed) return null;
+
+    final lines = value.text.split('\n');
+    final first = _lineIndex(value.text, value.selection.start);
+    final last = _lineIndex(
+      value.text,
+      value.selection.isCollapsed
+          ? value.selection.end
+          : value.selection.end - 1,
+    );
+    final affected = <int>{};
+    for (var index = first; index <= last; index++) {
+      final marker = _listMarker.firstMatch(lines[index]);
+      if (marker == null) continue;
+      final indentation = marker.group(1)?.length ?? 0;
+      if (outdent && indentation < 2) continue;
+      affected.add(index);
+      for (var child = index + 1; child < lines.length; child++) {
+        final childMarker = _listMarker.firstMatch(lines[child]);
+        if (childMarker == null ||
+            (childMarker.group(1)?.length ?? 0) <= indentation) {
+          break;
+        }
+        affected.add(child);
+      }
+    }
+    if (affected.isEmpty) return null;
+
+    final edits = <_NumberEdit>[];
+    for (final index in affected.toList()..sort()) {
+      final start = _lineOffset(lines, index);
+      edits.add(
+        outdent
+            ? (start: start, end: start + 2, replacement: '')
+            : (start: start, end: start, replacement: '  '),
+      );
+    }
+    final adjusted = _applyNumberEdits(value, edits);
+
+    return _renumberIndentedBlock(adjusted, affected, oldText: value.text);
+  }
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -22,6 +68,64 @@ class MarkdownListInputFormatter extends TextInputFormatter {
     return _listEdit(oldValue, newValue) ??
         _renumberAfterLineChange(oldValue, newValue);
   }
+}
+
+TextEditingValue _renumberIndentedBlock(
+  TextEditingValue value,
+  Set<int> affected, {
+  required String oldText,
+}) {
+  final lines = value.text.split('\n');
+  var first = affected.reduce((a, b) => a < b ? a : b);
+  var last = affected.reduce((a, b) => a > b ? a : b);
+  while (first > 0 && _listMarker.hasMatch(lines[first - 1])) first--;
+  while (last + 1 < lines.length && _listMarker.hasMatch(lines[last + 1])) {
+    last++;
+  }
+
+  final oldLines = oldText.split('\n');
+  final nextNumbers = <int, int>{};
+  final edits = <_NumberEdit>[];
+  for (var index = first; index <= last; index++) {
+    final marker = _listMarker.firstMatch(lines[index]);
+    if (marker == null) continue;
+    final indentation = marker.group(1)?.length ?? 0;
+    nextNumbers.removeWhere((level, _) => level > indentation);
+    final numbered = _numberedMarker.firstMatch(lines[index]);
+    if (numbered == null) {
+      nextNumbers.remove(indentation);
+      continue;
+    }
+    final number =
+        nextNumbers[indentation] ??
+        _oldGroupStartNumber(oldLines, index, first, indentation);
+    final edit = _numberEdit(numbered, number, _lineOffset(lines, index));
+    if (edit != null) edits.add(edit);
+    nextNumbers[indentation] = number + 1;
+  }
+
+  return edits.isEmpty ? value : _applyNumberEdits(value, edits);
+}
+
+int _oldGroupStartNumber(
+  List<String> lines,
+  int index,
+  int first,
+  int indentation,
+) {
+  int? firstNumber;
+  for (var previous = index; previous >= first; previous--) {
+    final marker = _listMarker.firstMatch(lines[previous]);
+    if (marker == null) break;
+    final level = marker.group(1)?.length ?? 0;
+    if (level < indentation) break;
+    if (level > indentation) continue;
+    final numbered = _numberedMarker.firstMatch(lines[previous]);
+    if (numbered == null) break;
+    firstNumber = int.parse(numbered.group(_numberGroup)!);
+  }
+
+  return firstNumber ?? 1;
 }
 
 bool _canFormat(TextEditingValue oldValue, TextEditingValue newValue) =>
@@ -309,7 +413,10 @@ int _lineOffset(List<String> lines, int index) => lines
 int _mappedOffset(int offset, List<_NumberEdit> edits) {
   var shift = 0;
   for (final edit in edits) {
-    if (offset <= edit.start) break;
+    if (offset < edit.start ||
+        (offset == edit.start && edit.start != edit.end)) {
+      break;
+    }
     if (offset < edit.end) {
       return edit.start + shift + edit.replacement.length;
     }

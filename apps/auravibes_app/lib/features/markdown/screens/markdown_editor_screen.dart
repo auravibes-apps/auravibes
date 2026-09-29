@@ -7,6 +7,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:textf/textf.dart';
 
@@ -36,6 +37,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     _controller.text = widget.initialMarkdown;
     _controller.addListener(_onMarkdownChanged);
     _focusNode.addListener(_onFocusChange);
+    _focusNode.onKeyEvent = _onEditorKey;
   }
 
   @override
@@ -66,6 +68,22 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     setState(() {
       _isFocused = _focusNode.hasFocus;
     });
+  }
+
+  KeyEventResult _onEditorKey(FocusNode _, KeyEvent event) {
+    if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.tab) {
+      return .ignored;
+    }
+
+    final adjusted = MarkdownListInputFormatter.adjustIndentation(
+      _controller.value,
+      outdent: HardwareKeyboard.instance.isShiftPressed,
+    );
+    if (adjusted == null) return .ignored;
+
+    _controller.value = adjusted;
+
+    return .handled;
   }
 
   void _unfocusInput() {
