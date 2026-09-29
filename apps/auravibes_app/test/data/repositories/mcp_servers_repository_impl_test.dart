@@ -72,6 +72,38 @@ void main() {
     }
 
     group('addMcpServerWithTools', () {
+      test('stores copied catalog metadata for the active workspace', () async {
+        final serverRow = createServerRow(workspaceId: 'workspace-a')
+            .copyWith(catalogSnapshotJson: const Value('{"name":"Original"}'));
+        final groupRow = createGroupRow(workspaceId: 'workspace-a');
+        when(() => fixture.mockMcpServersDao.insertMcpServer(any()))
+            .thenAnswer((_) async => serverRow);
+        when(() => fixture.mockToolsGroupsDao.insertToolsGroup(any()))
+            .thenAnswer((_) async => groupRow);
+
+        const serverToCreate = McpServerToCreate(
+          name: 'Original',
+          url: 'http://localhost:3000',
+          transport: McpTransportTypeSSE(),
+          authenticationType: .none(),
+          catalogSnapshotJson: '{"name":"Original"}',
+        );
+        final result = await fixture.repository.addMcpServerWithTools(
+          workspaceId: 'workspace-a',
+          serverToCreate: serverToCreate,
+          tools: [],
+        );
+
+        final inserted =
+            verify(
+                  () => fixture.mockMcpServersDao.insertMcpServer(captureAny()),
+                ).captured.single
+                as McpServersCompanion;
+        expect(inserted.workspaceId.value, 'workspace-a');
+        expect(inserted.catalogSnapshotJson.value, '{"name":"Original"}');
+        expect(result.catalogSnapshotJson, '{"name":"Original"}');
+      });
+
       test('creates server with tools in transaction', () async {
         final serverRow = createServerRow();
         final groupRow = createGroupRow(mcpServerId: 'mcp-1');

@@ -831,11 +831,13 @@ class const _AuthenticationSelector({required final String workspaceId})
   static List<McpAuthenticationTypeOptions> _supportedTypes(
     WorkspaceCapabilities capabilities,
   ) => McpAuthenticationTypeOptions.values
+      .where((type) => type != McpAuthenticationTypeOptions.httpHeaders)
       .where(
         (type) => capabilities.mcpAuthentication.contains(switch (type) {
           .none => WorkspaceMcpAuthentication.none,
           .bearerToken => WorkspaceMcpAuthentication.bearerToken,
           .oauth => WorkspaceMcpAuthentication.oauth,
+          .httpHeaders => WorkspaceMcpAuthentication.httpHeaders,
         }),
       )
       .toList();
@@ -856,6 +858,7 @@ class const _AuthenticationSelector({required final String workspaceId})
         .none => LocaleKeys.mcp_modal_auth_none,
         .oauth => LocaleKeys.mcp_modal_auth_oauth,
         .bearerToken => LocaleKeys.mcp_modal_auth_bearer_token,
+        .httpHeaders => LocaleKeys.mcp_modal_auth_bearer_token,
       };
 }
 

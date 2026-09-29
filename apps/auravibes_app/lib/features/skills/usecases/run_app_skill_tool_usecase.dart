@@ -236,6 +236,9 @@ extension _RunAppSkillSecretOperations on RunAppSkillToolUsecase {
         _bearerAttributes(bearerToken),
       ServiceConnectionSecretOAuth2(:final accessToken) =>
         _oauthSecretAttributes(request, accessToken),
+      ServiceConnectionSecretHttpHeaders() => throw StateError(
+        'MCP HTTP headers are not an app skill credential.',
+      ),
     };
   }
 

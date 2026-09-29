@@ -57,6 +57,9 @@ class McpServers extends Table with TableMixin {
   /// Optional description of what this MCP server provides.
   TextColumn get description => text().nullable()();
 
+  /// Copied catalog definition without submitted field values.
+  TextColumn get catalogSnapshotJson => text().nullable()();
+
   /// Whether the MCP server is enabled for connections.
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 

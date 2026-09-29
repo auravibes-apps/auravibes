@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/service_connections/models/service_connec
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
+import 'package:auravibes_app/features/service_connections/widgets/mcp_catalog_browser.dart';
 import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -236,6 +237,16 @@ void _openCreateConnection(BuildContext context, String workspaceId) =>
       ),
     );
 
+Future<void> _openMcpCatalog(BuildContext context, String workspaceId) async {
+  final installed = await McpCatalogBrowser.show(context, workspaceId);
+  if (installed != true || !context.mounted) return;
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.mcp_catalog_install_success),
+    variant: .success,
+  );
+}
+
 class const _ServiceConnectionsView({
   required final AsyncValue<List<ServiceConnectionListItem>> connectionsAsync,
   required final VoidCallback onAddConnection,
@@ -387,6 +398,11 @@ class const _ServiceConnectionsAppBar({
       title: const TextLocale(LocaleKeys.service_connections_title),
       actions: [
         _SyncModelCatalogButton(workspaceId: workspaceId),
+        AuraIconButton(
+          icon: Icons.hub_outlined,
+          onPressed: () => unawaited(_openMcpCatalog(context, workspaceId)),
+          tooltip: LocaleKeys.mcp_catalog_browse.tr(context: context),
+        ),
         _ConnectionsAddButton(onPressed: onAddConnection),
       ],
       leading: const _ConnectionsBackButton(),

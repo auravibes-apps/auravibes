@@ -1309,6 +1309,32 @@ abstract class LocaleKeys {
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';
+  static const mcp_catalog_back = 'mcp_catalog.back';
+  static const mcp_catalog_browse = 'mcp_catalog.browse';
+  static const mcp_catalog_title = 'mcp_catalog.title';
+  static const mcp_catalog_search = 'mcp_catalog.search';
+  static const mcp_catalog_transport = 'mcp_catalog.transport';
+  static const mcp_catalog_authentication = 'mcp_catalog.authentication';
+  static const mcp_catalog_all = 'mcp_catalog.all';
+  static const mcp_catalog_empty = 'mcp_catalog.empty';
+  static const mcp_catalog_no_match = 'mcp_catalog.no_match';
+  static const mcp_catalog_load_error = 'mcp_catalog.load_error';
+  static const mcp_catalog_sign_in_required = 'mcp_catalog.sign_in_required';
+  static const mcp_catalog_option = 'mcp_catalog.option';
+  static const mcp_catalog_required = 'mcp_catalog.required';
+  static const mcp_catalog_optional = 'mcp_catalog.optional';
+  static const mcp_catalog_help = 'mcp_catalog.help';
+  static const mcp_catalog_verify = 'mcp_catalog.verify';
+  static const mcp_catalog_install = 'mcp_catalog.install';
+  static const mcp_catalog_verification_success =
+      'mcp_catalog.verification_success';
+  static const mcp_catalog_verification_error =
+      'mcp_catalog.verification_error';
+  static const mcp_catalog_install_success = 'mcp_catalog.install_success';
+  static const mcp_catalog_install_error = 'mcp_catalog.install_error';
+  static const mcp_catalog_missing_fields = 'mcp_catalog.missing_fields';
+  static const mcp_catalog_unsupported_option =
+      'mcp_catalog.unsupported_option';
   static const mcp_modal_title = 'mcp_modal.title';
   static const mcp_modal_add_mcp_tooltip = 'mcp_modal.add_mcp_tooltip';
   static const mcp_modal_transport_sse = 'mcp_modal.transport.sse';

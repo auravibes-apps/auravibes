@@ -6,3 +6,4 @@ fields:
   transport: String
   useHttp2: bool
   bearerToken: String?
+  httpHeadersJson: String?

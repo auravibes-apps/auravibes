@@ -481,9 +481,32 @@ Future<String?> _createMcpAuthentication(_McpAuthenticationRequest request) {
     McpAuthenticationTypeNone() => Future.value(),
     McpAuthenticationTypeBearerToken(:final bearerToken) =>
       _createBearerForAuthentication(request, bearerToken),
+    McpAuthenticationTypeHttpHeaders(:final headers) =>
+      _createHeadersForAuthentication(request, headers),
     final McpAuthenticationTypeOAuth authenticationType =>
       _createOAuthForAuthentication(request, authenticationType),
   };
+}
+
+Future<String> _createHeadersForAuthentication(
+  _McpAuthenticationRequest request,
+  Map<String, String> headers,
+) async {
+  final encrypted = await _encryptedSecret(
+    request.repository,
+    ServiceConnectionSecretHttpHeaders(headers: headers),
+  );
+  final row = await _insertConnection(
+    request.repository,
+    _baseConnectionCompanion((
+      name: request.profile.name,
+      serviceId: request.profile.serviceId(),
+      kind: .mcpServer,
+      authenticationType: .apiKey,
+      workspaceId: request.workspaceId,
+    )).copyWith(encryptedAuthValue: .new(encrypted)),
+  );
+  return row.id;
 }
 
 Future<String> _createBearerForAuthentication(

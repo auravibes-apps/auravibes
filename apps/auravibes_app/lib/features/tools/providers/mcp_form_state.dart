@@ -79,7 +79,11 @@ extension McpFormStateExtensions on McpFormState {
     switch (transport) {
       case .sse:
         // SSE supports: none, oauth, bearer token.
-        return McpAuthenticationTypeOptions.values;
+        return [
+          McpAuthenticationTypeOptions.none,
+          McpAuthenticationTypeOptions.oauth,
+          McpAuthenticationTypeOptions.bearerToken,
+        ];
       case .streamableHttp:
         // Streamable HTTP supports: none, oauth (no bearer token).
         return [
@@ -613,4 +617,5 @@ WorkspaceMcpAuthentication _mcpAuthenticationCapability(
   .none => .none,
   .bearerToken => .bearerToken,
   .oauth => .oauth,
+  .httpHeaders => .httpHeaders,
 };

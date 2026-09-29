@@ -171,6 +171,7 @@ extension McpServersRepositoryOperations on McpServersRepository {
         transport: serverToCreate.transport,
         serviceConnectionId: Value(serverToCreate.serviceConnectionId),
         description: Value(serverToCreate.description),
+        catalogSnapshotJson: Value(serverToCreate.catalogSnapshotJson),
       ),
     );
   }
@@ -403,6 +404,7 @@ extension on McpServersRepository {
       updatedAt: table.updatedAt,
       serviceConnectionId: table.serviceConnectionId,
       description: table.description,
+      catalogSnapshotJson: table.catalogSnapshotJson,
       isEnabled: table.isEnabled,
     );
   }

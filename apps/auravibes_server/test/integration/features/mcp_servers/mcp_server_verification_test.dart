@@ -16,6 +16,83 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('MCP server verification', (sessionBuilder, _) {
+    test(
+      'catalog install keeps metadata and encrypted workspace headers',
+      () async {
+        final fixture = await _Fixture.create(sessionBuilder.build());
+        await McpCatalogEntry.db.insertRow(
+          fixture.session,
+          McpCatalogEntry(
+            catalogId: 'catalog-1',
+            name: 'Original',
+            description: 'Original description',
+            url: 'https://mcp.example.com',
+            transport: 'streamableHttp',
+            isEnabled: true,
+            optionsJson: '[{"key":"personal","name":"Personal","authType":"apiKey","fields":[{"key":"X-API-Key","isSecret":true,"isRequired":true}]}]',
+          ),
+        );
+        final probe = _FakeMcpServerProbe();
+        final useCases = McpServerUseCases(McpServerRepository(), probe);
+        final verification = await useCases.verify(
+          fixture.session,
+          userId: fixture.userId,
+          request: VerifyMcpServerRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'verify-catalog',
+            url: 'https://mcp.example.com',
+            transport: 'streamableHttp',
+            useHttp2: false,
+            httpHeadersJson: '{"X-API-Key":"secret-value"}',
+          ),
+        );
+        await useCases.create(
+          fixture.session,
+          userId: fixture.userId,
+          request: CreateMcpServerRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'create-catalog',
+            name: 'Original',
+            url: 'https://mcp.example.com',
+            transport: 'streamableHttp',
+            useHttp2: false,
+            httpHeadersJson: '{"X-API-Key":"secret-value"}',
+            catalogListingId: 'catalog-1',
+            catalogOptionKey: 'personal',
+            verificationReceipt: verification.verificationReceipt,
+          ),
+        );
+        final resources = await WorkspaceResource.db.find(
+          fixture.session,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        );
+        final server = resources.singleWhere(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.mcpServer,
+        );
+        final snapshot = jsonDecode(server.data) as Map<String, dynamic>;
+        final secret = (await WorkspaceSecret.db.find(
+          fixture.session,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        )).single;
+        expect(snapshot['catalogSnapshotJson'], contains('Original'));
+        expect(
+          snapshot['catalogSnapshotJson'],
+          isNot(contains('secret-value')),
+        );
+        expect(
+          base64Encode(secret.ciphertext.buffer.asUint8List()),
+          isNot(contains('secret-value')),
+        );
+        expect(probe.lastHeaders, {'X-API-Key': 'secret-value'});
+        await McpCatalogEntry.db.deleteWhere(
+          fixture.session,
+          where: (table) => table.catalogId.equals('catalog-1'),
+        );
+        expect(snapshot['catalogSnapshotJson'], contains('Original'));
+      },
+    );
+
     test('verify is read-only and create reuses its discovery', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       final probe = _FakeMcpServerProbe();
@@ -269,6 +346,7 @@ DiscoverMcpServerResult _discovery() => DiscoverMcpServerResult(
 
 class _FakeMcpServerProbe extends McpServerProbe {
   var calls = 0;
+  Map<String, String>? lastHeaders;
 
   @override
   Future<DiscoverMcpServerResult> call({
@@ -276,8 +354,10 @@ class _FakeMcpServerProbe extends McpServerProbe {
     required String transport,
     required bool useHttp2,
     String? bearerToken,
+    Map<String, String> httpHeaders = const {},
   }) async {
     calls++;
+    lastHeaders = httpHeaders;
 
     return _discovery();
   }
@@ -314,6 +394,8 @@ class _Fixture {
   final int workspaceId;
 
   static Future<_Fixture> create(Session session) async {
+    session.passwords['workspaceSecretKey'] =
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
     final userId = const Uuid().v4().toString();
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(

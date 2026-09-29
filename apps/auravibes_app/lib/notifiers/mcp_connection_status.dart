@@ -838,7 +838,8 @@ extension _McpPreparationOperations on McpConnectionNotifier {
       switch (server.authenticationType) {
         McpAuthenticationTypeOAuth(:final token) => token,
         McpAuthenticationTypeNone() ||
-        McpAuthenticationTypeBearerToken() => null,
+        McpAuthenticationTypeBearerToken() ||
+        McpAuthenticationTypeHttpHeaders() => null,
       };
 }
 
@@ -875,6 +876,9 @@ String _mcpConnectionFingerprint(McpServerFormToCreate server) {
     'transport': server.transport.toJson(),
     'authenticationType': server.authenticationType.name,
     'bearerTokenDigest': sha256.convert(utf8.encode(bearerToken)).toString(),
+    'headersDigest': sha256
+        .convert(utf8.encode(jsonEncode(server.httpHeaders ?? const {})))
+        .toString(),
     'oauthClientId': server.oauthClientId?.trim() ?? '',
   });
 }
@@ -1136,6 +1140,7 @@ extension _McpConnectionLocalCommitOperations on McpConnectionNotifier {
 String _mcpCommitFingerprint(McpServerFormToCreate server) => jsonEncode({
   'name': server.name.trim(),
   'description': server.description?.trim(),
+  'catalogSnapshotJson': server.catalogSnapshotJson,
 });
 
 extension _McpConnectionCleanupOperations on McpConnectionNotifier {

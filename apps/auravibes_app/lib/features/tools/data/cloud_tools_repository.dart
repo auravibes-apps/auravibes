@@ -266,13 +266,20 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
     required String verificationReceipt,
   }) async {
     _validateCloudMcpServer(server);
-    final result = await _createMcpServer(
-      _createMcpRequest(
-        server,
-        requestId: requestId,
-        verificationReceipt: verificationReceipt,
-      ),
-    );
+    final result =
+        server.catalogSnapshotJson == null && server.httpHeaders == null
+        ? await _createMcpServer(
+            _createMcpRequest(
+              server,
+              requestId: requestId,
+              verificationReceipt: verificationReceipt,
+            ),
+          )
+        : await CloudMcpGateway(await _gateway).createCatalogMcpServer(
+            server,
+            requestId: requestId,
+            verificationReceipt: verificationReceipt,
+          );
 
     return (
       server: _toMcpServerEntity(workspaceId, server, result),
@@ -293,7 +300,10 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
   }) async {
     final _ = workspaceId;
     _validateCloudMcpServer(server);
-    final result = await _verifyMcpServer(_verifyMcpRequest(server));
+    final result =
+        server.catalogSnapshotJson == null && server.httpHeaders == null
+        ? await _verifyMcpServer(_verifyMcpRequest(server))
+        : await CloudMcpGateway(await _gateway).verifyCatalogMcpServer(server);
 
     return (
       discovery: result.discovery,
@@ -668,6 +678,7 @@ McpServerEntity _createMcpServerEntity(
     DateTime createdAt,
     DateTime updatedAt,
     String? description,
+    String? catalogSnapshotJson,
     bool isEnabled,
   })
   metadata,
@@ -685,6 +696,7 @@ McpServerEntity _createMcpServerEntity(
 
   return server.copyWith(
     description: metadata.description,
+    catalogSnapshotJson: metadata.catalogSnapshotJson,
     isEnabled: metadata.isEnabled,
   );
 }
@@ -704,11 +716,18 @@ _mcpServerIdentity(WorkspaceResource resource, Map<String, dynamic> data) => (
   transport: .fromJson(Map<String, dynamic>.from(data['transport'] as Map)),
 );
 
-({DateTime createdAt, DateTime updatedAt, String? description, bool isEnabled})
+({
+  DateTime createdAt,
+  DateTime updatedAt,
+  String? description,
+  String? catalogSnapshotJson,
+  bool isEnabled,
+})
 _mcpServerMetadata(WorkspaceResource resource, Map<String, dynamic> data) => (
   createdAt: resource.createdAt,
   updatedAt: resource.updatedAt,
   description: data['description'] as String?,
+  catalogSnapshotJson: data['catalogSnapshotJson'] as String?,
   isEnabled: data['isEnabled'] != false,
 );
 
@@ -807,6 +826,7 @@ McpServerEntity _toMcpServerEntity(
   createdAt: result.createdAt,
   updatedAt: result.createdAt,
   description: server.description?.trim(),
+  catalogSnapshotJson: server.catalogSnapshotJson,
 );
 
 ({

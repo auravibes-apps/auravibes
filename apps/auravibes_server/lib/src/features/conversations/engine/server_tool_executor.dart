@@ -10,7 +10,9 @@ import '../../../generated/protocol.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
+import '../../mcp_servers/pinned_http_client.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
+import '../../mcp_servers/mcp_server_headers.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
 import '../../workspace_state/repositories/workspace_state_repository.dart';
 import '../../workspace_state/usecases/workspace_state_usecases.dart';
@@ -1370,6 +1372,9 @@ class const ServerToolExecutorService({
       serverId,
     );
     await _throwIfCancelled(session, turn);
+    final decrypted = secret == null
+        ? null
+        : await const WorkspaceSecretCipher().decrypt(session, secret);
     final result = await _postJson(
       session,
       turn,
@@ -1384,9 +1389,10 @@ class const ServerToolExecutorService({
           'arguments': arguments,
         },
       },
-      bearerToken: secret == null
-          ? null
-          : await const WorkspaceSecretCipher().decrypt(session, secret),
+      bearerToken: data['authType'] == 'httpHeaders' ? null : decrypted,
+      httpHeaders: data['authType'] == 'httpHeaders'
+          ? parseMcpHttpHeaders(decrypted)
+          : const {},
     );
     return McpToolResult(
       content: switch (result['content']) {
@@ -1616,8 +1622,9 @@ class const ServerToolExecutorService({
     List<InternetAddress> addresses,
     Map<String, Object?> body, {
     String? bearerToken,
+    Map<String, String> httpHeaders = const {},
   }) async {
-    final client = _client(addresses);
+    final client = _client(uri, addresses);
     final requestDone = Completer<void>();
     unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
     try {
@@ -1629,6 +1636,7 @@ class const ServerToolExecutorService({
       if (bearerToken != null) {
         request.headers.set('Authorization', 'Bearer $bearerToken');
       }
+      httpHeaders.forEach(request.headers.set);
       request.write(jsonEncode(body));
       final response = await request.close().timeout(
         const Duration(seconds: 30),
@@ -1685,7 +1693,7 @@ class const ServerToolExecutorService({
     UrlRequest input, {
     void Function(HttpClient client)? onClient,
   }) async {
-    final client = _client(addresses);
+    final client = _client(uri, addresses);
     onClient?.call(client);
     final requestDone = Completer<void>();
     unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
@@ -1766,10 +1774,9 @@ class const ServerToolExecutorService({
     done: requestDone.future,
   );
 
-  HttpClient _client(List<InternetAddress> addresses) => HttpClient()
-    ..connectionTimeout = const Duration(seconds: 10)
-    ..connectionFactory = (target, proxyHost, proxyPort) =>
-        Socket.startConnect(addresses.first, target.port);
+  HttpClient _client(Uri uri, List<InternetAddress> addresses) =>
+      pinnedHttpClient(uri, addresses.first)
+        ..connectionTimeout = const Duration(seconds: 10);
 
   Future<String> _readResponse(
     HttpClientResponse response, {

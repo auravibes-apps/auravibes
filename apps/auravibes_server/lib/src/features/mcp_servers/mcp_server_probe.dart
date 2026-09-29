@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 
 import '../../generated/protocol.dart';
 import 'mcp_server_policy.dart';
+import 'pinned_http_client.dart';
 
 typedef McpAddressLookup = Future<List<InternetAddress>> Function(String host);
 
@@ -20,6 +21,7 @@ class McpServerProbe {
     required String transport,
     required bool useHttp2,
     String? bearerToken,
+    Map<String, String> httpHeaders = const {},
   }) async {
     if (transport != 'streamableHttp') {
       throw const FormatException('Unsupported MCP transport.');
@@ -29,16 +31,15 @@ class McpServerProbe {
     }
     final addresses = await _lookup(uri.host).timeout(_timeout);
     McpServerPolicy.validateAddresses(addresses);
-    final client = HttpClient()
+    final client = pinnedHttpClient(uri, addresses.first)
       ..connectionTimeout = _timeout
-      ..autoUncompress = false
-      ..connectionFactory = (target, proxyHost, proxyPort) =>
-          Socket.startConnect(addresses.first, target.port);
+      ..autoUncompress = false;
     try {
       final initialized = await _rpc(
         client,
         uri,
         bearerToken,
+        httpHeaders,
         1,
         'initialize',
         {
@@ -51,6 +52,7 @@ class McpServerProbe {
         client,
         uri,
         bearerToken,
+        httpHeaders,
         null,
         'notifications/initialized',
         const <String, Object?>{},
@@ -63,6 +65,7 @@ class McpServerProbe {
           client,
           uri,
           bearerToken,
+          httpHeaders,
           requestId++,
           'tools/list',
           {'cursor': ?cursor},
@@ -92,6 +95,7 @@ class McpServerProbe {
     HttpClient client,
     Uri uri,
     String? token,
+    Map<String, String> httpHeaders,
     int? id,
     String method,
     Map<String, Object?> params, {
@@ -105,6 +109,7 @@ class McpServerProbe {
       ..headers.contentType = ContentType.json
       ..headers.set('Accept', 'application/json');
     if (token != null) request.headers.set('Authorization', 'Bearer $token');
+    httpHeaders.forEach(request.headers.set);
     if (sessionId != null) request.headers.set('Mcp-Session-Id', sessionId);
     request.write(
       jsonEncode({

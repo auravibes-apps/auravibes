@@ -18,6 +18,11 @@ class const BuildMcpServerToCreateUseCase({
 
     return switch (serverToCreate.authenticationType) {
       .bearerToken => _withBearerToken(serverInfo, serverToCreate.bearerToken),
+      .httpHeaders => serverInfo.copyWith(
+        authenticationType: McpAuthenticationType.httpHeaders(
+          headers: serverToCreate.httpHeaders ?? const {},
+        ),
+      ),
       .oauth => await _withOAuth(
         serverInfo,
         serverToCreate.url,
@@ -34,6 +39,7 @@ class const BuildMcpServerToCreateUseCase({
         transport: serverToCreate.transport,
         authenticationType: const McpAuthenticationTypeNone(),
         description: serverToCreate.description,
+        catalogSnapshotJson: serverToCreate.catalogSnapshotJson,
       );
 
   McpServerToCreate _withBearerToken(

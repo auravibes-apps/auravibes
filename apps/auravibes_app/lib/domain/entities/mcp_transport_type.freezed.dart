@@ -591,6 +591,10 @@ McpAuthenticationType _$McpAuthenticationTypeFromJson(
           return McpAuthenticationTypeBearerToken.fromJson(
             json
           );
+                case 'httpHeaders':
+          return McpAuthenticationTypeHttpHeaders.fromJson(
+            json
+          );
         
           default:
             throw CheckedFromJsonException(
@@ -645,13 +649,14 @@ extension McpAuthenticationTypePatterns on McpAuthenticationType {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( McpAuthenticationTypeNone value)?  none,TResult Function( McpAuthenticationTypeOAuth value)?  oauth,TResult Function( McpAuthenticationTypeBearerToken value)?  bearerToken,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( McpAuthenticationTypeNone value)?  none,TResult Function( McpAuthenticationTypeOAuth value)?  oauth,TResult Function( McpAuthenticationTypeBearerToken value)?  bearerToken,TResult Function( McpAuthenticationTypeHttpHeaders value)?  httpHeaders,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none(_that);case McpAuthenticationTypeOAuth() when oauth != null:
 return oauth(_that);case McpAuthenticationTypeBearerToken() when bearerToken != null:
-return bearerToken(_that);case _:
+return bearerToken(_that);case McpAuthenticationTypeHttpHeaders() when httpHeaders != null:
+return httpHeaders(_that);case _:
   return orElse();
 
 }
@@ -669,13 +674,14 @@ return bearerToken(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( McpAuthenticationTypeNone value)  none,required TResult Function( McpAuthenticationTypeOAuth value)  oauth,required TResult Function( McpAuthenticationTypeBearerToken value)  bearerToken,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( McpAuthenticationTypeNone value)  none,required TResult Function( McpAuthenticationTypeOAuth value)  oauth,required TResult Function( McpAuthenticationTypeBearerToken value)  bearerToken,required TResult Function( McpAuthenticationTypeHttpHeaders value)  httpHeaders,}){
 final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone():
 return none(_that);case McpAuthenticationTypeOAuth():
 return oauth(_that);case McpAuthenticationTypeBearerToken():
-return bearerToken(_that);}
+return bearerToken(_that);case McpAuthenticationTypeHttpHeaders():
+return httpHeaders(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -689,13 +695,14 @@ return bearerToken(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( McpAuthenticationTypeNone value)?  none,TResult? Function( McpAuthenticationTypeOAuth value)?  oauth,TResult? Function( McpAuthenticationTypeBearerToken value)?  bearerToken,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( McpAuthenticationTypeNone value)?  none,TResult? Function( McpAuthenticationTypeOAuth value)?  oauth,TResult? Function( McpAuthenticationTypeBearerToken value)?  bearerToken,TResult? Function( McpAuthenticationTypeHttpHeaders value)?  httpHeaders,}){
 final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none(_that);case McpAuthenticationTypeOAuth() when oauth != null:
 return oauth(_that);case McpAuthenticationTypeBearerToken() when bearerToken != null:
-return bearerToken(_that);case _:
+return bearerToken(_that);case McpAuthenticationTypeHttpHeaders() when httpHeaders != null:
+return httpHeaders(_that);case _:
   return null;
 
 }
@@ -712,12 +719,13 @@ return bearerToken(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  none,TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult Function( String bearerToken)?  bearerToken,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  none,TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult Function( String bearerToken)?  bearerToken,TResult Function( Map<String, String> headers)?  httpHeaders,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none();case McpAuthenticationTypeOAuth() when oauth != null:
 return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken() when bearerToken != null:
-return bearerToken(_that.bearerToken);case _:
+return bearerToken(_that.bearerToken);case McpAuthenticationTypeHttpHeaders() when httpHeaders != null:
+return httpHeaders(_that.headers);case _:
   return orElse();
 
 }
@@ -735,12 +743,13 @@ return bearerToken(_that.bearerToken);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  none,required TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)  oauth,required TResult Function( String bearerToken)  bearerToken,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  none,required TResult Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)  oauth,required TResult Function( String bearerToken)  bearerToken,required TResult Function( Map<String, String> headers)  httpHeaders,}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone():
 return none();case McpAuthenticationTypeOAuth():
 return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken():
-return bearerToken(_that.bearerToken);}
+return bearerToken(_that.bearerToken);case McpAuthenticationTypeHttpHeaders():
+return httpHeaders(_that.headers);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -754,12 +763,13 @@ return bearerToken(_that.bearerToken);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  none,TResult? Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult? Function( String bearerToken)?  bearerToken,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  none,TResult? Function( OAuthTokenEntity token,  String clientId,  String authorizationEndpoint,  String tokenEndpoint,  String? issuer,  String? resource)?  oauth,TResult? Function( String bearerToken)?  bearerToken,TResult? Function( Map<String, String> headers)?  httpHeaders,}) {final _that = this;
 switch (_that) {
 case McpAuthenticationTypeNone() when none != null:
 return none();case McpAuthenticationTypeOAuth() when oauth != null:
 return oauth(_that.token,_that.clientId,_that.authorizationEndpoint,_that.tokenEndpoint,_that.issuer,_that.resource);case McpAuthenticationTypeBearerToken() when bearerToken != null:
-return bearerToken(_that.bearerToken);case _:
+return bearerToken(_that.bearerToken);case McpAuthenticationTypeHttpHeaders() when httpHeaders != null:
+return httpHeaders(_that.headers);case _:
   return null;
 
 }
@@ -964,6 +974,83 @@ as String,
 }
 
 /// @nodoc
+@JsonSerializable()
+
+class McpAuthenticationTypeHttpHeaders extends McpAuthenticationType {
+  const McpAuthenticationTypeHttpHeaders({required  Map<String, String> headers,  String? $type}): _headers = headers,$type = $type ?? 'httpHeaders',super._();
+  factory McpAuthenticationTypeHttpHeaders.fromJson(Map<String, dynamic> json) => _$McpAuthenticationTypeHttpHeadersFromJson(json);
+
+ final  Map<String, String> _headers;
+ Map<String, String> get headers {
+  if (_headers is EqualUnmodifiableMapView) return _headers;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_headers);
+}
+
+
+@JsonKey(name: 'runtimeType')
+final String $type;
+
+
+/// Create a copy of McpAuthenticationType
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$McpAuthenticationTypeHttpHeadersCopyWith<McpAuthenticationTypeHttpHeaders> get copyWith => _$McpAuthenticationTypeHttpHeadersCopyWithImpl<McpAuthenticationTypeHttpHeaders>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$McpAuthenticationTypeHttpHeadersToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeHttpHeaders&&const DeepCollectionEquality().equals(other.headers, _headers));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_headers));
+}
+
+
+
+}
+
+/// @nodoc
+abstract mixin class $McpAuthenticationTypeHttpHeadersCopyWith<$Res> implements $McpAuthenticationTypeCopyWith<$Res> {
+  factory $McpAuthenticationTypeHttpHeadersCopyWith(McpAuthenticationTypeHttpHeaders value, $Res Function(McpAuthenticationTypeHttpHeaders) _then) = _$McpAuthenticationTypeHttpHeadersCopyWithImpl;
+@useResult
+$Res call({
+ Map<String, String> headers
+});
+
+
+
+
+}
+/// @nodoc
+class _$McpAuthenticationTypeHttpHeadersCopyWithImpl<$Res>
+    implements $McpAuthenticationTypeHttpHeadersCopyWith<$Res> {
+  _$McpAuthenticationTypeHttpHeadersCopyWithImpl(this._self, this._then);
+
+  final McpAuthenticationTypeHttpHeaders _self;
+  final $Res Function(McpAuthenticationTypeHttpHeaders) _then;
+
+/// Create a copy of McpAuthenticationType
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? headers = null,}) {
+  return _then(McpAuthenticationTypeHttpHeaders(
+headers: null == headers ? _self._headers : headers // ignore: cast_nullable_to_non_nullable
+as Map<String, String>,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$McpServerToCreate {
 
 /// User-friendly name for the MCP server.
@@ -972,7 +1059,7 @@ mixin _$McpServerToCreate {
  McpTransportType get transport;/// Transient authentication config used only while connecting.
  McpAuthenticationType get authenticationType;/// Optional credential record used to authenticate this MCP server.
  String? get serviceConnectionId;/// Optional description of what this MCP server provides.
- String? get description;
+ String? get description; String? get catalogSnapshotJson;
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -984,20 +1071,20 @@ $McpServerToCreateCopyWith<McpServerToCreate> get copyWith => _$McpServerToCreat
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerToCreate;
-  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.serviceConnectionId,_this.description);
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.serviceConnectionId,_this.description,_this.catalogSnapshotJson);
 }
 
 @override
 String toString() {
   final _this = this as McpServerToCreate;
-  return 'McpServerToCreate(name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description})';
+  return 'McpServerToCreate(name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, catalogSnapshotJson: ${_this.catalogSnapshotJson})';
 }
 
 
@@ -1008,7 +1095,7 @@ abstract mixin class $McpServerToCreateCopyWith<$Res>  {
   factory $McpServerToCreateCopyWith(McpServerToCreate value, $Res Function(McpServerToCreate) _then) = _$McpServerToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description, String? catalogSnapshotJson
 });
 
 
@@ -1025,7 +1112,7 @@ class _$McpServerToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(McpServerToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1033,6 +1120,7 @@ as String,transport: null == transport ? _self.transport : transport // ignore: 
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationType,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1127,10 +1215,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson);case _:
   return orElse();
 
 }
@@ -1148,10 +1236,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerToCreate():
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1168,10 +1256,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson);case _:
   return null;
 
 }
@@ -1183,7 +1271,7 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 
 
 class _McpServerToCreate extends McpServerToCreate {
-  const _McpServerToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, this.serviceConnectionId, this.description}): super._();
+  const _McpServerToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, this.serviceConnectionId, this.description, this.catalogSnapshotJson}): super._();
   
 
 /// User-friendly name for the MCP server.
@@ -1198,6 +1286,7 @@ class _McpServerToCreate extends McpServerToCreate {
 @override final  String? serviceConnectionId;
 /// Optional description of what this MCP server provides.
 @override final  String? description;
+@override final  String? catalogSnapshotJson;
 
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1209,18 +1298,18 @@ _$McpServerToCreateCopyWith<_McpServerToCreate> get copyWith => __$McpServerToCr
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
+    return Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description,catalogSnapshotJson);
 }
 
 @override
 String toString() {
-    return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
+    return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description, catalogSnapshotJson: $catalogSnapshotJson)';
 }
 
 
@@ -1231,7 +1320,7 @@ abstract mixin class _$McpServerToCreateCopyWith<$Res> implements $McpServerToCr
   factory _$McpServerToCreateCopyWith(_McpServerToCreate value, $Res Function(_McpServerToCreate) _then) = __$McpServerToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, String? serviceConnectionId, String? description, String? catalogSnapshotJson
 });
 
 
@@ -1248,7 +1337,7 @@ class __$McpServerToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(_McpServerToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1256,6 +1345,7 @@ as String,transport: null == transport ? _self.transport : transport // ignore: 
 as McpTransportType,authenticationType: null == authenticationType ? _self.authenticationType : authenticationType // ignore: cast_nullable_to_non_nullable
 as McpAuthenticationType,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1285,7 +1375,7 @@ mixin _$McpServerEntity {
  DateTime get createdAt;/// Timestamp when this configuration was last updated.
  DateTime get updatedAt;/// Optional credential record used to authenticate this MCP server.
  String? get serviceConnectionId;/// Optional description of what this MCP server provides.
- String? get description;/// Whether the MCP server is enabled.
+ String? get description; String? get catalogSnapshotJson;/// Whether the MCP server is enabled.
  bool get isEnabled;
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -1298,20 +1388,20 @@ $McpServerEntityCopyWith<McpServerEntity> get copyWith => _$McpServerEntityCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerEntity;
-  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.url,_this.transport,_this.authenticationType,_this.createdAt,_this.updatedAt,_this.serviceConnectionId,_this.description,_this.isEnabled);
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.url,_this.transport,_this.authenticationType,_this.createdAt,_this.updatedAt,_this.serviceConnectionId,_this.description,_this.catalogSnapshotJson,_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as McpServerEntity;
-  return 'McpServerEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, isEnabled: ${_this.isEnabled})';
+  return 'McpServerEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, catalogSnapshotJson: ${_this.catalogSnapshotJson}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -1322,7 +1412,7 @@ abstract mixin class $McpServerEntityCopyWith<$Res> implements $McpServerToCreat
   factory $McpServerEntityCopyWith(McpServerEntity value, $Res Function(McpServerEntity) _then) = _$McpServerEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, bool isEnabled
 });
 
 
@@ -1339,7 +1429,7 @@ class _$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? isEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? isEnabled = null,}) {
   return _then(McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1351,6 +1441,7 @@ as McpAuthenticationType,createdAt: null == createdAt ? _self.createdAt : create
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -1446,10 +1537,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -1467,10 +1558,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity():
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1487,10 +1578,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  bool isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
   return null;
 
 }
@@ -1502,7 +1593,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 
 
 class _McpServerEntity extends McpServerEntity {
-  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.serviceConnectionId, this.description, this.isEnabled = true}): super._();
+  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.serviceConnectionId, this.description, this.catalogSnapshotJson, this.isEnabled = true}): super._();
   
 
 /// Unique ID of this MCP server record in the database.
@@ -1525,6 +1616,7 @@ class _McpServerEntity extends McpServerEntity {
 @override final  String? serviceConnectionId;
 /// Optional description of what this MCP server provides.
 @override final  String? description;
+@override final  String? catalogSnapshotJson;
 /// Whether the MCP server is enabled.
 @override@JsonKey() final  bool isEnabled;
 
@@ -1538,18 +1630,18 @@ _$McpServerEntityCopyWith<_McpServerEntity> get copyWith => __$McpServerEntityCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
+    return Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,catalogSnapshotJson,isEnabled);
 }
 
 @override
 String toString() {
-    return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
+    return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, catalogSnapshotJson: $catalogSnapshotJson, isEnabled: $isEnabled)';
 }
 
 
@@ -1560,7 +1652,7 @@ abstract mixin class _$McpServerEntityCopyWith<$Res> implements $McpServerEntity
   factory _$McpServerEntityCopyWith(_McpServerEntity value, $Res Function(_McpServerEntity) _then) = __$McpServerEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, bool isEnabled
 });
 
 
@@ -1577,7 +1669,7 @@ class __$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? isEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? isEnabled = null,}) {
   return _then(_McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1589,6 +1681,7 @@ as McpAuthenticationType,createdAt: null == createdAt ? _self.createdAt : create
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -1609,7 +1702,7 @@ $McpAuthenticationTypeCopyWith<$Res> get authenticationType {
 /// @nodoc
 mixin _$McpServerFormToCreate {
 
- String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get oauthClientId; String? get description;
+ String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get oauthClientId; String? get description; Map<String, String>? get httpHeaders; String? get catalogSnapshotJson;
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1621,14 +1714,14 @@ $McpServerFormToCreateCopyWith<McpServerFormToCreate> get copyWith => _$McpServe
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerFormToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.oauthClientId, _this.oauthClientId) || other.oauthClientId == _this.oauthClientId)&&(identical(other.description, _this.description) || other.description == _this.description));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.oauthClientId, _this.oauthClientId) || other.oauthClientId == _this.oauthClientId)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.httpHeaders, _this.httpHeaders)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerFormToCreate;
-  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.oauthClientId,_this.description);
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.oauthClientId,_this.description,const DeepCollectionEquality().hash(_this.httpHeaders),_this.catalogSnapshotJson);
 }
 
 
@@ -1640,7 +1733,7 @@ abstract mixin class $McpServerFormToCreateCopyWith<$Res>  {
   factory $McpServerFormToCreateCopyWith(McpServerFormToCreate value, $Res Function(McpServerFormToCreate) _then) = _$McpServerFormToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? catalogSnapshotJson
 });
 
 
@@ -1657,7 +1750,7 @@ class _$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1666,6 +1759,8 @@ as McpTransportType,authenticationType: null == authenticationType ? _self.authe
 as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
 as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,httpHeaders: freezed == httpHeaders ? _self.httpHeaders : httpHeaders // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1751,10 +1846,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
   return orElse();
 
 }
@@ -1772,10 +1867,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate():
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1792,10 +1887,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
   return null;
 
 }
@@ -1807,7 +1902,7 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 
 
 class _McpServerFormToCreate extends McpServerFormToCreate {
-  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.oauthClientId, this.description}): super._();
+  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.oauthClientId, this.description,  Map<String, String>? httpHeaders, this.catalogSnapshotJson}): _httpHeaders = httpHeaders,super._();
   
 
 @override final  String name;
@@ -1817,6 +1912,16 @@ class _McpServerFormToCreate extends McpServerFormToCreate {
 @override final  String? bearerToken;
 @override final  String? oauthClientId;
 @override final  String? description;
+ final  Map<String, String>? _httpHeaders;
+@override Map<String, String>? get httpHeaders {
+  final value = _httpHeaders;
+  if (value == null) return null;
+  if (_httpHeaders is EqualUnmodifiableMapView) return _httpHeaders;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(value);
+}
+
+@override final  String? catalogSnapshotJson;
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1828,13 +1933,13 @@ _$McpServerFormToCreateCopyWith<_McpServerFormToCreate> get copyWith => __$McpSe
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.oauthClientId, oauthClientId) || other.oauthClientId == oauthClientId)&&(identical(other.description, description) || other.description == description));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.oauthClientId, oauthClientId) || other.oauthClientId == oauthClientId)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.httpHeaders, _httpHeaders)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,oauthClientId,description);
+    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,oauthClientId,description,const DeepCollectionEquality().hash(_httpHeaders),catalogSnapshotJson);
 }
 
 
@@ -1846,7 +1951,7 @@ abstract mixin class _$McpServerFormToCreateCopyWith<$Res> implements $McpServer
   factory _$McpServerFormToCreateCopyWith(_McpServerFormToCreate value, $Res Function(_McpServerFormToCreate) _then) = __$McpServerFormToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? catalogSnapshotJson
 });
 
 
@@ -1863,7 +1968,7 @@ class __$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(_McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1872,6 +1977,8 @@ as McpTransportType,authenticationType: null == authenticationType ? _self.authe
 as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bearerToken : bearerToken // ignore: cast_nullable_to_non_nullable
 as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String?,httpHeaders: freezed == httpHeaders ? _self._httpHeaders : httpHeaders // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

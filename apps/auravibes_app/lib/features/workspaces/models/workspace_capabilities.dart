@@ -30,6 +30,7 @@ final class const WorkspaceCapabilities({
       WorkspaceMcpAuthentication.none,
       WorkspaceMcpAuthentication.bearerToken,
       WorkspaceMcpAuthentication.oauth,
+      WorkspaceMcpAuthentication.httpHeaders,
     },
     nativeTools: true,
     skills: true,
@@ -49,6 +50,7 @@ final class const WorkspaceCapabilities({
     mcpAuthentication: {
       WorkspaceMcpAuthentication.none,
       WorkspaceMcpAuthentication.bearerToken,
+      WorkspaceMcpAuthentication.httpHeaders,
     },
     nativeTools: false,
     skills: true,
