@@ -194,8 +194,14 @@ class const _CompactionCheckpointEntry({
 class const _CompactionCheckpointCreatedAt({required final DateTime createdAt})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) =>
-      AuraText(child: Text(RelativeTimeFormatter.format(createdAt)));
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      RelativeTimeFormatter.format(
+        createdAt,
+        locale: Localizations.localeOf(context),
+      ),
+    ),
+  );
 }
 
 String _checkpointJoinedValue(

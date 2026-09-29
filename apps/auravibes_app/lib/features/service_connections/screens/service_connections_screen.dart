@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/stable_ui_selector.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -603,6 +604,7 @@ class const _ConnectionSearchInput({
       ),
       prefixIcon: const AuraIcon(Icons.search),
       size: .small,
+      textInputAction: .search,
       onChanged: onChanged,
     ),
   );
@@ -792,16 +794,25 @@ String _filteredConnectionsMessage(
 class const _ConnectionsListView({
   required final List<ServiceConnectionListItem> connections,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(12),
-      itemBuilder: (context, index) =>
-          _ConnectionTile(connection: connections[index]),
+      padding: _contentPaddingFor(context),
+      itemBuilder: _itemBuilder,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemCount: connections.length,
+      keyboardDismissBehavior: .onDrag,
     );
   }
+
+  EdgeInsets _contentPaddingFor(BuildContext context) => const EdgeInsets.all(
+    _contentPadding,
+  ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding));
+
+  Widget _itemBuilder(BuildContext _, int index) =>
+      _ConnectionTile(connection: connections[index]);
 }
 
 String _connectionFilterLabel(BuildContext context, _ConnectionFilter filter) {

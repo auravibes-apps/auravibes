@@ -1189,6 +1189,7 @@ class _ChatListSearchInput extends StatelessWidget {
         prefixIcon: const AuraIcon(Icons.search),
         suffixIcon: _ChatListSearchStatus(isSearching: state.isSearching),
         size: .small,
+        textInputAction: .search,
         onChanged: state.onSearchChanged,
       );
 
@@ -1257,6 +1258,7 @@ class const _ChatListConversationList({required final _ChatListViewState state})
     itemBuilder: _buildTile,
     separatorBuilder: (context, index) => const SizedBox(height: 10),
     itemCount: state.chats.length,
+    keyboardDismissBehavior: .onDrag,
   );
 
   Widget _buildTile(BuildContext _, int index) =>
@@ -1476,15 +1478,7 @@ class const _ChatTileMetadata({
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      Expanded(
-        child: AuraText(
-          child: Text(
-            RelativeTimeFormatter.format(chat.updatedAt),
-            overflow: .ellipsis,
-          ),
-          style: .bodySmall,
-        ),
-      ),
+      Expanded(child: _ChatTileUpdatedAt(updatedAt: chat.updatedAt)),
       ActiveSubAgentStatusWidget(
         workspaceId: chat.workspaceId,
         conversationId: chat.id,
@@ -1492,6 +1486,21 @@ class const _ChatTileMetadata({
         controlKey: ValueKey('chat_list_active_sub_agents_${chat.id}'),
       ),
     ],
+  );
+}
+
+class const _ChatTileUpdatedAt({required final DateTime updatedAt})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      RelativeTimeFormatter.format(
+        updatedAt,
+        locale: Localizations.localeOf(context),
+      ),
+      overflow: .ellipsis,
+    ),
+    style: .bodySmall,
   );
 }
 

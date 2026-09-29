@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_template_too
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -563,6 +564,7 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   ) async {
     if (!context.mounted) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
     await showDialog<void>(
       context: context,
       builder: (context) => _SkillToolPreviewDialog(preview: preview),
@@ -1347,14 +1349,18 @@ class const _SkillToolForm({
   required final SkillTemplateToolEntity? tool,
   required final _SkillToolFormData data,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(12),
+    padding: const EdgeInsets.all(_contentPadding)
+        .copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
     children: [
       AuraCard(
         child: _SkillToolFormContent(tool: tool, data: data),
       ),
     ],
+    keyboardDismissBehavior: .onDrag,
   );
 }
 
@@ -1532,6 +1538,8 @@ class const _SkillToolInputFields({
       onAdd: input.onAdd,
       onRemove: input.onRemove,
       onChanged: input.onChanged,
+      isSaving: values.state._isSaving,
+      onSave: actions.onSave,
     );
   }
 }
@@ -1622,6 +1630,7 @@ class const _SkillToolAdvancedDefinitionInput({
       LocaleKeys.skills_tool_advanced_definition_label.tr(context: context),
     ),
     keyboardType: .multiline,
+    textInputAction: .newline,
     minLines: SkillToolEditScreen._minAdvancedDefinitionLines,
     maxLines: SkillToolEditScreen._maxAdvancedDefinitionLines,
   );
@@ -1720,6 +1729,7 @@ class const _SkillToolTitleField({
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
     label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1745,6 +1755,7 @@ class const _SkillToolUrlField({
     controller: controller,
     placeholder: Text(LocaleKeys.skills_tool_url_hint.tr(context: context)),
     label: Text(LocaleKeys.skills_tool_url_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1814,6 +1825,7 @@ class const _SkillToolBodyField({
     controller: controller,
     placeholder: Text(LocaleKeys.skills_tool_body_hint.tr(context: context)),
     label: Text(LocaleKeys.skills_tool_body_label.tr(context: context)),
+    textInputAction: .newline,
     minLines: 5,
     maxLines: SkillToolEditScreen._maxToolBodyLines,
   );
@@ -1984,6 +1996,8 @@ class const _InputFieldsSection({
   required final VoidCallback onAdd,
   required final ValueChanged<_InputField> onRemove,
   required final VoidCallback onChanged,
+  required final bool isSaving,
+  required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _InputFieldsSectionColumn(
@@ -1991,6 +2005,8 @@ class const _InputFieldsSection({
     onAdd: onAdd,
     onRemove: onRemove,
     onChanged: onChanged,
+    isSaving: isSaving,
+    onSave: onSave,
   );
 }
 
@@ -2000,13 +2016,18 @@ class _InputFieldsSectionColumn extends StatelessWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onChanged,
+    required this.isSaving,
+    required this.onSave,
   }) : _children = [
          const _InputFieldsHeader(),
-         for (final field in fields)
+         for (var index = 0; index < fields.length; index++)
            _InputFieldCard(
-             field: field,
+             field: fields[index],
              onRemove: onRemove,
              onChanged: onChanged,
+             isLast: index == fields.length - 1,
+             isSaving: isSaving,
+             onSave: onSave,
            ),
          _AddInputFieldButton(onPressed: onAdd),
        ];
@@ -2015,6 +2036,8 @@ class _InputFieldsSectionColumn extends StatelessWidget {
   final VoidCallback onAdd;
   final ValueChanged<_InputField> onRemove;
   final VoidCallback onChanged;
+  final bool isSaving;
+  final VoidCallback onSave;
   final List<Widget> _children;
 
   @override
@@ -2090,6 +2113,7 @@ class const _RequestKeyValueFieldKey({
   Widget build(BuildContext context) => AuraInput(
     controller: field.keyController,
     label: Text(labelKey.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -2103,6 +2127,7 @@ class const _RequestKeyValueFieldValue({
     controller: field.valueController,
     placeholder: Text(placeholderKey.tr(context: context)),
     label: Text(labelKey.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -2122,35 +2147,64 @@ class const _InputFieldCard({
   required final _InputField field,
   required final ValueChanged<_InputField> onRemove,
   required final VoidCallback onChanged,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _InputFieldCardView(
     field: field,
     onRemove: onRemove,
     onChanged: onChanged,
+    isLast: isLast,
+    isSaving: isSaving,
+    onSave: onSave,
   );
 }
 
 class _InputFieldCardView extends StatelessWidget {
-  new({required this.field, required this.onRemove, required this.onChanged})
-    : _children = [
-        _InputFieldName(field: field),
-        _InputFieldType(field: field, onChanged: onChanged),
-        _InputFieldDescription(field: field),
-        _InputFieldDefault(field: field),
-        _InputFieldEnum(field: field),
-        if (field.type == 'number' || field.type == 'integer')
-          _InputFieldConstraints(field: field),
-        if (field.type == 'array')
-          _InputFieldItemsType(field: field, onChanged: onChanged),
-        if (field.type == 'object') _InputFieldNestedProperties(field: field),
-        _InputFieldOptional(field: field, onChanged: onChanged),
-        _InputFieldRemoveButton(field: field, onRemove: onRemove),
-      ];
+  new({
+    required this.field,
+    required this.onRemove,
+    required this.onChanged,
+    required this.isLast,
+    required this.isSaving,
+    required this.onSave,
+  }) : _children = [
+         _InputFieldName(field: field),
+         _InputFieldType(field: field, onChanged: onChanged),
+         _InputFieldDescription(field: field),
+         _InputFieldDefault(field: field),
+         _InputFieldEnum(
+           field: field,
+           isLast:
+               isLast &&
+               field.type != 'number' &&
+               field.type != 'integer' &&
+               field.type != 'object',
+           isSaving: isSaving,
+           onSave: onSave,
+         ),
+         if (field.type == 'number' || field.type == 'integer')
+           _InputFieldConstraints(
+             field: field,
+             isLast: isLast,
+             isSaving: isSaving,
+             onSave: onSave,
+           ),
+         if (field.type == 'array')
+           _InputFieldItemsType(field: field, onChanged: onChanged),
+         if (field.type == 'object') _InputFieldNestedProperties(field: field),
+         _InputFieldOptional(field: field, onChanged: onChanged),
+         _InputFieldRemoveButton(field: field, onRemove: onRemove),
+       ];
 
   final _InputField field;
   final ValueChanged<_InputField> onRemove;
   final VoidCallback onChanged;
+  final bool isLast;
+  final bool isSaving;
+  final VoidCallback onSave;
   final List<Widget> _children;
 
   @override
@@ -2169,6 +2223,7 @@ class const _InputFieldName({required final _InputField field})
       LocaleKeys.skills_tool_input_name_placeholder,
     ),
     label: Text(LocaleKeys.skills_tool_input_name_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -2261,6 +2316,7 @@ class const _InputFieldDescription({required final _InputField field})
     label: Text(
       LocaleKeys.skills_tool_input_description_label.tr(context: context),
     ),
+    textInputAction: .next,
   );
 }
 
@@ -2275,11 +2331,16 @@ class const _InputFieldDefault({required final _InputField field})
     label: Text(
       LocaleKeys.skills_tool_input_default_label.tr(context: context),
     ),
+    textInputAction: .next,
   );
 }
 
-class const _InputFieldEnum({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldEnum({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: field.enumController,
@@ -2287,17 +2348,30 @@ class const _InputFieldEnum({required final _InputField field})
       LocaleKeys.skills_tool_input_enum_hint.tr(context: context),
     ),
     label: Text(LocaleKeys.skills_tool_input_enum_label.tr(context: context)),
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: isLast && !isSaving ? (_) => onSave() : null,
   );
 }
 
-class const _InputFieldConstraints({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldConstraints({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(child: _InputFieldMinimum(field: field)),
       const SizedBox(width: 8),
-      Expanded(child: _InputFieldMaximum(field: field)),
+      Expanded(
+        child: _InputFieldMaximum(
+          field: field,
+          isLast: isLast,
+          isSaving: isSaving,
+          onSave: onSave,
+        ),
+      ),
     ],
   );
 }
@@ -2311,11 +2385,16 @@ class const _InputFieldMinimum({required final _InputField field})
       LocaleKeys.skills_tool_input_minimum_label.tr(context: context),
     ),
     keyboardType: .number,
+    textInputAction: .next,
   );
 }
 
-class const _InputFieldMaximum({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldMaximum({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: field.maximumController,
@@ -2323,6 +2402,8 @@ class const _InputFieldMaximum({required final _InputField field})
       LocaleKeys.skills_tool_input_maximum_label.tr(context: context),
     ),
     keyboardType: .number,
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: isLast && !isSaving ? (_) => onSave() : null,
   );
 }
 
@@ -2359,6 +2440,7 @@ class const _InputFieldNestedProperties({required final _InputField field})
       LocaleKeys.skills_tool_input_nested_properties_label.tr(context: context),
     ),
     keyboardType: .multiline,
+    textInputAction: .newline,
     minLines: 3,
     maxLines: 6,
   );

@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -87,5 +88,12 @@ void main() {
     expect(find.text('Skill Credential'), findsOneWidget);
     expect(find.text('TheCatAPI Key'), findsOneWidget);
     expect(find.text('apiKey'), findsOneWidget);
+    final inputs = tester
+        .widgetList<AuraInput>(find.byType(AuraInput))
+        .toList();
+    expect(inputs.map((input) => input.textInputAction), [
+      TextInputAction.next,
+      TextInputAction.done,
+    ]);
   });
 }

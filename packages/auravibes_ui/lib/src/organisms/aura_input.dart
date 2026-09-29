@@ -252,6 +252,7 @@ class _AuraInputState extends State<AuraInput> {
                   child: Focus(
                     canRequestFocus: isEnabled,
                     descendantsAreFocusable: isEnabled,
+                    skipTraversal: true,
                     child: identifiedTextField,
                   ),
                 ),

@@ -522,6 +522,7 @@ class const _DrawerPanelGesture({
     onHorizontalDragStart: state._handleDragStart,
     onHorizontalDragUpdate: state._handleDragUpdate,
     onHorizontalDragEnd: state._handleDragEnd,
+    behavior: .opaque,
   );
 }
 
@@ -754,6 +755,7 @@ class const _MobileBodyGesture({
       onHorizontalDragStart: callbacks.onDragStart,
       onHorizontalDragUpdate: callbacks.onDragUpdate,
       onHorizontalDragEnd: callbacks.onDragEnd,
+      behavior: .opaque,
     );
   }
 }
@@ -927,6 +929,7 @@ class const _MobilePanelGesture({
       onHorizontalDragStart: callbacks.onDragStart,
       onHorizontalDragUpdate: callbacks.onDragUpdate,
       onHorizontalDragEnd: callbacks.onDragEnd,
+      behavior: .opaque,
     );
   }
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -52,13 +55,21 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
-      child: MaterialApp(
-        home: AuraThemeScope(
-          theme: .light,
-          child: Theme(
-            data: .new(),
-            child: Material(child: child),
+      child: Builder(
+        builder: (context) => MaterialApp(
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: Material(child: child),
+            ),
           ),
+          locale: context.locale,
+          localizationsDelegates: [
+            ...GlobalMaterialLocalizations.delegates,
+            ...context.localizationDelegates,
+          ],
+          supportedLocales: context.supportedLocales,
         ),
       ),
       supportedLocales: const [Locale('en')],
@@ -67,8 +78,18 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
       startLocale: const Locale('en'),
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      assetLoader: const _TestTranslations(),
     );
   }
+}
+
+class _TestTranslations extends AssetLoader {
+  const new();
+
+  @override
+  Future<Map<String, dynamic>> load(String path, Locale locale) async =>
+      jsonDecode(File('$path/${locale.languageCode}.json').readAsStringSync())
+          as Map<String, dynamic>;
 }
 
 void main() {
@@ -92,6 +113,58 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('My MCP Server'), findsOneWidget);
+  });
+
+  testWidgets('shows a placeholder for an unusable group name', (tester) async {
+    final groupWithTools = ToolsGroupWithTools(
+      group: _group(name: ' null '),
+      tools: [_tool()],
+    );
+
+    await tester.pumpWidget(
+      _Subject(
+        child: ToolsGroupHeader(
+          groupWithTools: groupWithTools,
+          isExpanded: false,
+          onToggleExpand: () {
+            final _ = Object();
+          },
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('-'), findsOneWidget);
+  });
+
+  testWidgets('uses a placeholder in unusable group selection semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final groupWithTools = ToolsGroupWithTools(
+      group: _group(name: ' null '),
+      tools: [_tool()],
+    );
+
+    await tester.pumpWidget(
+      _Subject(
+        child: ToolsGroupHeader(
+          groupWithTools: groupWithTools,
+          isExpanded: false,
+          onToggleExpand: () {
+            final _ = Object();
+          },
+          onSelectionChanged: (_) {
+            final _ = Object();
+          },
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final semanticsLabel = tester.getSemantics(find.byType(AuraCheckbox)).label;
+    expect(semanticsLabel, 'Select group -');
+    semantics.dispose();
   });
 
   testWidgets('shows toggle for non-default group', (tester) async {

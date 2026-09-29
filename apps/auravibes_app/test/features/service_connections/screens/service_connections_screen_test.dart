@@ -632,6 +632,7 @@ void main() {
     await tester.tap(find.text('Skill credentials'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsOneWidget);
+    await tester.ensureVisible(find.text('All'));
     await tester.tap(find.text('All'));
     final _ = await tester.pumpAndSettle();
 

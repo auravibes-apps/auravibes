@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
@@ -276,16 +277,19 @@ class _AuraTableTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: Table(
-        children: _rows(context),
-        defaultColumnWidth: const IntrinsicColumnWidth(),
-        border: .new(
-          horizontalInside: BorderSide(color: context.auraColors.outline),
+    return AuraEdgy(
+      child: SingleChildScrollView(
+        scrollDirection: .horizontal,
+        child: Table(
+          children: _rows(context),
+          defaultColumnWidth: const IntrinsicColumnWidth(),
+          border: .new(
+            horizontalInside: BorderSide(color: context.auraColors.outline),
+          ),
+          defaultVerticalAlignment: .middle,
         ),
-        defaultVerticalAlignment: .middle,
       ),
+      axis: .horizontal,
     );
   }
 

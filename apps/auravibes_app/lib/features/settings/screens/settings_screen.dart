@@ -3,9 +3,11 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
+import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -137,7 +139,8 @@ class const _SettingsBody({
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(_settingsScreenPadding),
+      padding: const EdgeInsets.all(_settingsScreenPadding)
+          .copyWith(bottom: BottomPadding.of(context)),
       child: AuraColumn(
         children: [
           _AppSettingsCard(
@@ -147,9 +150,11 @@ class const _SettingsBody({
           ),
           CompactionSettingsSection(workspaceId: workspaceId),
           const AccentColorSection(),
+          const AppVersionIndicator(),
         ],
         crossAxisAlignment: .start,
       ),
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }

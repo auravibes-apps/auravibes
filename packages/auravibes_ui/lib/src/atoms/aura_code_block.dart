@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -36,9 +37,12 @@ class AuraCodeBlock extends StatelessWidget {
 class const _AuraCodeBlockContent({required final String code})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    scrollDirection: .horizontal,
-    padding: EdgeInsets.all(context.auraTheme.spacing.sm),
-    child: AuraText(child: SelectableText(code), style: .code),
+  Widget build(BuildContext context) => AuraEdgy(
+    child: SingleChildScrollView(
+      scrollDirection: .horizontal,
+      padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+      child: AuraText(child: SelectableText(code), style: .code),
+    ),
+    axis: .horizontal,
   );
 }
