@@ -243,6 +243,31 @@ void main() {
     expect(controller.value, original);
   });
 
+  testWidgets('Shift+Tab outdents a nested list item in the editor', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = const .new(
+        text: '- parent\n  - child',
+        selection: .collapsed(offset: 14),
+      );
+    await tester.pump();
+
+    final _ = await tester.sendKeyDownEvent(.shiftLeft);
+    final _ = await tester.sendKeyEvent(.tab);
+    final _ = await tester.sendKeyUpEvent(.shiftLeft);
+    await tester.pump();
+
+    expect(controller.text, '- parent\n- child');
+    expect(controller.selection, const TextSelection.collapsed(offset: 12));
+  });
+
   testWidgets('editor input exits empty bullet on Enter', (tester) async {
     await _openMarkdownEditor(
       tester,
