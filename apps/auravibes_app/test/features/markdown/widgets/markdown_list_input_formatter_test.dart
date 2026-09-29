@@ -265,4 +265,37 @@ void main() {
       const TextSelection(baseOffset: 9, extentOffset: 22),
     );
   });
+
+  test(
+    'indenting a bullet leaves unrelated nested ordered items unchanged',
+    () {
+      const original = TextEditingValue(
+        text: '- first\n- second\n  7. child\n  9. sibling',
+        selection: .collapsed(offset: 3),
+      );
+
+      final result = MarkdownListInputFormatter.adjustIndentation(
+        original,
+        outdent: false,
+      );
+
+      expect(result?.text, '  - first\n- second\n  7. child\n  9. sibling');
+      expect(result?.selection, const TextSelection.collapsed(offset: 5));
+    },
+  );
+
+  test('indent traverses continuation prose to reach nested list items', () {
+    const original = TextEditingValue(
+      text: '- parent\n  continuation\n  - child',
+      selection: .collapsed(offset: 3),
+    );
+
+    final result = MarkdownListInputFormatter.adjustIndentation(
+      original,
+      outdent: false,
+    );
+
+    expect(result?.text, '  - parent\n  continuation\n    - child');
+    expect(result?.selection, const TextSelection.collapsed(offset: 5));
+  });
 }

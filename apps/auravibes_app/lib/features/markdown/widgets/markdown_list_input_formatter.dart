@@ -7,6 +7,7 @@ const _numberGroup = 2;
 typedef _ListLine = ({String text, int start, int end, RegExpMatch marker});
 typedef _NumberEdit = ({int start, int end, String replacement});
 typedef _NumberedBlock = ({int start, String indentation, int firstNumber});
+typedef _OrderedGroup = ({int level, int start});
 
 /// Keeps Markdown list markers in the same edit as the user's keystroke.
 class MarkdownListInputFormatter extends TextInputFormatter {
@@ -35,8 +36,14 @@ class MarkdownListInputFormatter extends TextInputFormatter {
       affected.add(index);
       for (var child = index + 1; child < lines.length; child++) {
         final childMarker = _listMarker.firstMatch(lines[child]);
-        if (childMarker == null ||
-            (childMarker.group(1)?.length ?? 0) <= indentation) {
+        if (childMarker == null) {
+          if (lines[child].trim().isNotEmpty &&
+              _leadingIndentation(lines[child]) > indentation) {
+            continue;
+          }
+          break;
+        }
+        if ((childMarker.group(1)?.length ?? 0) <= indentation) {
           break;
         }
         affected.add(child);
@@ -84,6 +91,22 @@ TextEditingValue _renumberIndentedBlock(
   }
 
   final oldLines = oldText.split('\n');
+  final oldGroups = _orderedGroups(oldLines, first, last);
+  final newGroups = _orderedGroups(lines, first, last);
+  final movedGroups = {
+    for (final index in affected)
+      if (oldGroups[index] case final group?) group,
+  };
+  final touchedGroups = <_OrderedGroup>{};
+  for (final entry in newGroups.entries) {
+    final index = entry.key;
+    if (affected.contains(index) ||
+        oldGroups[index] != entry.value ||
+        movedGroups.contains(oldGroups[index])) {
+      touchedGroups.add(entry.value);
+    }
+  }
+
   final nextNumbers = <int, int>{};
   final edits = <_NumberEdit>[];
   for (var index = first; index <= last; index++) {
@@ -100,12 +123,40 @@ TextEditingValue _renumberIndentedBlock(
         nextNumbers[indentation] ??
         _oldGroupStartNumber(oldLines, index, first, indentation);
     final edit = _numberEdit(numbered, number, _lineOffset(lines, index));
-    if (edit != null) edits.add(edit);
+    if (edit != null && touchedGroups.contains(newGroups[index])) {
+      edits.add(edit);
+    }
     nextNumbers[indentation] = number + 1;
   }
 
   return edits.isEmpty ? value : _applyNumberEdits(value, edits);
 }
+
+Map<int, _OrderedGroup> _orderedGroups(
+  List<String> lines,
+  int first,
+  int last,
+) {
+  final starts = <int, int>{};
+  final groups = <int, _OrderedGroup>{};
+  for (var index = first; index <= last; index++) {
+    final marker = _listMarker.firstMatch(lines[index]);
+    if (marker == null) continue;
+    final level = marker.group(1)?.length ?? 0;
+    starts.removeWhere((depth, _) => depth > level);
+    if (!_numberedMarker.hasMatch(lines[index])) {
+      starts.remove(level);
+      continue;
+    }
+    final start = starts.putIfAbsent(level, () => index);
+    groups[index] = (level: level, start: start);
+  }
+
+  return groups;
+}
+
+int _leadingIndentation(String line) =>
+    RegExp(r'^[ \t]*').firstMatch(line)?.end ?? 0;
 
 int _oldGroupStartNumber(
   List<String> lines,
