@@ -35,6 +35,7 @@ class ChatbotService({
     chatProvider: chatProvider,
     history: history,
     tools: options.tools,
+    transcriptContextEntries: options.transcriptContextEntries,
     sessionId: options.sessionId,
     reasoningConfiguration: options.reasoningConfiguration,
     a2uiRuntime: a2uiRuntime,
@@ -95,6 +96,7 @@ class ChatbotService({
 }
 
 class const ChatbotMessageOptions({
+  final List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   final List<ToolSpec>? tools,
   final String? sessionId,
   final ReasoningConfiguration? reasoningConfiguration,
@@ -103,6 +105,7 @@ class const ChatbotMessageOptions({
 typedef _SendMessageRequest = ({
   ChatbotService service,
   WorkspaceModelSelectionWithConnectionEntity chatProvider,
+  List<AgentTranscriptContextEntry> transcriptContextEntries,
   List<ChatMessage> history,
   List<ToolSpec>? tools,
   String? sessionId,
@@ -138,6 +141,7 @@ Future<
 _createResponseStream(_SendMessageRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
+    transcriptContextEntries: request.transcriptContextEntries,
     sessionId: request.sessionId,
     reasoningConfiguration: request.reasoningConfiguration,
   );
@@ -456,8 +460,11 @@ extension on ChatbotService {
         parse: (value) => value as Map<String, Object?>,
       );
 
-  Message _toGenkitMessage(ChatMessage message) =>
-      Message(role: _genkitRole(message), content: _genkitContent(message));
+  Message _toGenkitMessage(ChatMessage message) => Message(
+    role: _genkitRole(message),
+    content: _genkitContent(message),
+    metadata: message.metadata,
+  );
 
   Role _genkitRole(ChatMessage message) => switch (message.role) {
     .system => Role.system,

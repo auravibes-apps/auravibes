@@ -826,6 +826,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       preparedInput.chatHistory,
       options: .new(
         tools: preparedInput.enabledTools,
+        transcriptContextEntries: preparedInput.transcriptContextEntries,
         sessionId: request.conversationId,
         reasoningConfiguration: preparedInput.reasoningConfiguration,
       ),

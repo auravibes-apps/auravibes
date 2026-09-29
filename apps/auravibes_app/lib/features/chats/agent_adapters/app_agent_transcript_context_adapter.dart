@@ -127,7 +127,7 @@ bool _hasTrustedContextRole(ChatMessage message) =>
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
   role: message.role == AgentContextMessageRole.system ? .system : .user,
   content: message.content,
-  metadata: message.kind == null ? const {} : {'kind': message.kind},
+  metadata: {'transcriptContext': true, 'kind': ?message.kind},
 );
 
 MessageToCreate _contextUpdateMessage(

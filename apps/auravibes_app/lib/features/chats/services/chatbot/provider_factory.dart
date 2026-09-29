@@ -4,6 +4,8 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/anthropic_request_encoder.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/app_anthropic_plugin.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_completions_plugin.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -36,6 +38,7 @@ typedef _ProviderRequest = ({
   String? sessionId,
   ReasoningConfiguration? reasoningConfiguration,
   _ProviderToolSampling toolSampling,
+  List<AgentTranscriptContextEntry> transcriptContextEntries,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -56,11 +59,13 @@ class const ProviderFactory({
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
     ReasoningConfiguration? reasoningConfiguration,
+    List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   }) async {
     final request = await _providerRequest(
       config,
       sessionId,
       reasoningConfiguration,
+      transcriptContextEntries,
     );
 
     return _createGenkit(request);
@@ -173,19 +178,20 @@ extension _ProviderFactoryCreation on ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config,
     String? sessionId,
     ReasoningConfiguration? reasoningConfiguration,
+    List<AgentTranscriptContextEntry> transcriptContextEntries,
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
-    final toolSampling = _providerToolSampling(config, connectionUrl);
 
     return (
       config: config,
+      transcriptContextEntries: transcriptContextEntries,
       apiKey: await _resolveCredential(config),
       baseUrl: resolvedBaseUrl(config),
       runtime: _runtimeSelection(config, connectionUrl),
       modelId: config.workspaceModelSelection.modelId,
       sessionId: sessionId,
       reasoningConfiguration: reasoningConfiguration,
-      toolSampling: toolSampling,
+      toolSampling: _providerToolSampling(config, connectionUrl),
     );
   }
 
@@ -240,14 +246,34 @@ extension _ProviderFactoryCreation on ProviderFactory {
 
 extension _ProviderFactoryPlugins on ProviderFactory {
   GenkitPlugin _anthropicPlugin(_ProviderRequest request) {
-    return anthropic(
+    return AppAnthropicPlugin(
       apiKey: request.apiKey,
+      encoder: _anthropicEncoder(request),
+      baseUrl: request.baseUrl,
       headers: sessionAffinityHeaders(
         providerType: request.config.modelsProvider.type,
         baseUrl: request.baseUrl,
         sessionId: request.sessionId,
       ),
-      baseUrl: request.baseUrl,
+      httpClient: httpClient,
+    );
+  }
+
+  AnthropicRequestEncoder _anthropicEncoder(_ProviderRequest request) {
+    if (!_supportsAnthropicSessionAffinity(
+      request.config.modelsProvider.type,
+      request.baseUrl,
+    )) {
+      return const .new();
+    }
+    final selection = request.config.workspaceModelSelection;
+
+    return .new(
+      supportsPromptCacheMarkers: selection.supportsPromptCacheMarkers,
+      supportsMidConversationSystemMessages:
+          selection.supportsMidConversationSystemMessages,
+      supportsToolDeltas: selection.supportsToolDeltas,
+      entries: request.transcriptContextEntries,
     );
   }
 

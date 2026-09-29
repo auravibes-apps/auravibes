@@ -835,6 +835,7 @@ class _FakeProviderFactory extends ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
     ReasoningConfiguration? reasoningConfiguration,
+    List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   }) async {
     if (throwsOnCreateGenkit) throw Exception('failed to create Genkit');
     return genkit.Genkit(isDevEnv: false)..defineModel(
