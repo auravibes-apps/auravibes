@@ -31,7 +31,13 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show A2uiChatAction, AppSkillDefinitionKind;
+    show
+        A2uiChatAction,
+        AppSkillDefinitionKind,
+        AgentToolOutputPolicy,
+        defaultToolOutputBytes,
+        maxPersistedToolOutputBytes,
+        projectToolOutput;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -1908,6 +1914,146 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+        findsNothing,
+      );
+    });
+
+    for (final (name, source, policy, persistedClipped, expectedLimit) in [
+      (
+        'context-only clipping',
+        'x' * (defaultToolOutputBytes + 1),
+        const AgentToolOutputPolicy(),
+        false,
+        defaultToolOutputBytes,
+      ),
+      (
+        'persisted clipping',
+        'x' * (maxPersistedToolOutputBytes + 1),
+        const AgentToolOutputPolicy(),
+        true,
+        defaultToolOutputBytes,
+      ),
+      (
+        'custom context limit',
+        'x' * 1024,
+        const AgentToolOutputPolicy(maxBytes: 512),
+        false,
+        512,
+      ),
+    ]) {
+      testWidgets('discloses $name in expanded activity details', (
+        tester,
+      ) async {
+        final projection = projectToolOutput(source, policy: policy);
+        final toolCall = MessageToolCallEntity(
+          id: 'tc-truncated',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          responseRaw: projection.persistedText,
+          responseContextRaw: projection.text == projection.persistedText
+              ? null
+              : projection.text,
+          outputTruncated: projection.truncated,
+          originalResponseBytes: projection.originalBytes,
+          resultStatus: ToolCallResultStatus.success,
+        );
+        final message = _createMessage(
+          content: '',
+          isUser: false,
+          metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+        );
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: [message.id],
+            overrides: _messageOverrides({message.id: message}),
+          ),
+        );
+        await revealActivityToolCalls(tester);
+        await tester.tap(
+          find.byKey(const ValueKey('activity_tool_tc-truncated')),
+        );
+        await tester.pump();
+
+        final disclosure = find.byKey(
+          const ValueKey('activity_tool_truncation_tc-truncated'),
+        );
+        expect(disclosure, findsOneWidget);
+        final text = tester.widget<Text>(disclosure).data!;
+        expect(text, contains('${projection.originalBytes}'));
+        expect(text, contains('$expectedLimit'));
+        expect(
+          text,
+          contains(
+            persistedClipped
+                ? 'stored output was also clipped'
+                : 'full output remains stored',
+          ),
+        );
+      });
+    }
+
+    testWidgets('omits truncation disclosure for in-budget and legacy data', (
+      tester,
+    ) async {
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-small',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{}',
+              responseRaw: 'small result',
+              resultStatus: ToolCallResultStatus.success,
+            ),
+            MessageToolCallEntity(
+              id: 'tc-legacy',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{}',
+              responseRaw: 'legacy result',
+              outputTruncated: true,
+              resultStatus: ToolCallResultStatus.success,
+            ),
+            MessageToolCallEntity(
+              id: 'tc-malformed',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{}',
+              responseRaw: 'legacy result',
+              responseContextRaw: '{"_toolOutput":{}}',
+              outputTruncated: true,
+              originalResponseBytes: 1024,
+              resultStatus: ToolCallResultStatus.success,
+            ),
+          ],
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          overrides: _messageOverrides({message.id: message}),
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.tap(find.byKey(const ValueKey('activity_tool_tc-small')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('activity_tool_tc-legacy')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('activity_tool_tc-malformed')));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('activity_tool_truncation_tc-small')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_truncation_tc-legacy')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('activity_tool_truncation_tc-malformed')),
         findsNothing,
       );
     });

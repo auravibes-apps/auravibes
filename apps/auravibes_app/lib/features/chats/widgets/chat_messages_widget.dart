@@ -2454,6 +2454,19 @@ class const _ActivityToolCallDetails({
   Widget build(BuildContext context) {
     final theme = context.auraTheme;
     final colors = context.auraColors;
+    final responseRaw = toolCall.responseRaw;
+    final contextProjection = responseRaw == null
+        ? null
+        : readToolOutputProjectionMetadata(
+            toolCall.responseContextRaw ?? responseRaw,
+          );
+    final persistedProjection = responseRaw == null
+        ? null
+        : readToolOutputProjectionMetadata(responseRaw);
+    final truncationKey = persistedProjection == null
+        ? LocaleKeys.chats_screens_chat_conversation_activity_context_truncated
+        : LocaleKeys
+              .chats_screens_chat_conversation_activity_persisted_truncated;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2476,6 +2489,21 @@ class const _ActivityToolCallDetails({
                     fontSize: theme.typography.fontSizeXs,
                     fontFamily: theme.typography.monoFontFamily,
                   ),
+                ),
+              ),
+            if (contextProjection != null)
+              Text(
+                truncationKey.tr(
+                  namedArgs: {
+                    'originalBytes': contextProjection.originalBytes.toString(),
+                    'limitBytes': contextProjection.limitBytes.toString(),
+                  },
+                ),
+                key: ValueKey('activity_tool_truncation_${toolCall.id}'),
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: theme.typography.fontSizeXs,
+                  fontFamily: theme.typography.bodyFontFamily,
                 ),
               ),
             if (decodedResponse case final value? when value.isNotEmpty)

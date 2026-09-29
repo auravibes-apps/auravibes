@@ -7,6 +7,8 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show defaultToolOutputBytes, projectToolOutput;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +73,42 @@ void main() {
       final messages = await repository.getMessagesByConversation('conv-1');
       expect(messages, hasLength(1));
       expect(messages.firstOrNull?.id, created.id);
+    });
+
+    test('reopens nested tool-output clipping metadata', () async {
+      final source = 'x' * (defaultToolOutputBytes + 1);
+      final projection = projectToolOutput(source);
+      final metadata = MessageMetadataEntity(
+        toolCalls: [
+          MessageToolCallEntity(
+            id: 'tool-1',
+            name: 'read_file',
+            argumentsRaw: '{}',
+            responseRaw: projection.persistedText,
+            responseContextRaw: projection.text,
+            outputTruncated: projection.truncated,
+            originalResponseBytes: projection.originalBytes,
+            resultStatus: .success,
+          ),
+        ],
+      );
+      final created = await repository.createMessage(
+        MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'Tool result',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          metadata: jsonEncode(metadata.toJson()),
+        ),
+      );
+
+      final reopened = await repository.getMessageById(created.id);
+      final toolCall = reopened?.metadata?.toolCalls.single;
+      expect(toolCall?.responseRaw, source);
+      expect(toolCall?.responseContextRaw, projection.text);
+      expect(toolCall?.outputTruncated, isTrue);
+      expect(toolCall?.originalResponseBytes, source.length);
     });
 
     test(

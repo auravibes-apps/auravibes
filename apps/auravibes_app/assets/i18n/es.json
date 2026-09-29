@@ -453,6 +453,8 @@
       "activity_thinking": "Razonamiento",
       "activity_arguments": "Argumentos",
       "activity_result": "Resultado",
+      "activity_context_truncated": "Respuesta de la herramienta: {originalBytes} bytes. Límite del contexto del modelo: {limitBytes} bytes; se conserva la respuesta completa.",
+      "activity_persisted_truncated": "Respuesta de la herramienta: {originalBytes} bytes. Límite del contexto del modelo: {limitBytes} bytes; la respuesta guardada también se recortó.",
       "activity_open_sub_agent": "Abrir subagente",
       "active_sub_agents_count": {
         "one": "1 subagente en ejecución",
