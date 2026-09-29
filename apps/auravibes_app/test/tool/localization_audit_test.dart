@@ -216,4 +216,27 @@ final receiver = 'menu.home'.tr();
       },
     );
   });
+
+  test('rejects adjacent extension receivers with interpolation', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+final simple = 'menu.$name' 'home'.tr();
+final braced = 'menu.${name}' 'count'.plural(2);
+final static = 'menu.' 'new_chat'.tr();
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': <String>{},
+        'es': {'menu.new_chat'},
+      },
+    );
+  });
 }

@@ -50,7 +50,12 @@ Map<String, Set<String>> findMissingTranslations({
   return missing;
 }
 
-typedef _Token = ({String value, bool isString, bool isLiteral});
+typedef _Token = ({
+  String value,
+  bool isString,
+  bool isLiteral,
+  bool followsString,
+});
 
 void _collectUsedKeys(
   String source,
@@ -72,7 +77,7 @@ void _collectUsedKeys(
       }
       usedKeys.add(key);
     }
-    if (token.isLiteral && (index == 0 || !tokens[index - 1].isLiteral)) {
+    if (token.isLiteral && !token.followsString) {
       final (key, end) = _literalSequence(tokens, index)!;
       if (end + 2 < tokens.length &&
           tokens[end].value == '.' &&
@@ -103,7 +108,9 @@ bool _isTranslationCall(_Token token) =>
   if (start >= tokens.length || !tokens[start].isLiteral) return null;
   final key = StringBuffer();
   var end = start;
-  while (end < tokens.length && tokens[end].isLiteral) {
+  while (end < tokens.length &&
+      tokens[end].isLiteral &&
+      (end == start || tokens[end].followsString)) {
     key.write(tokens[end].value);
     end++;
   }
@@ -113,6 +120,7 @@ bool _isTranslationCall(_Token token) =>
 List<_Token> _tokenize(String source) {
   final tokens = <_Token>[];
   var index = 0;
+  var previousWasString = false;
   while (index < source.length) {
     if (source.startsWith('//', index)) {
       final end = source.indexOf('\n', index + 2);
@@ -179,12 +187,24 @@ List<_Token> _tokenize(String source) {
         value: rawString ? value : _decodeDartString(value),
         isString: true,
         isLiteral: !hasInterpolation,
+        followsString: previousWasString,
       ));
       for (final expression in interpolations) {
-        tokens.add((value: ';', isString: false, isLiteral: false));
+        tokens.add((
+          value: ';',
+          isString: false,
+          isLiteral: false,
+          followsString: false,
+        ));
         tokens.addAll(expression);
-        tokens.add((value: ';', isString: false, isLiteral: false));
+        tokens.add((
+          value: ';',
+          isString: false,
+          isLiteral: false,
+          followsString: false,
+        ));
       }
+      previousWasString = true;
       index += delimiter.length;
       continue;
     }
@@ -199,11 +219,19 @@ List<_Token> _tokenize(String source) {
         value: source.substring(start, index),
         isString: false,
         isLiteral: false,
+        followsString: false,
       ));
+      previousWasString = false;
       continue;
     }
     if (character.trim().isNotEmpty) {
-      tokens.add((value: character, isString: false, isLiteral: false));
+      tokens.add((
+        value: character,
+        isString: false,
+        isLiteral: false,
+        followsString: false,
+      ));
+      previousWasString = false;
     }
     index++;
   }
