@@ -2041,7 +2041,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('activity_tool_tc-legacy')));
       await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('activity_tool_tc-malformed')));
+      await tester.tap(
+        find.byKey(const ValueKey('activity_tool_tc-malformed')),
+      );
       await tester.pump();
 
       expect(
