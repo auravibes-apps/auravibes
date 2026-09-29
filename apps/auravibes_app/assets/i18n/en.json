@@ -453,6 +453,8 @@
       "activity_thinking": "Thinking",
       "activity_arguments": "Arguments",
       "activity_result": "Result",
+      "activity_context_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; full output remains stored.",
+      "activity_persisted_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; stored output was also clipped.",
       "activity_open_sub_agent": "Open sub-agent",
       "active_sub_agents_count": {
         "one": "1 sub-agent running",

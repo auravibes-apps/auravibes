@@ -39,4 +39,37 @@ void main() {
       '?oauthToken=[REDACTED]',
     );
   });
+
+  test('redacts standalone provider secret keys', () {
+    expect(
+      LogRedaction.redact(
+        'Denied sk-live-secret and rk-live-secret; retry after 30 seconds.',
+      ),
+      'Denied [REDACTED] and [REDACTED]; retry after 30 seconds.',
+    );
+  });
+
+  test('keeps provider detail while redacting bearer and named secrets', () {
+    expect(
+      LogRedaction.redact(
+        'Quota exceeded. Authorization: Bearer bearer-secret; '
+        'api_key=key-secret',
+      ),
+      'Quota exceeded. Authorization: Bearer [REDACTED]; '
+      'api_key=[REDACTED]',
+    );
+  });
+
+  test('redacts structured provider credential headers', () {
+    expect(
+      LogRedaction.redact(
+        '{"headers":{"x-api-key":"fixture-provider-credential", '
+        '"Authorization":"Basic fixture-auth-secret"}, '
+        '"reason":"Quota exceeded"}',
+      ),
+      '{"headers":{"x-api-key":"[REDACTED]", '
+      '"Authorization":"[REDACTED]"}, '
+      '"reason":"Quota exceeded"}',
+    );
+  });
 }
