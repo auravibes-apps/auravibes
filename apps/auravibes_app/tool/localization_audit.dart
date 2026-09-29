@@ -66,6 +66,8 @@ typedef _Token = ({
   bool followsString,
 });
 
+const _singleQuoteCodeUnit = 0x27;
+
 void _collectUsedKeys(
   String source,
   Map<String, String> generatedKeys,
@@ -158,9 +160,12 @@ List<_Token> _tokenize(String source) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == '\u0027' || source[index + 1] == '"') &&
+        (source.codeUnitAt(index + 1) == _singleQuoteCodeUnit ||
+            source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
-    if (rawString || character == '\u0027' || character == '"') {
+    if (rawString ||
+        character.codeUnitAt(0) == _singleQuoteCodeUnit ||
+        character == '"') {
       if (rawString) index++;
       final quote = source[index];
       final tripleQuote = '$quote$quote$quote';
@@ -254,10 +259,8 @@ String _decodeDartString(String value) {
     }
     final escape = value[index + 1];
     if (escape == 'u' || escape == 'x') {
-      final braced =
-          escape == 'u' &&
-          index + 2 < value.length &&
-          value[index + 2] == '{';
+      final hasBrace = index + 2 < value.length && value[index + 2] == '{';
+      final braced = escape == 'u' && hasBrace;
       final start = index + (braced ? 3 : 2);
       final width = escape == 'u' ? 4 : 2;
       final end = braced ? value.indexOf('}', start) : start + width;
@@ -314,10 +317,12 @@ int? _interpolationEnd(String source, int start) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == '\u0027' || source[index + 1] == '"') &&
+        (source.codeUnitAt(index + 1) == _singleQuoteCodeUnit ||
+            source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
     if (rawString) character = source[++index];
-    if (character == '\u0027' || character == '"') {
+    if (character.codeUnitAt(0) == _singleQuoteCodeUnit ||
+        character == '"') {
       final tripleQuote = '$character$character$character';
       final delimiter = source.startsWith(tripleQuote, index)
           ? tripleQuote
