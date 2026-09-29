@@ -9,6 +9,7 @@ import 'package:toon_dart/toon_dart.dart';
 const _xmlAttributeEscape = HtmlEscape(HtmlEscapeMode.attribute);
 const _xmlTextEscape = HtmlEscape(HtmlEscapeMode.element);
 const skillCatalogMetadataKind = 'skill_catalog';
+const skillCatalogRevisionMetadataKey = 'catalogRevision';
 const skillCatalogSelectedRevisionsMetadataKey = 'selectedRevisions';
 
 class const SkillCatalogEntry({
@@ -205,6 +206,8 @@ class const BuildSkillContextMessages() {
           content: _skillCatalogXml(catalog, catalogRevision),
           metadata: {
             'kind': skillCatalogMetadataKind,
+            skillCatalogRevisionMetadataKey:
+                catalogRevision ?? buildSkillCatalogRevision(catalog),
             skillCatalogSelectedRevisionsMetadataKey: {
               for (final entry in catalog)
                 if (entry.active) entry.slug: entry.revision,

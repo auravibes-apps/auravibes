@@ -48,10 +48,10 @@
 - Produces `skillCatalogRevisionMetadataKey` on the existing `skill_catalog` context message metadata, matching the revision in its XML.
 - Keeps `SkillSuggestion` schema out of A2UI core and forms resources.
 
-- [ ] **Step 1: Write failing engine tests** for exact required payload, malformed slug/revision rejection, passive-only resource exposure, form/core omission, and metadata/XML revision equality.
-- [ ] **Step 2: Run** the engine focused tests and `cd apps/auravibes_server && fvm dart test test/features/conversations/engine/a2ui_protocol_test.dart`; confirm failures name missing contract behavior.
-- [ ] **Step 3: Implement** the shared schema, supported-component id, bounded passive instructions, passive resource filtering, and revision metadata.
-- [ ] **Step 4: Run the same focused tests**; expect all pass.
+- [x] **Step 1: Write failing engine tests** for exact required payload, malformed slug/revision rejection, passive-only resource exposure, form/core omission, and metadata/XML revision equality.
+- [x] **Step 2: Run** the engine focused tests and `cd apps/auravibes_server && fvm dart test test/features/conversations/engine/a2ui_protocol_test.dart`; confirm failures name missing contract behavior.
+- [x] **Step 3: Implement** the shared schema, supported-component id, bounded passive instructions, passive resource filtering, and revision metadata.
+- [x] **Step 4: Run the same focused tests**; expect all pass.
 - [ ] **Step 5: Commit** as `feat(engine): define bounded skill suggestion contract`.
 
 ### Task 2: Shared add/use action and read-only context preparation

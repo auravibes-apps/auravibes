@@ -296,17 +296,23 @@ void main() {
     final payload = conversationTurnJobPayload(
       'user',
       executionId: 'execution',
-      a2uiSupportedComponents: ['Text', 'Badge', 'FutureComponent'],
+      a2uiSupportedComponents: [
+        'Text',
+        'Badge',
+        'SkillSuggestion',
+        'FutureComponent',
+      ],
     );
     final components = cloudA2uiSupportedComponents(
       payload,
       isChildConversation: false,
     );
-    expect(components, {'Text', 'Badge'});
+    expect(components, {'Text', 'Badge', 'SkillSuggestion'});
     final prompt = shared.A2uiChatContract.systemPromptForComponents(
       components,
     );
     expect(prompt, contains('"Badge"'));
+    expect(prompt, contains('"SkillSuggestion"'));
     expect(prompt, isNot(contains('"Chart"')));
     expect(prompt, contains(a2uiChatCatalogId));
     expect(prompt, contains(a2uiChatFormCatalogId));

@@ -59,6 +59,23 @@ void main() {
     expect(resources[a2uiFormsResourceSlug], isNot(contains('"TextField"')));
   });
 
+  test('exposes skill suggestions in passive resource only', () {
+    final resources = {
+      for (final resource in a2uiSkillDefinition.resources)
+        resource.slug: resource.content,
+    };
+
+    expect(resources[a2uiPassiveResourceSlug], contains('"SkillSuggestion"'));
+    expect(
+      resources[a2uiFormsResourceSlug],
+      isNot(contains('"SkillSuggestion"')),
+    );
+    expect(
+      resources[a2uiCoreResourceSlug],
+      isNot(contains('"SkillSuggestion"')),
+    );
+  });
+
   test('keeps the A2UI definition separate from service definitions', () {
     expect(serviceSkillDefinitions, isNot(contains(a2uiSkillDefinition)));
     expect(internalAppSkillDefinitions, contains(a2uiSkillDefinition));
