@@ -675,7 +675,10 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
           message.status == MessageStatus.unfinished &&
           _hasA2uiMessageState(message);
       final isFinalResponse =
-          hasVisibleResponse && !hasFollowingAssistantActivity && !hasToolCalls;
+          message.status == MessageStatus.sent &&
+          hasVisibleResponse &&
+          !hasFollowingAssistantActivity &&
+          !hasToolCalls;
       if (requiresMessageItem && (awaitsA2uiAction || isFinalResponse)) {
         activitySources.add(source);
         addActivityRun();
@@ -706,7 +709,9 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     items.add(
       _MessageTimelineItem(
         source,
-        showResponseActions: message.isUser || !source.isStreaming,
+        showResponseActions:
+            message.isUser ||
+            (!source.isStreaming && message.status == MessageStatus.sent),
       ),
     );
   }

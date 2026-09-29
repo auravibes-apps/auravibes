@@ -31,7 +31,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AppSkillDefinitionKind;
+    show A2uiChatAction, AppSkillDefinitionKind;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -254,7 +254,7 @@ void main() {
   }
 
   group('ChatMessagesWidget', () {
-    testWidgets('copies updated values from supported form fields', (
+    testWidgets('keeps unfinished form fields editable without final actions', (
       tester,
     ) async {
       final result = await pumpCopySurface(tester, [
@@ -284,11 +284,17 @@ void main() {
       await tester.enterText(fields.first, 'Grace');
       await tester.enterText(fields.at(1), 'second-city');
       await tester.pump();
-      await tester.tap(find.byTooltip('Copy message'));
-      await tester.pump();
-
-      expect(result.copies, ['Name\nGrace\nCity\nsecond-city']);
-      expect(find.byTooltip('Message copied'), findsOneWidget);
+      expect(find.byTooltip('Copy message'), findsNothing);
+      expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+      expect(find.byKey(const ValueKey('message_footer_msg-1')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('a2ui_submit_msg-1:main')),
+        findsOneWidget,
+      );
+      expect(
+        result.runtime.copyableTextFor('msg-1'),
+        'Name\nGrace\nCity\nsecond-city',
+      );
     });
 
     testWidgets(
@@ -1354,6 +1360,82 @@ void main() {
       );
       expect(find.text('Intermediate response'), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
+    });
+
+    testWidgets('keeps unfinished A2UI controls without final actions', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final message = _createMessage(
+        id: 'pending-form',
+        content: 'Please answer',
+        isUser: false,
+        status: MessageStatus.unfinished,
+        metadata: MessageMetadataEntity(
+          thinking: 'Preparing form',
+          a2uiMessages: [
+            for (final operation in [
+              {
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:form:v1',
+                },
+              },
+              {
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {'id': 'root', 'component': 'Text', 'text': 'Answer here'},
+                  ],
+                },
+              },
+            ])
+              jsonEncode({
+                'protocolVersion': 'v1',
+                'interactionMode': 'requiresUserAction',
+                'message': {'version': 'v0.9', ...operation},
+              }),
+          ],
+        ),
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          messageEntitiesById: {message.id: message},
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            ..._messageOverrides({message.id: message}),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Answer here'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('a2ui_submit_pending-form:main')),
+        findsOneWidget,
+      );
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
+      expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+      expect(
+        find.byKey(const ValueKey('retry_message_pending-form')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('message_footer_pending-form')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('does not show unfinished status for an A2UI message', (
@@ -2802,7 +2884,7 @@ void main() {
                       {
                         'id': 'root',
                         'component': 'Text',
-                        'text': 'Replay detail',
+                        'text': 'A2UI detail',
                       },
                     ],
                   },
@@ -2859,7 +2941,7 @@ void main() {
         expect(disclosure, findsOneWidget);
         expect(find.text('Intermediate detail'), findsNothing);
         expect(find.text('report.txt'), findsNothing);
-        expect(find.text('Replay detail'), findsNothing);
+        expect(find.text('A2UI detail'), findsNothing);
         expect(find.byKey(const ValueKey('a2ui_rich')), findsNothing);
         expect(find.byIcon(Icons.copy_outlined), findsNothing);
         expect(find.byIcon(Icons.call_split_outlined), findsNothing);
@@ -2871,7 +2953,7 @@ void main() {
 
         expect(find.text('Intermediate detail'), findsOneWidget);
         expect(find.text('report.txt'), findsOneWidget);
-        expect(find.text('Replay detail'), findsOneWidget);
+        expect(find.text('A2UI detail'), findsOneWidget);
         expect(find.byKey(const ValueKey('a2ui_rich')), findsOneWidget);
         expect(
           find.byKey(const ValueKey('activity_tool_tc-rich')),
@@ -2884,6 +2966,119 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    testWidgets('replays submitted answers inside intermediate Activity', (
+      tester,
+    ) async {
+      final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+      addTearDown(runtime.dispose);
+      final assistant = _createMessage(
+        id: 'assistant-form',
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          a2uiMessages: [
+            for (final operation in [
+              {
+                'createSurface': {
+                  'surfaceId': 'main',
+                  'catalogId': 'urn:auravibes:a2ui:chat:form:v1',
+                },
+              },
+              {
+                'updateComponents': {
+                  'surfaceId': 'main',
+                  'components': [
+                    {
+                      'id': 'root',
+                      'component': 'Text',
+                      'text': {'path': '/answer'},
+                    },
+                  ],
+                },
+              },
+            ])
+              jsonEncode({
+                'protocolVersion': 'v1',
+                'interactionMode': 'requiresUserAction',
+                'message': {'version': 'v0.9', ...operation},
+              }),
+          ],
+        ),
+      );
+      final tool = _createMessage(
+        id: 'later-tool',
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tc-replay',
+              name: 'built_in_1_read_file',
+              argumentsRaw: '{}',
+              resultStatus: ToolCallResultStatus.success,
+            ),
+          ],
+        ),
+      );
+      const submitted = A2uiChatAction(
+        protocolVersion: 'v1',
+        conversationId: 'conv-1',
+        turnId: 'assistant-form',
+        assistantMessageId: 'assistant-form',
+        surfaceId: 'assistant-form:main',
+        wireSurfaceId: 'main',
+        componentId: '__aura_form_submit__',
+        actionName: 'submit',
+        context: {},
+        messageText: 'Form answers submitted',
+        answers: {'answer': 'Submitted answer'},
+      );
+      final answer = _createMessage(
+        id: 'user-answer',
+        content: 'Form answers submitted',
+        metadata: MessageMetadataEntity(
+          modelMetadata: {'a2uiAction': submitted.toJson()},
+        ),
+      );
+      final messagesById = {
+        assistant.id: assistant,
+        tool.id: tool,
+        answer.id: answer,
+      };
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [assistant.id, tool.id, answer.id],
+          messageEntitiesById: messagesById,
+          conversation: ConversationEntity(
+            id: 'conv-1',
+            title: 'Chat',
+            workspaceId: 'ws-1',
+            isPinned: false,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          overrides: [
+            chatA2uiRuntimeProvider.overrideWith((ref, id) => runtime),
+            ..._messageOverrides(messagesById),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final disclosure = find.byKey(
+        const ValueKey('activity_trace_toggle_assistant-form'),
+      );
+      expect(disclosure, findsOneWidget);
+      expect(find.text('Submitted answer'), findsNothing);
+      await tester.tap(disclosure);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('a2ui_assistant-form')), findsOneWidget);
+      expect(find.text('Submitted answer'), findsOneWidget);
+      expect(runtime.hasSurfaceIssue(assistant.id), isFalse);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('hides_response_actions_until_streamed_turn_is_final', (
       tester,
@@ -3058,8 +3253,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final disclosure =
-          find.byKey(const ValueKey('activity_trace_toggle_rich-response'));
+      final disclosure = find.byKey(
+        const ValueKey('activity_trace_toggle_rich-response'),
+      );
       expect(disclosure, findsOneWidget);
       expect(find.byKey(const ValueKey('a2ui_rich-response')), findsNothing);
       expect(find.text('Rich answer'), findsNothing);
