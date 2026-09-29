@@ -661,6 +661,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_arguments';
   static const chats_screens_chat_conversation_activity_result =
       'chats_screens.chat_conversation.activity_result';
+  static const chats_screens_chat_conversation_activity_context_truncated =
+      'chats_screens.chat_conversation.activity_context_truncated';
+  static const chats_screens_chat_conversation_activity_persisted_truncated =
+      'chats_screens.chat_conversation.activity_persisted_truncated';
   static const chats_screens_chat_conversation_activity_open_sub_agent =
       'chats_screens.chat_conversation.activity_open_sub_agent';
   static const chats_screens_chat_conversation_active_sub_agents_count =

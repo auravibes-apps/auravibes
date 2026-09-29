@@ -453,7 +453,16 @@ void main() {
     });
 
     test('surfaces an error from the final response', () async {
-      final responseError = genkit.RuntimeError(message: 'failed');
+      final responseError = genkit.RuntimeError(
+        message: 'failed',
+        details: {
+          'headers': {
+            'x-api-key': 'fixture-provider-credential',
+            'Authorization': 'Basic fixture-auth-secret',
+          },
+          'reason': 'Rate limit 429',
+        },
+      );
       final service = _createService(
         providerFactory: _FakeProviderFactory(
           response: genkit.ModelResponse(
@@ -466,11 +475,77 @@ void main() {
       await expectLater(
         service.sendMessage(_makeConfig(), []).toList(),
         throwsA(
-          isA<genkit.GenkitException>().having(
-            (error) => error.message,
-            'message',
-            responseError.message,
+          isA<genkit.GenkitException>()
+              .having(
+                (error) => error.message,
+                'message',
+                responseError.message,
+              )
+              .having(
+                (error) => error.details,
+                'details',
+                '{"headers":{"x-api-key":"fixture-provider-credential",'
+                    '"Authorization":"Basic fixture-auth-secret"},'
+                    '"reason":"Rate limit 429"}',
+              ),
+        ),
+      );
+    });
+
+    test(
+      'leaves empty final response details absent for message fallback',
+      () async {
+        final responseError = genkit.RuntimeError(
+          message: 'Provider temporarily unavailable',
+          details: {},
+        );
+        final service = _createService(
+          providerFactory: _FakeProviderFactory(
+            response: genkit.ModelResponse(
+              finishReason: genkit.FinishReason.failed,
+              error: responseError,
+            ),
           ),
+        );
+
+        await expectLater(
+          service.sendMessage(_makeConfig(), []).toList(),
+          throwsA(
+            isA<genkit.GenkitException>()
+                .having(
+                  (error) => error.message,
+                  'message for persistence',
+                  responseError.message,
+                )
+                .having((error) => error.details, 'absent details', isNull),
+          ),
+        );
+      },
+    );
+
+    test('preserves provider details from a final response error', () async {
+      final providerError = genkit.GenkitException(
+        'Provider request failed',
+        details: 'Context limit is 32768 tokens',
+      );
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(generateError: providerError),
+      );
+
+      await expectLater(
+        service.sendMessage(_makeConfig(), []).toList(),
+        throwsA(
+          isA<genkit.GenkitException>()
+              .having(
+                (error) => error.details,
+                'details',
+                providerError.details,
+              )
+              .having(
+                (error) => error.underlyingException,
+                'underlying exception',
+                same(providerError),
+              ),
         ),
       );
     });

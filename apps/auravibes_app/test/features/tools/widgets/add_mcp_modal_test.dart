@@ -246,7 +246,7 @@ void main() {
       await _showDialog(tester);
 
       final saveButton = tester.widget<AuraButton>(
-        find.byType(AuraButton).last,
+        find.widgetWithText(AuraButton, LocaleKeys.common_save.tr()),
       );
       expect(saveButton.disabled, isTrue);
     });
@@ -255,8 +255,10 @@ void main() {
       await _pumpAndInit(tester, const _Subject());
       await _showDialog(tester);
 
-      await tester.tap(find.byType(AuraButton).first);
-      await tester.pump();
+      await tester.tap(
+        find.widgetWithText(AuraButton, LocaleKeys.common_cancel.tr()),
+      );
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AddMcpModal), findsNothing);
     });
