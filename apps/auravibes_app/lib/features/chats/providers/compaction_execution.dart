@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'compaction_execution.g.dart';
@@ -32,6 +33,11 @@ class CompactionExecution extends _$CompactionExecution {
 
   bool tryMarkRunning(CompactionExecutionState executionState) {
     if (isCompacting(executionState.conversationId)) return false;
+    if (ref
+        .read(conversationActivityGateProvider)
+        .isCheckpointRestoreInProgress(executionState.conversationId)) {
+      return false;
+    }
 
     markRunning(executionState);
 

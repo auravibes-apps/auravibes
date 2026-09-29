@@ -3,9 +3,11 @@
 
 import 'dart:async';
 
+import 'package:auravibes_ui/src/atoms/aura_interaction_target.dart';
+import 'package:auravibes_ui/src/aura_haptics.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// Owns Aura snackbar lifecycle for a visual surface.
 ///
@@ -192,8 +194,14 @@ class _AuraSnackBarShowRequest {
 
 AuraSnackBarController _showSnackBar(_AuraSnackBarShowRequest request) {
   final host = _requiredSnackBarHost(request.context);
+  final controller = host.show(_AuraSnackBarRequestData(request).value);
+  if (request.variant == .success) {
+    unawaited(AuraHaptics.success());
+  } else if (request.variant == .error) {
+    unawaited(AuraHaptics.error());
+  }
 
-  return host.show(_AuraSnackBarRequestData(request).value);
+  return controller;
 }
 
 class _AuraSnackBarRequestData {
@@ -515,19 +523,26 @@ class const _AuraSnackBarAction({
   required final VoidCallback onDismiss,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: .min,
-    children: [
-      const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
-      GestureDetector(
-        child: _AuraSnackBarActionContent.fromValues(
-          label: label,
-          foregroundColor: foregroundColor,
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        const SizedBox(width: _AuraSnackBarOverlayEntryState._actionGap),
+        GestureDetector(
+          child: AuraInteractionTarget(
+            child: Center(
+              child: _AuraSnackBarActionContent.fromValues(
+                label: label,
+                foregroundColor: foregroundColor,
+              ),
+            ),
+          ),
+          onTap: _handleTap,
+          behavior: .opaque,
         ),
-        onTap: _handleTap,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 
   void _handleTap() {
     onAction?.call();

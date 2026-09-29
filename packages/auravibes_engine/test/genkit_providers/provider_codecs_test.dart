@@ -159,6 +159,259 @@ void main() {
     expect(disabledBody['reasoning_effort'], 'none');
   });
 
+  test('OpenAI-compatible options retain tool sampling policy', () {
+    final openRouter = OpenRouterOptions.fromJson(
+      OpenRouterOptions(toolSamplingPolicy: ToolSamplingPolicy.prefer).toJson(),
+    );
+    final reasoning = OpenAICompatReasoningOptions.fromJson(
+      OpenAICompatReasoningOptions(
+        toolSamplingPolicy: ToolSamplingPolicy.require,
+      ).toJson(),
+    );
+
+    expect(openRouter.toolSamplingPolicy, ToolSamplingPolicy.prefer);
+    expect(reasoning.toolSamplingPolicy, ToolSamplingPolicy.require);
+    expect(const OpenAICompatChatOptions().toJson(), isEmpty);
+  });
+
+  group('strict tool sampling', () {
+    test('reports per-tool decisions without schema or argument values', () {
+      final codec = _toolSamplingCodec(providerSupportsStrict: true);
+      final result = codec.evaluateTools(
+        tools: [
+          _toolDefinition(),
+          ToolDefinition(
+            name: 'fallback',
+            description: 'token=sk-secret-value',
+            inputSchema: {
+              'type': 'object',
+              'description': 'password=hidden',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': <String>[],
+              'additionalProperties': false,
+            },
+          ),
+        ],
+        policy: ToolSamplingPolicy.prefer,
+        modelSupportsStrict: true,
+      );
+
+      expect(result.decisions.map((decision) => decision.outcome), [
+        ToolSamplingOutcome.strict,
+        ToolSamplingOutcome.ordinary,
+      ]);
+      expect(
+        result.decisions.last.reason,
+        ToolSamplingValidationReason.incompatibleSchema,
+      );
+      expect(result.decisions.last.schemaPath, r'$.required');
+      final diagnostics = jsonEncode([
+        for (final decision in result.decisions) decision.toDiagnostic(),
+      ]);
+      expect(diagnostics, isNot(contains('sk-secret-value')));
+      expect(diagnostics, isNot(contains('password=hidden')));
+      expect(result.definitions!.first['function']['strict'], isTrue);
+      expect(
+        (result.definitions!.last['function'] as Map).containsKey('strict'),
+        isFalse,
+      );
+    });
+
+    test('reports provider and model fallbacks separately', () {
+      for (final testCase in [
+        (
+          provider: false,
+          model: true,
+          reason: ToolSamplingValidationReason.unsupportedProvider,
+        ),
+        (
+          provider: true,
+          model: false,
+          reason: ToolSamplingValidationReason.unsupportedModel,
+        ),
+      ]) {
+        final result =
+            _toolSamplingCodec(providerSupportsStrict: testCase.provider)
+                .evaluateTools(
+                  tools: [_toolDefinition()],
+                  policy: ToolSamplingPolicy.require,
+                  modelSupportsStrict: testCase.model,
+                );
+        expect(result.decisions.single.reason, testCase.reason);
+        expect(
+          result.requireStrict,
+          throwsA(
+            isA<ToolSamplingValidationException>().having(
+              (error) => error.reason,
+              'reason',
+              testCase.reason,
+            ),
+          ),
+        );
+      }
+    });
+
+    test('keeps the default request body unchanged', () {
+      final body = _buildToolBody(
+        codec: _toolSamplingCodec(providerSupportsStrict: true),
+        modelSupportsStrict: true,
+      );
+
+      expect(body['tools'], [
+        {
+          'type': 'function',
+          'function': {
+            'name': 'create_profile',
+            'description': 'Create a profile.',
+            'parameters': _strictToolSchema,
+          },
+        },
+      ]);
+    });
+
+    test('prefer and require emit strict mode for compatible schemas', () {
+      for (final policy in [
+        ToolSamplingPolicy.prefer,
+        ToolSamplingPolicy.require,
+      ]) {
+        final body = _buildToolBody(
+          codec: _toolSamplingCodec(providerSupportsStrict: true),
+          modelSupportsStrict: true,
+          policy: policy,
+        );
+
+        expect(body['tools'], [
+          {
+            'type': 'function',
+            'function': {
+              'name': 'create_profile',
+              'description': 'Create a profile.',
+              'parameters': _strictToolSchema,
+              'strict': true,
+            },
+          },
+        ]);
+      }
+    });
+
+    test('prefer falls back when provider or model lacks support', () {
+      for (final testCase in [
+        (provider: false, model: true),
+        (provider: true, model: false),
+      ]) {
+        final body = _buildToolBody(
+          codec: _toolSamplingCodec(providerSupportsStrict: testCase.provider),
+          modelSupportsStrict: testCase.model,
+          policy: ToolSamplingPolicy.prefer,
+        );
+        final function = _singleFunction(body);
+
+        expect(function.containsKey('strict'), isFalse);
+        expect(function['parameters'], _strictToolSchema);
+      }
+    });
+
+    test('prefer falls back only for incompatible schemas', () {
+      final body = _buildToolBody(
+        codec: _toolSamplingCodec(providerSupportsStrict: true),
+        modelSupportsStrict: true,
+        policy: ToolSamplingPolicy.prefer,
+        tools: [
+          _toolDefinition(),
+          _toolDefinition(name: 'invalid', schema: _optionalFieldSchema),
+        ],
+      );
+      final tools = body['tools']! as List<dynamic>;
+      final valid =
+          (tools.first as Map<String, dynamic>)['function']!
+              as Map<String, dynamic>;
+      final invalid =
+          (tools.last as Map<String, dynamic>)['function']!
+              as Map<String, dynamic>;
+
+      expect(valid['strict'], isTrue);
+      expect(invalid.containsKey('strict'), isFalse);
+    });
+
+    test('require rejects unsupported providers before transport', () {
+      expect(
+        () => _buildToolBody(
+          codec: _toolSamplingCodec(providerSupportsStrict: false),
+          modelSupportsStrict: true,
+          policy: ToolSamplingPolicy.require,
+        ),
+        throwsA(
+          isA<ToolSamplingValidationException>().having(
+            (error) => error.reason,
+            'reason',
+            ToolSamplingValidationReason.unsupportedProvider,
+          ),
+        ),
+      );
+    });
+
+    test('require rejects unsupported models before transport', () {
+      expect(
+        () => _buildToolBody(
+          codec: _toolSamplingCodec(providerSupportsStrict: true),
+          modelSupportsStrict: false,
+          policy: ToolSamplingPolicy.require,
+        ),
+        throwsA(
+          isA<ToolSamplingValidationException>().having(
+            (error) => error.reason,
+            'reason',
+            ToolSamplingValidationReason.unsupportedModel,
+          ),
+        ),
+      );
+    });
+
+    test('require rejects malformed and non-strict optional schemas', () {
+      for (final schema in <Map<String, dynamic>>[
+        _optionalFieldSchema,
+        const {
+          'type': 'object',
+          'properties': {'value': 'not-a-schema'},
+          'required': ['value'],
+          'additionalProperties': false,
+        },
+        const {
+          'type': 'object',
+          'properties': {
+            'items': {'type': 'array'},
+          },
+          'required': ['items'],
+          'additionalProperties': false,
+        },
+      ]) {
+        expect(
+          () => _buildToolBody(
+            codec: _toolSamplingCodec(providerSupportsStrict: true),
+            modelSupportsStrict: true,
+            policy: ToolSamplingPolicy.require,
+            tools: [_toolDefinition(schema: schema)],
+          ),
+          throwsA(
+            isA<ToolSamplingValidationException>()
+                .having(
+                  (error) => error.reason,
+                  'reason',
+                  ToolSamplingValidationReason.incompatibleSchema,
+                )
+                .having(
+                  (error) => error.toolName,
+                  'toolName',
+                  'create_profile',
+                ),
+          ),
+        );
+      }
+    });
+  });
+
   test('provider codecs encode shared audio data input', () {
     final request = ModelRequest(
       messages: [
@@ -583,6 +836,99 @@ ChatCompletionsCodec _testCodec() => ChatCompletionsCodec(
   errorLabel: 'Provider',
   customize: (modelName, config) => (model: modelName, extraBody: {}),
 );
+
+ChatCompletionsCodec _toolSamplingCodec({
+  required bool providerSupportsStrict,
+}) => ChatCompletionsCodec(
+  errorLabel: 'Provider',
+  supportsStrictToolSampling: providerSupportsStrict,
+  customize: (modelName, config) => (model: modelName, extraBody: {}),
+);
+
+Map<String, dynamic> _buildToolBody({
+  required ChatCompletionsCodec codec,
+  required bool modelSupportsStrict,
+  ToolSamplingPolicy policy = ToolSamplingPolicy.off,
+  List<ToolDefinition>? tools,
+}) => codec.buildRequestBody(
+  modelName: 'model',
+  request: ModelRequest(
+    messages: const [],
+    config: OpenAICompatChatOptions(toolSamplingPolicy: policy).toJson(),
+    tools: tools ?? [_toolDefinition()],
+  ),
+  stream: false,
+  modelCapabilities: _modelCapabilities(
+    supportsStrictToolSampling: modelSupportsStrict,
+  ),
+);
+
+Map<String, dynamic> _singleFunction(Map<String, dynamic> body) {
+  final tools = body['tools']! as List<dynamic>;
+  return (tools.single as Map<String, dynamic>)['function']!
+      as Map<String, dynamic>;
+}
+
+ToolDefinition _toolDefinition({
+  String name = 'create_profile',
+  Map<String, dynamic> schema = _strictToolSchema,
+}) => ToolDefinition(
+  name: name,
+  description: 'Create a profile.',
+  inputSchema: schema,
+);
+
+ModelCapabilities _modelCapabilities({
+  required bool supportsStrictToolSampling,
+}) => ModelCapabilities(
+  id: 'model',
+  name: 'Model',
+  limitContext: 128000,
+  limitOutput: 4096,
+  inputModalities: const ['text'],
+  outputModalities: const ['text'],
+  supportsStrictToolSampling: supportsStrictToolSampling,
+);
+
+const _strictToolSchema = <String, dynamic>{
+  'type': 'object',
+  'properties': {
+    'profile': {
+      'type': 'object',
+      'properties': {
+        'name': {'type': 'string'},
+        'nickname': {
+          'type': ['string', 'null'],
+        },
+      },
+      'required': ['name', 'nickname'],
+      'additionalProperties': false,
+    },
+    'labels': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'value': {'type': 'string'},
+        },
+        'required': ['value'],
+        'additionalProperties': false,
+      },
+    },
+  },
+  'required': ['profile', 'labels'],
+  'additionalProperties': false,
+};
+
+const _optionalFieldSchema = <String, dynamic>{
+  'type': 'object',
+  'properties': {
+    'requiredValue': {'type': 'string'},
+    'optionalValue': {'type': 'string'},
+  },
+  'required': ['requiredValue'],
+  'additionalProperties': false,
+};
 
 ProviderTransportResponse _response(
   Map<String, Object?> body, {

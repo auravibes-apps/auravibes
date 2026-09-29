@@ -1,8 +1,8 @@
 import 'package:auravibes_ui/src/atoms/aura_typing_indicator.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraTypingIndicator', () {
@@ -107,9 +107,12 @@ void main() {
 
     testWidgets('uses default color when none provided', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const Scaffold(body: AuraTypingIndicator()),
-          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const Scaffold(body: AuraTypingIndicator()),
+            theme: ThemeData.light().copyWith(),
+          ),
         ),
       );
 

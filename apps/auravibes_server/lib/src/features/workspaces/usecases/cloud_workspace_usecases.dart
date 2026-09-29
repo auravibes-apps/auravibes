@@ -104,6 +104,14 @@ class CloudWorkspaceUseCases(
         ownerUserId: userId,
         transaction: transaction,
       );
+      final authUser = await AuthUser.db.findById(
+        session,
+        UuidValue.fromString(userId),
+        transaction: transaction,
+      );
+      if (authUser == null) {
+        _fail(CloudWorkspaceErrorCode.authenticationRequired);
+      }
       final receipt = await _repository.findReceipt(
         session,
         actorUserId: userId,

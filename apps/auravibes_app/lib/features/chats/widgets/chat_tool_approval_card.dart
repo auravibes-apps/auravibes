@@ -15,18 +15,16 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show
-        AgentResolvedToolName,
-        AgentToolGrantLevel,
-        callSkillToolName,
-        toolCallApprovalDigest;
+    show AgentToolGrantLevel, toolCallApprovalDigest;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -719,87 +717,59 @@ class const _ApprovalCardDisplay({
   Widget build(BuildContext context) => _ApprovalCardFrame(
     child: _ApprovalCardBody(
       request: request,
-      displayName: _approvalDisplayName(ref, request),
+      displayName: _approvalDisplayName(context, ref, request),
     ),
   );
 }
 
-agent.AgentResolvedToolName? _effectiveDisplayTarget(
-  MessageToolCallEntity toolCall,
+String _approvalDisplayName(
+  BuildContext context,
+  WidgetRef ref,
+  _ApprovalCardRequest request,
 ) {
-  if (toolCall.name != agent.callSkillToolName) return null;
-
-  return _skillDisplayTarget(_decodeSkillArguments(toolCall.argumentsRaw));
-}
-
-agent.AgentResolvedToolName? _skillDisplayTarget(
-  Map<String, Object?>? decoded,
-) {
-  final skill = decoded?['skill'];
-  final tool = decoded?['tool'];
-  if (skill is! String || skill.isEmpty || tool is! String || tool.isEmpty) {
-    return null;
-  }
-
-  return ToolNameFormatter.parse(['skill', 'app', skill, tool].join('__'));
-}
-
-Map<String, Object?>? _decodeSkillArguments(String argumentsRaw) {
-  try {
-    final decoded = jsonDecode(argumentsRaw);
-
-    return decoded is Map ? decoded.cast<String, Object?>() : null;
-  } on FormatException {
-    return null;
-  }
-}
-
-String _approvalDisplayName(WidgetRef ref, _ApprovalCardRequest request) {
   final toolCall = request.current.toolCall;
-  final effectiveTarget = _effectiveDisplayTarget(toolCall);
+  final workspaceId = request.source.workspaceId;
+  final target = SkillToolCallDisplay.parseTarget(toolCall);
+  if (target == null) {
+    return _toolDisplayName(ref, workspaceId, toolCall.name);
+  }
 
-  return _toolDisplayName((
-    ref: ref,
-    workspaceId: request.source.workspaceId,
-    presentationToolName: effectiveTarget?.fullName ?? toolCall.name,
-    effectiveTarget: effectiveTarget,
-    rawToolName: toolCall.name,
-  ));
+  return SkillToolCallDisplay.displayName(
+    context: context,
+    titles: _skillToolCallDisplayTitles(ref, workspaceId, target),
+    target: target,
+  );
 }
 
-String _toolDisplayName(
-  ({
-    WidgetRef ref,
-    String workspaceId,
-    String presentationToolName,
-    agent.AgentResolvedToolName? effectiveTarget,
-    String rawToolName,
-  })
-  request,
+SkillToolCallDisplayTitles? _skillToolCallDisplayTitles(
+  WidgetRef ref,
+  String workspaceId,
+  SkillToolCallTarget target,
 ) {
-  final displayNameAsync = request.ref.watch(
-    toolDisplayNameProvider(request.workspaceId, request.presentationToolName),
+  final titlesAsync = ref.watch(
+    skillToolCallDisplayTitlesProvider(
+      workspaceId,
+      target.skillSlug,
+      target.toolSlug,
+    ),
+  );
+
+  return titlesAsync.maybeWhen(data: (titles) => titles, orElse: () => null);
+}
+
+String _toolDisplayName(WidgetRef ref, String workspaceId, String rawToolName) {
+  final displayNameAsync = ref.watch(
+    toolDisplayNameProvider(workspaceId, rawToolName),
   );
 
   return displayNameAsync.maybeWhen(
     data: (name) => name,
-    orElse: () => _fallbackToolDisplayName(request),
+    orElse: () => ToolNameFormatter.formatDisplayName(
+      ToolNameFormatter.parse(rawToolName),
+      rawName: rawToolName,
+    ),
   );
 }
-
-String _fallbackToolDisplayName(
-  ({
-    WidgetRef ref,
-    String workspaceId,
-    String presentationToolName,
-    agent.AgentResolvedToolName? effectiveTarget,
-    String rawToolName,
-  })
-  request,
-) => ToolNameFormatter.formatDisplayName(
-  request.effectiveTarget ?? ToolNameFormatter.parse(request.rawToolName),
-  rawName: request.rawToolName,
-);
 
 class const _ApprovalCardFrame({required final Widget child})
     extends StatelessWidget {
@@ -945,14 +915,22 @@ class const _NavigationCount({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    _navigationCountText(currentIndex, totalCount),
+    _navigationCountText(
+      currentIndex,
+      totalCount,
+      Localizations.localeOf(context),
+    ),
     style: _navigationCountStyle(context),
   );
 }
 
-String _navigationCountText(int currentIndex, int totalCount) => LocaleKeys
-    .tool_approval_pending_count
-    .tr(args: [(currentIndex + 1).toString(), totalCount.toString()]);
+String _navigationCountText(int currentIndex, int totalCount, Locale locale) =>
+    LocaleKeys.tool_approval_pending_count.tr(
+      args: [
+        NumberFormatter.count(currentIndex + 1, locale),
+        NumberFormatter.count(totalCount, locale),
+      ],
+    );
 
 TextStyle _navigationCountStyle(BuildContext context) {
   final typography = context.auraTheme.typography;
@@ -961,6 +939,7 @@ TextStyle _navigationCountStyle(BuildContext context) {
     color: context.auraColors.onSurface,
     fontSize: typography.fontSizeSm,
     fontWeight: FontWeight.w600,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 }
 

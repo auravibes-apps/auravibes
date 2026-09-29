@@ -400,10 +400,18 @@ class SkillToolCreateRoute({
   required final String workspaceId,
   required final String skillId,
 }) extends GoRouteData with $SkillToolCreateRoute {
+  final SkillToolEditRouteGuard _exitGuard = .new();
+
   @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return SkillToolEditScreen(workspaceId: workspaceId, skillId: skillId);
-  }
+  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+      _exitGuard.canExit(context);
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      SkillToolEditScreen(
+        workspaceId: workspaceId,
+        skillId: skillId,
+        routeExitGuard: _exitGuard,
+      );
 }
 
 class SkillToolEditRoute({
@@ -411,12 +419,18 @@ class SkillToolEditRoute({
   required final String skillId,
   required final String toolId,
 }) extends GoRouteData with $SkillToolEditRoute {
+  final SkillToolEditRouteGuard _exitGuard = .new();
+
+  @override
+  Future<bool> onExit(BuildContext context, GoRouterState state) =>
+      _exitGuard.canExit(context);
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillToolEditScreen(
       workspaceId: workspaceId,
       skillId: skillId,
       toolId: toolId,
+      routeExitGuard: _exitGuard,
     );
   }
 }

@@ -6,15 +6,22 @@ import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notif
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_app/widgets/friendly_build_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -36,6 +43,7 @@ Future<void> main() async {
     );
   }
 
+  ErrorWidget.builder = (details) => FriendlyBuildErrorWidget(details: details);
   _runApp(container);
   _scheduleModelSync(container);
 }
@@ -181,22 +189,26 @@ class const _MaterialAppShell({
       lightTheme: _auraThemeData(hue, .light),
       darkTheme: _auraThemeData(hue, .dark),
       themeMode: themeMode,
+      hue: hue,
     );
   }
 }
 
 ThemeData _auraThemeData(double hue, Brightness brightness) {
+  return _auraMaterialTheme(_auraThemeFor(hue, brightness), brightness);
+}
+
+AuraTheme _auraThemeFor(double hue, Brightness brightness) {
   final baseTheme = brightness == Brightness.light
       ? AuraTheme.light
       : AuraTheme.dark;
-  final auraTheme = baseTheme.copyWith(
+
+  return baseTheme.copyWith(
     colors: AuraComputedColorScheme(
       primaryHue: hue,
       brightness: brightness == Brightness.light ? .light : .dark,
     ),
   );
-
-  return _auraMaterialTheme(auraTheme, brightness);
 }
 
 class const _MaterialAppRoot({
@@ -204,6 +216,7 @@ class const _MaterialAppRoot({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
@@ -213,6 +226,7 @@ class const _MaterialAppRoot({
         lightTheme: lightTheme,
         darkTheme: darkTheme,
         themeMode: themeMode,
+        hue: hue,
       ),
     );
   }
@@ -223,6 +237,7 @@ class const _MaterialAppRouter({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -231,6 +246,7 @@ class const _MaterialAppRouter({
       lightTheme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
+      hue: hue,
     );
   }
 }
@@ -240,16 +256,20 @@ class const _MaterialAppRouterView({
   required final ThemeData lightTheme,
   required final ThemeData darkTheme,
   required final ThemeMode themeMode,
+  required final double hue,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localization = _appLocalization(context);
+    final brightness = _effectiveBrightness(themeMode, context);
+    final targetAuraTheme = _auraThemeFor(hue, brightness);
 
     return _AuraMaterialApp(
       routerConfig: routerConfig,
       lightTheme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
+      targetAuraTheme: targetAuraTheme,
       locale: localization.locale,
       delegates: localization.delegates,
       locales: localization.locales,
@@ -257,19 +277,32 @@ class const _MaterialAppRouterView({
   }
 }
 
+Brightness _effectiveBrightness(ThemeMode themeMode, BuildContext context) =>
+    switch (themeMode) {
+      .light => .light,
+      .dark => .dark,
+      .system => MediaQuery.platformBrightnessOf(context),
+    };
+
 class _AuraMaterialApp extends MaterialApp {
   new({
     required GoRouter routerConfig,
     required ThemeData lightTheme,
     required ThemeData darkTheme,
     required ThemeMode themeMode,
+    required AuraTheme targetAuraTheme,
     required Locale locale,
     required Iterable<LocalizationsDelegate<dynamic>> delegates,
     required Iterable<Locale> locales,
   }) : super.router(
          routerConfig: routerConfig,
-         builder: _snackBarBuilder,
+         builder: (context, child) => _AuraAppContent(
+           router: routerConfig,
+           targetAuraTheme: targetAuraTheme,
+           child: child,
+         ),
          title: AppFlavorConfig.instance.title,
+         scrollBehavior: const _AuraScrollBehavior(),
          theme: lightTheme,
          darkTheme: darkTheme,
          themeMode: themeMode,
@@ -278,6 +311,144 @@ class _AuraMaterialApp extends MaterialApp {
          supportedLocales: locales,
          debugShowCheckedModeBanner: _showDebugBanner,
        );
+}
+
+class const _AuraAppContent({
+  required final GoRouter router,
+  required final AuraTheme targetAuraTheme,
+  required final Widget? child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<AuraTheme>(
+    tween: _AuraThemeTween(end: targetAuraTheme),
+    duration: kThemeAnimationDuration,
+    builder: (context, theme, _) => _AuraAppThemeContent(
+      router: router,
+      theme: theme,
+      child: _snackBarBuilder(context, child),
+    ),
+  );
+}
+
+class const _AuraAppThemeContent({
+  required final GoRouter router,
+  required final AuraTheme theme,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraThemeScope(
+    theme: theme,
+    child: _RouteTitle(router: router, child: child),
+  );
+}
+
+class const _RouteTitle({
+  required final GoRouter router,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final routeInformationProvider = router.routeInformationProvider;
+
+    return ListenableBuilder(
+      listenable: routeInformationProvider,
+      builder: (context, _) => _RouteTitleContent(
+        path: routeInformationProvider.value.uri.path,
+        child: child,
+      ),
+    );
+  }
+}
+
+class const _RouteTitleContent({
+  required final String path,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final key = RouteTitles.titleKeyForPath(path);
+    final appTitle = AppFlavorConfig.instance.title;
+    final title = key == null
+        ? appTitle
+        : '${key.tr(context: context)} - $appTitle';
+
+    return Title(
+      title: title,
+      color: Theme.of(context).colorScheme.surface,
+      child: child,
+    );
+  }
+}
+
+abstract final class RouteTitles {
+  static const _workspaceRouteLength = 3;
+  static const _moreRouteLength = 4;
+  static const _cloudAccountRouteLength = 5;
+  static const _workspaceAreaIndex = 2;
+  static const _moreSectionIndex = 3;
+  static const _cloudAccountScreenIndex = 4;
+
+  static String? titleKeyForPath(String path) {
+    if (path == '/') return LocaleKeys.intro_flow_welcome_title;
+
+    final segments = Uri.parse(path).pathSegments;
+    if (segments case ['intro', ...]) {
+      return LocaleKeys.intro_flow_welcome_title;
+    }
+    if (segments.length < _workspaceRouteLength ||
+        segments.firstOrNull != 'workspaces') {
+      return null;
+    }
+
+    return switch (segments[_workspaceAreaIndex]) {
+      'chat' => LocaleKeys.menu_new_chat,
+      'chats' => LocaleKeys.menu_chats,
+      'settings' => LocaleKeys.settings_screen_title,
+      'more' => _moreTitleKey(segments),
+      _ => null,
+    };
+  }
+
+  static String? _moreTitleKey(List<String> segments) {
+    if (segments.length < _moreRouteLength) {
+      return LocaleKeys.more_screen_title;
+    }
+
+    return switch (segments[_moreSectionIndex]) {
+      'manage-workspaces' => LocaleKeys.workspace_management_title,
+      'cloud-accounts' => _cloudAccountTitleKey(segments),
+      'tools' => LocaleKeys.tools_screen_title,
+      'models' => LocaleKeys.models_screens_title,
+      'service-connections' => LocaleKeys.service_connections_title,
+      'skills' => LocaleKeys.skills_screen_title,
+      'skill-credential-definitions' =>
+        LocaleKeys.skill_credentials_definitions_title,
+      'agents' => LocaleKeys.agents_title,
+      _ => null,
+    };
+  }
+
+  static String _cloudAccountTitleKey(List<String> segments) {
+    if (segments.length < _cloudAccountRouteLength) {
+      return LocaleKeys.cloud_accounts_title;
+    }
+
+    return switch (segments[_cloudAccountScreenIndex]) {
+      'login' => LocaleKeys.cloud_accounts_login_existing,
+      'register' => LocaleKeys.cloud_accounts_register,
+      'forgot-password' => LocaleKeys.cloud_accounts_forgot_password,
+      _ => LocaleKeys.cloud_accounts_title,
+    };
+  }
+}
+
+class const _AuraScrollBehavior() extends MaterialScrollBehavior {
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => Scrollbar(child: child, controller: details.controller);
 }
 
 ({
@@ -290,10 +461,24 @@ _appLocalization(BuildContext context) {
     locale: context.locale,
     delegates: [
       ...GlobalMaterialLocalizations.delegates,
+      sdk_localizations.GlobalMaterialLocalizations.delegate,
       ...context.localizationDelegates,
     ],
     locales: context.supportedLocales,
   );
+}
+
+class _AuraThemeTween extends Tween<AuraTheme> {
+  new({required AuraTheme end}) : super(begin: end, end: end);
+
+  @override
+  AuraTheme lerp(double t) {
+    final begin = this.begin;
+    final end = this.end;
+    if (begin == null || end == null) return AuraTheme.light;
+
+    return begin.lerp(end, t);
+  }
 }
 
 Widget Function(BuildContext, Widget?) get _snackBarBuilder {
@@ -364,13 +549,80 @@ ThemeData _auraBaseMaterialTheme(_AuraThemeParts parts) {
 ThemeData _buildBaseTheme(_AuraThemeParts parts) =>
     _buildBaseThemeDetails(_buildBaseThemeCore(parts), parts);
 
-ThemeData _buildBaseThemeCore(_AuraThemeParts parts) => ThemeData(
-  extensions: [parts.auraTheme],
+const _noPageTransitionsBuilder = _NoPageTransitionsBuilder();
+
+final _auraPageTransitionsTheme = PageTransitionsTheme(
+  builders: {
+    ...const PageTransitionsTheme().builders,
+    if (kIsWeb) .android: _noPageTransitionsBuilder,
+    if (kIsWeb) .iOS: _noPageTransitionsBuilder,
+    .macOS: _noPageTransitionsBuilder,
+    .windows: _noPageTransitionsBuilder,
+    .linux: _noPageTransitionsBuilder,
+    .fuchsia: _noPageTransitionsBuilder,
+  },
+);
+
+ThemeData _buildBaseThemeCore(_AuraThemeParts parts) {
+  final colors = parts.colors;
+  final foundation = _baseThemeFoundation(parts);
+
+  return _baseThemeInputStyle(
+    _baseThemeInteractionColors(foundation, colors),
+    colors,
+  );
+}
+
+ThemeData _baseThemeFoundation(_AuraThemeParts parts) => ThemeData(
+  pageTransitionsTheme: _auraPageTransitionsTheme,
+  splashFactory: NoSplash.splashFactory,
   useMaterial3: true,
   colorScheme: _auraColorScheme(parts.colors, parts.brightness),
   brightness: parts.brightness,
   fontFamily: parts.auraTheme.typography.bodyFontFamily,
 );
+
+ThemeData _baseThemeInteractionColors(
+  ThemeData theme,
+  AuraColorScheme colors,
+) => theme.copyWith(
+  focusColor: colors.surfaceVariant,
+  highlightColor: Colors.transparent,
+  hoverColor: Colors.transparent,
+  splashColor: Colors.transparent,
+);
+
+ThemeData _baseThemeInputStyle(ThemeData theme, AuraColorScheme colors) {
+  final primary = colors.primary;
+
+  return theme.copyWith(
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      splashColor: Colors.transparent,
+    ),
+    textButtonTheme: .new(
+      style: .new(
+        overlayColor: _focusOnlyOverlay(colors.surfaceVariant),
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    textSelectionTheme: .new(
+      cursorColor: primary,
+      selectionColor: primary.withValues(alpha: 0.24),
+      selectionHandleColor: primary,
+    ),
+  );
+}
+
+class const _NoPageTransitionsBuilder()
+    extends FadeUpwardsPageTransitionsBuilder {
+  @override
+  Duration get transitionDuration => noTransitionDuration();
+
+  @override
+  Duration get reverseTransitionDuration => noTransitionDuration();
+
+  static Duration noTransitionDuration() => Duration.zero;
+}
 
 ThemeData _buildBaseThemeDetails(ThemeData theme, _AuraThemeParts parts) =>
     theme.copyWith(
@@ -560,12 +812,18 @@ IconButtonThemeData _auraIconButtonTheme(AuraColorScheme colors) {
     style: IconButton.styleFrom(
       foregroundColor: colors.onSurfaceVariant,
       disabledForegroundColor: colors.outline,
-      hoverColor: colors.surfaceVariant,
-      focusColor: colors.surfaceVariant,
-      highlightColor: colors.outlineVariant,
-    ),
+      splashFactory: NoSplash.splashFactory,
+    ).copyWith(overlayColor: _focusOnlyOverlay(colors.surfaceVariant)),
   );
 }
+
+WidgetStateProperty<Color?> _focusOnlyOverlay(Color focusColor) =>
+    WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.pressed)) return Colors.transparent;
+      if (states.contains(WidgetState.focused)) return focusColor;
+
+      return Colors.transparent;
+    });
 
 ProgressIndicatorThemeData _auraProgressIndicatorTheme(AuraColorScheme colors) {
   return ProgressIndicatorThemeData(

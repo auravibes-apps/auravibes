@@ -208,6 +208,8 @@ void main() {
             'name': 'native_url_url',
             'argumentsRaw': '{"url":"https://example.com"}',
             'responseRaw': 'ok',
+            'outputTruncated': false,
+            'fullOutputForContext': false,
             'resultStatus': 'success',
           },
         ],
@@ -226,6 +228,9 @@ void main() {
         'compactedThroughMessageId': 'msg-2',
         'compactedMessageIds': ['msg-1', 'msg-2'],
         'compactionCreatedAt': '2026-05-03T10:00:00.000Z',
+
+        'compactionProviderId': null,
+        'compactionModelId': null,
       });
     });
 

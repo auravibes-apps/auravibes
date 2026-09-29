@@ -1,5 +1,6 @@
 // Required: Existing UI spacing uses small numeric values.
 // Required: Private form row widgets keep this screen self-contained.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -13,7 +14,9 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_template_too
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         SkillTemplateDefinition,
@@ -89,6 +92,7 @@ class const SkillToolEditScreen({
   required final String workspaceId,
   required final String skillId,
   final String? toolId,
+  final SkillToolEditRouteGuard? routeExitGuard,
   super.key,
 }) extends ConsumerStatefulWidget {
   static const _maxToolBodyLines = 12;
@@ -100,7 +104,32 @@ class const SkillToolEditScreen({
       _SkillToolEditScreenState();
 }
 
+/// Guards route replacements that bypass the screen's PopScope.
+class SkillToolEditRouteGuard {
+  var _isDirty = false;
+  var _isSaving = false;
+
+  void update({required bool isDirty, required bool isSaving}) {
+    _isDirty = isDirty;
+    _isSaving = isSaving;
+  }
+
+  Future<bool> canExit(BuildContext context) async {
+    if (_isSaving || !context.mounted) return false;
+    if (!_isDirty) return true;
+
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (shouldDiscard != true || !context.mounted) return false;
+
+    _isDirty = false;
+
+    return true;
+  }
+}
+
 class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
+  SkillToolEditRouteGuard? _routeExitGuard;
+
   final _titleController = TextEditingController();
   final _descriptionController = TextfEditingController();
   final _urlController = TextEditingController();
@@ -117,26 +146,38 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   bool _editRawDefinition = false;
   bool _initialized = false;
   bool _isSaving = false;
+  bool _isDirty = false;
+  bool _allowPop = false;
+  bool _isUpdating = false;
+  String _savedSnapshot = '';
+
+  SkillToolEditRouteGuard get _exitGuard =>
+      _routeExitGuard ??= widget.routeExitGuard ?? SkillToolEditRouteGuard();
 
   bool get _isCreate => widget.toolId == null;
 
   @override
+  void initState() {
+    super.initState();
+    _syncRouteExitGuard();
+    _titleController.addListener(_onFormChanged);
+    _descriptionController.addListener(_onFormChanged);
+    _urlController.addListener(_onFormChanged);
+    _bodyController.addListener(_onFormChanged);
+    _definitionController.addListener(_onFormChanged);
+    _credentialDefinitionIdController.addListener(_onFormChanged);
+  }
+
+  @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _urlController.dispose();
-    _bodyController.dispose();
-    _definitionController.dispose();
-    _credentialDefinitionIdController.dispose();
-    for (final field in _headerFields) {
-      field.dispose();
-    }
-    for (final field in _queryFields) {
-      field.dispose();
-    }
-    for (final field in _inputFields) {
-      field.dispose();
-    }
+    _titleController.removeListener(_onFormChanged);
+    _descriptionController.removeListener(_onFormChanged);
+    _urlController.removeListener(_onFormChanged);
+    _bodyController.removeListener(_onFormChanged);
+    _definitionController.removeListener(_onFormChanged);
+    _credentialDefinitionIdController.removeListener(_onFormChanged);
+    _disposeFormControllers();
+    _disposeDynamicFields();
     super.dispose();
   }
 
@@ -145,10 +186,207 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     final data = _watchData();
     _initializeForView(data);
 
-    return _SkillToolEditView(data: _viewData(context, data));
+    return PopScope<Object?>(
+      child: _SkillToolEditView(data: _viewData(context, data)),
+      canPop: _canPop,
+      onPopInvokedWithResult: _onPopInvoked,
+    );
   }
 
-  void _setState(VoidCallback callback) => setState(callback);
+  void _setState([VoidCallback? callback]) {
+    _isUpdating = true;
+    try {
+      setState(() {
+        callback?.call();
+        _updateDirtyState();
+        _syncRouteExitGuard();
+      });
+    } finally {
+      _isUpdating = false;
+    }
+  }
+
+  void _syncRouteExitGuard() =>
+      _exitGuard.update(isDirty: _isDirty, isSaving: _isSaving);
+}
+
+extension SkillToolControllerCleanup on _SkillToolEditScreenState {
+  void _disposeFormControllers() {
+    for (final controller in [
+      _titleController,
+      _descriptionController,
+      _urlController,
+      _bodyController,
+      _definitionController,
+      _credentialDefinitionIdController,
+    ]) {
+      controller.dispose();
+    }
+  }
+
+  void _disposeDynamicFields() {
+    for (final fields in [_headerFields, _queryFields]) {
+      fields.forEach(_disposeKeyValueField);
+    }
+    _inputFields.forEach(_disposeInputField);
+  }
+}
+
+extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
+  void _listenToKeyValueField(_KeyValueField field) {
+    field.keyController.addListener(_onFormChanged);
+    field.valueController.addListener(_onFormChanged);
+  }
+
+  void _disposeKeyValueField(_KeyValueField field) {
+    field.keyController.removeListener(_onFormChanged);
+    field.valueController.removeListener(_onFormChanged);
+    field.dispose();
+  }
+
+  List<TextEditingController> _inputControllers(_InputField field) => [
+    field.nameController,
+    field.descriptionController,
+    field.defaultController,
+    field.enumController,
+    field.minimumController,
+    field.maximumController,
+    field.nestedPropertiesController,
+  ];
+
+  void _listenToInputField(_InputField field) {
+    for (final controller in _inputControllers(field)) {
+      controller.addListener(_onFormChanged);
+    }
+  }
+
+  void _disposeInputField(_InputField field) {
+    for (final controller in _inputControllers(field)) {
+      controller.removeListener(_onFormChanged);
+    }
+    field.dispose();
+  }
+
+  void _addKeyValueField(List<_KeyValueField> fields) {
+    _setState(() {
+      final field = _KeyValueField();
+      _listenToKeyValueField(field);
+      fields.add(field);
+    });
+  }
+
+  void _addInputField() {
+    _setState(() {
+      final field = _InputField();
+      _listenToInputField(field);
+      _inputFields.add(field);
+    });
+  }
+
+  void _onFormChanged() {
+    if (!mounted || !_initialized || _isUpdating) return;
+    _setState();
+  }
+
+  void _updateDirtyState() {
+    if (!_initialized) return;
+    _isDirty = _currentSnapshot() != _savedSnapshot;
+  }
+}
+
+extension _SkillToolEditScreenStateNavigation on _SkillToolEditScreenState {
+  bool get _canPop => _allowPop || (!_isDirty && !_isSaving);
+
+  void _onPopInvoked(bool didPop, Object? _) {
+    if (!didPop) unawaited(_handleBack(context));
+  }
+
+  Future<void> _handleBack(BuildContext context) async {
+    if (!await _exitGuard.canExit(context) || !context.mounted) return;
+    _popEditor(context);
+  }
+
+  void _popEditor(BuildContext context, {bool? saved}) {
+    _savedSnapshot = _currentSnapshot();
+    _setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop<bool>(saved);
+    });
+  }
+}
+
+extension _SkillToolEditScreenStateSnapshots on _SkillToolEditScreenState {
+  String _currentSnapshot() {
+    try {
+      return jsonEncode(_payloadSnapshot(_savePayload()));
+    } on Object {
+      return jsonEncode(_formSnapshot());
+    }
+  }
+
+  Map<String, Object?> _payloadSnapshot(_SkillToolSavePayload payload) => {
+    'title': payload.title,
+    'description': payload.description,
+    'template': _canonicalJsonValue(jsonDecode(payload.templateJson)),
+    'inputs': _canonicalJsonValue(jsonDecode(payload.inputsJson)),
+    'definition': _canonicalJsonValue(jsonDecode(payload.definitionJson)),
+    'credentialDefinitionId': payload.credentialDefinitionId,
+    'clearCredentialDefinition': payload.clearCredentialDefinition,
+    'requiresCredential': payload.requiresCredential,
+    'isEnabled': payload.isEnabled,
+  };
+
+  Map<String, Object?> _formSnapshot() => {
+    'title': _titleController.text,
+    'description': _descriptionController.text,
+    'url': _urlController.text,
+    'method': _method.value,
+    'body': _bodyController.text,
+    'bodyFormat': _bodyFormat.value,
+    'headers': _keyValueSnapshots(_headerFields),
+    'query': _keyValueSnapshots(_queryFields),
+    'inputs': _inputSnapshots(),
+    'definition': _definitionController.text,
+    'editRawDefinition': _editRawDefinition,
+    'credentialDefinitionId': _credentialDefinitionIdController.text,
+    'requiresCredential': _requiresCredential,
+    'isEnabled': _isEnabled,
+  };
+
+  List<List<String>> _keyValueSnapshots(List<_KeyValueField> fields) => [
+    for (final field in fields)
+      [field.keyController.text, field.valueController.text],
+  ];
+
+  List<List<Object?>> _inputSnapshots() => [
+    for (final field in _inputFields)
+      [
+        field.nameController.text,
+        field.type,
+        field.descriptionController.text,
+        field.optional,
+        field.defaultController.text,
+        field.enumController.text,
+        field.minimumController.text,
+        field.maximumController.text,
+        field.itemType,
+        field.nestedPropertiesController.text,
+      ],
+  ];
+}
+
+Object? _canonicalJsonValue(Object? value) {
+  if (value is Map) {
+    final keys = value.keys.cast<String>().toList()..sort();
+
+    return {for (final key in keys) key: _canonicalJsonValue(value[key])};
+  }
+  if (value is List) {
+    return [for (final item in value) _canonicalJsonValue(item)];
+  }
+
+  return value;
 }
 
 extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
@@ -178,8 +416,13 @@ extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
     final currentTool = data.currentTool;
     if (currentTool != null) _initializeFromTool(currentTool);
     if (data.toolAsync == null && !_initialized) {
-      _inputFields.add(_InputField());
+      final field = _InputField();
+      _listenToInputField(field);
+      _inputFields.add(field);
       _initialized = true;
+      _savedSnapshot = _currentSnapshot();
+      _isDirty = false;
+      _syncRouteExitGuard();
     }
   }
 
@@ -197,6 +440,7 @@ extension _SkillToolEditScreenStateView on _SkillToolEditScreenState {
     isSaving: _isSaving,
     onSave: () => _save(context),
     onPreview: () => _preview(context),
+    onBack: () => _handleBack(context),
   );
 
   _SkillToolFormData _formData(
@@ -238,12 +482,12 @@ extension _SkillToolEditScreenStateFormActions on _SkillToolEditScreenState {
       );
 
   _SkillToolQueryActions _queryActions() => _SkillToolQueryActions(
-    onAdd: () => _setState(() => _queryFields.add(_KeyValueField())),
+    onAdd: () => _addKeyValueField(_queryFields),
     onRemove: _removeQueryField,
   );
 
   _SkillToolHeaderActions _headerActions() => _SkillToolHeaderActions(
-    onAdd: () => _setState(() => _headerFields.add(_KeyValueField())),
+    onAdd: () => _addKeyValueField(_headerFields),
     onRemove: _removeHeaderField,
   );
 
@@ -257,7 +501,7 @@ extension _SkillToolEditScreenStateFormActions on _SkillToolEditScreenState {
   );
 
   _SkillToolInputActions _inputActions() => _SkillToolInputActions(
-    onAdd: () => _setState(() => _inputFields.add(_InputField())),
+    onAdd: _addInputField,
     onRemove: _removeInputField,
     onChanged: () => _setState(() {
       final _ = Object();
@@ -320,6 +564,7 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   ) async {
     if (!context.mounted) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
     await showDialog<void>(
       context: context,
       builder: (context) => _SkillToolPreviewDialog(preview: preview),
@@ -329,21 +574,21 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   void _removeQueryField(_KeyValueField field) {
     _setState(() {
       final _ = _queryFields.remove(field);
-      field.dispose();
+      _disposeKeyValueField(field);
     });
   }
 
   void _removeInputField(_InputField field) {
     _setState(() {
       final _ = _inputFields.remove(field);
-      field.dispose();
+      _disposeInputField(field);
     });
   }
 
   void _removeHeaderField(_KeyValueField field) {
     _setState(() {
       final _ = _headerFields.remove(field);
-      field.dispose();
+      _disposeKeyValueField(field);
     });
   }
 
@@ -365,6 +610,18 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
 
     _applyToolMetadata(tool);
     final definition = _parseSkillTemplateDefinition(tool);
+    _applyToolDefinition(tool, definition);
+    _listenToExistingFields();
+    _initialized = true;
+    _savedSnapshot = _currentSnapshot();
+    _isDirty = false;
+    _syncRouteExitGuard();
+  }
+
+  void _applyToolDefinition(
+    SkillTemplateToolEntity tool,
+    SkillTemplateDefinition? definition,
+  ) {
     _definitionController.text = definition?.toJsonString() ?? '';
     _applyTemplate(
       definition == null
@@ -372,7 +629,12 @@ extension _SkillToolEditScreenStateInitialization on _SkillToolEditScreenState {
           : tool.copyWith(templateJson: definition.legacyTemplateJson),
     );
     _applyInputFields(definition?.legacyInputsJson ?? tool.inputsJson);
-    _initialized = true;
+  }
+
+  void _listenToExistingFields() {
+    _headerFields.forEach(_listenToKeyValueField);
+    _queryFields.forEach(_listenToKeyValueField);
+    _inputFields.forEach(_listenToInputField);
   }
 
   void _applyToolMetadata(SkillTemplateToolEntity tool) {
@@ -446,7 +708,8 @@ extension _SkillToolEditScreenStateSave on _SkillToolEditScreenState {
 
   void _closeAfterSave(BuildContext context) {
     if (!context.mounted) return;
-    Navigator.of(context).pop(true);
+    _savedSnapshot = _currentSnapshot();
+    _popEditor(context, saved: true);
   }
 
   void _showSaveError(BuildContext context) {
@@ -944,6 +1207,7 @@ class const _SkillToolEditViewData({
   required final bool isSaving,
   required final VoidCallback onSave,
   required final VoidCallback onPreview,
+  required final VoidCallback onBack,
 });
 
 class const _SkillToolEditView({required final _SkillToolEditViewData data})
@@ -960,6 +1224,7 @@ class const _SkillToolEditView({required final _SkillToolEditViewData data})
       isSaving: data.isSaving,
       onSave: data.onSave,
       onPreview: data.onPreview,
+      onBack: data.onBack,
     ),
   );
 }
@@ -1006,6 +1271,7 @@ class const _SkillToolEditAppBar({
   required final bool isSaving,
   required final VoidCallback onSave,
   required final VoidCallback onPreview,
+  required final VoidCallback onBack,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -1017,7 +1283,7 @@ class const _SkillToolEditAppBar({
       _SkillToolAppBarPreview(onPressed: onPreview),
       _SkillToolAppBarSave(isSaving: isSaving, onSave: onSave),
     ],
-    leading: _SkillToolAppBarBack(onPressed: () => Navigator.of(context).pop()),
+    leading: _SkillToolAppBarBack(onPressed: onBack),
   );
 }
 
@@ -1083,14 +1349,18 @@ class const _SkillToolForm({
   required final SkillTemplateToolEntity? tool,
   required final _SkillToolFormData data,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(12),
+    padding: const EdgeInsets.all(_contentPadding)
+        .copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
     children: [
       AuraCard(
         child: _SkillToolFormContent(tool: tool, data: data),
       ),
     ],
+    keyboardDismissBehavior: .onDrag,
   );
 }
 
@@ -1268,6 +1538,8 @@ class const _SkillToolInputFields({
       onAdd: input.onAdd,
       onRemove: input.onRemove,
       onChanged: input.onChanged,
+      isSaving: values.state._isSaving,
+      onSave: actions.onSave,
     );
   }
 }
@@ -1358,6 +1630,7 @@ class const _SkillToolAdvancedDefinitionInput({
       LocaleKeys.skills_tool_advanced_definition_label.tr(context: context),
     ),
     keyboardType: .multiline,
+    textInputAction: .newline,
     minLines: SkillToolEditScreen._minAdvancedDefinitionLines,
     maxLines: SkillToolEditScreen._maxAdvancedDefinitionLines,
   );
@@ -1456,6 +1729,7 @@ class const _SkillToolTitleField({
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
     label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1481,6 +1755,7 @@ class const _SkillToolUrlField({
     controller: controller,
     placeholder: Text(LocaleKeys.skills_tool_url_hint.tr(context: context)),
     label: Text(LocaleKeys.skills_tool_url_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1550,6 +1825,7 @@ class const _SkillToolBodyField({
     controller: controller,
     placeholder: Text(LocaleKeys.skills_tool_body_hint.tr(context: context)),
     label: Text(LocaleKeys.skills_tool_body_label.tr(context: context)),
+    textInputAction: .newline,
     minLines: 5,
     maxLines: SkillToolEditScreen._maxToolBodyLines,
   );
@@ -1720,6 +1996,8 @@ class const _InputFieldsSection({
   required final VoidCallback onAdd,
   required final ValueChanged<_InputField> onRemove,
   required final VoidCallback onChanged,
+  required final bool isSaving,
+  required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _InputFieldsSectionColumn(
@@ -1727,6 +2005,8 @@ class const _InputFieldsSection({
     onAdd: onAdd,
     onRemove: onRemove,
     onChanged: onChanged,
+    isSaving: isSaving,
+    onSave: onSave,
   );
 }
 
@@ -1736,13 +2016,18 @@ class _InputFieldsSectionColumn extends StatelessWidget {
     required this.onAdd,
     required this.onRemove,
     required this.onChanged,
+    required this.isSaving,
+    required this.onSave,
   }) : _children = [
          const _InputFieldsHeader(),
-         for (final field in fields)
+         for (var index = 0; index < fields.length; index++)
            _InputFieldCard(
-             field: field,
+             field: fields[index],
              onRemove: onRemove,
              onChanged: onChanged,
+             isLast: index == fields.length - 1,
+             isSaving: isSaving,
+             onSave: onSave,
            ),
          _AddInputFieldButton(onPressed: onAdd),
        ];
@@ -1751,6 +2036,8 @@ class _InputFieldsSectionColumn extends StatelessWidget {
   final VoidCallback onAdd;
   final ValueChanged<_InputField> onRemove;
   final VoidCallback onChanged;
+  final bool isSaving;
+  final VoidCallback onSave;
   final List<Widget> _children;
 
   @override
@@ -1826,6 +2113,7 @@ class const _RequestKeyValueFieldKey({
   Widget build(BuildContext context) => AuraInput(
     controller: field.keyController,
     label: Text(labelKey.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1839,6 +2127,7 @@ class const _RequestKeyValueFieldValue({
     controller: field.valueController,
     placeholder: Text(placeholderKey.tr(context: context)),
     label: Text(labelKey.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1858,35 +2147,64 @@ class const _InputFieldCard({
   required final _InputField field,
   required final ValueChanged<_InputField> onRemove,
   required final VoidCallback onChanged,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _InputFieldCardView(
     field: field,
     onRemove: onRemove,
     onChanged: onChanged,
+    isLast: isLast,
+    isSaving: isSaving,
+    onSave: onSave,
   );
 }
 
 class _InputFieldCardView extends StatelessWidget {
-  new({required this.field, required this.onRemove, required this.onChanged})
-    : _children = [
-        _InputFieldName(field: field),
-        _InputFieldType(field: field, onChanged: onChanged),
-        _InputFieldDescription(field: field),
-        _InputFieldDefault(field: field),
-        _InputFieldEnum(field: field),
-        if (field.type == 'number' || field.type == 'integer')
-          _InputFieldConstraints(field: field),
-        if (field.type == 'array')
-          _InputFieldItemsType(field: field, onChanged: onChanged),
-        if (field.type == 'object') _InputFieldNestedProperties(field: field),
-        _InputFieldOptional(field: field, onChanged: onChanged),
-        _InputFieldRemoveButton(field: field, onRemove: onRemove),
-      ];
+  new({
+    required this.field,
+    required this.onRemove,
+    required this.onChanged,
+    required this.isLast,
+    required this.isSaving,
+    required this.onSave,
+  }) : _children = [
+         _InputFieldName(field: field),
+         _InputFieldType(field: field, onChanged: onChanged),
+         _InputFieldDescription(field: field),
+         _InputFieldDefault(field: field),
+         _InputFieldEnum(
+           field: field,
+           isLast:
+               isLast &&
+               field.type != 'number' &&
+               field.type != 'integer' &&
+               field.type != 'object',
+           isSaving: isSaving,
+           onSave: onSave,
+         ),
+         if (field.type == 'number' || field.type == 'integer')
+           _InputFieldConstraints(
+             field: field,
+             isLast: isLast,
+             isSaving: isSaving,
+             onSave: onSave,
+           ),
+         if (field.type == 'array')
+           _InputFieldItemsType(field: field, onChanged: onChanged),
+         if (field.type == 'object') _InputFieldNestedProperties(field: field),
+         _InputFieldOptional(field: field, onChanged: onChanged),
+         _InputFieldRemoveButton(field: field, onRemove: onRemove),
+       ];
 
   final _InputField field;
   final ValueChanged<_InputField> onRemove;
   final VoidCallback onChanged;
+  final bool isLast;
+  final bool isSaving;
+  final VoidCallback onSave;
   final List<Widget> _children;
 
   @override
@@ -1905,6 +2223,7 @@ class const _InputFieldName({required final _InputField field})
       LocaleKeys.skills_tool_input_name_placeholder,
     ),
     label: Text(LocaleKeys.skills_tool_input_name_label.tr(context: context)),
+    textInputAction: .next,
   );
 }
 
@@ -1997,6 +2316,7 @@ class const _InputFieldDescription({required final _InputField field})
     label: Text(
       LocaleKeys.skills_tool_input_description_label.tr(context: context),
     ),
+    textInputAction: .next,
   );
 }
 
@@ -2011,11 +2331,16 @@ class const _InputFieldDefault({required final _InputField field})
     label: Text(
       LocaleKeys.skills_tool_input_default_label.tr(context: context),
     ),
+    textInputAction: .next,
   );
 }
 
-class const _InputFieldEnum({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldEnum({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: field.enumController,
@@ -2023,17 +2348,30 @@ class const _InputFieldEnum({required final _InputField field})
       LocaleKeys.skills_tool_input_enum_hint.tr(context: context),
     ),
     label: Text(LocaleKeys.skills_tool_input_enum_label.tr(context: context)),
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: isLast && !isSaving ? (_) => onSave() : null,
   );
 }
 
-class const _InputFieldConstraints({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldConstraints({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(child: _InputFieldMinimum(field: field)),
       const SizedBox(width: 8),
-      Expanded(child: _InputFieldMaximum(field: field)),
+      Expanded(
+        child: _InputFieldMaximum(
+          field: field,
+          isLast: isLast,
+          isSaving: isSaving,
+          onSave: onSave,
+        ),
+      ),
     ],
   );
 }
@@ -2047,11 +2385,16 @@ class const _InputFieldMinimum({required final _InputField field})
       LocaleKeys.skills_tool_input_minimum_label.tr(context: context),
     ),
     keyboardType: .number,
+    textInputAction: .next,
   );
 }
 
-class const _InputFieldMaximum({required final _InputField field})
-    extends StatelessWidget {
+class const _InputFieldMaximum({
+  required final _InputField field,
+  required final bool isLast,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: field.maximumController,
@@ -2059,6 +2402,8 @@ class const _InputFieldMaximum({required final _InputField field})
       LocaleKeys.skills_tool_input_maximum_label.tr(context: context),
     ),
     keyboardType: .number,
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: isLast && !isSaving ? (_) => onSave() : null,
   );
 }
 
@@ -2095,6 +2440,7 @@ class const _InputFieldNestedProperties({required final _InputField field})
       LocaleKeys.skills_tool_input_nested_properties_label.tr(context: context),
     ),
     keyboardType: .multiline,
+    textInputAction: .newline,
     minLines: 3,
     maxLines: 6,
   );

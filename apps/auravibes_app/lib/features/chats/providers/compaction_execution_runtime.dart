@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:riverpod/riverpod.dart';
 
 /// Runtime adapter for compaction execution notifier state changes.
@@ -34,10 +35,21 @@ extension CompactionExecutionLifecycle on CompactionExecutionRuntime {
 final compactionExecutionRuntimeProvider = Provider<CompactionExecutionRuntime>(
   (ref) {
     final notifier = ref.watch(compactionExecutionProvider.notifier);
+    final skillContext = ref.watch(
+      conversationSkillContextRuntimeProvider.notifier,
+    );
 
     return CompactionExecutionRuntime(
-      tryMarkRunning: notifier.tryMarkRunning,
-      markRunning: notifier.markRunning,
+      tryMarkRunning: (executionState) {
+        if (!notifier.tryMarkRunning(executionState)) return false;
+        skillContext.markNeedsContext(executionState.conversationId);
+
+        return true;
+      },
+      markRunning: (executionState) {
+        notifier.markRunning(executionState);
+        skillContext.markNeedsContext(executionState.conversationId);
+      },
       markSuccess: notifier.markSuccess,
       markFailure: notifier.markFailure,
     );

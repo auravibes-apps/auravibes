@@ -13,10 +13,12 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_result.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -27,10 +29,14 @@ import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as flutter_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _syncWorkspaceId = 'sync-workspace';
@@ -88,6 +94,280 @@ void main() {
     );
   });
 
+  testWidgets('opens redacted details only for failed MCP connections', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Failed MCP',
+          displayStatus: .failed,
+          canReconnect: true,
+          lastAuthError: 'Authorization: Bearer replace-me',
+        ),
+        _mcpConnection(
+          name: 'Healthy MCP',
+          displayStatus: .connected,
+          canReconnect: true,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await _openConnectionMenu(tester, 'Failed MCP');
+
+    expect(find.text('View details'), findsOneWidget);
+    expect(find.text('Reconnect'), findsWidgets);
+
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.textContaining('Bearer [REDACTED]'), findsOneWidget);
+    expect(find.textContaining('replace-me'), findsNothing);
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
+    final healthyMenu = find.byKey(
+      const ValueKey<String>('service_connection_menu_Healthy MCP'),
+    );
+    final _ = await tester.ensureVisible(healthyMenu);
+    final _ = await tester.pumpAndSettle();
+    await _openConnectionMenu(tester, 'Healthy MCP');
+
+    expect(find.text('View details'), findsNothing);
+    expect(find.text('Reconnect'), findsWidgets);
+  });
+
+  testWidgets('opens details for MCP connections needing authentication', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Needs auth MCP',
+          displayStatus: .needsReauth,
+          lastAuthError: 'Authentication expired',
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await _openConnectionMenu(tester, 'Needs auth MCP');
+
+    expect(find.text('View details'), findsOneWidget);
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.textContaining('Authentication expired'), findsOneWidget);
+  });
+
+  testWidgets('tests MCP connection and copies a safe diagnostic report', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    PackageInfo.setMockInitialValues(
+      appName: 'AuraVibes',
+      packageName: 'me.auravibes.app',
+      version: '0.0.4',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final testUsecase = _MockTestMcpConnectionUsecase();
+    when(() => testUsecase('Failed MCP-server')).thenAnswer((_) async {
+      return (
+        status: McpConnectionTestStatus.network,
+        testedAt: DateTime.utc(2026, 9, 27, 12, 30),
+        transport: const McpTransportTypeStreamableHttp(),
+        errorDetails:
+            'https://mcp.example.com/mcp?api_key=secret '
+            'Authorization: Bearer secret',
+      );
+    });
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Failed MCP',
+          displayStatus: .failed,
+          canReconnect: true,
+          transport: const McpTransportTypeStreamableHttp(),
+        ),
+      ],
+      testUsecase: testUsecase,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await tester.tap(find.text('Test connection'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('MCP network or timeout failure'), findsOneWidget);
+    expect(find.text('Retry test'), findsOneWidget);
+    expect(find.textContaining('Tested '), findsOneWidget);
+    await tester.tap(find.text('View details'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(copied.single, contains('Transport: streamableHttp'));
+    expect(copied.single, contains('Status category: network'));
+    expect(copied.single, contains('Attempt time: 2026-09-27T12:30:00.000Z'));
+    expect(copied.single, contains('App version: 0.0.4'));
+    expect(copied.single, isNot(contains('mcp.example.com')));
+    expect(copied.single, isNot(contains('secret')));
+    verify(() => testUsecase('Failed MCP-server')).called(1);
+  });
+
+  testWidgets('localizes authentication recovery and historic diagnostics', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final testUsecase = _MockTestMcpConnectionUsecase();
+    when(() => testUsecase('Needs auth MCP-server')).thenAnswer((_) async {
+      return (
+        status: McpConnectionTestStatus.authentication,
+        testedAt: DateTime.utc(2026, 9, 27, 12, 30),
+        transport: const McpTransportTypeSSE(),
+        errorDetails: 'Authentication expired',
+      );
+    });
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(
+          name: 'Needs auth MCP',
+          displayStatus: .needsReauth,
+          canReconnect: true,
+          lastAuthError: 'Authentication expired',
+          transport: const McpTransportTypeSSE(),
+        ),
+      ],
+      testUsecase: testUsecase,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(
+      tester,
+      container,
+      _syncWorkspaceId,
+      locale: const Locale('es'),
+    );
+    await tester.tap(find.textContaining('Probar conexi'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.textContaining('la autenticaci'), findsOneWidget);
+    expect(
+      find.text('Reconecta este servidor MCP para restablecer el acceso.'),
+      findsOneWidget,
+    );
+    expect(find.text('Reconectar'), findsWidgets);
+    await _openConnectionMenu(tester, 'Needs auth MCP');
+    await tester.tap(find.text('Ver detalles').last);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Copiar'), findsOneWidget);
+  });
+
+  testWidgets('shows protocol guidance and keeps unknown failure details', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final testUsecase = _MockTestMcpConnectionUsecase();
+    var attempts = 0;
+    when(() => testUsecase('Protocol MCP-server')).thenAnswer((_) async {
+      attempts++;
+
+      return (
+        status: attempts == 1
+            ? McpConnectionTestStatus.protocol
+            : McpConnectionTestStatus.unknown,
+        testedAt: DateTime.utc(2026, 9, 27),
+        transport: const McpTransportTypeStreamableHttp(),
+        errorDetails: 'Unexpected failure',
+      );
+    });
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(name: 'Protocol MCP', displayStatus: .connected),
+      ],
+      testUsecase: testUsecase,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    final testButton = find.byKey(
+      const ValueKey<String>('service_connection_test_Protocol MCP'),
+    );
+    await tester.tap(testButton);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('MCP server or configuration failure'), findsOneWidget);
+    expect(find.text('Open Tools'), findsOneWidget);
+    expect(find.textContaining('add a replacement connection'), findsOneWidget);
+
+    await tester.tap(testButton);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('MCP connection check failed'), findsOneWidget);
+    expect(find.text('Open Tools'), findsNothing);
+    expect(find.text('Retry test'), findsNothing);
+    expect(find.text('View details'), findsOneWidget);
+  });
+
+  testWidgets('shows a localized successful MCP connection check', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final testUsecase = _MockTestMcpConnectionUsecase();
+    when(() => testUsecase('Healthy MCP-server')).thenAnswer((_) async {
+      return (
+        status: McpConnectionTestStatus.success,
+        testedAt: DateTime.utc(2026, 9, 27),
+        transport: const McpTransportTypeSSE(),
+        errorDetails: null,
+      );
+    });
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(name: 'Healthy MCP', displayStatus: .connected),
+      ],
+      testUsecase: testUsecase,
+    );
+    addTearDown(container.dispose);
+
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('service_connection_test_Healthy MCP')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('MCP connection check passed'), findsOneWidget);
+    expect(find.textContaining('Tested '), findsOneWidget);
+    expect(find.text('Reconnect'), findsNothing);
+    expect(find.text('Retry test'), findsNothing);
+    expect(find.text('View details'), findsNothing);
+  });
+
   testWidgets('searches connection metadata and applies status filters', (
     tester,
   ) async {
@@ -127,6 +407,11 @@ void main() {
       matching: find.byType(EditableText),
     );
     expect(find.text('Notion'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('GitHub'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('GitHub'), findsOneWidget);
 
     final _ = await tester.enterText(searchField, 'notion');
@@ -347,6 +632,7 @@ void main() {
     await tester.tap(find.text('Skill credentials'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsOneWidget);
+    await tester.ensureVisible(find.text('All'));
     await tester.tap(find.text('All'));
     final _ = await tester.pumpAndSettle();
 
@@ -494,6 +780,7 @@ ProviderContainer _syncTestContainer(
   ModelSyncService service, {
   WorkspaceSession? session,
   List<ServiceConnectionListItem> connections = const [],
+  TestMcpConnectionUsecase? testUsecase,
 }) {
   final workspaceSession =
       session ??
@@ -508,6 +795,9 @@ ProviderContainer _syncTestContainer(
       serviceConnectionsProvider(_syncWorkspaceId)
           .overrideWith((_) => Stream.value(connections)),
       modelSyncServiceProvider.overrideWithValue(service),
+      if (testUsecase != null)
+        testMcpConnectionUsecaseProvider(_syncWorkspaceId)
+            .overrideWith((_) async => testUsecase),
     ],
   );
 }
@@ -520,6 +810,8 @@ ServiceConnectionListItem _mcpConnection({
   List<ServiceConnectionMetadataValue> metadataValues = const [],
   bool canRefresh = false,
   bool canReconnect = false,
+  String? lastAuthError,
+  McpTransportType? transport,
 }) => ServiceConnectionListItem(
   id: name,
   workspaceId: _syncWorkspaceId,
@@ -533,17 +825,19 @@ ServiceConnectionListItem _mcpConnection({
   displayStatus: displayStatus,
   expiresAt: null,
   lastRefreshedAt: null,
-  lastAuthError: null,
+  lastAuthError: lastAuthError,
   metadataValues: metadataValues,
   canRefresh: canRefresh,
   canReconnect: canReconnect,
+  transport: transport,
 );
 
 Future<void> _pumpScreen(
   WidgetTester tester,
   ProviderContainer container,
-  String workspaceId,
-) async {
+  String workspaceId, {
+  Locale locale = const Locale('en'),
+}) async {
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
       EasyLocalization(
@@ -557,22 +851,36 @@ Future<void> _pumpScreen(
                 builder: (context, child) =>
                     AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
+                localizationsDelegates: [
+                  ...GlobalMaterialLocalizations.delegates,
+                  flutter_localizations.GlobalMaterialLocalizations.delegate,
+                  ...context.localizationDelegates,
+                ],
                 supportedLocales: context.supportedLocales,
               ),
             );
           },
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: locale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),
     );
     await Future<void>.delayed(.zero);
   });
+  final _ = await tester.pumpAndSettle();
+}
+
+Future<void> _openConnectionMenu(WidgetTester tester, String name) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byKey(ValueKey<String>('service_connection_menu_$name')),
+      matching: find.byIcon(Icons.more_vert),
+    ),
+  );
   final _ = await tester.pumpAndSettle();
 }
 
@@ -605,3 +913,6 @@ class _FakeSecretKeyManager extends SecretKeyManager {
 }
 
 class _MockSyncApiModelsUseCase extends Mock implements SyncApiModelsUseCase;
+
+class _MockTestMcpConnectionUsecase extends Mock
+    implements TestMcpConnectionUsecase;

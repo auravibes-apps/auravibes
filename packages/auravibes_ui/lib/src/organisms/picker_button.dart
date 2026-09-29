@@ -6,7 +6,7 @@ class const _PickerButton({
   required final Widget child,
   final Decoration? decoration,
   final bool selected = false,
-  final double width = AuraDateTimeInput._pickerControlHeight,
+  final double? width,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _PickerButtonSemantics(
@@ -15,7 +15,7 @@ class const _PickerButton({
     label: label,
     onPressed: onPressed,
     selected: selected,
-    width: width,
+    width: width ?? context.auraTheme.interactionSizes.minimumTargetSize,
   );
 }
 
@@ -105,7 +105,7 @@ class const _PickerButtonSurface({
   Widget build(BuildContext context) => AuraPressable(
     child: SizedBox(
       width: width,
-      height: AuraDateTimeInput._pickerControlHeight,
+      height: context.auraTheme.interactionSizes.minimumTargetSize,
       child: Center(child: child),
     ),
     color: color,
@@ -478,7 +478,7 @@ class const _TimePickerValue({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: AuraDateTimeInput._pickerControlHeight,
+    width: context.auraTheme.interactionSizes.minimumTargetSize,
     child: Center(
       child: Text(
         value,

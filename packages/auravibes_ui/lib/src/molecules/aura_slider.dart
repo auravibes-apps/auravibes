@@ -9,7 +9,6 @@ import 'package:flutter/widgets.dart';
 part 'aura_slider_mark.dart';
 part 'aura_labeled_slider.dart';
 
-const _controlHeight = 48.0;
 const _trackHeight = 4.0;
 const _thumbRadius = 10.0;
 const double _thumbDiameter = _thumbRadius * 2;
@@ -330,6 +329,7 @@ class const _AuraSliderTrack({
   Widget _buildLayout(BuildContext context, BoxConstraints constraints) =>
       _AuraSliderTrackLayout(
         width: constraints.maxWidth,
+        controlHeight: context.auraTheme.interactionSizes.minimumTargetSize,
         enabled: enabled,
         value: value,
         min: min,
@@ -344,6 +344,7 @@ class const _AuraSliderTrack({
 class _AuraSliderTrackLayout extends StatelessWidget {
   new({
     required double width,
+    required double controlHeight,
     required bool enabled,
     required double value,
     required double min,
@@ -368,6 +369,7 @@ class _AuraSliderTrackLayout extends StatelessWidget {
            inactiveColor: inactiveColor,
            isFocused: isFocused,
            width: width,
+           controlHeight: controlHeight,
          ),
        );
 
@@ -421,8 +423,9 @@ class _AuraSliderTrackCanvas extends StatelessWidget {
     required Color inactiveColor,
     required bool isFocused,
     required double width,
+    required double controlHeight,
   }) : _child = SizedBox(
-         height: _controlHeight,
+         height: controlHeight,
          child: CustomPaint(
            painter: _AuraSliderPainter(
              value: value,

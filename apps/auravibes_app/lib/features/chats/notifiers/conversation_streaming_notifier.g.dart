@@ -42,7 +42,7 @@ final class ConversationStreamingNotifierProvider
 }
 
 String _$conversationStreamingNotifierHash() =>
-    r'9eba06d10057dee1ec9565f57a678e367de75962';
+    r'28c498fa36833a6afb7a72e4bf6ce6cb194f0b65';
 
 abstract class _$ConversationStreamingNotifier extends $Notifier<Set<String>> {
   Set<String> build();

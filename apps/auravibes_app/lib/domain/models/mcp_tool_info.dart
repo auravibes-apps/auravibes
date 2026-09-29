@@ -16,6 +16,7 @@ abstract class const McpToolInfo._() with _$McpToolInfo {
     required String toolName,
     required String description,
     required Map<String, dynamic> inputSchema,
+    Map<String, dynamic>? outputSchema,
     bool? supportsProgress,
     bool? supportsCancellation,
     Map<String, dynamic>? metadata,

@@ -145,7 +145,13 @@ class AppDatabase extends _$AppDatabase {
       _apiModelModalitiesSchemaVersion + 1;
   static const int _reasoningControlsSchemaVersion =
       _legacyStreamingStatusSchemaVersion + 1;
-  static const int _currentSchemaVersion = _reasoningControlsSchemaVersion;
+  static const int _mcpOutputSchemaVersion =
+      _reasoningControlsSchemaVersion + 1;
+  static const int _compactionBudgetsSchemaVersion =
+      _mcpOutputSchemaVersion + 1;
+  static const int _compactionCheckpointSchemaVersion =
+      _compactionBudgetsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _compactionCheckpointSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -198,7 +204,17 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
+    await _upgradeMcpOutputSchema(m, from);
     await _runConversationUpgrades(m, from);
+  }
+
+  Future<void> _upgradeMcpOutputSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._mcpOutputSchemaVersion ||
+        !await _tableExists('tools') ||
+        await _columnExists('tools', 'output_schema')) {
+      return;
+    }
+    await m.addColumn(tools, tools.outputSchema);
   }
 
   Future<void> _runConversationUpgrades(Migrator m, int from) async {
@@ -206,6 +222,8 @@ extension on AppDatabase {
     await _upgradeRecentModelSelectionsSchema(m);
     await _upgradeForkSchema(m, from);
     await _upgradeReasoningControlsSchema(m, from);
+    await _upgradeCompactionBudgetsSchema(m, from);
+    await _upgradeCompactionCheckpointSchema(m, from);
   }
 
   Future<void> _upgradeApiModelModalitiesSchema(int from) async {
@@ -266,7 +284,7 @@ extension on AppDatabase {
   }
 
   Future<void> _upgradeAgentCatalogSchema(int from) async {
-    if (from >= AppDatabase._currentSchemaVersion) return;
+    if (from >= AppDatabase._reasoningControlsSchemaVersion) return;
     await customStatement(
       'CREATE INDEX IF NOT EXISTS agents_workspace_name_id '
       'ON agents (workspace_id, name COLLATE NOCASE, id)',
@@ -342,6 +360,36 @@ extension on AppDatabase {
         !await _columnExists('conversations', 'reasoning_config_json')) {
       await m.addColumn(conversations, conversations.reasoningConfigJson);
     }
+  }
+
+  Future<void> _upgradeCompactionBudgetsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._compactionBudgetsSchemaVersion ||
+        !await _tableExists('workspace_compaction_settings') ||
+        await _columnExists(
+          'workspace_compaction_settings',
+          'model_overrides_json',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      workspaceCompactionSettings,
+      workspaceCompactionSettings.modelOverridesJson,
+    );
+  }
+
+  Future<void> _upgradeCompactionCheckpointSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._compactionCheckpointSchemaVersion ||
+        !await _tableExists('conversations') ||
+        await _columnExists(
+          'conversations',
+          'active_compaction_checkpoint_id',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      conversations,
+      conversations.activeCompactionCheckpointId,
+    );
   }
 
   Future<void> _upgradeLegacyStreamingStatuses(int from) async {

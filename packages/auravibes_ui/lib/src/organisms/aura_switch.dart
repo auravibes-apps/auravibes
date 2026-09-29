@@ -1,7 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:async' show unawaited;
+
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
+import 'package:auravibes_ui/src/aura_haptics.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
@@ -71,7 +74,10 @@ class _AuraSwitchState extends State<AuraSwitch> {
   Widget build(BuildContext context) =>
       _AuraSwitchBuildData(this, context).child;
 
-  void _toggle() => widget.onChanged?.call(!widget.value);
+  void _toggle() {
+    unawaited(AuraHaptics.light());
+    widget.onChanged?.call(!widget.value);
+  }
 
   void _setFocus(bool value) => setState(() => _isFocused = value);
 }
@@ -301,10 +307,14 @@ class const _AuraSwitchGesture({
 class const _AuraSwitchTrack(final _AuraSwitchTrackData data)
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ConstrainedBox(
-    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-    child: Center(child: _AuraSwitchTrackSurface(data)),
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return ConstrainedBox(
+      constraints: .new(minWidth: targetSize, minHeight: targetSize),
+      child: Center(child: _AuraSwitchTrackSurface(data)),
+    );
+  }
 }
 
 class const _AuraSwitchTrackSurface(final _AuraSwitchTrackData data)

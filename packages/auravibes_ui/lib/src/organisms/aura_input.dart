@@ -5,7 +5,7 @@ import 'package:auravibes_ui/src/organisms/aura_field_wrapper.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/services.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 /// A customizable input field component following the Aura design system.
 ///
@@ -41,6 +41,7 @@ class AuraInput extends StatefulWidget {
     this.onTap,
     this.onTapOutside,
     this.focusNode,
+    this.identifier,
     this.semanticLabel,
     this.header,
     this.footer,
@@ -129,6 +130,9 @@ class AuraInput extends StatefulWidget {
   /// Defines the keyboard focus for this widget.
   final FocusNode? focusNode;
 
+  /// An optional stable identifier for the editable text control.
+  final String? identifier;
+
   /// A semantic label for the input field.
   final String? semanticLabel;
 
@@ -190,6 +194,47 @@ class _AuraInputState extends State<AuraInput> {
     final suffixIcon = widget.suffixIcon;
     final header = widget.header;
     final footer = widget.footer;
+    final identifier = widget.identifier;
+    final textField = TextFormField(
+      controller: widget.controller,
+      initialValue: widget.initialValue,
+      focusNode: _requiredFocusNode,
+      decoration: InputDecoration(
+        hint: widget.placeholder,
+        hintStyle: _getHintStyle(
+          auraColors,
+          typography: context.auraTheme.typography,
+        ),
+        isDense: false,
+        contentPadding: EdgeInsets.zero,
+        border: InputBorder.none,
+      ),
+      keyboardType: widget.keyboardType,
+      textInputAction: widget.textInputAction,
+      style: _getTextStyle(
+        auraColors,
+        typography: context.auraTheme.typography,
+      ),
+      autofocus: widget.autofocus && isEnabled,
+      readOnly: isReadOnly,
+      obscureText: widget.obscureText,
+      maxLines: widget.maxLines,
+      minLines: widget.minLines,
+      maxLength: widget.maxLength,
+      onChanged: onChanged,
+      onTap: onTap,
+      onTapOutside: isEnabled ? widget.onTapOutside : null,
+      onFieldSubmitted: onSubmitted,
+      inputFormatters: widget.inputFormatters,
+      enabled: isEnabled,
+    );
+    final identifiedTextField = identifier == null
+        ? textField
+        : Semantics(
+            key: ValueKey<String>(identifier),
+            child: textField,
+            identifier: identifier,
+          );
 
     return AuraFieldWrapper(
       child: Padding(
@@ -207,39 +252,8 @@ class _AuraInputState extends State<AuraInput> {
                   child: Focus(
                     canRequestFocus: isEnabled,
                     descendantsAreFocusable: isEnabled,
-                    child: TextFormField(
-                      controller: widget.controller,
-                      initialValue: widget.initialValue,
-                      focusNode: _requiredFocusNode,
-                      decoration: InputDecoration(
-                        hint: widget.placeholder,
-                        hintStyle: _getHintStyle(
-                          auraColors,
-                          typography: context.auraTheme.typography,
-                        ),
-                        isDense: false,
-                        contentPadding: EdgeInsets.zero,
-                        border: InputBorder.none,
-                      ),
-                      keyboardType: widget.keyboardType,
-                      textInputAction: widget.textInputAction,
-                      style: _getTextStyle(
-                        auraColors,
-                        typography: context.auraTheme.typography,
-                      ),
-                      autofocus: widget.autofocus && isEnabled,
-                      readOnly: isReadOnly,
-                      obscureText: widget.obscureText,
-                      maxLines: widget.maxLines,
-                      minLines: widget.minLines,
-                      maxLength: widget.maxLength,
-                      onChanged: onChanged,
-                      onTap: onTap,
-                      onTapOutside: isEnabled ? widget.onTapOutside : null,
-                      onFieldSubmitted: onSubmitted,
-                      inputFormatters: widget.inputFormatters,
-                      enabled: isEnabled,
-                    ),
+                    skipTraversal: true,
+                    child: identifiedTextField,
                   ),
                 ),
                 if (suffixIcon != null) ...[

@@ -10,13 +10,15 @@ the AuraVibes application.
 - `lib/src/molecules/`: composed controls, badges, cards, tabs, screens, and
   snackbars.
 - `lib/src/organisms/`: forms, dialogs, menus, pickers, groups, and navigation.
-- `lib/src/tokens/`: Aura colors, typography, spacing, motion, and radii.
+- `lib/src/tokens/`: Aura colors, typography, spacing, interaction sizes,
+  motion, and radii.
 - `lib/ui.dart`: public barrel export.
 
 The package supports Material 3-compatible theming, light and dark Aura
-themes, directional layouts, semantic labels, keyboard activation, and
-48-by-48 logical-pixel interactive targets. `Portal` and `GptMarkdown` remain
-public compatibility exports from the barrel.
+themes, directional layouts, semantic labels, keyboard activation, and a
+theme-configurable minimum interactive target of 48-by-48 logical pixels.
+Themes may increase this minimum but cannot reduce it below 48px. `Portal` and
+`GptMarkdown` remain public compatibility exports from the barrel.
 
 ## Development
 

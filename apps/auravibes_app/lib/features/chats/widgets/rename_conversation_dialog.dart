@@ -6,6 +6,8 @@ import 'package:material_ui/material_ui.dart';
 
 abstract final class RenameConversationDialog {
   static Future<String?> show(BuildContext context, {required String title}) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     return showDialog<String>(
       context: context,
       builder: (_) => _RenameConversationDialog(title: title),
@@ -82,6 +84,7 @@ class _RenameConversationField extends StatelessWidget {
       labelText: LocaleKeys.chats_screens_chat_conversation_rename_field_label
           .tr(),
     ),
+    textInputAction: .done,
     autofocus: true,
     onChanged: (value) => canSave.value = value.trim().isNotEmpty,
     onSubmitted: onSubmitted,

@@ -56,6 +56,35 @@ void main() {
     expect(selected, isNull);
   });
 
+  testWidgets('dragging agent sheet results dismisses search focus', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 350);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await _pumpSubject(
+      tester,
+      agents: [
+        for (var index = 0; index < 20; index++)
+          _makeAgent('agent-$index', 'Agent $index'),
+      ],
+      onChanged: (_) => fail('Unexpected agent selection'),
+      sheetMode: true,
+    );
+
+    final search = find.byType(EditableText);
+    await tester.tap(search);
+    await tester.pump();
+    final focusNode = tester.widget<EditableText>(search).focusNode;
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -120));
+    await tester.pump();
+
+    expect(focusNode.hasFocus, isFalse);
+  });
+
   testWidgets('sheet mode updates when agents arrive after mount', (
     tester,
   ) async {
@@ -163,16 +192,19 @@ Future<void> _pumpSubject(
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
-        child: Theme(
-          data: .new(extensions: [AuraTheme.light]),
-          child: Scaffold(
-            body: Portal(
-              child: CompactAgentSelector(
-                workspaceId: 'ws-1',
-                agentId: agentId,
-                onChanged: onChanged,
-                compactMode: compactMode,
-                sheetMode: sheetMode,
+        child: AuraThemeScope(
+          theme: .light,
+          child: Theme(
+            data: .new(),
+            child: Scaffold(
+              body: Portal(
+                child: CompactAgentSelector(
+                  workspaceId: 'ws-1',
+                  agentId: agentId,
+                  onChanged: onChanged,
+                  compactMode: compactMode,
+                  sheetMode: sheetMode,
+                ),
               ),
             ),
           ),

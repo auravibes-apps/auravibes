@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/tool_calls.dart';
+import 'package:auravibes_engine/src/tool_output_policy.dart';
 
 enum AgentToolResultStatus {
   success,
@@ -35,6 +36,10 @@ extension AgentToolResultStatusX on AgentToolResultStatus {
 class const AgentToolExecutionResult({
   required final AgentToolResultStatus resultStatus,
   final String? responseRaw,
+  final String? responseContextRaw,
+  final bool outputTruncated = false,
+  final int? originalResponseBytes,
+  final bool fullOutputForContext = false,
 });
 
 class const AgentToolExecutionFailure({
@@ -62,6 +67,9 @@ typedef AgentResolvedToolRunner<TTool extends Object> =
 
 typedef AgentToolCancellationChecker = bool Function(String conversationId);
 
+typedef AgentToolOutputPolicyResolver<TTool extends Object> =
+    AgentToolOutputPolicy Function(TTool tool);
+
 typedef AgentToolExecutionErrorLogger<TTool extends Object> = void Function(
   AgentToolExecutionErrorRequest<TTool> request,
 );
@@ -70,6 +78,7 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
   required final AgentResolvedToolRunner<TTool> runResolvedTool,
   required final AgentToolCancellationChecker isCancellationRequested,
   required final AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+  final AgentToolOutputPolicyResolver<TTool>? outputPolicyForTool,
 }) {
   Future<AgentToolExecutionResult> call({
     required String conversationId,
@@ -102,16 +111,33 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         final List<Object?> value => jsonEncode(value),
         _ => result.toString(),
       };
+      final projection = projectToolOutput(
+        responseRaw,
+        policy:
+            outputPolicyForTool?.call(tool) ?? const AgentToolOutputPolicy(),
+      );
       if (isCancellationRequested(conversationId)) {
         return AgentToolExecutionResult(
           resultStatus: .stoppedByUser,
-          responseRaw: responseRaw,
+          responseRaw: projection.persistedText,
+          responseContextRaw: _responseContext(projection),
+          outputTruncated: projection.truncated,
+          originalResponseBytes: projection.truncated
+              ? projection.originalBytes
+              : null,
+          fullOutputForContext: projection.fullOutputForContext,
         );
       }
 
       return AgentToolExecutionResult(
         resultStatus: .success,
-        responseRaw: responseRaw,
+        responseRaw: projection.persistedText,
+        responseContextRaw: _responseContext(projection),
+        outputTruncated: projection.truncated,
+        originalResponseBytes: projection.truncated
+            ? projection.originalBytes
+            : null,
+        fullOutputForContext: projection.fullOutputForContext,
       );
     } on FormatException catch (error, stackTrace) {
       logToolExecutionError((
@@ -137,9 +163,16 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
         failurePhase: failure.failurePhase,
       ));
 
+      final projection = projectToolOutput(failure.responseRaw);
       return AgentToolExecutionResult(
         resultStatus: .executionError,
-        responseRaw: failure.responseRaw,
+        responseRaw: projection.persistedText,
+        responseContextRaw: _responseContext(projection),
+        outputTruncated: projection.truncated,
+        originalResponseBytes: projection.truncated
+            ? projection.originalBytes
+            : null,
+        fullOutputForContext: projection.fullOutputForContext,
       );
     } on Object catch (error, stackTrace) {
       logToolExecutionError((
@@ -155,6 +188,12 @@ class const AgentToolExecutionDispatcher<TTool extends Object>({
     }
   }
 }
+
+String? _responseContext(AgentToolOutputProjection projection) =>
+    projection.fullOutputForContext ||
+        projection.text == projection.persistedText
+    ? null
+    : projection.text;
 
 Map<String, dynamic> safeJsonDecodeToolArguments(String source) {
   final decoded = jsonDecode(source);

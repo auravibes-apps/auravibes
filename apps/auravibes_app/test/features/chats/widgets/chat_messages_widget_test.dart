@@ -10,6 +10,8 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
@@ -20,13 +22,22 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillDefinitionKind;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart' show DataPath;
 import 'package:go_router/go_router.dart';
@@ -46,6 +57,7 @@ Widget buildSubject({
   Future<void> Function(MessageEntity message)? onRetryMessage,
   ConversationEntity? conversation,
   AuraTheme? theme,
+  Locale locale = const Locale('en'),
   Widget Function(BuildContext context, Widget child)? appBuilder,
 }) {
   return _ChatMessagesTestSubject(
@@ -58,12 +70,13 @@ Widget buildSubject({
     messageEntitiesById: messageEntitiesById,
     conversation: conversation,
     theme: theme,
+    locale: locale,
     appBuilder: appBuilder,
   );
 }
 
 Widget _scaffoldedApp(BuildContext context, Widget child) => MaterialApp(
-  home: Scaffold(body: child),
+  home: ChatPrimaryScrollController(child: Scaffold(body: child)),
   locale: context.locale,
   localizationsDelegates: context.localizationDelegates,
   supportedLocales: context.supportedLocales,
@@ -434,6 +447,7 @@ void main() {
         buildSubject(
           messages: [for (final message in messages) message.id],
           messageEntitiesById: messageEntitiesById,
+          appBuilder: _scaffoldedApp,
           overrides: [
             messageConversationByIdProvider.overrideWith(
               (ref, id) => messageEntitiesById[id.messageId],
@@ -450,6 +464,13 @@ void main() {
       );
 
       final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+      final primaryController = PrimaryScrollController.maybeOf(
+        tester.element(find.byType(Scaffold)),
+      );
+      expect(
+        primaryController,
+        same(tester.widget<ListView>(find.byType(ListView)).controller),
+      );
       expect(scrollable.position.maxScrollExtent, greaterThan(64));
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
 
@@ -466,6 +487,66 @@ void main() {
         closeTo(scrollable.position.minScrollExtent, .5),
       );
       expect(find.byKey(const ValueKey('chat_jump_to_latest')), findsNothing);
+    });
+
+    testWidgets('dragging chat history retains composer focus', (tester) async {
+      final composerFocus = FocusNode();
+      addTearDown(composerFocus.dispose);
+      final messages = [
+        for (var index = 0; index < 20; index++)
+          _createMessage(
+            id: 'message-$index',
+            content: List.filled(8, 'Message $index').join('\n'),
+          ),
+      ];
+      final entities = {for (final message in messages) message.id: message};
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [for (final message in messages) message.id],
+          messageEntitiesById: entities,
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => entities[id.messageId],
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+          appBuilder: (context, child) => MaterialApp(
+            home: ChatPrimaryScrollController(
+              child: Scaffold(
+                body: Column(
+                  children: [
+                    Expanded(child: child),
+                    TextField(
+                      key: const ValueKey('chat_composer'),
+                      focusNode: composerFocus,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+          ),
+        ),
+      );
+
+      final composer = find.byKey(const ValueKey('chat_composer'));
+      await tester.tap(composer);
+      await tester.pump();
+      expect(composerFocus.hasFocus, isTrue);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.pump();
+
+      expect(composerFocus.hasFocus, isTrue);
     });
 
     for (final status in [MessageStatus.error, MessageStatus.unfinished]) {
@@ -579,6 +660,34 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('aligns user copy action with the user bubble', (tester) async {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => _createMessage(content: 'Hello AI'),
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final bubbleRight = tester.getTopRight(find.byType(AuraMessageBubble)).dx;
+      final copyActionRight = tester
+          .getTopRight(find.byTooltip('Copy message'))
+          .dx;
+
+      expect(copyActionRight, closeTo(bubbleRight, 1));
     });
 
     testWidgets('uses a visible selection color for user messages', (
@@ -799,11 +908,55 @@ void main() {
       );
 
       await tester.tap(find.text('Open docs'));
-      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('https://example.org'));
-      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Host: example.org'), findsOneWidget);
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
 
       expect(launchedUrls, ['https://example.com', 'https://example.org']);
+    });
+
+    testWidgets('does not open Markdown link without confirmation', (
+      tester,
+    ) async {
+      var launchCount = 0;
+      _mockUrlLauncher(tester, (_) async {
+        launchCount++;
+        return true;
+      });
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['markdown-link'],
+          overrides: _messageOverrides({
+            'markdown-link': _createMessage(
+              content: '[Open docs](https://example.com/path?value=secret)',
+              isUser: false,
+            ),
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Open docs'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Host: example.com'), findsOneWidget);
+      expect(
+        find.textContaining('https://example.com/path?value=secret'),
+        findsOneWidget,
+      );
+      expect(launchCount, 0);
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(launchCount, 0);
     });
 
     testWidgets('rejects unsafe and malformed URLs', (tester) async {
@@ -822,7 +975,8 @@ void main() {
               id: 'unsafe-links',
               content:
                   '[Unsafe](javascript:alert(1)) '
-                  '[Missing host](https:///missing-host)',
+                  '[Missing host](https:///missing-host) '
+                  '[Deceptive](https://accounts.example@attacker.example/sso)',
               isUser: false,
             ),
           }),
@@ -833,8 +987,11 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Missing host'));
       await tester.pump();
+      await tester.tap(find.text('Deceptive'));
+      await tester.pump();
 
       expect(launchCount, 0);
+      expect(find.text('Open external link?'), findsNothing);
     });
 
     testWidgets('shows link failure feedback', (tester) async {
@@ -855,11 +1012,27 @@ void main() {
 
       await tester.tap(find.text('Open docs'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
 
       expect(find.text('Could not open link'), findsOneWidget);
     });
 
     testWidgets('shows link exception feedback', (tester) async {
+      const hapticsChannel = MethodChannel('haptic_feedback');
+      final hapticMethods = <String>[];
+      final messenger = tester.binding.defaultBinaryMessenger;
+      AuraHaptics.resetForTesting();
+      messenger.setMockMethodCallHandler(hapticsChannel, (call) async {
+        hapticMethods.add(call.method);
+        if (call.method == 'canVibrate') return true;
+
+        return null;
+      });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(hapticsChannel, null);
+        AuraHaptics.resetForTesting();
+      });
       _mockUrlLauncher(
         tester,
         (_) async => throw PlatformException(code: 'launch-failed'),
@@ -880,8 +1053,11 @@ void main() {
 
       await tester.tap(find.text('Open docs'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Open link'));
+      await tester.pumpAndSettle();
 
       expect(find.text('Could not open link'), findsOneWidget);
+      expect(hapticMethods, ['canVibrate', 'error']);
     });
 
     testWidgets('uses text cursor for user messages', (tester) async {
@@ -1652,6 +1828,51 @@ void main() {
       );
     });
 
+    testWidgets('hides pending tool arguments from the activity details', (
+      tester,
+    ) async {
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-pending',
+        name: 'notion_update_page',
+        argumentsRaw:
+            '{"page":"Launch Plan",'
+            '"change":"Add a task checklist"}',
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: [message.id],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: true,
+              ),
+            ),
+          ],
+          pendingToolCalls: const [
+            PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
+          ],
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey('activity_tool_tc-pending')),
+        findsOneWidget,
+      );
+      expect(find.text('Arguments'), findsNothing);
+      expect(find.textContaining('Launch Plan'), findsNothing);
+      expect(find.textContaining('Add a task checklist'), findsNothing);
+    });
+
     testWidgets('shows a tool-call description beside its title', (
       tester,
     ) async {
@@ -1698,6 +1919,241 @@ void main() {
       final status = tester.getRect(find.text('Completed'));
       expect(status.right, greaterThan(row.center.dx));
       expect(row.right - status.right, lessThan(100));
+    });
+
+    testWidgets('shows saved skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(320, 500));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final semantics = tester.ensureSemantics();
+      const toolCall = MessageToolCallEntity(
+        id: 'tc-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"search_web"}',
+        resultStatus: ToolCallResultStatus.disabledInWorkspace,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  source: SkillSource.user,
+                  kind: SkillKind.template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider('ws-1', 'skill-1').overrideWith(
+              (ref) async => [
+                SkillTemplateToolEntity(
+                  id: 'tool-1',
+                  skillId: 'skill-1',
+                  templateType: SkillTemplateToolType.url,
+                  title: 'Search the web',
+                  description: 'Searches the web.',
+                  slug: 'search_web',
+                  isEnabled: true,
+                  requiresCredential: false,
+                  createdAt: DateTime(2026),
+                  updatedAt: DateTime(2026),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final label = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-skill')),
+      );
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('Research Assistant / Search the web'),
+      );
+      expect(find.text('Call Skill Tool'), findsNothing);
+      final status = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_status_tc-skill')),
+      );
+      expect(status.maxLines, 1);
+      expect(status.overflow, TextOverflow.ellipsis);
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
+            .label,
+        contains('Research Assistant / Search the web Disabled in workspace'),
+      );
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+
+    testWidgets('shows app skill and tool titles in activity rows', (
+      tester,
+    ) async {
+      const registry = AppSkillRegistry();
+      final appSkill = registry.getAll().firstWhere(
+        (skill) => skill.tools.isNotEmpty,
+      );
+      final tool = appSkill.tools.first;
+      final toolCall = MessageToolCallEntity(
+        id: 'tc-app-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: jsonEncode({'skill': appSkill.slug, 'tool': tool.slug}),
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: MessageMetadataEntity(toolCalls: [toolCall]),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => [
+                WorkspaceSkill(
+                  source: .app,
+                  id: appSkill.identifier,
+                  slug: appSkill.slug,
+                  title: appSkill.title,
+                  description: appSkill.description,
+                  kind: appSkill.kind == AppSkillDefinitionKind.template
+                      ? .template
+                      : .native,
+                  isEnabled: true,
+                  titleKey: appSkill.titleKey,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final labelFinder = find.byKey(
+        const ValueKey('activity_tool_label_tc-app-skill'),
+      );
+      final context = tester.element(labelFinder);
+      final skillTitle =
+          appSkill.titleKey?.tr(context: context) ?? appSkill.title;
+      final toolTitle = tool.titleKey?.tr(context: context) ?? tool.title;
+      final label = tester.widget<Text>(labelFinder);
+      expect(
+        label.textSpan?.toPlainText(),
+        contains('$skillTitle / $toolTitle'),
+      );
+      expect(find.text('Completed'), findsOneWidget);
+      expect(find.text('Call Skill Tool'), findsNothing);
+    });
+
+    testWidgets('uses slug and generic fallbacks when metadata is missing', (
+      tester,
+    ) async {
+      const skillToolCall = MessageToolCallEntity(
+        id: 'tc-missing-tool',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research","tool":"missing_tool"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      const malformedToolCall = MessageToolCallEntity(
+        id: 'tc-malformed-skill',
+        name: 'call_skill_tool',
+        argumentsRaw: '{"skill":"research"}',
+        resultStatus: ToolCallResultStatus.success,
+      );
+      final message = _createMessage(
+        content: '',
+        isUser: false,
+        metadata: const MessageMetadataEntity(
+          toolCalls: [skillToolCall, malformedToolCall],
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+            workspaceSkillsProvider('ws-1').overrideWith(
+              (ref) async => const [
+                WorkspaceSkill(
+                  source: .user,
+                  id: 'skill-1',
+                  slug: 'research',
+                  title: 'Research Assistant',
+                  description: '',
+                  kind: .template,
+                  isEnabled: true,
+                ),
+              ],
+            ),
+            skillTemplateToolsProvider(
+              'ws-1',
+              'skill-1',
+            ).overrideWith((ref) async => []),
+          ],
+        ),
+      );
+      await revealActivityToolCalls(tester);
+      await tester.pump();
+      await tester.pump();
+
+      final missingToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-missing-tool')),
+      );
+      expect(
+        missingToolLabel.textSpan?.toPlainText(),
+        contains('Research Assistant / Missing Tool'),
+      );
+      final malformedToolLabel = tester.widget<Text>(
+        find.byKey(const ValueKey('activity_tool_label_tc-malformed-skill')),
+      );
+      expect(malformedToolLabel.textSpan?.toPlainText(), 'Call Skill Tool');
     });
 
     testWidgets('reveals a finished activity run in three compact levels', (
@@ -2831,6 +3287,56 @@ void main() {
       );
     });
 
+    testWidgets('formats hidden tool-call counts using the active locale', (
+      tester,
+    ) async {
+      final toolCalls = List.generate(
+        1002,
+        (index) => MessageToolCallEntity(
+          id: 'tc-$index',
+          name: 'built_in_1_read_file',
+          argumentsRaw: '{}',
+          resultStatus: ToolCallResultStatus.success,
+        ),
+      );
+      final message = _createMessage(
+        content: 'Final answer',
+        isUser: false,
+        metadata: MessageMetadataEntity(
+          thinking: 'Need to inspect the file first',
+          toolCalls: toolCalls,
+        ),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['msg-1'],
+          locale: const Locale('es'),
+          overrides: [
+            messageConversationByIdProvider.overrideWith((ref, id) => message),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+      final traceToggle = find.byKey(
+        const ValueKey('activity_trace_toggle_msg-1'),
+      );
+      await tester.tap(traceToggle);
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('activity_tool_list_toggle_msg-1')),
+      );
+
+      expect(find.textContaining('+1.000'), findsOneWidget);
+    });
+
     testWidgets('flushes tool activity at timeline boundaries', (tester) async {
       const firstTool = MessageToolCallEntity(
         id: 'boundary-tool-1',
@@ -3162,7 +3668,7 @@ void main() {
             ),
           ],
           appBuilder: (context, child) {
-            mainChat = child;
+            mainChat = ChatPrimaryScrollController(child: child);
 
             return MaterialApp.router(
               routerConfig: router,
@@ -3890,7 +4396,7 @@ void main() {
       );
 
       expect(find.text(providerDetails), findsOneWidget);
-      expect(find.byType(SelectableText), findsOneWidget);
+      expect(find.byType(AuraSelectableText), findsOneWidget);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
@@ -3915,6 +4421,7 @@ class const _ChatMessagesTestSubject({
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   final ConversationEntity? conversation,
   final AuraTheme? theme,
+  final Locale locale = const Locale('en'),
   final Widget Function(BuildContext context, Widget child)? appBuilder,
 }) extends StatelessWidget {
   @override
@@ -3942,34 +4449,43 @@ class const _ChatMessagesTestSubject({
       child: EasyLocalization(
         child: Builder(
           builder: (context) {
-            final child = Theme(
-              data: ThemeData(extensions: [theme ?? AuraTheme.light]),
-              child: Material(
-                child: ChatMessagesWidget(
-                  workspaceId: 'ws-1',
-                  conversationId: conversationId,
-                  messages: messages,
-                  messageEntitiesById: messageEntitiesById,
-                  pendingToolCalls: pendingToolCalls,
-                  showThinking: showThinking,
-                  onRetryMessage: onRetryMessage,
+            final child = AuraThemeScope(
+              theme: theme ?? AuraTheme.light,
+              child: Theme(
+                data: ThemeData(),
+                child: AuraLegacyMaterialBridge(
+                  child: Material(
+                    child: ChatMessagesWidget(
+                      workspaceId: 'ws-1',
+                      conversationId: conversationId,
+                      messages: messages,
+                      messageEntitiesById: messageEntitiesById,
+                      pendingToolCalls: pendingToolCalls,
+                      showThinking: showThinking,
+                      onRetryMessage: onRetryMessage,
+                    ),
+                  ),
                 ),
               ),
             );
 
             return appBuilder?.call(context, child) ??
                 MaterialApp(
-                  home: child,
+                  home: ChatPrimaryScrollController(child: child),
                   locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
                   supportedLocales: context.supportedLocales,
                 );
           },
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: locale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),

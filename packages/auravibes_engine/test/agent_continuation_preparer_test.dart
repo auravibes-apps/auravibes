@@ -13,8 +13,10 @@ void main() {
         'skill context',
         'hello',
       ]);
+      expect(result.requestedContextMessages.single.content, 'skill context');
       expect(result.enabledTools, ['calculator']);
       expect(result.messagesCount, 1);
+      expect(result.transcriptContextEntries, isEmpty);
     });
 
     test('disables tools when selected model cannot use them', () async {
@@ -109,6 +111,19 @@ class const _FakeAgentContinuationProvider(
   }) async {
     return ['calculator'];
   }
+
+  @override
+  Future<PreparedAgentTranscriptContext<_Chat, String>>
+  reconcileTranscriptContext({
+    required String conversationId,
+    required String workspaceId,
+    required List<_Chat> contextMessages,
+    required List<String> tools,
+  }) async => PreparedAgentTranscriptContext(
+    contextMessages: contextMessages,
+    tools: tools,
+    entries: const [],
+  );
 
   @override
   Future<List<_Chat>> buildChatHistory({

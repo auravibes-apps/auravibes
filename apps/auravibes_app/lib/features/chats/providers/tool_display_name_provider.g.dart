@@ -119,6 +119,100 @@ final class ToolDisplayNameFamily extends $Family
   String toString() => r'toolDisplayNameProvider';
 }
 
+@ProviderFor(skillToolCallDisplayTitles)
+final skillToolCallDisplayTitlesProvider = SkillToolCallDisplayTitlesFamily._();
+
+final class SkillToolCallDisplayTitlesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<SkillToolCallDisplayTitles?>,
+          SkillToolCallDisplayTitles?,
+          FutureOr<SkillToolCallDisplayTitles?>
+        >
+    with
+        $FutureModifier<SkillToolCallDisplayTitles?>,
+        $FutureProvider<SkillToolCallDisplayTitles?> {
+  SkillToolCallDisplayTitlesProvider._({
+    required SkillToolCallDisplayTitlesFamily super.from,
+    required (String, String, String) super.argument,
+  }) : super(
+         retry: null,
+         name: r'skillToolCallDisplayTitlesProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$skillToolCallDisplayTitlesHash();
+
+  @override
+  String toString() {
+    return r'skillToolCallDisplayTitlesProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<SkillToolCallDisplayTitles?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<SkillToolCallDisplayTitles?> create(Ref ref) {
+    final argument = this.argument as (String, String, String);
+    return skillToolCallDisplayTitles(
+      ref,
+      argument.$1,
+      argument.$2,
+      argument.$3,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SkillToolCallDisplayTitlesProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$skillToolCallDisplayTitlesHash() =>
+    r'a60f42e3d240652d42d64602177bfb915b669d01';
+
+final class SkillToolCallDisplayTitlesFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<SkillToolCallDisplayTitles?>,
+          (String, String, String)
+        > {
+  SkillToolCallDisplayTitlesFamily._()
+    : super(
+        retry: null,
+        name: r'skillToolCallDisplayTitlesProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  SkillToolCallDisplayTitlesProvider call(
+    String workspaceId,
+    String skillSlug,
+    String toolSlug,
+  ) => SkillToolCallDisplayTitlesProvider._(
+    argument: (workspaceId, skillSlug, toolSlug),
+    from: this,
+  );
+
+  @override
+  String toString() => r'skillToolCallDisplayTitlesProvider';
+}
+
 /// Provides the name of an MCP server by its ID.
 ///
 /// Returns null if the server is not found.

@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/models/providers/api_model_repository_pro
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -59,16 +60,24 @@ void main() {
                 return MaterialApp(
                   routes: {
                     '/': (_) => const SizedBox.shrink(),
-                    '/provider': (_) => Theme(
-                      data: .new(extensions: [AuraTheme.light]),
-                      child: const Scaffold(
-                        body: AddModelProviderWidget(workspaceId: _workspaceId),
+                    '/provider': (_) => AuraThemeScope(
+                      theme: .light,
+                      child: Theme(
+                        data: .new(),
+                        child: const Scaffold(
+                          body: AddModelProviderWidget(
+                            workspaceId: _workspaceId,
+                          ),
+                        ),
                       ),
                     ),
                   },
                   initialRoute: '/provider',
-                  builder: (context, child) =>
-                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
+                  builder: (_, child) => AuraLegacyMaterialBridge(
+                    child: AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  ),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,

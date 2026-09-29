@@ -2,7 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
-import 'package:material_ui/material_ui.dart';
+import 'package:flutter/material.dart';
 
 export 'package:auravibes_ui/src/molecules/aura_radio_option.dart'
     show AuraRadioOption;
@@ -11,8 +11,6 @@ export 'aura_radio_list_tile.dart';
 
 /// A container managing mutually exclusive radio selections.
 class AuraRadioGroup<T> extends StatelessWidget {
-  static const double _kRadioTapTargetSize = 48;
-
   /// Creates an AuraRadioGroup widget.
   const new({
     required this.value,
@@ -438,7 +436,7 @@ class const _AuraRadioOptionSubtitle({required final Widget child})
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsetsDirectional.only(
       start:
-          AuraRadioGroup._kRadioTapTargetSize +
+          context.auraTheme.interactionSizes.minimumTargetSize +
           context.auraTheme.fromSpacing(.sm),
     ),
     child: DefaultTextStyle.merge(

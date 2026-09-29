@@ -6,9 +6,12 @@ import 'package:material_ui/material_ui.dart';
 void main() {
   testWidgets('renders child widget', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(body: AppContent(child: Text('child content'))),
-        theme: .new(extensions: [AuraTheme.light]),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(body: AppContent(child: Text('child content'))),
+          theme: .new(),
+        ),
       ),
     );
 
@@ -18,9 +21,12 @@ void main() {
 
   testWidgets('constrains max width to DesignBreakpoints.sm', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(body: AppContent(child: SizedBox.shrink())),
-        theme: .new(extensions: [AuraTheme.light]),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(body: AppContent(child: SizedBox.shrink())),
+          theme: .new(),
+        ),
       ),
     );
 

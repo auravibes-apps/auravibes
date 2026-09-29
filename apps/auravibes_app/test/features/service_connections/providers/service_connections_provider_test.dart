@@ -374,6 +374,22 @@ class _FakeCredentialsRepository(List<SkillCredentialEntity> initial)
   }
 
   @override
+  Future<List<SkillCredentialEntity>> getUsableCredentialsForDefinition({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> countLinkedCredentials({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<SkillCredentialEntity> updateCredential(
     String credentialId,
     SkillCredentialToUpdate credential,

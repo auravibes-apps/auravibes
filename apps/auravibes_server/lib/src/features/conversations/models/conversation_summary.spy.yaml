@@ -12,5 +12,6 @@ fields:
   forkThroughMessageId: String?
   forkMaterializedAt: DateTime?
   revision: int
+  activeCompactionCheckpointId: String?
   createdAt: DateTime
   updatedAt: DateTime

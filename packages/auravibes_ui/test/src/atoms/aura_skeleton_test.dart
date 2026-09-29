@@ -1,20 +1,23 @@
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   testWidgets('renders a circular accessible placeholder', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: const Scaffold(
-          body: AuraSkeleton(
-            width: 24,
-            height: 24,
-            circular: true,
-            semanticLabel: 'Loading',
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          home: const Scaffold(
+            body: AuraSkeleton(
+              width: 24,
+              height: 24,
+              circular: true,
+              semanticLabel: 'Loading',
+            ),
           ),
+          theme: .new(),
         ),
-        theme: .new(extensions: [AuraTheme.light]),
       ),
     );
 

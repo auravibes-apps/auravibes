@@ -15,14 +15,23 @@ void main() {
     );
   }
 
-  Widget buildSubject(Completer<String?> result) => EasyLocalization(
+  Widget buildSubject(
+    Completer<String?> result, {
+    FocusNode? sourceFocusNode,
+  }) => EasyLocalization(
     child: Builder(
       builder: (context) => MaterialApp(
         home: Scaffold(
           body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => unawaited(openDialog(context, result)),
-              child: const Text('Open'),
+            builder: (context) => Column(
+              children: [
+                if (sourceFocusNode != null)
+                  TextField(focusNode: sourceFocusNode),
+                TextButton(
+                  onPressed: () => unawaited(openDialog(context, result)),
+                  child: const Text('Open'),
+                ),
+              ],
             ),
           ),
         ),
@@ -41,9 +50,14 @@ void main() {
 
   Future<void> pumpSubject(
     WidgetTester tester,
-    Completer<String?> result,
-  ) async {
-    await tester.runAsync(() => tester.pumpWidget(buildSubject(result)));
+    Completer<String?> result, {
+    FocusNode? sourceFocusNode,
+  }) async {
+    await tester.runAsync(
+      () => tester.pumpWidget(
+        buildSubject(result, sourceFocusNode: sourceFocusNode),
+      ),
+    );
     await tester.pump();
     await tester.pump();
     await tester.pump();
@@ -65,6 +79,26 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(await result.future, 'Renamed');
+  });
+
+  testWidgets('closing the rename dialog does not restore source focus', (
+    tester,
+  ) async {
+    final result = Completer<String?>();
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+    await pumpSubject(tester, result, sourceFocusNode: focusNode);
+    focusNode.requestFocus();
+    await tester.pump();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.text('Open'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+    await tester.tap(find.text('Cancel'));
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+    expect(await result.future, isNull);
   });
 
   testWidgets('cancel leaves the title unchanged', (tester) async {

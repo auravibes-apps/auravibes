@@ -790,6 +790,7 @@ class const _AddModelProviderFormScroll({
       padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
       controller: controls.scrollController,
       child: _AddModelProviderFormBody(data: data),
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -2210,6 +2211,7 @@ class const _ModelProviderSearchInput({
       ),
     ),
     prefixIcon: Icon(Icons.search, color: context.auraColors.onSurfaceVariant),
+    textInputAction: .search,
     onChanged: onSearchChanged,
   );
 }
@@ -2228,6 +2230,7 @@ class const _ModelProviderResults({
         onSelected: onModelSelected,
       ),
       itemCount: models.length,
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -2269,15 +2272,10 @@ class const _ModelProviderListItem({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
-    final isOAuthProvider = ModelProviderOAuthProfiles.isCodexProvider(
-      model.id,
-    );
+    final authMode = ModelProviderAuthMode.forProviderId(model.id);
 
     return AuraCard(
-      child: _ModelProviderListItemContent(
-        model: model,
-        isOAuthProvider: isOAuthProvider,
-      ),
+      child: _ModelProviderListItemContent(model: model, authMode: authMode),
       onTap: () => onSelected(model.id),
     );
   }
@@ -2285,29 +2283,35 @@ class const _ModelProviderListItem({
 
 class const _ModelProviderListItemContent({
   required final ApiModelProviderEntity model,
-  required final bool isOAuthProvider,
+  required final ModelProviderAuthMode authMode,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Row(
-    mainAxisAlignment: .spaceBetween,
     children: [
       ModelLogo(modelId: model.id),
-      AuraText(child: Text(model.name)),
-      _ModelProviderOAuthBadge(visible: isOAuthProvider),
+      const AuraSizedBox(width: .md),
+      Expanded(
+        child: AuraText(
+          child: Text(model.name, overflow: .ellipsis, maxLines: 1),
+        ),
+      ),
+      const AuraSizedBox(width: .md),
+      _ModelProviderAuthBadge(authMode: authMode),
     ],
   );
 }
 
-class const _ModelProviderOAuthBadge({required final bool visible})
-    extends StatelessWidget {
+class const _ModelProviderAuthBadge({
+  required final ModelProviderAuthMode authMode,
+}) extends StatelessWidget {
+  String get _labelKey => switch (authMode) {
+    .apiKey => LocaleKeys.service_connections_create_api_key_label,
+    .oauth2 => LocaleKeys.mcp_modal_auth_oauth,
+  };
+
   @override
-  Widget build(BuildContext _) => visible
-      ? const AuraText(
-          child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
-          style: .bodySmall,
-          tint: .primary,
-        )
-      : const SizedBox.shrink();
+  Widget build(BuildContext _) =>
+      AuraText(child: TextLocale(_labelKey), style: .bodySmall, tint: .primary);
 }
 
 /// Header showing the selected model with a back button.

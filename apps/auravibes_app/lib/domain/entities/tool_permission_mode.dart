@@ -55,6 +55,9 @@ abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
     /// JSON schema for input parameters (for MCP tools).
     String? inputSchema,
 
+    /// JSON schema for MCP tool results.
+    String? outputSchemaJson,
+
     /// Optional reference to the tools group this tool belongs to.
     String? workspaceToolsGroupId,
   }) = _WorkspaceToolEntity;

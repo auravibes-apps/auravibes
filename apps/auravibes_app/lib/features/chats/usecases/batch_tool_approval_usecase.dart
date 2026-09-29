@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_resume_se
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_activity_gate.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/cloud_tool_decision_item.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
@@ -35,6 +36,7 @@ typedef _LocalBatchRequest = ({
 class const BatchToolApprovalUsecase({
   required final MessageRepository messageRepository,
   required final ConversationRepository conversationRepository,
+  required final ConversationActivityGate conversationActivityGate,
   required final AgentToolResumeService agentToolResumeService,
   required final ResolvedToolService runResolvedTool,
   required final AgentCancellationRuntime cancellationRuntime,
@@ -236,21 +238,15 @@ extension on BatchToolApprovalUsecase {
     );
   }
 
-  Future<BatchToolApprovalResult> _runLocal(_LocalBatchRequest request) async {
-    final claims = await _claimLocalCalls(request);
-    onToolCallChanged();
+  Future<BatchToolApprovalResult> _runLocal(_LocalBatchRequest request) {
+    final conversationIds = request.calls
+        .map((call) => _sourceConversationId(call, request.rootConversationId))
+        .toSet();
 
-    final result = _resultFromClaims(claims);
-    final claimed = claims.where(
-      (claim) => claim.status == ToolCallApprovalBatchClaimStatus.claimed,
+    return conversationActivityGate.runActivities(
+      conversationIds,
+      () => _runLocalClaims(this, request),
     );
-    await _finishLocalClaims(
-      claimed,
-      approve: request.approve,
-      workspaceId: request.workspaceId,
-    );
-
-    return result;
   }
 
   Future<List<ToolCallApprovalBatchClaim>> _claimLocalCalls(
@@ -388,12 +384,20 @@ ToolCallExecutionBatchUpdate _executionUpdateForResolvedClaim(
     throw StateError('Resolved tool result is missing a status.');
   }
 
-  return ToolCallExecutionBatchUpdate(
-    conversationId: item.conversationId,
-    messageId: item.messageId,
-    toolCallId: item.toolCallId,
+  return ToolCallExecutionBatchUpdate.fromParts(
+    identity: (
+      conversationId: item.conversationId,
+      messageId: item.messageId,
+      toolCallId: item.toolCallId,
+    ),
     resultStatus: resultStatus,
-    responseRaw: entry.responseRaw,
+    output: (
+      responseRaw: entry.responseRaw,
+      responseContextRaw: null,
+      outputTruncated: false,
+      originalResponseBytes: null,
+      fullOutputForContext: false,
+    ),
   );
 }
 
@@ -428,18 +432,35 @@ _ResolvedBatchClaim _missingResolvedTool(
 
 List<ToolCallExecutionBatchUpdate> _executionUpdates(
   Iterable<agent.AgentToolBatchResult<ResolvedTool>> results,
-) => [
-  for (final result in results)
-    ToolCallExecutionBatchUpdate(
-      conversationId: result.call.conversationId,
-      messageId: result.call.messageId,
-      toolCallId: result.call.toolCallId,
-      resultStatus: AgentToolStatusMapper.toResultStatus(
-        result.result.resultStatus,
-      ),
-      responseRaw: result.result.responseRaw,
+) => [for (final result in results) _executionUpdate(result)];
+
+ToolCallExecutionBatchUpdate _executionUpdate(
+  agent.AgentToolBatchResult<ResolvedTool> result,
+) {
+  final call = result.call;
+  final execution = result.result;
+  final output = _batchToolOutput(execution);
+
+  return ToolCallExecutionBatchUpdate.fromParts(
+    identity: (
+      conversationId: call.conversationId,
+      messageId: call.messageId,
+      toolCallId: call.toolCallId,
     ),
-];
+    resultStatus: AgentToolStatusMapper.toResultStatus(execution.resultStatus),
+    output: output,
+  );
+}
+
+ToolCallExecutionOutput _batchToolOutput(
+  agent.AgentToolExecutionResult result,
+) => (
+  responseRaw: result.responseRaw,
+  responseContextRaw: result.responseContextRaw,
+  outputTruncated: result.outputTruncated,
+  originalResponseBytes: result.originalResponseBytes,
+  fullOutputForContext: result.fullOutputForContext,
+);
 
 Map<String, List<ToolCallApprovalBatchClaim>> _groupClaimsByConversation(
   Iterable<ToolCallApprovalBatchClaim> claims,
@@ -548,6 +569,24 @@ CloudToolDecisionItem _cloudDecisionItem(
     argumentsDigest: argumentsDigest,
     turnRevision: turnRevision,
   );
+}
+
+Future<BatchToolApprovalResult> _runLocalClaims(
+  BatchToolApprovalUsecase usecase,
+  _LocalBatchRequest request,
+) async {
+  final claims = await usecase._claimLocalCalls(request);
+  usecase.onToolCallChanged();
+  final result = _resultFromClaims(claims);
+  await usecase._finishLocalClaims(
+    claims.where(
+      (claim) => claim.status == ToolCallApprovalBatchClaimStatus.claimed,
+    ),
+    approve: request.approve,
+    workspaceId: request.workspaceId,
+  );
+
+  return result;
 }
 
 String _sourceConversationId(PendingToolCall call, String fallback) =>

@@ -11,6 +11,7 @@ void main() {
         'family': 'gpt-5.5',
         'reasoning': true,
         'tool_call': true,
+        'structured_output': true,
         'open_weights': false,
         'cost': {'input': 30, 'cache_read': 15, 'output': 60},
         'limit': {'context': 400000, 'output': 128000},
@@ -36,6 +37,8 @@ void main() {
     expect(model.costInput, 30.0);
     expect(model.supportsReasoning, isTrue);
     expect(model.supportsToolCalls, isTrue);
+    expect(model.supportsStructuredOutput, isTrue);
+    expect(model.supportsStrictToolSampling, isFalse);
     expect(model.supportsPriorityMode, isTrue);
     expect(model.isTextGenerationModel, isTrue);
     expect(model.isCodexRuntimeModel, isTrue);
@@ -149,6 +152,82 @@ void main() {
     );
   });
 
+  test(
+    'strict tool support requires a verified provider, model, and tools',
+    () {
+      for (final testCase in [
+        (
+          provider: 'openai',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: true,
+        ),
+        (
+          provider: 'openai',
+          model: 'gpt-4o-2024-08-06',
+          tools: false,
+          strict: false,
+        ),
+        (provider: 'openai', model: 'unknown', tools: true, strict: false),
+        (
+          provider: 'openrouter',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: false,
+        ),
+        (
+          provider: 'custom',
+          model: 'gpt-4o-2024-08-06',
+          tools: true,
+          strict: false,
+        ),
+      ]) {
+        final model = ModelCapabilities.fromJson(testCase.provider, {
+          'id': testCase.model,
+          'name': testCase.model,
+          'tool_call': testCase.tools,
+          'structured_output': true,
+          'limit': {'context': 1000, 'output': 100},
+          'modalities': {
+            'input': ['text'],
+            'output': ['text'],
+          },
+        });
+        expect(model.supportsStructuredOutput, isTrue);
+        expect(model.supportsStrictToolSampling, testCase.strict);
+      }
+    },
+  );
+
+  test('rejects malformed structured output capability clearly', () {
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'structured_output': 'yes',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-4o-2024-08-06',
+        'name': 'GPT-4o',
+        'tool_call': 'yes',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('requires priority mode for Codex runtime eligibility', () {
     final model = ModelCapabilities(
       id: 'gpt-5.5',
@@ -160,6 +239,7 @@ void main() {
     );
 
     expect(model.isCodexRuntimeModel, isFalse);
+    expect(model.supportsStrictToolSampling, isFalse);
   });
 
   test('Codex eligibility is capability-based', () {

@@ -4,15 +4,22 @@ import 'dart:convert';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
+  setUpAll(initializeDateFormatting);
+
+  Widget _legacyMaterialBuilder(BuildContext _, Widget? child) =>
+      AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink());
+
   test('every advertised icon has a concrete mapping and aliases', () {
     expect(auraChatIcons.keys.toSet(), engine.a2uiChatIconNames.toSet());
     for (final name in engine.a2uiChatIconNames) {
@@ -112,15 +119,19 @@ void main() {
           }, interactionMode: mode),
         ];
         await tester.pumpWidget(
-          MaterialApp(
-            theme: ThemeData(extensions: [AuraTheme.light]),
-            home: ListView(
-              children: [
-                ChatA2uiSurfaceHost.historical(
-                  messageId: 'dashboard-message',
-                  payloads: payloads,
-                ),
-              ],
+          AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              builder: _legacyMaterialBuilder,
+              theme: ThemeData(),
+              home: ListView(
+                children: [
+                  ChatA2uiSurfaceHost.historical(
+                    messageId: 'dashboard-message',
+                    payloads: payloads,
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -247,17 +258,21 @@ void main() {
         });
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SingleChildScrollView(
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'historical-1',
-            payloads: [
-              payload('one', '', create: true),
-              payload('one', 'First'),
-              payload('two', '', create: true),
-              payload('two', 'Second'),
-            ],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: SingleChildScrollView(
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'historical-1',
+              payloads: [
+                payload('one', '', create: true),
+                payload('one', 'First'),
+                payload('two', '', create: true),
+                payload('two', 'Second'),
+              ],
+            ),
           ),
         ),
       ),
@@ -268,15 +283,19 @@ void main() {
     expect(find.text('Second'), findsOneWidget);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SingleChildScrollView(
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'historical-1',
-            payloads: [
-              payload('one', '', create: true),
-              payload('one', 'Updated'),
-            ],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: SingleChildScrollView(
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'historical-1',
+              payloads: [
+                payload('one', '', create: true),
+                payload('one', 'Updated'),
+              ],
+            ),
           ),
         ),
       ),
@@ -316,11 +335,15 @@ void main() {
         startLocale: const Locale('en'),
         useOnlyLangCode: true,
         useFallbackTranslations: true,
-        child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
-          home: ChatA2uiSurfaceHost.historical(
-            messageId: 'historical-rootless',
-            payloads: payloads,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            home: ChatA2uiSurfaceHost.historical(
+              messageId: 'historical-rootless',
+              payloads: payloads,
+            ),
           ),
         ),
       ),
@@ -388,11 +411,15 @@ void main() {
         startLocale: const Locale('en'),
         useOnlyLangCode: true,
         useFallbackTranslations: true,
-        child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
-          home: ChatA2uiSurfaceHost.live(
-            runtime: runtime,
-            messageId: 'assistant-1',
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            home: ChatA2uiSurfaceHost.live(
+              runtime: runtime,
+              messageId: 'assistant-1',
+            ),
           ),
         ),
       ),
@@ -494,14 +521,18 @@ void main() {
         startLocale: const Locale('en'),
         useOnlyLangCode: true,
         useFallbackTranslations: true,
-        child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
-          home: SizedBox(
-            width: 320,
-            child: ChatA2uiSurfaceHost.message(
-              runtime: runtime,
-              messageId: 'assistant-1',
-              payloads: runtime.messagesFor('assistant-1'),
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            home: SizedBox(
+              width: 320,
+              child: ChatA2uiSurfaceHost.message(
+                runtime: runtime,
+                messageId: 'assistant-1',
+                payloads: runtime.messagesFor('assistant-1'),
+              ),
             ),
           ),
         ),
@@ -569,13 +600,17 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SizedBox(
-          width: 320,
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'historical-slider',
-            payloads: payloads,
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: SizedBox(
+            width: 320,
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'historical-slider',
+              payloads: payloads,
+            ),
           ),
         ),
       ),
@@ -588,7 +623,9 @@ void main() {
     expect(tester.getSemantics(find.byType(AuraSlider)).value, '75.0');
   });
 
-  testWidgets('read-only slider renders a literal value', (tester) async {
+  testWidgets('read-only slider formats a literal value for Spanish', (
+    tester,
+  ) async {
     final payloads = [
       jsonEncode({
         'version': 'v0.9',
@@ -606,10 +643,11 @@ void main() {
               'id': 'root',
               'component': 'Slider',
               'label': 'Utilization',
-              'value': 74,
+              'value': 74.5,
               'min': 0,
               'max': 100,
-              'precision': 0,
+              'step': 0.5,
+              'precision': 1,
             },
           ],
         },
@@ -617,22 +655,175 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SizedBox(
-          width: 320,
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'literal-slider',
-            payloads: payloads,
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          locale: const Locale('es'),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: const [Locale('en'), Locale('es')],
+          home: SizedBox(
+            width: 320,
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'literal-slider',
+              payloads: payloads,
+            ),
           ),
         ),
       ),
     );
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('74'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('100'), findsOneWidget);
+    expect(find.text('74,5'), findsOneWidget);
+    expect(find.text('0,0'), findsOneWidget);
+    expect(find.text('100,0'), findsOneWidget);
+  });
+
+  for (final (locale, date) in [
+    (const Locale('en'), 'May 12, 2024'),
+    (const Locale('es'), '12 may 2024'),
+  ]) {
+    for (final (variant, value) in [
+      ('date', '2024-05-12'),
+      ('time', '14:30'),
+      ('dateTime', '2024-05-12T14:30:00.000Z'),
+    ]) {
+      testWidgets('date input shows $variant in ${locale.languageCode}', (
+        tester,
+      ) async {
+        final time = DateFormat.jm(locale.toLanguageTag())
+            .format(DateTime(2024, 5, 12, 14, 30));
+        final display = switch (variant) {
+          'date' => date,
+          'time' => time,
+          _ => '$date $time',
+        };
+        final payloads = [
+          jsonEncode({
+            'version': 'v0.9',
+            'createSurface': {
+              'surfaceId': 'date-input',
+              'catalogId': auraChatCatalogId,
+            },
+          }),
+          jsonEncode({
+            'version': 'v0.9',
+            'updateComponents': {
+              'surfaceId': 'date-input',
+              'components': [
+                {
+                  'id': 'root',
+                  'component': 'DateTimeInput',
+                  'variant': variant,
+                  'value': value,
+                },
+              ],
+            },
+          }),
+        ];
+
+        await tester.pumpWidget(
+          AuraThemeScope(
+            theme: .light,
+            child: MaterialApp(
+              builder: _legacyMaterialBuilder,
+              home: SizedBox(
+                width: 320,
+                child: ChatA2uiSurfaceHost.historical(
+                  messageId: 'literal-date-input',
+                  payloads: payloads,
+                ),
+              ),
+              theme: ThemeData(),
+              locale: locale,
+              localizationsDelegates: GlobalMaterialLocalizations.delegates,
+              supportedLocales: const [Locale('en'), Locale('es')],
+            ),
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+
+        expect(find.byType(AuraDateTimeInput), findsOneWidget);
+        expect(find.text(display), findsOneWidget);
+      });
+    }
+  }
+
+  testWidgets('localized date input keeps UTC protocol value', (tester) async {
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conversation-1',
+      enabled: true,
+    )..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+    for (final message in [
+      {
+        'createSurface': {
+          'surfaceId': 'main',
+          'catalogId': auraChatFormCatalogId,
+        },
+      },
+      {
+        'updateComponents': {
+          'surfaceId': 'main',
+          'components': [
+            {
+              'id': 'root',
+              'component': 'DateTimeInput',
+              'variant': 'dateTime',
+              'value': {'path': '/selected'},
+            },
+          ],
+        },
+      },
+    ]) {
+      runtime.addMessageJson(
+        jsonEncode({
+          'protocolVersion': 'v1',
+          'interactionMode': 'requiresUserAction',
+          'message': {'version': 'v0.9', ...message},
+        }),
+      );
+    }
+    runtime.commitCurrentMessage();
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('es')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('es'),
+        startLocale: const Locale('es'),
+        useOnlyLangCode: true,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            home: ChatA2uiSurfaceHost.message(
+              runtime: runtime,
+              messageId: 'assistant-1',
+              payloads: runtime.messagesFor('assistant-1'),
+            ),
+            theme: ThemeData(),
+            locale: const Locale('es'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('es')],
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    final input = tester.widget<AuraDateTimeInput>(
+      find.byType(AuraDateTimeInput),
+    );
+    input.onChanged?.call(DateTime.utc(2024, 5, 12, 14, 30));
+    expect(
+      runtime.controller
+          .contextFor('assistant-1:main')
+          .dataModel
+          .getValue<String>(DataPath('/selected')),
+      '2024-05-12T14:30:00.000Z',
+    );
   });
 
   testWidgets('row stretch is safe in an unbounded chat surface', (
@@ -667,15 +858,19 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: ListView(
-          children: [
-            ChatA2uiSurfaceHost.historical(
-              messageId: 'dashboard-message',
-              payloads: payloads,
-            ),
-          ],
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: ListView(
+            children: [
+              ChatA2uiSurfaceHost.historical(
+                messageId: 'dashboard-message',
+                payloads: payloads,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -716,13 +911,17 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SizedBox(
-          width: 320,
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'flex-row-message',
-            payloads: payloads,
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: SizedBox(
+            width: 320,
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'flex-row-message',
+              payloads: payloads,
+            ),
           ),
         ),
       ),
@@ -762,13 +961,17 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(extensions: [AuraTheme.light]),
-        home: SizedBox(
-          width: 320,
-          child: ChatA2uiSurfaceHost.historical(
-            messageId: 'tabs-message',
-            payloads: payloads,
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: SizedBox(
+            width: 320,
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'tabs-message',
+              payloads: payloads,
+            ),
           ),
         ),
       ),
@@ -779,6 +982,45 @@ void main() {
     await tester.tap(find.text('Alerts'));
     await tester.pump();
     expect(find.text('Alerts content'), findsOneWidget);
+  });
+
+  testWidgets('shows a placeholder for empty A2UI text', (tester) async {
+    final payloads = [
+      jsonEncode({
+        'version': 'v0.9',
+        'createSurface': {
+          'surfaceId': 'empty-text',
+          'catalogId': auraChatCatalogId,
+        },
+      }),
+      jsonEncode({
+        'version': 'v0.9',
+        'updateComponents': {
+          'surfaceId': 'empty-text',
+          'components': [
+            {'id': 'root', 'component': 'Text', 'text': ''},
+          ],
+        },
+      }),
+    ];
+
+    await tester.pumpWidget(
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: _legacyMaterialBuilder,
+          theme: ThemeData(),
+          home: ChatA2uiSurfaceHost.historical(
+            messageId: 'empty-text-message',
+            payloads: payloads,
+          ),
+        ),
+      ),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('-'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('renders the extended catalog components', (tester) async {
@@ -1009,15 +1251,19 @@ void main() {
         startLocale: const Locale('en'),
         useOnlyLangCode: true,
         useFallbackTranslations: true,
-        child: MaterialApp(
-          theme: ThemeData(extensions: [AuraTheme.light]),
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: SizedBox(
-                width: 800,
-                child: ChatA2uiSurfaceHost.historical(
-                  messageId: 'extended-message',
-                  payloads: payloads,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: SizedBox(
+                  width: 800,
+                  child: ChatA2uiSurfaceHost.historical(
+                    messageId: 'extended-message',
+                    payloads: payloads,
+                  ),
                 ),
               ),
             ),

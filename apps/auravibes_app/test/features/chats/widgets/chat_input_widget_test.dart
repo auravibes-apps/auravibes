@@ -10,11 +10,13 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -69,6 +71,7 @@ void main() {
     bool isCompacting = false,
     ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
+    ValueListenable<String?>? activeConversation,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -83,35 +86,55 @@ void main() {
         ],
         child: Builder(
           builder: (context) {
+            Widget chatInput(String? conversationId) => ChatInputWidget(
+              workspaceId: 'ws-1',
+              onSendMessage: onSendMessage,
+              onToolsPress: onToolsPress,
+              modelSheetControl: modelSheetControl,
+              agentSheetControl: agentSheetControl,
+              modelCompactControl: modelCompactControl,
+              agentCompactControl: agentCompactControl,
+              onDraftStatusChanged: onDraftStatusChanged,
+              conversationId: conversationId,
+              reasoningControl: reasoningControl,
+              draftToLoad: draftToLoad,
+              modalitiesInput: modalitiesInput,
+              onContinueAgent: onContinueAgent,
+              continueDisabledHint: continueDisabledHint,
+              disabledHint: disabledHint,
+              compactDisabledHint: compactDisabledHint,
+              disabled: disabled,
+              isBusy: isBusy,
+              showStopButton: showStopButton,
+              onStop: onStop,
+              onCompact: onCompact,
+              canCompact: canCompact,
+              isCompacting: isCompacting,
+              key: conversationId == null ? null : ValueKey(conversationId),
+            );
+
             return MaterialApp(
-              home: Theme(
-                data: .new(extensions: [AuraTheme.light]),
-                child: AuraSnackBarHost(
-                  child: Material(
-                    child: Portal(
-                      child: ChatInputWidget(
-                        workspaceId: 'ws-1',
-                        onSendMessage: onSendMessage,
-                        onToolsPress: onToolsPress,
-                        modelSheetControl: modelSheetControl,
-                        agentSheetControl: agentSheetControl,
-                        modelCompactControl: modelCompactControl,
-                        agentCompactControl: agentCompactControl,
-                        onDraftStatusChanged: onDraftStatusChanged,
-                        reasoningControl: reasoningControl,
-                        draftToLoad: draftToLoad,
-                        modalitiesInput: modalitiesInput,
-                        onContinueAgent: onContinueAgent,
-                        continueDisabledHint: continueDisabledHint,
-                        disabledHint: disabledHint,
-                        compactDisabledHint: compactDisabledHint,
-                        disabled: disabled,
-                        isBusy: isBusy,
-                        showStopButton: showStopButton,
-                        onStop: onStop,
-                        onCompact: onCompact,
-                        canCompact: canCompact,
-                        isCompacting: isCompacting,
+              home: AuraThemeScope(
+                theme: .light,
+                child: Theme(
+                  data: .new(),
+                  child: AuraLegacyMaterialBridge(
+                    child: AuraSnackBarHost(
+                      child: Material(
+                        child: Portal(
+                          child: activeConversation == null
+                              ? chatInput(null)
+                              : ValueListenableBuilder<String?>(
+                                  valueListenable: activeConversation,
+                                  builder: (context, conversationId, child) {
+                                    if (conversationId == null) {
+                                      return const SizedBox.shrink();
+                                    }
+
+                                    return chatInput(conversationId);
+                                  },
+                                ),
+                        ),
                       ),
                     ),
                   ),
@@ -216,6 +239,156 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
     await tester.pump();
     expect(draftStatuses.last, isTrue);
+    final recordingText = tester.widget<Text>(find.textContaining('00:00'));
+    expect(
+      recordingText.style?.fontFeatures,
+      contains(const FontFeature.tabularFigures()),
+    );
+  });
+
+  testWidgets('keeps conversation text and attachment across navigation', (
+    tester,
+  ) async {
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final activeConversation = ValueNotifier<String?>('chat-1');
+    addTearDown(activeConversation.dispose);
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final previousPicker = fp.FilePickerPlatform.instance;
+    addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
+    fp.FilePickerPlatform.instance = _FakeFilePickerPlatform([
+      _FakePlatformFile(
+        name: attachment.fileName,
+        size: attachment.sizeBytes,
+        path: attachment.localPath,
+      ),
+    ]);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        activeConversation: activeConversation,
+        modalitiesInput: const ['text', 'file'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future<void>.value(),
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'first draft');
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.attach_file));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('report.pdf'), findsOneWidget);
+
+    activeConversation.value = 'chat-2';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.deletedPaths, isEmpty);
+    await tester.enterText(find.byType(EditableText), 'second draft');
+
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'first draft',
+    );
+    expect(find.text('report.pdf'), findsOneWidget);
+    expect(attachmentService.deletedPaths, isEmpty);
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.text('Discard draft'));
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+
+    activeConversation.value = 'chat-2';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'second draft',
+    );
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('keeps failed send draft and clears successful send draft', (
+    tester,
+  ) async {
+    final activeConversation = ValueNotifier<String?>('chat-1');
+    addTearDown(activeConversation.dispose);
+    var attempts = 0;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        activeConversation: activeConversation,
+        onSendMessage: (_) async {
+          attempts++;
+          if (attempts == 1) throw StateError('send failed');
+        },
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'unsent message');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+    expect(attempts, 1);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'unsent message',
+    );
+
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'unsent message',
+    );
+    final sendButton = find.descendant(
+      of: find.byKey(const ValueKey<String>('chat_send_button')),
+      matching: find.byType(AuraButton),
+    );
+    expect(tester.widget<AuraButton>(sendButton).disabled, isFalse);
+
+    tester.widget<AuraButton>(sendButton).onPressed();
+    final _ = await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    activeConversation.value = null;
+    await tester.pump();
+    activeConversation.value = 'chat-1';
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+    expect(attempts, 2);
   });
 
   testWidgets('renders without error', (tester) async {
@@ -468,11 +641,67 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(
-      find.text('Current model does not support this input.'),
+      find.text(
+        '''The selected model doesn't support image input. '''
+        'Switch to a model that accepts images.',
+      ),
       findsOneWidget,
     );
     expect(find.text(attachment.fileName), findsNothing);
     expect(attachmentService.deletedPaths, [attachment.localPath]);
+  });
+
+  testWidgets('clears all draft attachments and deletes their files', (
+    tester,
+  ) async {
+    const first = MessageAttachmentToCreate(
+      localPath: '/tmp/first.pdf',
+      fileName: 'first.pdf',
+      displayName: 'First',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 1024,
+    );
+    const second = MessageAttachmentToCreate(
+      localPath: '/tmp/second.pdf',
+      fileName: 'second.pdf',
+      displayName: 'Second',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 2048,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(first);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['file'],
+        attachmentService: attachmentService,
+        draftToLoad: const ChatDraft(
+          text: 'Keep this text',
+          attachments: [first, second],
+        ),
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    expect(find.text('first.pdf'), findsOneWidget);
+    expect(find.text('second.pdf'), findsOneWidget);
+    final clearAllButton = find.byWidgetPredicate(
+      (widget) =>
+          widget is AuraIconButton &&
+          widget.identifier == 'chat_clear_all_attachments',
+    );
+    tester.widget<AuraIconButton>(clearAllButton).onPressed?.call();
+    await tester.pump();
+
+    expect(find.text('first.pdf'), findsNothing);
+    expect(find.text('second.pdf'), findsNothing);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Keep this text',
+    );
+    expect(attachmentService.deletedPaths, [first.localPath, second.localPath]);
   });
 
   testWidgets('does not update sending state after unmount', (tester) async {
@@ -668,7 +897,9 @@ void main() {
     );
   });
 
-  testWidgets('hides mic button when audio is unsupported', (tester) async {
+  testWidgets('shows disabled mic button with an audio support reason', (
+    tester,
+  ) async {
     await pumpAndInit(
       tester,
       buildSubject(
@@ -678,7 +909,284 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.mic_none_outlined), findsNothing);
+    if (kIsWeb) {
+      expect(find.byIcon(Icons.mic_none_outlined), findsNothing);
+
+      return;
+    }
+
+    final micButton = find.byKey(const ValueKey<String>('chat_voice_button'));
+    expect(find.byIcon(Icons.mic_none_outlined), findsOneWidget);
+    expect(
+      tester
+          .widget<AuraIconButton>(
+            find.descendant(
+              of: micButton,
+              matching: find.byType(AuraIconButton),
+            ),
+          )
+          .disabled,
+      isTrue,
+    );
+    expect(
+      find.byTooltip(
+        '''The selected model doesn't support audio input. '''
+        'Switch to a model that accepts audio.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('reports localized microphone permission denial', (tester) async {
+    if (kIsWeb) return;
+
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/recording.wav',
+      fileName: 'recording.wav',
+      displayName: 'recording.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+      sizeBytes: 1024,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      startError: const ChatMicrophonePermissionDeniedException(),
+    );
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['audio'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text(
+        'Microphone permission denied. Allow microphone access in system '
+        'settings, then try again.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Recording'), findsNothing);
+    expect(attachmentService.startCount, 1);
+  });
+
+  testWidgets('explains unsupported file and image inputs', (tester) async {
+    overridePlatform(.linux);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(onSendMessage: (_) => Future.value()),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(
+      find.byTooltip(
+        '''The selected model doesn't support file input. '''
+        'Switch to a model that accepts files.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip(
+        '''The selected model doesn't support image input. '''
+        'Switch to a model that accepts images.',
+      ),
+      findsOneWidget,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('automatically stops a voice recording at two minutes once', (
+    tester,
+  ) async {
+    if (kIsWeb) return;
+
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/recording.wav',
+      fileName: 'recording.wav',
+      displayName: 'recording.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+      sizeBytes: 1024,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      recordingResult: attachment,
+    );
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['audio'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Recording 00:00 / 02:00'), findsOneWidget);
+
+    await tester.pump(const Duration(minutes: 2));
+    await tester.pump();
+    await tester.pump();
+
+    expect(attachmentService.stopCount, 1);
+    expect(find.text('recording.wav'), findsOneWidget);
+    expect(find.textContaining('Recording'), findsNothing);
+  });
+
+  testWidgets('coalesces repeated manual recording stops', (tester) async {
+    if (kIsWeb) return;
+
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/recording.wav',
+      fileName: 'recording.wav',
+      displayName: 'recording.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+      sizeBytes: 1024,
+    );
+    final stopCompleter = Completer<MessageAttachmentToCreate?>();
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      stopCompleter: stopCompleter,
+    );
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['audio'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
+    await tester.pump();
+    await tester.pump();
+    final stopButton = find.byKey(
+      const ValueKey<String>('chat_voice_stop_button'),
+    );
+    await tester.tap(stopButton);
+    await tester.tap(stopButton);
+    await tester.pump();
+
+    expect(attachmentService.stopCount, 1);
+    stopCompleter.complete(attachment);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('recording.wav'), findsOneWidget);
+    expect(attachmentService.stopCount, 1);
+  });
+
+  testWidgets('canceling a voice recording does not add an attachment', (
+    tester,
+  ) async {
+    if (kIsWeb) return;
+
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/recording.wav',
+      fileName: 'recording.wav',
+      displayName: 'recording.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+      sizeBytes: 1024,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['audio'],
+        attachmentService: attachmentService,
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('chat_voice_button')));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_voice_cancel_button')),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(attachmentService.cancelCount, 1);
+    expect(find.text('recording.wav'), findsNothing);
+    expect(find.textContaining('Recording'), findsNothing);
+  });
+
+  testWidgets('keeps camera cancellation silent', (tester) async {
+    overridePlatform(.android);
+    final previousImagePicker = ImagePickerPlatform.instance;
+    addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
+    ImagePickerPlatform.instance = _FakeImagePickerPlatform();
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['image'],
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.photo_camera_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text(
+        '''Couldn't open the camera. Check camera permissions and try again.''',
+      ),
+      findsNothing,
+    );
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('shows feedback when camera capture fails', (tester) async {
+    overridePlatform(.android);
+    final previousImagePicker = ImagePickerPlatform.instance;
+    addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
+    ImagePickerPlatform.instance = _FakeImagePickerPlatform(
+      error: .new('Camera unavailable'),
+    );
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['image'],
+        onSendMessage: (_) => Future.value(),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.photo_camera_outlined));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.text(
+        '''Couldn't open the camera. Check camera permissions and try again.''',
+      ),
+      findsOneWidget,
+    );
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('shows mic button outside menu when audio is supported', (
@@ -900,6 +1408,42 @@ void main() {
     expect(find.text('sheet model'), findsOneWidget);
   });
 
+  testWidgets('model selector opens from blank space inside its target', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const SizedBox(
+          width: 200,
+          height: 48,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('compact model'),
+          ),
+        ),
+        modelSheetControl: const Text('sheet model'),
+      ),
+    );
+
+    final target = tester.getRect(
+      find.byKey(const ValueKey<String>('chat_model_selector')),
+    );
+    await tester.tapAt(.new(target.right - 8, target.center.dy));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+  });
+
   testWidgets('desktop uses menu model agent layout', (tester) async {
     await pumpAndInit(
       tester,
@@ -982,9 +1526,15 @@ void _noop() {
 class _FakeLocalChatAttachmentService(
   final MessageAttachmentToCreate attachment, {
   final Exception? copyError,
+  final Exception? startError,
+  final MessageAttachmentToCreate? recordingResult,
+  final Completer<MessageAttachmentToCreate?>? stopCompleter,
 }) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
   final deletedPaths = <String>[];
+  int startCount = 0;
+  int stopCount = 0;
+  int cancelCount = 0;
 
   @override
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
@@ -1006,10 +1556,18 @@ class _FakeLocalChatAttachmentService(
   }
 
   @override
-  Future<void> startVoiceRecording() => Future.value();
+  Future<void> startVoiceRecording() async {
+    startCount++;
+    if (startError case final error?) throw error;
+  }
 
   @override
-  Future<MessageAttachmentToCreate?> stopVoiceRecording() async => null;
+  Future<MessageAttachmentToCreate?> stopVoiceRecording() {
+    stopCount++;
+    if (stopCompleter case final completer?) return completer.future;
+
+    return Future.value(recordingResult);
+  }
 
   @override
   @override
@@ -1021,7 +1579,25 @@ class _FakeLocalChatAttachmentService(
   Future<Uint8List> readAttachmentBytes(String _) => throw UnimplementedError();
 
   @override
-  Future<void> cancelVoiceRecording() => Future.value();
+  Future<void> cancelVoiceRecording() async {
+    cancelCount++;
+  }
+}
+
+class _FakeImagePickerPlatform({final Exception? error})
+    extends ImagePickerPlatform {
+  @override
+  Future<XFile?> getImageFromSource({
+    required ImageSource source,
+    ImagePickerOptions options = const ImagePickerOptions(),
+  }) async {
+    if (error case final error?) throw error;
+
+    return null;
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _FakeFilePickerPlatform(final List<fp.PlatformFile> result)

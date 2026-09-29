@@ -12,29 +12,43 @@ import 'package:material_ui/material_ui.dart';
 class const ActiveSubAgentStatusWidget({
   required final String workspaceId,
   required final String conversationId,
+  final String? conversationTitle,
+  final Key controlKey = const ValueKey('chat_active_sub_agents'),
   super.key,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final childIds = ref.watch(
-      activeSubAgentRuntimeProvider.select(
-        (state) => state[conversationId] ?? const <String>{},
-      ),
-    );
+    final childIds = _watchActiveSubAgentIds(ref, conversationId);
     if (childIds.isEmpty) return const SizedBox.shrink();
 
     return _ActiveSubAgentStatusButton(
       workspaceId: workspaceId,
       conversationId: conversationId,
       childIds: childIds.toList()..sort(),
+      conversationTitle: conversationTitle,
+      controlKey: controlKey,
     );
   }
 }
 
-String _activeSubAgentSemanticLabel(int count) {
+Set<String> _watchActiveSubAgentIds(WidgetRef ref, String conversationId) =>
+    ref.watch(
+      activeSubAgentRuntimeProvider.select(
+        (state) => state[conversationId] ?? const <String>{},
+      ),
+    );
+
+String _activeSubAgentSemanticLabel(int count, String? conversationTitle) {
   final countLabel = LocaleKeys
       .chats_screens_chat_conversation_active_sub_agents_count
       .plural(count);
+  if (conversationTitle != null) {
+    return LocaleKeys
+        .chats_screens_chat_conversation_active_sub_agents_chat_accessible_label
+        .tr(
+          namedArgs: {'count': countLabel, 'conversation': conversationTitle},
+        );
+  }
 
   return LocaleKeys
       .chats_screens_chat_conversation_active_sub_agents_accessible_label
@@ -45,6 +59,8 @@ class const _ActiveSubAgentStatusButton({
   required final String workspaceId,
   required final String conversationId,
   required final List<String> childIds,
+  required final String? conversationTitle,
+  required final Key controlKey,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -58,6 +74,8 @@ class const _ActiveSubAgentStatusButton({
 
     return _ActiveSubAgentButtonSurface(
       count: count,
+      conversationTitle: conversationTitle,
+      controlKey: controlKey,
       onTap: () => _openActiveChildren(navigation, childIds),
     );
   }
@@ -65,26 +83,35 @@ class const _ActiveSubAgentStatusButton({
 
 class const _ActiveSubAgentButtonSurface({
   required final int count,
+  required final String? conversationTitle,
+  required final Key controlKey,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(right: context.auraTheme.fromSpacing(.xs)),
-    child: _ActiveSubAgentButtonSemantics(count: count, onTap: onTap),
+    child: _ActiveSubAgentButtonSemantics(
+      count: count,
+      conversationTitle: conversationTitle,
+      controlKey: controlKey,
+      onTap: onTap,
+    ),
   );
 }
 
 class const _ActiveSubAgentButtonSemantics({
   required final int count,
+  required final String? conversationTitle,
+  required final Key controlKey,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
-    key: const ValueKey('chat_active_sub_agents'),
+    key: controlKey,
     child: _ActiveSubAgentTapTarget(count: count, onTap: onTap),
     container: true,
     button: true,
-    label: _activeSubAgentSemanticLabel(count),
+    label: _activeSubAgentSemanticLabel(count, conversationTitle),
     onTap: onTap,
   );
 }
@@ -157,6 +184,7 @@ void _showActiveSubAgentChooser(
   _ActiveSubAgentNavigation navigation,
   List<String> childIds,
 ) {
+  FocusManager.instance.primaryFocus?.unfocus();
   final _ = showModalBottomSheet<void>(
     context: navigation.context,
     builder: _activeSubAgentChooserBuilder(navigation, childIds),

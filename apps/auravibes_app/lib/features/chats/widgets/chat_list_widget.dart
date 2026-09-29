@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_archive_prov
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
@@ -1188,6 +1189,7 @@ class _ChatListSearchInput extends StatelessWidget {
         prefixIcon: const AuraIcon(Icons.search),
         suffixIcon: _ChatListSearchStatus(isSearching: state.isSearching),
         size: .small,
+        textInputAction: .search,
         onChanged: state.onSearchChanged,
       );
 
@@ -1256,6 +1258,7 @@ class const _ChatListConversationList({required final _ChatListViewState state})
     itemBuilder: _buildTile,
     separatorBuilder: (context, index) => const SizedBox(height: 10),
     itemCount: state.chats.length,
+    keyboardDismissBehavior: .onDrag,
   );
 
   Widget _buildTile(BuildContext _, int index) =>
@@ -1462,15 +1465,42 @@ class const _ChatTileInfo({
     children: [
       _ChatTileTitleRow(chat: chat, title: title),
       const SizedBox(height: 4),
-      AuraText(
-        child: Text(
-          RelativeTimeFormatter.format(chat.updatedAt),
-          overflow: .ellipsis,
-        ),
-        style: .bodySmall,
-      ),
+      _ChatTileMetadata(chat: chat, title: title),
     ],
     crossAxisAlignment: .start,
+  );
+}
+
+class const _ChatTileMetadata({
+  required final ConversationEntity chat,
+  required final String title,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraRow(
+    children: [
+      Expanded(child: _ChatTileUpdatedAt(updatedAt: chat.updatedAt)),
+      ActiveSubAgentStatusWidget(
+        workspaceId: chat.workspaceId,
+        conversationId: chat.id,
+        conversationTitle: title,
+        controlKey: ValueKey('chat_list_active_sub_agents_${chat.id}'),
+      ),
+    ],
+  );
+}
+
+class const _ChatTileUpdatedAt({required final DateTime updatedAt})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      RelativeTimeFormatter.format(
+        updatedAt,
+        locale: Localizations.localeOf(context),
+      ),
+      overflow: .ellipsis,
+    ),
+    style: .bodySmall,
   );
 }
 

@@ -114,6 +114,7 @@ class _AuraModalState extends State<AuraModal> {
       return;
     }
 
+    FocusManager.instance.primaryFocus?.unfocus();
     _isShowing = true;
     try {
       await _showAuraModal(context, widget);
@@ -227,15 +228,22 @@ class const _AuraModalEntrySemantics({
   required final VoidCallback onShow,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: widget.entryPointChild,
-    container: true,
-    excludeSemantics: true,
-    enabled: true,
-    button: true,
-    label: 'Open modal',
-    onTap: onShow,
-  );
+  Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
+    return Semantics(
+      child: ConstrainedBox(
+        constraints: .new(minWidth: targetSize, minHeight: targetSize),
+        child: widget.entryPointChild,
+      ),
+      container: true,
+      excludeSemantics: true,
+      enabled: true,
+      button: true,
+      label: 'Open modal',
+      onTap: onShow,
+    );
+  }
 }
 
 class const _AuraModalSurface({

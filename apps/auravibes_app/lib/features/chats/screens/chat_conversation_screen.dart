@@ -27,6 +27,7 @@ import 'package:auravibes_app/features/chats/services/chat_attachment_modality.d
 import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
+import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
@@ -43,6 +44,7 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -1132,11 +1134,13 @@ class const _LoadedChatConversationView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _ChatConversationBody(data: data),
-      appBar: _ChatConversationAppBar(
-        title: data.conversation.title,
-        leading: data.leading,
+    return ChatPrimaryScrollController(
+      child: AuraScreen(
+        child: _ChatConversationBody(data: data),
+        appBar: _ChatConversationAppBar(
+          title: data.conversation.title,
+          leading: data.leading,
+        ),
       ),
     );
   }
@@ -1163,13 +1167,20 @@ class const _ChatConversationBody({
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
-        _ChatConversationStatusAndComposer(data: data),
+        _ChatConversationStatusAndComposer(
+          data: data,
+          key: ValueKey((
+            workspaceId: data.workspaceId,
+            conversationId: data.conversation.id,
+          )),
+        ),
     ],
   );
 }
 
 class const _ChatConversationStatusAndComposer({
   required final _LoadedChatConversationData data,
+  super.key,
 }) extends HookWidget {
   @override
   Widget build(BuildContext context) {
@@ -1466,6 +1477,7 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
+         conversationId: data.conversation.id,
          reasoningControl: reasoningControl,
          draftToLoad: draftToLoad,
          modalitiesInput: data.state.modalitiesInput,
@@ -1714,8 +1726,14 @@ class const _RateLimitRetryText({required final int remainingSeconds})
   Widget build(BuildContext context) => AuraText(
     child: Text(
       LocaleKeys.chats_screens_chat_conversation_rate_limit_retry.tr(
-        namedArgs: {'seconds': remainingSeconds.toString()},
+        namedArgs: {
+          'seconds': NumberFormatter.count(
+            remainingSeconds,
+            Localizations.localeOf(context),
+          ),
+        },
       ),
+      style: const TextStyle(fontFeatures: [FontFeature.tabularFigures()]),
     ),
     style: .bodySmall,
   );
@@ -1738,6 +1756,7 @@ void _showSkillsModal({
 }) {
   if (!context.mounted) return;
 
+  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,
@@ -1756,6 +1775,7 @@ void _showToolsModal({
 }) {
   if (!context.mounted) return;
 
+  FocusManager.instance.primaryFocus?.unfocus();
   unawaited(
     showDialog<void>(
       context: context,
@@ -1872,6 +1892,7 @@ Future<bool> _confirmModelSwitch(
   Set<String> missing,
 ) async {
   if (missing.isEmpty || !context.mounted) return true;
+  FocusManager.instance.primaryFocus?.unfocus();
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => _ConfirmModelSwitchDialog(missing: missing),
@@ -2344,8 +2365,11 @@ bool _canStopCloudState(CloudConversationState state) {
 Future<void> _sendMessage(_SendMessageRequest request) async {
   try {
     await _sendMessageUsecase(request);
-  } on Exception catch (error, stackTrace) {
+  } on MessagePersistedException catch (error) {
+    _reportSendMessageFailure(request, error, error.stackTrace);
+  } on Object catch (error, stackTrace) {
     _reportSendMessageFailure(request, error, stackTrace);
+    Error.throwWithStackTrace(error, stackTrace);
   }
 }
 
@@ -2355,7 +2379,7 @@ Future<void> _sendMessageUsecase(_SendMessageRequest request) => request.ref
 
 void _reportSendMessageFailure(
   _SendMessageRequest request,
-  Exception error,
+  Object error,
   StackTrace stackTrace,
 ) {
   _logger.severe(

@@ -1,11 +1,14 @@
 // ignore_for_file: type=lint, type=warning
+import 'dart:async' show unawaited;
 import 'dart:ui' show SemanticsRole;
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/aura_haptics.dart';
 import 'package:auravibes_ui/src/molecules/aura_container.dart';
 import 'package:auravibes_ui/src/molecules/aura_divider.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -171,6 +174,8 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
       final selectedIndex = _selectedOptionIndex(options);
       if (index == selectedIndex) return;
 
+      unawaited(AuraHaptics.selection());
+
       if (widget.value == null) {
         setState(() => _selectedIndex = index);
       }
@@ -184,6 +189,8 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
       widget.items.length,
     );
     if (index == selectedIndex) return;
+
+    unawaited(AuraHaptics.light());
 
     if (widget.selectedIndex == null) {
       setState(() => _selectedIndex = index);
@@ -233,21 +240,81 @@ class const _AuraTabBar({
   required final List<String?> semanticLabels,
   required final int selectedIndex,
   final ValueChanged<int>? onChanged,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
+  @override
+  State<_AuraTabBar> createState() => _AuraTabBarState();
+}
+
+class _AuraTabBarState extends State<_AuraTabBar> {
+  late final List<GlobalKey> _tabKeys;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabKeys = List.generate(widget.titles.length, (_) => GlobalKey());
+    _scheduleReveal();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuraTabBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final count = widget.titles.length;
+    if (_tabKeys.length > count) _tabKeys.removeRange(count, _tabKeys.length);
+    if (_tabKeys.length < count) {
+      _tabKeys.addAll(
+        List.generate(count - _tabKeys.length, (_) => GlobalKey()),
+      );
+    }
+    if (oldWidget.selectedIndex != widget.selectedIndex ||
+        oldWidget.titles.length != count) {
+      _scheduleReveal();
+    }
+  }
+
+  void _scheduleReveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          widget.selectedIndex < 0 ||
+          widget.selectedIndex >= _tabKeys.length) {
+        return;
+      }
+      final selectedContext = _tabKeys[widget.selectedIndex].currentContext;
+      final renderObject = selectedContext?.findRenderObject();
+      final position = selectedContext == null
+          ? null
+          : Scrollable.maybeOf(selectedContext)?.position;
+      if (renderObject == null || position == null) return;
+
+      unawaited(
+        position.ensureVisible(
+          renderObject,
+          alignment: 0.5,
+          duration: TickerMode.valuesOf(context).enabled
+              ? const Duration(milliseconds: 200)
+              : Duration.zero,
+          curve: Curves.easeInOut,
+        ),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var index = 0; index < titles.length; index++)
-                _buildTab(context, index),
-            ],
+        AuraEdgy(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var index = 0; index < widget.titles.length; index++)
+                  _buildTab(context, index),
+              ],
+            ),
           ),
+          axis: .horizontal,
         ),
         const AuraDivider(),
       ],
@@ -255,23 +322,29 @@ class const _AuraTabBar({
   }
 
   Widget _buildTab(BuildContext context, int index) {
-    final isSelected = index == selectedIndex;
+    final isSelected = index == widget.selectedIndex;
     final auraColors = context.auraColors;
-    final borderRadius = context.auraTheme.fromBorderRadius(.md);
-    final title = titles[index];
+    final auraTheme = context.auraTheme;
+    final targetSize = auraTheme.interactionSizes.minimumTargetSize;
+    final borderRadius = auraTheme.fromBorderRadius(.md);
+    final title = widget.titles[index];
 
     return Semantics(
+      key: _tabKeys[index],
       child: IntrinsicWidth(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          constraints: BoxConstraints(
+            minWidth: targetSize,
+            minHeight: targetSize,
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
               AuraPressable(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 48),
-                  child: AuraSizedBox(
-                    height: .xl2,
+                  constraints: BoxConstraints(minWidth: targetSize),
+                  child: SizedBox(
+                    height: targetSize,
                     child: AuraPadding(
                       child: Center(
                         child: AuraText(
@@ -292,9 +365,13 @@ class const _AuraTabBar({
                       : DesignColors.transparent,
                   borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
                 ),
-                onPressed: onChanged == null ? null : () => onChanged!(index),
+                onPressed: widget.onChanged == null
+                    ? null
+                    : () => widget.onChanged!(index),
                 semanticLabel:
-                    semanticLabels[index] ?? _textSemanticLabel(title) ?? 'Tab',
+                    widget.semanticLabels[index] ??
+                    _textSemanticLabel(title) ??
+                    'Tab',
               ),
               Positioned(
                 left: 0,
@@ -320,9 +397,9 @@ class const _AuraTabBar({
       container: true,
       excludeSemantics: true,
       selected: isSelected,
-      label: semanticLabels[index] ?? _textSemanticLabel(title),
-      enabled: onChanged != null,
-      onTap: onChanged == null ? null : () => onChanged!(index),
+      label: widget.semanticLabels[index] ?? _textSemanticLabel(title),
+      enabled: widget.onChanged != null,
+      onTap: widget.onChanged == null ? null : () => widget.onChanged!(index),
       role: SemanticsRole.tab,
     );
   }

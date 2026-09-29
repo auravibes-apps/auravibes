@@ -324,7 +324,7 @@ void main() {
     final _ = await container.read(groupedToolsProvider('workspace-1').future);
     await grouped.setMcpGroupEnabled(groupId, isEnabled: false);
     await grouped.reconnectMcp('server-1');
-    await grouped.deleteMcpGroup(groupId);
+    expect(await grouped.deleteMcpGroup(groupId), isTrue);
 
     expect(discoveries, 3);
     expect(resources.any((item) => item.resourceId == groupServerId), isFalse);

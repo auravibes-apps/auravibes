@@ -36,6 +36,8 @@ class const ConversationEngineResult({
 class const ConversationCompactionResult({
   required final String summary,
   required final AgentCompactionRangeSelected range,
+  required final String providerId,
+  required final String modelId,
 });
 
 String appendDurableSkillActivations(
@@ -51,6 +53,11 @@ String appendDurableSkillActivations(
   return '$summary\n\n<durable_skill_activations>\n'
       '${unique.join('\n\n')}\n'
       '</durable_skill_activations>';
+}
+
+String _toolResultForContext(ConversationToolCall call) {
+  final result = call.resultJson ?? call.status;
+  return projectToolOutput(result).text;
 }
 
 typedef ConversationProviderTransport =
@@ -365,7 +372,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
           assistantContent: assistant['content'] as String?,
           resultsByCallId: {
             for (final call in batchCalls)
-              call.stableId: call.resultJson ?? call.status,
+              call.stableId: _toolResultForContext(call),
           },
         ).map((message) => Map<String, dynamic>.from(message)),
       );
@@ -393,7 +400,7 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
         ],
         resultsByCallId: {
           for (final call in unbatchedCalls)
-            call.stableId: call.resultJson ?? call.status,
+            call.stableId: _toolResultForContext(call),
         },
       ).map((message) => Map<String, dynamic>.from(message)),
     );
@@ -502,6 +509,7 @@ final class const ServerConversationEngineHost({
     final toolExchanges = <Map<String, dynamic>>[];
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
+      supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
       customize: (modelName, _) => (
         model: modelName,
         extraBody: reasoningRequestBody(
@@ -673,6 +681,21 @@ final class const ServerConversationEngineHost({
       if (iteration >= 20) {
         throw const ConversationEngineConfigurationException('tool_loop_limit');
       }
+      final toolSampling = evaluateCloudToolSampling(
+        codec,
+        tools,
+        policy: config.toolSamplingPolicy,
+        modelSupportsStrict: config.modelSupportsStrictToolSampling,
+      );
+      if (debugA2ui) {
+        for (final decision in toolSampling.decisions) {
+          if (decision.policy == ToolSamplingPolicy.off) continue;
+          session.log(
+            'Tool sampling: ${jsonEncode(decision.toDiagnostic())}',
+          );
+        }
+      }
+      toolSampling.requireStrict();
       providerResponse = await admissionGate
           .run(
             session,
@@ -691,8 +714,7 @@ final class const ServerConversationEngineHost({
               {
                 'model': config.modelId,
                 'messages': requestMessages,
-                if (tools.isNotEmpty)
-                  'tools': tools.map(_providerTool).toList(growable: false),
+                if (tools.isNotEmpty) 'tools': toolSampling.definitions,
                 'stream': true,
                 'stream_options': {'include_usage': true},
               },
@@ -869,7 +891,7 @@ final class const ServerConversationEngineHost({
         toolResults.add({
           'role': 'tool',
           'tool_call_id': request.id,
-          'content': call.resultJson ?? call.status,
+          'content': _toolResultForContext(call),
         });
       }
       toolExchanges
@@ -921,9 +943,26 @@ final class const ServerConversationEngineHost({
     required String conversationStableId,
     required Set<String> a2uiSupportedComponents,
   }) async {
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.stableId.equals(conversationStableId),
+    );
+    final activeCheckpointTranscriptId =
+        conversationPromptCheckpointTranscriptId(
+          messages: messages,
+          activeCheckpointStableId: conversation?.activeCompactionCheckpointId,
+        );
+    final selectedMessageIds = selectAgentPromptHistory(
+      AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+      activeCompactionCheckpointId: activeCheckpointTranscriptId,
+    ).messageIds.toSet();
     final result = <Map<String, dynamic>>[];
     for (final message in messages.where(
-      (message) => message.status != 'queued',
+      (message) =>
+          message.status != 'queued' &&
+          selectedMessageIds.contains('${message.id}'),
     )) {
       final metadata = message.metadataJson == null
           ? const <String, dynamic>{}
@@ -1248,7 +1287,27 @@ final class const ServerConversationEngineHost({
     required List<ConversationMessage> messages,
     Future<void>? leaseLost,
   }) async {
-    final range = selectConversationCompactionRange(messages);
+    final config = await _loadConfig(session, job, messages);
+    final toolCalls = await ConversationToolCall.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.messageId.inSet(
+            messages.map((message) => message.id).whereType<int>().toSet(),
+          ),
+    );
+    final toolCallsByMessageId = <int, List<ConversationToolCall>>{};
+    for (final toolCall in toolCalls) {
+      (toolCallsByMessageId[toolCall.messageId] ??= []).add(toolCall);
+    }
+    final range = selectConversationCompactionRange(
+      messages,
+      toolCallsByMessageId: toolCallsByMessageId,
+      limitContext: config.limitContext,
+      limitOutput: config.limitOutput,
+      reserveTokens: config.reserveTokens,
+      keepRecentTokens: config.keepRecentTokens,
+    );
     if (range is! AgentCompactionRangeSelected) {
       throw const ConversationEngineConfigurationException(
         'compaction_range',
@@ -1258,7 +1317,6 @@ final class const ServerConversationEngineHost({
     final compactable = messages
         .where((message) => compactableIds.contains('${message.id}'))
         .toList();
-    final config = await _loadConfig(session, job, messages);
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       customize: (modelName, _) => (model: modelName, extraBody: const {}),
@@ -1299,6 +1357,8 @@ final class const ServerConversationEngineHost({
         await _durableSkillActivations(session, job.workspaceId, range),
       ),
       range: range,
+      providerId: config.providerId,
+      modelId: config.modelId,
     );
   }
 
@@ -1415,13 +1475,56 @@ final class const ServerConversationEngineHost({
       throw const ConversationCancelledException();
     }
     final uri = providerRequestUri(connection.providerId, validated.uri);
+    final compactionResource = await WorkspaceResource.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.resourceKind.equals(WorkspaceResourceKind.compactionSetting) &
+          table.resourceId.equals('workspace') &
+          table.deletedAt.equals(null),
+    );
+    Map<String, dynamic> compactionSettings = const {};
+    if (compactionResource != null) {
+      try {
+        final decoded = jsonDecode(compactionResource.data);
+        if (decoded is Map<String, dynamic>) compactionSettings = decoded;
+      } on FormatException {
+        // Invalid optional budgets preserve legacy compaction selection.
+      }
+    }
+    final overrides = compactionSettings['modelOverrides'];
+    final modelOverride = overrides is Map
+        ? overrides['${connection.providerId}/${selection.model.modelId}']
+        : null;
+    final override = modelOverride is Map ? modelOverride : const {};
+    int? nonNegativeInt(String key) {
+      final value = override[key];
+      return value is int && value >= 0 ? value : null;
+    }
+
     session.log(
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
+    final providerSupportsStrict =
+        connection.providerId == 'openai' && connection.url == null;
+    final modelSupportsStrict =
+        providerSupportsStrict &&
+        selection.model.supportsToolCalls &&
+        verifiedStrictToolSampling(
+          connection.providerId,
+          selection.model.modelId,
+        );
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
+      providerSupportsStrictToolSampling: providerSupportsStrict,
+      modelSupportsStrictToolSampling: modelSupportsStrict,
+      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
+          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+          : modelSupportsStrict
+          ? ToolSamplingPolicy.prefer
+          : ToolSamplingPolicy.off,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(
@@ -1432,6 +1535,10 @@ final class const ServerConversationEngineHost({
         ),
       ),
       reasoningConfiguration: reasoningConfiguration,
+      limitContext: selection.model.limitContext,
+      limitOutput: selection.model.limitOutput,
+      reserveTokens: nonNegativeInt('reserveTokens'),
+      keepRecentTokens: nonNegativeInt('keepRecentTokens'),
     );
   }
 
@@ -1495,14 +1602,23 @@ String _activationSkillKey(ConversationToolCall call) {
   return call.stableId;
 }
 
-Map<String, Object?> _providerTool(ServerResolvedTool tool) => {
-  'type': 'function',
-  'function': {
-    'name': tool.spec.name,
-    'description': tool.spec.description,
-    'parameters': tool.spec.inputJsonSchema,
-  },
-};
+ToolSamplingResult evaluateCloudToolSampling(
+  ChatCompletionsCodec codec,
+  Iterable<ServerResolvedTool> tools, {
+  required ToolSamplingPolicy policy,
+  required bool modelSupportsStrict,
+}) => codec.evaluateTools(
+  tools: [
+    for (final tool in tools)
+      ToolDefinition(
+        name: tool.spec.name,
+        description: tool.spec.description,
+        inputSchema: tool.spec.inputJsonSchema,
+      ),
+  ],
+  policy: policy,
+  modelSupportsStrict: modelSupportsStrict,
+);
 
 Uri providerRequestUri(String providerId, Uri baseUri) {
   final endpoint = switch (providerId) {
@@ -1602,12 +1718,43 @@ Future<void> _waitForCancellation(Session session, int turnId) async {
 }
 
 AgentCompactionRangeSelection selectConversationCompactionRange(
-  List<ConversationMessage> messages,
-) => selectAgentCompactionRange(
-  AgentContextSnapshot(messages.map(_messageSnapshot).toList()),
+  List<ConversationMessage> messages, {
+  Map<int, List<ConversationToolCall>> toolCallsByMessageId = const {},
+  int? limitContext,
+  int? limitOutput,
+  int? reserveTokens,
+  int? keepRecentTokens,
+}) => selectAgentCompactionRange(
+  AgentContextSnapshot(
+    messages
+        .map(
+          (message) => _messageSnapshot(
+            message,
+            toolCalls: toolCallsByMessageId[message.id] ?? const [],
+          ),
+        )
+        .toList(),
+  ),
+  limitContext: limitContext,
+  limitOutput: limitOutput,
+  reserveTokens: reserveTokens,
+  keepRecentTokens: keepRecentTokens,
 );
+String? conversationPromptCheckpointTranscriptId({
+  required Iterable<ConversationMessage> messages,
+  required String? activeCheckpointStableId,
+}) {
+  if (activeCheckpointStableId == null) return null;
+  for (final message in messages) {
+    if (message.stableId == activeCheckpointStableId) return '${message.id}';
+  }
+  return null;
+}
 
-AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
+AgentTranscriptMessageSnapshot _messageSnapshot(
+  ConversationMessage message, {
+  List<ConversationToolCall> toolCalls = const [],
+}) {
   final metadata = switch (message.metadataJson) {
     final String source => _jsonObject(source),
     null => const <String, dynamic>{},
@@ -1629,7 +1776,27 @@ AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
       _ => AgentTranscriptStatus.error,
     },
     textCharacterCount: message.content.length,
-    toolCalls: const [],
+    toolCalls: [
+      for (final call in toolCalls)
+        AgentTranscriptToolCallSnapshot(
+          id: call.stableId,
+          lifecycle: switch (call.status) {
+            'pending' ||
+            'running' ||
+            'needsConfirmation' ||
+            'approved' ||
+            'granted' ||
+            'awaitingSubAgents' => AgentToolCallLifecycle.pending,
+            'success' => AgentToolCallLifecycle.success,
+            'skippedByUser' => AgentToolCallLifecycle.skippedByUser,
+            'stoppedByUser' ||
+            'cancelled' => AgentToolCallLifecycle.stoppedByUser,
+            _ => AgentToolCallLifecycle.failed,
+          },
+          argumentCharacterCount: call.argumentsJson.length,
+          resultCharacterCount: call.resultJson?.length ?? 0,
+        ),
+    ],
     latestCumulativeTokenCount: null,
     isCompactionSummary: metadata['isCompactionSummary'] == true,
     compactedThroughMessageId: switch (message.compactedThroughMessageId) {
@@ -1657,10 +1824,17 @@ Map<String, dynamic> _jsonObject(String source) {
 class const _ProviderConfig({
   required final String providerId,
   required final String modelId,
+  required final bool providerSupportsStrictToolSampling,
+  required final bool modelSupportsStrictToolSampling,
+  required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,
   required final Map<String, String> headers,
   final ReasoningConfiguration? reasoningConfiguration,
+  final int? limitContext,
+  final int? limitOutput,
+  final int? reserveTokens,
+  final int? keepRecentTokens,
 });
 
 List<ReasoningOption> _reasoningOptions(

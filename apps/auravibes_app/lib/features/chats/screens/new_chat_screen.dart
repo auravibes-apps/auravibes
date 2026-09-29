@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -100,6 +101,7 @@ class const _NewChatActions({
   void onToolsPress() {
     if (workspaceId.isEmpty || !context.mounted) return;
 
+    FocusManager.instance.primaryFocus?.unfocus();
     unawaited(
       showDialog<void>(
         context: context,
@@ -358,6 +360,7 @@ class const _NewChatInput({
           modelCompactControl: _NewChatModelCompactControl(data: data),
           agentCompactControl: _NewChatAgentCompactControl(data: data),
           onDraftStatusChanged: (hasDraft) => data.draftStatus.value = hasDraft,
+          autofocus: true,
           reasoningControl:
               ChatReasoningControls.hasSupportedReasoningOptions(
                 reasoningOptions,
@@ -500,43 +503,53 @@ class const _WorkspaceSelector({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final localSwitchPending = useState(false);
-    final switchPending = this.switchPending ?? localSwitchPending;
-    final switchWorkspace = _workspaceSwitchAction(
+
+    return _WorkspaceSelectorActions(
+      selector: this,
+      switchPending: switchPending ?? localSwitchPending,
+      focusNode: useFocusNode(),
+    );
+  }
+}
+
+class const _WorkspaceSelectorActions({
+  required final _WorkspaceSelector selector,
+  required final ValueNotifier<bool> switchPending,
+  required final FocusNode focusNode,
+}) extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final request = _WorkspaceSwitchRequest(
       context,
       ref,
-      this,
+      selector,
       switchPending,
+      focusNode,
     );
+    final switchWorkspace = _workspaceSwitchAction(request);
 
     return _WorkspaceSelectorState(
       switchPending: switchPending,
-      workspaceId: workspaceId,
+      focusNode: focusNode,
+      workspaceId: selector.workspaceId,
       onChanged: (value) => unawaited(switchWorkspace(value)),
     );
   }
 }
 
 Future<void> Function(String?) _workspaceSwitchAction(
-  BuildContext context,
-  WidgetRef ref,
-  _WorkspaceSelector selector,
-  ValueNotifier<bool> switchPending,
+  _WorkspaceSwitchRequest request,
 ) {
-  final request = (
-    context: context,
-    ref: ref,
-    selector: selector,
-    switchPending: switchPending,
-  );
   Future<void> switchWorkspace(String? targetWorkspaceId) =>
       _switchNewChatWorkspace(request, targetWorkspaceId);
-  _listenForWorkspaceSwitchErrors(request, switchWorkspace);
+  _listenForWorkspaceSwitchErrors(request);
 
   return switchWorkspace;
 }
 
 class const _WorkspaceSelectorState({
   required final ValueNotifier<bool> switchPending,
+  required final FocusNode focusNode,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends HookConsumerWidget {
@@ -550,7 +563,9 @@ class const _WorkspaceSelectorState({
     );
 
     return _WorkspaceSelectorView(
-      isSwitching: switchState.status == .loading || isSwitchPending,
+      switchState: switchState,
+      switchPending: isSwitchPending,
+      focusNode: focusNode,
       workspaces: workspaces,
       workspaceId: workspaceId,
       onChanged: onChanged,
@@ -559,57 +574,151 @@ class const _WorkspaceSelectorState({
 }
 
 class const _WorkspaceSelectorView({
-  required final bool isSwitching,
+  required final WorkspaceSwitchState switchState,
+  required final bool switchPending,
+  required final FocusNode focusNode,
   required final AsyncValue<List<WorkspaceEntity>> workspaces,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
+  bool get _isSwitching => switchState.status == .loading || switchPending;
+
+  String? get _retryTargetWorkspaceId =>
+      switchState.status == .error ? switchState.targetWorkspaceId : null;
+
   @override
   Widget build(BuildContext context) => Semantics(
     key: const ValueKey<String>('workspace_selector'),
     child: SizedBox(
       width: 240,
-      child: isSwitching
-          ? const _WorkspaceSwitchingIndicator()
-          : _WorkspaceSelectorValue(
-              workspaces: workspaces,
-              workspaceId: workspaceId,
-              onChanged: onChanged,
-            ),
+      child: _WorkspaceSelectorControl(
+        isSwitching: _isSwitching,
+        retryTargetWorkspaceId: _retryTargetWorkspaceId,
+        focusNode: focusNode,
+        workspaces: workspaces,
+        workspaceId: workspaceId,
+        onChanged: onChanged,
+      ),
     ),
     identifier: 'workspace_selector',
   );
 }
 
-class const _WorkspaceSwitchingIndicator() extends StatelessWidget {
+class const _WorkspaceSelectorControl({
+  required final bool isSwitching,
+  required final String? retryTargetWorkspaceId,
+  required final FocusNode focusNode,
+  required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => const Row(
+  Widget build(BuildContext context) => isSwitching
+      ? const _WorkspaceSwitchingIndicator()
+      : _WorkspaceSelectorRow(
+          retryTargetWorkspaceId: retryTargetWorkspaceId,
+          focusNode: focusNode,
+          workspaces: workspaces,
+          workspaceId: workspaceId,
+          onChanged: onChanged,
+        );
+}
+
+class const _WorkspaceSelectorRow({
+  required final String? retryTargetWorkspaceId,
+  required final FocusNode focusNode,
+  required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final String workspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
     children: [
-      AuraSpinner(size: .small),
-      SizedBox(width: 8),
-      Flexible(
-        child: TextLocale(LocaleKeys.workspace_management_switch_loading),
+      Expanded(
+        child: _WorkspaceSelectorValue(
+          workspaces: workspaces,
+          focusNode: focusNode,
+          workspaceId: workspaceId,
+          onChanged: onChanged,
+        ),
+      ),
+      _WorkspaceRetryButton(
+        targetWorkspaceId: retryTargetWorkspaceId,
+        onChanged: onChanged,
       ),
     ],
   );
 }
 
-typedef _WorkspaceSwitchRequest = ({
-  BuildContext context,
-  WidgetRef ref,
-  _WorkspaceSelector selector,
-  ValueNotifier<bool> switchPending,
-});
+class const _WorkspaceRetryButton({
+  required final String? targetWorkspaceId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (targetWorkspaceId) {
+    final targetWorkspaceId? => AuraIconButton(
+      icon: Icons.refresh,
+      onPressed: () => onChanged(targetWorkspaceId),
+      key: const ValueKey<String>('workspace_switch_retry'),
+      semanticLabel: LocaleKeys.workspace_management_switch_retry.tr(),
+      tooltip: LocaleKeys.workspace_management_switch_retry.tr(),
+    ),
+    null => const SizedBox.shrink(),
+  };
+}
+
+class const _WorkspaceSwitchingIndicator() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: const Row(
+      children: [
+        AuraSpinner(size: .small),
+        SizedBox(width: 8),
+        Flexible(
+          child: TextLocale(LocaleKeys.workspace_management_switch_loading),
+        ),
+      ],
+    ),
+    container: true,
+    excludeSemantics: true,
+    label: LocaleKeys.workspace_management_switch_loading.tr(),
+    role: .status,
+  );
+}
+
+class const _WorkspaceSwitchRequest(
+  final BuildContext context,
+  final WidgetRef ref,
+  final _WorkspaceSelector selector,
+  final ValueNotifier<bool> switchPending,
+  final FocusNode selectorFocusNode,
+);
 
 Future<void> _switchNewChatWorkspace(
   _WorkspaceSwitchRequest request,
   String? targetWorkspaceId,
 ) async {
-  if (targetWorkspaceId == null ||
-      targetWorkspaceId == request.selector.workspaceId) {
+  final switchTargetId = _workspaceSwitchTarget(request, targetWorkspaceId);
+  if (switchTargetId == null) return;
+  if (!await _confirmWorkspaceSwitch(request)) {
+    _restoreWorkspaceSelectorFocus(request);
+
     return;
   }
-  if (!await _confirmWorkspaceSwitch(request)) return;
+  _startWorkspaceSwitch(request, switchTargetId);
+}
+
+String? _workspaceSwitchTarget(
+  _WorkspaceSwitchRequest request,
+  String? targetWorkspaceId,
+) => targetWorkspaceId == request.selector.workspaceId
+    ? null
+    : targetWorkspaceId;
+
+void _startWorkspaceSwitch(
+  _WorkspaceSwitchRequest request,
+  String targetWorkspaceId,
+) {
   FocusManager.instance.primaryFocus?.unfocus();
   request.switchPending.value = true;
   request.ref.read(workspaceSwitcherProvider.notifier)
@@ -645,13 +754,10 @@ Future<bool> _confirmNewChatWorkspaceDiscard(BuildContext context) async {
   return shouldDiscard == true;
 }
 
-void _listenForWorkspaceSwitchErrors(
-  _WorkspaceSwitchRequest request,
-  Future<void> Function(String?) switchWorkspace,
-) {
+void _listenForWorkspaceSwitchErrors(_WorkspaceSwitchRequest request) {
   request.ref.listen(workspaceSwitcherProvider, (previous, next) {
     _clearSwitchPendingAfterCompletion(previous, next, request.switchPending);
-    _showWorkspaceSwitchErrorForState(request, next, switchWorkspace);
+    _showWorkspaceSwitchErrorForState(request, next);
   });
 }
 
@@ -667,40 +773,35 @@ void _clearSwitchPendingAfterCompletion(
 void _showWorkspaceSwitchErrorForState(
   _WorkspaceSwitchRequest request,
   WorkspaceSwitchState next,
-  Future<void> Function(String?) switchWorkspace,
 ) {
   if (next case WorkspaceSwitchState(
     status: .error,
     errorLocalizationKey: final String errorKey,
-    targetWorkspaceId: final String targetWorkspaceId,
   )) {
     request.switchPending.value = false;
-    _showWorkspaceSwitchError(
-      request.context,
-      errorKey,
-      targetWorkspaceId,
-      switchWorkspace,
-    );
+    _restoreWorkspaceSelectorFocus(request);
+    _showWorkspaceSwitchError(request.context, errorKey);
   }
 }
 
-void _showWorkspaceSwitchError(
-  BuildContext context,
-  String errorKey,
-  String targetWorkspaceId,
-  Future<void> Function(String?) switchWorkspace,
-) {
+void _restoreWorkspaceSelectorFocus(_WorkspaceSwitchRequest request) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!request.context.mounted) return;
+    request.selectorFocusNode.requestFocus();
+  });
+}
+
+void _showWorkspaceSwitchError(BuildContext context, String errorKey) {
   final _ = AuraSnackBars.show(
     context: context,
     content: TextLocale(errorKey),
     variant: .error,
-    actionLabel: LocaleKeys.workspace_management_switch_retry.tr(),
-    onAction: () => unawaited(switchWorkspace(targetWorkspaceId)),
   );
 }
 
 class const _WorkspaceSelectorValue({
   required final AsyncValue<List<WorkspaceEntity>> workspaces,
+  required final FocusNode focusNode,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
@@ -708,6 +809,7 @@ class const _WorkspaceSelectorValue({
   Widget build(BuildContext context) => switch (workspaces) {
     AsyncData(:final value) => _WorkspaceOptions(
       workspaces: value,
+      focusNode: focusNode,
       workspaceId: workspaceId,
       onChanged: onChanged,
     ),
@@ -737,6 +839,7 @@ class const _WorkspaceSelectorError({required final String workspaceId})
 
 class const _WorkspaceOptions({
   required final List<WorkspaceEntity> workspaces,
+  required final FocusNode focusNode,
   required final String workspaceId,
   required final ValueChanged<String?> onChanged,
 }) extends StatelessWidget {
@@ -749,6 +852,7 @@ class const _WorkspaceOptions({
     key: const Key('new_chat_workspace_selector'),
     value: workspaceId,
     onChanged: onChanged,
+    focusNode: focusNode,
     semanticLabel: LocaleKeys.workspace_management_title.tr(),
   );
 }
@@ -777,6 +881,7 @@ class const _NoModelProviderPromptScroll({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
+    padding: EdgeInsets.only(bottom: BottomPadding.of(context)),
     child: ConstrainedBox(
       constraints: .new(minHeight: minHeight),
       child: _NoModelProviderPromptCenter(workspaceId: workspaceId),

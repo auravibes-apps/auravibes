@@ -276,8 +276,11 @@ void main() {
       tool: ResolvedTool.mcp(
         tableId: 'tool-1',
         toolIdentifier: 'remote-tool',
-        mcpServerId: 'server-1',
-        mcpSlug: 'server-1',
+        mcp: (
+          mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
+          outputSchemaJson: null,
+        ),
       ),
       arguments: {'value': 1},
     );
@@ -293,8 +296,11 @@ void main() {
         tool: ResolvedTool.mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
-          mcpServerId: 'server-1',
-          mcpSlug: 'server-1',
+          mcp: (
+            mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
+            outputSchemaJson: null,
+          ),
         ),
         arguments: const {},
       ),
@@ -309,8 +315,7 @@ void main() {
         tool: ResolvedTool.mcp(
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
-          mcpServerId: '',
-          mcpSlug: 'server-1',
+          mcp: (mcpServerId: '', mcpSlug: 'server-1', outputSchemaJson: null),
         ),
         arguments: {'value': 1},
       ),
@@ -1036,7 +1041,12 @@ void main() {
       buildAppSkillNativeToolSpecsUsecase: specs,
       runSkillsManagerToolUsecase: (_) => nativeTool,
       onSkillsManagerToolSuccess:
-          ({required workspaceId, required toolSlug, required result}) {
+          ({
+            required conversationId,
+            required workspaceId,
+            required toolSlug,
+            required result,
+          }) {
             nativeSuccesses.add((workspaceId: workspaceId, toolSlug: toolSlug));
           },
     );

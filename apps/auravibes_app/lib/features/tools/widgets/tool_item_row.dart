@@ -7,13 +7,21 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _kToolItemIconSize = 36.0;
+
+typedef ToolItemSelection = ({
+  bool isSelected,
+  bool isWorking,
+  ValueChanged<bool> onChanged,
+});
 
 /// A simplified tool row widget for display inside tool groups.
 ///
@@ -27,8 +35,29 @@ class const ToolItemRow({
   /// Whether to show the delete button.
   /// Should be false for MCP tools (they can't be individually deleted).
   final bool showDeleteButton = true,
+  final bool isSelected = false,
+  final bool isSelectionEnabled = false,
+  final bool isWorking = false,
+  final ValueChanged<bool>? onSelectionChanged,
   super.key,
 }) extends HookConsumerWidget {
+  new selectable({
+    required WorkspaceToolEntity tool,
+    required String workspaceId,
+    required ToolItemSelection selection,
+    bool showDeleteButton = true,
+    Key? key,
+  }) : this(
+         tool: tool,
+         workspaceId: workspaceId,
+         showDeleteButton: showDeleteButton,
+         isSelected: selection.isSelected,
+         isSelectionEnabled: true,
+         isWorking: selection.isWorking,
+         onSelectionChanged: selection.onChanged,
+         key: key,
+       );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
@@ -37,6 +66,10 @@ class const ToolItemRow({
       tool: tool,
       workspaceId: workspaceId,
       showDeleteButton: showDeleteButton,
+      isSelected: isSelected,
+      isSelectionEnabled: isSelectionEnabled,
+      isWorking: isWorking,
+      onSelectionChanged: onSelectionChanged,
       isExpanded: isExpanded.value,
       onEnabledChanged: _enabledChanged(ref),
       onToggleExpanded: _toggleExpanded(isExpanded),
@@ -60,6 +93,10 @@ class const _ToolItemBody({
   required final WorkspaceToolEntity tool,
   required final String workspaceId,
   required final bool showDeleteButton,
+  required final bool isSelected,
+  required final bool isSelectionEnabled,
+  required final bool isWorking,
+  required final ValueChanged<bool>? onSelectionChanged,
   required final bool isExpanded,
   required final ValueChanged<bool> onEnabledChanged,
   required final VoidCallback onToggleExpanded,
@@ -67,48 +104,38 @@ class const _ToolItemBody({
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
-      child: _ToolItemColumn(
-        tool: tool,
-        workspaceId: workspaceId,
-        showDeleteButton: showDeleteButton,
-        isExpanded: isExpanded,
-        onEnabledChanged: onEnabledChanged,
-        onToggleExpanded: onToggleExpanded,
-      ),
+      child: _ToolItemColumn(body: this),
       padding: const .symmetric(vertical: .xs),
     );
   }
 }
 
-class const _ToolItemColumn({
-  required final WorkspaceToolEntity tool,
-  required final String workspaceId,
-  required final bool showDeleteButton,
-  required final bool isExpanded,
-  required final ValueChanged<bool> onEnabledChanged,
-  required final VoidCallback onToggleExpanded,
-}) extends StatelessWidget {
+class const _ToolItemColumn({required final _ToolItemBody body})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        _ToolItemHeader(
-          tool: tool,
-          isEnabled: tool.isEnabled,
-          isExpanded: isExpanded,
-          onEnabledChanged: onEnabledChanged,
-          onToggleExpanded: onToggleExpanded,
-        ),
-        if (isExpanded)
-          _ExpandedToolOptions(
-            tool: tool,
-            workspaceId: workspaceId,
-            isEnabled: tool.isEnabled,
-            permissionMode: tool.permissionMode,
-            showDeleteButton: showDeleteButton,
-          ),
+        _ToolItemHeader(body: body),
+        _OptionalExpandedToolOptions(body: body),
       ],
       crossAxisAlignment: .start,
+    );
+  }
+}
+
+class const _OptionalExpandedToolOptions({required final _ToolItemBody body})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!body.isExpanded || body.isWorking) return const SizedBox.shrink();
+
+    return _ExpandedToolOptions(
+      tool: body.tool,
+      workspaceId: body.workspaceId,
+      isEnabled: body.tool.isEnabled,
+      permissionMode: body.tool.permissionMode,
+      showDeleteButton: body.showDeleteButton,
     );
   }
 }
@@ -189,30 +216,43 @@ class const _ToolOptions({
   }
 }
 
-class const _ToolItemHeader({
-  required final WorkspaceToolEntity tool,
-  required final bool isEnabled,
-  required final bool isExpanded,
-  required final ValueChanged<bool> onEnabledChanged,
-  required final VoidCallback onToggleExpanded,
-}) extends StatelessWidget {
+class const _ToolItemHeader({required final _ToolItemBody body})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
       children: [
-        _ToolItemIcon(tool: tool, isEnabled: isEnabled),
+        _OptionalToolSelection(body: body),
+        _ToolItemIcon(tool: body.tool, isEnabled: body.tool.isEnabled),
         const AuraSizedBox(width: .sm),
-        Expanded(child: _ToolItemDescription(tool: tool)),
-        _ToolItemActions(
-          isEnabled: isEnabled,
-          isExpanded: isExpanded,
-          onEnabledChanged: onEnabledChanged,
-          onToggleExpanded: onToggleExpanded,
-        ),
+        Expanded(child: _ToolItemDescription(tool: body.tool)),
+        _ToolItemActions(body: body),
       ],
     );
   }
 }
+
+class const _OptionalToolSelection({required final _ToolItemBody body})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!body.isSelectionEnabled) return const SizedBox.shrink();
+
+    return AuraCheckbox(
+      value: body.isSelected,
+      onChanged: body.isWorking ? null : body.onSelectionChanged,
+      key: ValueKey('tool-selection-${body.tool.id}'),
+      disabled: body.isWorking,
+      semanticLabel: _toolSelectionLabel(body.tool, body.isSelected),
+    );
+  }
+}
+
+String _toolSelectionLabel(WorkspaceToolEntity tool, bool isSelected) =>
+    (isSelected
+            ? LocaleKeys.tools_screen_deselect_tool
+            : LocaleKeys.tools_screen_select_tool)
+        .tr(args: [tool.toolId.toHumanReadable()]);
 
 class const _ToolItemIcon({
   required final WorkspaceToolEntity tool,
@@ -283,18 +323,22 @@ class const _ToolDescriptionText({required final WorkspaceToolEntity tool})
   }
 }
 
-class const _ToolItemActions({
-  required final bool isEnabled,
-  required final bool isExpanded,
-  required final ValueChanged<bool> onEnabledChanged,
-  required final VoidCallback onToggleExpanded,
-}) extends StatelessWidget {
+class const _ToolItemActions({required final _ToolItemBody body})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
       children: [
-        AuraSwitch(value: isEnabled, onChanged: onEnabledChanged, size: .sm),
-        _ToolExpandButton(isExpanded: isExpanded, onPressed: onToggleExpanded),
+        AuraSwitch(
+          value: body.tool.isEnabled,
+          onChanged: body.isWorking ? null : body.onEnabledChanged,
+          size: .sm,
+          disabled: body.isWorking,
+        ),
+        _ToolExpandButton(
+          isExpanded: body.isExpanded,
+          onPressed: body.onToggleExpanded,
+        ),
       ],
     );
   }

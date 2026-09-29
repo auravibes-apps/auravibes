@@ -20,6 +20,7 @@ class AuraPressable extends StatefulWidget {
     this.interaction = AuraPressableInteraction.action,
     this.clipBehavior = Clip.hardEdge,
     this.padding,
+    this.identifier,
     this.semanticLabel,
     this.isButtonSemantics = false,
   });
@@ -54,6 +55,9 @@ class AuraPressable extends StatefulWidget {
   /// Optional padding to apply around the pressable widget.
   final AuraEdgeInsetsGeometry? padding;
 
+  /// An optional stable identifier for UI automation.
+  final String? identifier;
+
   /// A semantic label announced by assistive technologies.
   final String? semanticLabel;
 
@@ -83,6 +87,7 @@ class AuraPressableState extends State<AuraPressable> {
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
+    final minimumTargetSize = auraTheme.interactionSizes.minimumTargetSize;
     final auraColors = context.auraColors;
     final policy = AuraInteractionScope.of(context);
     final isAllowed = switch (widget.interaction) {
@@ -92,30 +97,50 @@ class AuraPressableState extends State<AuraPressable> {
     final onPressed = isAllowed ? widget.onPressed : null;
     final onLongPress = isAllowed ? widget.onLongPress : null;
     if (onPressed == null) {
-      return _buildDisabled(policy);
+      return _buildDisabled(policy, minimumTargetSize);
     }
 
     final alpha = _stateLayerAlpha(_pressDown, _hovering || _focused);
-    return _buildEnabled(auraTheme, auraColors, alpha, onPressed, onLongPress);
+    return _buildEnabled(
+      auraTheme,
+      auraColors,
+      alpha,
+      onPressed,
+      onLongPress,
+      minimumTargetSize,
+    );
   }
 
-  Widget _buildDisabled(AuraInteractionPolicy policy) {
-    final content = Container(
-      decoration: widget.decoration,
-      child: widget.child,
-      clipBehavior: _clipBehavior,
+  Widget _buildDisabled(
+    AuraInteractionPolicy policy,
+    double minimumTargetSize,
+  ) {
+    final identifier = widget.identifier;
+    final content = ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: minimumTargetSize,
+        minHeight: minimumTargetSize,
+      ),
+      child: Container(
+        decoration: widget.decoration,
+        child: widget.child,
+        clipBehavior: _clipBehavior,
+      ),
     );
 
     if (!widget.isButtonSemantics &&
         policy.mode == AuraInteractionMode.interactive &&
-        widget.semanticLabel == null) {
+        widget.semanticLabel == null &&
+        identifier == null) {
       return content;
     }
 
     return Semantics(
+      key: identifier == null ? null : ValueKey<String>(identifier),
       label: widget.semanticLabel,
       button: widget.isButtonSemantics || widget.semanticLabel != null,
       enabled: false,
+      identifier: identifier,
       child: content,
     );
   }
@@ -126,8 +151,12 @@ class AuraPressableState extends State<AuraPressable> {
     double alpha,
     void Function() onPressed,
     void Function()? onLongPress,
+    double minimumTargetSize,
   ) {
+    final identifier = widget.identifier;
+
     return Semantics(
+      key: identifier == null ? null : ValueKey<String>(identifier),
       child: FocusableActionDetector(
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
@@ -151,7 +180,10 @@ class AuraPressableState extends State<AuraPressable> {
               : null,
           child: GestureDetector(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: BoxConstraints(
+                minWidth: minimumTargetSize,
+                minHeight: minimumTargetSize,
+              ),
               child: AuraPadding(
                 child: Container(
                   decoration: widget.decoration,
@@ -180,6 +212,7 @@ class AuraPressableState extends State<AuraPressable> {
       ),
       enabled: true,
       button: true,
+      identifier: identifier,
       label: widget.semanticLabel,
       onTap: onPressed,
     );

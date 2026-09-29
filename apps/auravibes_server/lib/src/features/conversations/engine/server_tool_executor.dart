@@ -1301,6 +1301,7 @@ class const ServerToolExecutorService({
           },
       ],
       'nextCursor': page.nextCursor,
+      'hint': generalSubAgentHint,
     };
   }
 

@@ -44,6 +44,7 @@ void main() {
     required DateTime createdAt,
     required bool isUser,
     required MessageTableStatus status,
+    MessagesTableType messageType = .text,
     String? metadata,
   }) => database.messageDao.insertMessage(
     .new(
@@ -52,7 +53,7 @@ void main() {
       updatedAt: .new(createdAt),
       conversationId: const .new('source'),
       content: .new(id),
-      messageType: const .new(.text),
+      messageType: .new(messageType),
       isUser: .new(isUser),
       status: .new(status),
       metadata: .new(metadata),
@@ -79,6 +80,36 @@ void main() {
     final fork = await repository.forkConversation('source');
 
     expect(fork.reasoningConfiguration?.encode(), configuration.encode());
+  });
+
+  test('fork preserves selected conversation skills', () async {
+    await insertSource();
+    final now = DateTime.utc(2026);
+    final _ = await insertMessage(
+      id: 'user-1',
+      createdAt: now,
+      isUser: true,
+      status: .sent,
+    );
+    final _ = await insertMessage(
+      id: 'assistant-1',
+      createdAt: now.add(const Duration(seconds: 1)),
+      isUser: false,
+      status: .sent,
+    );
+    final _ = await database.conversationSkillsDao.setAppSkillLoaded(
+      'source',
+      'research',
+      isLoaded: true,
+    );
+
+    final fork = await repository.forkConversation('source');
+    final selected = await database.conversationSkillsDao.getConversationSkills(
+      fork.id,
+    );
+
+    expect(selected.single.appSkillIdentifier, 'research');
+    expect(selected.single.isLoaded, isTrue);
   });
 
   test('sidebar fork stops before an active approval turn', () async {
@@ -207,9 +238,23 @@ void main() {
     final base = DateTime.utc(2026);
     final _ = await insertMessage(
       id: 'user-1',
-      createdAt: base.subtract(const Duration(seconds: 1)),
+      createdAt: base.subtract(const Duration(seconds: 2)),
       isUser: true,
       status: .sent,
+    );
+    final activeCheckpoint = await insertMessage(
+      id: 'summary-1',
+      createdAt: base.subtract(const Duration(seconds: 1)),
+      isUser: false,
+      status: .sent,
+      messageType: .system,
+      metadata: jsonEncode(
+        const MessageMetadataEntity(isCompactionSummary: true).toJson(),
+      ),
+    );
+    final _ = await database.conversationDao.patchConversation(
+      'source',
+      .new(activeCompactionCheckpointId: .new(activeCheckpoint.id)),
     );
     final completedAssistant = await insertMessage(
       id: 'assistant-1',
@@ -225,6 +270,7 @@ void main() {
     );
 
     final firstFork = await repository.forkConversation('source');
+    expect(firstFork.activeCompactionCheckpointId, activeCheckpoint.id);
     final messageRepository = MessageRepository(database);
     final _ = await messageRepository.createMessage(
       .new(
@@ -262,7 +308,12 @@ void main() {
     );
 
     expect(secondFork.forkThroughMessageId, completedAssistant.id);
-    expect(messages.map((message) => message.id), ['user-1', 'assistant-1']);
+    expect(messages.map((message) => message.id), [
+      'user-1',
+      'summary-1',
+      'assistant-1',
+    ]);
+    expect(secondFork.activeCompactionCheckpointId, activeCheckpoint.id);
   });
 
   test('no completed response before an active turn is rejected', () async {

@@ -1,8 +1,10 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
+import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -34,17 +36,28 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
+            overrides: [
+              themeProvider.overrideWith(_MockThemeNotifier.new),
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
           ),
         );
       });
       final _ = await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
+      expect(find.byType(AppVersionIndicator), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('app_drawer_menu')),
@@ -87,14 +100,19 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               compactionSettingsProvider('test-ws').overrideWith(
                 (ref) => Stream.value(CompactionSettings.defaults),
               ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
             ],
           ),
         );
@@ -123,11 +141,21 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
-            child: Theme(
-              data: .new(extensions: [AuraTheme.light]),
-              child: const SettingsScreen(workspaceId: 'test-ws'),
+            child: AuraThemeScope(
+              theme: .light,
+              child: Theme(
+                data: .new(),
+                child: const SettingsScreen(workspaceId: 'test-ws'),
+              ),
             ),
-            overrides: [themeProvider.overrideWith(_MockThemeNotifier.new)],
+            overrides: [
+              themeProvider.overrideWith(_MockThemeNotifier.new),
+              compactionSettingsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(CompactionSettings.defaults),
+              ),
+              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+                  .overrideWith((ref) => Stream.value(const [])),
+            ],
           ),
         );
       });
@@ -149,6 +177,8 @@ void main() {
         overrides: [
           compactionSettingsProvider('test-ws')
               .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
+          listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
+              .overrideWith((ref) => Stream.value(const [])),
         ],
       );
       addTearDown(container.dispose);
@@ -194,18 +224,21 @@ class const _ThemeModeTestApp() extends ConsumerWidget {
     final themeMode =
         ref.watch(themeProvider).asData?.value.themeMode ?? ThemeMode.system;
 
-    return MaterialApp(
-      home: Navigator(
-        onGenerateRoute: (_) => MaterialPageRoute<void>(
-          builder: (_) => const SettingsScreen(workspaceId: 'test-ws'),
+    return AuraThemeScope(
+      theme: .dark,
+      child: MaterialApp(
+        home: Navigator(
+          onGenerateRoute: (_) => MaterialPageRoute<void>(
+            builder: (_) => const SettingsScreen(workspaceId: 'test-ws'),
+          ),
         ),
+        theme: .new(),
+        darkTheme: .new(),
+        themeMode: themeMode,
+        locale: context.locale,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
       ),
-      theme: .new(extensions: [AuraTheme.light]),
-      darkTheme: .new(extensions: [AuraTheme.dark]),
-      themeMode: themeMode,
-      locale: context.locale,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
     );
   }
 }

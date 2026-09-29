@@ -6,6 +6,8 @@
 import 'dart:convert';
 
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
+import 'package:auravibes_engine/src/model_capabilities.dart';
+import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:genkit/plugin.dart';
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
@@ -23,6 +25,106 @@ class const ChatCompletionsModelDefinition({
   required final String name,
   final ModelInfo? info,
 });
+
+enum ToolSamplingPolicy {
+  /// Sends ordinary tool schemas without strict sampling fields.
+  off,
+
+  /// Uses strict sampling when both capabilities and schema allow it.
+  prefer,
+
+  /// Requires strict sampling or rejects the request before transport.
+  require;
+
+  static ToolSamplingPolicy fromJson(Object? value) {
+    if (value == null) return off;
+    if (value case final String name) {
+      for (final policy in values) {
+        if (policy.name == name) return policy;
+      }
+    }
+
+    throw const FormatException(
+      'Tool sampling policy must be "off", "prefer", or "require".',
+    );
+  }
+}
+
+/// Why a required strict tool-sampling request was rejected.
+enum ToolSamplingValidationReason {
+  policyOff,
+  unsupportedProvider,
+  unsupportedModel,
+  incompatibleSchema,
+}
+
+enum ToolSamplingOutcome { strict, ordinary }
+
+/// Pre-transport result; contains schema locations, never argument values.
+class const ToolSamplingDecision({
+  required final ToolSamplingPolicy policy,
+  required final ToolSamplingOutcome outcome,
+  required final String toolName,
+  final ToolSamplingValidationReason? reason,
+  final String? schemaPath,
+  final ToolSchemaIssueReason? schemaReason,
+  final String? detail,
+}) {
+  Map<String, String?> toDiagnostic() => {
+    'policy': policy.name,
+    'outcome': outcome.name,
+    'toolName': toolName,
+    'reason': reason?.name,
+    'schemaPath': schemaPath,
+    'schemaReason': schemaReason?.name,
+  };
+}
+
+class const ToolSamplingResult({
+  required final List<Map<String, dynamic>>? definitions,
+  required final List<ToolSamplingDecision> decisions,
+}) {
+  void requireStrict() {
+    for (final decision in decisions) {
+      if (decision.policy != ToolSamplingPolicy.require ||
+          decision.outcome == ToolSamplingOutcome.strict) {
+        continue;
+      }
+      throw ToolSamplingValidationException(
+        reason: decision.reason!,
+        detail: decision.detail!,
+        toolName: decision.reason == .incompatibleSchema
+            ? decision.toolName
+            : null,
+        schemaPath: decision.schemaPath,
+        schemaReason: decision.schemaReason,
+      );
+    }
+  }
+}
+
+/// A pre-transport strict tool-sampling validation failure.
+final class ToolSamplingValidationException implements Exception {
+  const new({
+    required this.reason,
+    required this.detail,
+    this.toolName,
+    this.schemaPath,
+    this.schemaReason,
+  });
+
+  final ToolSamplingValidationReason reason;
+  final String detail;
+  final String? toolName;
+  final String? schemaPath;
+  final ToolSchemaIssueReason? schemaReason;
+
+  @override
+  String toString() {
+    final tool = toolName == null ? '' : ' for tool "$toolName"';
+    return 'Tool sampling validation failed$tool: $detail';
+  }
+}
 
 mixin ChatCompletionsSamplingOptions {
   double? get temperature;
@@ -56,6 +158,9 @@ class const ChatCompletionsCodec({
     Map<String, dynamic>? config,
   )
   customize,
+
+  /// Whether this provider accepts OpenAI-compatible strict tool definitions.
+  final bool supportsStrictToolSampling = false,
 }) {
   Future<ModelResponse> complete(
     ProviderTransport transport,
@@ -140,18 +245,46 @@ class const ChatCompletionsCodec({
     required String modelName,
     required ModelRequest request,
     required bool stream,
+    ModelCapabilities? modelCapabilities,
+    bool modelSupportsStrictToolSampling = false,
+    ToolSamplingPolicy defaultPolicy = ToolSamplingPolicy.off,
+    void Function(List<ToolSamplingDecision>)? onToolSamplingDecision,
   }) {
     final custom = customize(modelName, request.config);
+    final sampling = evaluateTools(
+      tools: request.tools,
+      policy: ToolSamplingPolicy.fromJson(
+        request.config?.containsKey('toolSamplingPolicy') == true
+            ? request.config!['toolSamplingPolicy']
+            : defaultPolicy.name,
+      ),
+      modelSupportsStrict:
+          modelCapabilities?.supportsStrictToolSampling ??
+          modelSupportsStrictToolSampling,
+    );
+    onToolSamplingDecision?.call(sampling.decisions);
+    sampling.requireStrict();
 
     return {
       'model': custom.model,
       'messages': request.messages.expand(_messageToJson).toList(),
       'stream': stream,
       if (stream) 'stream_options': {'include_usage': true},
-      'tools': ?request.tools?.map(_toolToJson).toList(),
+      'tools': ?sampling.definitions,
       ...custom.extraBody,
     };
   }
+
+  ToolSamplingResult evaluateTools({
+    required List<ToolDefinition>? tools,
+    required ToolSamplingPolicy policy,
+    required bool modelSupportsStrict,
+  }) => _evaluateTools(
+    tools,
+    policy: policy,
+    providerSupportsStrict: supportsStrictToolSampling,
+    modelSupportsStrict: modelSupportsStrict,
+  );
 
   void _throwIfRawError(int statusCode, String responseBody) {
     if (statusCode >= 200 && statusCode < 300) return;
@@ -363,18 +496,72 @@ List<Map<String, dynamic>>? _toolCallsToJson(List<Part> parts) {
   return toolCalls.isEmpty ? null : toolCalls;
 }
 
-Map<String, dynamic> _toolToJson(ToolDefinition tool) {
+ToolSamplingResult _evaluateTools(
+  List<ToolDefinition>? tools, {
+  required ToolSamplingPolicy policy,
+  required bool providerSupportsStrict,
+  required bool modelSupportsStrict,
+}) {
+  if (tools == null) {
+    return const ToolSamplingResult(definitions: null, decisions: []);
+  }
+  final definitions = <Map<String, dynamic>>[];
+  final decisions = <ToolSamplingDecision>[];
+  for (final tool in tools) {
+    final reason = policy == .off
+        ? ToolSamplingValidationReason.policyOff
+        : !providerSupportsStrict
+        ? ToolSamplingValidationReason.unsupportedProvider
+        : !modelSupportsStrict
+        ? ToolSamplingValidationReason.unsupportedModel
+        : null;
+    final issue = reason == null
+        ? strictToolSchemaIssue(tool.inputSchema)
+        : null;
+    final strict = reason == null && issue == null;
+    final fallback =
+        reason ??
+        (issue == null
+            ? null
+            : ToolSamplingValidationReason.incompatibleSchema);
+    definitions.add(_toolToJson(tool, strict: strict));
+    decisions.add(
+      ToolSamplingDecision(
+        policy: policy,
+        outcome: strict ? .strict : .ordinary,
+        toolName: tool.name,
+        reason: fallback,
+        schemaPath: issue?.path,
+        schemaReason: issue?.reason,
+        detail: switch (fallback) {
+          .policyOff => 'Strict tool sampling is disabled.',
+          .unsupportedProvider =>
+            'The selected provider does not support strict tool sampling.',
+          .unsupportedModel =>
+            'The selected model does not support strict tool sampling.',
+          .incompatibleSchema => '${issue!.path} ${issue.detail}.',
+          null => null,
+        },
+      ),
+    );
+  }
+  return ToolSamplingResult(definitions: definitions, decisions: decisions);
+}
+
+Map<String, dynamic> _toolToJson(ToolDefinition tool, {bool strict = false}) {
+  var parameters =
+      tool.inputSchema ??
+      <String, dynamic>{'type': 'object', 'properties': <String, dynamic>{}};
+  if (strict && parameters.containsKey(r'$schema')) {
+    parameters = Map<String, dynamic>.from(parameters)..remove(r'$schema');
+  }
   return {
     'type': 'function',
     'function': {
       'name': tool.name,
       'description': tool.description,
-      'parameters':
-          tool.inputSchema ??
-          <String, dynamic>{
-            'type': 'object',
-            'properties': <String, dynamic>{},
-          },
+      'parameters': parameters,
+      if (strict) 'strict': true,
     },
   };
 }

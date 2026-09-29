@@ -135,8 +135,13 @@ class MarionetteDevelopmentState({
 
   @override
   Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
-    required String childId,
+    String? childId,
   }) async {
+    if (childId == null) {
+      final childIds = await subAgentSmokeFixture.stopParent();
+
+      return {'parentConversationId': demoConversationId, 'childIds': childIds};
+    }
     await subAgentSmokeFixture.finish(childId: childId);
 
     return {'childId': childId};
@@ -487,9 +492,7 @@ abstract interface class MarionetteExtensionActions {
 
   Future<Map<String, dynamic>> startSubAgentSmokeFixture({required int count});
 
-  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
-    required String childId,
-  });
+  Future<Map<String, dynamic>> finishSubAgentSmokeFixture({String? childId});
 
   Future<Map<String, dynamic>> clearDevelopmentState();
 

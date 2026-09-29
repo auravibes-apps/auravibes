@@ -1,7 +1,7 @@
 import 'package:auravibes_ui/src/molecules/aura_snack_bar_variant.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraSnackBarVariant', () {
@@ -20,23 +20,26 @@ void main() {
   group('showAuraSnackBar', () {
     testWidgets('displays snackbar with custom implementation', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Test message'),
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Test message'),
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -54,24 +57,27 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Timed message'),
-                      duration: const Duration(milliseconds: 1500),
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Timed message'),
+                        duration: const Duration(milliseconds: 1500),
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -87,24 +93,27 @@ void main() {
 
     testWidgets('displays snackbar with success variant', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Success!'),
-                      variant: .success,
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Success!'),
+                        variant: .success,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -118,24 +127,27 @@ void main() {
 
     testWidgets('displays snackbar with error variant', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Error!'),
-                      variant: .error,
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Error!'),
+                        variant: .error,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -148,24 +160,27 @@ void main() {
 
     testWidgets('displays snackbar with warning variant', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Warning!'),
-                      variant: .warning,
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Warning!'),
+                        variant: .warning,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -178,24 +193,27 @@ void main() {
 
     testWidgets('displays snackbar with info variant', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Info!'),
-                      variant: .info,
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Info!'),
+                        variant: .info,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -211,29 +229,31 @@ void main() {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
+      var actionCount = 0;
 
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('With action'),
-                      actionLabel: 'UNDO',
-                      onAction: () {
-                        final _ = Object();
-                      },
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('With action'),
+                        actionLabel: 'UNDO',
+                        onAction: () => actionCount++,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -243,12 +263,21 @@ void main() {
 
       expect(find.text('UNDO'), findsOneWidget);
 
-      // Tap action button - use ensureVisible first.
+      // Tap the action's blank target padding, not the label itself.
       await tester.ensureVisible(find.text('UNDO'));
       await tester.pump();
-      await tester.tap(find.text('UNDO'));
+      final actionTarget = find
+          .ancestor(
+            of: find.text('UNDO'),
+            matching: find.byType(GestureDetector),
+          )
+          .first;
+      final actionRect = tester.getRect(actionTarget);
+      expect(actionRect.height, greaterThanOrEqualTo(48));
+      await tester.tapAt(.new(actionRect.center.dx, actionRect.bottom - 2));
       await tester.pump();
 
+      expect(actionCount, 1);
       expect(find.byType(SnackBar), findsNothing);
     });
 
@@ -256,40 +285,43 @@ void main() {
       final controllers = <AuraSnackBarController>[];
 
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        controllers.add(
-                          AuraSnackBars.show(
-                            context: context,
-                            content: const Text('First message'),
-                          ),
-                        );
-                      },
-                      child: const Text('Show first'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        controllers.add(
-                          AuraSnackBars.show(
-                            context: context,
-                            content: const Text('Second message'),
-                          ),
-                        );
-                      },
-                      child: const Text('Show second'),
-                    ),
-                  ],
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          controllers.add(
+                            AuraSnackBars.show(
+                              context: context,
+                              content: const Text('First message'),
+                            ),
+                          );
+                        },
+                        child: const Text('Show first'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          controllers.add(
+                            AuraSnackBars.show(
+                              context: context,
+                              content: const Text('Second message'),
+                            ),
+                          );
+                        },
+                        child: const Text('Show second'),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -316,36 +348,39 @@ void main() {
 
     testWidgets('replacement receives a fresh dismissal timer', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      final _ = AuraSnackBars.show(
-                        context: context,
-                        content: const Text('First timed message'),
-                        duration: const Duration(seconds: 1),
-                      );
-                    },
-                    child: const Text('Show first timed message'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      final _ = AuraSnackBars.show(
-                        context: context,
-                        content: const Text('Replacement timed message'),
-                        duration: const Duration(seconds: 2),
-                      );
-                    },
-                    child: const Text('Show replacement timed message'),
-                  ),
-                ],
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        final _ = AuraSnackBars.show(
+                          context: context,
+                          content: const Text('First timed message'),
+                          duration: const Duration(seconds: 1),
+                        );
+                      },
+                      child: const Text('Show first timed message'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final _ = AuraSnackBars.show(
+                          context: context,
+                          content: const Text('Replacement timed message'),
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                      child: const Text('Show replacement timed message'),
+                    ),
+                  ],
+                ),
               ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -372,48 +407,51 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Row(
-              children: [
-                Expanded(
-                  child: AuraSnackBarHost(
-                    child: Builder(
-                      builder: (context) {
-                        return ElevatedButton(
-                          onPressed: () {
-                            final _ = AuraSnackBars.show(
-                              context: context,
-                              content: const Text('Left message'),
-                            );
-                          },
-                          child: const Text('Show left'),
-                        );
-                      },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Row(
+                children: [
+                  Expanded(
+                    child: AuraSnackBarHost(
+                      child: Builder(
+                        builder: (context) {
+                          return ElevatedButton(
+                            onPressed: () {
+                              final _ = AuraSnackBars.show(
+                                context: context,
+                                content: const Text('Left message'),
+                              );
+                            },
+                            child: const Text('Show left'),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: AuraSnackBarHost(
-                    child: Builder(
-                      builder: (context) {
-                        return ElevatedButton(
-                          onPressed: () {
-                            final _ = AuraSnackBars.show(
-                              context: context,
-                              content: const Text('Right message'),
-                            );
-                          },
-                          child: const Text('Show right'),
-                        );
-                      },
+                  Expanded(
+                    child: AuraSnackBarHost(
+                      child: Builder(
+                        builder: (context) {
+                          return ElevatedButton(
+                            onPressed: () {
+                              final _ = AuraSnackBars.show(
+                                context: context,
+                                content: const Text('Right message'),
+                              );
+                            },
+                            child: const Text('Show right'),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -436,23 +474,26 @@ void main() {
 
     testWidgets('animates in with slide and fade', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Animated'),
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Animated'),
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -470,24 +511,27 @@ void main() {
 
     testWidgets('uses Aura colors correctly', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Colored snackbar'),
-                      variant: .error,
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Colored snackbar'),
+                        variant: .error,
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -501,23 +545,26 @@ void main() {
 
     testWidgets('positions at bottom of screen with padding', (tester) async {
       await tester.pumpWidget(
-        _SnackBarTestApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return ElevatedButton(
-                  onPressed: () {
-                    final _ = AuraSnackBars.show(
-                      context: context,
-                      content: const Text('Bottom position'),
-                    );
-                  },
-                  child: const Text('Show'),
-                );
-              },
+        AuraThemeScope(
+          theme: .light,
+          child: _SnackBarTestApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return ElevatedButton(
+                    onPressed: () {
+                      final _ = AuraSnackBars.show(
+                        context: context,
+                        content: const Text('Bottom position'),
+                      );
+                    },
+                    child: const Text('Show'),
+                  );
+                },
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

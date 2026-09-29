@@ -185,6 +185,8 @@ class McpServerUseCases(
               'mcpServerId': serverId,
               'description': tool.description,
               'inputSchema': jsonDecode(tool.inputSchemaJson),
+              if (tool.outputSchemaJson case final schema?)
+                'outputSchema': jsonDecode(schema),
               'isEnabled': true,
               'permissionMode': 'alwaysAsk',
             }),

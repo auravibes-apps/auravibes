@@ -47,6 +47,9 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
   ) async {
+    final _ = SkillCredentialAttributeDefinition.validateDefinitionMap(
+      definition.attributesJson,
+    );
     final table = await _dao.createDefinition(
       .new(
         workspaceId: Value(workspaceId),
@@ -63,6 +66,13 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
     String definitionId,
     SkillCredentialDefinitionToUpdate definition,
   ) async {
+    final current = await getDefinitionById(definitionId);
+    if (current == null) {
+      throw StateError('Credential definition was not found');
+    }
+    final _ = SkillCredentialAttributeDefinition.validateDefinitionMap(
+      definition.attributesJson ?? current.attributesJson,
+    );
     final table = await _dao.updateDefinition(
       definitionId,
       _updateDefinitionCompanion(definition),

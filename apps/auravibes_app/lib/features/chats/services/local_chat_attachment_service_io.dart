@@ -235,7 +235,7 @@ Future<void> _ensureRecordingPermission(AudioRecorder recorder) async {
   if (await recorder.hasPermission()) return;
 
   _logger.warning('Microphone permission was denied');
-  throw StateError('Microphone permission was denied.');
+  throw const ChatMicrophonePermissionDeniedException();
 }
 
 InputDevice? _preferredInputDevice(List<InputDevice> devices) {

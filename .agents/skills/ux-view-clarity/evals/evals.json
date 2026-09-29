@@ -1,0 +1,47 @@
+{
+  "skill_name": "ux-view-clarity",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Make the chat composer 8 px taller. Keep the change local.",
+      "expected_output": "Loads ux-view-clarity, performs a brief task-clarity check, and does not expand the request into a flow audit or redesign.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Change the save button label in service connection creation to say Connect.",
+      "expected_output": "Loads ux-view-clarity and checks that the label matches the action and result; preserves localization requirements and does not start a full UX audit.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Add a view where someone chooses which agent to use before starting a conversation. Plan the experience before implementation.",
+      "expected_output": "Loads ux-view-clarity and produces a concise task/view brief with goal, entry, essential information, primary action, exit, relevant states, and a test scenario without inventing unsupported product rules.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Add a Widgetbook example for the connection status card.",
+      "expected_output": "Loads ux-view-clarity for the user-visible example and checks that the example communicates purpose, status, and next action without expanding into an application-wide audit.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Audit color contrast of the primary button against WCAG.",
+      "expected_output": "Does not load ux-view-clarity because no UI edit was requested; routes to the accessibility skill.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Refactor the provider retry policy without changing visible behavior.",
+      "expected_output": "Does not load ux-view-clarity because the task has no user-visible UI change.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Fix the typo in the Markdown architecture guide.",
+      "expected_output": "Does not load ux-view-clarity because the change is documentation-only.",
+      "files": []
+    }
+  ]
+}

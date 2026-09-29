@@ -16,11 +16,27 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
   Future<List<ServiceConnectionTable>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,
+    bool requireSecret = false,
   }) {
     return _credentialsForDefinitionQuery(
       workspaceId,
       credentialDefinitionId,
+      requireSecret: requireSecret,
     ).get();
+  }
+
+  Future<int> countLinkedCredentials({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) async {
+    final count = serviceConnections.id.count();
+    final query = selectOnly(serviceConnections)
+      ..addColumns([count])
+      ..where(_linkedCredentialFilter(workspaceId, credentialDefinitionId));
+
+    final row = await query.getSingle();
+
+    return await row.read(count) ?? 0;
   }
 
   Stream<List<ServiceConnectionTable>> watchCredentialsForWorkspace(
@@ -72,15 +88,20 @@ extension SkillCredentialsDaoQueries on SkillCredentialsDao {
   SimpleSelectStatement<$ServiceConnectionsTable, ServiceConnectionTable>
   _credentialsForDefinitionQuery(
     String workspaceId,
-    String credentialDefinitionId,
-  ) {
+    String credentialDefinitionId, {
+    bool requireSecret = false,
+  }) {
     final statement = select(serviceConnections)
       ..where(
-        (tbl) => _credentialDefinitionFilter(
-          tbl,
-          workspaceId,
-          credentialDefinitionId,
-        ),
+        (tbl) =>
+            _credentialDefinitionFilter(
+              tbl,
+              workspaceId,
+              credentialDefinitionId,
+            ) &
+            (requireSecret
+                ? tbl.encryptedAuthValue.isNotNull()
+                : const Constant(true)),
       );
 
     return statement..orderBy(_credentialNameOrdering());
@@ -105,6 +126,16 @@ extension SkillCredentialsDaoQueries on SkillCredentialsDao {
   ) =>
       _workspaceCredentialFilter(tbl, workspaceId) &
       tbl.serviceId.equals(credentialDefinitionId);
+
+  Expression<bool> _linkedCredentialFilter(
+    String workspaceId,
+    String credentialDefinitionId,
+  ) =>
+      serviceConnections.workspaceId.equals(workspaceId) &
+      serviceConnections.kind.equals(
+        ServiceConnectionKindTable.skillCredential.name,
+      ) &
+      serviceConnections.serviceId.equals(credentialDefinitionId);
 
   Expression<bool> _workspaceCredentialFilter(
     $ServiceConnectionsTable tbl,

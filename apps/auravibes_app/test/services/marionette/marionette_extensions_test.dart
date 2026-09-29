@@ -39,6 +39,9 @@ void main() {
           'childId': 'fixture-child',
           'workspaceId': 'arbitrary',
         }),
+        await dispatcher.stopSubAgentSmokeFixtureParent({
+          'workspaceId': 'arbitrary',
+        }),
       ];
 
       expect(results, everyElement(isA<MarionetteExtensionInvalidParams>()));
@@ -67,6 +70,9 @@ void main() {
       final smokeFinish = await dispatcher.finishSubAgentSmokeFixture({
         'childId': 'fixture-child',
       });
+      final smokeParentStop = await dispatcher.stopSubAgentSmokeFixtureParent(
+        {},
+      );
 
       expect(navigation, isA<MarionetteExtensionSuccess>());
       expect(workspace, isA<MarionetteExtensionSuccess>());
@@ -76,7 +82,8 @@ void main() {
       expect(flag, isA<MarionetteExtensionSuccess>());
       expect(smokeStart, isA<MarionetteExtensionSuccess>());
       expect(smokeFinish, isA<MarionetteExtensionSuccess>());
-      expect(actions.actionCalls, 8);
+      expect(smokeParentStop, isA<MarionetteExtensionSuccess>());
+      expect(actions.actionCalls, 9);
       expect(actions.lastFeatureFlag, (flag: 'a2ui', enabled: true));
       expect(actions.lastSubAgentSmokeCount, 2);
       expect(actions.lastSubAgentSmokeChildId, 'fixture-child');
@@ -104,6 +111,7 @@ void main() {
       'auravibes.seedDemoData',
       'auravibes.startSubAgentSmokeFixture',
       'auravibes.finishSubAgentSmokeFixture',
+      'auravibes.stopSubAgentSmokeFixtureParent',
       'auravibes.clearDevelopmentState',
       'auravibes.setDevelopmentFeatureFlag',
     ];
@@ -157,6 +165,17 @@ void main() {
     final finishSchema = finishInputSchema.toJson();
     expect(finishSchema['required'], ['childId']);
     expect(finishSchema['properties'], hasLength(1));
+
+    final stopParentInputSchema =
+        details['auravibes.stopSubAgentSmokeFixtureParent']?.inputSchema;
+    if (stopParentInputSchema == null) {
+      fail(
+        'auravibes.stopSubAgentSmokeFixtureParent schema was not registered',
+      );
+    }
+    final stopParentSchema = stopParentInputSchema.toJson();
+    expect(stopParentSchema['required'], isNull);
+    expect(stopParentSchema['properties'], isEmpty);
   });
 
   group('MarionetteExtensionBootstrap.shouldEnable', () {
@@ -278,11 +297,11 @@ final class _FakeActions implements MarionetteExtensionActions {
 
   @override
   Future<Map<String, dynamic>> finishSubAgentSmokeFixture({
-    required String childId,
+    String? childId,
   }) async {
     actionCalls++;
-    lastSubAgentSmokeChildId = childId;
+    if (childId != null) lastSubAgentSmokeChildId = childId;
 
-    return {'childId': childId};
+    return childId == null ? const {} : {'childId': childId};
   }
 }

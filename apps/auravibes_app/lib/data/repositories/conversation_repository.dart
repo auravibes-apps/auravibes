@@ -152,8 +152,8 @@ class ConversationRepository(
     final effective = await _effectiveMessageRows(sourceConversationId);
     final boundary = _resolveForkBoundary(effective, throughMessageId);
 
-    final title = await _forkTitle(source.workspaceId, source.title);
-    final fork = await _createFork(source, title, boundary);
+    final forkDetails = await _forkDetails(source, effective, boundary);
+    final fork = await _createFork(source, forkDetails);
 
     return _mapToConversation(fork);
   }
@@ -405,22 +405,43 @@ extension on ConversationRepository {
   }
 }
 
+typedef _ForkDetails = ({
+  String title,
+  String boundary,
+  String? activeCheckpointId,
+});
+
 extension on ConversationRepository {
   ConversationsCompanion _forkCompanion(
     ConversationsTable source,
-    String title,
-    String boundary,
-  ) => ConversationsCompanion(
-    workspaceId: .new(source.workspaceId),
-    title: .new(title),
-    modelId: .new(source.modelId),
-    agentId: .new(source.agentId),
-    reasoningConfigJson: .new(source.reasoningConfigJson),
+    _ForkDetails details,
+  ) => _forkParentSettingsCompanion(source).copyWith(
+    title: .new(details.title),
     parentConversationId: const Value(null),
     forkSourceConversationId: .new(source.id),
     forkSourceTitle: .new(source.title),
-    forkThroughMessageId: .new(boundary),
+    forkThroughMessageId: .new(details.boundary),
+    activeCompactionCheckpointId: .new(details.activeCheckpointId),
     isPinned: const Value(false),
+  );
+
+  ConversationsCompanion _forkParentSettingsCompanion(
+    ConversationsTable source,
+  ) => ConversationsCompanion(
+    workspaceId: .new(source.workspaceId),
+    modelId: .new(source.modelId),
+    agentId: .new(source.agentId),
+    reasoningConfigJson: .new(source.reasoningConfigJson),
+  );
+
+  Future<_ForkDetails> _forkDetails(
+    ConversationsTable source,
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String boundary,
+  ) async => (
+    title: await _forkTitle(source.workspaceId, source.title),
+    boundary: boundary,
+    activeCheckpointId: _forkCheckpointId(source, rows, boundary),
   );
 
   Future<ConversationsTable> _requireForkSource(String id) async {
@@ -454,7 +475,43 @@ extension on ConversationRepository {
   bool _hasValidBoundary(
     List<({MessagesTable table, bool isForkReference})> rows,
     String boundary,
-  ) => rows.any((row) => row.table.id == boundary && _isDurable(row.table));
+  ) => rows.any((row) {
+    final message = row.table;
+
+    return message.id == boundary &&
+        _isDurable(message) &&
+        !_isTranscriptContextRow(message);
+  });
+
+  String? _forkCheckpointId(
+    ConversationsTable source,
+    List<({MessagesTable table, bool isForkReference})> rows,
+    String boundary,
+  ) {
+    final checkpointId = source.activeCompactionCheckpointId;
+    if (checkpointId == null) return null;
+    final boundaryIndex = rows.indexWhere((row) => row.table.id == boundary);
+
+    return rows
+            .take(boundaryIndex + 1)
+            .any((row) => _isActiveCheckpointSummary(source, row))
+        ? checkpointId
+        : null;
+  }
+
+  bool _isActiveCheckpointSummary(
+    ConversationsTable source,
+    ({MessagesTable table, bool isForkReference}) row,
+  ) {
+    final message = row.table;
+
+    return message.id == source.activeCompactionCheckpointId &&
+        (message.conversationId == source.id || row.isForkReference) &&
+        message.status == MessageTableStatus.sent &&
+        MessageMetadataEntity.fromJsonString(message.metadata)
+                ?.isCompactionSummary ==
+            true;
+  }
 
   Never _throwInvalidForkBoundary() =>
       throw const ConversationValidationException(
@@ -463,11 +520,10 @@ extension on ConversationRepository {
 
   Future<ConversationsTable> _createFork(
     ConversationsTable source,
-    String title,
-    String boundary,
+    _ForkDetails details,
   ) => _database.transaction(() async {
     final created = await _database.conversationDao.insertConversation(
-      _forkCompanion(source, title, boundary),
+      _forkCompanion(source, details),
     );
     await _copyConversationSettings(source.id, created.id);
 
@@ -566,7 +622,10 @@ extension on ConversationRepository {
     List<({MessagesTable table, bool isForkReference})> rows,
   ) {
     for (final row in rows.reversed) {
-      if (_isDurable(row.table)) return row.table.id;
+      final message = row.table;
+      if (_isDurable(message) && !_isTranscriptContextRow(message)) {
+        return message.id;
+      }
     }
 
     return null;
@@ -607,7 +666,11 @@ extension on ConversationRepository {
   ) {
     for (var index = turnStart - 1; index >= 0; index--) {
       final candidate = rows[index].table;
-      if (_isDurable(candidate) && !candidate.isUser) return candidate.id;
+      if (_isDurable(candidate) &&
+          !candidate.isUser &&
+          !_isTranscriptContextRow(candidate)) {
+        return candidate.id;
+      }
     }
 
     return null;
@@ -618,6 +681,13 @@ extension on ConversationRepository {
       !(MessageMetadataEntity.fromJsonString(message.metadata)
               ?.hasPendingToolCalls ??
           false);
+
+  bool _isTranscriptContextRow(MessagesTable message) =>
+      message.messageType == MessagesTableType.system &&
+      MessageMetadataEntity.fromJsonString(message.metadata)
+              ?.modelMetadata[MessageMetadataEntity
+              .agentTranscriptContextMetadataKey] ==
+          true;
 
   bool _isTerminalStatus(MessageTableStatus status) =>
       status == MessageTableStatus.sent || status == MessageTableStatus.error;
@@ -982,6 +1052,8 @@ extension on ConversationRepository {
       agentId: conversationTable.agentId,
       reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
       parentConversationId: conversationTable.parentConversationId,
+      activeCompactionCheckpointId:
+          conversationTable.activeCompactionCheckpointId,
     );
   }
 
@@ -1002,6 +1074,7 @@ extension on ConversationRepository {
       agentId: .new(conversation.agentId),
       reasoningConfigJson: .new(conversation.reasoningConfiguration?.encode()),
       parentConversationId: .new(conversation.parentConversationId),
+      activeCompactionCheckpointId: const Value(null),
       isPinned: .new(conversation.isPinned ?? false),
     );
   }
@@ -1018,10 +1091,19 @@ extension on ConversationRepository {
       reasoningConfigJson: conversation.clearReasoningConfiguration
           ? const Value(null)
           : Value.absentIfNull(conversation.reasoningConfiguration?.encode()),
+      activeCompactionCheckpointId: _activeCompactionCheckpointPatch(
+        conversation,
+      ),
       isPinned: .absentIfNull(conversation.isPinned),
     );
   }
 }
+
+Value<String?> _activeCompactionCheckpointPatch(
+  ConversationPatch conversation,
+) => conversation.clearActiveCompactionCheckpointId
+    ? const Value(null)
+    : Value.absentIfNull(conversation.activeCompactionCheckpointId);
 
 class const ConversationException(
   final String message, [

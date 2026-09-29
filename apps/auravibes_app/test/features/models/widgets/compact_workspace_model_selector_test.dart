@@ -383,17 +383,20 @@ abstract final class _SubjectBuilder {
     addTearDown(appDatabase.close);
 
     return TestableApp(
-      child: Theme(
-        data: .new(extensions: [AuraTheme.light]),
-        child: Scaffold(
-          body: Portal(
-            child: CompactWorkspaceModelSelector(
-              workspaceId: 'ws-1',
-              workspaceModelSelectionId: selectedId,
-              onChanged: onChanged ?? (_) => fail('Unexpected model change'),
-              compactMode: compactMode,
-              sheetMode: sheetMode,
-              modelUnavailable: modelUnavailable,
+      child: AuraThemeScope(
+        theme: .light,
+        child: Theme(
+          data: .new(),
+          child: Scaffold(
+            body: Portal(
+              child: CompactWorkspaceModelSelector(
+                workspaceId: 'ws-1',
+                workspaceModelSelectionId: selectedId,
+                onChanged: onChanged ?? (_) => fail('Unexpected model change'),
+                compactMode: compactMode,
+                sheetMode: sheetMode,
+                modelUnavailable: modelUnavailable,
+              ),
             ),
           ),
         ),

@@ -24,14 +24,3 @@ deleteSkillTemplateToolProvider =
       return (id) =>
           ref.read(skillTemplateToolsRepositoryProvider).deleteTool(id);
     });
-
-final ProviderFamily<Future<void> Function(String), String>
-deleteSkillCredentialDefinitionProvider =
-    Provider.family<Future<void> Function(String), String>((ref, workspaceId) {
-      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-      if (cloud != null) return cloud.deleteDefinition;
-
-      return (id) => ref
-          .read(skillCredentialDefinitionsRepositoryProvider)
-          .deleteDefinition(id);
-    });

@@ -294,9 +294,11 @@ class const _AuraRadioIndicator({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
+
     return SizedBox(
-      width: DesignInputSizes.heightLg,
-      height: DesignInputSizes.heightLg,
+      width: targetSize,
+      height: targetSize,
       child: Center(child: _AuraRadioPaint(presentation: presentation)),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
@@ -276,16 +277,19 @@ class _AuraTableTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: .horizontal,
-      child: Table(
-        children: _rows(context),
-        defaultColumnWidth: const IntrinsicColumnWidth(),
-        border: .new(
-          horizontalInside: BorderSide(color: context.auraColors.outline),
+    return AuraEdgy(
+      child: SingleChildScrollView(
+        scrollDirection: .horizontal,
+        child: Table(
+          children: _rows(context),
+          defaultColumnWidth: const IntrinsicColumnWidth(),
+          border: .new(
+            horizontalInside: BorderSide(color: context.auraColors.outline),
+          ),
+          defaultVerticalAlignment: .middle,
         ),
-        defaultVerticalAlignment: .middle,
       ),
+      axis: .horizontal,
     );
   }
 
@@ -505,9 +509,17 @@ class const _AuraTableCellInteraction({
   Widget build(BuildContext context) {
     final callback = onSort;
     if (callback == null) return content;
+    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
     return Semantics(
-      child: GestureDetector(child: content, onTap: callback),
+      child: GestureDetector(
+        child: ConstrainedBox(
+          constraints: .new(minWidth: targetSize, minHeight: targetSize),
+          child: content,
+        ),
+        onTap: callback,
+        behavior: .opaque,
+      ),
       button: true,
     );
   }

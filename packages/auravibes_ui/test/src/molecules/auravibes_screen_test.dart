@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_ui/material_ui.dart';
 
 void main() {
   group('AuraScreen', () {
@@ -8,9 +8,12 @@ void main() {
       const childText = 'Screen Content';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(child: Text(childText)),
-          theme: .new(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(child: Text(childText)),
+            theme: .new(),
+          ),
         ),
       );
 
@@ -21,13 +24,16 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-            // ignore: avoid_redundant_argument_values - Required to cover explicit standard variant separately from default behavior.
-            variant: .standard,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(
+              child: SizedBox(),
+              // ignore: avoid_redundant_argument_values - Required to cover explicit standard variant separately from default behavior.
+              variant: .standard,
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -40,9 +46,12 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(child: SizedBox(), variant: .aurora),
-          theme: .new(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(child: SizedBox(), variant: .aurora),
+            theme: .new(),
+          ),
         ),
       );
 
@@ -55,12 +64,15 @@ void main() {
       const titleText = 'My Screen';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-            appBar: AuraAppBar(title: Text(titleText)),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(
+              child: SizedBox(),
+              appBar: AuraAppBar(title: Text(titleText)),
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -81,12 +93,15 @@ void main() {
       final bodyKey = UniqueKey();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: AuraScreen(
-            child: SizedBox(key: bodyKey, height: 20),
-            appBar: const AuraAppBar(title: Text('My Screen')),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: AuraScreen(
+              child: SizedBox(key: bodyKey, height: 20),
+              appBar: const AuraAppBar(title: Text('My Screen')),
+            ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -100,9 +115,12 @@ void main() {
       const padding = AuraEdgeInsetsGeometry.medium;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(child: SizedBox(), padding: padding),
-          theme: .new(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(child: SizedBox(), padding: padding),
+            theme: .new(),
+          ),
         ),
       );
 
@@ -111,9 +129,12 @@ void main() {
 
     testWidgets('uses standard variant by default', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(child: SizedBox()),
-          theme: .new(extensions: [AuraTheme.light]),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(child: SizedBox()),
+            theme: .new(),
+          ),
         ),
       );
 
@@ -126,15 +147,18 @@ void main() {
       const titleText = 'Screen with Leading';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-            appBar: AuraAppBar(
-              title: Text(titleText),
-              leading: Text('Leading'),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(
+              child: SizedBox(),
+              appBar: AuraAppBar(
+                title: Text(titleText),
+                leading: Text('Leading'),
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -150,15 +174,18 @@ void main() {
       const screenTitleText = 'My Screen';
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-            appBar: AuraAppBar(
-              title: Text(screenTitleText),
-              leading: Text(customLeadingText),
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: const AuraScreen(
+              child: SizedBox(),
+              appBar: AuraAppBar(
+                title: Text(screenTitleText),
+                leading: Text(customLeadingText),
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -170,14 +197,17 @@ void main() {
       final leadingWidth = double.parse('96');
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: AuraAppBar(
-              title: const Text('Sized leading'),
-              leadingWidth: leadingWidth,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: AuraAppBar(
+                title: const Text('Sized leading'),
+                leadingWidth: leadingWidth,
+              ),
             ),
+            theme: .new(),
           ),
-          theme: .new(extensions: [AuraTheme.light]),
         ),
       );
 

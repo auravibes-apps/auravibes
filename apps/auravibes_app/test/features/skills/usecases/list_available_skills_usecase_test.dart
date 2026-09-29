@@ -811,6 +811,18 @@ class _FakeSkillCredentialsRepository implements SkillCredentialsRepository {
   }
 
   @override
+  Future<List<SkillCredentialEntity>> getUsableCredentialsForDefinition({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) async => const [];
+
+  @override
+  Future<int> countLinkedCredentials({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) async => 0;
+
+  @override
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
     String workspaceId,
   ) {
