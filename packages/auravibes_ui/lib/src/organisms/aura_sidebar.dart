@@ -306,26 +306,29 @@ class _AuraSidebarItemButton extends StatelessWidget {
     required bool selected,
     required AuraColorScheme colors,
     required double borderRadius,
-  }) : _child = AuraPressable(
-         child: ExcludeSemantics(
-           excluding: item.semanticLabel != null,
-           child: _AuraSidebarItemContent(
-             icon: item.icon,
-             label: isExpanded ? item.label : const SizedBox.shrink(),
-             selected: selected,
+  }) : _child = Semantics(
+         child: AuraPressable(
+           child: ExcludeSemantics(
+             excluding: item.semanticLabel != null,
+             child: _AuraSidebarItemContent(
+               icon: item.icon,
+               label: isExpanded ? item.label : const SizedBox.shrink(),
+               selected: selected,
+             ),
            ),
+           color: colors.primary,
+           decoration: BoxDecoration(
+             color: selected
+                 ? colors.primary.withValues(
+                     alpha: _AuraSidebarItem._selectedAlpha,
+                   )
+                 : null,
+             borderRadius: BorderRadius.all(.circular(borderRadius)),
+           ),
+           onPressed: onTap,
+           semanticLabel: item.semanticLabel ?? 'Navigation item',
          ),
-         color: colors.primary,
-         decoration: BoxDecoration(
-           color: selected
-               ? colors.primary.withValues(
-                   alpha: _AuraSidebarItem._selectedAlpha,
-                 )
-               : null,
-           borderRadius: BorderRadius.all(.circular(borderRadius)),
-         ),
-         onPressed: onTap,
-         semanticLabel: item.semanticLabel ?? 'Navigation item',
+         selected: selected,
        );
 
   final Widget _child;
