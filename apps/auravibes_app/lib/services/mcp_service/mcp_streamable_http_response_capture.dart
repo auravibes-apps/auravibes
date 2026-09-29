@@ -63,7 +63,7 @@ final class McpStreamableHttpResponseCapture extends http.BaseClient {
         _hasJsonRpcError(decoded['error']);
   }
 
-  static Object? _decodeResponseBody(List<int> body) {
+  static dynamic _decodeResponseBody(List<int> body) {
     try {
       return jsonDecode(utf8.decode(body));
     } on FormatException {

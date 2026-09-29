@@ -1218,7 +1218,7 @@ class _FailingMcpManagerService extends McpManagerService {
   @override
   Future<McpManagerClient> connectMcpWithAutoTransport(
     McpConnectionRequest request,
-  ) async {
+  ) {
     throw Exception('Connection refused');
   }
 }
