@@ -631,9 +631,27 @@ void main() {
       final combiningAcute = String.fromCharCode(0x0301);
       final precomposedCafe = 'Caf$acuteE';
       final decomposedCafe = 'Cafe$combiningAcute';
+      const compatibilityForm = '\uFB02ower Local';
+      const extendedCombiningMark = 'a\u1AB0x Local';
+      const greekName = 'Αθήνα Local';
+      const dottedCapitalI = 'İstanbul Local';
+      const dotlessI = 'ıstanbul Local';
+      const sharpS = 'Straße Local';
       final local = await repository.createWorkspace(
         .new(name: '$precomposedCafe Local', type: .local),
       );
+      for (final name in const [
+        compatibilityForm,
+        extendedCombiningMark,
+        greekName,
+        dottedCapitalI,
+        dotlessI,
+        sharpS,
+      ]) {
+        final _ = await repository.createWorkspace(
+          .new(name: name, type: .local),
+        );
+      }
       final _ = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Other Local', type: .local),
       );
@@ -684,6 +702,31 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('$decomposedCafe Connected'), findsOneWidget);
       expect(find.text('Caf$graveE Cloud'), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'flower');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(compatibilityForm), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'ax');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(extendedCombiningMark), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'αθηνα');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(greekName), findsOneWidget);
+
+      await tester.enterText(find.byType(AuraInput), 'istanbul');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(dottedCapitalI), findsOneWidget);
+      expect(find.text(dotlessI), findsNothing);
+
+      await tester.enterText(find.byType(AuraInput), 'strasse');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(sharpS), findsNothing);
+
+      await tester.enterText(find.byType(AuraInput), 'straße');
+      final _ = await tester.pumpAndSettle();
+      expect(find.text(sharpS), findsOneWidget);
     });
 
     testWidgets('retry reloads only the failed cloud account', (tester) async {
