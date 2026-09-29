@@ -455,7 +455,13 @@ void main() {
     test('surfaces an error from the final response', () async {
       final responseError = genkit.RuntimeError(
         message: 'failed',
-        details: {'reason': 'Rate limit 429'},
+        details: {
+          'headers': {
+            'x-api-key': 'fixture-provider-credential',
+            'Authorization': 'Basic fixture-auth-secret',
+          },
+          'reason': 'Rate limit 429',
+        },
       );
       final service = _createService(
         providerFactory: _FakeProviderFactory(
@@ -478,7 +484,9 @@ void main() {
               .having(
                 (error) => error.details,
                 'details',
-                '{"reason":"Rate limit 429"}',
+                '{"headers":{"x-api-key":"fixture-provider-credential",'
+                    '"Authorization":"Basic fixture-auth-secret"},'
+                    '"reason":"Rate limit 429"}',
               ),
         ),
       );

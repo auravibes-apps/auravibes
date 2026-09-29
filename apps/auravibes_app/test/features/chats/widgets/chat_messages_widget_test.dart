@@ -3311,6 +3311,135 @@ void main() {
       );
     });
 
+    for (final later in [
+      (status: MessageStatus.sent, isStreaming: true),
+      (status: MessageStatus.unfinished, isStreaming: false),
+    ]) {
+      testWidgets('hides earlier response actions before later plain assistant '
+          '${later.isStreaming ? 'stream' : 'unfinished message'}', (
+        tester,
+      ) async {
+        final messagesById = {
+          'first': _createMessage(
+            id: 'first',
+            content: 'First response',
+            isUser: false,
+          ),
+          'later': _createMessage(
+            id: 'later',
+            content: 'Continuing response',
+            isUser: false,
+            status: later.status,
+          ),
+        };
+        await pumpAndInit(
+          tester,
+          buildSubject(
+            messages: ['first', 'later'],
+            overrides: [
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => messagesById[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith(
+                (ref, id) => id == 'later' && later.isStreaming,
+              ),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        expect(find.byIcon(Icons.copy_outlined), findsNothing);
+        expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+        expect(find.byKey(const ValueKey('retry_message_first')), findsNothing);
+        expect(
+          find.byKey(const ValueKey('message_footer_first')),
+          findsNothing,
+        );
+      });
+    }
+
+    testWidgets('hides earlier response actions while next row is unresolved', (
+      tester,
+    ) async {
+      final first = _createMessage(
+        id: 'first',
+        content: 'First response',
+        isUser: false,
+      );
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          messages: ['first', 'unresolved'],
+          overrides: [
+            messageConversationByIdProvider.overrideWith(
+              (ref, id) => id.messageId == 'first' ? first : null,
+            ),
+            isMessageStreamingProvider.overrideWith((ref, id) => false),
+            conversationBusyStateProvider.overrideWith(
+              (ref, _) async => const ConversationBusyState(
+                isStreaming: false,
+                hasPendingTools: false,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.byIcon(Icons.copy_outlined), findsNothing);
+      expect(find.byIcon(Icons.call_split_outlined), findsNothing);
+      expect(find.byKey(const ValueKey('message_footer_first')), findsNothing);
+    });
+
+    for (final boundaryType in [MessageType.text, MessageType.system]) {
+      testWidgets(
+        'keeps earlier response actions across $boundaryType boundary',
+        (tester) async {
+          final first = _createMessage(
+            id: 'first',
+            content: 'First response',
+            isUser: false,
+          );
+          final boundary = _createMessage(
+            id: 'boundary',
+            content: 'Next turn',
+            isUser: boundaryType == MessageType.text,
+            messageType: boundaryType,
+          );
+          await pumpAndInit(
+            tester,
+            buildSubject(
+              messages: ['first', 'boundary'],
+              overrides: _messageOverrides({
+                'first': first,
+                'boundary': boundary,
+              }),
+            ),
+          );
+
+          final firstItem = find.byKey(const ValueKey('first'));
+          expect(
+            find.descendant(
+              of: firstItem,
+              matching: find.byIcon(Icons.copy_outlined),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: firstItem,
+              matching: find.byIcon(Icons.call_split_outlined),
+            ),
+            findsOneWidget,
+          );
+        },
+      );
+    }
+
     testWidgets('preserves rich responses before later assistant activity', (
       tester,
     ) async {
@@ -4904,11 +5033,13 @@ void main() {
       tester,
     ) async {
       const providerDetails =
-          'This endpoint has a maximum context length of 32768 tokens. '
-          'Bearer bearer-secret; sk-live-secret';
+          '{"headers":{"x-api-key":"fixture-provider-credential",'
+          '"Authorization":"Basic fixture-auth-secret"},'
+          '"reason":"Quota exceeded"}';
       const safeDetails =
-          'This endpoint has a maximum context length of 32768 tokens. '
-          'Bearer [REDACTED]; [REDACTED]';
+          '{"headers":{"x-api-key":"[REDACTED]",'
+          '"Authorization":"[REDACTED]"},'
+          '"reason":"Quota exceeded"}';
       String? copiedText;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,

@@ -725,14 +725,10 @@ bool _hasFollowingAssistantActivity(
   List<_ResolvedChatMessage?> messages,
   int index,
 ) {
-  for (var nextIndex = index + 1; nextIndex < messages.length; nextIndex++) {
-    final next = messages[nextIndex];
-    if (next == null || _isTimelineBoundary(next.message)) return false;
+  if (index + 1 >= messages.length) return false;
+  final next = messages[index + 1];
 
-    if (_hasAssistantActivity(next.message)) return true;
-  }
-
-  return false;
+  return next == null || !_isTimelineBoundary(next.message);
 }
 
 bool _hasAssistantActivity(MessageEntity message) =>

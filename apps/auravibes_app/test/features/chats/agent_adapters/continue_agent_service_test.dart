@@ -1493,9 +1493,13 @@ void main() {
         (_) => Stream.error(
           GenkitException(
             'OpenRouter provider request failed.',
-            details:
-                'The provider rejected this request for an unknown reason. '
-                'api_key=key-secret',
+            details: jsonEncode({
+              'headers': {
+                'x-api-key': 'fixture-provider-credential',
+                'Authorization': 'Basic fixture-auth-secret',
+              },
+              'reason': 'The provider rejected this request.',
+            }),
           ),
         ),
       );
@@ -1515,7 +1519,10 @@ void main() {
       expect(created.single.conversationId, 'conversation-1');
       expect(
         created.single.content,
-        '${errorMessage.content} api_key=[REDACTED]',
+        jsonEncode({
+          'headers': {'x-api-key': '[REDACTED]', 'Authorization': '[REDACTED]'},
+          'reason': 'The provider rejected this request.',
+        }),
       );
       expect(created.single.messageType, MessageType.system);
       expect(created.single.isUser, isFalse);
