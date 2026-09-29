@@ -167,6 +167,10 @@ class const ChatMessagesWidget({
     final data = _buildChatTimelineItems(
       resolvedMessages,
       submittedA2uiReplayPayloads,
+      pendingToolCallKeys: {
+        for (final pendingCall in pendingToolCalls)
+          _activityToolCallKey(pendingCall.messageId, pendingCall.toolCall.id),
+      },
     ).reversed.toList(growable: false);
     final retryableMessageId = _retryableUserMessageId(resolvedMessages);
 
@@ -478,11 +482,13 @@ class _ActivityRun {
   const _ActivityRun(
     this.sources, {
     this.activityContentMessageIds = const {},
+    this.pendingToolCallKeys = const {},
     this.responseMessageId,
   });
 
   final List<_ResolvedChatMessage> sources;
   final Set<String> activityContentMessageIds;
+  final Set<String> pendingToolCallKeys;
   final String? responseMessageId;
 
   String get id => sources.first.message.id;
@@ -493,7 +499,11 @@ typedef _ActivityToolCall = ({
   MessageToolCallEntity toolCall,
   bool isForkReference,
   bool isStreaming,
+  bool hideArguments,
 });
+
+String _activityToolCallKey(String messageId, String toolCallId) =>
+    '$messageId:$toolCallId';
 
 sealed class _ActivityRunEntry {
   const _ActivityRunEntry();
@@ -570,6 +580,9 @@ List<_ActivityRunEntry> _buildActivityRunEntries(_ActivityRun run) {
         toolCall: toolCall,
         isForkReference: source.message.isForkReference,
         isStreaming: source.isStreaming,
+        hideArguments: run.pendingToolCallKeys.contains(
+          _activityToolCallKey(messageId, toolCall.id),
+        ),
       ));
     }
   }
@@ -590,8 +603,9 @@ bool _isLiveActivityToolGroup(_ActivityToolGroupEntry entry) =>
 
 List<_ChatTimelineItem> _buildChatTimelineItems(
   List<_ResolvedChatMessage?> messages,
-  Map<String, List<String>> replayPayloadsByMessageId,
-) {
+  Map<String, List<String>> replayPayloadsByMessageId, {
+  Set<String> pendingToolCallKeys = const {},
+}) {
   final items = <_ChatTimelineItem>[];
   final activitySources = <_ResolvedChatMessage>[];
   final activityContentMessageIds = <String>{};
@@ -601,6 +615,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     final run = _ActivityRun(
       List.of(activitySources),
       activityContentMessageIds: Set.of(activityContentMessageIds),
+      pendingToolCallKeys: pendingToolCallKeys,
       responseMessageId: responseMessageId,
     );
     if (_buildActivityRunEntries(run).isNotEmpty) {
@@ -772,7 +787,9 @@ class const _ChatMessageTimelineItem({
         !_isTimelineBoundary(message) &&
         _hasAssistantActivity(message);
     return AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: message.isUser
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         if (showActivity)
           _AssistantActivityRun(
@@ -1630,6 +1647,7 @@ class const _AssistantActivityRun({
               workspaceId: workspaceId,
               toolCall: item.toolCall,
             ),
+            showArguments: !item.hideArguments,
             openSubAgent: _openSubAgent(
               context: context,
               ref: ref,
@@ -1646,6 +1664,7 @@ class const _AssistantActivityRun({
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
+            showArguments: activityToolCall.showArguments,
             isExpanded: expandedToolIds.value.contains(
               activityToolCall.toolCall.id,
             ),
@@ -2163,6 +2182,7 @@ void _toggleDisclosure({
 class const _ActivityToolCallRow({
   required final MessageToolCallEntity toolCall,
   required final String displayName,
+  required final bool showArguments,
   required final bool isExpanded,
   required final VoidCallback onToggle,
   required final VoidCallback? openSubAgent,
@@ -2170,7 +2190,9 @@ class const _ActivityToolCallRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final decodedArgs = ToolMetadataDecoder.decode(toolCall.argumentsRaw);
+    final decodedArgs = showArguments
+        ? ToolMetadataDecoder.decode(toolCall.argumentsRaw)
+        : null;
     final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
     final hasDetails =
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
