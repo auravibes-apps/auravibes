@@ -29,7 +29,12 @@ void main() {
       'id': 'gpt-4',
       'name': 'GPT-4',
       'open_weights': false,
-      'cost': {'input': 30.0, 'output': 60.0, 'cache_read': 15.0},
+      'cost': {
+        'input': 30.0,
+        'output': 60.0,
+        'cache_read': 15.0,
+        'cache_write': 20.0,
+      },
       'limit': {'context': 128000, 'output': 4096},
       'modalities': {
         'input': ['text', 'image'],
@@ -78,6 +83,7 @@ void main() {
           family: 'gpt-4',
           costInput: 30,
           costCacheRead: 15,
+          costCacheWrite: 20,
           costOutput: 60,
           openWeights: false,
           supportsReasoning: true,
@@ -93,6 +99,7 @@ void main() {
       expect(model.costInput, 30.0);
       expect(model.costOutput, 60.0);
       expect(model.costCacheRead, 15.0);
+      expect(model.costCacheWrite, 20.0);
     });
 
     test('parses limit fields', () {
@@ -156,6 +163,7 @@ void main() {
       expect(model.costInput, isNull);
       expect(model.costOutput, isNull);
       expect(model.costCacheRead, isNull);
+      expect(model.costCacheWrite, isNull);
     });
 
     test('handles missing modalities with defaults', () {

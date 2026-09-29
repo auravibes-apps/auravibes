@@ -97,6 +97,8 @@ void main() {
 
       costInput: 30,
       costOutput: 60,
+      costCacheWrite: 7,
+      costCacheRead: 3,
       limitContext: 128000,
       limitOutput: 4096,
     );
@@ -172,6 +174,8 @@ void main() {
         expect(result.firstOrNull?.modalitiesInput, ['text']);
         expect(result.firstOrNull?.modalitiesOutput, ['text']);
         expect(result.firstOrNull?.costInput, 30);
+        expect(result.firstOrNull?.costCacheRead, 3);
+        expect(result.firstOrNull?.costCacheWrite, 7);
         expect(result.firstOrNull?.costOutput, 60);
         expect(result.firstOrNull?.openWeights, false);
         expect(result.firstOrNull?.supportsReasoning, false);

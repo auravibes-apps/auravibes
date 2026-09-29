@@ -76,5 +76,29 @@ void main() {
       expect(merged.metadata, {'provider': 'test'});
       expect(merged.thinking, 'First second');
     });
+
+    test('concatenates cache token usage and preserves missing values', () {
+      const first = LanguageModelUsage(
+        promptTokens: 10,
+        responseTokens: 5,
+        totalTokens: 15,
+        cacheReadInputTokens: 3,
+        cacheCreationInputTokens: 2,
+      );
+      const second = LanguageModelUsage(
+        promptTokens: 2,
+        responseTokens: 3,
+        totalTokens: 5,
+        cacheReadInputTokens: 4,
+      );
+
+      final merged = first.concat(second);
+      const unknownCacheUsage = LanguageModelUsage();
+
+      expect(merged.cacheReadInputTokens, 7);
+      expect(merged.cacheCreationInputTokens, 2);
+      expect(unknownCacheUsage.cacheReadInputTokens, isNull);
+      expect(unknownCacheUsage.cacheCreationInputTokens, isNull);
+    });
   });
 }

@@ -45,6 +45,9 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
     /// Cost per 1M cache read tokens.
     double? costCacheRead,
 
+    /// Cost per 1M cache creation tokens.
+    double? costCacheWrite,
+
     /// Cost per 1M output tokens.
     double? costOutput,
 
@@ -131,6 +134,7 @@ ApiModelEntity _applyModelCosts(
   family: capabilities.family,
   costInput: capabilities.costInput,
   costCacheRead: capabilities.costCacheRead,
+  costCacheWrite: capabilities.costCacheWrite,
   costOutput: capabilities.costOutput,
 );
 

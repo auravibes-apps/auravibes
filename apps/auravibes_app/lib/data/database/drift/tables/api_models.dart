@@ -64,6 +64,7 @@ class ApiModels extends Table {
   RealColumn get costInput => real().nullable()();
   RealColumn get costOutput => real().nullable()();
   RealColumn get costCacheRead => real().nullable()();
+  RealColumn get costCacheWrite => real().nullable()();
 
   IntColumn get limitContext => integer()();
 

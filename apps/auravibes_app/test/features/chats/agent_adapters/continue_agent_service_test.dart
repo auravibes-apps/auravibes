@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record_input.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -14,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -25,8 +29,23 @@ import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
+class MockModelUsageRepository extends Mock implements ModelUsageRepository {}
+
 void main() {
-  setUpAll(registerTestFallbackValues);
+  setUpAll(() {
+    registerTestFallbackValues();
+    registerFallbackValue(
+      const ModelUsageRecordInput(
+        conversationId: '',
+        providerId: '',
+        modelId: '',
+        requestKind: ModelUsageRequestKind.generation,
+        outcome: ModelUsageRequestOutcome.succeeded,
+        usage: null,
+        costStatus: ModelUsageCostStatus.unknown,
+      ),
+    );
+  });
 
   group('ContinueAgentService', () {
     var chatbotService = MockChatbotService();
@@ -38,6 +57,11 @@ void main() {
         MockLoadConversationToolSpecsUsecase();
     var monitoringService = MockMonitoringService();
     var apiModelRepository = MockApiModelRepository();
+    var modelUsageRepository = MockModelUsageRepository();
+    var recordModelUsageUsecase = RecordModelUsageUsecase(
+      repository: modelUsageRepository,
+      getModel: (_, _) async => null,
+    );
     var selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
     var removedMessageIds = <String>[];
     var startedConversationIds = <String>[];
@@ -92,6 +116,11 @@ void main() {
       loadConversationToolSpecsUsecase = MockLoadConversationToolSpecsUsecase();
       monitoringService = MockMonitoringService();
       apiModelRepository = MockApiModelRepository();
+      modelUsageRepository = MockModelUsageRepository();
+      recordModelUsageUsecase = RecordModelUsageUsecase(
+        repository: modelUsageRepository,
+        getModel: (_, _) async => null,
+      );
       selectPromptMessagesUsecase = MockSelectPromptMessagesUsecase();
       removedMessageIds = [];
       startedConversationIds = [];
@@ -105,6 +134,7 @@ void main() {
       usecase = ContinueAgentService(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
+        recordModelUsageUsecase: recordModelUsageUsecase,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
           messageRepository: messageRepository,
@@ -167,6 +197,23 @@ void main() {
           .thenAnswer((_) async => _unfinishedAssistantMessage);
       when(() => messageRepository.patchMessage(any(), any()))
           .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => modelUsageRepository.recordRequest(any()))
+          .thenAnswer((invocation) async {
+            final input =
+                invocation.positionalArguments.single as ModelUsageRecordInput;
+            return ModelUsageRecord(
+              id: 'usage-1',
+              conversationId: input.conversationId,
+              providerId: input.providerId,
+              modelId: input.modelId,
+              requestKind: input.requestKind,
+              outcome: input.outcome,
+              usage: input.usage,
+              costStatus: input.costStatus,
+              costUsd: input.costUsd,
+              createdAt: DateTime.utc(2026),
+            );
+          });
     });
 
     test('disables tools for unsupported non-Codex models', () {
@@ -250,6 +297,17 @@ void main() {
       expect(streamingUpdate.metadata?.completionTokens, 12);
       expect(streamingUpdate.metadata?.totalTokens, isNull);
       expect(streamingUpdate.metadata?.usedTokens, 22);
+
+      final usageInput =
+          verify(() => modelUsageRepository.recordRequest(captureAny()))
+                  .captured
+                  .single
+              as ModelUsageRecordInput;
+      expect(usageInput.conversationId, 'conversation-1');
+      expect(usageInput.providerId, 'provider-1');
+      expect(usageInput.modelId, 'gpt-4');
+      expect(usageInput.requestKind, ModelUsageRequestKind.generation);
+      expect(usageInput.outcome, ModelUsageRequestOutcome.succeeded);
     });
 
     test(

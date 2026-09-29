@@ -63,6 +63,21 @@ void main() {
     expect(model.supportsDeferredTools, isFalse);
   });
 
+  test('parses cache-write pricing', () {
+    final model = ModelCapabilities.fromJson('anthropic', {
+      'id': 'claude-sonnet-5-5',
+      'name': 'Claude Sonnet 5.5',
+      'cost': {'cache_write': 3.75},
+      'limit': {'context': 1000, 'output': 100},
+      'modalities': {
+        'input': ['text'],
+        'output': ['text'],
+      },
+    });
+
+    expect(model.costCacheWrite, 3.75);
+  });
+
   test('parses model capabilities and eligibility', () {
     final model = ModelCapabilities.fromJson(
       'openai',

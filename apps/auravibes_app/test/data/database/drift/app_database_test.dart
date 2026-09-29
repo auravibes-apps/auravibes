@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 20);
+      expect(fixture.database.schemaVersion, 21);
     });
 
     test('migration defaults advanced capabilities to false', () async {
@@ -85,6 +85,7 @@ void main() {
       expect(fixture.database.apiModelsDao, isNotNull);
       expect(fixture.database.conversationDao, isNotNull);
       expect(fixture.database.messageDao, isNotNull);
+      expect(fixture.database.modelUsageRecordsDao, isNotNull);
       expect(fixture.database.conversationToolsDao, isNotNull);
       expect(fixture.database.skillsDao, isNotNull);
       expect(fixture.database.skillCredentialDefinitionsDao, isNotNull);
@@ -230,6 +231,36 @@ void main() {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
     });
+
+    test(
+      'migration adds cache-write pricing and request usage records',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 20
+          ..execute('CREATE TABLE api_models (id TEXT NOT NULL PRIMARY KEY)')
+          ..execute(
+            'CREATE TABLE conversations (id TEXT NOT NULL PRIMARY KEY)',
+          );
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final modelColumns = await fixture.database
+            .customSelect('PRAGMA table_info(api_models)')
+            .get();
+        final usageTable = await fixture.database
+            .customSelect(
+              "SELECT name FROM sqlite_master "
+              "WHERE type = 'table' AND name = 'model_usage_records'",
+            )
+            .get();
+
+        expect(
+          modelColumns.map((row) => row.read<String>('name')),
+          contains('cost_cache_write'),
+        );
+        expect(usageTable, hasLength(1));
+      },
+    );
 
     test('migration repairs the legacy api model modalities column', () async {
       await fixture.close();

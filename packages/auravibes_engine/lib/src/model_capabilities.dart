@@ -13,6 +13,7 @@ final class ModelCapabilities {
     this.family,
     this.costInput,
     this.costCacheRead,
+    this.costCacheWrite,
     this.costOutput,
     this.openWeights,
     this.supportsReasoning = false,
@@ -57,6 +58,7 @@ final class ModelCapabilities {
       family: _optionalString(json, 'family'),
       costInput: _optionalNum(cost, 'input')?.toDouble(),
       costCacheRead: _optionalNum(cost, 'cache_read')?.toDouble(),
+      costCacheWrite: _optionalNum(cost, 'cache_write')?.toDouble(),
       costOutput: _optionalNum(cost, 'output')?.toDouble(),
       openWeights: _optionalBool(json, 'open_weights'),
       supportsReasoning: legacyReasoning || reasoningOptions.isNotEmpty,
@@ -95,6 +97,7 @@ final class ModelCapabilities {
   final String? family;
   final double? costInput;
   final double? costCacheRead;
+  final double? costCacheWrite;
   final double? costOutput;
   final bool? openWeights;
   final bool supportsReasoning;

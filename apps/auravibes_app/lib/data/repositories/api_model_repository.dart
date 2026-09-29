@@ -253,6 +253,7 @@ extension ApiModelRepositoryModelMappings on ApiModelRepository {
     family: modelTable.family,
     costInput: modelTable.costInput,
     costCacheRead: modelTable.costCacheRead,
+    costCacheWrite: modelTable.costCacheWrite,
     costOutput: modelTable.costOutput,
     openWeights: modelTable.openWeights,
     supportsReasoning: modelTable.supportsReasoning,
@@ -333,6 +334,7 @@ ApiModelsCompanion _addModelCostMetadata(
   costInput: .new(entity.costInput),
   costOutput: .new(entity.costOutput),
   costCacheRead: .new(entity.costCacheRead),
+  costCacheWrite: .new(entity.costCacheWrite),
   limitContext: .new(entity.limitContext),
   limitOutput: .new(entity.limitOutput),
 );

@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -19,8 +20,10 @@ import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart'
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_compaction_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
@@ -125,6 +128,7 @@ class const CompactConversationUsecase({
   final Future<ModelSelectionStore> Function(String workspaceId)?
   modelSelectionStore,
   final ChatbotService? chatbotService,
+  final RecordModelUsageUsecase? recordModelUsageUsecase,
   final SelectCompactionRangeUsecase? selectCompactionRangeUsecase,
   final Future<ApiModelEntity?> Function(String providerId, String modelId)?
   getApiModel,
@@ -159,12 +163,23 @@ class const CompactConversationUsecase({
   Future<String> _generateSummary(
     WorkspaceModelSelectionWithConnectionEntity model,
     List<ChatMessage> chatHistory,
+    String conversationId,
   ) async {
     final service = chatbotService;
     if (service == null) {
       throw StateError('Local chatbot service unavailable');
     }
-    final stream = service.sendMessage(model, chatHistory);
+    final responseStream = service.sendMessage(model, chatHistory);
+    final recorder = recordModelUsageUsecase;
+    final stream = recorder == null
+        ? responseStream
+        : recorder.trackRequest(
+            conversationId: conversationId,
+            providerId: model.modelsProvider.id,
+            modelId: model.workspaceModelSelection.modelId,
+            requestKind: ModelUsageRequestKind.compaction,
+            stream: responseStream,
+          );
 
     return requireCompactionSummary(await _collectSummaryText(stream));
   }
@@ -462,7 +477,7 @@ extension on CompactConversationUsecase {
     required CompactionTrigger trigger,
   }) async {
     try {
-      return await _generateSummary(model, chatHistory);
+      return await _generateSummary(model, chatHistory, conversationId);
     } on Exception catch (error, stackTrace) {
       if (trigger == CompactionTrigger.auto) {
         await _persistRequiredFailureMessage(conversationId: conversationId);
@@ -684,6 +699,7 @@ compactConversationUsecaseProvider =
         modelSelectionStore: (workspaceId) =>
             ref.read(modelSelectionStoreProvider(workspaceId).future),
         chatbotService: ref.watch(chatbotServiceProvider),
+        recordModelUsageUsecase: ref.watch(recordModelUsageUsecaseProvider),
         selectCompactionRangeUsecase: ref.watch(
           selectCompactionRangeUsecaseProvider,
         ),

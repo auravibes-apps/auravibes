@@ -4,10 +4,13 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record_input.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -15,8 +18,10 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -41,6 +46,8 @@ class MockWorkspaceModelSelectionRepository extends Mock
 
 class MockChatbotService extends Mock implements ChatbotService;
 
+class MockModelUsageRepository extends Mock implements ModelUsageRepository;
+
 class FakeModelSelectionConnection extends Fake
     implements WorkspaceModelSelectionWithConnectionEntity;
 
@@ -55,6 +62,8 @@ class _CompactConversationFixture {
   MockConversationRepository? _mockConversationRepo;
   MockWorkspaceModelSelectionRepository? _mockModelSelectionRepo;
   MockChatbotService? _mockChatbotService;
+  MockModelUsageRepository? _mockModelUsageRepository;
+  RecordModelUsageUsecase? _recordModelUsageUsecase;
   ProviderContainer? _container;
   CompactConversationUsecase? _usecase;
 
@@ -70,6 +79,14 @@ class _CompactConversationFixture {
   MockChatbotService get mockChatbotService =>
       _mockChatbotService ?? fail('mockChatbotService not initialized');
 
+  MockModelUsageRepository get mockModelUsageRepository =>
+      _mockModelUsageRepository ??
+      fail('mockModelUsageRepository not initialized');
+
+  RecordModelUsageUsecase get recordModelUsageUsecase =>
+      _recordModelUsageUsecase ??
+      fail('recordModelUsageUsecase not initialized');
+
   CompactConversationUsecase get usecase =>
       _usecase ?? fail('usecase not initialized');
 
@@ -78,6 +95,11 @@ class _CompactConversationFixture {
     _mockConversationRepo = .new();
     _mockModelSelectionRepo = .new();
     _mockChatbotService = .new();
+    _mockModelUsageRepository = .new();
+    _recordModelUsageUsecase = RecordModelUsageUsecase(
+      repository: mockModelUsageRepository,
+      getModel: (_, _) async => null,
+    );
     final container = ProviderContainer();
     _container = container;
     final compactionExecution = container.read(
@@ -89,6 +111,7 @@ class _CompactConversationFixture {
       conversationRepository: mockConversationRepo,
       modelSelectionStore: (_) async => mockModelSelectionRepo,
       chatbotService: mockChatbotService,
+      recordModelUsageUsecase: recordModelUsageUsecase,
       selectCompactionRangeUsecase: const SelectCompactionRangeUsecase(),
     );
 
@@ -136,6 +159,23 @@ class _CompactConversationFixture {
             updatedAt: .new(2026),
           );
         });
+    when(() => mockModelUsageRepository.recordRequest(any()))
+        .thenAnswer((invocation) async {
+          final input =
+              invocation.positionalArguments.single as ModelUsageRecordInput;
+          return ModelUsageRecord(
+            id: 'usage-1',
+            conversationId: input.conversationId,
+            providerId: input.providerId,
+            modelId: input.modelId,
+            requestKind: input.requestKind,
+            outcome: input.outcome,
+            usage: input.usage,
+            costStatus: input.costStatus,
+            costUsd: input.costUsd,
+            createdAt: DateTime.utc(2026),
+          );
+        });
   }
 
   void dispose() {
@@ -145,6 +185,8 @@ class _CompactConversationFixture {
     _mockConversationRepo = null;
     _mockModelSelectionRepo = null;
     _mockChatbotService = null;
+    _mockModelUsageRepository = null;
+    _recordModelUsageUsecase = null;
     _usecase = null;
   }
 }
@@ -157,6 +199,17 @@ void main() {
     registerFallbackValue(FakeMessageToCreate());
     registerFallbackValue(FakeConversationPatch());
     registerFallbackValue(FakeMessagePatch());
+    registerFallbackValue(
+      const ModelUsageRecordInput(
+        conversationId: '',
+        providerId: '',
+        modelId: '',
+        requestKind: ModelUsageRequestKind.compaction,
+        outcome: ModelUsageRequestOutcome.succeeded,
+        usage: null,
+        costStatus: ModelUsageCostStatus.unknown,
+      ),
+    );
   });
 
   setUp(fixture.reset);
@@ -197,6 +250,9 @@ void main() {
             fixture.mockModelSelectionRepo,
           ),
           chatbotServiceProvider.overrideWithValue(fixture.mockChatbotService),
+          recordModelUsageUsecaseProvider.overrideWithValue(
+            fixture.recordModelUsageUsecase,
+          ),
           selectCompactionRangeUsecaseProvider.overrideWithValue(
             const SelectCompactionRangeUsecase(),
           ),
@@ -250,6 +306,19 @@ void main() {
 
       expect(result.status, CompactionExecutionStatus.success);
       expect(result.trigger, CompactionTrigger.manual);
+
+      final usageInput =
+          verify(
+                () => fixture.mockModelUsageRepository.recordRequest(
+                  captureAny(),
+                ),
+              ).captured.single
+              as ModelUsageRecordInput;
+      expect(usageInput.conversationId, 'conv-1');
+      expect(usageInput.providerId, 'openai');
+      expect(usageInput.modelId, 'gpt-4');
+      expect(usageInput.requestKind, ModelUsageRequestKind.compaction);
+      expect(usageInput.outcome, ModelUsageRequestOutcome.succeeded);
 
       final captured =
           verify(() => fixture.mockMessageRepo.createMessage(captureAny()))

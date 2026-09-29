@@ -403,6 +403,8 @@ extension on ChatbotService {
     promptTokens: _promptTokens(response),
     responseTokens: _responseTokens(response),
     totalTokens: _totalTokens(response),
+    cacheReadInputTokens: _cacheReadInputTokens(response),
+    cacheCreationInputTokens: _cacheCreationInputTokens(response),
     metadata: _responseMetadata(response),
   );
 
@@ -425,7 +427,31 @@ extension on ChatbotService {
   int? _totalTokens(GenerateResponseHelper<Object?> response) =>
       response.usage?.totalTokens?.toInt();
 
+  int? _cacheReadInputTokens(GenerateResponseHelper<Object?> response) =>
+      _usageMetadataToken(response, 'cacheReadInputTokens');
+
+  int? _cacheCreationInputTokens(GenerateResponseHelper<Object?> response) =>
+      _usageMetadataToken(response, 'cacheCreationInputTokens');
+
+  int? _usageMetadataToken(
+    GenerateResponseHelper<Object?> response,
+    String key,
+  ) {
+    final value = _providerResponseMetadata(response)[key];
+    return value is num ? value.toInt() : null;
+  }
+
   Map<String, Object?> _responseMetadata(
+    GenerateResponseHelper<Object?> response,
+  ) {
+    final metadata = {..._providerResponseMetadata(response)}
+      ..remove('cacheReadInputTokens')
+      ..remove('cacheCreationInputTokens');
+
+    return metadata;
+  }
+
+  Map<String, Object?> _providerResponseMetadata(
     GenerateResponseHelper<Object?> response,
   ) =>
       response.candidates?.firstOrNull?.message.metadata
