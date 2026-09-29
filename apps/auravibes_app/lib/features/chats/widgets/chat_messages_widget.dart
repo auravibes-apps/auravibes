@@ -1171,6 +1171,10 @@ class const _MessageTextContent({
           key: ValueKey(message.id),
           status: status,
           timestamp: message.createdAt,
+          timestampLabel: RelativeTimeFormatter.format(
+            message.createdAt,
+            translate: (key, {args}) => context.tr(key, args: args),
+          ),
         ),
       );
     }

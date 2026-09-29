@@ -454,6 +454,7 @@ TextStyle _tileTextStyle(_AuraTileAppearance appearance) => TextStyle(
   fontSize: _tileFontSize(appearance),
   fontWeight: _tileFontWeight(appearance),
   height: appearance.theme.typography.lineHeightBase,
+  fontFamily: appearance.theme.typography.bodyFontFamily,
 );
 
 double _tileFontSize(_AuraTileAppearance appearance) {

@@ -173,9 +173,11 @@ class const _ToolsOverviewHeader() extends StatelessWidget {
           style: .heading3,
           tint: .primary,
         ),
-        AuraText(
-          child: TextLocale(LocaleKeys.tools_screen_workspace_ai_tools),
-          style: .heading4,
+        Expanded(
+          child: AuraText(
+            child: TextLocale(LocaleKeys.tools_screen_workspace_ai_tools),
+            style: .heading4,
+          ),
         ),
       ],
     );
