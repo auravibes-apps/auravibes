@@ -125,7 +125,7 @@ class const _ConversationContextUsageLabels({
       return AuraText(
         child: Text(
           LocaleKeys
-              .chats_screens_chat_conversation_context_usage_label_limit_unavailable
+              .chats_screens_chat_conversation_context_usage_label_unavailable
               .tr(namedArgs: {'used': data.usageLabel}),
         ),
         style: .caption,

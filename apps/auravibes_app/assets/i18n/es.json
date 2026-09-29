@@ -488,7 +488,7 @@
       "view_sub_agent_run": "Ver ejecución",
       "context_usage": {
         "label": "Uso de ventana de contexto",
-        "label_limit_unavailable": "{used} tokens usados · límite no disponible",
+        "label_unavailable": "{used} tokens usados · límite no disponible",
         "limit_unavailable": "El límite de contexto no está disponible para este modelo.",
         "tooltip_normal": "Usando {used} de {limit} tokens ({percent}%). Margen saludable.",
         "tooltip_elevated": "Usando {used} de {limit} tokens ({percent}%). Acercándose al límite.",

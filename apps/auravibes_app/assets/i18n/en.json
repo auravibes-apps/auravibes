@@ -488,7 +488,7 @@
       "view_sub_agent_run": "View run",
       "context_usage": {
         "label": "Context window usage",
-        "label_limit_unavailable": "{used} tokens used · limit unavailable",
+        "label_unavailable": "{used} tokens used · limit unavailable",
         "limit_unavailable": "Context window limit unavailable for this model.",
         "tooltip_normal": "Using {used} of {limit} tokens ({percent}%). Healthy headroom.",
         "tooltip_elevated": "Using {used} of {limit} tokens ({percent}%). Approaching limit.",

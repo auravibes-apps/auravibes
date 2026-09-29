@@ -715,8 +715,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.view_sub_agent_run';
   static const chats_screens_chat_conversation_context_usage_label =
       'chats_screens.chat_conversation.context_usage.label';
-  static const chats_screens_chat_conversation_context_usage_label_limit_unavailable =
-      'chats_screens.chat_conversation.context_usage.label_limit_unavailable';
+  static const chats_screens_chat_conversation_context_usage_label_unavailable =
+      'chats_screens.chat_conversation.context_usage.label_unavailable';
   static const chats_screens_chat_conversation_context_usage_limit_unavailable =
       'chats_screens.chat_conversation.context_usage.limit_unavailable';
   static const chats_screens_chat_conversation_context_usage_tooltip_normal =
