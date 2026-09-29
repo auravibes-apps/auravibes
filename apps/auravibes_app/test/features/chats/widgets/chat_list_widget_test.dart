@@ -940,6 +940,143 @@ void main() {
       );
     });
 
+    testWidgets('prevents selection changes while bulk pin is in flight', (
+      tester,
+    ) async {
+      final finishPin = Completer<ConversationEntity>();
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Chat One'),
+          _createConversation(id: 'conv-2', title: 'Chat Two'),
+        ]),
+        onPatch: (id, patch) => finishPin.future,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      final staleClear = tester
+          .widget<AuraIconButton>(
+            find.ancestor(
+              of: find.byTooltip(
+                LocaleKeys.chats_screens_chats_list_clear_selection.tr(),
+              ),
+              matching: find.byType(AuraIconButton),
+            ),
+          )
+          .onPressed;
+      await tester.tap(find.text('Pin selected'));
+      await tester.pump();
+
+      expect(repo.patches, hasLength(1));
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(const ValueKey('conversation-selection-conv-1')),
+            )
+            .onChanged,
+        isNull,
+      );
+      staleClear?.call();
+      await tester.pump();
+      expect(find.text('1 selected'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Chat Two'));
+      await tester.pump();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(repo.patches, hasLength(1));
+
+      finishPin.complete(
+        _createConversation(title: 'Chat One', isPinned: true),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+    });
+
+    testWidgets('prevents selection changes while bulk delete is in flight', (
+      tester,
+    ) async {
+      final finishDelete = Completer<bool>();
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Chat One'),
+          _createConversation(id: 'conv-2', title: 'Chat Two'),
+        ]),
+        onDelete: (id) => finishDelete.future,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            deleteConversationUsecaseProvider.overrideWithValue(
+              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Delete selected'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pump();
+
+      expect(repo.deleteCalls, ['conv-1']);
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(const ValueKey('conversation-selection-conv-1')),
+            )
+            .onChanged,
+        isNull,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Chat Two'));
+      await tester.pump();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(repo.deleteCalls, ['conv-1']);
+
+      finishDelete.complete(true);
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsNothing);
+      expect(repo.deleteCalls, ['conv-1']);
+    });
+
     testWidgets('cancelled bulk delete leaves conversations unchanged', (
       tester,
     ) async {

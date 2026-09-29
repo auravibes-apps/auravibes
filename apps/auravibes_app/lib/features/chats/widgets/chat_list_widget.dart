@@ -67,8 +67,10 @@ class _ChatListViewState {
        searchQuery = actions.input.searchText.value,
        showSearchInput = data.hasSearchInput,
        selectedChats = actions.results.selectedChats,
+       isBulkActionRunning = actions.results.isBulkActionRunning,
        onSelectionChanged = _conversationSelectionChanged(
          actions.results.selectedChats,
+         actions.results.isBulkActionRunning,
        ),
        workspaceId = actions.workspaceId;
 
@@ -84,6 +86,7 @@ class _ChatListViewState {
   final String searchQuery;
   final bool showSearchInput;
   final ValueNotifier<Map<String, ConversationEntity>> selectedChats;
+  final ValueNotifier<bool> isBulkActionRunning;
   final _ChatListSelectionChanged onSelectionChanged;
   final String workspaceId;
 }
@@ -107,6 +110,7 @@ typedef _ChatListResultsState = ({
   ValueNotifier<bool> hasMore,
   ValueNotifier<bool> isLoadingMore,
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  ValueNotifier<bool> isBulkActionRunning,
 });
 
 typedef _ChatListDataState = ({
@@ -155,13 +159,14 @@ typedef _ChatTileCallbacks = ({
   VoidCallback onTogglePin,
   VoidCallback onRename,
   VoidCallback onMenuToggle,
-  VoidCallback onTap,
-  ValueChanged<bool> onSelectionChanged,
+  VoidCallback? onTap,
+  ValueChanged<bool>? onSelectionChanged,
 });
 
 typedef _ChatTileSelectionState = ({
   bool isSelected,
   bool isSelectionMode,
+  bool isSelectionEnabled,
   ValueChanged<bool> onSelectionChanged,
 });
 
@@ -296,6 +301,7 @@ _ChatListResultsState _useChatListResultsState() => (
   hasMore: useState(false),
   isLoadingMore: useState(false),
   selectedChats: useState<Map<String, ConversationEntity>>({}),
+  isBulkActionRunning: useState(false),
 );
 
 void Function()? _clearSelectedChats(
@@ -456,9 +462,12 @@ _ChatListActions _chatListActions(
 
 _ChatListSelectionChanged _conversationSelectionChanged(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
-) =>
-    (chat, {required selected}) =>
-        _setConversationSelection(selectedChats, chat, selected: selected);
+  ValueNotifier<bool> isBulkActionRunning,
+) => (chat, {required selected}) {
+  if (isBulkActionRunning.value) return;
+
+  _setConversationSelection(selectedChats, chat, selected: selected);
+};
 
 _ChatListActionCallbacks _chatListActionCallbacks(
   ValueNotifier<String> searchText,
@@ -611,11 +620,14 @@ extension on _ChatTileState {
     onRename: () => _handleRename(context),
     onMenuToggle: _menuController.toggle,
     onTap: _selectionAwareTap(context),
-    onSelectionChanged: widget.selection.onSelectionChanged,
+    onSelectionChanged: widget.selection.isSelectionEnabled
+        ? widget.selection.onSelectionChanged
+        : null,
   );
 
-  VoidCallback _selectionAwareTap(BuildContext context) {
+  VoidCallback? _selectionAwareTap(BuildContext context) {
     final selection = widget.selection;
+    if (!selection.isSelectionEnabled) return null;
 
     return selection.isSelectionMode
         ? () => selection.onSelectionChanged(!selection.isSelected)
@@ -863,6 +875,7 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
       _ChatListBulkActions(
         workspaceId: state.workspaceId,
         selectedChats: state.selectedChats,
+        isBulkActionRunning: state.isBulkActionRunning,
       ),
       _ChatListSearchInput(state: state),
       Expanded(child: _ChatListResults(state: state)),
@@ -875,6 +888,7 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
 class const _ChatListBulkActions({
   required final String workspaceId,
   required final ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  required final ValueNotifier<bool> isBulkActionRunning,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ChatListBulkActions> createState() =>
@@ -901,7 +915,10 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
           onPin: (isPinned) =>
               unawaited(_setPins(selected.values.toList(), isPinned)),
           onDelete: () => unawaited(_deleteSelected()),
-          onClear: () => widget.selectedChats.value = {},
+          onClear: () {
+            if (_isWorking) return;
+            widget.selectedChats.value = {};
+          },
         ),
       );
 
@@ -954,10 +971,14 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
 
   Future<void> _withWorking(Future<void> Function() action) async {
     setState(() => _isWorking = true);
+    widget.isBulkActionRunning.value = true;
     try {
       await action();
     } finally {
-      if (mounted) setState(() => _isWorking = false);
+      if (mounted) {
+        setState(() => _isWorking = false);
+        widget.isBulkActionRunning.value = false;
+      }
     }
   }
 
@@ -988,7 +1009,7 @@ void _recordPinnedChats(
 ) {
   final updated = {...selectedChats.value};
   for (final chat in chats) {
-    updated[chat.id] = chat;
+    if (updated.containsKey(chat.id)) updated[chat.id] = chat;
   }
   selectedChats.value = updated;
 }
@@ -1270,23 +1291,27 @@ class const _ChatListConversationListTile({
   required final int index,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) =>
-      ValueListenableBuilder<Map<String, ConversationEntity>>(
-        valueListenable: state.selectedChats,
-        builder: _buildChatTile,
-      );
+  Widget build(BuildContext _) => ValueListenableBuilder<bool>(
+    valueListenable: state.isBulkActionRunning,
+    builder: (context, isBulkActionRunning, _) =>
+        ValueListenableBuilder<Map<String, ConversationEntity>>(
+          valueListenable: state.selectedChats,
+          builder: (context, selected, _) =>
+              _buildChatTile(context, selected, isBulkActionRunning),
+        ),
+  );
 
   Widget _buildChatTile(
     BuildContext _,
     Map<String, ConversationEntity> selected,
-    Widget? _,
+    bool isBulkActionRunning,
   ) {
     final chat = state.chats[index];
 
     return _ChatTile(
       chat: chat,
       workspaceId: state.workspaceId,
-      selection: _tileSelection(chat, selected),
+      selection: _tileSelection(chat, selected, isBulkActionRunning),
       key: ValueKey(chat.id),
     );
   }
@@ -1294,9 +1319,11 @@ class const _ChatListConversationListTile({
   _ChatTileSelectionState _tileSelection(
     ConversationEntity chat,
     Map<String, ConversationEntity> selected,
+    bool isBulkActionRunning,
   ) => (
     isSelected: selected.containsKey(chat.id),
     isSelectionMode: selected.isNotEmpty,
+    isSelectionEnabled: !isBulkActionRunning,
     onSelectionChanged: (isSelected) =>
         state.onSelectionChanged(chat, selected: isSelected),
   );
@@ -1397,7 +1424,7 @@ class const _ChatTileMainSection({
   required final ConversationEntity chat,
   required final bool isSelected,
   required final String title,
-  required final ValueChanged<bool> onSelectionChanged,
+  required final ValueChanged<bool>? onSelectionChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Expanded(
@@ -1423,7 +1450,7 @@ class const _ChatTileSelectionControl({
   required final String conversationId,
   required final bool isSelected,
   required final String title,
-  required final ValueChanged<bool> onChanged,
+  required final ValueChanged<bool>? onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCheckbox(
