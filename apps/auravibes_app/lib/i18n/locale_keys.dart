@@ -11,6 +11,8 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const navigation_drawer_toggle_tooltip =
+      'navigation_drawer.toggle_tooltip';
   static const navigation_drawer_resize_handle_tooltip =
       'navigation_drawer.resize_handle_tooltip';
   static const navigation_drawer_resize_handle_hint =

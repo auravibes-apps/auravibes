@@ -10,6 +10,7 @@
     "more": "More"
   },
   "navigation_drawer": {
+    "toggle_tooltip": "Toggle navigation menu",
     "resize_handle_tooltip": "Resize navigation drawer",
     "resize_handle_hint": "Drag horizontally to change the drawer width"
   },
