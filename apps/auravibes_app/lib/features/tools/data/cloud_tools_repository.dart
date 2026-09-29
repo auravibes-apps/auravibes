@@ -267,7 +267,10 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
   }) async {
     _validateCloudMcpServer(server);
     final result =
-        server.catalogSnapshotJson == null && server.httpHeaders == null
+        server.catalogSnapshotJson == null &&
+            server.httpHeaders == null &&
+            server.oauthJson == null &&
+            server.transport is McpTransportTypeStreamableHttp
         ? await _createMcpServer(
             _createMcpRequest(
               server,
@@ -301,7 +304,10 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
     final _ = workspaceId;
     _validateCloudMcpServer(server);
     final result =
-        server.catalogSnapshotJson == null && server.httpHeaders == null
+        server.catalogSnapshotJson == null &&
+            server.httpHeaders == null &&
+            server.oauthJson == null &&
+            server.transport is McpTransportTypeStreamableHttp
         ? await _verifyMcpServer(_verifyMcpRequest(server))
         : await CloudMcpGateway(await _gateway).verifyCatalogMcpServer(server);
 
@@ -400,10 +406,15 @@ mixin _ToolsGroupOperations on _CloudToolsRepositoryBase {
 extension on _CloudToolsRepositoryBase {
   void _validateCloudMcpServer(McpServerFormToCreate server) {
     WorkspaceCapabilities.cloud
-      ..require(supported: server.transport is McpTransportTypeStreamableHttp)
       ..require(
         supported:
-            server.authenticationType != McpAuthenticationTypeOptions.oauth,
+            server.transport is McpTransportTypeStreamableHttp ||
+            server.transport is McpTransportTypeSSE,
+      )
+      ..require(
+        supported:
+            server.authenticationType != McpAuthenticationTypeOptions.oauth ||
+            server.oauthJson != null && server.bearerToken?.isNotEmpty == true,
       );
   }
 

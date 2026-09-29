@@ -46,11 +46,15 @@ final class const WorkspaceCapabilities({
     modelProviderIds: {'openai', 'openai-codex', 'openrouter', 'anthropic'},
     modelBrowserOAuth: true,
     modelDeviceOAuth: false,
-    mcpTransports: {WorkspaceMcpTransport.streamableHttp},
+    mcpTransports: {
+      WorkspaceMcpTransport.streamableHttp,
+      WorkspaceMcpTransport.sse,
+    },
     mcpAuthentication: {
       WorkspaceMcpAuthentication.none,
       WorkspaceMcpAuthentication.bearerToken,
       WorkspaceMcpAuthentication.httpHeaders,
+      WorkspaceMcpAuthentication.oauth,
     },
     nativeTools: false,
     skills: true,

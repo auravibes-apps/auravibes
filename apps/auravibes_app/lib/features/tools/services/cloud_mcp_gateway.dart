@@ -12,7 +12,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   ) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.verify(
-      VerifyMcpServerRequest(
+      .new(
         workspaceId: _stateGateway.workspace.cloudWorkspaceId,
         requestId: const UuidV7().generate(),
         url: server.url.trim(),
@@ -22,6 +22,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
         httpHeadersJson: server.httpHeaders == null
             ? null
             : jsonEncode(server.httpHeaders),
+        oauthJson: server.oauthJson,
       ),
     ),
   );
@@ -33,7 +34,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.create(
-      CreateMcpServerRequest(
+      .new(
         workspaceId: _stateGateway.workspace.cloudWorkspaceId,
         requestId: requestId,
         name: server.name.trim(),
@@ -45,6 +46,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
         httpHeadersJson: server.httpHeaders == null
             ? null
             : jsonEncode(server.httpHeaders),
+        oauthJson: server.oauthJson,
         catalogListingId: _snapshotField(server, 'id'),
         catalogOptionKey: _snapshotOptionKey(server),
         verificationReceipt: verificationReceipt,
@@ -154,6 +156,7 @@ String? _snapshotField(McpServerFormToCreate server, String key) {
   final raw = server.catalogSnapshotJson;
   if (raw == null) return null;
   final decoded = jsonDecode(raw) as Map<String, dynamic>;
+
   return decoded[key] as String?;
 }
 
@@ -161,5 +164,6 @@ String? _snapshotOptionKey(McpServerFormToCreate server) {
   final raw = server.catalogSnapshotJson;
   if (raw == null) return null;
   final decoded = jsonDecode(raw) as Map<String, dynamic>;
+
   return (decoded['option'] as Map<String, dynamic>)['key'] as String?;
 }

@@ -107,9 +107,7 @@ void main() {
     expect(region.obscureText, isFalse);
   });
 
-  testWidgets('shows unsupported cloud choices without allowing selection', (
-    tester,
-  ) async {
+  testWidgets('allows cloud SSE OAuth catalog choice', (tester) async {
     final listing = McpCatalogListing(
       id: 'sse-1',
       name: 'Event server',
@@ -167,8 +165,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Event server · OAuth'), findsOneWidget);
-    expect(find.textContaining('This option is unavailable'), findsOneWidget);
+    expect(find.textContaining('This option is unavailable'), findsNothing);
     final tile = tester.widget<ListTile>(find.byType(ListTile));
-    expect(tile.onTap, isNull);
+    expect(tile.onTap, isNotNull);
   });
 }

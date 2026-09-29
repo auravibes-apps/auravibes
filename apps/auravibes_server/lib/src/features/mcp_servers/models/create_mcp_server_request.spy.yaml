@@ -9,6 +9,7 @@ fields:
   description: String?
   bearerToken: String?
   httpHeadersJson: String?
+  oauthJson: String?
   catalogListingId: String?
   catalogOptionKey: String?
   verificationReceipt: String?

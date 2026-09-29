@@ -1702,7 +1702,7 @@ $McpAuthenticationTypeCopyWith<$Res> get authenticationType {
 /// @nodoc
 mixin _$McpServerFormToCreate {
 
- String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get oauthClientId; String? get description; Map<String, String>? get httpHeaders; String? get catalogSnapshotJson;
+ String get name; String get url; McpTransportType get transport; McpAuthenticationTypeOptions get authenticationType; String? get bearerToken; String? get oauthClientId; String? get description; Map<String, String>? get httpHeaders; String? get oauthJson; String? get catalogSnapshotJson;
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1714,14 +1714,14 @@ $McpServerFormToCreateCopyWith<McpServerFormToCreate> get copyWith => _$McpServe
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerFormToCreate;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.oauthClientId, _this.oauthClientId) || other.oauthClientId == _this.oauthClientId)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.httpHeaders, _this.httpHeaders)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.oauthClientId, _this.oauthClientId) || other.oauthClientId == _this.oauthClientId)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.httpHeaders, _this.httpHeaders)&&(identical(other.oauthJson, _this.oauthJson) || other.oauthJson == _this.oauthJson)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerFormToCreate;
-  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.oauthClientId,_this.description,const DeepCollectionEquality().hash(_this.httpHeaders),_this.catalogSnapshotJson);
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.oauthClientId,_this.description,const DeepCollectionEquality().hash(_this.httpHeaders),_this.oauthJson,_this.catalogSnapshotJson);
 }
 
 
@@ -1733,7 +1733,7 @@ abstract mixin class $McpServerFormToCreateCopyWith<$Res>  {
   factory $McpServerFormToCreateCopyWith(McpServerFormToCreate value, $Res Function(McpServerFormToCreate) _then) = _$McpServerFormToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? catalogSnapshotJson
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? oauthJson, String? catalogSnapshotJson
 });
 
 
@@ -1750,7 +1750,7 @@ class _$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? catalogSnapshotJson = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? oauthJson = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1760,7 +1760,8 @@ as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bear
 as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,httpHeaders: freezed == httpHeaders ? _self.httpHeaders : httpHeaders // ignore: cast_nullable_to_non_nullable
-as Map<String, String>?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,oauthJson: freezed == oauthJson ? _self.oauthJson : oauthJson // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -1846,10 +1847,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? oauthJson,  String? catalogSnapshotJson)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.oauthJson,_that.catalogSnapshotJson);case _:
   return orElse();
 
 }
@@ -1867,10 +1868,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? oauthJson,  String? catalogSnapshotJson)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate():
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.oauthJson,_that.catalogSnapshotJson);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1887,10 +1888,10 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? catalogSnapshotJson)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String url,  McpTransportType transport,  McpAuthenticationTypeOptions authenticationType,  String? bearerToken,  String? oauthClientId,  String? description,  Map<String, String>? httpHeaders,  String? oauthJson,  String? catalogSnapshotJson)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerFormToCreate() when $default != null:
-return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.catalogSnapshotJson);case _:
+return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_that.bearerToken,_that.oauthClientId,_that.description,_that.httpHeaders,_that.oauthJson,_that.catalogSnapshotJson);case _:
   return null;
 
 }
@@ -1902,7 +1903,7 @@ return $default(_that.name,_that.url,_that.transport,_that.authenticationType,_t
 
 
 class _McpServerFormToCreate extends McpServerFormToCreate {
-  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.oauthClientId, this.description,  Map<String, String>? httpHeaders, this.catalogSnapshotJson}): _httpHeaders = httpHeaders,super._();
+  const _McpServerFormToCreate({required this.name, required this.url, required this.transport, required this.authenticationType, required this.bearerToken, this.oauthClientId, this.description,  Map<String, String>? httpHeaders, this.oauthJson, this.catalogSnapshotJson}): _httpHeaders = httpHeaders,super._();
   
 
 @override final  String name;
@@ -1921,6 +1922,7 @@ class _McpServerFormToCreate extends McpServerFormToCreate {
   return EqualUnmodifiableMapView(value);
 }
 
+@override final  String? oauthJson;
 @override final  String? catalogSnapshotJson;
 
 /// Create a copy of McpServerFormToCreate
@@ -1933,13 +1935,13 @@ _$McpServerFormToCreateCopyWith<_McpServerFormToCreate> get copyWith => __$McpSe
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.oauthClientId, oauthClientId) || other.oauthClientId == oauthClientId)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.httpHeaders, _httpHeaders)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.oauthClientId, oauthClientId) || other.oauthClientId == oauthClientId)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.httpHeaders, _httpHeaders)&&(identical(other.oauthJson, oauthJson) || other.oauthJson == oauthJson)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,oauthClientId,description,const DeepCollectionEquality().hash(_httpHeaders),catalogSnapshotJson);
+    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,oauthClientId,description,const DeepCollectionEquality().hash(_httpHeaders),oauthJson,catalogSnapshotJson);
 }
 
 
@@ -1951,7 +1953,7 @@ abstract mixin class _$McpServerFormToCreateCopyWith<$Res> implements $McpServer
   factory _$McpServerFormToCreateCopyWith(_McpServerFormToCreate value, $Res Function(_McpServerFormToCreate) _then) = __$McpServerFormToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? catalogSnapshotJson
+ String name, String url, McpTransportType transport, McpAuthenticationTypeOptions authenticationType, String? bearerToken, String? oauthClientId, String? description, Map<String, String>? httpHeaders, String? oauthJson, String? catalogSnapshotJson
 });
 
 
@@ -1968,7 +1970,7 @@ class __$McpServerFormToCreateCopyWithImpl<$Res>
 
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? catalogSnapshotJson = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? oauthClientId = freezed,Object? description = freezed,Object? httpHeaders = freezed,Object? oauthJson = freezed,Object? catalogSnapshotJson = freezed,}) {
   return _then(_McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1978,7 +1980,8 @@ as McpAuthenticationTypeOptions,bearerToken: freezed == bearerToken ? _self.bear
 as String?,oauthClientId: freezed == oauthClientId ? _self.oauthClientId : oauthClientId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,httpHeaders: freezed == httpHeaders ? _self._httpHeaders : httpHeaders // ignore: cast_nullable_to_non_nullable
-as Map<String, String>?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
+as Map<String, String>?,oauthJson: freezed == oauthJson ? _self.oauthJson : oauthJson // ignore: cast_nullable_to_non_nullable
+as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

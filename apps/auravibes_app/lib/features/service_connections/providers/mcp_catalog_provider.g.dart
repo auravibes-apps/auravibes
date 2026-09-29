@@ -66,7 +66,7 @@ final class McpCatalogProvider
   }
 }
 
-String _$mcpCatalogHash() => r'98cb1447fb9d3ef0ff47473c889f7ccc9512320a';
+String _$mcpCatalogHash() => r'f58fb6fdc6dc2f09e4b676a7a0cb5bfae9f6a47d';
 
 final class McpCatalogFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<McpCatalogListing>>, String> {

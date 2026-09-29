@@ -70,6 +70,20 @@ class McpCatalogInstallation {
     if (missingRequiredFields.isNotEmpty) {
       throw const FormatException('Required catalog fields are missing.');
     }
+    if (option.authType == 'oauth' &&
+        option.fields.any(
+          (field) => field.key != 'clientId' || field.isSecret,
+        )) {
+      throw const FormatException('Unsupported OAuth catalog field.');
+    }
+    if ({'none', 'apiKey', 'httpHeaders'}.contains(option.authType)) {
+      final names = <String>{};
+      if (option.fields.any(
+        (field) => !names.add(field.key.toLowerCase()),
+      )) {
+        throw const FormatException('Duplicate catalog HTTP header.');
+      }
+    }
     final submitted = {
       for (final field in option.fields)
         if (values[field.key]?.trim().isNotEmpty == true)

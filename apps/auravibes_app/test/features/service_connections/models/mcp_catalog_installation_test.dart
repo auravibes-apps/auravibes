@@ -107,4 +107,53 @@ void main() {
       );
     }
   });
+
+  test('rejects OAuth fields that cannot be forwarded', () {
+    final option = McpCatalogConnectionOption(
+      key: 'oauth',
+      name: 'OAuth',
+      authType: 'oauth',
+      fields: [
+        McpCatalogCredentialField(
+          key: 'clientSecret',
+          isSecret: true,
+          isRequired: true,
+        ),
+      ],
+    );
+    final request = McpCatalogInstallation(
+      workspaceId: 'workspace-a',
+      listing: listing,
+      option: option,
+      values: {'clientSecret': 'secret-value'},
+    );
+    expect(() => request.toForm(), throwsFormatException);
+  });
+
+  test('rejects case-insensitive duplicate header names', () {
+    final option = McpCatalogConnectionOption(
+      key: 'headers',
+      name: 'Headers',
+      authType: 'httpHeaders',
+      fields: [
+        McpCatalogCredentialField(
+          key: 'X-Key',
+          isSecret: true,
+          isRequired: true,
+        ),
+        McpCatalogCredentialField(
+          key: 'x-key',
+          isSecret: true,
+          isRequired: true,
+        ),
+      ],
+    );
+    final request = McpCatalogInstallation(
+      workspaceId: 'workspace-a',
+      listing: listing,
+      option: option,
+      values: {'X-Key': 'first', 'x-key': 'second'},
+    );
+    expect(() => request.toForm(), throwsFormatException);
+  });
 }

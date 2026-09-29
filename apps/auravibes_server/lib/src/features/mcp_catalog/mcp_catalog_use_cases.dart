@@ -86,6 +86,16 @@ McpCatalogListing parseMcpCatalogListing(McpCatalogEntry entry) {
         ),
       );
     }
+    if (authType == 'oauth' &&
+        fields.any((field) => field.key != 'clientId' || field.isSecret)) {
+      throw const FormatException('Unsupported MCP OAuth catalog field');
+    }
+    if ({'none', 'apiKey', 'httpHeaders'}.contains(authType)) {
+      final names = <String>{};
+      if (fields.any((field) => !names.add(field.key.toLowerCase()))) {
+        throw const FormatException('Duplicate MCP HTTP header');
+      }
+    }
     options.add(
       McpCatalogConnectionOption(
         key: key,

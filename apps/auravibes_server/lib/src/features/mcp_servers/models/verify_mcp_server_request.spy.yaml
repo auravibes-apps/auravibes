@@ -7,3 +7,4 @@ fields:
   useHttp2: bool
   bearerToken: String?
   httpHeadersJson: String?
+  oauthJson: String?

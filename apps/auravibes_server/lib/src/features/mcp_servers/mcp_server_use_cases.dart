@@ -12,6 +12,8 @@ import '../workspace_state/workspace_secret_cipher.dart';
 import '../mcp_catalog/mcp_catalog_repository.dart';
 import '../mcp_catalog/mcp_catalog_use_cases.dart';
 import 'mcp_server_headers.dart';
+import 'mcp_oauth_credentials.dart';
+import 'mcp_oauth_token_resolver.dart';
 import 'mcp_server_policy.dart';
 import 'mcp_server_probe.dart';
 import 'mcp_server_repository.dart';
@@ -42,6 +44,13 @@ class McpServerUseCases(
       request.httpHeadersJson,
       request.bearerToken,
     );
+    final oauth = request.oauthJson == null
+        ? null
+        : McpOAuthCredentials.parse(request.oauthJson!);
+    if (oauth != null &&
+        (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
+      _validation();
+    }
     final discovery = await _probe(
       uri: McpServerPolicy.validateUri(url),
       transport: request.transport,
@@ -78,11 +87,13 @@ class McpServerUseCases(
       request.httpHeadersJson,
       request.bearerToken,
     );
-    final catalogSnapshotJson = await _catalogSnapshot(
-      session,
-      request,
-      headers,
-    );
+    final oauth = request.oauthJson == null
+        ? null
+        : McpOAuthCredentials.parse(request.oauthJson!);
+    if (oauth != null &&
+        (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
+      _validation();
+    }
     if (request.requestId.isEmpty ||
         name.isEmpty ||
         name.length > 200 ||
@@ -100,6 +111,7 @@ class McpServerUseCases(
       headers: headers,
       catalogListingId: request.catalogListingId,
       catalogOptionKey: request.catalogOptionKey,
+      oauthJson: request.oauthJson,
     );
     final existing = await session.db.transaction((transaction) async {
       await _authorize(
@@ -118,6 +130,11 @@ class McpServerUseCases(
       );
     });
     if (existing != null) return existing;
+    final catalogSnapshotJson = await _catalogSnapshot(
+      session,
+      request,
+      headers,
+    );
     final verificationReceipt = request.verificationReceipt;
     if (verificationReceipt == null) _validation();
     final discovery = await _discoveryFromVerificationReceipt(
@@ -174,7 +191,9 @@ class McpServerUseCases(
             },
             'description': description,
             'catalogSnapshotJson': ?catalogSnapshotJson,
-            'authType': headers.isNotEmpty
+            'authType': oauth != null
+                ? 'oauth'
+                : headers.isNotEmpty
                 ? 'httpHeaders'
                 : request.bearerToken?.isNotEmpty == true
                 ? 'bearerToken'
@@ -228,9 +247,11 @@ class McpServerUseCases(
           transaction: transaction,
         );
       }
-      final secretValue = headers.isNotEmpty
+      final secretValue = oauth == null
+          ? headers.isNotEmpty
           ? jsonEncode(headers)
-          : request.bearerToken;
+          : request.bearerToken
+          : request.oauthJson;
       if (secretValue case final token? when token.isNotEmpty) {
         final encrypted = await const WorkspaceSecretCipher().encrypt(
           session,
@@ -367,6 +388,12 @@ class McpServerUseCases(
         if (request.bearerToken?.isNotEmpty == true ||
             !headers.keys.toSet().containsAll(requiredKeys) ||
             !fieldKeys.containsAll(headers.keys)) {
+          _validation();
+        }
+      case 'oauth':
+        if (request.oauthJson == null ||
+            request.bearerToken?.isNotEmpty != true ||
+            headers.isNotEmpty) {
           _validation();
         }
       default:
@@ -570,6 +597,7 @@ class McpServerUseCases(
     required Map<String, String> headers,
     required String? catalogListingId,
     required String? catalogOptionKey,
+    required String? oauthJson,
   }) async {
     final tokenDigest = await _bearerTokenDigest(bearerToken);
     final headersDigest = await _headersDigest(headers);
@@ -586,6 +614,7 @@ class McpServerUseCases(
           'headersDigest': headersDigest,
           'catalogListingId': catalogListingId,
           'catalogOptionKey': catalogOptionKey,
+          'oauthDigest': await _bearerTokenDigest(oauthJson),
         }),
       ),
     );
@@ -611,6 +640,7 @@ class McpServerUseCases(
       'headersDigest': await _headersDigest(
         _validatedHeaders(request.httpHeadersJson, request.bearerToken),
       ),
+      'oauthDigest': await _bearerTokenDigest(request.oauthJson),
       'expiresAt': expiresAt.toIso8601String(),
       'discovery': discovery.toJson(),
     });
@@ -668,7 +698,9 @@ class McpServerUseCases(
           payload['headersDigest'] !=
               await _headersDigest(
                 _validatedHeaders(request.httpHeadersJson, request.bearerToken),
-              )) {
+              ) ||
+          payload['oauthDigest'] !=
+              await _bearerTokenDigest(request.oauthJson)) {
         _validation();
       }
       final expiresAt = DateTime.tryParse(
@@ -746,6 +778,8 @@ class McpServerUseCases(
     try {
       final decrypted = secret == null
           ? null
+          : metadata.authType == 'oauth'
+          ? await McpOAuthTokenResolver().resolve(session, secret)
           : await const WorkspaceSecretCipher().decrypt(session, secret);
       return await _probe(
         uri: McpServerPolicy.validateUri(metadata.url),
@@ -758,6 +792,8 @@ class McpServerUseCases(
       );
     } on FormatException {
       return _unhealthy('invalid_response');
+    } on McpOAuthReauthRequired {
+      return _unhealthy('reauth_required');
     } on TimeoutException {
       return _unhealthy('timeout');
     } on SocketException {

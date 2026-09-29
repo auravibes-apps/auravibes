@@ -6,6 +6,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 
 import '../../generated/protocol.dart';
 import 'mcp_server_policy.dart';
+import 'mcp_sse_session.dart';
 import 'pinned_http_client.dart';
 
 typedef McpAddressLookup = Future<List<InternetAddress>> Function(String host);
@@ -23,7 +24,7 @@ class McpServerProbe {
     String? bearerToken,
     Map<String, String> httpHeaders = const {},
   }) async {
-    if (transport != 'streamableHttp') {
+    if (!{'streamableHttp', 'sse'}.contains(transport)) {
       throw const FormatException('Unsupported MCP transport.');
     }
     if (useHttp2) {
@@ -31,6 +32,14 @@ class McpServerProbe {
     }
     final addresses = await _lookup(uri.host).timeout(_timeout);
     McpServerPolicy.validateAddresses(addresses);
+    if (transport == 'sse') {
+      return _discoverSse(
+        uri,
+        addresses.first,
+        bearerToken,
+        httpHeaders,
+      );
+    }
     final client = pinnedHttpClient(uri, addresses.first)
       ..connectionTimeout = _timeout
       ..autoUncompress = false;
@@ -88,6 +97,49 @@ class McpServerProbe {
       );
     } finally {
       client.close(force: true);
+    }
+  }
+
+  Future<DiscoverMcpServerResult> _discoverSse(
+    Uri uri,
+    InternetAddress address,
+    String? bearerToken,
+    Map<String, String> httpHeaders,
+  ) async {
+    final session = await McpSseSession.connect(
+      uri,
+      address,
+      bearerToken: bearerToken,
+      httpHeaders: httpHeaders,
+    );
+    try {
+      final initialized = await session.request(1, 'initialize', {
+        'protocolVersion': '2025-06-18',
+        'capabilities': <String, Object?>{},
+        'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
+      });
+      await session.notify('notifications/initialized', const {});
+      var requestId = 2;
+      final tools = await collectCloudMcpTools((cursor) => session.request(
+        requestId++,
+        'tools/list',
+        {'cursor': ?cursor},
+      )).timeout(const Duration(seconds: 30));
+      final serverInfo = initialized['serverInfo'];
+      final info = serverInfo is Map<Object?, Object?> ? serverInfo : null;
+      return DiscoverMcpServerResult(
+        health: McpServerHealth.healthy,
+        serverName: info?['name'] is String ? info!['name']! as String : null,
+        serverVersion: info?['version'] is String
+            ? info!['version']! as String
+            : null,
+        protocolVersion: initialized['protocolVersion'] is String
+            ? initialized['protocolVersion']! as String
+            : null,
+        tools: tools,
+      );
+    } finally {
+      await session.close();
     }
   }
 

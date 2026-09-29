@@ -24,6 +24,7 @@ abstract class CreateMcpServerRequest
     this.description,
     this.bearerToken,
     this.httpHeadersJson,
+    this.oauthJson,
     this.catalogListingId,
     this.catalogOptionKey,
     this.verificationReceipt,
@@ -39,6 +40,7 @@ abstract class CreateMcpServerRequest
     String? description,
     String? bearerToken,
     String? httpHeadersJson,
+    String? oauthJson,
     String? catalogListingId,
     String? catalogOptionKey,
     String? verificationReceipt,
@@ -57,6 +59,7 @@ abstract class CreateMcpServerRequest
       description: jsonSerialization['description'] as String?,
       bearerToken: jsonSerialization['bearerToken'] as String?,
       httpHeadersJson: jsonSerialization['httpHeadersJson'] as String?,
+      oauthJson: jsonSerialization['oauthJson'] as String?,
       catalogListingId: jsonSerialization['catalogListingId'] as String?,
       catalogOptionKey: jsonSerialization['catalogOptionKey'] as String?,
       verificationReceipt: jsonSerialization['verificationReceipt'] as String?,
@@ -81,6 +84,8 @@ abstract class CreateMcpServerRequest
 
   String? httpHeadersJson;
 
+  String? oauthJson;
+
   String? catalogListingId;
 
   String? catalogOptionKey;
@@ -100,6 +105,7 @@ abstract class CreateMcpServerRequest
     String? description,
     String? bearerToken,
     String? httpHeadersJson,
+    String? oauthJson,
     String? catalogListingId,
     String? catalogOptionKey,
     String? verificationReceipt,
@@ -117,6 +123,7 @@ abstract class CreateMcpServerRequest
       if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
       if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
       if (catalogListingId != null) 'catalogListingId': catalogListingId,
       if (catalogOptionKey != null) 'catalogOptionKey': catalogOptionKey,
       if (verificationReceipt != null)
@@ -137,6 +144,7 @@ abstract class CreateMcpServerRequest
       if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
       if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
       if (catalogListingId != null) 'catalogListingId': catalogListingId,
       if (catalogOptionKey != null) 'catalogOptionKey': catalogOptionKey,
       if (verificationReceipt != null)
@@ -163,6 +171,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
     String? description,
     String? bearerToken,
     String? httpHeadersJson,
+    String? oauthJson,
     String? catalogListingId,
     String? catalogOptionKey,
     String? verificationReceipt,
@@ -176,6 +185,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
          description: description,
          bearerToken: bearerToken,
          httpHeadersJson: httpHeadersJson,
+         oauthJson: oauthJson,
          catalogListingId: catalogListingId,
          catalogOptionKey: catalogOptionKey,
          verificationReceipt: verificationReceipt,
@@ -195,6 +205,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
     Object? description = _Undefined,
     Object? bearerToken = _Undefined,
     Object? httpHeadersJson = _Undefined,
+    Object? oauthJson = _Undefined,
     Object? catalogListingId = _Undefined,
     Object? catalogOptionKey = _Undefined,
     Object? verificationReceipt = _Undefined,
@@ -211,6 +222,7 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
       httpHeadersJson: httpHeadersJson is String?
           ? httpHeadersJson
           : this.httpHeadersJson,
+      oauthJson: oauthJson is String? ? oauthJson : this.oauthJson,
       catalogListingId: catalogListingId is String?
           ? catalogListingId
           : this.catalogListingId,

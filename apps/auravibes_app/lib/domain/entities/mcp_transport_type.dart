@@ -303,6 +303,8 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
 
     Map<String, String>? httpHeaders,
 
+    String? oauthJson,
+
     String? catalogSnapshotJson,
   }) = _McpServerFormToCreate;
 

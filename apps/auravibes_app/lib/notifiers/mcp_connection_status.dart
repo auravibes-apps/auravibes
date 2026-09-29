@@ -266,6 +266,7 @@ class _PreparedMcpConnection {
   StreamSubscription<OAuthTokenEntity>? tokenSubscription;
   String? cloudCreateRequestId;
   String? cloudCommitFingerprint;
+  McpServerFormToCreate? cloudVerifiedForm;
 
   Future<void> close() async {
     await tokenSubscription?.cancel();
@@ -349,7 +350,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       workspaceId: workspaceId,
     );
     if (_isCloud) {
-      return await _prepareCloudMcpConnection(request, serverToCreate);
+      return await _prepareCloudMcpConnection(
+        request,
+        serverToCreate,
+        onOAuthDeviceCode: onOAuthDeviceCode,
+        isOAuthCancelled: isOAuthCancelled,
+      );
     }
 
     return await _prepareLocalMcpConnection(
@@ -375,7 +381,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     if (_isCloud) {
       await _commitCloudPreparedMcpConnection(
         session,
-        serverToCreate,
+        session.cloudVerifiedForm ?? serverToCreate,
         workspaceId,
       );
 
@@ -685,21 +691,53 @@ extension _McpPreparedConnectionOperations on McpConnectionNotifier {
 extension _McpPreparationOperations on McpConnectionNotifier {
   Future<McpConnectionVerification> _prepareCloudMcpConnection(
     _McpPrepareRequest request,
-    McpServerFormToCreate server,
-  ) async {
+    McpServerFormToCreate server, {
+    void Function(McpOAuthDeviceCode deviceCode) onOAuthDeviceCode =
+        _ignoreOAuthDeviceCode,
+    bool Function() isOAuthCancelled = _neverCancelOAuth,
+  }) async {
+    final verifiedForm =
+        server.authenticationType == McpAuthenticationTypeOptions.oauth
+        ? await _cloudOAuthForm(
+            server,
+            onOAuthDeviceCode: onOAuthDeviceCode,
+            isOAuthCancelled: isOAuthCancelled,
+          )
+        : server;
     final verification = await _cloudRepository.verifyMcpServer(
       workspaceId: request.workspaceId,
-      server: server,
+      server: verifiedForm,
     );
     if (_isDisposed) throw const McpVerificationRequiredException();
 
     final session = _storePreparedCloudMcpConnection(
       request,
-      server,
+      verifiedForm,
       verification,
-    );
+    )..cloudVerifiedForm = verifiedForm;
 
     return _mcpVerificationSummary(session);
+  }
+
+  Future<McpServerFormToCreate> _cloudOAuthForm(
+    McpServerFormToCreate form, {
+    required void Function(McpOAuthDeviceCode deviceCode) onOAuthDeviceCode,
+    required bool Function() isOAuthCancelled,
+  }) async {
+    final prepared = await _buildMcpServerInfo(
+      form,
+      onOAuthDeviceCode: onOAuthDeviceCode,
+      isOAuthCancelled: isOAuthCancelled,
+    );
+    final auth = prepared.authenticationType;
+    if (auth is! McpAuthenticationTypeOAuth) {
+      throw const FormatException('MCP OAuth authentication failed.');
+    }
+
+    return form.copyWith(
+      bearerToken: auth.token.accessToken,
+      oauthJson: jsonEncode(auth.toJson()),
+    );
   }
 
   Future<McpConnectionVerification> _prepareLocalMcpConnection(
@@ -880,6 +918,9 @@ String _mcpConnectionFingerprint(McpServerFormToCreate server) {
         .convert(utf8.encode(jsonEncode(server.httpHeaders ?? const {})))
         .toString(),
     'oauthClientId': server.oauthClientId?.trim() ?? '',
+    'oauthDigest': sha256
+        .convert(utf8.encode(server.oauthJson ?? ''))
+        .toString(),
   });
 }
 

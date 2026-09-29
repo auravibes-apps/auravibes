@@ -32,6 +32,9 @@ void main() {
       '[{"key":"x","name":"X","authType":"apiKey","fields":[{"key":"token","isSecret":true,"isRequired":true,"value":"leak"}]}]',
       '[{"key":"x","name":"X","authType":"apiKey","fields":[{"key":"token","isSecret":true,"isRequired":true},{"key":"token","isSecret":false,"isRequired":false}]}]',
       '[{"key":"x","name":"X","authType":"unknown","fields":[]}]',
+      '[{"key":"x","name":"X","authType":"oauth","fields":[{"key":"clientSecret","isSecret":true,"isRequired":true}]}]',
+      '[{"key":"x","name":"X","authType":"oauth","fields":[{"key":"clientId","isSecret":true,"isRequired":true}]}]',
+      '[{"key":"x","name":"X","authType":"httpHeaders","fields":[{"key":"X-Key","isSecret":true,"isRequired":true},{"key":"x-key","isSecret":true,"isRequired":false}]}]',
     ]) {
       expect(
         () => parseMcpCatalogListing(

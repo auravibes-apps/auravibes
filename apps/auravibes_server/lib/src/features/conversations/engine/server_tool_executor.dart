@@ -10,6 +10,8 @@ import '../../../generated/protocol.dart';
 import '../../agents/agent_catalog_repository.dart';
 import '../../agents/agent_catalog_use_cases.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
+import '../../mcp_servers/mcp_sse_session.dart';
+import '../../mcp_servers/mcp_oauth_token_resolver.dart';
 import '../../mcp_servers/pinned_http_client.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../mcp_servers/mcp_server_headers.dart';
@@ -1356,7 +1358,8 @@ class const ServerToolExecutorService({
     );
     final data = _jsonMap(server.data);
     final transport = data['transport'];
-    if (transport is! Map || transport['type'] != 'streamableHttp') {
+    if (transport is! Map ||
+        !{'streamableHttp', 'sse'}.contains(transport['type'])) {
       throw const ServerToolNotConfiguredException();
     }
     final uri = McpServerPolicy.validateUri(data['url'] as String);
@@ -1374,8 +1377,25 @@ class const ServerToolExecutorService({
     await _throwIfCancelled(session, turn);
     final decrypted = secret == null
         ? null
+        : data['authType'] == 'oauth'
+        ? await McpOAuthTokenResolver().resolve(session, secret)
         : await const WorkspaceSecretCipher().decrypt(session, secret);
-    final result = await _postJson(
+    final bearerToken = data['authType'] == 'httpHeaders' ? null : decrypted;
+    final httpHeaders = data['authType'] == 'httpHeaders'
+        ? parseMcpHttpHeaders(decrypted)
+        : const <String, String>{};
+    final result = transport['type'] == 'sse'
+        ? await _callSse(
+            session,
+            turn,
+            uri,
+            addresses.first,
+            tool.descriptor.toolIdentifier,
+            arguments,
+            bearerToken: bearerToken,
+            httpHeaders: httpHeaders,
+          )
+        : await _postJson(
       session,
       turn,
       uri,
@@ -1389,10 +1409,8 @@ class const ServerToolExecutorService({
           'arguments': arguments,
         },
       },
-      bearerToken: data['authType'] == 'httpHeaders' ? null : decrypted,
-      httpHeaders: data['authType'] == 'httpHeaders'
-          ? parseMcpHttpHeaders(decrypted)
-          : const {},
+      bearerToken: bearerToken,
+      httpHeaders: httpHeaders,
     );
     return McpToolResult(
       content: switch (result['content']) {
@@ -1410,6 +1428,41 @@ class const ServerToolExecutorService({
       },
       isError: result['isError'] as bool?,
     ).toModelText();
+  }
+
+  Future<Map<String, Object?>> _callSse(
+    Session serverSession,
+    ConversationTurn turn,
+    Uri uri,
+    InternetAddress address,
+    String toolName,
+    Map<String, dynamic> arguments, {
+    String? bearerToken,
+    Map<String, String> httpHeaders = const {},
+  }) async {
+    final sse = await McpSseSession.connect(
+      uri,
+      address,
+      bearerToken: bearerToken,
+      httpHeaders: httpHeaders,
+    );
+    final done = Completer<void>();
+    unawaited(_closeClientOnCancellation(sse.client, serverSession, turn, done));
+    try {
+      await sse.request(1, 'initialize', {
+        'protocolVersion': '2025-06-18',
+        'capabilities': <String, Object?>{},
+        'clientInfo': {'name': 'AuraVibes Server', 'version': '1.0.0'},
+      });
+      await sse.notify('notifications/initialized', const {});
+      return await sse.request(2, 'tools/call', {
+        'name': toolName,
+        'arguments': arguments,
+      });
+    } finally {
+      if (!done.isCompleted) done.complete();
+      await sse.close();
+    }
   }
 
   Future<Object?> _runSkill(
