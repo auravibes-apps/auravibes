@@ -174,15 +174,21 @@ extension McpFormNotifierWorkflowActions on McpFormNotifier {
     if (discard && verificationId != null) {
       unawaited(_discardPreparedVerification(verificationId));
     }
-    if (_formState.isConnectionVerified ||
-        _formState.verifiedToolCount != 0 ||
-        _formState.transport == .sse) {
-      _formState = _formState.copyWith(
-        isConnectionVerified: false,
-        verifiedToolCount: 0,
-        transport: .streamableHttp,
-      );
+    _clearVerifiedFormState();
+  }
+
+  void _clearVerifiedFormState() {
+    if (!_formState.isConnectionVerified &&
+        _formState.verifiedToolCount == 0 &&
+        _formState.transport != .sse) {
+      return;
     }
+
+    _formState = _formState.copyWith(
+      isConnectionVerified: false,
+      verifiedToolCount: 0,
+      transport: .streamableHttp,
+    );
   }
 
   void _expireVerification(String verificationId) {
@@ -513,21 +519,31 @@ bool _setMcpVerification(
   McpFormNotifier notifier,
   McpConnectionVerification verification,
 ) {
-  final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
-  notifier._verificationId = verification.id;
-  if (remaining <= .zero) {
-    notifier._expireVerification(verification.id);
-
-    return false;
-  }
+  final remaining = _remainingMcpVerification(notifier, verification);
+  if (remaining == null) return false;
   _scheduleMcpVerificationExpiry(notifier, verification.id, remaining);
-  notifier._formState = _formStateWithDetectedTransport(
-    notifier._formState,
-    verification.transport,
+  notifier._formState = _markMcpVerification(
+    _formStateWithDetectedTransport(
+      notifier._formState,
+      verification.transport,
+    ),
+    verification.toolCount,
   );
-  _markMcpVerification(notifier, verification.toolCount);
 
   return true;
+}
+
+Duration? _remainingMcpVerification(
+  McpFormNotifier notifier,
+  McpConnectionVerification verification,
+) {
+  notifier._verificationId = verification.id;
+  final remaining = verification.expiresAt.difference(DateTime.now().toUtc());
+  if (remaining > .zero) return remaining;
+
+  notifier._expireVerification(verification.id);
+
+  return null;
 }
 
 McpFormState _formStateWithDetectedTransport(
@@ -541,6 +557,9 @@ McpFormState _formStateWithDetectedTransport(
   ),
 };
 
+McpFormState _markMcpVerification(McpFormState state, int toolCount) =>
+    state.copyWith(isConnectionVerified: true, verifiedToolCount: toolCount);
+
 void _scheduleMcpVerificationExpiry(
   McpFormNotifier notifier,
   String verificationId,
@@ -550,13 +569,6 @@ void _scheduleMcpVerificationExpiry(
   notifier._verificationExpiryTimer = .new(
     remaining,
     () => notifier._expireVerification(verificationId),
-  );
-}
-
-void _markMcpVerification(McpFormNotifier notifier, int toolCount) {
-  notifier._formState = notifier._formState.copyWith(
-    isConnectionVerified: true,
-    verifiedToolCount: toolCount,
   );
 }
 

@@ -731,24 +731,13 @@ extension _McpPreparationOperations on McpConnectionNotifier {
   ) async {
     McpManagerClient? client;
     try {
-      client = await manager.connectMcpWithAutoTransport((
-        name: serverInfo.name,
-        url: serverInfo.url,
-        useHttp2: switch (serverInfo.transport) {
-          McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
-          McpTransportTypeSSE() => false,
-        },
-        authenticationType: serverInfo.authenticationType,
-        serviceConnectionId: serverInfo.serviceConnectionId,
-        description: serverInfo.description,
-      ));
-      final resolvedServerInfo = serverInfo.copyWith(
-        transport: client.resolvedTransport,
+      client = await manager.connectMcpWithAutoTransport(
+        _mcpConnectionRequest(serverInfo),
       );
       final verification = await _prepareConnectedLocalMcp((
         request: request,
         manager: manager,
-        serverInfo: resolvedServerInfo,
+        serverInfo: serverInfo.copyWith(transport: client.resolvedTransport),
         client: client,
       ));
       client = null;
@@ -887,6 +876,18 @@ extension _McpLocalPreparationSupportOperations on McpConnectionNotifier {
     return tools;
   }
 }
+
+McpConnectionRequest _mcpConnectionRequest(McpServerToCreate serverInfo) => (
+  name: serverInfo.name,
+  url: serverInfo.url,
+  useHttp2: switch (serverInfo.transport) {
+    McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
+    McpTransportTypeSSE() => false,
+  },
+  authenticationType: serverInfo.authenticationType,
+  serviceConnectionId: serverInfo.serviceConnectionId,
+  description: serverInfo.description,
+);
 
 String _mcpConnectionFingerprint(McpServerFormToCreate server) {
   final bearerToken = server.bearerToken?.trim() ?? '';

@@ -322,7 +322,6 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
   final authType = server.authenticationType;
   final transport = await _createStreamableTransport(
     server,
-    authType,
     transportType,
     oauthCredentialService: oauthCredentialService,
     httpClient: httpClient,
@@ -336,24 +335,24 @@ Future<mcp.ClientTransport> _createHttpTransportConfig(
 
 Future<mcp.StreamableHttpClientTransport> _createStreamableTransport(
   McpServerToCreate server,
-  McpAuthenticationType authType,
   McpTransportTypeStreamableHttp transportType, {
   required OAuthCredentialService? oauthCredentialService,
   http.Client? httpClient,
-}) => mcp.StreamableHttpClientTransport.create(
-  baseUrl: server.url,
-  oauthConfig: authType is McpAuthenticationTypeOAuth
-      ? null
-      : _getOauthConfig(authType),
-  headers: authType is McpAuthenticationTypeOAuth
-      ? const {}
-      : _httpHeaders(authType),
-  headersProvider: authType is McpAuthenticationTypeOAuth
-      ? (_) => _oauthHeaders(server, authType, oauthCredentialService)
-      : null,
-  useHttp2: transportType.useHttp2,
-  httpClient: httpClient,
-);
+}) {
+  final authType = server.authenticationType;
+  final isOAuth = authType is McpAuthenticationTypeOAuth;
+
+  return mcp.StreamableHttpClientTransport.create(
+    baseUrl: server.url,
+    oauthConfig: isOAuth ? null : _getOauthConfig(authType),
+    headers: isOAuth ? const {} : _httpHeaders(authType),
+    headersProvider: isOAuth
+        ? (_) => _oauthHeaders(server, authType, oauthCredentialService)
+        : null,
+    useHttp2: transportType.useHttp2,
+    httpClient: httpClient,
+  );
+}
 
 Future<Map<String, String>> _oauthHeaders(
   McpServerToCreate server,

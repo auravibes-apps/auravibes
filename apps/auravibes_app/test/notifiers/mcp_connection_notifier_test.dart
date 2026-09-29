@@ -1214,6 +1214,13 @@ class _FailingMcpManagerService extends McpManagerService {
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
     throw Exception('Connection refused');
   }
+
+  @override
+  Future<McpManagerClient> connectMcpWithAutoTransport(
+    McpConnectionRequest request,
+  ) async {
+    throw Exception('Connection refused');
+  }
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
@@ -1235,6 +1242,21 @@ class _SuccessfulMcpManagerService extends McpManagerService {
 
     return _client;
   }
+
+  @override
+  Future<McpManagerClient> connectMcpWithAutoTransport(
+    McpConnectionRequest request,
+  ) =>
+      connectMcp(
+        McpServerToCreate(
+          name: request.name,
+          url: request.url,
+          transport: _client.resolvedTransport,
+          authenticationType: request.authenticationType,
+          serviceConnectionId: request.serviceConnectionId,
+          description: request.description,
+        ),
+      );
 
   @override
   Future<void> disconnect(McpManagerClient? client) async {

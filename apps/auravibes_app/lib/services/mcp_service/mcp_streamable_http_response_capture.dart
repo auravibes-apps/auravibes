@@ -55,21 +55,26 @@ final class McpStreamableHttpResponseCapture extends http.BaseClient {
 
   static bool _isJsonRpcErrorResponse(List<int> body, Object? requestId) {
     if (requestId == null || body.isEmpty) return false;
-    try {
-      final decoded = jsonDecode(utf8.decode(body));
-      if (decoded is! Map) return false;
-      final response = Map<String, Object?>.from(decoded);
-      final error = response['error'];
-      if (error is! Map) return false;
-      final errorObject = Map<String, Object?>.from(error);
+    final decoded = _decodeResponseBody(body);
+    if (decoded is! Map<Object?, Object?>) return false;
 
-      return response['jsonrpc'] == '2.0' &&
-          response['id'] == requestId &&
-          errorObject['code'] is num &&
-          errorObject['message'] is String;
+    return decoded['jsonrpc'] == '2.0' &&
+        decoded['id'] == requestId &&
+        _hasJsonRpcError(decoded['error']);
+  }
+
+  static Object? _decodeResponseBody(List<int> body) {
+    try {
+      return jsonDecode(utf8.decode(body));
     } on FormatException {
-      return false;
+      return null;
     }
+  }
+
+  static bool _hasJsonRpcError(Object? value) {
+    if (value is! Map<Object?, Object?>) return false;
+
+    return value['code'] is num && value['message'] is String;
   }
 
   static http.StreamedResponse _replayResponse(
