@@ -1349,10 +1349,12 @@ class const _SkillToolForm({
   required final SkillTemplateToolEntity? tool,
   required final _SkillToolFormData data,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(12)
-        .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+    padding: const EdgeInsets.all(_contentPadding)
+        .copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
     children: [
       AuraCard(
         child: _SkillToolFormContent(tool: tool, data: data),

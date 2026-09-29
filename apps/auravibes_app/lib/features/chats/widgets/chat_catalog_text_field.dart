@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
 
 /// A catalog field whose text stays synchronized with its bound model value.
@@ -104,6 +105,7 @@ class const _ChatCatalogTextFieldInput({
     Widget? hint,
     Widget? error,
     int maxLines,
+    TextInputAction textInputAction,
     Widget? placeholder,
   })
   values,
@@ -117,7 +119,7 @@ class const _ChatCatalogTextFieldInput({
     error: values.error,
     isRequired: isRequired,
     keyboardType: values.keyboardType,
-    textInputAction: values.maxLines > 1 ? .newline : .done,
+    textInputAction: values.textInputAction,
     obscureText: values.obscureText,
     maxLines: values.maxLines,
     maxLength: maxLength,
@@ -133,6 +135,7 @@ class const _ChatCatalogTextFieldInput({
   Widget? hint,
   Widget? error,
   int maxLines,
+  TextInputAction textInputAction,
   Widget? placeholder,
 })
 _fieldValues(ChatCatalogTextField widget) => (
@@ -142,7 +145,8 @@ _fieldValues(ChatCatalogTextField widget) => (
   error: _fieldError(widget.errorText),
   keyboardType: _fieldKeyboardType(widget.variant),
   obscureText: widget.variant == 'password',
-  maxLines: widget.variant == 'multiline' ? 4 : 1,
+  maxLines: _fieldMaxLines(widget.variant),
+  textInputAction: _fieldTextInputAction(widget.variant),
 );
 
 Widget? _optionalFieldText(String value) => value.isEmpty ? null : Text(value);
@@ -157,3 +161,8 @@ TextInputType? _fieldKeyboardType(String? variant) => switch (variant) {
   'email' => TextInputType.emailAddress,
   _ => null,
 };
+
+int _fieldMaxLines(String? variant) => variant == 'multiline' ? 4 : 1;
+
+TextInputAction _fieldTextInputAction(String? variant) =>
+    variant == 'multiline' ? .newline : .done;

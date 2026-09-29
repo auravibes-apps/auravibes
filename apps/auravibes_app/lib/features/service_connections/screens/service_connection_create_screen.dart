@@ -746,11 +746,14 @@ class const _AppSkillCredentialForm({
   required final VoidCallback onSave,
   required final bool canSave,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [_AppSkillCredentialCard._fromForm(this)],
       keyboardDismissBehavior: .onDrag,
     );
@@ -968,6 +971,8 @@ class const _CredentialFormContent({
   required final ValueChanged<String?> onDefinitionChanged,
   required final VoidCallback onSave,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   new fromCredentialForm(
     _CredentialForm form,
     List<SkillCredentialDefinitionEntity> definitions,
@@ -985,8 +990,9 @@ class const _CredentialFormContent({
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [_CredentialFormCard.fromContent(this)],
       keyboardDismissBehavior: .onDrag,
     );
@@ -1087,25 +1093,39 @@ class const _CredentialFormFieldsColumn({
     );
 
     return AuraColumn(
-      children: [
-        _CredentialNameField._fromCredentialCard(
-          card,
-          hasAttributes: attributes.isNotEmpty,
-        ),
-        _CredentialAttributesFields._fromCredentialCard(
-          card,
-          definition,
-          onSave: card.onSave,
-          canSubmit:
-              !card.isSaving && card.nameController.text.trim().isNotEmpty,
-        ),
-        _CredentialSaveAction._fromCredentialCard(card),
-      ],
+      children: _CredentialFormFieldChildren(
+        card: card,
+        definition: definition,
+        attributes: attributes,
+      ).values,
       spacing: .md,
       crossAxisAlignment: .start,
       mainAxisSize: .min,
     );
   }
+}
+
+class _CredentialFormFieldChildren {
+  new({
+    required _CredentialFormCard card,
+    required SkillCredentialDefinitionEntity definition,
+    required Map<String, SkillCredentialAttributeDefinition> attributes,
+  }) : values = [
+         _CredentialNameField._fromCredentialCard(
+           card,
+           hasAttributes: attributes.isNotEmpty,
+         ),
+         _CredentialAttributesFields._fromCredentialCard(
+           card,
+           definition,
+           onSave: card.onSave,
+           canSubmit:
+               !card.isSaving && card.nameController.text.trim().isNotEmpty,
+         ),
+         _CredentialSaveAction._fromCredentialCard(card),
+       ];
+
+  final List<Widget> values;
 }
 
 class const _DefinitionSelector({
@@ -1177,28 +1197,55 @@ class const _CredentialAttributeFieldsColumn({
   required final bool canSubmit,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _CredentialAttributeFieldColumn(
+    attributes: attributes,
+    controllers: controllers,
+    onSave: onSave,
+    canSubmit: canSubmit,
+  );
+}
+
+class const _CredentialAttributeFieldColumn({
+  required final Map<String, SkillCredentialAttributeDefinition> attributes,
+  required final Map<String, TextEditingController> controllers,
+  required final VoidCallback onSave,
+  required final bool canSubmit,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    final entries = attributes.entries.toList(growable: false);
+    final lastKey = attributes.keys.lastOrNull;
 
     return AuraColumn(
       children: [
-        for (var index = 0; index < entries.length; index++)
-          _CredentialAttributeField(
-            entry: entries[index],
-            controller: _credentialAttributeController(
-              controllers,
-              entries[index].key,
-            ),
-            textInputAction: index == entries.length - 1 ? .done : .next,
-            onSubmitted: index == entries.length - 1 && canSubmit
-                ? (_) => onSave()
-                : null,
+        for (final entry in attributes.entries)
+          _CredentialAttributeFieldRow(
+            entry: entry,
+            controllers: controllers,
+            onSave: onSave,
+            canSubmit: canSubmit,
+            isLast: entry.key == lastKey,
           ),
       ],
       spacing: .md,
       crossAxisAlignment: .start,
     );
   }
+}
+
+class const _CredentialAttributeFieldRow({
+  required final MapEntry<String, SkillCredentialAttributeDefinition> entry,
+  required final Map<String, TextEditingController> controllers,
+  required final VoidCallback onSave,
+  required final bool canSubmit,
+  required final bool isLast,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CredentialAttributeField(
+    entry: entry,
+    controller: _credentialAttributeController(controllers, entry.key),
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: isLast && canSubmit ? (_) => onSave() : null,
+  );
 }
 
 TextEditingController _credentialAttributeController(

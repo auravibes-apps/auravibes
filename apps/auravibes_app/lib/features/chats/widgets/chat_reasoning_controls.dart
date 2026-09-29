@@ -449,15 +449,17 @@ class const _ReasoningBudgetInput({
     LocaleKeys.chats_screens_chat_conversation_reasoning_budget_tokens,
   );
 
+  Widget? get _errorWidget => switch (error) {
+    final message? => _ReasoningBudgetError(message: message),
+    null => null,
+  };
+
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
     label: _label,
     hint: _ReasoningBudgetHint(option: option),
-    error: switch (error) {
-      final message? => _ReasoningBudgetError(message: message),
-      null => null,
-    },
+    error: _errorWidget,
     keyboardType: .number,
     textInputAction: .done,
     enabled: enabled,

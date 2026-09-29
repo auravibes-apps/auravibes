@@ -214,11 +214,14 @@ class const _CredentialDefinitionsList({
   required final Set<String> duplicatingIds,
   required final ValueChanged<SkillCredentialDefinitionEntity> onDuplicate,
 }) extends StatelessWidget {
+  static const _contentPadding = 8.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(8)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 8)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       itemBuilder: _itemBuilder,
       separatorBuilder: _separatorBuilder,
       itemCount: definitions.length,

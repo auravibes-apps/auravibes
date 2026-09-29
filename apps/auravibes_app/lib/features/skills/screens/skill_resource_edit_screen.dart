@@ -299,14 +299,15 @@ class const _SkillResourceForm({
   required final SkillResourceEntity? resource,
   required final AppSkillResourceDefinition? staticResource,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     final isReadOnly = staticResource != null;
     final slug = resource?.slug ?? staticResource?.slug;
 
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: _paddingFor(context),
       children: [
         _SkillResourceFormCard(
           state: state,
@@ -317,6 +318,10 @@ class const _SkillResourceForm({
       keyboardDismissBehavior: .onDrag,
     );
   }
+
+  EdgeInsets _paddingFor(BuildContext context) => const EdgeInsets.all(
+    _contentPadding,
+  ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding));
 }
 
 class const _SkillResourceFormCard({
@@ -351,20 +356,26 @@ class const _SkillResourceIdentityFields({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       if (slug case final slug?) _SkillResourceSlugField(slug: slug),
-      AuraInput(
-        controller: state._titleController,
-        label: Text(
-          LocaleKeys.skills_resource_title_label.tr(context: context),
-        ),
-        textInputAction: isReadOnly ? null : .done,
-        enabled: !isReadOnly,
-        onSubmitted: !isReadOnly && !state._isSaving
-            ? (_) => state._save(context)
-            : null,
-      ),
+      _SkillResourceTitleInput(state: state, isReadOnly: isReadOnly),
     ],
     spacing: .md,
     crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourceTitleInput({
+  required final _SkillResourceEditScreenState state,
+  required final bool isReadOnly,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: state._titleController,
+    label: Text(LocaleKeys.skills_resource_title_label.tr(context: context)),
+    textInputAction: isReadOnly ? null : .done,
+    enabled: !isReadOnly,
+    onSubmitted: !isReadOnly && !state._isSaving
+        ? (_) => state._save(context)
+        : null,
   );
 }
 

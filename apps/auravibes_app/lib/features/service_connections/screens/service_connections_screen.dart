@@ -794,18 +794,25 @@ String _filteredConnectionsMessage(
 class const _ConnectionsListView({
   required final List<ServiceConnectionListItem> connections,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
-      itemBuilder: (context, index) =>
-          _ConnectionTile(connection: connections[index]),
+      padding: _contentPaddingFor(context),
+      itemBuilder: _itemBuilder,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemCount: connections.length,
       keyboardDismissBehavior: .onDrag,
     );
   }
+
+  EdgeInsets _contentPaddingFor(BuildContext context) => const EdgeInsets.all(
+    _contentPadding,
+  ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding));
+
+  Widget _itemBuilder(BuildContext _, int index) =>
+      _ConnectionTile(connection: connections[index]);
 }
 
 String _connectionFilterLabel(BuildContext context, _ConnectionFilter filter) {

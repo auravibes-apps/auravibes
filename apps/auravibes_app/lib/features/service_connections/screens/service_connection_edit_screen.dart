@@ -931,11 +931,14 @@ class const _SkillCredentialEditForm({
 
 class const _ConnectionEditFormShell({required final List<Widget> children})
     extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
         AuraCard(
           child: AuraColumn(
@@ -1030,14 +1033,16 @@ class const _SkillCredentialNameInput({
       label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
       textInputAction: hasAttributes ? .next : .done,
       onChanged: (_) => owner._refreshForm(),
-      onSubmitted:
-          hasAttributes ||
-              owner._isSaving ||
-              owner._nameController.text.trim().isEmpty
-          ? null
-          : (_) => owner._saveSkillCredential(context),
+      onSubmitted: _onSubmitted(context),
     );
   }
+
+  ValueChanged<String>? _onSubmitted(BuildContext context) =>
+      hasAttributes ||
+          owner._isSaving ||
+          owner._nameController.text.trim().isEmpty
+      ? null
+      : (_) => owner._saveSkillCredential(context);
 }
 
 class const _SkillCredentialEditAttributes({
@@ -1046,29 +1051,57 @@ class const _SkillCredentialEditAttributes({
   required final Map<String, SkillCredentialAttributeDefinition> attributes,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _SkillCredentialEditAttributeColumn(
+    state: state,
+    owner: owner,
+    attributes: attributes,
+  );
+}
+
+class const _SkillCredentialEditAttributeColumn({
+  required final _SkillCredentialEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+  required final Map<String, SkillCredentialAttributeDefinition> attributes,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
-    final entries = attributes.entries.toList(growable: false);
+    final lastKey = attributes.keys.lastOrNull;
 
     return AuraColumn(
       children: [
-        for (var index = 0; index < entries.length; index++)
-          _SkillCredentialAttributeInput(
-            entries[index],
-            editState: state,
+        for (final entry in attributes.entries)
+          _SkillCredentialEditAttributeInputRow(
+            entry: entry,
+            state: state,
             owner: owner,
-            textInputAction: index == entries.length - 1 ? .done : .next,
-            onSubmitted:
-                index == entries.length - 1 &&
-                    !owner._isSaving &&
-                    owner._nameController.text.trim().isNotEmpty
-                ? (_) => owner._saveSkillCredential(context)
-                : null,
+            isLast: entry.key == lastKey,
           ),
       ],
       spacing: .md,
       crossAxisAlignment: .start,
     );
   }
+}
+
+class const _SkillCredentialEditAttributeInputRow({
+  required final MapEntry<String, SkillCredentialAttributeDefinition> entry,
+  required final _SkillCredentialEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+  required final bool isLast,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillCredentialAttributeInput(
+    entry,
+    editState: state,
+    owner: owner,
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: _onSubmitted(context),
+  );
+
+  ValueChanged<String>? _onSubmitted(BuildContext context) =>
+      isLast && !owner._isSaving && owner._nameController.text.trim().isNotEmpty
+      ? (_) => owner._saveSkillCredential(context)
+      : null;
 }
 
 abstract class _SkillCredentialAttributeInput extends StatelessWidget {

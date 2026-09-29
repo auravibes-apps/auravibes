@@ -296,16 +296,10 @@ class _AuraMaterialApp extends MaterialApp {
     required Iterable<Locale> locales,
   }) : super.router(
          routerConfig: routerConfig,
-         builder: (context, child) => TweenAnimationBuilder<AuraTheme>(
-           tween: _AuraThemeTween(end: targetAuraTheme),
-           duration: kThemeAnimationDuration,
-           builder: (context, theme, _) => AuraThemeScope(
-             theme: theme,
-             child: _RouteTitle(
-               router: routerConfig,
-               child: _snackBarBuilder(context, child),
-             ),
-           ),
+         builder: (context, child) => _AuraAppContent(
+           router: routerConfig,
+           targetAuraTheme: targetAuraTheme,
+           child: child,
          ),
          title: AppFlavorConfig.instance.title,
          scrollBehavior: const _AuraScrollBehavior(),
@@ -319,63 +313,133 @@ class _AuraMaterialApp extends MaterialApp {
        );
 }
 
+class const _AuraAppContent({
+  required final GoRouter router,
+  required final AuraTheme targetAuraTheme,
+  required final Widget? child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<AuraTheme>(
+    tween: _AuraThemeTween(end: targetAuraTheme),
+    duration: kThemeAnimationDuration,
+    builder: (context, theme, _) => _AuraAppThemeContent(
+      router: router,
+      theme: theme,
+      child: _snackBarBuilder(context, child),
+    ),
+  );
+}
+
+class const _AuraAppThemeContent({
+  required final GoRouter router,
+  required final AuraTheme theme,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraThemeScope(
+    theme: theme,
+    child: _RouteTitle(router: router, child: child),
+  );
+}
+
 class const _RouteTitle({
   required final GoRouter router,
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: router.routeInformationProvider,
-    builder: (context, _) {
-      final key = titleKeyForPath(
-        router.routeInformationProvider.value.uri.path,
-      );
-      final appTitle = AppFlavorConfig.instance.title;
-      final title = key == null
-          ? appTitle
-          : '${key.tr(context: context)} - $appTitle';
+  Widget build(BuildContext context) {
+    final routeInformationProvider = router.routeInformationProvider;
 
-      return Title(
-        title: title,
-        color: Theme.of(context).colorScheme.surface,
+    return ListenableBuilder(
+      listenable: routeInformationProvider,
+      builder: (context, _) => _RouteTitleContent(
+        path: routeInformationProvider.value.uri.path,
         child: child,
-      );
-    },
-  );
+      ),
+    );
+  }
 }
 
-String? titleKeyForPath(String path) {
-  final segments = Uri.parse(path).pathSegments;
-  if (path == '/') return LocaleKeys.intro_flow_welcome_title;
-  if (segments case ['intro', ...]) {
-    return LocaleKeys.intro_flow_welcome_title;
+class const _RouteTitleContent({
+  required final String path,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final key = RouteTitles.titleKeyForPath(path);
+    final appTitle = AppFlavorConfig.instance.title;
+    final title = key == null
+        ? appTitle
+        : '${key.tr(context: context)} - $appTitle';
+
+    return Title(
+      title: title,
+      color: Theme.of(context).colorScheme.surface,
+      child: child,
+    );
   }
-  if (segments.length < 3 || segments.firstOrNull != 'workspaces') return null;
+}
 
-  if (segments[2] == 'chat') return LocaleKeys.menu_new_chat;
-  if (segments[2] == 'chats') return LocaleKeys.menu_chats;
-  if (segments[2] == 'settings') return LocaleKeys.settings_screen_title;
-  if (segments[2] != 'more') return null;
-  if (segments.length < 4) return LocaleKeys.more_screen_title;
+abstract final class RouteTitles {
+  static const _workspaceRouteLength = 3;
+  static const _moreRouteLength = 4;
+  static const _cloudAccountRouteLength = 5;
+  static const _workspaceAreaIndex = 2;
+  static const _moreSectionIndex = 3;
+  static const _cloudAccountScreenIndex = 4;
 
-  return switch (segments[3]) {
-    'manage-workspaces' => LocaleKeys.workspace_management_title,
-    'cloud-accounts' when segments.length > 4 => switch (segments[4]) {
+  static String? titleKeyForPath(String path) {
+    if (path == '/') return LocaleKeys.intro_flow_welcome_title;
+
+    final segments = Uri.parse(path).pathSegments;
+    if (segments case ['intro', ...]) {
+      return LocaleKeys.intro_flow_welcome_title;
+    }
+    if (segments.length < _workspaceRouteLength ||
+        segments.firstOrNull != 'workspaces') {
+      return null;
+    }
+
+    return switch (segments[_workspaceAreaIndex]) {
+      'chat' => LocaleKeys.menu_new_chat,
+      'chats' => LocaleKeys.menu_chats,
+      'settings' => LocaleKeys.settings_screen_title,
+      'more' => _moreTitleKey(segments),
+      _ => null,
+    };
+  }
+
+  static String? _moreTitleKey(List<String> segments) {
+    if (segments.length < _moreRouteLength) {
+      return LocaleKeys.more_screen_title;
+    }
+
+    return switch (segments[_moreSectionIndex]) {
+      'manage-workspaces' => LocaleKeys.workspace_management_title,
+      'cloud-accounts' => _cloudAccountTitleKey(segments),
+      'tools' => LocaleKeys.tools_screen_title,
+      'models' => LocaleKeys.models_screens_title,
+      'service-connections' => LocaleKeys.service_connections_title,
+      'skills' => LocaleKeys.skills_screen_title,
+      'skill-credential-definitions' =>
+        LocaleKeys.skill_credentials_definitions_title,
+      'agents' => LocaleKeys.agents_title,
+      _ => null,
+    };
+  }
+
+  static String _cloudAccountTitleKey(List<String> segments) {
+    if (segments.length < _cloudAccountRouteLength) {
+      return LocaleKeys.cloud_accounts_title;
+    }
+
+    return switch (segments[_cloudAccountScreenIndex]) {
       'login' => LocaleKeys.cloud_accounts_login_existing,
       'register' => LocaleKeys.cloud_accounts_register,
       'forgot-password' => LocaleKeys.cloud_accounts_forgot_password,
       _ => LocaleKeys.cloud_accounts_title,
-    },
-    'cloud-accounts' => LocaleKeys.cloud_accounts_title,
-    'tools' => LocaleKeys.tools_screen_title,
-    'models' => LocaleKeys.models_screens_title,
-    'service-connections' => LocaleKeys.service_connections_title,
-    'skills' => LocaleKeys.skills_screen_title,
-    'skill-credential-definitions' =>
-      LocaleKeys.skill_credentials_definitions_title,
-    'agents' => LocaleKeys.agents_title,
-    _ => null,
-  };
+    };
+  }
 }
 
 class const _AuraScrollBehavior() extends MaterialScrollBehavior {
@@ -499,32 +563,55 @@ final _auraPageTransitionsTheme = PageTransitionsTheme(
   },
 );
 
-ThemeData _buildBaseThemeCore(_AuraThemeParts parts) => ThemeData(
+ThemeData _buildBaseThemeCore(_AuraThemeParts parts) {
+  final colors = parts.colors;
+  final foundation = _baseThemeFoundation(parts);
+
+  return _baseThemeInputStyle(
+    _baseThemeInteractionColors(foundation, colors),
+    colors,
+  );
+}
+
+ThemeData _baseThemeFoundation(_AuraThemeParts parts) => ThemeData(
   pageTransitionsTheme: _auraPageTransitionsTheme,
   splashFactory: NoSplash.splashFactory,
   useMaterial3: true,
   colorScheme: _auraColorScheme(parts.colors, parts.brightness),
   brightness: parts.brightness,
-  focusColor: parts.colors.surfaceVariant,
+  fontFamily: parts.auraTheme.typography.bodyFontFamily,
+);
+
+ThemeData _baseThemeInteractionColors(
+  ThemeData theme,
+  AuraColorScheme colors,
+) => theme.copyWith(
+  focusColor: colors.surfaceVariant,
   highlightColor: Colors.transparent,
   hoverColor: Colors.transparent,
   splashColor: Colors.transparent,
-  fontFamily: parts.auraTheme.typography.bodyFontFamily,
-  floatingActionButtonTheme: const FloatingActionButtonThemeData(
-    splashColor: Colors.transparent,
-  ),
-  textButtonTheme: .new(
-    style: .new(
-      overlayColor: _focusOnlyOverlay(parts.colors.surfaceVariant),
-      splashFactory: NoSplash.splashFactory,
-    ),
-  ),
-  textSelectionTheme: .new(
-    cursorColor: parts.colors.primary,
-    selectionColor: parts.colors.primary.withValues(alpha: 0.24),
-    selectionHandleColor: parts.colors.primary,
-  ),
 );
+
+ThemeData _baseThemeInputStyle(ThemeData theme, AuraColorScheme colors) {
+  final primary = colors.primary;
+
+  return theme.copyWith(
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      splashColor: Colors.transparent,
+    ),
+    textButtonTheme: .new(
+      style: .new(
+        overlayColor: _focusOnlyOverlay(colors.surfaceVariant),
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    textSelectionTheme: .new(
+      cursorColor: primary,
+      selectionColor: primary.withValues(alpha: 0.24),
+      selectionHandleColor: primary,
+    ),
+  );
+}
 
 class const _NoPageTransitionsBuilder() extends PageTransitionsBuilder {
   @override

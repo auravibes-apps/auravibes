@@ -1478,18 +1478,7 @@ class const _ChatTileMetadata({
   @override
   Widget build(BuildContext context) => AuraRow(
     children: [
-      Expanded(
-        child: AuraText(
-          child: Text(
-            RelativeTimeFormatter.format(
-              chat.updatedAt,
-              locale: Localizations.localeOf(context),
-            ),
-            overflow: .ellipsis,
-          ),
-          style: .bodySmall,
-        ),
-      ),
+      Expanded(child: _ChatTileUpdatedAt(updatedAt: chat.updatedAt)),
       ActiveSubAgentStatusWidget(
         workspaceId: chat.workspaceId,
         conversationId: chat.id,
@@ -1497,6 +1486,21 @@ class const _ChatTileMetadata({
         controlKey: ValueKey('chat_list_active_sub_agents_${chat.id}'),
       ),
     ],
+  );
+}
+
+class const _ChatTileUpdatedAt({required final DateTime updatedAt})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      RelativeTimeFormatter.format(
+        updatedAt,
+        locale: Localizations.localeOf(context),
+      ),
+      overflow: .ellipsis,
+    ),
+    style: .bodySmall,
   );
 }
 

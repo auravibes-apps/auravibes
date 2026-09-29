@@ -58,17 +58,16 @@ class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
       mcpFormProvider(workspaceId).select(_hasUnsavedMcpFormChanges),
     );
 
-    return PopScope<Object?>(
-      child: _AddMcpDialogContent(
-        workspaceId: workspaceId,
-        onSubmit: () => unawaited(_submitForm(context)),
-      ),
-      canPop: !hasUnsavedChanges || _allowPop,
-      onPopInvokedWithResult: _onPopInvoked,
+    return _AddMcpNavigationScope(
+      workspaceId: workspaceId,
+      hasUnsavedChanges: hasUnsavedChanges,
+      allowPop: _allowPop,
+      onSubmit: () => unawaited(_submitForm(context)),
+      onPopInvoked: _onPopInvoked,
     );
   }
 
-  void _onPopInvoked(bool didPop, Object? _) {
+  void _onPopInvoked(bool didPop) {
     if (!didPop) unawaited(_confirmDiscard(context));
   }
 
@@ -125,6 +124,21 @@ class const _AddMcpDialogContent({
           .circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       );
+}
+
+class const _AddMcpNavigationScope({
+  required final String workspaceId,
+  required final bool hasUnsavedChanges,
+  required final bool allowPop,
+  required final VoidCallback onSubmit,
+  required final ValueChanged<bool> onPopInvoked,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopScope<Object?>(
+    child: _AddMcpDialogContent(workspaceId: workspaceId, onSubmit: onSubmit),
+    canPop: !hasUnsavedChanges || allowPop,
+    onPopInvokedWithResult: (didPop, _) => onPopInvoked(didPop),
+  );
 }
 
 class const _AddMcpDialogLayout({
@@ -193,52 +207,52 @@ class const _McpFormStack({
   );
 }
 
+typedef _McpFormDisplayState = ({
+  bool canSubmit,
+  McpOAuthDeviceCode? oauthDeviceCode,
+  bool showBearerTokenField,
+  bool showOAuthFields,
+});
+
 class const _McpFormFields({
   required final String workspaceId,
   required final VoidCallback onSubmit,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) => _McpFormFieldsLayout(
-    workspaceId: workspaceId,
-    onSubmit: onSubmit,
-    canSubmit: ref.watch(
-      mcpFormProvider(workspaceId).select(
-        (value) =>
-            value.isConnectionVerified &&
-            !value.isSubmitting &&
-            !value.isTestingConnection,
-      ),
-    ),
-    oauthDeviceCode: ref.watch(
-      mcpFormProvider(workspaceId).select((value) => value.oauthDeviceCode),
-    ),
-    showBearerTokenField: ref.watch(
-      mcpFormProvider(workspaceId)
-          .select((value) => value.showBearerTokenField),
-    ),
-    showOAuthFields: ref.watch(
-      mcpFormProvider(workspaceId).select((value) => value.showOAuthFields),
-    ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final displayState = ref.watch(
+      mcpFormProvider(workspaceId).select(_selectState),
+    );
+
+    return _McpFormFieldsLayout(
+      workspaceId: workspaceId,
+      onSubmit: onSubmit,
+      displayState: displayState,
+    );
+  }
+
+  static _McpFormDisplayState _selectState(McpFormState value) => (
+    canSubmit:
+        value.isConnectionVerified &&
+        !value.isSubmitting &&
+        !value.isTestingConnection,
+    oauthDeviceCode: value.oauthDeviceCode,
+    showBearerTokenField: value.showBearerTokenField,
+    showOAuthFields: value.showOAuthFields,
   );
 }
 
 class const _McpFormFieldsLayout({
   required final String workspaceId,
   required final VoidCallback onSubmit,
-  required final bool canSubmit,
-  required final McpOAuthDeviceCode? oauthDeviceCode,
-  required final bool showBearerTokenField,
-  required final bool showOAuthFields,
+  required final _McpFormDisplayState displayState,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: _McpFormFieldChildren(
       workspaceId: workspaceId,
       onSubmit: onSubmit,
-      canSubmit: canSubmit,
-      oauthDeviceCode: oauthDeviceCode,
-      showBearerTokenField: showBearerTokenField,
-      showOAuthFields: showOAuthFields,
+      displayState: displayState,
     ).values,
     spacing: .md,
     crossAxisAlignment: .stretch,
@@ -249,39 +263,43 @@ class _McpFormFieldChildren {
   new({
     required String workspaceId,
     required VoidCallback onSubmit,
-    required bool canSubmit,
-    required McpOAuthDeviceCode? oauthDeviceCode,
-    required bool showBearerTokenField,
-    required bool showOAuthFields,
+    required _McpFormDisplayState displayState,
   }) : values = [
          _ErrorBanner(workspaceId: workspaceId),
          _NameInput(workspaceId: workspaceId),
          _DescriptionInput(workspaceId: workspaceId),
          _UrlInput(
            workspaceId: workspaceId,
-           textInputAction: showOAuthFields || showBearerTokenField
+           textInputAction:
+               displayState.showOAuthFields || displayState.showBearerTokenField
                ? .next
                : .done,
-           onSubmitted: !showOAuthFields && !showBearerTokenField && canSubmit
+           onSubmitted:
+               !displayState.showOAuthFields &&
+                   !displayState.showBearerTokenField &&
+                   displayState.canSubmit
                ? onSubmit
                : null,
          ),
          _TransportSelector(workspaceId: workspaceId),
          _AuthenticationSelector(workspaceId: workspaceId),
-         if (showOAuthFields)
+         if (displayState.showOAuthFields)
            _OAuthAdvancedSettings(
              workspaceId: workspaceId,
-             textInputAction: showBearerTokenField ? .next : .done,
-             onSubmitted: !showBearerTokenField && canSubmit ? onSubmit : null,
+             textInputAction: displayState.showBearerTokenField ? .next : .done,
+             onSubmitted:
+                 !displayState.showBearerTokenField && displayState.canSubmit
+                 ? onSubmit
+                 : null,
            ),
-         if (oauthDeviceCode case final value?)
+         if (displayState.oauthDeviceCode case final value?)
            _McpOAuthDeviceCodePanel(deviceCode: value),
          Visibility(
            child: _BearerTokenField(
              workspaceId: workspaceId,
-             onSubmitted: canSubmit ? onSubmit : null,
+             onSubmitted: displayState.canSubmit ? onSubmit : null,
            ),
-           visible: showBearerTokenField,
+           visible: displayState.showBearerTokenField,
          ),
          _VerificationStatus(workspaceId: workspaceId),
        ];

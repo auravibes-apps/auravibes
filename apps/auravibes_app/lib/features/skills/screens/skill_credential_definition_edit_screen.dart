@@ -705,11 +705,14 @@ class const _SkillCredentialDefinitionForm({
   required final _SkillCredentialDefinitionEditScreenState state,
   required final SkillCredentialDefinitionEntity? definition,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
         _CredentialDefinitionFormCard(state: state, definition: definition),
       ],
@@ -870,18 +873,19 @@ class const _CredentialDefinitionAttributeRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final onSubmitted = isLast && !state._isSaving
-        ? (_) => unawaited(state._save(context))
-        : null;
-
     return _AttributeRowEditor(
       row: row,
       controls: .new(state: state, row: row),
       descriptionTextInputAction: isLast ? .done : .next,
-      onDescriptionSubmitted: onSubmitted,
+      onDescriptionSubmitted: _onSubmitted(context),
       key: ValueKey(row),
     );
   }
+
+  ValueChanged<String>? _onSubmitted(BuildContext context) =>
+      isLast && !state._isSaving
+      ? (_) => unawaited(state._save(context))
+      : null;
 }
 
 class const _CredentialDefinitionAddAttributeButton({

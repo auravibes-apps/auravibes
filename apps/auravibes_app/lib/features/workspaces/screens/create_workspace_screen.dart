@@ -30,20 +30,20 @@ class CreateWorkspaceScreen extends StatelessWidget {
 class const _CreateWorkspaceContent({required final String workspaceId})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16)
-          .copyWith(bottom: BottomPadding.of(context)),
-      children: [
-        CreateWorkspaceForm(
-          onCreated: (workspace) =>
-              context.go(NewChatRoute(workspaceId: workspace.id).location),
-          onAddCloudAccount: () => _addCloudAccount(context),
-        ),
-      ],
-      keyboardDismissBehavior: .onDrag,
-    );
-  }
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(16)
+        .copyWith(bottom: BottomPadding.of(context)),
+    children: [
+      CreateWorkspaceForm(
+        onCreated: (workspace) => _openWorkspace(context, workspace.id),
+        onAddCloudAccount: () => _addCloudAccount(context),
+      ),
+    ],
+    keyboardDismissBehavior: .onDrag,
+  );
+
+  void _openWorkspace(BuildContext context, String workspaceId) =>
+      context.go(NewChatRoute(workspaceId: workspaceId).location);
 
   void _addCloudAccount(BuildContext context) {
     context.go(

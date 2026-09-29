@@ -162,6 +162,8 @@ class const _IntroContentLayout({required final _IntroContentContainer content})
 }
 
 class _IntroContentList extends StatelessWidget {
+  static const _contentPadding = 24.0;
+
   new({required _IntroContentContainer content})
     : _children = [
         _ProgressIndicator(activeSlide: content.slide),
@@ -185,8 +187,8 @@ class _IntroContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.all(24)
-        .copyWith(bottom: BottomPadding.of(context, minimum: 24)),
+    padding: const EdgeInsets.all(_contentPadding)
+        .copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
     children: _children,
   );
 }

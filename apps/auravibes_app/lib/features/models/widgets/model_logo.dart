@@ -45,59 +45,96 @@ class const _ModelLogo({
 }
 
 class _ModelLogoNetwork extends StatelessWidget {
-  new({
+  const new({
     required this.url,
     required this.color,
     required this.height,
     this.width,
     this.httpClient,
-  }) : picture = SvgPicture.network(
-         url,
-         width: width ?? height,
-         height: height,
-         placeholderBuilder: (context) => SizedBox(
-           width: width ?? height,
-           height: height,
-           child: ColoredBox(color: context.auraColors.surfaceVariant),
-         ),
-         colorFilter: .mode(color, .srcIn),
-         errorBuilder: (context, _, _) => SizedBox(
-           width: width ?? height,
-           height: height,
-           child: ColoredBox(
-             color: context.auraColors.surfaceVariant,
-             child: Center(
-               child: Semantics(
-                 child: Icon(
-                   Icons.broken_image_outlined,
-                   size: 16,
-                   color: context.auraColors.onSurfaceVariant,
-                 ),
-                 label: LocaleKeys.models_screens_add_provider_search_no_icon
-                     .tr(context: context),
-               ),
-             ),
-           ),
-         ),
-         imageBuilder: (context, child) => TweenAnimationBuilder<double>(
-           tween: .new(begin: 0, end: 1),
-           duration: TickerMode.valuesOf(context).enabled
-               ? context.auraTheme.animation.fast
-               : Duration.zero,
-           builder: (_, opacity, child) =>
-               Opacity(opacity: opacity, child: child),
-           child: child,
-         ),
-         httpClient: httpClient,
-       );
+  });
 
   final String url;
   final Color color;
   final double height;
   final double? width;
   final http.Client? httpClient;
-  final SvgPicture picture;
+  @override
+  Widget build(BuildContext context) => SvgPicture.network(
+    url,
+    width: width ?? height,
+    height: height,
+    placeholderBuilder: _buildPlaceholder,
+    colorFilter: .mode(color, .srcIn),
+    errorBuilder: (context, _, _) => _buildError(context),
+    imageBuilder: (_, child) => _buildAnimatedImage(child),
+    httpClient: httpClient,
+  );
+
+  Widget _buildPlaceholder(BuildContext context) => SizedBox(
+    width: width ?? height,
+    height: height,
+    child: ColoredBox(color: context.auraColors.surfaceVariant),
+  );
+
+  Widget _buildError(BuildContext context) => _ModelLogoErrorFallback(
+    width: width ?? height,
+    height: height,
+    label: LocaleKeys.models_screens_add_provider_search_no_icon.tr(
+      context: context,
+    ),
+  );
+
+  Widget _buildAnimatedImage(Widget child) => _ModelLogoFadeIn(child: child);
+}
+
+class const _ModelLogoErrorFallback({
+  required final double width,
+  required final double height,
+  required final String label,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    height: height,
+    child: ColoredBox(
+      color: context.auraColors.surfaceVariant,
+      child: Center(
+        child: Semantics(
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 16,
+            color: context.auraColors.onSurfaceVariant,
+          ),
+          label: label,
+        ),
+      ),
+    ),
+  );
+}
+
+class const _ModelLogoFadeIn({required final Widget child})
+    extends StatelessWidget {
+  static final _tween = Tween<double>(begin: 0, end: 1);
 
   @override
-  Widget build(BuildContext context) => picture;
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: _tween,
+    duration: _durationFor(context),
+    builder: (_, opacity, child) =>
+        _ModelLogoOpacity(opacity: opacity, child: child),
+    child: child,
+  );
+
+  static Duration _durationFor(BuildContext context) =>
+      TickerMode.valuesOf(context).enabled
+      ? context.auraTheme.animation.fast
+      : Duration.zero;
+}
+
+class const _ModelLogoOpacity({
+  required final double opacity,
+  required final Widget? child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Opacity(opacity: opacity, child: child);
 }

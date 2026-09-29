@@ -713,11 +713,14 @@ class const _SkillDetailForm({
   required final _SkillDetailScreenState state,
   required final SkillDetail? detail,
 }) extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
         AuraCard(
           child: _SkillDetailFormFields(state: state, detail: detail),
@@ -1385,13 +1388,22 @@ class _SkillToolsCardActions {
   }
 
   Future<void> _delete(SkillTemplateToolEntity tool) async {
+    final shouldDelete = await _confirmDelete();
+    if (shouldDelete != true) return;
+
+    await _deleteTool(tool);
+  }
+
+  Future<bool?> _confirmDelete() {
     FocusManager.instance.primaryFocus?.unfocus();
-    final shouldDelete = await showDialog<bool>(
+
+    return showDialog<bool>(
       context: context,
       builder: (_) => const _SkillToolDeleteDialog(),
     );
-    if (shouldDelete != true) return;
+  }
 
+  Future<void> _deleteTool(SkillTemplateToolEntity tool) async {
     await ref.read(deleteSkillTemplateToolProvider(workspaceId))(tool.id);
     ref.invalidate(skillTemplateToolsProvider(workspaceId, skillId));
   }
