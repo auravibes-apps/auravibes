@@ -532,10 +532,6 @@
     "deselect_tool": "Deselect tool {}",
     "bulk_delete_title": "Delete selected tools?",
     "bulk_delete_confirm": "Selected custom tools will be removed. Selected MCP groups will remove their server and all of its tools.",
-    "bulk_delete_failures": {
-      "one": "Could not remove 1 tool: {names}",
-      "other": "Could not remove {} tools: {names}"
-    },
     "permission_always_ask": "Always Ask",
     "permission_always_allow": "Always Allow",
     "permission_label": "Permission",
@@ -581,10 +577,6 @@
     "deselect_skill": "Deselect skill {}",
     "bulk_delete_title": "Delete selected skills?",
     "bulk_delete_confirm": "Delete the selected user skills? Their conversation load state and template tools will also be removed.",
-    "bulk_delete_failures": {
-      "one": "Could not delete 1 skill: {names}",
-      "other": "Could not delete {} skills: {names}"
-    },
     "save_error": "Unable to save skill",
     "unsaved_changes_title": "Unsaved changes",
     "unsaved_changes_message": "You have unsaved changes. Discard them and leave?",
@@ -878,6 +870,8 @@
     "delete": "Delete",
     "confirm": "Confirm",
     "close": "Close",
+    "failed_items_title": "Some items could not be deleted",
+    "retry_failed": "Retry failed",
     "close_dialog": "Close dialog",
     "reload": "Reload",
     "details": "Details",
@@ -1190,10 +1184,6 @@
     "deselect_workspace": "Deselect workspace {}",
     "bulk_delete_title": "Delete selected workspaces?",
     "bulk_delete_confirm": "Local workspaces will be deleted from this device. Connected cloud workspaces will only be removed from this app.",
-    "bulk_delete_failures": {
-      "one": "Could not delete or remove 1 workspace: {names}",
-      "other": "Could not delete or remove {} workspaces: {names}"
-    },
     "cloud_retry": "Retry",
     "create_button": "Create Workspace",
     "duplicate": "Duplicate Workspace",

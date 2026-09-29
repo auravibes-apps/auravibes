@@ -58,6 +58,8 @@ void main() {
       WorkspaceEntity workspace,
       SkillEntity skill,
       List<SkillEntity> skills,
+      Set<String> failedDeleteIds,
+      List<String> deleteAttempts,
     })
   >
   createFixture({
@@ -98,8 +100,13 @@ void main() {
         ),
       );
     }
+    final failedDeleteIds = <String>{};
+    final deleteAttempts = <String>[];
     Future<void> deleteSkill(String id) async {
-      if (failDeletes) throw StateError('delete failed');
+      deleteAttempts.add(id);
+      if (failDeletes || failedDeleteIds.contains(id)) {
+        throw StateError('delete failed');
+      }
       final _ = await skillsRepository.deleteSkill(id);
     }
 
@@ -157,6 +164,8 @@ void main() {
       workspace: workspace,
       skill: skill,
       skills: userSkills,
+      failedDeleteIds: failedDeleteIds,
+      deleteAttempts: deleteAttempts,
     );
   }
 
@@ -448,59 +457,86 @@ void main() {
     expect(find.byKey(const ValueKey('skills-delete-selected')), findsNothing);
   });
 
-  for (final names in <List<String>>[
-    ['Fail One'],
-    ['Fail One', 'Fail Two'],
-    [
-      'Fail Very long skill name beyond the preview limit',
-      'Fail Two',
-      'Fail Three',
-      'Fail Four',
-    ],
-  ]) {
-    testWidgets('bounds skill failure feedback for ${names.length} items', (
-      tester,
-    ) async {
-      final fixture = await createFixture(
-        skillTitle: names.firstOrNull ?? fail('Expected a skill name'),
-        additionalUserSkillNames: names.skip(1).toList(),
-        failDeletes: true,
-      );
-      final router = createRouter();
-      addTearDown(router.dispose);
-      final _ = await tester.runAsync(
-        () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
-      );
-      final _ = await tester.pumpAndSettle();
-      router.go('/workspaces/${fixture.workspace.id}/more/skills');
-      final _ = await tester.pumpAndSettle();
+  testWidgets('shows and retries only failed skill deletions', (tester) async {
+    final fixture = await createFixture(
+      skillTitle: 'Fail One',
+      additionalUserSkillNames: ['Fail Two', 'Fail Three', 'Success Skill'],
+    );
+    final [failedOne, failedTwo, failedThree, success] = fixture.skills;
+    fixture.failedDeleteIds.addAll([
+      failedOne.id,
+      failedTwo.id,
+      failedThree.id,
+    ]);
+    final router = createRouter();
+    addTearDown(router.dispose);
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(EditableText), 'Fail');
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('skills-select-all')));
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
-      final _ = await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
-      final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('skills-select-all')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('skills-delete-selected')));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
+    final _ = await tester.pumpAndSettle();
 
-      final feedback =
-          tester
-              .widget<Text>(
-                find.textContaining('Could not delete ${names.length} skill'),
-              )
-              .data ??
-          fail('Expected failure feedback');
+    final failureDialog = find.byType(AlertDialog);
+    expect(
+      find.descendant(
+        of: failureDialog,
+        matching: find.text('Some items could not be deleted'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Retry failed'), findsOneWidget);
+    for (final name in ['Fail One', 'Fail Two', 'Fail Three']) {
       expect(
-        feedback,
-        contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),
+        find.descendant(of: failureDialog, matching: find.text(name)),
+        findsOneWidget,
       );
-      expect(feedback, isNot(contains('Fail Three')));
-      if (names.length == 4) {
-        expect(feedback, contains('2 more failures'));
-        expect(feedback, isNot(contains('preview limit')));
-      }
-      expect(find.textContaining('${names.length} selected'), findsOneWidget);
+    }
+    expect(fixture.deleteAttempts.toSet(), {
+      failedOne.id,
+      failedTwo.id,
+      failedThree.id,
+      success.id,
     });
-  }
+
+    final beforeFirstRetry = fixture.deleteAttempts.length;
+    fixture.failedDeleteIds
+      ..clear()
+      ..add(failedTwo.id);
+    await tester.tap(find.text('Retry failed'));
+    final _ = await tester.pumpAndSettle();
+    expect(fixture.deleteAttempts.skip(beforeFirstRetry).toSet(), {
+      failedOne.id,
+      failedTwo.id,
+      failedThree.id,
+    });
+    expect(
+      find.descendant(of: failureDialog, matching: find.text('Fail Two')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: failureDialog, matching: find.text('Fail One')),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: failureDialog, matching: find.text('Fail Three')),
+      findsNothing,
+    );
+
+    fixture.failedDeleteIds.clear();
+    final beforeSecondRetry = fixture.deleteAttempts.length;
+    await tester.tap(find.text('Retry failed'));
+    final _ = await tester.pumpAndSettle();
+    expect(fixture.deleteAttempts.skip(beforeSecondRetry).toList(), [
+      failedTwo.id,
+    ]);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
 }

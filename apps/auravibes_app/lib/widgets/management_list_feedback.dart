@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart';
 
 abstract final class ManagementListFeedback {
   static const _failurePreviewLimit = 2;
@@ -41,6 +43,76 @@ abstract final class ManagementListFeedback {
             hiddenCount: hiddenCount,
           ),
         );
+
+  static Future<void> showFailuresDialog<T>({
+    required BuildContext context,
+    required List<T> failedItems,
+    required String Function(T) nameOf,
+    required Future<List<T>> Function(List<T>) onRetry,
+  }) async {
+    if (failedItems.isEmpty) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        var failures = failedItems;
+        var isRetrying = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            Future<void> retry() async {
+              try {
+                final nextFailures = await onRetry(.unmodifiable(failures));
+                if (!dialogContext.mounted) return;
+                if (nextFailures.isEmpty) {
+                  Navigator.of(dialogContext).pop();
+
+                  return;
+                }
+                setState(() => failures = nextFailures);
+              } finally {
+                if (dialogContext.mounted) {
+                  setState(() => isRetrying = false);
+                }
+              }
+            }
+
+            return AlertDialog(
+              title: Text(
+                LocaleKeys.common_failed_items_title.tr(context: context),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
+                  children: failures.map((item) => Text(nameOf(item))).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isRetrying
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: Text(LocaleKeys.common_close.tr(context: context)),
+                ),
+                TextButton(
+                  onPressed: isRetrying
+                      ? null
+                      : () {
+                          setState(() => isRetrying = true);
+                          unawaited(retry());
+                        },
+                  child: Text(
+                    LocaleKeys.common_retry_failed.tr(context: context),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   static String failureText(
     BuildContext context,

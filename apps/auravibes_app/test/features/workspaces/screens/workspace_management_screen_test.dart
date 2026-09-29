@@ -60,6 +60,8 @@ class _FakeWorkspaceSelectionRepository
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
   Exception? deleteError;
+  final Set<String> failedDeleteIds = {};
+  final List<String> deleteAttempts = [];
   final List<WorkspaceEntity> _workspaces = [];
   final _controller = StreamController<List<WorkspaceEntity>>.broadcast();
   var _nextId = 1;
@@ -119,8 +121,10 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    deleteAttempts.add(id);
     final error = deleteError;
     if (error != null) throw error;
+    if (failedDeleteIds.contains(id)) throw StateError('delete failed');
 
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
@@ -631,16 +635,31 @@ void main() {
       final combiningAcute = String.fromCharCode(0x0301);
       final precomposedCafe = 'Caf$acuteE';
       final decomposedCafe = 'Cafe$combiningAcute';
-      const compatibilityForm = '\uFB02ower Local';
-      const extendedCombiningMark = 'a\u1AB0x Local';
-      const greekName = 'Αθήνα Local';
-      const dottedCapitalI = 'İstanbul Local';
-      const dotlessI = 'ıstanbul Local';
-      const sharpS = 'Straße Local';
+      final compatibilityForm = '${String.fromCharCode(0xfb02)}ower Local';
+      final extendedCombiningMark = 'a${String.fromCharCode(0x1ab0)}x Local';
+      final greekLetters = String.fromCharCodes([
+        0x0391,
+        0x03b8,
+        0x03ae,
+        0x03bd,
+        0x03b1,
+      ]);
+      final greekName = '$greekLetters Local';
+      final dottedCapitalI = '${String.fromCharCode(0x0130)}stanbul Local';
+      final dotlessI = '${String.fromCharCode(0x0131)}stanbul Local';
+      final sharpS = 'Stra${String.fromCharCode(0x00df)}e Local';
+      final sharpSQuery = 'stra${String.fromCharCode(0x00df)}e';
+      final greekQuery = String.fromCharCodes([
+        0x03b1,
+        0x03b8,
+        0x03b7,
+        0x03bd,
+        0x03b1,
+      ]);
       final local = await repository.createWorkspace(
         .new(name: '$precomposedCafe Local', type: .local),
       );
-      for (final name in const [
+      for (final name in [
         compatibilityForm,
         extendedCombiningMark,
         greekName,
@@ -711,7 +730,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text(extendedCombiningMark), findsOneWidget);
 
-      await tester.enterText(find.byType(AuraInput), 'αθηνα');
+      await tester.enterText(find.byType(AuraInput), greekQuery);
       final _ = await tester.pumpAndSettle();
       expect(find.text(greekName), findsOneWidget);
 
@@ -724,7 +743,7 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text(sharpS), findsNothing);
 
-      await tester.enterText(find.byType(AuraInput), 'straße');
+      await tester.enterText(find.byType(AuraInput), sharpSQuery);
       final _ = await tester.pumpAndSettle();
       expect(find.text(sharpS), findsOneWidget);
     });
@@ -1315,66 +1334,114 @@ void main() {
       }
     });
 
-    for (final names in <List<String>>[
-      ['Fail One'],
-      ['Fail One', 'Fail Two'],
-      [
-        'Fail Very long workspace name beyond the preview limit',
-        'Fail Two',
-        'Fail Three',
-        'Fail Four',
-      ],
-    ]) {
-      testWidgets(
-        'bounds workspace failure feedback for ${names.length} items',
-        (tester) async {
-          final active = await repository.createWorkspace(
-            const WorkspaceToCreate(name: 'Home', type: .local),
-          );
-          for (final name in names) {
-            final _ = await repository.createWorkspace(
-              .new(name: name, type: .local),
-            );
-          }
-          repository.deleteError = .new('delete failed');
-
-          await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
-          final _ = await tester.pumpAndSettle();
-          await tester.enterText(find.byType(AuraInput), 'Fail');
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(
-            find.byKey(const ValueKey('workspace-delete-selected')),
-          );
-          final _ = await tester.pumpAndSettle();
-          await tester.tap(find.text('Delete'));
-          final _ = await tester.pumpAndSettle();
-
-          final feedback =
-              tester
-                  .widget<Text>(
-                    find.textContaining(
-                      'Could not delete or remove ${names.length} workspace',
-                    ),
-                  )
-                  .data ??
-              fail('Expected failure feedback');
-          expect(
-            feedback,
-            contains(names.length == 4 ? 'Fail Very long' : 'Fail One'),
-          );
-          expect(feedback, isNot(contains('Fail Three')));
-          if (names.length == 4) {
-            expect(feedback, contains('2 more failures'));
-            expect(feedback, isNot(contains('preview limit')));
-          }
-          expect(
-            find.textContaining('${names.length} selected'),
-            findsOneWidget,
-          );
-        },
+    testWidgets('shows and retries only failed workspace deletions', (
+      tester,
+    ) async {
+      final active = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Home', type: .local),
       );
-    }
+      final success = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Success', type: .local),
+      );
+      final failedOne = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail One', type: .local),
+      );
+      final failedTwo = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail Two', type: .local),
+      );
+      final failedThree = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target Fail Three', type: .local),
+      );
+      repository.failedDeleteIds.addAll([
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      ]);
+
+      await _pumpAndInit(tester, _buildScreen(workspaceId: active.id));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), 'Target');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('workspace-select-all')));
+      final _ = await tester.pumpAndSettle();
+      await tester.enterText(find.byType(AuraInput), '');
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(repository.deleteAttempts.toSet(), {
+        success.id,
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      });
+      final failureDialog = find.byType(AlertDialog);
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Some items could not be deleted'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry failed'), findsOneWidget);
+      for (final name in [
+        'Target Fail One',
+        'Target Fail Two',
+        'Target Fail Three',
+      ]) {
+        expect(
+          find.descendant(of: failureDialog, matching: find.text(name)),
+          findsOneWidget,
+        );
+      }
+      expect(await repository.getWorkspaceById(success.id), isNull);
+
+      final beforeFirstRetry = repository.deleteAttempts.length;
+      repository.failedDeleteIds
+        ..clear()
+        ..add(failedTwo.id);
+      await tester.tap(find.text('Retry failed'));
+      final _ = await tester.pumpAndSettle();
+      expect(repository.deleteAttempts.skip(beforeFirstRetry).toSet(), {
+        failedOne.id,
+        failedTwo.id,
+        failedThree.id,
+      });
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail Two'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail One'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: failureDialog,
+          matching: find.text('Target Fail Three'),
+        ),
+        findsNothing,
+      );
+
+      repository.failedDeleteIds.clear();
+      final beforeSecondRetry = repository.deleteAttempts.length;
+      await tester.tap(find.text('Retry failed'));
+      final _ = await tester.pumpAndSettle();
+      expect(repository.deleteAttempts.skip(beforeSecondRetry).toList(), [
+        failedTwo.id,
+      ]);
+      expect(await repository.getWorkspaceById(failedOne.id), isNull);
+      expect(await repository.getWorkspaceById(failedTwo.id), isNull);
+      expect(await repository.getWorkspaceById(failedThree.id), isNull);
+      expect(find.byType(AlertDialog), findsNothing);
+    });
   });
 }

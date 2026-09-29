@@ -258,16 +258,29 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
   }
 
   Future<void> _deleteSelected(List<WorkspaceEntity> selected) async {
+    final failed = await _deleteWorkspaceTargets(selected);
+    if (!mounted || failed.isEmpty) return;
+
+    await ManagementListFeedback.showFailuresDialog(
+      context: context,
+      failedItems: failed,
+      nameOf: (workspace) => workspace.name,
+      onRetry: _deleteWorkspaceTargets,
+    );
+  }
+
+  Future<List<WorkspaceEntity>> _deleteWorkspaceTargets(
+    List<WorkspaceEntity> targets,
+  ) async {
     setState(() => _isBulkDeleting = true);
-    final failed = await _actions(context).deleteSelected(selected);
-    if (!mounted) return;
+    final failed = await _actions(context).deleteSelected(targets);
+    if (!mounted) return failed;
     setState(() {
       _isBulkDeleting = false;
       _selectedIds = _workspaceIds(failed);
     });
-    if (failed.isEmpty) return;
 
-    _showWorkspaceBulkDeleteFailures(context, failed);
+    return failed;
   }
 }
 
@@ -294,23 +307,6 @@ Future<bool?> _confirmWorkspaceBulkDelete(
   actions: _deleteConfirmationActions,
   isDestructive: true,
 );
-
-void _showWorkspaceBulkDeleteFailures(
-  BuildContext context,
-  List<WorkspaceEntity> failed,
-) {
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: Text(
-      ManagementListFeedback.failureText(
-        context,
-        LocaleKeys.workspace_management_bulk_delete_failures,
-        failed.map((workspace) => workspace.name).toList(),
-      ),
-    ),
-    variant: .error,
-  );
-}
 
 Set<String> _workspaceIds(List<WorkspaceEntity> workspaces) =>
     workspaces.map((workspace) => workspace.id).toSet();
