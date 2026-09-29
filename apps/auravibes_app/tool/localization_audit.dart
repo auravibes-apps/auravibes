@@ -72,24 +72,43 @@ void _collectUsedKeys(
       }
       usedKeys.add(key);
     }
-    if (token.isLiteral &&
-        index + 3 < tokens.length &&
-        tokens[index + 1].value == '.' &&
-        _isTranslationCall(tokens[index + 2]) &&
-        tokens[index + 3].value == '(') {
-      usedKeys.add(token.value);
+    if (token.isLiteral && (index == 0 || !tokens[index - 1].isLiteral)) {
+      final (key, end) = _literalSequence(tokens, index)!;
+      if (end + 2 < tokens.length &&
+          tokens[end].value == '.' &&
+          _isTranslationCall(tokens[end + 1]) &&
+          tokens[end + 2].value == '(') {
+        usedKeys.add(key);
+      }
     }
     if (_isTranslationCall(token) &&
-        index + 2 < tokens.length &&
-        tokens[index + 1].value == '(' &&
-        tokens[index + 2].isLiteral) {
-      usedKeys.add(tokens[index + 2].value);
+        index + 1 < tokens.length &&
+        tokens[index + 1].value == '(') {
+      final argument = _literalSequence(tokens, index + 2);
+      if (argument != null) {
+        final (key, end) = argument;
+        if (end < tokens.length &&
+            (tokens[end].value == ',' || tokens[end].value == ')')) {
+          usedKeys.add(key);
+        }
+      }
     }
   }
 }
 
 bool _isTranslationCall(_Token token) =>
     !token.isString && (token.value == 'tr' || token.value == 'plural');
+
+(String, int)? _literalSequence(List<_Token> tokens, int start) {
+  if (start >= tokens.length || !tokens[start].isLiteral) return null;
+  final key = StringBuffer();
+  var end = start;
+  while (end < tokens.length && tokens[end].isLiteral) {
+    key.write(tokens[end].value);
+    end++;
+  }
+  return (key.toString(), end);
+}
 
 List<_Token> _tokenize(String source) {
   final tokens = <_Token>[];
@@ -157,9 +176,7 @@ List<_Token> _tokenize(String source) {
       final end = index < source.length ? index : source.length;
       final value = source.substring(start, end);
       tokens.add((
-        value: rawString || hasInterpolation
-            ? value
-            : value.replaceAll(r'\$', r'$'),
+        value: rawString ? value : _decodeDartString(value),
         isString: true,
         isLiteral: !hasInterpolation,
       ));
@@ -191,6 +208,45 @@ List<_Token> _tokenize(String source) {
     index++;
   }
   return tokens;
+}
+
+String _decodeDartString(String value) {
+  final decoded = StringBuffer();
+  var index = 0;
+  while (index < value.length) {
+    if (value[index] != '\\' || index + 1 >= value.length) {
+      decoded.write(value[index++]);
+      continue;
+    }
+    final escape = value[index + 1];
+    if (escape == 'u' || escape == 'x') {
+      final braced = escape == 'u' &&
+          index + 2 < value.length &&
+          value[index + 2] == '{';
+      final start = index + (braced ? 3 : 2);
+      final end = braced
+          ? value.indexOf('}', start)
+          : start + (escape == 'u' ? 4 : 2);
+      if (end >= start && end <= value.length) {
+        final codePoint = int.tryParse(value.substring(start, end), radix: 16);
+        if (codePoint != null && codePoint <= 0x10ffff) {
+          decoded.write(String.fromCharCode(codePoint));
+          index = end + (braced ? 1 : 0);
+          continue;
+        }
+      }
+    }
+    decoded.write(switch (escape) {
+      'n' => '\n',
+      'r' => '\r',
+      't' => '\t',
+      'b' => '\b',
+      'f' => '\f',
+      _ => escape,
+    });
+    index += 2;
+  }
+  return decoded.toString();
 }
 
 int? _interpolationEnd(String source, int start) {

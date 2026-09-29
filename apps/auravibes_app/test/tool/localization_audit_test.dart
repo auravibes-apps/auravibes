@@ -139,6 +139,8 @@ final fake = "LocaleKeys.unknown_text and tr('menu.fake')";
   test('reports escaped dollar in a literal translation key', () {
     File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
 final price = 'menu.\$price'.tr();
+final quote = tr('menu.quo\'te');
+final slash = tr('menu.back\\slash');
 final dynamic = 'menu.$name'.tr();
 ''');
     File('${translationsDir.path}/es.json').writeAsStringSync('''
@@ -152,8 +154,54 @@ final dynamic = 'menu.$name'.tr();
         localeKeysFile: localeKeysFile,
       ),
       {
-        'en': {r'menu.$price'},
-        'es': {r'menu.$price'},
+        'en': {r'menu.$price', "menu.quo'te", r'menu.back\slash'},
+        'es': {r'menu.$price', "menu.quo'te", r'menu.back\slash'},
+      },
+    );
+  });
+
+  test('decodes Unicode escapes to the runtime translation key', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+final home = tr('menu.\u0068ome');
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"new_chat":"Nuevo chat"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': <String>{},
+        'es': {'menu.home'},
+      },
+    );
+  });
+
+  test('accepts static adjacent literals and skips dynamic arguments', () {
+    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+final home = tr('menu.' 'home');
+final count = plural('menu.' 'count', 2);
+final dynamic = tr('menu.' + suffix);
+final dynamicCount = plural('menu.' + suffix, 2);
+final receiver = 'menu.home'.tr();
+''');
+    File('${translationsDir.path}/es.json').writeAsStringSync('''
+{"menu":{"new_chat":"Nuevo chat"}}
+''');
+
+    expect(
+      findMissingTranslations(
+        translationsDir: translationsDir,
+        sourceDir: sourceDir,
+        localeKeysFile: localeKeysFile,
+      ),
+      {
+        'en': {'menu.count'},
+        'es': {'menu.count', 'menu.home'},
       },
     );
   });
