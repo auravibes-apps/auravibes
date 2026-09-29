@@ -141,6 +141,7 @@ final fake = "LocaleKeys.unknown_text and tr('menu.fake')";
 final price = 'menu.\$price'.tr();
 final quote = tr('menu.quo\'te');
 final slash = tr('menu.back\\slash');
+final vertical = tr('menu.vertical\vtab');
 final dynamic = 'menu.$name'.tr();
 ''');
     File('${translationsDir.path}/es.json').writeAsStringSync('''
@@ -154,8 +155,18 @@ final dynamic = 'menu.$name'.tr();
         localeKeysFile: localeKeysFile,
       ),
       {
-        'en': {r'menu.$price', "menu.quo'te", r'menu.back\slash'},
-        'es': {r'menu.$price', "menu.quo'te", r'menu.back\slash'},
+        'en': {
+          r'menu.$price',
+          "menu.quo'te",
+          r'menu.back\slash',
+          'menu.vertical\u000Btab',
+        },
+        'es': {
+          r'menu.$price',
+          "menu.quo'te",
+          r'menu.back\slash',
+          'menu.vertical\u000Btab',
+        },
       },
     );
   });

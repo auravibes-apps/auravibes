@@ -242,6 +242,7 @@ String _decodeDartString(String value) {
       't' => '\t',
       'b' => '\b',
       'f' => '\f',
+      'v' => '\u000B',
       _ => escape,
     });
     index += 2;
