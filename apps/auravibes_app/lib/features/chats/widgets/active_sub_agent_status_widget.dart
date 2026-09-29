@@ -184,6 +184,7 @@ void _showActiveSubAgentChooser(
   _ActiveSubAgentNavigation navigation,
   List<String> childIds,
 ) {
+  FocusManager.instance.primaryFocus?.unfocus();
   final _ = showModalBottomSheet<void>(
     context: navigation.context,
     builder: _activeSubAgentChooserBuilder(navigation, childIds),

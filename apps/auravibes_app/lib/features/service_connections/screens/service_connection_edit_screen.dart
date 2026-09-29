@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_definit
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -930,10 +931,14 @@ class const _SkillCredentialEditForm({
 
 class const _ConnectionEditFormShell({required final List<Widget> children})
     extends StatelessWidget {
+  static const _contentPadding = 12.0;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(
+        _contentPadding,
+      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
         AuraCard(
           child: AuraColumn(
@@ -943,6 +948,7 @@ class const _ConnectionEditFormShell({required final List<Widget> children})
           ),
         ),
       ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -994,10 +1000,21 @@ class const _SkillCredentialEditFields({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final attributes = SkillCredentialAttributeDefinition.parseMap(
+      state.definition.attributesJson,
+    );
+
     return AuraColumn(
       children: [
-        _SkillCredentialNameInput(owner: owner),
-        _SkillCredentialEditAttributes(state: state, owner: owner),
+        _SkillCredentialNameInput(
+          owner: owner,
+          hasAttributes: attributes.isNotEmpty,
+        ),
+        _SkillCredentialEditAttributes(
+          state: state,
+          owner: owner,
+          attributes: attributes,
+        ),
       ],
       spacing: .md,
       crossAxisAlignment: .start,
@@ -1007,31 +1024,58 @@ class const _SkillCredentialEditFields({
 
 class const _SkillCredentialNameInput({
   required final _ServiceConnectionEditScreenState owner,
+  required final bool hasAttributes,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraInput(
       controller: owner._nameController,
       label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
+      textInputAction: hasAttributes ? .next : .done,
       onChanged: (_) => owner._refreshForm(),
+      onSubmitted: _onSubmitted(context),
     );
   }
+
+  ValueChanged<String>? _onSubmitted(BuildContext context) =>
+      hasAttributes ||
+          owner._isSaving ||
+          owner._nameController.text.trim().isEmpty
+      ? null
+      : (_) => owner._saveSkillCredential(context);
 }
 
 class const _SkillCredentialEditAttributes({
   required final _SkillCredentialEditState state,
   required final _ServiceConnectionEditScreenState owner,
+  required final Map<String, SkillCredentialAttributeDefinition> attributes,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillCredentialEditAttributeColumn(
+    state: state,
+    owner: owner,
+    attributes: attributes,
+  );
+}
+
+class const _SkillCredentialEditAttributeColumn({
+  required final _SkillCredentialEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+  required final Map<String, SkillCredentialAttributeDefinition> attributes,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final attributes = SkillCredentialAttributeDefinition.parseMap(
-      state.definition.attributesJson,
-    );
+    final lastKey = attributes.keys.lastOrNull;
 
     return AuraColumn(
       children: [
         for (final entry in attributes.entries)
-          _SkillCredentialAttributeInput(entry, editState: state, owner: owner),
+          _SkillCredentialEditAttributeInputRow(
+            entry: entry,
+            state: state,
+            owner: owner,
+            isLast: entry.key == lastKey,
+          ),
       ],
       spacing: .md,
       crossAxisAlignment: .start,
@@ -1039,17 +1083,51 @@ class const _SkillCredentialEditAttributes({
   }
 }
 
+class const _SkillCredentialEditAttributeInputRow({
+  required final MapEntry<String, SkillCredentialAttributeDefinition> entry,
+  required final _SkillCredentialEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+  required final bool isLast,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SkillCredentialAttributeInput(
+    entry,
+    editState: state,
+    owner: owner,
+    textInputAction: isLast ? .done : .next,
+    onSubmitted: _onSubmitted(context),
+  );
+
+  ValueChanged<String>? _onSubmitted(BuildContext context) =>
+      isLast && !owner._isSaving && owner._nameController.text.trim().isNotEmpty
+      ? (_) => owner._saveSkillCredential(context)
+      : null;
+}
+
 abstract class _SkillCredentialAttributeInput extends StatelessWidget {
   factory(
     MapEntry<String, SkillCredentialAttributeDefinition> entry, {
     required _SkillCredentialEditState editState,
     required _ServiceConnectionEditScreenState owner,
+    required TextInputAction textInputAction,
+    required ValueChanged<String>? onSubmitted,
   }) {
     if (entry.value.secret) {
-      return _SecretAttributeInput.fromEntry(entry, editState, owner);
+      return _SecretAttributeInput.fromEntry(
+        entry,
+        editState,
+        owner,
+        textInputAction: textInputAction,
+        onSubmitted: onSubmitted,
+      );
     }
 
-    return _NonSecretAttributeInput.fromEntry(entry, owner);
+    return _NonSecretAttributeInput.fromEntry(
+      entry,
+      owner,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+    );
   }
   const new _();
 }
@@ -1060,22 +1138,30 @@ class _NonSecretAttributeInput extends _SkillCredentialAttributeInput {
     required this.definition,
     required this.controller,
     required this.onChanged,
+    required this.textInputAction,
+    required this.onSubmitted,
   }) : super._();
 
   new fromEntry(
     MapEntry<String, SkillCredentialAttributeDefinition> entry,
-    _ServiceConnectionEditScreenState owner,
-  ) : this(
-        name: entry.key,
-        definition: entry.value,
-        controller: owner._nonSecretControllers[entry.key],
-        onChanged: owner._refreshForm,
-      );
+    _ServiceConnectionEditScreenState owner, {
+    required TextInputAction textInputAction,
+    required ValueChanged<String>? onSubmitted,
+  }) : this(
+         name: entry.key,
+         definition: entry.value,
+         controller: owner._nonSecretControllers[entry.key],
+         onChanged: owner._refreshForm,
+         textInputAction: textInputAction,
+         onSubmitted: onSubmitted,
+       );
 
   final String name;
   final SkillCredentialAttributeDefinition definition;
   final TextEditingController? controller;
   final VoidCallback onChanged;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,7 +1172,9 @@ class _NonSecretAttributeInput extends _SkillCredentialAttributeInput {
       label: Text(name),
       hint: description.isEmpty ? null : Text(description),
       isRequired: !definition.optional,
+      textInputAction: textInputAction,
       onChanged: (_) => onChanged(),
+      onSubmitted: onSubmitted,
     );
   }
 }
@@ -1099,20 +1187,26 @@ class _SecretAttributeInput extends _SkillCredentialAttributeInput {
     required this.controller,
     required this.clearedSecrets,
     required this.onChanged,
+    required this.textInputAction,
+    required this.onSubmitted,
   }) : super._();
 
   new fromEntry(
     MapEntry<String, SkillCredentialAttributeDefinition> entry,
     _SkillCredentialEditState editState,
-    _ServiceConnectionEditScreenState owner,
-  ) : this(
-        name: entry.key,
-        definition: entry.value,
-        state: editState.credential.secretAttributes[entry.key],
-        controller: owner._secretControllers[entry.key]!,
-        clearedSecrets: owner._clearedSecrets,
-        onChanged: owner._refreshForm,
-      );
+    _ServiceConnectionEditScreenState owner, {
+    required TextInputAction textInputAction,
+    required ValueChanged<String>? onSubmitted,
+  }) : this(
+         name: entry.key,
+         definition: entry.value,
+         state: editState.credential.secretAttributes[entry.key],
+         controller: owner._secretControllers[entry.key]!,
+         clearedSecrets: owner._clearedSecrets,
+         onChanged: owner._refreshForm,
+         textInputAction: textInputAction,
+         onSubmitted: onSubmitted,
+       );
 
   final String name;
   final SkillCredentialAttributeDefinition definition;
@@ -1120,6 +1214,8 @@ class _SecretAttributeInput extends _SkillCredentialAttributeInput {
   final TextEditingController controller;
   final Set<String> clearedSecrets;
   final VoidCallback onChanged;
+  final TextInputAction textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) =>
@@ -1153,7 +1249,9 @@ class _SecretAttributeAuraInput extends AuraInput {
             : null,
         keyboardType: .visiblePassword,
         obscureText: true,
+        textInputAction: input.textInputAction,
         onChanged: input._onChanged,
+        onSubmitted: input.onSubmitted,
       );
 }
 
@@ -1195,7 +1293,11 @@ class const _ModelProviderEditForm({
     return _ConnectionEditFormShell(
       children: [
         _ConnectionEditHeader(text: connection.modelId),
-        _ModelProviderEditFields(owner: owner, suffix: connection.keySuffix),
+        _ModelProviderEditFields(
+          state: state,
+          owner: owner,
+          suffix: connection.keySuffix,
+        ),
         _ModelProviderVerificationError(owner: owner),
         _ModelProviderVerifyButton(state: state, owner: owner),
         _ModelProviderEditSaveButton(state: state, owner: owner),
@@ -1205,6 +1307,7 @@ class const _ModelProviderEditForm({
 }
 
 class const _ModelProviderEditFields({
+  required final _ModelProviderEditState state,
   required final _ServiceConnectionEditScreenState owner,
   required final String? suffix,
 }) extends StatelessWidget {
@@ -1214,7 +1317,7 @@ class const _ModelProviderEditFields({
       children: [
         _ModelProviderNameInput(owner: owner),
         _ModelProviderKeyInput(owner: owner, suffix: suffix),
-        _ModelProviderUrlInput(owner: owner),
+        _ModelProviderUrlInput(owner: owner, state: state),
       ],
       spacing: .md,
       crossAxisAlignment: .start,
@@ -1278,6 +1381,7 @@ class const _ModelProviderNameInput({
       label: const TextLocale(
         LocaleKeys.models_screens_add_provider_fields_name_label,
       ),
+      textInputAction: .next,
       onChanged: (_) => owner._refreshForm(),
     );
   }
@@ -1302,12 +1406,14 @@ class _ModelProviderKeyAuraInput extends AuraInput {
         ),
         keyboardType: .visiblePassword,
         obscureText: true,
+        textInputAction: .next,
         onChanged: (_) => input.owner._invalidateModelProviderVerification(),
       );
 }
 
 class const _ModelProviderUrlInput({
   required final _ServiceConnectionEditScreenState owner,
+  required final _ModelProviderEditState state,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1317,7 +1423,11 @@ class const _ModelProviderUrlInput({
         LocaleKeys.models_screens_add_provider_fields_url_label,
       ),
       keyboardType: .url,
+      textInputAction: .done,
       onChanged: (_) => owner._invalidateModelProviderVerification(),
+      onSubmitted: owner._modelProviderCanSave(state)
+          ? (_) => owner._saveModelProvider(context)
+          : null,
     );
   }
 }
@@ -1379,6 +1489,7 @@ class const _GenericServiceConnectionNameInput({
     return AuraInput(
       controller: owner._nameController,
       label: Text(LocaleKeys.skill_credentials_name_label.tr(context: context)),
+      textInputAction: .next,
       onChanged: (_) => owner._refreshForm(),
     );
   }
@@ -1426,7 +1537,13 @@ class _GenericServiceConnectionSecretAuraInput extends AuraInput {
         suffixIcon: _GenericSecretClearButton(onPressed: input._clearSecret),
         keyboardType: .visiblePassword,
         obscureText: true,
+        textInputAction: .done,
         onChanged: input._onChanged,
+        onSubmitted:
+            !input.owner._isSaving &&
+                input.owner._nameController.text.trim().isNotEmpty
+            ? (_) => input.owner._saveGenericConnection(context, input.state)
+            : null,
       );
 }
 

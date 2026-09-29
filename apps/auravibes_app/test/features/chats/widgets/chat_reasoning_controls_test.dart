@@ -213,6 +213,36 @@ void main() {
     expect(find.byType(ChatReasoningControls), findsNothing);
   });
 
+  testWidgets('closing the narrow sheet does not restore field focus', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+    await _pumpLocalized(
+      tester,
+      Column(
+        children: [
+          TextField(focusNode: focusNode),
+          ChatReasoningControl(options: options, value: null, onChanged: _noop),
+        ],
+      ),
+    );
+    focusNode.requestFocus();
+    await tester.pump();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_reasoning_selector')),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+    expect(await tester.sendKeyEvent(.escape), isTrue);
+    final _ = await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse);
+  });
+
   testWidgets('selection collapses choices and keeps editor open', (
     tester,
   ) async {
@@ -368,17 +398,37 @@ void main() {
     );
     semantics.dispose();
 
+    await tester.enterText(find.byType(AuraInput), '32768');
+    await tester.pump();
+    expect(changed?.budgetTokens, 32768);
+
     await tester.enterText(find.byType(AuraInput), '32769');
+    await tester.pump();
+    final input = tester.widget<AuraInput>(find.byType(AuraInput));
+    expect(input.controller?.text, '32768');
+    expect(
+      find.text('Enter a whole number from 1024 to 32768.', findRichText: true),
+      findsNothing,
+    );
+    expect(changed?.budgetTokens, 32768);
+
+    await tester.enterText(find.byType(AuraInput), '12');
     await tester.pump();
     expect(
       find.text('Enter a whole number from 1024 to 32768.', findRichText: true),
       findsOneWidget,
     );
-    expect(changed, isNull);
 
     await tester.enterText(find.byType(AuraInput), '4096');
     await tester.pump();
     expect(changed?.budgetTokens, 4096);
+
+    await tester.enterText(find.byType(AuraInput), '');
+    await tester.pump();
+    expect(
+      tester.widget<AuraInput>(find.byType(AuraInput)).controller?.text,
+      isEmpty,
+    );
 
     await tester.tap(
       find.byKey(const ValueKey<String>('chat_reasoning_reset')),

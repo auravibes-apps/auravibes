@@ -54,6 +54,19 @@ extension StringExtensions on String {
   }
 }
 
+/// Normalizes optional text at display boundaries.
+extension NullableDisplayStringExtensions on String? {
+  /// Returns the trimmed text, or [placeholder] when it is not usable.
+  String orPlaceholder([String placeholder = '-']) {
+    final value = this?.trim();
+    if (value == null || value.isEmpty || value.toLowerCase() == 'null') {
+      return placeholder;
+    }
+
+    return value;
+  }
+}
+
 String _normalizeIdentifier(String value) {
   const firstGroup = 1;
   const secondGroup = 2;

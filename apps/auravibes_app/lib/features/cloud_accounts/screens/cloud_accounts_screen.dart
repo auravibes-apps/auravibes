@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_repository
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
+import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -26,7 +27,8 @@ class const CloudAccountsScreen({required final String workspaceId, super.key})
 
     return AuraScreen(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16)
+            .copyWith(bottom: BottomPadding.of(context)),
         children: [
           if (AppEnvConfig.auravibesServerUrl.isEmpty)
             const AuraText(

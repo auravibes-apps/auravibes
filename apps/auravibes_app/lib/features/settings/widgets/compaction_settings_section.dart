@@ -459,7 +459,7 @@ class const _CompactionSettingsColumn({
       if (state._validationError case final validationError?)
         _CompactionValidationError(message: validationError),
       _CompactionUsageThreshold(state: state),
-      _CompactionRemainingTokenInput(controller: state._remainingController),
+      _CompactionRemainingTokenInput(state: state),
       _CompactionModelBudgets(state: state, models: models),
       _CompactionSettingsActions(state: state),
     ],
@@ -654,16 +654,18 @@ class const _CompactionUsageThresholdSlider({
 }
 
 class const _CompactionRemainingTokenInput({
-  required final TextEditingController controller,
+  required final _CompactionSettingsSectionState state,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraInput(
-    controller: controller,
+    controller: state._remainingController,
     placeholder: Text(
       LocaleKeys.compaction_settings_remaining_threshold_hint.tr(),
     ),
     label: Text(LocaleKeys.compaction_settings_remaining_threshold.tr()),
     keyboardType: .number,
+    textInputAction: .done,
+    onSubmitted: (_) => unawaited(state._save()),
   );
 }
 

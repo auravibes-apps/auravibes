@@ -364,8 +364,10 @@ void main() {
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(EditableText), 'summary');
+    final search = find.byType(EditableText);
+    await tester.enterText(search, 'summary');
     final _ = await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(search).focusNode.hasFocus, isTrue);
     await tester.tap(find.byKey(const ValueKey('skills-select-all')));
     final _ = await tester.pumpAndSettle();
 
@@ -387,6 +389,7 @@ void main() {
     expect(find.text('Delete selected skills?'), findsOneWidget);
     await tester.tap(find.widgetWithText(AuraButton, 'Cancel'));
     final _ = await tester.pumpAndSettle();
+    expect(tester.widget<EditableText>(search).focusNode.hasFocus, isFalse);
     expect(
       await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
       isA<SkillEntity>(),

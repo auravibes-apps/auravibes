@@ -31,8 +31,10 @@ import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dar
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
+import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -49,6 +51,19 @@ import 'package:material_ui/material_ui.dart';
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
 
+class const ChatPrimaryScrollController({
+  required final Widget child,
+  super.key,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = useMemoized(_DisclosureScrollController.new);
+    useEffect(() => controller.dispose, [controller]);
+
+    return PrimaryScrollController(controller: controller, child: child);
+  }
+}
+
 class const ChatMessagesWidget({
   required final String workspaceId,
   required final String conversationId,
@@ -63,8 +78,8 @@ class const ChatMessagesWidget({
   // ignore: unnecessary-nullable
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = useMemoized(_DisclosureScrollController.new);
-    useEffect(() => controller.dispose, [controller]);
+    final controller =
+        PrimaryScrollController.of(context) as _DisclosureScrollController;
     final parentConversationId = conversationId;
     final conversation = ref
         .watch(
@@ -204,7 +219,7 @@ class const ChatMessagesWidget({
           itemCount: itemCount,
           addAutomaticKeepAlives: false,
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          keyboardDismissBehavior: .manual,
         ),
         Positioned(
           right: 16,
@@ -1169,7 +1184,10 @@ class const _MessageFooter({
                   conversationId: conversationId,
                 ),
               Text(
-                RelativeTimeFormatter.format(createdAt),
+                RelativeTimeFormatter.format(
+                  createdAt,
+                  locale: Localizations.localeOf(context),
+                ),
                 style: TextStyle(
                   color: auraColors.onSurfaceVariant,
                   fontSize: typography.fontSizeXs,
@@ -1328,7 +1346,7 @@ class const _ForkBoundaryDivider({
               .value;
     final label = TextLocale(
       LocaleKeys.chats_screens_chat_conversation_forked_from,
-      args: [conversation.forkSourceTitle ?? ''],
+      args: [conversation.forkSourceTitle.orPlaceholder()],
       style: TextStyle(color: context.auraColors.onSurfaceVariant),
     );
     final row = Row(
@@ -1440,6 +1458,7 @@ Future<void> _openChatMarkdownLink(BuildContext context, String url) async {
     await OpenSystemBrowser.call(uri);
   } on Object {
     if (!context.mounted) return;
+    unawaited(AuraHaptics.error());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: TextLocale(
@@ -1478,7 +1497,10 @@ class const _AiMessageContent({
         if (showMetadata) ...[
           const AuraSizedBox(height: .xs),
           Text(
-            RelativeTimeFormatter.format(timestamp),
+            RelativeTimeFormatter.format(
+              timestamp,
+              locale: Localizations.localeOf(context),
+            ),
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
               fontSize: typography.fontSizeXs,
@@ -1666,6 +1688,7 @@ class const _AssistantActivityRun({
               icon: Icons.build_outlined,
               label: _toolCallsSummary(
                 activityToolCalls.map((toolCall) => toolCall.displayName),
+                Localizations.localeOf(context),
               ),
               color: context.auraColors.secondary,
               isExpanded: expandedToolGroupIds.value.contains(groupId),
@@ -1910,12 +1933,14 @@ String _activityToolCallDisplayName({
   );
 }
 
-String _toolCallsSummary(Iterable<String> displayNames) {
+String _toolCallsSummary(Iterable<String> displayNames, Locale locale) {
   const maximumNames = 2;
   final names = displayNames.toList(growable: false);
   final summary = names.take(maximumNames).toList();
   final remaining = names.length - summary.length;
-  if (remaining > 0) summary.add('+$remaining');
+  if (remaining > 0) {
+    summary.add('+${NumberFormatter.count(remaining, locale)}');
+  }
 
   return summary.join(', ');
 }

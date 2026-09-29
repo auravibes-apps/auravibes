@@ -18,6 +18,7 @@ import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -909,14 +910,22 @@ class const _NavigationCount({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    _navigationCountText(currentIndex, totalCount),
+    _navigationCountText(
+      currentIndex,
+      totalCount,
+      Localizations.localeOf(context),
+    ),
     style: _navigationCountStyle(context),
   );
 }
 
-String _navigationCountText(int currentIndex, int totalCount) => LocaleKeys
-    .tool_approval_pending_count
-    .tr(args: [(currentIndex + 1).toString(), totalCount.toString()]);
+String _navigationCountText(int currentIndex, int totalCount, Locale locale) =>
+    LocaleKeys.tool_approval_pending_count.tr(
+      args: [
+        NumberFormatter.count(currentIndex + 1, locale),
+        NumberFormatter.count(totalCount, locale),
+      ],
+    );
 
 TextStyle _navigationCountStyle(BuildContext context) {
   final typography = context.auraTheme.typography;
@@ -925,6 +934,7 @@ TextStyle _navigationCountStyle(BuildContext context) {
     color: context.auraColors.onSurface,
     fontSize: typography.fontSizeSm,
     fontWeight: FontWeight.w600,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 }
 

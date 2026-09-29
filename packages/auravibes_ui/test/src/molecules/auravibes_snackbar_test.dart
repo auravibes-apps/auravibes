@@ -229,6 +229,7 @@ void main() {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
+      var actionCount = 0;
 
       await tester.pumpWidget(
         AuraThemeScope(
@@ -243,9 +244,7 @@ void main() {
                         context: context,
                         content: const Text('With action'),
                         actionLabel: 'UNDO',
-                        onAction: () {
-                          final _ = Object();
-                        },
+                        onAction: () => actionCount++,
                       );
                     },
                     child: const Text('Show'),
@@ -264,12 +263,21 @@ void main() {
 
       expect(find.text('UNDO'), findsOneWidget);
 
-      // Tap action button - use ensureVisible first.
+      // Tap the action's blank target padding, not the label itself.
       await tester.ensureVisible(find.text('UNDO'));
       await tester.pump();
-      await tester.tap(find.text('UNDO'));
+      final actionTarget = find
+          .ancestor(
+            of: find.text('UNDO'),
+            matching: find.byType(GestureDetector),
+          )
+          .first;
+      final actionRect = tester.getRect(actionTarget);
+      expect(actionRect.height, greaterThanOrEqualTo(48));
+      await tester.tapAt(.new(actionRect.center.dx, actionRect.bottom - 2));
       await tester.pump();
 
+      expect(actionCount, 1);
       expect(find.byType(SnackBar), findsNothing);
     });
 

@@ -5,6 +5,38 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraModal', () {
+    testWidgets('opening and closing a modal does not restore field focus', (
+      tester,
+    ) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      await tester.pumpWidget(
+        _AuraModalTestApp(
+          child: Column(
+            children: [
+              TextField(focusNode: focusNode),
+              const AuraModal(
+                entryPointChild: Text('Open modal'),
+                contentChild: Text('Modal content'),
+                barrierLabel: 'Dismiss modal',
+              ),
+            ],
+          ),
+        ),
+      );
+      focusNode.requestFocus();
+      await tester.pump();
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.text('Open modal'));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+
+      await tester.tapAt(const Offset(1, 1));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+    });
+
     testWidgets('opens and renders arbitrary content', (tester) async {
       await tester.pumpWidget(
         const _AuraModalTestApp(
@@ -95,7 +127,7 @@ void main() {
 
       expect(await tester.sendKeyEvent(.tab), isTrue);
       expect(await tester.sendKeyEvent(.enter), isTrue);
-      expect(await tester.sendKeyEvent(.enter), isTrue);
+      final _ = await tester.sendKeyEvent(.enter);
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Modal content'), findsOneWidget);
