@@ -471,6 +471,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
             tool.inputJsonSchema,
             requiresCredential: tool.requiresCredential,
             credentialIds: credentialIds,
+            strictProviderSchema: tool.urlTemplate != null,
           ),
           requiresCredential: tool.requiresCredential,
         ),
@@ -521,11 +522,13 @@ Map<String, Object?> cloudNativeInputSchema(
   Map<String, Object?> inputJsonSchema, {
   required bool requiresCredential,
   Iterable<String> credentialIds = const [],
+  bool strictProviderSchema = false,
 }) {
   return materializeSkillToolSchema(
     inputJsonSchema,
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
+    strictProviderSchema: strictProviderSchema,
   );
 }
 
