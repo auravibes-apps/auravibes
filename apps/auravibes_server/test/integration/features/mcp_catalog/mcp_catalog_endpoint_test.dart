@@ -54,6 +54,12 @@ void main() {
           databaseSession,
           _entry('hidden', name: 'Hidden', isEnabled: false),
         );
+        await McpCatalogEntry.db.insertRow(
+          databaseSession,
+          _entry('invalid', name: 'Invalid').copyWith(
+            optionsJson: '[{"key":"personal","name":"Personal","authType":"apiKey","fields":[{"key":"apiKey","isSecret":true,"isRequired":true,"value":"actual-secret"}]}]',
+          ),
+        );
 
         final first = await endpoints.mcpCatalog.list(authenticated);
         expect(first.map((listing) => listing.id), ['alpha']);
