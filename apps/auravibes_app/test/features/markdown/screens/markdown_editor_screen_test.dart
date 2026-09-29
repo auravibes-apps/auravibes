@@ -187,12 +187,15 @@ void main() {
   testWidgets('preview renders the latest unsaved markdown and empty drafts', (
     tester,
   ) async {
-    await _openMarkdownEditor(tester, onResult: (_) {});
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
     await tester.enterText(_markdownEditorInput, '# Latest unsaved draft');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.bySemanticsLabel('Preview'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(GptMarkdown), findsOneWidget);
     expect(
@@ -202,59 +205,61 @@ void main() {
     expect(_markdownEditorInput.hitTestable(), findsNothing);
 
     await tester.tap(find.bySemanticsLabel('Preview'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(_markdownEditorInput, '');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Preview'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.text('Nothing to preview yet'), findsOneWidget);
   });
 
-  testWidgets(
-    'source preview round trip restores the selection and accessible toggle state',
-    (tester) async {
-      final semantics = tester.ensureSemantics();
-      try {
-        await _openMarkdownEditor(tester, onResult: (_) {});
-        await tester.showKeyboard(_markdownEditorInput);
-        final editable = tester.widget<EditableText>(_markdownEditorInput);
-        final controller = editable.controller
-          ..value = const TextEditingValue(
-            text: 'before selected after',
-            selection: TextSelection(baseOffset: 7, extentOffset: 15),
-          );
-        final focusNode = editable.focusNode;
-        final sourceValue = controller.value;
-        await tester.pumpAndSettle();
+  testWidgets('source preview restores selection and accessible toggle state', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _openMarkdownEditor(
+        tester,
+        onResult: (value) => fail('Unexpected editor close: $value'),
+      );
+      await tester.showKeyboard(_markdownEditorInput);
+      final editable = tester.widget<EditableText>(_markdownEditorInput);
+      final controller = editable.controller
+        ..value = const TextEditingValue(
+          text: 'before selected after',
+          selection: .new(baseOffset: 7, extentOffset: 15),
+        );
+      final focusNode = editable.focusNode;
+      final sourceValue = controller.value;
+      final _ = await tester.pumpAndSettle();
 
-        final sourceToggle = tester
-            .getSemantics(find.bySemanticsLabel('Preview'))
-            .getSemanticsData();
-        expect(sourceToggle.flagsCollection.isToggled, ui.Tristate.isFalse);
-        expect(focusNode.hasFocus, isTrue);
+      final sourceToggle = tester
+          .getSemantics(find.bySemanticsLabel('Preview'))
+          .getSemanticsData();
+      expect(sourceToggle.flagsCollection.isToggled, ui.Tristate.isFalse);
+      expect(focusNode.hasFocus, isTrue);
 
-        await tester.tap(find.bySemanticsLabel('Preview'));
-        await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
 
-        final previewToggle = tester
-            .getSemantics(find.bySemanticsLabel('Preview'))
-            .getSemanticsData();
-        expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
-        expect(find.byTooltip('Markdown'), findsOneWidget);
-        expect(controller.value, sourceValue);
-        expect(focusNode.hasFocus, isFalse);
+      final previewToggle = tester
+          .getSemantics(find.bySemanticsLabel('Preview'))
+          .getSemanticsData();
+      expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
+      expect(find.byTooltip('Markdown'), findsOneWidget);
+      expect(controller.value, sourceValue);
+      expect(focusNode.hasFocus, isFalse);
 
-        await tester.tap(find.bySemanticsLabel('Preview'));
-        await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
 
-        expect(controller.value, sourceValue);
-        expect(focusNode.hasFocus, isTrue);
-      } finally {
-        semantics.dispose();
-      }
-    },
-  );
+      expect(controller.value, sourceValue);
+      expect(focusNode.hasFocus, isTrue);
+    } finally {
+      semantics.dispose();
+    }
+  });
 
   testWidgets('preview round trip preserves toolbar undo history', (
     tester,
@@ -270,30 +275,30 @@ void main() {
       final controller = editable.controller
         ..value = const TextEditingValue(
           text: 'text',
-          selection: TextSelection(baseOffset: 0, extentOffset: 4),
+          selection: .new(baseOffset: 0, extentOffset: 4),
         );
       final focusNode = editable.focusNode;
       final originalValue = controller.value;
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.format_bold));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       final boldValue = controller.value;
       expect(boldValue.text, '**text**');
 
       await tester.tap(find.bySemanticsLabel('Preview'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(focusNode.hasFocus, isFalse);
       expect(find.byIcon(Icons.format_bold).hitTestable(), findsNothing);
       expect(find.bySemanticsLabel('Bold'), findsNothing);
 
       await tester.tap(find.bySemanticsLabel('Preview'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       expect(controller.value, boldValue);
       expect(focusNode.hasFocus, isTrue);
 
       await tester.tap(find.byIcon(Icons.undo));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(controller.value, originalValue);
     } finally {
@@ -307,14 +312,14 @@ void main() {
     String? result;
     await _openMarkdownEditor(tester, onResult: (value) => result = value);
     await tester.enterText(_markdownEditorInput, '# Saved after preview');
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.bySemanticsLabel('Preview'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Preview'));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));
-    await tester.pumpAndSettle();
+    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(MarkdownEditorScreen), findsNothing);
     expect(result, '# Saved after preview');

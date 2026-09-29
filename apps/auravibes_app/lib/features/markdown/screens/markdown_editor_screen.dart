@@ -450,10 +450,6 @@ class const _MarkdownPreviewToggle({
             .tr(context: context);
 
     return Semantics(
-      label: semanticLabel,
-      button: true,
-      toggled: isPreview,
-      onTap: onToggle,
       child: ExcludeSemantics(
         child: AuraIconButton(
           icon: isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
@@ -461,6 +457,10 @@ class const _MarkdownPreviewToggle({
           tooltip: tooltip,
         ),
       ),
+      toggled: isPreview,
+      button: true,
+      label: semanticLabel,
+      onTap: onToggle,
     );
   }
 }

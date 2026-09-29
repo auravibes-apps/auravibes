@@ -33,7 +33,7 @@ class MarkdownListInputFormatter extends TextInputFormatter {
       if (marker == null) continue;
       final indentation = marker.group(1)?.length ?? 0;
       if (outdent && _outdentWidth(marker.group(1) ?? '') == 0) continue;
-      affected.add(index);
+      final _ = affected.add(index);
       for (var child = index + 1; child < lines.length; child++) {
         final childMarker = _listMarker.firstMatch(lines[child]);
         if (childMarker == null) {
@@ -46,7 +46,7 @@ class MarkdownListInputFormatter extends TextInputFormatter {
         if ((childMarker.group(1)?.length ?? 0) <= indentation) {
           break;
         }
-        affected.add(child);
+        final _ = affected.add(child);
       }
     }
     if (affected.isEmpty) return null;
@@ -94,7 +94,9 @@ TextEditingValue _renumberIndentedBlock(
   final lines = value.text.split('\n');
   var first = affected.reduce((a, b) => a < b ? a : b);
   var last = affected.reduce((a, b) => a > b ? a : b);
-  while (first > 0 && _listMarker.hasMatch(lines[first - 1])) first--;
+  while (first > 0 && _listMarker.hasMatch(lines[first - 1])) {
+    first--;
+  }
   while (last + 1 < lines.length && _listMarker.hasMatch(lines[last + 1])) {
     last++;
   }
@@ -102,17 +104,14 @@ TextEditingValue _renumberIndentedBlock(
   final oldLines = oldText.split('\n');
   final oldGroups = _orderedGroups(oldLines, first, last);
   final newGroups = _orderedGroups(lines, first, last);
-  final movedGroups = {
-    for (final index in affected)
-      if (oldGroups[index] case final group?) group,
-  };
+  final movedGroups = {for (final index in affected) ?oldGroups[index]};
   final touchedGroups = <_OrderedGroup>{};
   for (final entry in newGroups.entries) {
     final index = entry.key;
     if (affected.contains(index) ||
         oldGroups[index] != entry.value ||
         movedGroups.contains(oldGroups[index])) {
-      touchedGroups.add(entry.value);
+      final _ = touchedGroups.add(entry.value);
     }
   }
 
@@ -125,7 +124,7 @@ TextEditingValue _renumberIndentedBlock(
     nextNumbers.removeWhere((level, _) => level > indentation);
     final numbered = _numberedMarker.firstMatch(lines[index]);
     if (numbered == null) {
-      nextNumbers.remove(indentation);
+      final _ = nextNumbers.remove(indentation);
       continue;
     }
     final number =
@@ -154,7 +153,7 @@ Map<int, _OrderedGroup> _orderedGroups(
     final level = marker.group(1)?.length ?? 0;
     starts.removeWhere((depth, _) => depth > level);
     if (!_numberedMarker.hasMatch(lines[index])) {
-      starts.remove(level);
+      final _ = starts.remove(level);
       continue;
     }
     final start = starts.putIfAbsent(level, () => index);
@@ -182,7 +181,9 @@ int _oldGroupStartNumber(
     if (level > indentation) continue;
     final numbered = _numberedMarker.firstMatch(lines[previous]);
     if (numbered == null) break;
-    firstNumber = int.parse(numbered.group(_numberGroup)!);
+    final numberText = numbered.group(_numberGroup);
+    if (numberText == null) break;
+    firstNumber = int.parse(numberText);
   }
 
   return firstNumber ?? 1;

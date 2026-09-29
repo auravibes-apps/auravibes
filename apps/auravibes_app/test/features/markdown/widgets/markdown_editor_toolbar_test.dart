@@ -119,9 +119,9 @@ void main() {
       ]) {
         final text = '\\${action.marker}word${action.marker}';
         final contentStart = text.indexOf('word');
-        controller.value = TextEditingValue(
+        controller.value = .new(
           text: text,
-          selection: TextSelection(
+          selection: .new(
             baseOffset: contentStart,
             extentOffset: contentStart + 'word'.length,
           ),
@@ -141,7 +141,7 @@ void main() {
       const evenBackslashText = r'\\*word*';
       controller.value = const TextEditingValue(
         text: evenBackslashText,
-        selection: TextSelection(baseOffset: 3, extentOffset: 7),
+        selection: .new(baseOffset: 3, extentOffset: 7),
       );
       await tester.pump();
       await tester.tap(find.byIcon(Icons.format_italic));
@@ -163,7 +163,7 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(focusNode.dispose);
       final selectionStart = text.indexOf(' and ');
-      controller.selection = TextSelection(
+      controller.selection = .new(
         baseOffset: selectionStart,
         extentOffset: selectionStart + ' and '.length,
       );
@@ -187,7 +187,7 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(focusNode.dispose);
       final selectionStart = text.indexOf('word');
-      controller.selection = TextSelection(
+      controller.selection = .new(
         baseOffset: selectionStart,
         extentOffset: selectionStart + 'word'.length,
       );
@@ -202,102 +202,105 @@ void main() {
       expect(controller.text, '2 * 3 = 6. word');
     });
 
-    testWidgets(
-      'bold italic and inline code actions unwrap selected matching spans',
-      (tester) async {
-        final controller = TextEditingController();
-        final focusNode = FocusNode();
-        addTearDown(controller.dispose);
-        addTearDown(focusNode.dispose);
+    testWidgets('inline actions unwrap selected matching spans', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
 
-        await pumpAndInit(
-          tester,
-          buildSubject(controller: controller, focusNode: focusNode),
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (
+          icon: Icons.format_bold,
+          marker: '**',
+          content: '${String.fromCharCode(0x1F44B)}bold',
+        ),
+        (icon: Icons.format_italic, marker: '_', content: 'italic'),
+        (icon: Icons.format_italic, marker: '*', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+      ]) {
+        final text =
+            'before ${action.marker}${action.content}'
+            '${action.marker} after';
+        final contentStart = text.indexOf(action.content);
+        final unmarkedStart = contentStart - action.marker.length;
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: contentStart,
+            extentOffset: contentStart + action.content.length,
+          ),
         );
+        await tester.pump();
 
-        for (final action in [
-          (icon: Icons.format_bold, marker: '**', content: 'bold'),
-          (icon: Icons.format_italic, marker: '_', content: 'italic'),
-          (icon: Icons.format_italic, marker: '*', content: 'italic'),
-          (icon: Icons.code, marker: '`', content: 'code'),
-        ]) {
-          final text =
-              'before ${action.marker}${action.content}'
-              '${action.marker} after';
-          final contentStart = text.indexOf(action.content);
-          final unmarkedStart = contentStart - action.marker.length;
-          controller.value = TextEditingValue(
-            text: text,
-            selection: TextSelection(
-              baseOffset: contentStart,
-              extentOffset: contentStart + action.content.length,
-            ),
-          );
-          await tester.pump();
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
 
-          await tester.tap(find.byIcon(action.icon));
-          await tester.pump();
-
-          expect(controller.text, 'before ${action.content} after');
-          expect(
-            controller.selection,
-            TextSelection(
-              baseOffset: unmarkedStart,
-              extentOffset: unmarkedStart + action.content.length,
-            ),
-          );
-        }
-      },
-    );
-
-    testWidgets(
-      'selection containing complete marked span unwraps markers and selects text',
-      (tester) async {
-        final controller = TextEditingController();
-        final focusNode = FocusNode();
-        addTearDown(controller.dispose);
-        addTearDown(focusNode.dispose);
-
-        await pumpAndInit(
-          tester,
-          buildSubject(controller: controller, focusNode: focusNode),
+        expect(controller.text, 'before ${action.content} after');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: unmarkedStart,
+            extentOffset: unmarkedStart + action.content.length,
+          ),
         );
+      }
+    });
 
-        for (final action in [
-          (icon: Icons.format_bold, marker: '**', content: 'bold'),
-          (icon: Icons.format_italic, marker: '_', content: 'italic'),
-          (icon: Icons.code, marker: '`', content: 'code'),
-        ]) {
-          final text =
-              'before ${action.marker}${action.content}'
-              '${action.marker} after';
-          final markedStart = text.indexOf(action.marker);
-          final contentStart = markedStart + action.marker.length;
-          final unmarkedStart = markedStart;
-          controller.value = TextEditingValue(
-            text: text,
-            selection: TextSelection(
-              baseOffset: markedStart,
-              extentOffset:
-                  contentStart + action.content.length + action.marker.length,
-            ),
-          );
-          await tester.pump();
+    testWidgets('selection of full span unwraps markers and selects text', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
 
-          await tester.tap(find.byIcon(action.icon));
-          await tester.pump();
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
 
-          expect(controller.text, 'before ${action.content} after');
-          expect(
-            controller.selection,
-            TextSelection(
-              baseOffset: unmarkedStart,
-              extentOffset: unmarkedStart + action.content.length,
-            ),
-          );
-        }
-      },
-    );
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (icon: Icons.format_italic, marker: '_', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+      ]) {
+        final text =
+            'before ${action.marker}${action.content}'
+            '${action.marker} after';
+        final markedStart = text.indexOf(action.marker);
+        final contentStart = markedStart + action.marker.length;
+        final unmarkedStart = markedStart;
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: markedStart,
+            extentOffset:
+                contentStart + action.content.length + action.marker.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(controller.text, 'before ${action.content} after');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: unmarkedStart,
+            extentOffset: unmarkedStart + action.content.length,
+          ),
+        );
+      }
+    });
 
     testWidgets('format actions still wrap unformatted selections', (
       tester,
@@ -319,9 +322,9 @@ void main() {
       ]) {
         final text = 'before ${action.content} after';
         final contentStart = text.indexOf(action.content);
-        controller.value = TextEditingValue(
+        controller.value = .new(
           text: text,
-          selection: TextSelection(
+          selection: .new(
             baseOffset: contentStart,
             extentOffset: contentStart + action.content.length,
           ),
@@ -364,7 +367,7 @@ void main() {
           final contentStart = text.indexOf(action.content);
           final initialValue = TextEditingValue(
             text: text,
-            selection: TextSelection(
+            selection: .new(
               baseOffset: contentStart + 1,
               extentOffset: contentStart + action.content.length - 1,
             ),
@@ -507,7 +510,7 @@ void main() {
       final focusNode = FocusNode();
       addTearDown(controller.dispose);
       addTearDown(focusNode.dispose);
-      controller.selection = TextSelection.collapsed(
+      controller.selection = .collapsed(
         offset: text.indexOf('documentation') + 5,
       );
 
@@ -547,9 +550,7 @@ void main() {
       final focusNode = FocusNode();
       addTearDown(controller.dispose);
       addTearDown(focusNode.dispose);
-      controller.selection = TextSelection.collapsed(
-        offset: text.indexOf(') now') + 1,
-      );
+      controller.selection = .collapsed(offset: text.indexOf(') now') + 1);
 
       await pumpAndInit(
         tester,
@@ -578,7 +579,7 @@ void main() {
         addTearDown(focusNode.dispose);
         final linkStart = text.indexOf('[guide]');
         final linkEnd = text.indexOf(') after') + 1;
-        controller.selection = TextSelection(
+        controller.selection = .new(
           baseOffset: linkEnd,
           extentOffset: linkStart,
           isDirectional: true,
@@ -627,7 +628,7 @@ void main() {
       addTearDown(focusNode.dispose);
       final linkStart = text.indexOf('[guide]');
       final linkEnd = text.indexOf(') after') + 1;
-      controller.selection = TextSelection(
+      controller.selection = .new(
         baseOffset: linkEnd,
         extentOffset: linkStart,
         isDirectional: true,
@@ -655,7 +656,7 @@ void main() {
       final focusNode = FocusNode();
       addTearDown(controller.dispose);
       addTearDown(focusNode.dispose);
-      controller.selection = TextSelection.collapsed(
+      controller.selection = .collapsed(
         offset: text.indexOf('with_parentheses') + 3,
       );
 
@@ -695,7 +696,7 @@ void main() {
       final selectionStart = text.indexOf('[one]');
       final selectionEnd =
           text.indexOf('[two]') + '[two](https://two.example)'.length;
-      controller.selection = TextSelection(
+      controller.selection = .new(
         baseOffset: selectionStart,
         extentOffset: selectionEnd,
       );

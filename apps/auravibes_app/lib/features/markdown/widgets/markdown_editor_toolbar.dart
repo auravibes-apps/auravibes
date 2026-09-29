@@ -164,7 +164,7 @@ extension on _MarkdownEditorToolbarState {
     final selection = _safeSelection;
     final text = _controller.text;
     final bounds = _selectionBounds(selection, text);
-    final markers = [marker, if (alternateMarker != null) alternateMarker];
+    final markers = [marker, ?alternateMarker];
     final span = _matchingInlineSpan(text, bounds, markers);
 
     if (span == null) {
@@ -178,13 +178,13 @@ extension on _MarkdownEditorToolbarState {
     final selectsSpan = bounds.start == span.start && bounds.end == span.end;
     if (!selectsContents && !selectsSpan) return;
 
-    final content = text.substring(span.contentStart, span.contentEnd);
+    final content = _textRange(text, span.contentStart, span.contentEnd);
     final contentEnd = span.start + content.length;
     final isReversed = selection.baseOffset > selection.extentOffset;
     _replace(
-      TextSelection(baseOffset: span.start, extentOffset: span.end),
+      .new(baseOffset: span.start, extentOffset: span.end),
       content,
-      TextSelection(
+      .new(
         baseOffset: isReversed ? contentEnd : span.start,
         extentOffset: isReversed ? span.start : contentEnd,
         affinity: selection.affinity,
@@ -503,6 +503,18 @@ int _toolbarLineEnd(String text, int selectionEnd) {
   final end = text.indexOf('\n', selectionEnd);
 
   return end == -1 ? text.length : end;
+}
+
+String _textRange(String text, int start, int end) {
+  var offset = 0;
+  final range = StringBuffer();
+  for (final character in text.characters) {
+    final nextOffset = offset + character.length;
+    if (offset >= start && nextOffset <= end) range.write(character);
+    offset = nextOffset;
+  }
+
+  return range.toString();
 }
 
 TextSelection _linkSelection(

@@ -164,20 +164,25 @@ void main() {
       final indentedNextMarker = marker == '1. ' ? '1. ' : marker;
       final original = TextEditingValue(
         text: '${marker}parent\n  - child\n    - grandchild\n${nextMarker}next',
-        selection: TextSelection.collapsed(offset: marker.length + 2),
+        selection: .collapsed(offset: marker.length + 2),
       );
 
       final indented = MarkdownListInputFormatter.adjustIndentation(
         original,
         outdent: false,
       );
-      expect(
-        indented?.text,
-        '  ${marker}parent\n    - child\n      - grandchild\n${indentedNextMarker}next',
-      );
+      final expected =
+          '  ${marker}parent\n'
+          '    - child\n'
+          '      - grandchild\n'
+          '${indentedNextMarker}next';
+      expect(indented?.text, expected);
       expect(indented?.selection.baseOffset, original.selection.baseOffset + 2);
+      if (indented == null) {
+        fail('Expected list item to indent');
+      }
       expect(
-        MarkdownListInputFormatter.adjustIndentation(indented!, outdent: true),
+        MarkdownListInputFormatter.adjustIndentation(indented, outdent: true),
         original,
       );
     }
