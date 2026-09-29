@@ -2,11 +2,14 @@ import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/model_usage_totals.dart';
 
 ModelUsageTotals aggregateModelUsageRecords(List<ModelUsageRecord> records) {
-  final knownCosts = records.every(
-    (record) =>
-        record.costStatus == ModelUsageCostStatus.known &&
-        record.costUsd != null,
-  );
+  // An empty record set cannot establish coverage of a conversation's usage.
+  final knownCosts =
+      records.isNotEmpty &&
+      records.every(
+        (record) =>
+            record.costStatus == ModelUsageCostStatus.known &&
+            record.costUsd != null,
+      );
   final totalCost = knownCosts
       ? records.fold<double>(
           0,
@@ -46,10 +49,12 @@ ModelUsageTotals aggregateModelUsageRecords(List<ModelUsageRecord> records) {
 
 int? _sumComplete(Iterable<int?> values) {
   var total = 0;
+  var hasValue = false;
   for (final value in values) {
     if (value == null) return null;
     total += value;
+    hasValue = true;
   }
 
-  return total;
+  return hasValue ? total : null;
 }
