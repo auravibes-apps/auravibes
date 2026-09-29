@@ -11,6 +11,8 @@ abstract class LocaleKeys {
   static const menu_agents = 'menu.agents';
   static const menu_prompts = 'menu.prompts';
   static const menu_more = 'menu.more';
+  static const navigation_drawer_toggle_tooltip =
+      'navigation_drawer.toggle_tooltip';
   static const navigation_drawer_resize_handle_tooltip =
       'navigation_drawer.resize_handle_tooltip';
   static const navigation_drawer_resize_handle_hint =
@@ -715,6 +717,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.view_sub_agent_run';
   static const chats_screens_chat_conversation_context_usage_label =
       'chats_screens.chat_conversation.context_usage.label';
+  static const chats_screens_chat_conversation_context_usage_label_unavailable =
+      'chats_screens.chat_conversation.context_usage.label_unavailable';
   static const chats_screens_chat_conversation_context_usage_limit_unavailable =
       'chats_screens.chat_conversation.context_usage.limit_unavailable';
   static const chats_screens_chat_conversation_context_usage_tooltip_normal =

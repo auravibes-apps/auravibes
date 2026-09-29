@@ -98,13 +98,14 @@ class const ContextUsageData({
 
   String usageLabelFor(Locale locale) {
     final formatter = NumberFormat.compact(locale: locale.toLanguageTag());
-    final limit = hasLimit ? formatter.format(normalizedLimit) : '--';
+    final used = formatter.format(usedTokens);
+    if (!hasLimit) return used;
 
-    return '${formatter.format(usedTokens)}/$limit';
+    return '$used/${formatter.format(normalizedLimit)}';
   }
 
   String percentLabelFor(Locale locale) =>
-      hasLimit ? '${NumberFormatter.count(percent, locale)}%' : '--';
+      hasLimit ? '${NumberFormatter.count(percent, locale)}%' : '';
 
   String percentValueFor(Locale locale) =>
       NumberFormatter.count(percent, locale);

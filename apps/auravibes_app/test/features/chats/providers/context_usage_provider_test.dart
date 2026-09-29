@@ -90,8 +90,8 @@ void main() {
         expect(data.percent, 0);
         expect(data.progress, 0);
         expect(data.overflowTokens, 0);
-        expect(data.usageLabelFor(const Locale('en')), '500/--');
-        expect(data.percentLabelFor(const Locale('en')), '--');
+        expect(data.usageLabelFor(const Locale('en')), '500');
+        expect(data.percentLabelFor(const Locale('en')), isEmpty);
       });
 
       test('returns unknown level when limit is 0', () {

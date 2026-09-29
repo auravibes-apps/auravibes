@@ -93,7 +93,7 @@ class const _ConversationContextUsageRow({
     return AuraRow(
       children: [
         _ConversationContextUsageIcon(data: data),
-        _ConversationContextUsageProgress(data: data),
+        if (data.hasLimit) _ConversationContextUsageProgress(data: data),
         _ConversationContextUsageLabels(data: data, locale: locale),
       ],
       spacing: .xs,
@@ -125,6 +125,30 @@ class const _ConversationContextUsageProgress({
 }
 
 class const _ConversationContextUsageLabels({
+  required final ContextUsageData data,
+  required final Locale locale,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => data.hasLimit
+      ? _LimitedContextUsageLabels(data: data, locale: locale)
+      : _UnavailableContextUsageLabel(data: data, locale: locale);
+}
+
+class const _UnavailableContextUsageLabel({
+  required final ContextUsageData data,
+  required final Locale locale,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: Text(
+      LocaleKeys.chats_screens_chat_conversation_context_usage_label_unavailable
+          .tr(namedArgs: {'used': data.usageLabelFor(locale)}),
+    ),
+    style: .caption,
+  );
+}
+
+class const _LimitedContextUsageLabels({
   required final ContextUsageData data,
   required final Locale locale,
 }) extends StatelessWidget {
