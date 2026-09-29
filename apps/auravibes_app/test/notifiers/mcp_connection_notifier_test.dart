@@ -1246,17 +1246,18 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   @override
   Future<McpManagerClient> connectMcpWithAutoTransport(
     McpConnectionRequest request,
-  ) =>
-      connectMcp(
-        McpServerToCreate(
-          name: request.name,
-          url: request.url,
-          transport: _client.resolvedTransport,
-          authenticationType: request.authenticationType,
-          serviceConnectionId: request.serviceConnectionId,
-          description: request.description,
-        ),
-      );
+  ) async {
+    final serverInfo = McpServerToCreate(
+      name: request.name,
+      url: request.url,
+      transport: _client.resolvedTransport,
+      authenticationType: request.authenticationType,
+      serviceConnectionId: request.serviceConnectionId,
+      description: request.description,
+    );
+
+    return connectMcp(serverInfo);
+  }
 
   @override
   Future<void> disconnect(McpManagerClient? client) async {
