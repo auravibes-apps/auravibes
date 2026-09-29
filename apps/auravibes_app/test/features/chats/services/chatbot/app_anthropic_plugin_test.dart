@@ -2,14 +2,67 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/chatbot/anthropic_request_encoder.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/app_anthropic_plugin.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentContextMessage, AgentTranscriptContextEntry, ToolSpec;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:logging/logging.dart';
 
 void main() {
+  test('malformed successful response exposes only redacted failure', () async {
+    const sentinel = 'private-response-sentinel-37b81';
+    final diagnostics = <String>[];
+    final subscription = Logger.root.onRecord.listen((record) {
+      diagnostics.add('${record.message} ${record.error} ${record.stackTrace}');
+    });
+    addTearDown(subscription.cancel);
+    final ai = Genkit(
+      plugins: [
+        AppAnthropicPlugin(
+          apiKey: 'fixture-key',
+          encoder: const .new(),
+          httpClient: MockClient(
+            (request) async => http.Response(
+              sentinel,
+              200,
+              headers: {'content-type': 'application/json'},
+            ),
+          ),
+        ),
+      ],
+      isDevEnv: false,
+    );
+    final result = await ai.generate<Object?, Object?>(
+      model: modelRef<Object?>('anthropic/claude-opus-5'),
+      messages: [
+        Message(
+          role: .user,
+          content: [TextPart(text: 'Hi')],
+        ),
+      ],
+    );
+    expect(
+      result.cause,
+      isA<AnthropicRequestException>()
+          .having((error) => error.code, 'code', 'invalid_response')
+          .having(
+            (error) => error.localeKey,
+            'localeKey',
+            LocaleKeys.chats_screens_chat_conversation_send_error,
+          )
+          .having(
+            (error) => error.toString(),
+            'diagnostic',
+            'AnthropicRequestException: invalid_response',
+          ),
+    );
+    expect(result.toString(), isNot(contains(sentinel)));
+    expect(diagnostics.join('\n'), isNot(contains(sentinel)));
+  });
+
   test(
     'serialized body preserves text and surfaces reported cache usage',
     () async {

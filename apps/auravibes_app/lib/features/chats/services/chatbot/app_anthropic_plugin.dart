@@ -89,13 +89,23 @@ Future<sdk.Message> _request(
   sdk.AnthropicClient client,
   AnthropicEncodedRequest request,
   ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
-) => context.streamingRequested
-    ? _stream(client, request, context)
-    : client.messages.create(
-        request.request,
-        betas: request.betas,
-        abortTrigger: context.cancel?.whenCancelled,
-      );
+) async {
+  if (context.streamingRequested) {
+    return await _stream(client, request, context);
+  }
+  try {
+    return await client.messages.create(
+      request.request,
+      betas: request.betas,
+      abortTrigger: context.cancel?.whenCancelled,
+    );
+  } on FormatException catch (_, stackTrace) {
+    Error.throwWithStackTrace(
+      const AnthropicRequestException('invalid_response'),
+      stackTrace,
+    );
+  }
+}
 
 void _emitEvent(
   sdk.MessageStreamEvent event,
