@@ -258,7 +258,7 @@ void main() {
       await tester.tap(
         find.widgetWithText(AuraButton, LocaleKeys.common_cancel.tr()),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AddMcpModal), findsNothing);
     });
