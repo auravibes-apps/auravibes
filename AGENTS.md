@@ -18,7 +18,7 @@
 
 ## Workspace source of truth
 
-- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.6.0`.
+- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.7.0`.
 - Commands and package membership live in root `pubspec.yaml`.
 - Diagnostics and scoped exceptions live in `analysis_options.yaml`.
 - Required CI gates live in `.github/workflows/ci.yml`.
@@ -51,7 +51,7 @@
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
-- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default (`--skip-pub-get` skips it). Use the workspace bootstrap command above for Melos package links. Commit `.vscode/settings.json` sync.
+- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
 
@@ -136,7 +136,7 @@
 - UX clarity: for every user-visible UI edit in the app, shared UI package, or Widgetbook, load `.agents/skills/ux-view-clarity/SKILL.md`; for a standalone audit or simplification of an existing journey, load `.agents/skills/ux-task-audit/SKILL.md`. Load both when the requested work includes both an existing-flow audit and a UI edit. Small edits get the clarity skill's brief check.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
-- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.6.0.
+- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.7.0.
 - Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.
 
 ## PR Gates
