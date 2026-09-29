@@ -70,7 +70,9 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(observedTheme?.colors.onSurface, AuraTheme.light.colors.onSurface);
-    final materialTheme = observedMaterialTheme!;
+    final materialTheme =
+        observedMaterialTheme ??
+        fail('Expected the route to build with a Material theme.');
     final focusColor = materialTheme.colorScheme.surfaceContainerHighest;
     final defaultSplashFactory = ThemeData().splashFactory;
     expect(materialTheme.splashFactory, isNot(same(defaultSplashFactory)));
