@@ -110,11 +110,7 @@ void main() {
       limitTokens: 2000000,
     );
 
-    await tester.pumpWidget(
-      buildSubject(data: data, locale: const Locale('es')),
-    );
-    await tester.pump();
-    await tester.pump();
+    await pumpSubject(tester, data: data, locale: const Locale('es'));
 
     expect(find.text(data.usageLabelFor(const Locale('es'))), findsOneWidget);
   });
