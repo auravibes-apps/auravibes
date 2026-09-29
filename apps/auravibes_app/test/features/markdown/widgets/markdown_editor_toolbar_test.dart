@@ -99,6 +99,61 @@ void main() {
       expect(controller.text, '**bold**');
     });
 
+    testWidgets('escaped inline delimiters are not toggled as formatting', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_italic, marker: '*', wrapper: '*'),
+        (icon: Icons.format_italic, marker: '_', wrapper: '*'),
+        (icon: Icons.code, marker: '`', wrapper: '`'),
+      ]) {
+        final text = '\\${action.marker}word${action.marker}';
+        final contentStart = text.indexOf('word');
+        controller.value = TextEditingValue(
+          text: text,
+          selection: TextSelection(
+            baseOffset: contentStart,
+            extentOffset: contentStart + 'word'.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(
+          controller.text,
+          '\\${action.marker}${action.wrapper}word'
+          '${action.wrapper}${action.marker}',
+        );
+      }
+
+      const evenBackslashText = r'\\*word*';
+      controller.value = const TextEditingValue(
+        text: evenBackslashText,
+        selection: TextSelection(baseOffset: 3, extentOffset: 7),
+      );
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+
+      expect(controller.text, r'\\word');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 2, extentOffset: 6),
+      );
+    });
+
     testWidgets(
       'bold italic and inline code actions unwrap selected matching spans',
       (tester) async {

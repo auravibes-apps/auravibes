@@ -453,7 +453,11 @@ int _nextInlineMarker(String text, String marker, int start) {
     final nextOffset = offset + marker.length;
     final nextMatches =
         nextOffset < text.length && text[nextOffset] == marker[0];
-    if (!previousMatches && !nextMatches) return offset;
+    if (!previousMatches &&
+        !nextMatches &&
+        !_isEscapedMarkdownCharacter(text, offset)) {
+      return offset;
+    }
 
     offset = text.indexOf(marker, nextOffset);
   }
