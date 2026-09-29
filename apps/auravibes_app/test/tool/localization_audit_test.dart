@@ -71,6 +71,7 @@ final count = 'menu.home'.plural(2);
 final home = 'menu.home'.tr();
 final count = 'menu.count'.plural(2);
 final other = tr('menu.other');
+final raw = tr(r'menu.raw');
 ''');
     File('${translationsDir.path}/es.json').writeAsStringSync('''
 {"menu":{"new_chat":"Nuevo chat"}}
@@ -83,8 +84,8 @@ final other = tr('menu.other');
         localeKeysFile: localeKeysFile,
       ),
       {
-        'en': {'menu.count', 'menu.other'},
-        'es': {'menu.count', 'menu.home', 'menu.other'},
+        'en': {'menu.count', 'menu.other', 'menu.raw'},
+        'es': {'menu.count', 'menu.home', 'menu.other', 'menu.raw'},
       },
     );
   });

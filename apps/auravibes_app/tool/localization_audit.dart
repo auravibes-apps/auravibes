@@ -117,15 +117,21 @@ List<_Token> _tokenize(String source) {
       continue;
     }
     final character = source[index];
-    if (character == "'" || character == '"') {
-      final quote = character;
+    final rawString =
+        (character == 'r' || character == 'R') &&
+        index + 1 < source.length &&
+        (source[index + 1] == "'" || source[index + 1] == '"') &&
+        (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
+    if (rawString || character == "'" || character == '"') {
+      if (rawString) index++;
+      final quote = source[index];
       final tripleQuote = '$quote$quote$quote';
       final triple = source.startsWith(tripleQuote, index);
       final delimiter = triple ? tripleQuote : quote;
       index += delimiter.length;
       final start = index;
       while (index < source.length && !source.startsWith(delimiter, index)) {
-        if (source[index] == '\\') index++;
+        if (!rawString && source[index] == '\\') index++;
         index++;
       }
       final end = index < source.length ? index : source.length;
@@ -133,7 +139,7 @@ List<_Token> _tokenize(String source) {
       tokens.add((
         value: value,
         isString: true,
-        isLiteral: !value.contains(r'$'),
+        isLiteral: rawString || !value.contains(r'$'),
       ));
       index += delimiter.length;
       continue;
