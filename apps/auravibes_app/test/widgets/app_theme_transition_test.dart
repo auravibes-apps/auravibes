@@ -17,6 +17,7 @@ void main() {
   ) async {
     AppFlavorConfig.instance.setAppFlavor(.dev);
     AuraTheme? observedTheme;
+    ThemeData? observedMaterialTheme;
     TextSelectionThemeData? observedSelectionTheme;
     PageTransitionsTheme? observedPageTransitionsTheme;
     final themeNotifier = _TestThemeNotifier();
@@ -33,10 +34,11 @@ void main() {
                   child: Builder(
                     builder: (context) {
                       observedTheme = context.auraTheme;
-                      observedSelectionTheme = Theme.of(context)
-                          .textSelectionTheme;
-                      observedPageTransitionsTheme = Theme.of(context)
-                          .pageTransitionsTheme;
+                      final materialTheme = Theme.of(context);
+                      observedMaterialTheme = materialTheme;
+                      observedSelectionTheme = materialTheme.textSelectionTheme;
+                      observedPageTransitionsTheme =
+                          materialTheme.pageTransitionsTheme;
 
                       return const SizedBox.shrink();
                     },
@@ -68,6 +70,46 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(observedTheme?.colors.onSurface, AuraTheme.light.colors.onSurface);
+    final materialTheme = observedMaterialTheme!;
+    final focusColor = materialTheme.colorScheme.surfaceContainerHighest;
+    final defaultSplashFactory = ThemeData().splashFactory;
+    expect(materialTheme.splashFactory, isNot(same(defaultSplashFactory)));
+    expect(
+      materialTheme.textButtonTheme.style?.splashFactory,
+      isNot(same(defaultSplashFactory)),
+    );
+    expect(
+      materialTheme.iconButtonTheme.style?.splashFactory,
+      isNot(same(defaultSplashFactory)),
+    );
+    expect(materialTheme.splashColor, Colors.transparent);
+    expect(materialTheme.highlightColor, Colors.transparent);
+    expect(materialTheme.hoverColor, Colors.transparent);
+    expect(materialTheme.focusColor, focusColor);
+    expect(
+      materialTheme.floatingActionButtonTheme.splashColor,
+      Colors.transparent,
+    );
+    final textButtonOverlay = materialTheme.textButtonTheme.style?.overlayColor;
+    expect(textButtonOverlay?.resolve({WidgetState.focused}), focusColor);
+    expect(
+      textButtonOverlay?.resolve({WidgetState.hovered}),
+      Colors.transparent,
+    );
+    expect(
+      textButtonOverlay?.resolve({WidgetState.pressed}),
+      Colors.transparent,
+    );
+    final iconButtonOverlay = materialTheme.iconButtonTheme.style?.overlayColor;
+    expect(iconButtonOverlay?.resolve({WidgetState.focused}), focusColor);
+    expect(
+      iconButtonOverlay?.resolve({WidgetState.hovered}),
+      Colors.transparent,
+    );
+    expect(
+      iconButtonOverlay?.resolve({WidgetState.pressed}),
+      Colors.transparent,
+    );
     final lightPrimary = observedTheme?.colors.primary;
     expect(observedSelectionTheme?.cursorColor, lightPrimary);
     expect(observedSelectionTheme?.selectionHandleColor, lightPrimary);

@@ -17,7 +17,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
-import 'package:flutter/foundation.dart' as foundation show visibleForTesting;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
@@ -199,11 +198,6 @@ ThemeData _auraThemeData(double hue, Brightness brightness) {
   return _auraMaterialTheme(_auraThemeFor(hue, brightness), brightness);
 }
 
-/// Builds the app theme for focused theme tests.
-@foundation.visibleForTesting
-ThemeData auraThemeDataForTesting(double hue, Brightness brightness) =>
-    _auraThemeData(hue, brightness);
-
 AuraTheme _auraThemeFor(double hue, Brightness brightness) {
   final baseTheme = brightness == Brightness.light
       ? AuraTheme.light
@@ -331,10 +325,7 @@ class const _RouteTitle({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: .merge([
-      router.routerDelegate,
-      router.routeInformationProvider,
-    ]),
+    listenable: router.routeInformationProvider,
     builder: (context, _) {
       final key = titleKeyForPath(
         router.routeInformationProvider.value.uri.path,

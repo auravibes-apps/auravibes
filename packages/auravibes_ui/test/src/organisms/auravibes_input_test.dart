@@ -67,8 +67,8 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                AuraInput(textInputAction: TextInputAction.next),
-                AuraInput(textInputAction: TextInputAction.done),
+                AuraInput(textInputAction: .next),
+                AuraInput(textInputAction: .done),
               ],
             ),
           ),
@@ -81,8 +81,8 @@ void main() {
           .focusNode;
       await tester.tap(fields.first);
       await tester.pump();
-      await tester.testTextInput.receiveAction(TextInputAction.next);
-      await tester.pumpAndSettle();
+      await tester.testTextInput.receiveAction(.next);
+      final _ = await tester.pumpAndSettle();
 
       expect(nextFieldFocus.hasFocus, isTrue);
     });
