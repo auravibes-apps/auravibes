@@ -161,6 +161,230 @@ void main() {
       expect(find.bySemanticsLabel('Link'), findsOneWidget);
     });
 
+    testWidgets('link dialog edits the link at the caret in place', (
+      tester,
+    ) async {
+      const text = 'Read [documentation](https://old.example/guide) carefully';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = TextSelection.collapsed(
+        offset: text.indexOf('documentation') + 5,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        'documentation',
+      );
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://old.example/guide',
+      );
+      await tester.enterText(fields.at(1), 'API docs');
+      await tester.enterText(fields.last, 'https://new.example/api');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'Read [API docs](https://new.example/api) carefully',
+      );
+      expect(focusNode.hasFocus, isTrue);
+    });
+
+    testWidgets('link dialog detects a caret adjacent to the link', (
+      tester,
+    ) async {
+      const text = 'Read [guide](https://guide.example) now';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = TextSelection.collapsed(
+        offset: text.indexOf(') now') + 1,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, 'guide');
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://guide.example',
+      );
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'selected markdown link updates without changing surrounding text',
+      (tester) async {
+        const text = 'before [guide](https://old.example) after';
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        final linkStart = text.indexOf('[guide]');
+        final linkEnd = text.indexOf(') after') + 1;
+        controller.selection = TextSelection(
+          baseOffset: linkEnd,
+          extentOffset: linkStart,
+          isDirectional: true,
+        );
+        final initialValue = controller.value;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+        await tester.tap(find.byIcon(Icons.link));
+        await tester.pump();
+
+        final fields = find.byType(TextField);
+        expect(
+          tester.widget<TextField>(fields.at(1)).controller?.text,
+          'guide',
+        );
+        expect(
+          tester.widget<TextField>(fields.last).controller?.text,
+          'https://old.example',
+        );
+        await tester.enterText(fields.at(1), 'handbook');
+        await tester.enterText(fields.last, 'https://new.example');
+        await tester.tap(find.text('Confirm'));
+        final _ = await tester.pumpAndSettle();
+
+        expect(controller.text, 'before [handbook](https://new.example) after');
+        final updatedValue = controller.value;
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, initialValue);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, updatedValue);
+      },
+    );
+
+    testWidgets('canceling link edit preserves text and selection', (
+      tester,
+    ) async {
+      const text = 'before [guide](https://guide.example) after';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final linkStart = text.indexOf('[guide]');
+      final linkEnd = text.indexOf(') after') + 1;
+      controller.selection = TextSelection(
+        baseOffset: linkEnd,
+        extentOffset: linkStart,
+        isDirectional: true,
+      );
+      final initialValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.value, initialValue);
+    });
+
+    testWidgets('edits a link destination containing parentheses', (
+      tester,
+    ) async {
+      const text =
+          'Read [source](https://example.com/path_(with_parentheses)) next';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = TextSelection.collapsed(
+        offset: text.indexOf('with_parentheses') + 3,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, 'source');
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://example.com/path_(with_parentheses)',
+      );
+      await tester.enterText(fields.at(1), 'guide');
+      await tester.enterText(fields.last, 'https://new.example/path_(updated)');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'Read [guide](https://new.example/path_(updated)) next',
+      );
+    });
+
+    testWidgets('selection spanning multiple links keeps insertion behavior', (
+      tester,
+    ) async {
+      const text =
+          'See [one](https://one.example) and [two](https://two.example) now';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf('[one]');
+      final selectionEnd =
+          text.indexOf('[two]') + '[two](https://two.example)'.length;
+      controller.selection = TextSelection(
+        baseOffset: selectionStart,
+        extentOffset: selectionEnd,
+      );
+      final selectedText = controller.selection.textInside(text);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        selectedText,
+      );
+      await tester.enterText(fields.last, 'https://combined.example');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'See [$selectedText](https://combined.example) now',
+      );
+    });
+
     testWidgets('link dialog uses localized placeholder for empty selection', (
       tester,
     ) async {

@@ -269,33 +269,39 @@ extension on _MarkdownEditorToolbarState {
   Future<void> _formatLink(BuildContext context) async {
     final before = _controller.value;
     final selection = _safeSelection;
+    final link = _markdownLinkAtSelection(before.text, selection);
     final result = await MarkdownLinkDialog.show(
       context,
-      selectedText: selection.textInside(before.text),
+      selectedText: link?.label ?? selection.textInside(before.text),
+      selectedDestination: link?.destination ?? '',
     );
     if (!context.mounted || _controller.text != before.text) return;
 
-    _completeLink((value: before, selection: selection), result, context);
+    _completeLink(
+      (value: before, selection: selection, link: link),
+      result,
+      context,
+    );
   }
 
   void _completeLink(
-    ({TextEditingValue value, TextSelection selection}) snapshot,
+    _LinkEditSnapshot snapshot,
     ({String text, String destination})? result,
     BuildContext context,
   ) {
     if (result == null) {
-      _restoreLinkSelection(snapshot.value.selection);
+      _restoreLinkValue(snapshot.value);
 
       return;
     }
 
-    _insertLink(snapshot, _linkValue(result, context));
+    _applyLink(snapshot, _linkValue(result, context));
   }
 
-  void _restoreLinkSelection(TextSelection selection) {
-    if (_controller.selection == selection) return;
+  void _restoreLinkValue(TextEditingValue value) {
+    if (_controller.value == value) return;
 
-    _toolbarEdit(() => _controller.selection = selection);
+    _toolbarEdit(() => _controller.value = value);
   }
 
   ({String label, String destination, bool isPlaceholder}) _linkValue(
@@ -316,15 +322,22 @@ extension on _MarkdownEditorToolbarState {
     );
   }
 
-  void _insertLink(
-    ({TextEditingValue value, TextSelection selection}) snapshot,
+  void _applyLink(
+    _LinkEditSnapshot snapshot,
     ({String label, String destination, bool isPlaceholder}) linkValue,
   ) {
     final before = snapshot.value;
-    final selection = snapshot.selection;
-    final link = '[${linkValue.label}](${linkValue.destination})';
-    final insertedSelection = _linkSelection(selection.start, link, linkValue);
-    _toolbarEdit(() => _replace(selection, link, insertedSelection));
+    final existingLink = snapshot.link;
+    final sourceRange = existingLink == null
+        ? snapshot.selection
+        : TextSelection(
+            baseOffset: existingLink.start,
+            extentOffset: existingLink.end,
+          );
+    final markdownLink = '[${linkValue.label}](${linkValue.destination})';
+    final start = existingLink?.start ?? sourceRange.start;
+    final insertedSelection = _linkSelection(start, markdownLink, linkValue);
+    _toolbarEdit(() => _replace(sourceRange, markdownLink, insertedSelection));
     _rememberAction(before);
   }
 
@@ -382,6 +395,112 @@ TextSelection _linkSelection(
         extentOffset: start + 1 + value.label.length,
       )
     : TextSelection.collapsed(offset: start + link.length);
+
+typedef _MarkdownLink = ({
+  int start,
+  int end,
+  String label,
+  String destination,
+});
+
+typedef _LinkEditSnapshot = ({
+  TextEditingValue value,
+  TextSelection selection,
+  _MarkdownLink? link,
+});
+
+_MarkdownLink? _markdownLinkAtSelection(String text, TextSelection selection) {
+  _MarkdownLink? match;
+  for (final link in _markdownLinks(text)) {
+    final containsCaret =
+        selection.isCollapsed &&
+        selection.start >= link.start &&
+        selection.start <= link.end;
+    final intersectsSelection =
+        !selection.isCollapsed &&
+        selection.start < link.end &&
+        selection.end > link.start;
+    if (!containsCaret && !intersectsSelection) continue;
+    if (match != null) return null;
+
+    match = link;
+  }
+
+  return match;
+}
+
+List<_MarkdownLink> _markdownLinks(String text) {
+  final links = <_MarkdownLink>[];
+  var start = text.indexOf('[');
+  while (start != -1) {
+    final isImage = start > 0 && text[start - 1] == '!';
+    if (_isEscapedMarkdownCharacter(text, start) || isImage) {
+      start = text.indexOf('[', start + 1);
+      continue;
+    }
+
+    final labelEnd = _matchingMarkdownBracket(text, start);
+    if (labelEnd == -1 ||
+        labelEnd + 1 >= text.length ||
+        text[labelEnd + 1] != '(') {
+      start = text.indexOf('[', start + 1);
+      continue;
+    }
+
+    final destinationEnd = _matchingMarkdownParenthesis(text, labelEnd + 1);
+    if (destinationEnd == -1) {
+      start = text.indexOf('[', start + 1);
+      continue;
+    }
+
+    links.add((
+      start: start,
+      end: destinationEnd + 1,
+      label: _textInside(text, start + 1, labelEnd),
+      destination: _textInside(text, labelEnd + 2, destinationEnd),
+    ));
+    start = text.indexOf('[', destinationEnd + 1);
+  }
+
+  return links;
+}
+
+int _matchingMarkdownBracket(String text, int start) {
+  var depth = 1;
+  for (var index = start + 1; index < text.length; index++) {
+    if (_isEscapedMarkdownCharacter(text, index)) continue;
+    if (text[index] == '[') depth++;
+    if (text[index] == ']') {
+      depth--;
+      if (depth == 0) return index;
+    }
+  }
+
+  return -1;
+}
+
+int _matchingMarkdownParenthesis(String text, int start) {
+  var depth = 0;
+  for (var index = start; index < text.length; index++) {
+    if (_isEscapedMarkdownCharacter(text, index)) continue;
+    if (text[index] == '(') depth++;
+    if (text[index] == ')') {
+      depth--;
+      if (depth == 0) return index;
+    }
+  }
+
+  return -1;
+}
+
+bool _isEscapedMarkdownCharacter(String text, int offset) {
+  var backslashCount = 0;
+  for (var index = offset - 1; index >= 0 && text[index] == r'\'; index--) {
+    backslashCount++;
+  }
+
+  return backslashCount.isOdd;
+}
 
 typedef _TaskEdit = ({int start, int end, String replacement});
 
