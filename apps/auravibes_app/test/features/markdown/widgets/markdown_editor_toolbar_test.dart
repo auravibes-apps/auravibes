@@ -99,6 +99,241 @@ void main() {
       expect(controller.text, '**bold**');
     });
 
+    testWidgets(
+      'bold italic and inline code actions unwrap selected matching spans',
+      (tester) async {
+        final controller = TextEditingController();
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        for (final action in [
+          (icon: Icons.format_bold, marker: '**', content: 'bold'),
+          (icon: Icons.format_italic, marker: '_', content: 'italic'),
+          (icon: Icons.format_italic, marker: '*', content: 'italic'),
+          (icon: Icons.code, marker: '`', content: 'code'),
+        ]) {
+          final text =
+              'before ${action.marker}${action.content}'
+              '${action.marker} after';
+          final contentStart = text.indexOf(action.content);
+          final unmarkedStart = contentStart - action.marker.length;
+          controller.value = TextEditingValue(
+            text: text,
+            selection: TextSelection(
+              baseOffset: contentStart,
+              extentOffset: contentStart + action.content.length,
+            ),
+          );
+          await tester.pump();
+
+          await tester.tap(find.byIcon(action.icon));
+          await tester.pump();
+
+          expect(controller.text, 'before ${action.content} after');
+          expect(
+            controller.selection,
+            TextSelection(
+              baseOffset: unmarkedStart,
+              extentOffset: unmarkedStart + action.content.length,
+            ),
+          );
+        }
+      },
+    );
+
+    testWidgets(
+      'selection containing complete marked span unwraps markers and selects text',
+      (tester) async {
+        final controller = TextEditingController();
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        for (final action in [
+          (icon: Icons.format_bold, marker: '**', content: 'bold'),
+          (icon: Icons.format_italic, marker: '_', content: 'italic'),
+          (icon: Icons.code, marker: '`', content: 'code'),
+        ]) {
+          final text =
+              'before ${action.marker}${action.content}'
+              '${action.marker} after';
+          final markedStart = text.indexOf(action.marker);
+          final contentStart = markedStart + action.marker.length;
+          final unmarkedStart = markedStart;
+          controller.value = TextEditingValue(
+            text: text,
+            selection: TextSelection(
+              baseOffset: markedStart,
+              extentOffset:
+                  contentStart + action.content.length + action.marker.length,
+            ),
+          );
+          await tester.pump();
+
+          await tester.tap(find.byIcon(action.icon));
+          await tester.pump();
+
+          expect(controller.text, 'before ${action.content} after');
+          expect(
+            controller.selection,
+            TextSelection(
+              baseOffset: unmarkedStart,
+              extentOffset: unmarkedStart + action.content.length,
+            ),
+          );
+        }
+      },
+    );
+
+    testWidgets('format actions still wrap unformatted selections', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (icon: Icons.format_italic, marker: '*', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+      ]) {
+        final text = 'before ${action.content} after';
+        final contentStart = text.indexOf(action.content);
+        controller.value = TextEditingValue(
+          text: text,
+          selection: TextSelection(
+            baseOffset: contentStart,
+            extentOffset: contentStart + action.content.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        final wrapped = '${action.marker}${action.content}${action.marker}';
+        expect(controller.text, 'before $wrapped after');
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: contentStart + wrapped.length),
+        );
+      }
+    });
+
+    testWidgets(
+      'partial selection leaves existing formatting markers unchanged',
+      (tester) async {
+        final controller = TextEditingController();
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        for (final action in [
+          (icon: Icons.format_bold, marker: '**', content: 'bold'),
+          (icon: Icons.format_italic, marker: '_', content: 'italic'),
+          (icon: Icons.code, marker: '`', content: 'code'),
+        ]) {
+          final text =
+              'before ${action.marker}${action.content}'
+              '${action.marker} after';
+          final contentStart = text.indexOf(action.content);
+          final initialValue = TextEditingValue(
+            text: text,
+            selection: TextSelection(
+              baseOffset: contentStart + 1,
+              extentOffset: contentStart + action.content.length - 1,
+            ),
+          );
+          controller.value = initialValue;
+          await tester.pump();
+
+          await tester.tap(find.byIcon(action.icon));
+          await tester.pump();
+
+          expect(controller.value, initialValue);
+          final undoButton = find.byWidgetPredicate(
+            (widget) => widget is AuraIconButton && widget.icon == Icons.undo,
+          );
+          expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNull);
+        }
+      },
+    );
+
+    testWidgets(
+      'undo and redo restore wrapped and unwrapped values and selections',
+      (tester) async {
+        final controller = TextEditingController(text: 'bold');
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = const TextSelection(
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+        final original = controller.value;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+        await tester.tap(find.byIcon(Icons.format_bold));
+        await tester.pump();
+        final wrapped = controller.value;
+        expect(wrapped.text, '**bold**');
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, original);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, wrapped);
+
+        controller.selection = const TextSelection(
+          baseOffset: 2,
+          extentOffset: 6,
+        );
+        await tester.pump();
+        final selectedWrapped = controller.value;
+        await tester.tap(find.byIcon(Icons.format_bold));
+        await tester.pump();
+        final unwrapped = controller.value;
+        expect(unwrapped.text, 'bold');
+        expect(
+          unwrapped.selection,
+          const TextSelection(baseOffset: 0, extentOffset: 4),
+        );
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, selectedWrapped);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, unwrapped);
+      },
+    );
+
     for (final action in [
       (icon: Icons.title, prefix: '# '),
       (icon: Icons.format_list_bulleted, prefix: '- '),

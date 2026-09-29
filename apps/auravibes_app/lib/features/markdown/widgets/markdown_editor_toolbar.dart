@@ -124,9 +124,9 @@ extension on _MarkdownEditorToolbarState {
   bool _applyInlineAction(_ToolbarActionKind action) {
     switch (action) {
       case .bold:
-        _wrapSelection('**', '**');
+        _toggleSelection('**');
       case .italic:
-        _wrapSelection('*', '*');
+        _toggleSelection('*', alternateMarker: '_');
       case .code:
         _formatCode();
       case .heading ||
@@ -160,6 +160,76 @@ extension on _MarkdownEditorToolbarState {
 }
 
 extension on _MarkdownEditorToolbarState {
+  void _toggleSelection(String marker, {String? alternateMarker}) {
+    final selection = _safeSelection;
+    final text = _controller.text;
+    final bounds = _selectionBounds(selection, text);
+    final markers = [marker, if (alternateMarker != null) alternateMarker];
+    final span = _matchingInlineSpan(text, bounds, markers);
+
+    if (span == null) {
+      _wrapSelection(marker, marker);
+
+      return;
+    }
+
+    final selectsContents =
+        bounds.start == span.contentStart && bounds.end == span.contentEnd;
+    final selectsSpan = bounds.start == span.start && bounds.end == span.end;
+    if (!selectsContents && !selectsSpan) return;
+
+    final content = text.substring(span.contentStart, span.contentEnd);
+    final contentEnd = span.start + content.length;
+    final isReversed = selection.baseOffset > selection.extentOffset;
+    _replace(
+      TextSelection(baseOffset: span.start, extentOffset: span.end),
+      content,
+      TextSelection(
+        baseOffset: isReversed ? contentEnd : span.start,
+        extentOffset: isReversed ? span.start : contentEnd,
+        affinity: selection.affinity,
+        isDirectional: selection.isDirectional,
+      ),
+    );
+  }
+
+  ({int start, int contentStart, int contentEnd, int end})? _matchingInlineSpan(
+    String text,
+    ({int start, int end}) selection,
+    List<String> markers,
+  ) {
+    ({int start, int contentStart, int contentEnd, int end})? bestSpan;
+
+    for (final marker in markers) {
+      var searchOffset = 0;
+      while (searchOffset < text.length) {
+        final start = _nextInlineMarker(text, marker, searchOffset);
+        if (start == -1) break;
+
+        final contentStart = start + marker.length;
+        final contentEnd = _nextInlineMarker(text, marker, contentStart);
+        if (contentEnd == -1) break;
+
+        final end = contentEnd + marker.length;
+        if (start <= selection.start && selection.end <= end) {
+          final span = (
+            start: start,
+            contentStart: contentStart,
+            contentEnd: contentEnd,
+            end: end,
+          );
+          if (bestSpan == null || end - start < bestSpan.end - bestSpan.start) {
+            bestSpan = span;
+          }
+        }
+
+        searchOffset = start + marker.length;
+      }
+    }
+
+    return bestSpan;
+  }
+
   void _wrapSelection(String before, String after) {
     final selection = _safeSelection;
     final selected = selection.textInside(_controller.text);
@@ -355,7 +425,7 @@ extension on _MarkdownEditorToolbarState {
       return;
     }
 
-    _wrapSelection('`', '`');
+    _toggleSelection('`');
   }
 
   void _replace(
@@ -374,6 +444,21 @@ extension on _MarkdownEditorToolbarState {
   void _requestFocus() {
     if (!_focusNode.hasFocus) _focusNode.requestFocus();
   }
+}
+
+int _nextInlineMarker(String text, String marker, int start) {
+  var offset = text.indexOf(marker, start);
+  while (offset != -1) {
+    final previousMatches = offset > 0 && text[offset - 1] == marker[0];
+    final nextOffset = offset + marker.length;
+    final nextMatches =
+        nextOffset < text.length && text[nextOffset] == marker[0];
+    if (!previousMatches && !nextMatches) return offset;
+
+    offset = text.indexOf(marker, nextOffset);
+  }
+
+  return -1;
 }
 
 int _toolbarLineStart(String text, int selectionStart) =>
