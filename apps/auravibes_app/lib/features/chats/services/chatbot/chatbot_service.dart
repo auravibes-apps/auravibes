@@ -1,6 +1,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
@@ -175,7 +177,19 @@ void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
   if (responseError == null) return;
   final cause = finalResponse.cause;
   if (cause is AgentRateLimitRetryException) throw cause;
-  throw GenkitException(responseError.message, underlyingException: cause);
+  final causeDetails = cause is GenkitException ? cause.details?.trim() : null;
+  final responseDetails = responseError.details;
+  String? details;
+  if (causeDetails != null && causeDetails.isNotEmpty) {
+    details = causeDetails;
+  } else if (responseDetails != null) {
+    details = jsonEncode(responseDetails);
+  }
+  throw GenkitException(
+    responseError.message,
+    details: details,
+    underlyingException: cause,
+  );
 }
 
 Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(

@@ -4,6 +4,7 @@ abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
 
   static final _secretPatterns = <RegExp>[
+    RegExp(r'(\b)(?:sk|rk)-[A-Za-z0-9_-]+\b'),
     RegExp(
       r'\b(authorization\s*[:=]\s*bearer\s+)[^\s,;]+',
       caseSensitive: false,

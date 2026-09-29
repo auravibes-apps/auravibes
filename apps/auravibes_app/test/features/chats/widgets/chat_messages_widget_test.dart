@@ -4758,7 +4758,11 @@ void main() {
       tester,
     ) async {
       const providerDetails =
-          'This endpoint has a maximum context length of 32768 tokens.';
+          'This endpoint has a maximum context length of 32768 tokens. '
+          'Bearer bearer-secret; sk-live-secret';
+      const safeDetails =
+          'This endpoint has a maximum context length of 32768 tokens. '
+          'Bearer [REDACTED]; [REDACTED]';
       String? copiedText;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
@@ -4803,14 +4807,19 @@ void main() {
         ),
       );
 
-      expect(find.text(providerDetails), findsOneWidget);
+      expect(find.text(safeDetails), findsOneWidget);
+      expect(find.text(providerDetails), findsNothing);
       expect(find.byType(AuraSelectableText), findsOneWidget);
+      final selectable = tester.widget<AuraSelectableText>(
+        find.byType(AuraSelectableText),
+      );
+      expect(selectable.data, safeDetails);
       expect(find.byIcon(Icons.copy_outlined), findsOneWidget);
 
       await tester.tap(find.byIcon(Icons.copy_outlined));
       await tester.pump();
 
-      expect(copiedText, providerDetails);
+      expect(copiedText, safeDetails);
       expect(find.byIcon(Icons.check), findsOneWidget);
     });
   });

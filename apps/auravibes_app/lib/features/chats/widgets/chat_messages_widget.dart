@@ -31,6 +31,7 @@ import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dar
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -2692,7 +2693,7 @@ class const _ErrorMessageWidget({
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final visibleContent = isProviderError
-        ? content
+        ? LogRedaction.redact(content)
         : content.tr(context: context);
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;
