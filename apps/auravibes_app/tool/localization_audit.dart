@@ -1,6 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+extension on String {
+  String _slice(int start, int end) =>
+      String.fromCharCodes(codeUnits.getRange(start, end));
+}
+
 Map<String, Set<String>> findMissingTranslations({
   required Directory translationsDir,
   required Directory sourceDir,
@@ -12,7 +17,10 @@ Map<String, Set<String>> findMissingTranslations({
   );
   final declarations = localeKeysFile.readAsStringSync();
   for (final match in declaration.allMatches(declarations)) {
-    generatedKeys[match.group(1)!] = match.group(2)!;
+    final symbol = match.group(1);
+    final path = match.group(2);
+    if (symbol == null || path == null) continue;
+    generatedKeys[symbol] = path;
   }
 
   final usedKeys = <String>{};
@@ -47,6 +55,7 @@ Map<String, Set<String>> findMissingTranslations({
         if (!availableKeys.contains(key)) key,
     };
   }
+
   return missing;
 }
 
@@ -75,15 +84,16 @@ void _collectUsedKeys(
       if (key == null) {
         throw StateError('Unknown LocaleKeys symbol: $symbol');
       }
-      usedKeys.add(key);
+      usedKeys.addAll([key]);
     }
     if (token.isLiteral && !token.followsString) {
-      final (key, end) = _literalSequence(tokens, index)!;
-      if (end + 2 < tokens.length &&
-          tokens[end].value == '.' &&
-          _isTranslationCall(tokens[end + 1]) &&
-          tokens[end + 2].value == '(') {
-        usedKeys.add(key);
+      final receiver = _literalSequence(tokens, index);
+      if (receiver != null &&
+          receiver.end + 2 < tokens.length &&
+          tokens[receiver.end].value == '.' &&
+          _isTranslationCall(tokens[receiver.end + 1]) &&
+          tokens[receiver.end + 2].value == '(') {
+        usedKeys.addAll([receiver.key]);
       }
     }
     if (_isTranslationCall(token) &&
@@ -91,10 +101,10 @@ void _collectUsedKeys(
         tokens[index + 1].value == '(') {
       final argument = _literalSequence(tokens, index + 2);
       if (argument != null) {
-        final (key, end) = argument;
-        if (end < tokens.length &&
-            (tokens[end].value == ',' || tokens[end].value == ')')) {
-          usedKeys.add(key);
+        if (argument.end < tokens.length &&
+            (tokens[argument.end].value == ',' ||
+                tokens[argument.end].value == ')')) {
+          usedKeys.addAll([argument.key]);
         }
       }
     }
@@ -104,7 +114,7 @@ void _collectUsedKeys(
 bool _isTranslationCall(_Token token) =>
     !token.isString && (token.value == 'tr' || token.value == 'plural');
 
-(String, int)? _literalSequence(List<_Token> tokens, int start) {
+({String key, int end})? _literalSequence(List<_Token> tokens, int start) {
   if (start >= tokens.length || !tokens[start].isLiteral) return null;
   final key = StringBuffer();
   var end = start;
@@ -114,7 +124,8 @@ bool _isTranslationCall(_Token token) =>
     key.write(tokens[end].value);
     end++;
   }
-  return (key.toString(), end);
+
+  return (key: key.toString(), end: end);
 }
 
 List<_Token> _tokenize(String source) {
@@ -147,9 +158,9 @@ List<_Token> _tokenize(String source) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == "'" || source[index + 1] == '"') &&
+        (source[index + 1] == '\'' || source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
-    if (rawString || character == "'" || character == '"') {
+    if (rawString || character == '\'' || character == '"') {
       if (rawString) index++;
       final quote = source[index];
       final tripleQuote = '$quote$quote$quote';
@@ -164,12 +175,12 @@ List<_Token> _tokenize(String source) {
           final end = _interpolationEnd(source, index);
           if (end != null) {
             hasInterpolation = true;
-            interpolations.add(_tokenize(source.substring(index + 2, end)));
+            interpolations.add(_tokenize(source._slice(index + 2, end)));
             index = end + 1;
             continue;
           }
         }
-        if (!rawString && source[index] == '\\') {
+        if (!rawString && source[index] == r'\') {
           index += 2;
           continue;
         }
@@ -182,7 +193,7 @@ List<_Token> _tokenize(String source) {
         index++;
       }
       final end = index < source.length ? index : source.length;
-      final value = source.substring(start, end);
+      final value = source._slice(start, end);
       tokens.add((
         value: rawString ? value : _decodeDartString(value),
         isString: true,
@@ -190,19 +201,20 @@ List<_Token> _tokenize(String source) {
         followsString: previousWasString,
       ));
       for (final expression in interpolations) {
-        tokens.add((
-          value: ';',
-          isString: false,
-          isLiteral: false,
-          followsString: false,
-        ));
-        tokens.addAll(expression);
-        tokens.add((
-          value: ';',
-          isString: false,
-          isLiteral: false,
-          followsString: false,
-        ));
+        tokens
+          ..add((
+            value: ';',
+            isString: false,
+            isLiteral: false,
+            followsString: false,
+          ))
+          ..addAll(expression)
+          ..add((
+            value: ';',
+            isString: false,
+            isLiteral: false,
+            followsString: false,
+          ));
       }
       previousWasString = true;
       index += delimiter.length;
@@ -216,7 +228,7 @@ List<_Token> _tokenize(String source) {
         index++;
       }
       tokens.add((
-        value: source.substring(start, index),
+        value: source._slice(start, index),
         isString: false,
         isLiteral: false,
         followsString: false,
@@ -235,6 +247,7 @@ List<_Token> _tokenize(String source) {
     }
     index++;
   }
+
   return tokens;
 }
 
@@ -242,21 +255,21 @@ String _decodeDartString(String value) {
   final decoded = StringBuffer();
   var index = 0;
   while (index < value.length) {
-    if (value[index] != '\\' || index + 1 >= value.length) {
+    if (value[index] != r'\' || index + 1 >= value.length) {
       decoded.write(value[index++]);
       continue;
     }
     final escape = value[index + 1];
     if (escape == 'u' || escape == 'x') {
-      final braced = escape == 'u' &&
+      final braced =
+          escape == 'u' &&
           index + 2 < value.length &&
           value[index + 2] == '{';
       final start = index + (braced ? 3 : 2);
-      final end = braced
-          ? value.indexOf('}', start)
-          : start + (escape == 'u' ? 4 : 2);
+      final width = escape == 'u' ? 4 : 2;
+      final end = braced ? value.indexOf('}', start) : start + width;
       if (end >= start && end <= value.length) {
-        final codePoint = int.tryParse(value.substring(start, end), radix: 16);
+        final codePoint = int.tryParse(value._slice(start, end), radix: 16);
         if (codePoint != null && codePoint <= 0x10ffff) {
           decoded.write(String.fromCharCode(codePoint));
           index = end + (braced ? 1 : 0);
@@ -275,6 +288,7 @@ String _decodeDartString(String value) {
     });
     index += 2;
   }
+
   return decoded.toString();
 }
 
@@ -307,17 +321,17 @@ int? _interpolationEnd(String source, int start) {
     final rawString =
         (character == 'r' || character == 'R') &&
         index + 1 < source.length &&
-        (source[index + 1] == "'" || source[index + 1] == '"') &&
+        (source[index + 1] == '\'' || source[index + 1] == '"') &&
         (index == 0 || !_isIdentifierPart(source.codeUnitAt(index - 1)));
     if (rawString) character = source[++index];
-    if (character == "'" || character == '"') {
+    if (character == '\'' || character == '"') {
       final tripleQuote = '$character$character$character';
       final delimiter = source.startsWith(tripleQuote, index)
           ? tripleQuote
           : character;
       index += delimiter.length;
       while (index < source.length && !source.startsWith(delimiter, index)) {
-        if (!rawString && source[index] == '\\') index++;
+        if (!rawString && source[index] == r'\') index++;
         index++;
       }
       index += delimiter.length;
@@ -327,6 +341,7 @@ int? _interpolationEnd(String source, int start) {
     if (character == '}' && --depth == 0) return index;
     index++;
   }
+
   return null;
 }
 
@@ -343,7 +358,7 @@ void _collectKeys(
 ) {
   for (final entry in values.entries) {
     final key = prefix.isEmpty ? entry.key : '$prefix.${entry.key}';
-    keys.add(key);
+    keys.addAll([key]);
     if (entry.value case final Map<String, dynamic> children) {
       _collectKeys(children, key, keys);
     }
@@ -353,9 +368,9 @@ void _collectKeys(
 void main() {
   final appDir = File.fromUri(Platform.script).parent.parent;
   final missing = findMissingTranslations(
-    translationsDir: Directory('${appDir.path}/assets/i18n'),
-    sourceDir: Directory('${appDir.path}/lib'),
-    localeKeysFile: File('${appDir.path}/lib/i18n/locale_keys.dart'),
+    translationsDir: .new('${appDir.path}/assets/i18n'),
+    sourceDir: .new('${appDir.path}/lib'),
+    localeKeysFile: .new('${appDir.path}/lib/i18n/locale_keys.dart'),
   );
   for (final entry in missing.entries) {
     for (final key in entry.value) {

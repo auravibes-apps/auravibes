@@ -5,17 +5,15 @@ import 'package:test/test.dart';
 import '../../tool/localization_audit.dart';
 
 void main() {
-  late Directory root;
-  late Directory translationsDir;
-  late Directory sourceDir;
-  late File localeKeysFile;
+  final root = Directory.systemTemp.createTempSync('localization-audit-');
+  final translationsDir = Directory('${root.path}/i18n');
+  final sourceDir = Directory('${root.path}/lib');
+  final localeKeysFile = File('${root.path}/locale_keys.dart');
 
   setUp(() {
-    root = Directory.systemTemp.createTempSync('localization-audit-');
-    translationsDir = Directory('${root.path}/i18n')..createSync();
-    sourceDir = Directory('${root.path}/lib')..createSync();
-    localeKeysFile = File('${root.path}/locale_keys.dart')
-      ..writeAsStringSync('''
+    translationsDir.createSync();
+    sourceDir.createSync();
+    localeKeysFile.writeAsStringSync('''
 abstract class LocaleKeys {
   static const menu_new_chat =
       'menu.new_chat';
@@ -31,7 +29,7 @@ final count = 'menu.home'.plural(2);
 ''');
   });
 
-  tearDown(() => root.deleteSync(recursive: true));
+  tearDownAll(() => root.deleteSync(recursive: true));
 
   test('uses generated dotted paths and literal translation calls', () {
     File('${translationsDir.path}/es.json').writeAsStringSync('''
@@ -157,13 +155,13 @@ final dynamic = 'menu.$name'.tr();
       {
         'en': {
           r'menu.$price',
-          "menu.quo'te",
+          'menu.quo\'te',
           r'menu.back\slash',
           'menu.vertical\u000Btab',
         },
         'es': {
           r'menu.$price',
-          "menu.quo'te",
+          'menu.quo\'te',
           r'menu.back\slash',
           'menu.vertical\u000Btab',
         },
@@ -193,7 +191,7 @@ final home = tr('menu.\u0068ome');
   });
 
   test('accepts static adjacent literals and skips dynamic arguments', () {
-    File('${sourceDir.path}/screen.dart').writeAsStringSync(r'''
+    File('${sourceDir.path}/screen.dart').writeAsStringSync('''
 final home = tr('menu.' 'home');
 final count = plural('menu.' 'count', 2);
 final dynamic = tr('menu.' + suffix);
