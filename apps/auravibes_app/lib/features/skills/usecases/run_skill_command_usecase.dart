@@ -449,9 +449,10 @@ class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
     String conversationId,
     String workspaceId,
     Map<String, dynamic> arguments,
-  ) async {
+  ) {
     final command = SkillCommandTarget.fromArguments(arguments);
-    await _validateCommandManifest(
+
+    return _validateCommandManifest(
       .new(
         conversationId: conversationId,
         workspaceId: workspaceId,
@@ -460,19 +461,25 @@ class const _RunSkillCommandValidation(final RunSkillCommandUsecase _usecase) {
       ),
       command,
     );
-
-    return command;
   }
 
-  Future<void> _validateCommandManifest(
+  Future<SkillCommandTarget> _validateCommandManifest(
     _SkillManifestRequest request,
     SkillCommandTarget command,
   ) async {
     final manifest = await _requiredManifest(request);
-    validateToolArguments(
-      _requiredManifestTool(manifest, command).inputJsonSchema,
-      command.args,
+    final tool = _requiredManifestTool(manifest, command);
+    final schema = tool.inputJsonSchema;
+    final normalized = command.copyWithArguments(
+      normalizeSkillToolArguments(
+        schema,
+        command.args,
+        optionalNullMeansOmission: tool.optionalNullMeansOmission,
+      ),
     );
+    validateToolArguments(schema, normalized.args);
+
+    return normalized;
   }
 
   SkillManifestTool _requiredManifestTool(

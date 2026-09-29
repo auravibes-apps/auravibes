@@ -19,6 +19,29 @@ void main() {
       );
     });
 
+    test('omits explicit null values for optional nested inputs', () {
+      const definitions = {
+        'filters': SkillTemplateInputDefinition(
+          description: 'Filters',
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            'region': SkillTemplateInputDefinition(
+              description: 'Region',
+              optional: true,
+            ),
+          },
+        ),
+      };
+
+      expect(
+        normalizeSkillTemplateInputs({
+          'filters': {'region': null},
+        }, definitions),
+        {'filters': <String, Object?>{}},
+      );
+    });
+
     test('preserves validation classification and canonical JSON', () {
       void validateBody(String body, {String? bodyFormat}) {
         validateSkillTemplateDefinition(

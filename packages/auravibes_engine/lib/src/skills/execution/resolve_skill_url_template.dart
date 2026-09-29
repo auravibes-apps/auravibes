@@ -124,10 +124,41 @@ Map<String, dynamic> normalizeSkillTemplateInputs(
       continue;
     }
     _validateInputValue(entry.key, value, entry.value);
-    normalized[entry.key] = value;
+    normalized[entry.key] = _omitOptionalNestedNulls(value, entry.value);
   }
   _validateSchemaAlternatives(schema, normalized);
   return normalized;
+}
+
+Object? _omitOptionalNestedNulls(
+  Object? value,
+  SkillTemplateInputDefinition definition,
+) {
+  if (value is Map && definition.type.trim().toLowerCase() == 'object') {
+    final normalized = Map<Object?, Object?>.from(value);
+    for (final entry in definition.properties.entries) {
+      final nestedValue = normalized[entry.key];
+      if (nestedValue == null && entry.value.optional) {
+        normalized.remove(entry.key);
+      } else if (nestedValue != null) {
+        normalized[entry.key] = _omitOptionalNestedNulls(
+          nestedValue,
+          entry.value,
+        );
+      }
+    }
+    return normalized;
+  }
+  if (value is List &&
+      definition.type.trim().toLowerCase() == 'array' &&
+      definition.items != null) {
+    return [
+      for (final item in value)
+        _omitOptionalNestedNulls(item, definition.items!),
+    ];
+  }
+
+  return value;
 }
 
 void _validateSchemaAlternatives(

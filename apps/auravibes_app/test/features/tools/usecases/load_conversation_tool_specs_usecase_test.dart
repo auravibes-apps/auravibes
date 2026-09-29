@@ -60,19 +60,7 @@ class _FakeBuildCombinedToolSpecsUseCase.candidates(
 }
 
 class _FakeBuildDynamicSkillToolSpecsUsecase(final List<ToolSpec> _result)
-    extends BuildDynamicSkillToolSpecsUsecase {
-  this
-    : super(
-        (_) => ListAvailableSkillsUsecase(
-          _NeverSkillsRepository(),
-          _NeverConversationSkillsRepository(),
-          _NeverAppSkillSettingsRepository(),
-          const AppSkillRegistry(),
-        ),
-        const AppSkillRegistry(),
-        const _NoAppSkillCandidates(),
-      );
-
+    implements BuildDynamicSkillToolSpecsUsecase {
   @override
   Future<List<ToolSpec>> call({
     required String conversationId,

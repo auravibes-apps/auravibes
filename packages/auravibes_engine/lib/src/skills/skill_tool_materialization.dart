@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 class const SkillToolMaterializationInput({
@@ -126,15 +127,145 @@ Map<String, Object?> materializeSkillToolSchema(
       : result;
 }
 
+/// Converts a declared skill contract only when object closure preserves its
+/// input semantics. Unsupported contracts remain unchanged for strict
+/// preflight.
+Map<String, Object?> strictSkillToolSchema(
+  Map<String, Object?> schema, {
+  bool optionalNullMeansOmission = false,
+}) {
+  final source = Map<String, Object?>.from(schema);
+  if (strictToolSchemaIssue(Map<String, dynamic>.from(source)) == null) {
+    return source;
+  }
+  if (source['type'] != 'object' ||
+      source['properties'] is! Map ||
+      source['additionalProperties'] != false ||
+      (!optionalNullMeansOmission && _hasOptionalObjectProperties(source))) {
+    return source;
+  }
+
+  final strict = _strictProviderSchema(
+    source,
+    root: true,
+    preserveRootAlternatives: true,
+  );
+  return strictToolSchemaIssue(Map<String, dynamic>.from(strict)) == null
+      ? strict
+      : source;
+}
+
+/// Drops null object properties only when their source contract marks them
+/// optional. Keeps unknown keys so the execution validator can reject them.
+Map<String, Object?> normalizeSkillToolArguments(
+  Map<String, Object?> schema,
+  Map<String, Object?> arguments, {
+  bool optionalNullMeansOmission = false,
+}) => optionalNullMeansOmission
+    ? _normalizedSkillToolArguments(schema, arguments)
+    : Map<String, Object?>.from(arguments);
+
+Map<String, Object?> _normalizedSkillToolArguments(
+  Map<String, Object?> schema,
+  Map<String, Object?> arguments,
+) {
+  final normalized = _normalizeSkillToolValue(schema, arguments);
+  if (normalized is! Map<Object?, Object?>) {
+    throw StateError('Normalized skill arguments must remain an object.');
+  }
+  return Map<String, Object?>.from(normalized);
+}
+
+bool _hasOptionalObjectProperties(Map<String, Object?> schema) {
+  final properties = schema['properties'];
+  if (properties is Map) {
+    final required = (schema['required'] as List? ?? const [])
+        .whereType<String>()
+        .toSet();
+    if (properties.keys.any(
+      (key) => key is String && !required.contains(key),
+    )) {
+      return true;
+    }
+    for (final child in properties.values) {
+      if (child is Map &&
+          _hasOptionalObjectProperties(Map<String, Object?>.from(child))) {
+        return true;
+      }
+    }
+  }
+  if (schema['items'] case final Map<Object?, Object?> items
+      when _hasOptionalObjectProperties(Map<String, Object?>.from(items))) {
+    return true;
+  }
+  if (schema[r'$defs'] case final Map<Object?, Object?> definitions) {
+    for (final value in definitions.values) {
+      if (value is Map &&
+          _hasOptionalObjectProperties(Map<String, Object?>.from(value))) {
+        return true;
+      }
+    }
+  }
+  if (schema['anyOf'] case final List<Object?> alternatives) {
+    for (final alternative in alternatives) {
+      if (alternative is Map &&
+          _hasOptionalObjectProperties(
+            Map<String, Object?>.from(alternative),
+          )) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+Object? _normalizeSkillToolValue(Map<Object?, Object?> schema, Object? value) {
+  final properties = schema['properties'];
+  if (value is Map<Object?, Object?> && properties is Map<Object?, Object?>) {
+    final required = (schema['required'] as List? ?? const [])
+        .whereType<String>()
+        .toSet();
+    final normalized = <Object?, Object?>{};
+    for (final entry in value.entries) {
+      final name = entry.key;
+      if (name is String &&
+          properties.containsKey(name) &&
+          entry.value == null &&
+          !required.contains(name)) {
+        continue;
+      }
+      final childSchema = properties[name];
+      normalized[name] = childSchema is Map<Object?, Object?>
+          ? _normalizeSkillToolValue(childSchema, entry.value)
+          : entry.value;
+    }
+    return normalized;
+  }
+  final items = schema['items'];
+  if (value is List && items is Map<Object?, Object?>) {
+    return [for (final item in value) _normalizeSkillToolValue(items, item)];
+  }
+
+  return value;
+}
+
 Map<String, Object?> _strictProviderSchema(
   Map<String, Object?> schema, {
   required bool root,
   bool nullable = false,
+  bool preserveRootAlternatives = false,
 }) {
+  if (!_canStrictifyProviderSchema(schema, root: root)) {
+    return Map<String, Object?>.from(schema);
+  }
+
   // Defaults remain in source definitions used by the executor.
   final result = Map<String, Object?>.from(schema)..remove('default');
   if (root) {
     if (result['properties'] is Map) {
+      if (preserveRootAlternatives && result.containsKey('anyOf')) {
+        return Map<String, Object?>.from(schema);
+      }
       // Runtime validation keeps enforcing source-schema alternatives.
       result.remove('anyOf');
     }
@@ -159,6 +290,7 @@ Map<String, Object?> _strictProviderSchema(
               Map<String, Object?>.from(propertySchema),
               root: false,
               nullable: !originalRequired.contains(entry.key),
+              preserveRootAlternatives: preserveRootAlternatives,
             )
           : propertySchema;
     }
@@ -176,6 +308,7 @@ Map<String, Object?> _strictProviderSchema(
     result['items'] = _strictProviderSchema(
       Map<String, Object?>.from(items),
       root: false,
+      preserveRootAlternatives: preserveRootAlternatives,
     );
   }
   if (result[r'$defs'] case final Map<Object?, Object?> definitions) {
@@ -185,6 +318,7 @@ Map<String, Object?> _strictProviderSchema(
           entry.key: _strictProviderSchema(
             Map<String, Object?>.from(entry.value! as Map),
             root: false,
+            preserveRootAlternatives: preserveRootAlternatives,
           )
         else
           entry.key: entry.value,
@@ -197,6 +331,7 @@ Map<String, Object?> _strictProviderSchema(
           _strictProviderSchema(
             Map<String, Object?>.from(alternative),
             root: false,
+            preserveRootAlternatives: preserveRootAlternatives,
           )
         else
           alternative,
@@ -204,6 +339,64 @@ Map<String, Object?> _strictProviderSchema(
   }
 
   return nullable ? _allowNull(result) : result;
+}
+
+bool _canStrictifyProviderSchema(
+  Map<String, Object?> schema, {
+  required bool root,
+}) {
+  if (root && schema['properties'] is! Map) return false;
+  if (schema.containsKey('oneOf')) return false;
+
+  final properties = schema['properties'];
+  if (properties is Map && schema['type'] == 'object') {
+    if (!root && schema['additionalProperties'] != false) return false;
+    if (!properties.keys.every((key) => key is String) ||
+        !properties.values.every((value) => value is Map)) {
+      return false;
+    }
+    final required = schema['required'];
+    if (required != null &&
+        (required is! List || !required.every((name) => name is String))) {
+      return false;
+    }
+    if (required is List) {
+      final names = required.cast<String>();
+      if (names.toSet().length != names.length ||
+          !properties.keys.toSet().containsAll(names)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  final types = _schemaTypes(schema['type']);
+  if (types != null) {
+    if (types.contains('object')) {
+      return properties is Map &&
+          properties.keys.every((key) => key is String) &&
+          properties.values.every((value) => value is Map) &&
+          schema['additionalProperties'] == false;
+    }
+    if (types.contains('array')) return schema['items'] is Map;
+    return types.every(
+      (type) => const {
+        'boolean',
+        'integer',
+        'null',
+        'number',
+        'string',
+      }.contains(type),
+    );
+  }
+
+  if (schema['anyOf'] case final List<Object?> alternatives
+      when !root && alternatives.isNotEmpty) {
+    return alternatives.every(
+      (alternative) => alternative is Map<Object?, Object?>,
+    );
+  }
+  return false;
 }
 
 Map<String, Object?> _allowNull(Map<String, Object?> schema) {

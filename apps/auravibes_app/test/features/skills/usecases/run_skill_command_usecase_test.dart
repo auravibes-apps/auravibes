@@ -449,6 +449,14 @@ void main() {
         'type': 'object',
         'properties': {
           'title': {'type': 'string'},
+          'filters': {
+            'type': 'object',
+            'properties': {
+              'region': {'type': 'string'},
+            },
+            'required': <String>[],
+            'additionalProperties': false,
+          },
         },
         'required': ['title'],
         'additionalProperties': false,
@@ -495,7 +503,10 @@ void main() {
         arguments: {
           'skill': 'github',
           'tool': 'create_issue',
-          'args': {'title': 'Collision regression'},
+          'args': {
+            'title': 'Collision regression',
+            'filters': {'region': null},
+          },
           'revision': loadedManifest.revision,
         },
       ));
@@ -513,7 +524,10 @@ void main() {
       expect(templateRunner.lastWorkspaceId, 'workspace-1');
       expect(templateRunner.lastSkillSlug, 'github');
       expect(templateRunner.lastToolSlug, 'create_issue');
-      expect(templateRunner.lastArguments, {'title': 'Collision regression'});
+      expect(templateRunner.lastArguments, {
+        'title': 'Collision regression',
+        'filters': <String, Object?>{},
+      });
       expect(nativeRunner.calls, 0);
     },
   );
