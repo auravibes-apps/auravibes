@@ -203,11 +203,21 @@ extension on _MarkdownEditorToolbarState {
     for (final marker in markers) {
       var searchOffset = 0;
       while (searchOffset < text.length) {
-        final start = _nextInlineMarker(text, marker, searchOffset);
+        final start = _nextInlineMarker(
+          text,
+          marker,
+          searchOffset,
+          opening: true,
+        );
         if (start == -1) break;
 
         final contentStart = start + marker.length;
-        final contentEnd = _nextInlineMarker(text, marker, contentStart);
+        final contentEnd = _nextInlineMarker(
+          text,
+          marker,
+          contentStart,
+          opening: false,
+        );
         if (contentEnd == -1) break;
 
         final end = contentEnd + marker.length;
@@ -446,16 +456,25 @@ extension on _MarkdownEditorToolbarState {
   }
 }
 
-int _nextInlineMarker(String text, String marker, int start) {
+int _nextInlineMarker(
+  String text,
+  String marker,
+  int start, {
+  required bool opening,
+}) {
   var offset = text.indexOf(marker, start);
   while (offset != -1) {
     final previousMatches = offset > 0 && text[offset - 1] == marker[0];
     final nextOffset = offset + marker.length;
     final nextMatches =
         nextOffset < text.length && text[nextOffset] == marker[0];
+    final hasEmphasisBoundary =
+        marker[0] == '`' ||
+        _hasEmphasisBoundary(text, offset, marker, opening: opening);
     if (!previousMatches &&
         !nextMatches &&
-        !_isEscapedMarkdownCharacter(text, offset)) {
+        !_isEscapedMarkdownCharacter(text, offset) &&
+        hasEmphasisBoundary) {
       return offset;
     }
 
@@ -463,6 +482,18 @@ int _nextInlineMarker(String text, String marker, int start) {
   }
 
   return -1;
+}
+
+bool _hasEmphasisBoundary(
+  String text,
+  int offset,
+  String marker, {
+  required bool opening,
+}) {
+  final boundaryOffset = opening ? offset + marker.length : offset - 1;
+  if (boundaryOffset < 0 || boundaryOffset >= text.length) return false;
+
+  return text[boundaryOffset].trim().isNotEmpty;
 }
 
 int _toolbarLineStart(String text, int selectionStart) =>

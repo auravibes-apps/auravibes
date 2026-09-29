@@ -178,6 +178,30 @@ void main() {
       expect(controller.text, '**one**** and ****two**');
     });
 
+    testWidgets('italic ignores literal multiplication operators', (
+      tester,
+    ) async {
+      const text = '2 * 3 = 6. *word*';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf('word');
+      controller.selection = TextSelection(
+        baseOffset: selectionStart,
+        extentOffset: selectionStart + 'word'.length,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+
+      expect(controller.text, '2 * 3 = 6. word');
+    });
+
     testWidgets(
       'bold italic and inline code actions unwrap selected matching spans',
       (tester) async {
