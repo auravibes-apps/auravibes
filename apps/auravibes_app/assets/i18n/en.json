@@ -433,6 +433,8 @@
       "tool_call_fallback_description": "Review the arguments for {tool}",
       "a2ui_form_invalid": "Check your answers and try again.",
       "continue_error": "Could not continue the agent. Please try again.",
+      "transcript_context_unsupported": "This conversation uses an unsupported agent context format. Its history is still available to export.",
+      "transcript_context_malformed": "Saved agent context could not be read. Conversation history is still available to export.",
       "retry_error": "Could not retry this message. Its original content was kept.",
       "generation_credits_error": "This request needs more credits or a lower maximum token limit. Add credits or lower the model's maximum tokens, then try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",

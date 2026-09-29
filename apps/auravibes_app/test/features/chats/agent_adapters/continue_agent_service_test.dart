@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/continue_agent_service.dart';
@@ -1337,6 +1338,55 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test(
+      'stops on unsupported transcript context before provider execution',
+      () async {
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => const []);
+        final unsupported = _userMessage.copyWith(
+          id: 'context-1',
+          content: '{"version":2,"prompt":"PRIVATE PROMPT"}',
+          messageType: .system,
+          isUser: false,
+          metadata: const MessageMetadataEntity(
+            modelMetadata: {
+              MessageMetadataEntity.agentTranscriptContextMetadataKey: true,
+            },
+          ),
+        );
+        when(
+          () => messageRepository.getTranscriptMessagesByConversation(
+            'conversation-1',
+          ),
+        ).thenAnswer((_) async => [_userMessage, unsupported]);
+
+        await expectLater(
+          usecase.call(conversationId: 'conversation-1'),
+          throwsA(isA<UnsupportedTranscriptVersionException>()),
+        );
+        expect(
+          () => verifyNever(
+            () => chatbotService.sendMessage(
+              any(),
+              any(),
+              options: any(named: 'options'),
+            ),
+          ),
+          returnsNormally,
+        );
+      },
+    );
 
     test('logs and rethrows when stream errors before any chunk', () async {
       final records = <LogRecord>[];
