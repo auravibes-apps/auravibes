@@ -44,6 +44,7 @@ typedef McpConnectionVerification = ({
   String id,
   int toolCount,
   DateTime expiresAt,
+  McpTransportType transport,
 });
 
 typedef _AddedMcpServer = ({
@@ -663,10 +664,14 @@ extension _McpPreparedConnectionOperations on McpConnectionNotifier {
     _PreparedMcpConnection session,
     McpServerFormToCreate server,
     String workspaceId,
-  ) =>
-      DateTime.now().toUtc().isBefore(session.expiresAt) &&
-      session.workspaceId == workspaceId &&
-      session.fingerprint == _mcpConnectionFingerprint(server);
+  ) {
+    final serverInfo = session.serverInfo;
+
+    return DateTime.now().toUtc().isBefore(session.expiresAt) &&
+        session.workspaceId == workspaceId &&
+        (serverInfo == null || serverInfo.transport == server.transport) &&
+        session.fingerprint == _mcpConnectionFingerprint(server);
+  }
 
   Future<void> _completePreparedMcpConnection(String verificationId) async {
     final session = _preparedMcpConnections.remove(verificationId);
@@ -708,7 +713,7 @@ extension _McpPreparationOperations on McpConnectionNotifier {
       verification,
     )..cloudVerifiedForm = verifiedForm;
 
-    return _mcpVerificationSummary(session);
+    return _mcpVerificationSummary(session, transport: verifiedForm.transport);
   }
 
   Future<McpServerFormToCreate> _cloudVerificationForm(
@@ -787,11 +792,13 @@ extension _McpLocalPreparationOperations on McpConnectionNotifier {
   ) async {
     McpManagerClient? client;
     try {
-      client = await manager.connectMcp(serverInfo);
+      client = await manager.connectMcpWithAutoTransport(
+        _mcpConnectionRequest(serverInfo),
+      );
       final verification = await _prepareConnectedLocalMcp((
         request: request,
         manager: manager,
-        serverInfo: serverInfo,
+        serverInfo: serverInfo.copyWith(transport: client.resolvedTransport),
         client: client,
       ));
       client = null;
@@ -816,7 +823,10 @@ extension _McpLocalPreparationOperations on McpConnectionNotifier {
         tools: tools,
       ));
 
-      return _mcpVerificationSummary(session);
+      return _mcpVerificationSummary(
+        session,
+        transport: request.serverInfo.transport,
+      );
     } on Object {
       await tokenPreparation.subscription?.cancel();
       rethrow;
@@ -929,12 +939,23 @@ extension _McpLocalPreparationSupportOperations on McpConnectionNotifier {
   }
 }
 
+McpConnectionRequest _mcpConnectionRequest(McpServerToCreate serverInfo) => (
+  name: serverInfo.name,
+  url: serverInfo.url,
+  useHttp2: switch (serverInfo.transport) {
+    McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
+    McpTransportTypeSSE() => false,
+  },
+  authenticationType: serverInfo.authenticationType,
+  serviceConnectionId: serverInfo.serviceConnectionId,
+  description: serverInfo.description,
+);
+
 String _mcpConnectionFingerprint(McpServerFormToCreate server) {
   final bearerToken = server.bearerToken?.trim() ?? '';
 
   return jsonEncode({
     'url': server.url.trim(),
-    'transport': server.transport.toJson(),
     'authenticationType': server.authenticationType.name,
     'bearerTokenDigest': _fingerprintDigest(bearerToken),
     'headersDigest': _fingerprintDigest(
@@ -949,11 +970,13 @@ String _fingerprintDigest(String value) =>
     sha256.convert(utf8.encode(value)).toString();
 
 McpConnectionVerification _mcpVerificationSummary(
-  _PreparedMcpConnection session,
-) => (
+  _PreparedMcpConnection session, {
+  required McpTransportType transport,
+}) => (
   id: session.id,
   toolCount: session.tools.length,
   expiresAt: session.expiresAt,
+  transport: transport,
 );
 
 _McpLocalPreparedData _mcpLocalPreparedData(_McpLocalPreparedRequest data) {

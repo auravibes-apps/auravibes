@@ -663,6 +663,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.activity_arguments';
   static const chats_screens_chat_conversation_activity_result =
       'chats_screens.chat_conversation.activity_result';
+  static const chats_screens_chat_conversation_activity_context_truncated =
+      'chats_screens.chat_conversation.activity_context_truncated';
+  static const chats_screens_chat_conversation_activity_persisted_truncated =
+      'chats_screens.chat_conversation.activity_persisted_truncated';
   static const chats_screens_chat_conversation_activity_open_sub_agent =
       'chats_screens.chat_conversation.activity_open_sub_agent';
   static const chats_screens_chat_conversation_active_sub_agents_count =
@@ -1418,6 +1422,8 @@ abstract class LocaleKeys {
       'mcp_modal.verification_required';
   static const mcp_modal_verification_expired =
       'mcp_modal.verification_expired';
+  static const mcp_modal_legacy_sse_unavailable =
+      'mcp_modal.legacy_sse_unavailable';
   static const mcp_edit_secret_saved = 'mcp_edit.secret_saved';
   static const mcp_edit_secret_hint = 'mcp_edit.secret_hint';
   static const compaction_settings_title = 'compaction.settings.title';

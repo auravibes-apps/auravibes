@@ -197,8 +197,11 @@ class const _AuraBadgeIconTheme({
   );
 }
 
-TextStyle _badgeTextStyle(Color foreground, AuraTheme theme) =>
-    TextStyle(color: foreground, fontWeight: theme.typography.fontWeightMedium);
+TextStyle _badgeTextStyle(Color foreground, AuraTheme theme) => TextStyle(
+  color: foreground,
+  fontWeight: theme.typography.fontWeightMedium,
+  fontFamily: theme.typography.bodyFontFamily,
+);
 
 EdgeInsets _badgePadding(AuraBadgeSize size, AuraSpacingScale spacing) =>
     switch (size) {

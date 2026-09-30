@@ -454,6 +454,8 @@
       "activity_thinking": "Thinking",
       "activity_arguments": "Arguments",
       "activity_result": "Result",
+      "activity_context_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; full output remains stored.",
+      "activity_persisted_truncated": "Tool response: {originalBytes} bytes. Model context limit: {limitBytes} bytes; stored output was also clipped.",
       "activity_open_sub_agent": "Open sub-agent",
       "active_sub_agents_count": {
         "one": "1 sub-agent running",
@@ -1123,7 +1125,8 @@
     "test_connection_success": "Connection verified",
     "verification_success": "Connection verified · {} tools found",
     "verification_required": "Verify the connection before saving.",
-    "verification_expired": "Verification expired. Verify the connection again."
+    "verification_expired": "Verification expired. Verify the connection again.",
+    "legacy_sse_unavailable": "Streamable HTTP was rejected. This endpoint may require legacy SSE, which the web app cannot use. Connect from a native app or configure the server for Streamable HTTP."
   },
   "mcp_edit": {
     "secret_saved": "Saved securely",
