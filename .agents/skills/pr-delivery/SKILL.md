@@ -184,6 +184,21 @@ After each fix, rerun applicable checks, commit named files, push, verify the
 new remote SHA, and monitor all required checks for that head. Never report
 success after a local fix but before current-head GitHub checks finish.
 
+## Issue references and closure
+
+When writing or updating a PR description:
+
+- For each issue whose acceptance criteria the PR fully meets, include one full
+  closing reference, such as `Closes #<issue-number>`, on its own line. Never
+  group issue numbers after one closing keyword.
+- Put related or partially addressed issues under non-closing references, such
+  as `Related to #<issue-number>`. Close an issue only when its acceptance
+  criteria are fully met.
+
+After a user-authorized merge, verify that each intended issue actually closed.
+If an issue with a valid closing reference remains open, check the repository's
+“Auto-close issues with merged linked pull requests” setting.
+
 ## Sonar (conditional)
 
 Handle Sonar when it is a required check for this PR, the user asks for Sonar
