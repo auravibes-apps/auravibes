@@ -1,6 +1,6 @@
 ---
 name: agent-instructions-maintenance
-description: Use whenever work reveals a missing, stale, contradictory, ignored, or overly broad AGENTS.md rule or skill, or when asked to review or update agent guidance. Diagnose the evidence, choose the narrowest durable location, make a small verified update, and prune guidance that no longer helps.
+description: Use when work reveals missing, stale, conflicting, ignored, or overly broad repository agent instructions, skills, or harness checks, or when asked to maintain them. Verify the source and enforcement, make a targeted update, and validate it.
 metadata:
   version: "0.1.0"
 ---
