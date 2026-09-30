@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/chats/services/chat_attachment_modality.d
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -596,33 +597,59 @@ class const _ChatInputAgentSelector({
   required final VoidCallback? onSkillsPress,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: StableUiSelector(
-              identifier: 'chat_agent_selector',
-              child: GestureDetector(
-                child: IgnorePointer(child: compactControl),
-                onTap: () => _showAgentSelectorSheet(context, sheetControl),
-                behavior: .opaque,
-              ),
-            ),
+  Widget build(BuildContext context) => _ChatInputAgentSelectorLayout(
+    compactControl: compactControl,
+    sheetControl: sheetControl,
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    onSkillsPress: onSkillsPress,
+  );
+}
+
+class const _ChatInputAgentSelectorLayout({
+  required final Widget compactControl,
+  required final Widget sheetControl,
+  required final String workspaceId,
+  required final String? conversationId,
+  required final VoidCallback? onSkillsPress,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Row(
+      children: [
+        Expanded(
+          child: _ChatInputAgentSelectorControl(
+            compactControl: compactControl,
+            sheetControl: sheetControl,
           ),
-          if (onSkillsPress case final onSkillsPress?) ...[
-            const AuraSizedBox(width: .xs),
-            _ChatInputSkillsControl(
-              workspaceId: workspaceId,
-              conversationId: conversationId,
-              onPressed: onSkillsPress,
-            ),
-          ],
+        ),
+        if (onSkillsPress case final onSkillsPress?) ...[
+          const AuraSizedBox(width: .xs),
+          _ChatInputSkillsControl(
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            onPressed: onSkillsPress,
+          ),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
+
+class const _ChatInputAgentSelectorControl({
+  required final Widget compactControl,
+  required final Widget sheetControl,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => StableUiSelector(
+    identifier: 'chat_agent_selector',
+    child: GestureDetector(
+      child: IgnorePointer(child: compactControl),
+      onTap: () => _showAgentSelectorSheet(context, sheetControl),
+      behavior: .opaque,
+    ),
+  );
 }
 
 void _showAgentSelectorSheet(BuildContext context, Widget sheetControl) {
@@ -1642,44 +1669,81 @@ class const _ChatInputSkillsControl({
     final currentConversationId = conversationId;
     final count = currentConversationId == null
         ? 0
-        : switch (ref.watch(
-            conversationSkillSelectorProvider(
-              workspaceId,
-              currentConversationId,
+        : _loadedSkillCount(
+            ref.watch(
+              conversationSkillSelectorProvider(
+                workspaceId,
+                currentConversationId,
+              ),
             ),
-          )) {
-            AsyncData(:final value) => value.loaded.length,
-            AsyncLoading(:final value?, hasValue: true) => value.loaded.length,
-            AsyncLoading() || AsyncError() => 0,
-          };
+          );
     final semanticLabel = LocaleKeys.chat_input_skills_control_count.tr(
       context: context,
       namedArgs: {'count': '$count'},
     );
 
-    return AuraTooltip(
-      message: semanticLabel,
-      child: Semantics(
-        key: const ValueKey<String>('chat_skills_button'),
-        child: AuraButton(
-          onPressed: onPressed,
-          child: Row(
-            mainAxisSize: .min,
-            children: [
-              const AuraIcon(Icons.psychology_alt_outlined, size: .small),
-              const SizedBox(width: 4),
-              Text('$count'),
-            ],
-          ),
-          variant: .outlined,
-          size: .small,
-        ),
-        button: true,
-        identifier: 'chat_skills_button',
-        label: semanticLabel,
-      ),
+    return _ChatInputSkillsButton(
+      count: count,
+      semanticLabel: semanticLabel,
+      onPressed: onPressed,
     );
   }
+}
+
+int _loadedSkillCount(AsyncValue<ConversationSkillSelectorState> selector) =>
+    switch (selector) {
+      AsyncData(:final value) => value.loaded.length,
+      AsyncLoading(:final value?, hasValue: true) => value.loaded.length,
+      AsyncLoading() || AsyncError() => 0,
+    };
+
+class const _ChatInputSkillsButton({
+  required final int count,
+  required final String semanticLabel,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTooltip(
+    message: semanticLabel,
+    child: _ChatInputSkillsButtonSemantics(
+      count: count,
+      semanticLabel: semanticLabel,
+      onPressed: onPressed,
+    ),
+  );
+}
+
+class const _ChatInputSkillsButtonSemantics({
+  required final int count,
+  required final String semanticLabel,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: const ValueKey<String>('chat_skills_button'),
+    child: AuraButton(
+      onPressed: onPressed,
+      child: _ChatInputSkillsCount(count: count),
+      variant: .outlined,
+      size: .small,
+    ),
+    button: true,
+    identifier: 'chat_skills_button',
+    label: semanticLabel,
+  );
+}
+
+class const _ChatInputSkillsCount({required final int count})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      const AuraIcon(Icons.psychology_alt_outlined, size: .small),
+      const SizedBox(width: 4),
+      Text('$count'),
+    ],
+  );
 }
 
 class const _ChatInputModeControls({required final _ChatInputState state})

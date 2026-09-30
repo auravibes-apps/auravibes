@@ -456,17 +456,19 @@ Future<void> _submitSkillSuggestion(
     result = await ref
         .read(applyConversationSkillActionUsecaseProvider)
         .call(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          slug: intent.slug,
-          action: switch (intent.action) {
-            .add => .add,
-            .useNow => .useNow,
-          },
-          expectedCatalogRevision: intent.catalogRevision,
-          userRequestForSkill: (title) => LocaleKeys
-              .skills_selector_use_now_request
-              .tr(namedArgs: {'skill': title}),
+          request: (
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            slug: intent.slug,
+            action: switch (intent.action) {
+              .add => .add,
+              .useNow => .useNow,
+            },
+            expectedCatalogRevision: intent.catalogRevision,
+            userRequestForSkill: (title) => LocaleKeys
+                .skills_selector_use_now_request
+                .tr(namedArgs: {'skill': title}),
+          ),
         );
   } on Object {
     if (!context.mounted) return;

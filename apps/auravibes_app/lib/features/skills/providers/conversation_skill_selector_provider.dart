@@ -35,6 +35,11 @@ typedef _SkillSelectorStateRequest = ({
   ConversationSkillContextSnapshot? snapshot,
 });
 
+typedef _SkillContextState = ({
+  ConversationSkillContextStatus status,
+  ConversationSkillContextFailure? failure,
+});
+
 Future<List<AvailableSkill>> _loadSkills(_SkillLoadRequest request) =>
     request.usecase.call(
       conversationId: request.conversationId,
@@ -108,25 +113,53 @@ Future<Map<String, String>> _currentSkillRevisions(
 ConversationSkillSelectorState _selectorState(
   _SkillSelectorStateRequest request,
 ) {
-  final failures = <String, ConversationSkillContextFailure>{};
-  final statuses = <String, ConversationSkillContextStatus>{};
-  for (final skill in request.loaded) {
-    final revision = request.revisions[skill.slug];
-    final failure = _contextFailure(skill, request.snapshot, revision);
-    if (failure != null) failures[skill.slug] = failure;
-    statuses[skill.slug] = _contextStatus(
-      skill,
-      request.snapshot,
-      revision,
-      failure,
-    );
-  }
+  final contextBySlug = _contextBySlug(request);
 
   return ConversationSkillSelectorState(
     loaded: request.loaded,
     loadable: request.loadable,
-    contextStatusBySlug: statuses,
-    failureBySlug: failures,
+    contextStatusBySlug: _contextStatuses(contextBySlug),
+    failureBySlug: _contextFailures(contextBySlug),
+  );
+}
+
+Map<String, _SkillContextState> _contextBySlug(
+  _SkillSelectorStateRequest request,
+) => {
+  for (final skill in request.loaded)
+    skill.slug: _skillContextState(
+      skill,
+      request.snapshot,
+      request.revisions[skill.slug],
+    ),
+};
+
+Map<String, ConversationSkillContextStatus> _contextStatuses(
+  Map<String, _SkillContextState> contextBySlug,
+) => {for (final entry in contextBySlug.entries) entry.key: entry.value.status};
+
+Map<String, ConversationSkillContextFailure> _contextFailures(
+  Map<String, _SkillContextState> contextBySlug,
+) {
+  final failures = <String, ConversationSkillContextFailure>{};
+  for (final entry in contextBySlug.entries) {
+    final failure = entry.value.failure;
+    if (failure != null) failures[entry.key] = failure;
+  }
+
+  return failures;
+}
+
+_SkillContextState _skillContextState(
+  AvailableSkill skill,
+  ConversationSkillContextSnapshot? snapshot,
+  String? revision,
+) {
+  final failure = _contextFailure(skill, snapshot, revision);
+
+  return (
+    failure: failure,
+    status: _contextStatus(skill, snapshot, revision, failure),
   );
 }
 

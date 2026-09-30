@@ -41,97 +41,170 @@ class ApplyConversationSkillActionUsecase({
   final Set<String> _inProgress = {};
 
   Future<ConversationSkillActionResult> call({
-    required String workspaceId,
-    required String conversationId,
-    required String slug,
-    required ConversationSkillAction action,
-    required String Function(String title) userRequestForSkill,
-    String? expectedCatalogRevision,
+    required ConversationSkillActionRequest request,
   }) async {
-    final key = '$workspaceId\u0000$conversationId\u0000$slug';
+    final key =
+        '${request.workspaceId}\u0000'
+        '${request.conversationId}\u0000'
+        '${request.slug}';
     if (!_inProgress.add(key)) return .inProgress;
 
     try {
-      return await _apply(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        slug: slug,
-        action: action,
-        expectedCatalogRevision: expectedCatalogRevision,
-        userRequestForSkill: userRequestForSkill,
-      );
+      return await _apply(request);
     } finally {
       final _ = _inProgress.remove(key);
     }
   }
 }
 
+typedef _ResolvedActionSkill = ({
+  AvailableSkill? skill,
+  List<AvailableSkill> loadedSkills,
+  ConversationSkillActionResult? failure,
+});
+
+bool _isAlreadyAdded(
+  ConversationSkillActionRequest request,
+  List<AvailableSkill> loadedSkills,
+) =>
+    request.action == .add &&
+    loadedSkills.any((item) => item.slug == request.slug);
+
+ConversationSkillActionResult? _credentialFailure(AvailableSkill skill) =>
+    switch (skill.credentialReadiness) {
+      .missing => .credentialsMissing,
+      .unknown => .credentialsUnknown,
+      .ready => null,
+    };
+
+_ResolvedActionSkill _failedActionSkill(
+  ConversationSkillActionResult failure,
+) => (skill: null, loadedSkills: const [], failure: failure);
+
 extension on ApplyConversationSkillActionUsecase {
-  Future<ConversationSkillActionResult> _apply({
-    required String workspaceId,
-    required String conversationId,
-    required String slug,
-    required ConversationSkillAction action,
-    required String? expectedCatalogRevision,
-    required String Function(String title) userRequestForSkill,
-  }) async {
+  Future<ConversationSkillActionResult> _apply(
+    ConversationSkillActionRequest request,
+  ) async {
+    final workspaceFailure = await _workspaceFailure(request);
+    if (workspaceFailure != null) return workspaceFailure;
+
+    return await _applyResolvedSkill(
+      request,
+      await _resolveActionSkill(request),
+    );
+  }
+
+  Future<ConversationSkillActionResult> _applyResolvedSkill(
+    ConversationSkillActionRequest request,
+    _ResolvedActionSkill resolved,
+  ) async {
+    if (resolved.failure case final failure?) return failure;
+    final skill = resolved.skill;
+    if (skill == null) return .unavailable;
+    if (_isAlreadyAdded(request, resolved.loadedSkills)) return .alreadyAdded;
+
+    final credentialFailure = _credentialFailure(skill);
+    if (credentialFailure != null) return credentialFailure;
+
+    final loadFailure = await _loadActionSkill(request);
+    if (loadFailure != null) return loadFailure;
+
+    return await _finishAction(request, skill);
+  }
+
+  Future<ConversationSkillActionResult?> _workspaceFailure(
+    ConversationSkillActionRequest request,
+  ) async {
     final String? conversationWorkspaceId;
     try {
       conversationWorkspaceId = await workspaceIdForConversation(
-        conversationId,
+        request.conversationId,
       );
     } on Object {
       return .unavailable;
     }
-    if (conversationWorkspaceId != workspaceId) {
-      return .unauthorized;
-    }
+    if (conversationWorkspaceId != request.workspaceId) return .unauthorized;
 
-    final AvailableSkill? skill;
-    final List<AvailableSkill> loadedSkills;
+    return null;
+  }
+
+  Future<_ResolvedActionSkill> _resolveActionSkill(
+    ConversationSkillActionRequest request,
+  ) async {
     try {
-      skill = (await listSkills(
-        workspaceId,
-        conversationId,
-        .catalog,
-      )).where((item) => item.slug == slug).firstOrNull;
-      if (skill == null) return .unavailable;
-
-      if (expectedCatalogRevision != null &&
-          !await _matchesCatalogRevision(
-            workspaceId,
-            conversationId,
-            expectedCatalogRevision,
-          )) {
-        return .stale;
+      final skill = await _catalogSkill(request);
+      if (skill == null) {
+        return _failedActionSkill(.unavailable);
       }
 
-      loadedSkills = await listSkills(workspaceId, conversationId, .loaded);
+      if (!await _catalogRevisionMatches(request)) {
+        return _failedActionSkill(.stale);
+      }
+
+      final loadedSkills = await listSkills(
+        request.workspaceId,
+        request.conversationId,
+        .loaded,
+      );
+
+      return (skill: skill, loadedSkills: loadedSkills, failure: null);
+    } on Object {
+      return _failedActionSkill(.unavailable);
+    }
+  }
+
+  Future<AvailableSkill?> _catalogSkill(
+    ConversationSkillActionRequest request,
+  ) async {
+    final workspaceId = request.workspaceId;
+    final conversationId = request.conversationId;
+    final slug = request.slug;
+    final skills = await listSkills(workspaceId, conversationId, .catalog);
+
+    return skills.where((item) => item.slug == slug).firstOrNull;
+  }
+
+  Future<bool> _catalogRevisionMatches(
+    ConversationSkillActionRequest request,
+  ) async {
+    final expectedRevision = request.expectedCatalogRevision;
+    if (expectedRevision == null) return true;
+
+    return await _matchesCatalogRevision(
+      request.workspaceId,
+      request.conversationId,
+      expectedRevision,
+    );
+  }
+
+  Future<ConversationSkillActionResult?> _loadActionSkill(
+    ConversationSkillActionRequest request,
+  ) async {
+    try {
+      await loadSkill(
+        request.workspaceId,
+        request.conversationId,
+        request.slug,
+      );
+    } on LoadConversationSkillException catch (error) {
+      return _loadFailure(error);
     } on Object {
       return .unavailable;
     }
 
-    final isLoaded = loadedSkills.any((item) => item.slug == slug);
-    if (action == .add && isLoaded) return .alreadyAdded;
-    if (skill.credentialReadiness == .missing) return .credentialsMissing;
-    if (skill.credentialReadiness == .unknown) return .credentialsUnknown;
-    try {
-      await loadSkill(workspaceId, conversationId, slug);
-    } on LoadConversationSkillException catch (error) {
-      return _loadFailure(error);
-    } on Object {
-      return skill.credentialReadiness == .unknown
-          ? .credentialsUnknown
-          : .unavailable;
-    }
+    return null;
+  }
 
-    if (action == .add) return .added;
-
+  Future<ConversationSkillActionResult> _finishAction(
+    ConversationSkillActionRequest request,
+    AvailableSkill skill,
+  ) async {
+    if (request.action == .add) return .added;
     try {
       await sendMessage(
-        workspaceId,
-        conversationId,
-        .new(text: userRequestForSkill(skill.title)),
+        request.workspaceId,
+        request.conversationId,
+        .new(text: request.userRequestForSkill(skill.title)),
       );
     } on MessagePersistedException {
       return .used;

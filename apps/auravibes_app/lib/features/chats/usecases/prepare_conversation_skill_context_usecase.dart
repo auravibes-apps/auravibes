@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/features/chats/models/skill_context_preparation_failure.dart';
 import 'package:auravibes_app/features/chats/models/skill_context_preparation_result.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -31,54 +32,7 @@ class PrepareConversationSkillContextUsecase({
     required String conversationId,
   }) async {
     try {
-      final contextMessages = await buildContextMessages(
-        workspaceId,
-        conversationId,
-      );
-      final selectedRevisions = _selectedRevisions(contextMessages);
-      final selectedSkills = await listLoadedSkills(
-        workspaceId,
-        conversationId,
-        .loaded,
-      );
-      if (selectedSkills.any(
-        (skill) => skill.credentialReadiness == .missing,
-      )) {
-        return SkillContextPreparationResult(
-          selectedRevisions: selectedRevisions,
-          canActivate: false,
-          failure: .missingCredentials,
-        );
-      }
-      if (selectedSkills.any(
-        (skill) => skill.credentialReadiness == .unknown,
-      )) {
-        return SkillContextPreparationResult(
-          selectedRevisions: selectedRevisions,
-          canActivate: false,
-          failure: .preparationFailed,
-        );
-      }
-      if (selectedSkills.any(
-        (skill) => !selectedRevisions.containsKey(skill.slug),
-      )) {
-        return SkillContextPreparationResult(
-          selectedRevisions: selectedRevisions,
-          canActivate: false,
-          failure: .unavailableMetadata,
-        );
-      }
-
-      final tools = await previewTools(workspaceId, conversationId);
-      final canActivate =
-          await supportsTools(conversationId) &&
-          tools.any((tool) => tool.name == activateSkillToolName);
-
-      return SkillContextPreparationResult(
-        selectedRevisions: selectedRevisions,
-        canActivate: canActivate,
-        failure: null,
-      );
+      return await _prepare(workspaceId, conversationId);
     } on Object {
       return const SkillContextPreparationResult(
         selectedRevisions: {},
@@ -86,6 +40,55 @@ class PrepareConversationSkillContextUsecase({
         failure: .preparationFailed,
       );
     }
+  }
+
+  Future<SkillContextPreparationResult> _prepare(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    final selectedRevisions = _selectedRevisions(
+      await buildContextMessages(workspaceId, conversationId),
+    );
+    final selectedSkills = await listLoadedSkills(
+      workspaceId,
+      conversationId,
+      .loaded,
+    );
+    final failure = _preparationFailure(selectedSkills, selectedRevisions);
+    if (failure != null) {
+      return SkillContextPreparationResult(
+        selectedRevisions: selectedRevisions,
+        canActivate: false,
+        failure: failure,
+      );
+    }
+
+    return SkillContextPreparationResult(
+      selectedRevisions: selectedRevisions,
+      canActivate: await _canActivate(workspaceId, conversationId),
+      failure: null,
+    );
+  }
+
+  SkillContextPreparationFailure? _preparationFailure(
+    List<AvailableSkill> selectedSkills,
+    Map<String, String> selectedRevisions,
+  ) {
+    if (_hasMissingCredentials(selectedSkills)) return .missingCredentials;
+    if (_hasUnknownCredentials(selectedSkills)) return .preparationFailed;
+    if (_hasUnresolvedSkill(selectedSkills, selectedRevisions)) {
+      return .unavailableMetadata;
+    }
+
+    return null;
+  }
+
+  Future<bool> _canActivate(String workspaceId, String conversationId) async {
+    if (!await supportsTools(conversationId)) return false;
+
+    final tools = await previewTools(workspaceId, conversationId);
+
+    return tools.any((tool) => tool.name == activateSkillToolName);
   }
 }
 
@@ -96,12 +99,33 @@ Map<String, String> _selectedRevisions(List<ChatMessage> messages) {
   final raw = catalog?.metadata[skillCatalogSelectedRevisionsMetadataKey];
   if (raw is! Map) return const {};
 
-  return {
-    for (final entry in raw.entries)
-      if (entry.key is String && entry.value is String)
-        entry.key as String: entry.value as String,
-  };
+  return _stringEntries(raw);
 }
+
+Map<String, String> _stringEntries(Map<Object?, Object?> raw) {
+  final entries = <String, String>{};
+  for (final entry in raw.entries) {
+    if (_isStringPair(entry.key, entry.value)) {
+      entries[entry.key as String] = entry.value as String;
+    }
+  }
+
+  return entries;
+}
+
+bool _isStringPair(Object? key, Object? value) =>
+    key is String && value is String;
+
+bool _hasMissingCredentials(List<AvailableSkill> skills) =>
+    skills.any((skill) => skill.credentialReadiness == .missing);
+
+bool _hasUnknownCredentials(List<AvailableSkill> skills) =>
+    skills.any((skill) => skill.credentialReadiness == .unknown);
+
+bool _hasUnresolvedSkill(
+  List<AvailableSkill> skills,
+  Map<String, String> revisions,
+) => skills.any((skill) => !revisions.containsKey(skill.slug));
 
 final prepareConversationSkillContextUsecaseProvider =
     Provider<PrepareConversationSkillContextUsecase>((ref) {

@@ -19,7 +19,8 @@ void main() {
         send: (_, _, _) async => sends++,
       );
 
-      final result = await usecase.call(
+      final result = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -42,13 +43,14 @@ void main() {
           send: (_, _, _) async => sends++,
         );
 
-        final result = await usecase.call(
+        final result = await _call(
+          usecase,
           workspaceId: 'workspace-1',
           conversationId: 'conversation-1',
           slug: 'research',
           action: .useNow,
-          expectedCatalogRevision: 'stale-revision',
           userRequestForSkill: (title) => 'Use $title for my latest request.',
+          expectedCatalogRevision: 'stale-revision',
         );
 
         expect(result, ConversationSkillActionResult.stale);
@@ -67,7 +69,8 @@ void main() {
         },
       );
 
-      final first = usecase.call(
+      final first = _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -75,7 +78,8 @@ void main() {
         userRequestForSkill: _requestForSkill,
       );
       await loadStarted.future;
-      final duplicate = await usecase.call(
+      final duplicate = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -92,7 +96,8 @@ void main() {
       final drafts = <ChatDraft>[];
       final usecase = _usecase(send: (_, _, draft) async => drafts.add(draft));
 
-      final result = await usecase.call(
+      final result = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -121,7 +126,8 @@ void main() {
           load: (_, _, _) async => loads++,
         );
 
-        final result = await usecase.call(
+        final result = await _call(
+          usecase,
           workspaceId: 'workspace-1',
           conversationId: 'conversation-1',
           slug: 'research',
@@ -142,7 +148,8 @@ void main() {
         load: (_, _, _) async => loads++,
       );
 
-      final result = await usecase.call(
+      final result = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'missing',
@@ -173,7 +180,8 @@ void main() {
           load: (_, _, _) async => loads++,
         );
 
-        final result = await usecase.call(
+        final result = await _call(
+          usecase,
           workspaceId: 'workspace-1',
           conversationId: 'conversation-1',
           slug: 'research',
@@ -195,7 +203,8 @@ void main() {
         send: (_, _, _) async => sends++,
       );
 
-      final result = await usecase.call(
+      final result = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -220,7 +229,8 @@ void main() {
         send: (_, _, draft) async => drafts.add(draft),
       );
 
-      final first = usecase.call(
+      final first = _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -228,7 +238,8 @@ void main() {
         userRequestForSkill: (title) => 'Use $title for my latest request.',
       );
       await loadStarted.future;
-      final duplicate = await usecase.call(
+      final duplicate = await _call(
+        usecase,
         workspaceId: 'workspace-1',
         conversationId: 'conversation-1',
         slug: 'research',
@@ -256,7 +267,8 @@ void main() {
           },
         );
 
-        final result = await usecase.call(
+        final result = await _call(
+          usecase,
           workspaceId: 'workspace-1',
           conversationId: 'conversation-1',
           slug: 'research',
@@ -270,6 +282,25 @@ void main() {
     );
   });
 }
+
+Future<ConversationSkillActionResult> _call(
+  ApplyConversationSkillActionUsecase usecase, {
+  required String workspaceId,
+  required String conversationId,
+  required String slug,
+  required ConversationSkillAction action,
+  required String Function(String title) userRequestForSkill,
+  String? expectedCatalogRevision,
+}) => usecase.call(
+  request: (
+    workspaceId: workspaceId,
+    conversationId: conversationId,
+    slug: slug,
+    action: action,
+    userRequestForSkill: userRequestForSkill,
+    expectedCatalogRevision: expectedCatalogRevision,
+  ),
+);
 
 String _requestForSkill(String title) => 'Use $title.';
 
