@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('empty history keeps usage and cost unavailable', () {
-    final totals = aggregateModelUsageRecords([]);
+    final totals = ModelUsageAggregation.aggregate([]);
 
     expect(totals.requestCount, 0);
     expect(totals.succeededRequestCount, 0);

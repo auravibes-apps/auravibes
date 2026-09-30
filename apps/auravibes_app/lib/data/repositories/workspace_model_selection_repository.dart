@@ -227,30 +227,52 @@ extension on WorkspaceModelSelectionRepository {
     WorkspaceModelSelectionEntity selection,
     WorkspaceModelSelectionWithConnection source,
   ) {
-    final connectionUrl = source.modelConnection.url?.trim();
-    final providerUrl = source.modelProvider?.url?.trim();
-    final officialTransport =
-        source.modelConnection.serviceId == 'anthropic' &&
-        source.modelProvider?.type == ModelProvidersTableType.anthropic &&
-        (connectionUrl == null || connectionUrl.isEmpty) &&
-        (providerUrl == null ||
-            providerUrl.isEmpty ||
-            providerUrl.replaceFirst(RegExp(r'/$'), '') ==
-                providerProfile('anthropic').defaultUrl);
+    final officialTransport = _isOfficialAnthropicTransport(source);
     final model = source.apiModel;
 
     return selection.copyWith(
-      supportsPromptCacheMarkers:
-          officialTransport && (model?.supportsPromptCacheMarkers ?? false),
-      supportsMidConversationSystemMessages:
-          officialTransport &&
-          (model?.supportsMidConversationSystemMessages ?? false),
-      supportsToolDeltas:
-          officialTransport && (model?.supportsToolDeltas ?? false),
-      supportsDeferredTools:
-          officialTransport && (model?.supportsDeferredTools ?? false),
+      supportsPromptCacheMarkers: _officialCapability(
+        officialTransport,
+        model?.supportsPromptCacheMarkers,
+      ),
+      supportsMidConversationSystemMessages: _officialCapability(
+        officialTransport,
+        model?.supportsMidConversationSystemMessages,
+      ),
+      supportsToolDeltas: _officialCapability(
+        officialTransport,
+        model?.supportsToolDeltas,
+      ),
+      supportsDeferredTools: _officialCapability(
+        officialTransport,
+        model?.supportsDeferredTools,
+      ),
     );
   }
+
+  bool _officialCapability(bool isOfficial, bool? supported) =>
+      isOfficial && (supported ?? false);
+
+  bool _isOfficialAnthropicTransport(
+    WorkspaceModelSelectionWithConnection source,
+  ) {
+    final connectionUrl = source.modelConnection.url?.trim();
+    final providerUrl = source.modelProvider?.url?.trim();
+
+    if (source.modelConnection.serviceId != 'anthropic') return false;
+    if (source.modelProvider?.type != ModelProvidersTableType.anthropic) {
+      return false;
+    }
+    if (connectionUrl != null && connectionUrl.isNotEmpty) return false;
+
+    return _isDefaultAnthropicProviderUrl(providerUrl);
+  }
+
+  bool _isDefaultAnthropicProviderUrl(String? url) =>
+      url == null ||
+      url.isEmpty ||
+      url.replaceFirst(RegExp(r'/$'), '') ==
+          providerProfile('anthropic').defaultUrl;
 
   ModelConnectionEntity _modelConnectionEntity(
     WorkspaceModelSelectionWithConnection withProvider,

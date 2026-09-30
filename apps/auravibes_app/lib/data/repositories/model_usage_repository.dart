@@ -18,7 +18,7 @@ class const ModelUsageRepository(final AppDatabase _database) {
 
   Future<ModelUsageTotals> getTotalsForConversation(
     String conversationId,
-  ) async => aggregateModelUsageRecords(
+  ) async => ModelUsageAggregation.aggregate(
     await getRecordsForConversation(conversationId),
   );
 
@@ -27,19 +27,32 @@ class const ModelUsageRepository(final AppDatabase _database) {
     conversationId: row.conversationId,
     providerId: row.providerId,
     modelId: row.modelId,
-    requestKind: ModelUsageRequestKind.values.byName(row.requestKind),
-    outcome: ModelUsageRequestOutcome.values.byName(row.outcome),
-    usage: row.usageReported
-        ? LanguageModelUsage(
-            promptTokens: row.promptTokens,
-            responseTokens: row.responseTokens,
-            totalTokens: row.totalTokens,
-            cacheReadInputTokens: row.cacheReadInputTokens,
-            cacheCreationInputTokens: row.cacheCreationInputTokens,
-          )
-        : null,
-    costStatus: ModelUsageCostStatus.values.byName(row.costStatus),
+    requestKind: _requestKind(row.requestKind),
+    outcome: _requestOutcome(row.outcome),
+    usage: _reportedUsage(row),
+    costStatus: _costStatus(row.costStatus),
     costUsd: row.costUsd,
     createdAt: row.createdAt,
+  );
+}
+
+ModelUsageRequestKind _requestKind(String value) =>
+    ModelUsageRequestKind.values.byName(value);
+
+ModelUsageRequestOutcome _requestOutcome(String value) =>
+    ModelUsageRequestOutcome.values.byName(value);
+
+ModelUsageCostStatus _costStatus(String value) =>
+    ModelUsageCostStatus.values.byName(value);
+
+LanguageModelUsage? _reportedUsage(ModelUsageRecordsTable row) {
+  if (!row.usageReported) return null;
+
+  return LanguageModelUsage(
+    promptTokens: row.promptTokens,
+    responseTokens: row.responseTokens,
+    totalTokens: row.totalTokens,
+    cacheReadInputTokens: row.cacheReadInputTokens,
+    cacheCreationInputTokens: row.cacheCreationInputTokens,
   );
 }

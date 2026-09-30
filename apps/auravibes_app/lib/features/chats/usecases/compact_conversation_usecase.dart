@@ -168,19 +168,14 @@ class const CompactConversationUsecase({
     if (service == null) {
       throw StateError('Local chatbot service unavailable');
     }
-    final responseStream = service.sendMessage(model, chatHistory);
-    final recorder = recordModelUsageUsecase;
-    final stream = recorder == null
-        ? responseStream
-        : recorder.trackRequest(
-            conversationId: conversationId,
-            providerId: model.modelsProvider.id,
-            modelId: model.workspaceModelSelection.modelId,
-            requestKind: .compaction,
-            stream: responseStream,
-          );
+    final summaryStream = _summaryStream(
+      service,
+      model,
+      chatHistory,
+      conversationId,
+    );
 
-    return requireCompactionSummary(await _collectSummaryText(stream));
+    return requireCompactionSummary(await _collectSummaryText(summaryStream));
   }
 
   Future<String> _generateCompactionSummaryText(
@@ -313,6 +308,27 @@ class const CompactConversationUsecase({
 }
 
 extension on CompactConversationUsecase {
+  Stream<ChatResult<ChatMessage>> _summaryStream(
+    ChatbotService service,
+    WorkspaceModelSelectionWithConnectionEntity model,
+    List<ChatMessage> chatHistory,
+    String conversationId,
+  ) {
+    final responseStream = service.sendMessage(model, chatHistory);
+    final recorder = recordModelUsageUsecase;
+    if (recorder == null) return responseStream;
+
+    return recorder.trackRequest(
+      request: (
+        conversationId: conversationId,
+        providerId: model.modelsProvider.id,
+        modelId: model.workspaceModelSelection.modelId,
+        requestKind: .compaction,
+      ),
+      stream: responseStream,
+    );
+  }
+
   Future<CompactionExecutionState> _compactCloud({
     required CloudCompactionUsecase cloud,
     required String conversationId,

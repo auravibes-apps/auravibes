@@ -77,10 +77,12 @@ void main() {
 
     await fixture.usecase
         .trackRequest(
-          conversationId: 'conv-1',
-          providerId: 'anthropic',
-          modelId: 'model-1',
-          requestKind: .generation,
+          request: (
+            conversationId: 'conv-1',
+            providerId: 'anthropic',
+            modelId: 'model-1',
+            requestKind: .generation,
+          ),
           stream: .value(
             .new(output: ChatMessage.model('reply'), usage: usage),
           ),
@@ -97,10 +99,12 @@ void main() {
   test('leaves cost unknown when a cache count is absent', () async {
     await fixture.usecase
         .trackRequest(
-          conversationId: 'conv-1',
-          providerId: 'anthropic',
-          modelId: 'model-1',
-          requestKind: .cacheWarm,
+          request: (
+            conversationId: 'conv-1',
+            providerId: 'anthropic',
+            modelId: 'model-1',
+            requestKind: .cacheWarm,
+          ),
           stream: .value(
             const .new(
               output: .new(role: .model),
@@ -131,10 +135,12 @@ void main() {
 
       await usecase
           .trackRequest(
-            conversationId: 'conv-1',
-            providerId: 'anthropic',
-            modelId: 'model-1',
-            requestKind: .generation,
+            request: (
+              conversationId: 'conv-1',
+              providerId: 'anthropic',
+              modelId: 'model-1',
+              requestKind: .generation,
+            ),
             stream: .value(
               const .new(
                 output: .new(role: .model),
@@ -157,10 +163,12 @@ void main() {
 
   test('records failed compaction requests with unknown cost', () async {
     final stream = fixture.usecase.trackRequest(
-      conversationId: 'conv-1',
-      providerId: 'anthropic',
-      modelId: 'model-1',
-      requestKind: .compaction,
+      request: (
+        conversationId: 'conv-1',
+        providerId: 'anthropic',
+        modelId: 'model-1',
+        requestKind: .compaction,
+      ),
       stream: .error(StateError('provider failed')),
     );
 
@@ -179,10 +187,12 @@ void main() {
       final controller = StreamController<ChatResult<ChatMessage>>();
       final subscription = fixture.usecase
           .trackRequest(
-            conversationId: 'conv-1',
-            providerId: 'anthropic',
-            modelId: 'model-1',
-            requestKind: .generation,
+            request: (
+              conversationId: 'conv-1',
+              providerId: 'anthropic',
+              modelId: 'model-1',
+              requestKind: .generation,
+            ),
             stream: controller.stream,
           )
           .listen(null);

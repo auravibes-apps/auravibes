@@ -1,6 +1,7 @@
 // Required: UI callbacks stay local to their widgets.
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
@@ -117,23 +118,49 @@ Future<void> _importConversationArchive(
         .read(conversationArchiveFileServiceProvider)
         .pickArchiveJson();
     if (archiveJson == null || !context.mounted) return;
-    await _importArchive(context, ref, workspaceId, archiveJson);
+    await _importArchive((
+      context: context,
+      ref: ref,
+      workspaceId: workspaceId,
+      archiveJson: archiveJson,
+    ));
   } on Object catch (error) {
     if (!context.mounted) return;
     ConversationArchiveFeedback.showError(context, error);
   }
 }
 
-Future<void> _importArchive(
+typedef _ArchiveImportRequest = ({
   BuildContext context,
   WidgetRef ref,
   String workspaceId,
   String archiveJson,
-) async {
-  final conversations = await ref
-      .read(conversationArchiveUsecaseProvider)
-      .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
+});
+
+Future<void> _importArchive(_ArchiveImportRequest request) async {
+  final (:context, :ref, :workspaceId, :archiveJson) = request;
+  final conversations = await _importConversations(
+    ref,
+    workspaceId,
+    archiveJson,
+  );
   if (!context.mounted) return;
+  _showArchiveImportResult(context, workspaceId, conversations);
+}
+
+Future<List<ConversationEntity>> _importConversations(
+  WidgetRef ref,
+  String workspaceId,
+  String archiveJson,
+) => ref
+    .read(conversationArchiveUsecaseProvider)
+    .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
+
+void _showArchiveImportResult(
+  BuildContext context,
+  String workspaceId,
+  List<ConversationEntity> conversations,
+) {
   if (conversations.length > 1) {
     ConversationArchiveFeedback.showImportedMany(context, conversations.length);
 

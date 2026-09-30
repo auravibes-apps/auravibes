@@ -153,14 +153,18 @@ typedef _ChatListSelectionChanged = void Function(
   required bool selected,
 });
 
+typedef _ChatTileSelectionCallbacks = ({
+  VoidCallback? onTap,
+  ValueChanged<bool>? onSelectionChanged,
+});
+
 typedef _ChatTileCallbacks = ({
   VoidCallback onFork,
   VoidCallback onDelete,
   VoidCallback onTogglePin,
   VoidCallback onRename,
   VoidCallback onMenuToggle,
-  VoidCallback? onTap,
-  ValueChanged<bool>? onSelectionChanged,
+  _ChatTileSelectionCallbacks selection,
 });
 
 typedef _ChatTileSelectionState = ({
@@ -298,11 +302,16 @@ _ChatListInputState _useChatListInputState() => (
 
 _ChatListResultsState _useChatListResultsState() => (
   loadedChats: useState<List<ConversationEntity>>([]),
-  hasMore: useState(false),
-  isLoadingMore: useState(false),
-  selectedChats: useState<Map<String, ConversationEntity>>({}),
-  isBulkActionRunning: useState(false),
+  hasMore: useState(_initialHasMore),
+  isLoadingMore: useState(_initialIsLoadingMore),
+  selectedChats: useState(_initialSelectedChats),
+  isBulkActionRunning: useState(_initialIsBulkActionRunning),
 );
+
+const _initialHasMore = false;
+const _initialIsLoadingMore = false;
+const _initialIsBulkActionRunning = false;
+const _initialSelectedChats = <String, ConversationEntity>{};
 
 void Function()? _clearSelectedChats(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
@@ -619,6 +628,10 @@ extension on _ChatTileState {
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
     onMenuToggle: _menuController.toggle,
+    selection: _tileSelectionCallbacks(context),
+  );
+
+  _ChatTileSelectionCallbacks _tileSelectionCallbacks(BuildContext context) => (
     onTap: _selectionAwareTap(context),
     onSelectionChanged: widget.selection.isSelectionEnabled
         ? widget.selection.onSelectionChanged
@@ -912,46 +925,66 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
         selected: selected,
         isWorking: _isWorking,
         canExportArchive: _shouldShowArchiveAction(ref, widget.workspaceId),
-        callbacks: (
-          onPin: (isPinned) =>
-              unawaited(_setPins(selected.values.toList(), isPinned)),
-          onDelete: () => unawaited(_deleteSelected()),
-          onArchiveExport: () => unawaited(_exportSelected(selected.values)),
-          onClear: () {
-            if (_isWorking) return;
-            widget.selectedChats.value = {};
-          },
-        ),
+        callbacks: _bulkActionCallbacks(selected),
       );
+
+  _ChatListBulkActionCallbacks _bulkActionCallbacks(
+    Map<String, ConversationEntity> selected,
+  ) => (
+    onPin: (isPinned) =>
+        unawaited(_setPins(selected.values.toList(), isPinned)),
+    onDelete: () => unawaited(_deleteSelected()),
+    onArchiveExport: () => unawaited(_exportSelected(selected.values)),
+    onClear: _clearSelected,
+  );
+
+  void _setWorking(bool isWorking) => setState(() => _isWorking = isWorking);
+}
+
+extension on _ChatListBulkActionsState {
+  void _clearSelected() {
+    if (_isWorking) return;
+    widget.selectedChats.value = {};
+  }
 
   Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
     if (_isWorking) return;
-    await _withWorking(() async {
-      try {
-        final archiveJson = await ref
-            .read(conversationArchiveUsecaseProvider)
-            .exportConversations(
-              workspaceId: widget.workspaceId,
-              conversationIds: [for (final chat in selected) chat.id],
-            );
-        final saved = await ref
-            .read(conversationArchiveFileServiceProvider)
-            .saveArchiveJson(
-              archiveJson,
-              fileName: 'conversations.auravibes.json',
-            );
-        if (!saved || !mounted) return;
-        ConversationArchiveFeedback.showExported(context);
-      } on Object catch (error, stackTrace) {
-        _logger.warning(
-          'Failed to export conversation archive',
-          error,
-          stackTrace,
-        );
-        if (!mounted) return;
-        ConversationArchiveFeedback.showError(context, error);
-      }
-    });
+    await _withWorking(() => _exportSelectedArchive(selected));
+  }
+
+  Future<void> _exportSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) async {
+    try {
+      final saved = await _createAndSaveSelectedArchive(selected);
+      if (!saved || !mounted) return;
+      ConversationArchiveFeedback.showExported(context);
+    } on Object catch (error, stackTrace) {
+      _reportSelectedArchiveError(error, stackTrace);
+    }
+  }
+
+  Future<bool> _createAndSaveSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) async => await _saveSelectedArchive(await _createSelectedArchive(selected));
+
+  Future<String> _createSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) => ref
+      .read(conversationArchiveUsecaseProvider)
+      .exportConversations(
+        workspaceId: widget.workspaceId,
+        conversationIds: [for (final chat in selected) chat.id],
+      );
+
+  Future<bool> _saveSelectedArchive(String archiveJson) => ref
+      .read(conversationArchiveFileServiceProvider)
+      .saveArchiveJson(archiveJson, fileName: 'conversations.auravibes.json');
+
+  void _reportSelectedArchiveError(Object error, StackTrace stackTrace) {
+    _logger.warning('Failed to export conversation archive', error, stackTrace);
+    if (!mounted) return;
+    ConversationArchiveFeedback.showError(context, error);
   }
 
   Future<void> _setPins(List<ConversationEntity> chats, bool isPinned) async {
@@ -1002,13 +1035,13 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
   }
 
   Future<void> _withWorking(Future<void> Function() action) async {
-    setState(() => _isWorking = true);
+    _setWorking(true);
     widget.isBulkActionRunning.value = true;
     try {
       await action();
     } finally {
       if (mounted) {
-        setState(() => _isWorking = false);
+        _setWorking(false);
         widget.isBulkActionRunning.value = false;
       }
     }
@@ -1057,6 +1090,9 @@ void _recordDeletedChats(
   selectedChats.value = updated;
 }
 
+bool _shouldPinSelected(Map<String, ConversationEntity> selected) =>
+    !selected.values.every((chat) => chat.isPinned);
+
 void _showConversationFailures(
   BuildContext context,
   String key,
@@ -1093,7 +1129,7 @@ class const _ChatListBulkActionBar({
     ).toEdgeInsets(context),
     child: _ChatListBulkActionLayout(
       count: selected.length,
-      shouldPin: !selected.values.every((chat) => chat.isPinned),
+      shouldPin: _shouldPinSelected(selected),
       isWorking: isWorking,
       canExportArchive: canExportArchive,
       callbacks: callbacks,
@@ -1351,12 +1387,17 @@ class const _ChatListConversationListTile({
   @override
   Widget build(BuildContext _) => ValueListenableBuilder<bool>(
     valueListenable: state.isBulkActionRunning,
-    builder: (context, isBulkActionRunning, _) =>
-        ValueListenableBuilder<Map<String, ConversationEntity>>(
-          valueListenable: state.selectedChats,
-          builder: (context, selected, _) =>
-              _buildChatTile(context, selected, isBulkActionRunning),
-        ),
+    builder: _buildWithBulkActionState,
+  );
+
+  Widget _buildWithBulkActionState(
+    BuildContext _,
+    bool isBulkActionRunning,
+    Widget? _,
+  ) => ValueListenableBuilder<Map<String, ConversationEntity>>(
+    valueListenable: state.selectedChats,
+    builder: (context, selected, _) =>
+        _buildChatTile(context, selected, isBulkActionRunning),
   );
 
   Widget _buildChatTile(
@@ -1443,7 +1484,7 @@ class const _ChatTileView({
       callbacks: callbacks,
       onArchiveExport: onArchiveExport,
     ),
-    onTap: callbacks.onTap,
+    onTap: callbacks.selection.onTap,
     style: .border,
   );
 }
@@ -1465,7 +1506,7 @@ class const _ChatTileRow({
         chat: chat,
         isSelected: isSelected,
         title: title,
-        onSelectionChanged: callbacks.onSelectionChanged,
+        onSelectionChanged: callbacks.selection.onSelectionChanged,
       ),
       _ChatTileModelBadge(displayName: modelDisplayName),
       _ChatTileMenu(

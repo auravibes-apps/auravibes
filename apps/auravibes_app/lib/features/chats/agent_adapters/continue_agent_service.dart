@@ -839,10 +839,14 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
 
   Stream<ChatResult<ChatMessage>> _createResponseStream(
     _ContinueAgentRequest request,
+  ) => _recordResponseUsage(request, _sendResponseStream(request));
+
+  Stream<ChatResult<ChatMessage>> _sendResponseStream(
+    _ContinueAgentRequest request,
   ) {
     final preparedInput = request.preparedInput;
 
-    final responseStream = this.chatbotService.sendMessage(
+    return this.chatbotService.sendMessage(
       preparedInput.model,
       preparedInput.chatHistory,
       options: .new(
@@ -853,14 +857,23 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       ),
       a2uiRuntime: request.a2uiRuntime,
     );
+  }
+
+  Stream<ChatResult<ChatMessage>> _recordResponseUsage(
+    _ContinueAgentRequest request,
+    Stream<ChatResult<ChatMessage>> responseStream,
+  ) {
     final recorder = recordModelUsageUsecase;
     if (recorder == null) return responseStream;
+    final preparedInput = request.preparedInput;
 
     return recorder.trackRequest(
-      conversationId: request.conversationId,
-      providerId: preparedInput.model.modelsProvider.id,
-      modelId: preparedInput.model.workspaceModelSelection.modelId,
-      requestKind: .generation,
+      request: (
+        conversationId: request.conversationId,
+        providerId: preparedInput.model.modelsProvider.id,
+        modelId: preparedInput.model.workspaceModelSelection.modelId,
+        requestKind: .generation,
+      ),
       stream: responseStream,
     );
   }

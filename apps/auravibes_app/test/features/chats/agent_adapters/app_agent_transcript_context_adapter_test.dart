@@ -109,11 +109,13 @@ void main() {
       if (conversation == null) {
         throw StateError('Fixture conversation missing');
       }
-      final archive = await ConversationArchiveCodec.exportConversation(
+      final archive = await ConversationArchiveCodec.exportConversation((
         conversation: conversation,
         messages: visibleMessages,
+        modelLabel: null,
+        agentContext: null,
         readAttachmentBytes: (_) async => Uint8List(0),
-      );
+      ));
 
       expect(archive, contains('Visible request'));
       expect(archive, isNot(contains('PRIVATE PROMPT')));

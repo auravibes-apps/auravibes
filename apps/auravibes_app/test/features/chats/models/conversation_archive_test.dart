@@ -87,16 +87,17 @@ void main() {
           ),
         ];
 
-        final encoded = await ConversationArchiveCodec.exportConversation(
+        final encoded = await ConversationArchiveCodec.exportConversation((
           conversation: conversation,
           messages: messages,
           modelLabel: 'Example model',
+          agentContext: null,
           readAttachmentBytes: (path) async {
             expect(path, 'file:///private/attachment/report.pdf');
 
             return Uint8List.fromList([1, 2, 3]);
           },
-        );
+        ));
         final decodedJson = jsonDecode(encoded) as Map<String, dynamic>;
         final transcript = decodedJson['conversation'] as Map<String, dynamic>;
         final archivedMessages = decodedJson['messages'] as List<dynamic>;

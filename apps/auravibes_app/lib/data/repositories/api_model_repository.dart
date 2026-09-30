@@ -249,19 +249,28 @@ extension ApiModelRepositoryModelMappings on ApiModelRepository {
   ApiModelEntity _addModelCapabilities(
     ApiModelEntity model,
     ApiModelsTable modelTable,
-  ) => model.copyWith(
-    family: modelTable.family,
-    costInput: modelTable.costInput,
-    costCacheRead: modelTable.costCacheRead,
-    costCacheWrite: modelTable.costCacheWrite,
-    costOutput: modelTable.costOutput,
-    openWeights: modelTable.openWeights,
-    supportsReasoning: modelTable.supportsReasoning,
-    reasoningOptions: _decodeReasoningOptions(
-      modelTable.reasoningOptionsJson,
-      modelTable.supportsReasoning,
+  ) => _addModelTransportCapabilities(
+    model.copyWith(
+      family: modelTable.family,
+      costInput: modelTable.costInput,
+      costCacheRead: modelTable.costCacheRead,
+      costCacheWrite: modelTable.costCacheWrite,
+      costOutput: modelTable.costOutput,
+      openWeights: modelTable.openWeights,
+      supportsReasoning: modelTable.supportsReasoning,
+      reasoningOptions: _decodeReasoningOptions(
+        modelTable.reasoningOptionsJson,
+        modelTable.supportsReasoning,
+      ),
+      isCanonical: modelTable.isCanonical,
     ),
-    isCanonical: modelTable.isCanonical,
+    modelTable,
+  );
+
+  ApiModelEntity _addModelTransportCapabilities(
+    ApiModelEntity model,
+    ApiModelsTable modelTable,
+  ) => model.copyWith(
     supportsPriorityMode: modelTable.supportsPriorityMode,
     supportsToolCalls: modelTable.supportsToolCalls,
     supportsPromptCacheMarkers: modelTable.supportsPromptCacheMarkers,
@@ -308,6 +317,14 @@ ApiModelsCompanion _addModelDescriptionMetadata(
 ApiModelsCompanion _addModelCapabilityMetadata(
   ApiModelsCompanion companion,
   ApiModelEntity entity,
+) => _addModelTransportMetadata(
+  _addModelReasoningMetadata(companion, entity),
+  entity,
+);
+
+ApiModelsCompanion _addModelReasoningMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
 ) => companion.copyWith(
   openWeights: .new(entity.openWeights),
   supportsReasoning: .new(entity.supportsReasoning),
@@ -319,6 +336,12 @@ ApiModelsCompanion _addModelCapabilityMetadata(
   isCanonical: .new(entity.isCanonical),
   supportsPriorityMode: .new(entity.supportsPriorityMode),
   supportsToolCalls: .new(entity.supportsToolCalls),
+);
+
+ApiModelsCompanion _addModelTransportMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
+) => companion.copyWith(
   supportsPromptCacheMarkers: .new(entity.supportsPromptCacheMarkers),
   supportsMidConversationSystemMessages: .new(
     entity.supportsMidConversationSystemMessages,

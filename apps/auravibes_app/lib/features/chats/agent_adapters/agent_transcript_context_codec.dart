@@ -9,7 +9,10 @@ abstract final class AgentTranscriptContextCodec {
   static String encodeUpdate(AgentTranscriptContextUpdate update) =>
       jsonEncode(_updateToJson(update));
 
-  static AgentTranscriptContextUpdate decodeUpdate(String content) {
+  static AgentTranscriptContextUpdate decodeUpdate(String content) =>
+      _decodeVersionedUpdate(_decodeJsonObject(content));
+
+  static Map<String, Object?> _decodeJsonObject(String content) {
     Object? decoded;
     try {
       decoded = jsonDecode(content);
@@ -23,6 +26,12 @@ abstract final class AgentTranscriptContextCodec {
       throw const MalformedTranscriptContextException();
     }
 
+    return decoded;
+  }
+
+  static AgentTranscriptContextUpdate _decodeVersionedUpdate(
+    Map<String, Object?> decoded,
+  ) {
     final schemaVersion = decoded['version'];
     if (schemaVersion is int) {
       if (schemaVersion == version) return _decodeVersion1(decoded);
