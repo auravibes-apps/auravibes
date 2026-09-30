@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/skills/providers/conversation_skill_selec
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,7 +118,10 @@ void main() {
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
-    expect(find.text('Preparing context…'), findsOneWidget);
+    expect(
+      find.text(LocaleKeys.skills_selector_context_preparing.tr()),
+      findsOneWidget,
+    );
     expect(find.text('Retry'), findsNothing);
   });
 

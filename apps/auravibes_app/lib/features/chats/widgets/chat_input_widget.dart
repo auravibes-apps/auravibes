@@ -523,6 +523,9 @@ class const _ChatInputPadding({required final _ChatInputState state})
         header: _ChatInputAgentSelector(
           compactControl: state.input.agentCompactControl,
           sheetControl: state.input.agentSheetControl,
+          workspaceId: state.input.workspaceId,
+          conversationId: state.input.conversationId,
+          onSkillsPress: state.input.onSkillsPress,
         ),
       ),
     );
@@ -588,18 +591,35 @@ class _ChatInputFieldView extends StatelessWidget {
 class const _ChatInputAgentSelector({
   required final Widget compactControl,
   required final Widget sheetControl,
+  required final String workspaceId,
+  required final String? conversationId,
+  required final VoidCallback? onSkillsPress,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: StableUiSelector(
-        identifier: 'chat_agent_selector',
-        child: GestureDetector(
-          child: IgnorePointer(child: compactControl),
-          onTap: () => _showAgentSelectorSheet(context, sheetControl),
-          behavior: .opaque,
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: StableUiSelector(
+              identifier: 'chat_agent_selector',
+              child: GestureDetector(
+                child: IgnorePointer(child: compactControl),
+                onTap: () => _showAgentSelectorSheet(context, sheetControl),
+                behavior: .opaque,
+              ),
+            ),
+          ),
+          if (onSkillsPress case final onSkillsPress?) ...[
+            const AuraSizedBox(width: .xs),
+            _ChatInputSkillsControl(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+              onPressed: onSkillsPress,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -1604,14 +1624,6 @@ class const _ChatInputControlRow({required final _ChatInputState state})
     return Row(
       children: [
         _ChatInputModeControls(state: state),
-        if (input.onSkillsPress case final onSkillsPress?) ...[
-          const AuraSizedBox(width: .xs),
-          _ChatInputSkillsControl(
-            workspaceId: input.workspaceId,
-            conversationId: input.conversationId,
-            onPressed: onSkillsPress,
-          ),
-        ],
         if (input.onStop case final onStop?)
           _ChatInputStopControls(state: state, onStop: onStop),
         _ChatInputSendButton(state: state),
