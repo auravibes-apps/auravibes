@@ -18,14 +18,16 @@ void main() {
       final streamRepository = MessageRepository(streamDatabase);
       final firstValue = Completer<List<MessageEntity>>();
       final streamTimer = Stopwatch()..start();
+      void handleValue(List<MessageEntity> value) {
+        if (!firstValue.isCompleted && value.isNotEmpty) {
+          streamTimer.stop();
+          firstValue.complete(value);
+        }
+      }
+
       final subscription = streamRepository
           .watchMessagesByConversation(conversationId)
-          .listen((value) {
-            if (!firstValue.isCompleted && value.isNotEmpty) {
-              streamTimer.stop();
-              firstValue.complete(value);
-            }
-          }, onError: firstValue.completeError);
+          .listen(handleValue, onError: firstValue.completeError);
       addTearDown(subscription.cancel);
       final streamed = await firstValue.future.timeout(
         const Duration(seconds: 30),

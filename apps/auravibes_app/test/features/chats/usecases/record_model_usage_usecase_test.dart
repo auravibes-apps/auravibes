@@ -21,7 +21,7 @@ class _Fixture {
     );
   }
 
-  _(this.repository, this.usecase);
+  new _(this.repository, this.usecase);
 
   final MockModelUsageRepository repository;
   final RecordModelUsageUsecase usecase;

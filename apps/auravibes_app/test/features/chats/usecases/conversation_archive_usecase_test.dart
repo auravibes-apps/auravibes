@@ -580,7 +580,7 @@ void main() {
       );
       final messageRepository = _FailOnSecondMessageRepository(
         database,
-        _attachmentFileStore: fileStore,
+        attachmentFileStore: fileStore,
       );
       final usecase = _usecase(
         database,
@@ -713,7 +713,7 @@ String _contextUpdate({
 });
 
 class _FailOnSecondMessageRepository extends MessageRepository {
-  new(super._database, {required super._attachmentFileStore});
+  new(super._database, {required super.attachmentFileStore});
 
   var _calls = 0;
 
