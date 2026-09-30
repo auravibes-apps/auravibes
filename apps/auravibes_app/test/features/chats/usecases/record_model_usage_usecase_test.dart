@@ -12,15 +12,15 @@ import 'package:mocktail/mocktail.dart';
 class MockModelUsageRepository extends Mock implements ModelUsageRepository;
 
 class _Fixture {
-  factory _Fixture() {
+  factory() {
     final repository = MockModelUsageRepository();
-    return _Fixture._(
+    return new _(
       repository,
       .new(repository: repository, getModel: (_, _) async => _pricedModel()),
     );
   }
 
-  _Fixture._(this.repository, this.usecase);
+  new _(this.repository, this.usecase);
 
   final MockModelUsageRepository repository;
   final RecordModelUsageUsecase usecase;
@@ -35,10 +35,10 @@ class _Fixture {
         conversationId: '',
         providerId: '',
         modelId: '',
-        requestKind: ModelUsageRequestKind.generation,
-        outcome: ModelUsageRequestOutcome.succeeded,
+        requestKind: .generation,
+        outcome: .succeeded,
         usage: null,
-        costStatus: ModelUsageCostStatus.unknown,
+        costStatus: .unknown,
       ),
     );
     when(() => repository.recordRequest(any())).thenAnswer((invocation) async {
@@ -80,7 +80,7 @@ void main() {
           providerId: 'anthropic',
           modelId: 'model-1',
           requestKind: .generation,
-          stream: Stream.value(
+          stream: .value(
             .new(output: ChatMessage.model('reply'), usage: usage),
           ),
         )
@@ -100,7 +100,7 @@ void main() {
           providerId: 'anthropic',
           modelId: 'model-1',
           requestKind: .cacheWarm,
-          stream: Stream.value(
+          stream: .value(
             const .new(
               output: .new(role: .model),
               usage: .new(
@@ -134,7 +134,7 @@ void main() {
             providerId: 'anthropic',
             modelId: 'model-1',
             requestKind: .generation,
-            stream: Stream.value(
+            stream: .value(
               const .new(
                 output: .new(role: .model),
                 usage: .new(
@@ -160,7 +160,7 @@ void main() {
       providerId: 'anthropic',
       modelId: 'model-1',
       requestKind: .compaction,
-      stream: Stream.error(StateError('provider failed')),
+      stream: .error(StateError('provider failed')),
     );
 
     await expectLater(stream, emitsError(isA<StateError>()));

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -301,7 +302,7 @@ void main() {
         createdAt: createdAt,
         updatedAt: createdAt,
         messages: [message],
-        agentContext: ConversationArchiveAgentContext(
+        agentContext: .new(
           isComplete: true,
           entriesInput: [
             ConversationArchiveAgentContextEntry(
@@ -331,7 +332,7 @@ void main() {
       final decoded = ConversationArchiveCodec.decodeMany(encoded);
       final bundle = jsonDecode(encoded) as Map<String, dynamic>;
       final firstContext =
-          decoded.first.agentContext ?? fail('Missing context');
+          decoded.firstOrNull?.agentContext ?? fail('Missing context');
       final contextUpdate = jsonDecode(
         firstContext.entries.single.updateJson,
       ) as Map<String, dynamic>;
@@ -349,7 +350,7 @@ void main() {
       final createdAt = DateTime.utc(2025, 1, 2);
       final current = jsonDecode(
         ConversationArchiveCodec.encode(
-          ConversationArchive(
+          .new(
             title: 'Legacy',
             createdAt: createdAt,
             updatedAt: createdAt,
@@ -358,7 +359,7 @@ void main() {
         ),
       ) as Map<String, dynamic>;
       current['version'] = ConversationArchiveCodec.legacyVersion;
-      current.remove('agentContext');
+      final _ = current.remove('agentContext');
 
       final decoded = ConversationArchiveCodec.decodeMany(jsonEncode(current));
 
@@ -368,7 +369,7 @@ void main() {
 
     test('encoding rejects archives beyond supported JSON depth', () {
       final createdAt = DateTime.utc(2025, 1, 2);
-      Map<String, Object?> schema = {};
+      var schema = <String, Object?>{};
       for (
         var index = 0;
         index < ConversationArchiveCodec.maxJsonDepth;
@@ -381,7 +382,7 @@ void main() {
         createdAt: createdAt,
         updatedAt: createdAt,
         messages: [],
-        agentContext: ConversationArchiveAgentContext(
+        agentContext: .new(
           isComplete: true,
           entriesInput: [
             ConversationArchiveAgentContextEntry(

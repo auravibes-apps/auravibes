@@ -10,14 +10,14 @@ class AppAnthropicPlugin extends GenkitPlugin {
     required this.apiKey,
     required this.encoder,
     this.baseUrl,
-    this.headers,
+    this.headers = const {},
     this.httpClient,
   });
 
   final String apiKey;
   final AnthropicRequestEncoder encoder;
   final String? baseUrl;
-  final Map<String, String>? headers;
+  final Map<String, String> headers;
   final http.Client? httpClient;
 
   @override

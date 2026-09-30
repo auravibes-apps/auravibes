@@ -4,10 +4,10 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -114,7 +114,6 @@ typedef _ContinueAgentDependencies = ({
 abstract class _ContinueAgentServiceDependencies({
   required final ChatbotService chatbotService,
   required final MessageRepository messageRepository,
-  final RecordModelUsageUsecase? recordModelUsageUsecase,
   required final AgentContinuationProvider<
     WorkspaceModelSelectionWithConnectionEntity,
     MessageEntity,
@@ -126,6 +125,7 @@ abstract class _ContinueAgentServiceDependencies({
   required final ConversationStreamingRuntime conversationStreamingRuntime,
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final MonitoringService monitoringService,
+  final RecordModelUsageUsecase? recordModelUsageUsecase,
   final ConversationSkillContextRuntime? skillContextRuntime,
   final ChatA2uiRuntime Function(String conversationId)?
   a2uiRuntimeForConversation,
@@ -137,12 +137,12 @@ abstract class _ContinueAgentServiceDependencies({
 class ContinueAgentService({
   required super.chatbotService,
   required super.messageRepository,
-  super.recordModelUsageUsecase,
   required super.agentContinuationProvider,
   required super.messagesStreamingRuntime,
   required super.conversationStreamingRuntime,
   required super.agentCancellationRuntime,
   required super.monitoringService,
+  super.recordModelUsageUsecase,
   super.skillContextRuntime,
   super.a2uiRuntimeForConversation,
   super.isTopLevelConversation,
@@ -861,7 +861,7 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       conversationId: request.conversationId,
       providerId: preparedInput.model.modelsProvider.id,
       modelId: preparedInput.model.workspaceModelSelection.modelId,
-      requestKind: ModelUsageRequestKind.generation,
+      requestKind: .generation,
       stream: responseStream,
     );
   }

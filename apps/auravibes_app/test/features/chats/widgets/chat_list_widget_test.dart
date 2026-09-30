@@ -10,8 +10,8 @@ import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart'
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -910,14 +910,14 @@ void main() {
       final workspaceTools = WorkspaceToolsRepository(database);
       final archiveUsecase = ConversationArchiveUsecase(
         conversationRepository: archiveConversations,
-        messageRepository: MessageRepository(database),
-        attachmentService: LocalChatAttachmentService(),
-        conversationToolsRepository: ConversationToolsRepository(
+        messageRepository: .new(database),
+        attachmentService: .new(),
+        conversationToolsRepository: .new(
           database,
           workspaceTools,
         ),
         workspaceToolsRepository: workspaceTools,
-        toolsGroupsRepository: ToolsGroupsRepository(database),
+        toolsGroupsRepository: .new(database),
       );
       final fileService = _RecordingArchiveFileService();
       final listRepository = _StubConversationRepository(
@@ -1096,7 +1096,7 @@ void main() {
       finishPin.complete(
         _createConversation(title: 'Chat One', isPinned: true),
       );
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('1 selected'), findsOneWidget);
     });
@@ -1135,7 +1135,7 @@ void main() {
       );
       await tester.pump();
       await tester.tap(find.text('Delete selected'));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Delete'));
       await tester.pump();
 
@@ -1159,7 +1159,7 @@ void main() {
       expect(repo.deleteCalls, ['conv-1']);
 
       finishDelete.complete(true);
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('1 selected'), findsNothing);
       expect(repo.deleteCalls, ['conv-1']);

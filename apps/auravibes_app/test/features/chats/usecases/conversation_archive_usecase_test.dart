@@ -8,7 +8,6 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
@@ -17,6 +16,7 @@ import 'package:auravibes_app/features/chats/services/local_chat_attachment_serv
 import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show foldAgentTranscriptContext;
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
@@ -337,11 +337,11 @@ void main() {
       expect(context.contextMessages, hasLength(2));
       expect(context.contextMessages.last.content, 'Trusted skill context');
       expect(visibleMessages.last.metadata?.compactedMessageIds, [
-        visibleMessages[0].id,
+        visibleMessages.firstOrNull?.id,
       ]);
       expect(
         visibleMessages.last.metadata?.compactedFromMessageId,
-        visibleMessages[0].id,
+        visibleMessages.firstOrNull?.id,
       );
     },
   );
@@ -569,7 +569,7 @@ void main() {
         '${tempDirectory.path}${Platform.pathSeparator}archive_rollback_test'
         '${Platform.pathSeparator}chat_attachments_draft',
       )..createSync(recursive: true);
-      final fileStore = const AttachmentFileStore(
+      const fileStore = AttachmentFileStore(
         storageNamespace: 'archive_rollback_test',
       );
       final firstStagedPath =
@@ -604,14 +604,14 @@ void main() {
                   displayName: 'Rollback',
                   mimeType: 'text/plain',
                   modality: .file,
-                  bytes: Uint8List.fromList([1, 2, 3]),
+                  bytes: .fromList([1, 2, 3]),
                 ),
                 ConversationArchiveAttachment(
                   fileName: 'rollback-second.txt',
                   displayName: 'Rollback second',
                   mimeType: 'text/plain',
                   modality: .file,
-                  bytes: Uint8List.fromList([4, 5, 6]),
+                  bytes: .fromList([4, 5, 6]),
                 ),
               ],
             ),
@@ -713,10 +713,7 @@ String _contextUpdate({
 });
 
 class _FailOnSecondMessageRepository extends MessageRepository {
-  _FailOnSecondMessageRepository(
-    AppDatabase database, {
-    required AttachmentFileStore attachmentFileStore,
-  }) : super(database, attachmentFileStore: attachmentFileStore);
+  new(super.database, {required super.attachmentFileStore});
 
   var _calls = 0;
 
@@ -732,9 +729,9 @@ class _FailOnSecondMessageRepository extends MessageRepository {
 class _FakeArchiveAttachmentService extends LocalChatAttachmentService {
   new(this._directory, {this.failDeletePath});
 
-  final Directory _directory;
   final String? failDeletePath;
   final deleteAttempts = <String>[];
+  final Directory _directory;
 
   @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(

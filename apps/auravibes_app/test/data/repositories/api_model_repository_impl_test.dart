@@ -97,8 +97,8 @@ void main() {
 
       costInput: 30,
       costOutput: 60,
-      costCacheWrite: 7,
       costCacheRead: 3,
+      costCacheWrite: 7,
       limitContext: 128000,
       limitOutput: 4096,
     );

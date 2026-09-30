@@ -249,8 +249,8 @@ void main() {
             .get();
         final usageTable = await fixture.database
             .customSelect(
-              "SELECT name FROM sqlite_master "
-              "WHERE type = 'table' AND name = 'model_usage_records'",
+              'SELECT name FROM sqlite_master '
+              'WHERE type = \'table\' AND name = \'model_usage_records\'',
             )
             .get();
 

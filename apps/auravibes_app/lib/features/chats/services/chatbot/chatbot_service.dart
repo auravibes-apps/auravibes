@@ -456,17 +456,16 @@ extension on ChatbotService {
     String key,
   ) {
     final value = _providerResponseMetadata(response)[key];
+
     return value is num ? value.toInt() : null;
   }
 
   Map<String, Object?> _responseMetadata(
     GenerateResponseHelper<Object?> response,
   ) {
-    final metadata = {..._providerResponseMetadata(response)}
+    return {..._providerResponseMetadata(response)}
       ..remove('cacheReadInputTokens')
       ..remove('cacheCreationInputTokens');
-
-    return metadata;
   }
 
   Map<String, Object?> _providerResponseMetadata(

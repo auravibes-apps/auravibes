@@ -23,8 +23,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
-import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/cloud_compaction_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart'
@@ -177,7 +177,7 @@ class const CompactConversationUsecase({
             conversationId: conversationId,
             providerId: model.modelsProvider.id,
             modelId: model.workspaceModelSelection.modelId,
-            requestKind: ModelUsageRequestKind.compaction,
+            requestKind: .compaction,
             stream: responseStream,
           );
 

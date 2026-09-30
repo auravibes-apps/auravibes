@@ -9,9 +9,9 @@ import 'package:auravibes_app/data/repositories/workspace_model_selection_reposi
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record_input.dart';
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
@@ -96,7 +96,7 @@ class _CompactConversationFixture {
     _mockModelSelectionRepo = .new();
     _mockChatbotService = .new();
     _mockModelUsageRepository = .new();
-    _recordModelUsageUsecase = RecordModelUsageUsecase(
+    _recordModelUsageUsecase = .new(
       repository: mockModelUsageRepository,
       getModel: (_, _) async => null,
     );
@@ -163,6 +163,7 @@ class _CompactConversationFixture {
         .thenAnswer((invocation) async {
           final input =
               invocation.positionalArguments.single as ModelUsageRecordInput;
+
           return ModelUsageRecord(
             id: 'usage-1',
             conversationId: input.conversationId,
@@ -173,7 +174,7 @@ class _CompactConversationFixture {
             usage: input.usage,
             costStatus: input.costStatus,
             costUsd: input.costUsd,
-            createdAt: DateTime.utc(2026),
+            createdAt: .utc(2026),
           );
         });
   }
@@ -204,10 +205,10 @@ void main() {
         conversationId: '',
         providerId: '',
         modelId: '',
-        requestKind: ModelUsageRequestKind.compaction,
-        outcome: ModelUsageRequestOutcome.succeeded,
+        requestKind: .compaction,
+        outcome: .succeeded,
         usage: null,
-        costStatus: ModelUsageCostStatus.unknown,
+        costStatus: .unknown,
       ),
     );
   });

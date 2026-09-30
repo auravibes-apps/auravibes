@@ -4,9 +4,9 @@ import 'dart:convert';
 import 'package:auravibes_app/data/repositories/model_usage_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/model_usage_record_input.dart';
-import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -30,7 +30,7 @@ import 'package:riverpod/riverpod.dart';
 
 import '../../../test_mocks.dart';
 
-class MockModelUsageRepository extends Mock implements ModelUsageRepository {}
+class MockModelUsageRepository extends Mock implements ModelUsageRepository;
 
 void main() {
   setUpAll(() {
@@ -40,10 +40,10 @@ void main() {
         conversationId: '',
         providerId: '',
         modelId: '',
-        requestKind: ModelUsageRequestKind.generation,
-        outcome: ModelUsageRequestOutcome.succeeded,
+        requestKind: .generation,
+        outcome: .succeeded,
         usage: null,
-        costStatus: ModelUsageCostStatus.unknown,
+        costStatus: .unknown,
       ),
     );
   });
@@ -202,7 +202,7 @@ void main() {
           .thenAnswer((invocation) async {
             final input =
                 invocation.positionalArguments.single as ModelUsageRecordInput;
-            return ModelUsageRecord(
+            return .new(
               id: 'usage-1',
               conversationId: input.conversationId,
               providerId: input.providerId,
@@ -212,7 +212,7 @@ void main() {
               usage: input.usage,
               costStatus: input.costStatus,
               costUsd: input.costUsd,
-              createdAt: DateTime.utc(2026),
+              createdAt: .utc(2026),
             );
           });
     });
