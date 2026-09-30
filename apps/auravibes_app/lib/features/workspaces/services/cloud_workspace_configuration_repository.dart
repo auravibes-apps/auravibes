@@ -12,6 +12,10 @@ typedef CloudWorkspaceConfigurationCalls = ({
   Future<List<SkillResourceView>> Function(String skillId) listSkillResources,
   Future<void> Function(WorkspaceConfigurationEntry entry) createConnection,
   Future<void> Function(WorkspaceConfigurationEntry entry) createSkillResource,
+  Future<void> Function(WorkspaceConfigurationEntry entry, int expectedRevision)
+  updateSkillResource,
+  Future<void> Function(String selectionId, String policy)
+  updateToolSamplingPolicy,
 });
 
 typedef _CloudExportRows = ({
@@ -22,23 +26,17 @@ typedef _CloudExportRows = ({
 });
 
 typedef _CloudImportPlan = ({
+  List<WorkspaceConfigurationEntry> entries,
   List<WorkspaceResource> active,
-  Map<String, String> toolIds,
   Map<String, String> appSkillIds,
-  Map<String, String> skillIds,
+  Set<String> existingConnectionIds,
+  Map<String, SkillResourceView> skillResourcesById,
 });
 
 typedef _CloudResourceCreate = ({
   WorkspaceResourceKind kind,
   String id,
   Map<String, Object?> data,
-});
-
-typedef _SkillSettingUpdates = ({
-  CloudWorkspaceResourceStore store,
-  List<WorkspaceConfigurationEntry> entries,
-  List<WorkspaceResource> active,
-  Map<String, String> appSkillIds,
 });
 
 class CloudWorkspaceConfigurationRepository {
@@ -86,54 +84,47 @@ class CloudWorkspaceConfigurationRepository {
 
   Future<void> importJson(String json) async {
     final archive = _cloudArchive(json);
-    final plan = await _importPlan(_store, _kinds, archive.entries);
-    await _applyArchive(archive.entries, plan);
+    final plan = await _importPlan(_store, _kinds, _calls, archive);
+    await _applyArchive(plan);
   }
 
-  Future<void> _applyArchive(
-    List<WorkspaceConfigurationEntry> entries,
-    _CloudImportPlan plan,
-  ) async {
-    final (:active, :toolIds, :appSkillIds, :skillIds) = plan;
-    await _createBaseResources(entries, toolIds, appSkillIds);
-    await _applyExistingTools(entries, active, toolIds);
-    await _createLinkedResources(entries, active, toolIds, appSkillIds);
-    await _applyToolPermissions(entries, active, toolIds);
+  Future<void> _applyArchive(_CloudImportPlan plan) async {
+    final entries = plan.entries;
+    final active = plan.active;
+    final appSkillIds = plan.appSkillIds;
+    await _upsertBaseResources(entries, active);
+    await _upsertAgentAssociations(entries, active, appSkillIds);
+    await _upsertSkillSettings(entries, active, appSkillIds);
+    await _applyToolPermissions(entries, active);
     await _applyCompaction(entries, active);
-    await _applyExternalEntries(_calls, entries, skillIds);
+    await _applyExternalEntries(_calls, plan);
   }
 
-  Future<void> _createBaseResources(
-    List<WorkspaceConfigurationEntry> entries,
-    Map<String, String> toolIds,
-    Map<String, String> appSkillIds,
-  ) async {
-    final resources = <_CloudResourceCreate>[
-      ..._baseSkillResources(entries, appSkillIds),
-      ..._baseToolResources(entries, toolIds),
-      ..._baseAgentResources(entries),
-    ];
-    await _createBatches(resources);
-  }
-
-  Future<void> _createLinkedResources(
+  Future<void> _upsertBaseResources(
     List<WorkspaceConfigurationEntry> entries,
     List<WorkspaceResource> active,
-    Map<String, String> toolIds,
-    Map<String, String> appSkillIds,
   ) async {
     final resources = <_CloudResourceCreate>[
-      ..._agentSkillResources(entries),
-      ..._agentToolPermissionResources(entries, toolIds),
-      ..._newSkillSettingResources(entries, active, appSkillIds),
+      ..._baseSkillResources(entries),
+      ..._baseToolResources(entries),
+      ..._baseAgentResources(entries),
     ];
-    await _createBatches(resources);
-    await _updateExistingSkillSettings((
-      store: _store,
-      entries: entries,
-      active: active,
-      appSkillIds: appSkillIds,
-    ));
+    final creates = <_CloudResourceCreate>[];
+    for (final resource in resources) {
+      final existing = _resourceById(active, resource.kind, resource.id);
+      if (existing == null) {
+        creates.add(resource);
+        continue;
+      }
+      if (_resourceDataMatches(existing, resource.data)) continue;
+      await _store.update(
+        kind: resource.kind,
+        id: resource.id,
+        revision: existing.revision,
+        data: _mergeResourceData(existing, resource.data),
+      );
+    }
+    await _createBatches(creates);
   }
 
   Future<void> _createBatches(List<_CloudResourceCreate> resources) async {
@@ -147,27 +138,62 @@ class CloudWorkspaceConfigurationRepository {
     }
   }
 
-  Future<void> _applyExistingTools(
-    List<WorkspaceConfigurationEntry> entries,
-    List<WorkspaceResource> active,
-    Map<String, String> toolIds,
-  ) async {
-    for (final entry in entries.where((entry) => entry.kind == .tool)) {
-      final id = toolIds[entry.id];
-      if (id == null) continue;
-      await _updateExistingTool(_store, entry, active, id);
-    }
-  }
-
   Future<void> _applyToolPermissions(
     List<WorkspaceConfigurationEntry> entries,
     List<WorkspaceResource> active,
-    Map<String, String> toolIds,
   ) async {
     for (final entry in entries.where((entry) => entry.kind == .tool)) {
-      final id = toolIds[entry.id];
-      if (id == null) continue;
-      await _upsertToolPermission(_store, entry, active, id);
+      await _upsertToolPermission(_store, entry, active, entry.id);
+    }
+  }
+
+  Future<void> _upsertAgentAssociations(
+    List<WorkspaceConfigurationEntry> entries,
+    List<WorkspaceResource> active,
+    Map<String, String> appSkillIds,
+  ) async {
+    for (final entry in entries.where(
+      (item) => item.kind == .agentSkill || item.kind == .agentToolPermission,
+    )) {
+      final existing = _resourceById(active, .agentAssociation, entry.id);
+      final data = entry.kind == .agentSkill
+          ? _agentSkillData(entry, appSkillIds)
+          : _agentToolPermissionData(entry);
+      if (existing == null) {
+        await _store.create(kind: .agentAssociation, id: entry.id, data: data);
+      } else if (entry.kind == .agentToolPermission &&
+          !_resourceDataMatches(existing, data)) {
+        await _store.update(
+          kind: .agentAssociation,
+          id: entry.id,
+          revision: existing.revision,
+          data: _mergeResourceData(existing, data),
+        );
+      }
+    }
+  }
+
+  Future<void> _upsertSkillSettings(
+    List<WorkspaceConfigurationEntry> entries,
+    List<WorkspaceResource> active,
+    Map<String, String> appSkillIds,
+  ) async {
+    for (final entry in entries.where((item) => item.kind == .skillSetting)) {
+      final mappedExisting = _resourceById(active, .skillSetting, entry.id);
+      final id = mappedExisting?.resourceId ?? _settingId(entry, appSkillIds);
+      final existing =
+          mappedExisting ?? _resourceById(active, .skillSetting, id);
+      final data = _skillSettingData(entry, appSkillIds, id);
+      if (existing == null) {
+        await _store.create(kind: .skillSetting, id: id, data: data);
+      } else if (!_resourceDataMatches(existing, data)) {
+        await _store.update(
+          kind: .skillSetting,
+          id: id,
+          revision: existing.revision,
+          data: _mergeResourceData(existing, data),
+        );
+      }
     }
   }
 
@@ -193,6 +219,10 @@ CloudWorkspaceConfigurationCalls _productionCalls(
   listSkillResources: (skillId) => _listSkillResources(store, skillId),
   createConnection: (entry) => _createModelConnection(store, entry),
   createSkillResource: (entry) => _createSkillResource(store, entry),
+  updateSkillResource: (entry, revision) =>
+      _updateSkillResource(store, entry, revision),
+  updateToolSamplingPolicy: (selectionId, policy) =>
+      _updateToolSamplingPolicy(store, selectionId, policy),
 );
 
 Future<List<ModelConnectionView>> _listModelConnections(
@@ -259,6 +289,41 @@ Future<void> _createSkillResource(
   final api = await _api(store);
   final _ = await api.client.skillResource.create(
     _skillResourceRequest(api, entry),
+  );
+}
+
+Future<void> _updateSkillResource(
+  CloudWorkspaceResourceStore store,
+  WorkspaceConfigurationEntry entry,
+  int expectedRevision,
+) async {
+  final api = await _api(store);
+  final _ = await api.client.skillResource.update(
+    .new(
+      workspaceId: api.workspaceId,
+      requestId: const UuidV7().generate(),
+      resourceId: entry.id,
+      expectedRevision: expectedRevision,
+      title: _string(entry.data, 'title'),
+      description: _string(entry.data, 'description'),
+      content: _string(entry.data, 'content'),
+    ),
+  );
+}
+
+Future<void> _updateToolSamplingPolicy(
+  CloudWorkspaceResourceStore store,
+  String selectionId,
+  String policy,
+) async {
+  final api = await _api(store);
+  await api.client.modelConnection.updateToolSamplingPolicy(
+    .new(
+      workspaceId: api.workspaceId,
+      requestId: const UuidV7().generate(),
+      selectionId: selectionId,
+      toolSamplingPolicy: policy,
+    ),
   );
 }
 
@@ -451,58 +516,11 @@ WorkspaceConfigurationEntry _modelConnectionEntry(ModelConnectionView view) =>
       },
     );
 
-Map<String, String> _matchingToolIds(
-  List<WorkspaceConfigurationEntry> entries,
-  List<WorkspaceResource> target,
-) {
-  final existing = _nativeToolIdsByName(target);
-
-  return {
-    for (final entry in entries.where((item) => item.kind == .tool))
-      entry.id: existing[_string(entry.data, 'toolId')] ?? entry.id,
-  };
-}
-
 Map<String, String> _nativeToolIdsByName(List<WorkspaceResource> resources) => {
   for (final resource in resources.where(_isNativeTool))
     _string(CloudResourceMapper.decode(resource), 'toolId'):
         resource.resourceId,
 };
-
-Map<String, String> _appSkillIds(
-  List<WorkspaceConfigurationEntry> entries,
-  List<WorkspaceResource> target,
-) {
-  final existing = _existingAppSkillIds(target);
-  final imported = _importedAppSkillIds(entries, existing);
-
-  return {..._existingAppSettingIds(entries, existing), ...imported};
-}
-
-Map<String, String> _existingAppSettingIds(
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> existing,
-) => _existingSettingsMap(_appSettingEntries(entries), existing);
-
-List<WorkspaceConfigurationEntry> _appSettingEntries(
-  List<WorkspaceConfigurationEntry> entries,
-) => entries
-    .where((item) => item.kind == .skillSetting && item.data['source'] == 'app')
-    .toList();
-
-Map<String, String> _existingSettingsMap(
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> existing,
-) {
-  final ids = <String, String>{};
-  for (final entry in entries) {
-    final skillId = _string(entry.data, 'skillId');
-    final existingId = existing[skillId];
-    if (existingId != null) ids[skillId] = existingId;
-  }
-
-  return ids;
-}
 
 Map<String, String> _existingAppSkillIds(List<WorkspaceResource> resources) => {
   for (final resource in resources.where((item) => item.resourceKind == .skill))
@@ -513,17 +531,6 @@ Map<String, String> _existingAppSkillIds(List<WorkspaceResource> resources) => {
 
 bool _isAppSkill(WorkspaceResource resource) =>
     CloudResourceMapper.decode(resource)['source'] == 'app';
-
-Map<String, String> _importedAppSkillIds(
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> existing,
-) => {
-  for (final entry in entries.where(
-    (item) => item.kind == .skill && item.data['source'] == 'app',
-  ))
-    _string(entry.data, 'slug'):
-        existing[_string(entry.data, 'slug')] ?? entry.id,
-};
 
 void _validateAppReferences(
   List<WorkspaceConfigurationEntry> entries,
@@ -581,9 +588,8 @@ bool _isSupportedAssociation(
 }
 
 WorkspaceConfigurationArchive _cloudArchive(String json) {
-  final archive = WorkspaceConfigurationArchiveCodec.remapIds(
-    WorkspaceConfigurationArchiveCodec.decode(json),
-  );
+  final archive = WorkspaceConfigurationArchiveCodec.decode(json);
+  WorkspaceConfigurationArchiveCodec.validateNaturalIdentities(archive);
   _validateCloudEntries(archive.entries);
 
   return archive;
@@ -592,29 +598,258 @@ WorkspaceConfigurationArchive _cloudArchive(String json) {
 Future<_CloudImportPlan> _importPlan(
   CloudWorkspaceResourceStore store,
   List<WorkspaceResourceKind> kinds,
-  List<WorkspaceConfigurationEntry> entries,
+  CloudWorkspaceConfigurationCalls calls,
+  WorkspaceConfigurationArchive archive,
 ) async {
   final active = _activeResources(await store.watchResources(kinds).first);
-  final toolIds = _matchingToolIds(entries, active);
-  final appSkillIds = _appSkillIds(entries, active);
-  _validateAppReferences(entries, appSkillIds);
-  final skillIds = _cloudSkillIds(entries, appSkillIds);
+  final hasModelConnections = archive.entries.any(
+    (item) => item.kind == .modelConnection || item.kind == .modelSelection,
+  );
+  final hasModelSelections = archive.entries.any(
+    (item) => item.kind == .modelSelection,
+  );
+  final connections = hasModelConnections
+      ? await calls.listConnections()
+      : <ModelConnectionView>[];
+  final selections = hasModelSelections
+      ? await calls.listModelSelections()
+      : <WorkspaceModelSelectionView>[];
+  final idMapping = _existingDefinitionIds(archive, active, connections);
+  final appSkillIds = _existingAppSkillIds(active);
+  _mapExistingRelationships(
+    archive,
+    active,
+    selections,
+    appSkillIds,
+    idMapping,
+  );
+  final skillResources = await _existingSkillResources(
+    calls,
+    archive,
+    idMapping,
+  );
+  _mapExistingSkillResources(archive, idMapping, skillResources);
+  final remapped = WorkspaceConfigurationArchiveCodec.remapIds(
+    archive,
+    idMapping: idMapping,
+  );
+  final resolvedAppSkillIds = {
+    ...appSkillIds,
+    for (final entry in remapped.entries.where(
+      (item) => item.kind == .skill && item.data['source'] == 'app',
+    ))
+      _string(entry.data, 'slug'): entry.id,
+  };
+  _validateCloudEntries(remapped.entries);
+  _validateAppReferences(remapped.entries, resolvedAppSkillIds);
 
   return (
     active: active,
-    toolIds: toolIds,
-    appSkillIds: appSkillIds,
-    skillIds: skillIds,
+    entries: remapped.entries,
+    appSkillIds: resolvedAppSkillIds,
+    existingConnectionIds: {for (final item in connections) item.id},
+    skillResourcesById: {for (final item in skillResources) item.id: item},
   );
 }
 
-Map<String, String> _cloudSkillIds(
-  List<WorkspaceConfigurationEntry> entries,
+Map<WorkspaceConfigurationArchiveEntryId, String> _existingDefinitionIds(
+  WorkspaceConfigurationArchive archive,
+  List<WorkspaceResource> active,
+  List<ModelConnectionView> connections,
+) {
+  final ids = <WorkspaceConfigurationArchiveEntryId, String>{};
+  for (final entry in archive.entries.where((item) => item.kind == .agent)) {
+    final name = _string(entry.data, 'name').trim();
+    final existing = active
+        .where((item) => item.resourceKind == .agent)
+        .where(
+          (item) =>
+              _string(CloudResourceMapper.decode(item), 'name').trim() == name,
+        )
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.resourceId;
+    }
+  }
+  for (final entry in archive.entries.where((item) => item.kind == .skill)) {
+    final source = _string(entry.data, 'source');
+    final slug = _string(entry.data, 'slug');
+    final existing = active.where((item) => item.resourceKind == .skill).where((
+      item,
+    ) {
+      final data = CloudResourceMapper.decode(item);
+
+      return data['source'] == source && data['slug'] == slug;
+    }).firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.resourceId;
+    }
+  }
+  final toolIds = _nativeToolIdsByName(active);
+  for (final entry in archive.entries.where((item) => item.kind == .tool)) {
+    final existingId = toolIds[_string(entry.data, 'toolId')];
+    if (existingId != null) ids[(kind: entry.kind, id: entry.id)] = existingId;
+  }
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .modelConnection,
+  )) {
+    final providerId = _string(entry.data, 'providerId');
+    final name = _string(entry.data, 'name');
+    final url = entry.data['url'] as String?;
+    final existing = connections
+        .where(
+          (item) =>
+              item.providerId == providerId &&
+              item.name == name &&
+              WorkspaceConfigurationArchiveCodec.publicUrl(item.url) == url,
+        )
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.id;
+    }
+  }
+
+  return ids;
+}
+
+void _mapExistingRelationships(
+  WorkspaceConfigurationArchive archive,
+  List<WorkspaceResource> active,
+  List<WorkspaceModelSelectionView> selections,
   Map<String, String> appSkillIds,
-) => {
-  for (final entry in entries.where((item) => item.kind == .skill))
-    entry.id: _cloudSkillId(entry, appSkillIds),
-};
+  Map<WorkspaceConfigurationArchiveEntryId, String> ids,
+) {
+  String? targetId(WorkspaceConfigurationKind kind, Object? sourceId) =>
+      sourceId is String ? ids[(kind: kind, id: sourceId)] : null;
+
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .agentSkill,
+  )) {
+    final agentId = targetId(.agent, entry.data['agentId']);
+    final isAppSkill = entry.data['source'] == 'app';
+    final skillIdentifier = _string(entry.data, 'skillId');
+    final skillId = isAppSkill
+        ? appSkillIds[skillIdentifier]
+        : targetId(.skill, skillIdentifier);
+    if (agentId == null || skillId == null) continue;
+    final existing = active
+        .where((item) => item.resourceKind == .agentAssociation)
+        .where((item) {
+          final data = CloudResourceMapper.decode(item);
+
+          return data['agentId'] == agentId &&
+              data['skillId'] == skillId &&
+              (isAppSkill
+                  ? data['appSkillIdentifier'] == skillIdentifier
+                  : data['appSkillIdentifier'] == null);
+        })
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.resourceId;
+    }
+  }
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .agentToolPermission,
+  )) {
+    final agentId = targetId(.agent, entry.data['agentId']);
+    final toolId = targetId(.tool, entry.data['toolId']);
+    if (agentId == null || toolId == null) continue;
+    final existing = active
+        .where((item) => item.resourceKind == .agentAssociation)
+        .where((item) {
+          final data = CloudResourceMapper.decode(item);
+
+          return data['agentId'] == agentId && data['toolId'] == toolId;
+        })
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.resourceId;
+    }
+  }
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .skillSetting,
+  )) {
+    final isAppSkill = entry.data['source'] == 'app';
+    final skillId = isAppSkill
+        ? appSkillIds[_string(entry.data, 'skillId')]
+        : targetId(.skill, entry.data['skillId']);
+    if (skillId == null) continue;
+    final existing = active
+        .where((item) => item.resourceKind == .skillSetting)
+        .where((item) => CloudResourceMapper.decode(item)['skillId'] == skillId)
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.resourceId;
+    }
+  }
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .modelSelection,
+  )) {
+    final connectionId = targetId(
+      .modelConnection,
+      entry.data['modelConnectionId'],
+    );
+    if (connectionId == null) continue;
+    final modelId = _string(entry.data, 'modelId');
+    final existing = selections
+        .where(
+          (item) =>
+              item.connectionId == connectionId && item.modelId == modelId,
+        )
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.id;
+    }
+  }
+}
+
+Future<List<SkillResourceView>> _existingSkillResources(
+  CloudWorkspaceConfigurationCalls calls,
+  WorkspaceConfigurationArchive archive,
+  Map<WorkspaceConfigurationArchiveEntryId, String> ids,
+) async {
+  final skillIds = {
+    for (final entry in archive.entries.where(
+      (item) => item.kind == .skillResource,
+    ))
+      if (ids[(
+            kind: WorkspaceConfigurationKind.skill,
+            id: _string(entry.data, 'skillId'),
+          )]
+          case final String skillId)
+        skillId,
+  };
+  final resources = <SkillResourceView>[];
+  for (final skillId in skillIds) {
+    resources.addAll(await calls.listSkillResources(skillId));
+  }
+
+  return resources;
+}
+
+void _mapExistingSkillResources(
+  WorkspaceConfigurationArchive archive,
+  Map<WorkspaceConfigurationArchiveEntryId, String> ids,
+  List<SkillResourceView> resources,
+) {
+  for (final entry in archive.entries.where(
+    (item) => item.kind == .skillResource,
+  )) {
+    final skillId =
+        ids[(
+          kind: WorkspaceConfigurationKind.skill,
+          id: _string(entry.data, 'skillId'),
+        )];
+    if (skillId == null) continue;
+    final slug = _string(entry.data, 'slug');
+    final existing = resources
+        .where((item) => item.skillId == skillId && item.slug == slug)
+        .firstOrNull;
+    if (existing != null) {
+      ids[(kind: entry.kind, id: entry.id)] = existing.id;
+    }
+  }
+}
 
 List<WorkspaceResource> _activeResources(List<WorkspaceResource> resources) =>
     resources.where((resource) => resource.deletedAt == null).toList();
@@ -778,60 +1013,53 @@ Future<void> _appendSkillResources(
 
 Future<void> _applyExternalEntries(
   CloudWorkspaceConfigurationCalls calls,
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> skillIds,
+  _CloudImportPlan plan,
 ) async {
-  await _createModelConnections(calls, entries);
-  await _createSkillResources(calls, entries, skillIds);
-}
-
-Future<void> _createModelConnections(
-  CloudWorkspaceConfigurationCalls calls,
-  List<WorkspaceConfigurationEntry> entries,
-) async {
-  for (final entry in entries.where((item) => item.kind == .modelConnection)) {
+  final entries = plan.entries;
+  final existingConnectionIds = plan.existingConnectionIds;
+  final skillResourcesById = plan.skillResourcesById;
+  final connections = entries.where((item) => item.kind == .modelConnection);
+  for (final entry in connections) {
+    if (existingConnectionIds.contains(entry.id)) continue;
     await calls.createConnection(entry);
   }
-}
-
-Future<void> _createSkillResources(
-  CloudWorkspaceConfigurationCalls calls,
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> skillIds,
-) async {
   for (final entry in entries.where((item) => item.kind == .skillResource)) {
-    await calls.createSkillResource(_skillResourceForTarget(entry, skillIds));
+    final existing = skillResourcesById[entry.id];
+    if (existing == null) {
+      await calls.createSkillResource(entry);
+    } else if (!_skillResourceMatches(existing, entry)) {
+      await calls.updateSkillResource(entry, existing.revision);
+    }
+  }
+  final selections = entries.where((item) => item.kind == .modelSelection);
+  if (selections.isEmpty) return;
+  final views = await calls.listModelSelections();
+  for (final entry in selections) {
+    final connectionId = _string(entry.data, 'modelConnectionId');
+    final modelId = _string(entry.data, 'modelId');
+    final selection = views
+        .where(
+          (item) =>
+              item.connectionId == connectionId && item.modelId == modelId,
+        )
+        .firstOrNull;
+    if (selection == null) {
+      throw const WorkspaceConfigurationArchiveException(
+        'workspace_archive.unsupported_configuration',
+      );
+    }
+    final policy = _string(entry.data, 'toolSamplingPolicy');
+    if (selection.toolSamplingPolicy == policy) continue;
+    await calls.updateToolSamplingPolicy(selection.id, policy);
   }
 }
-
-WorkspaceConfigurationEntry _skillResourceForTarget(
-  WorkspaceConfigurationEntry entry,
-  Map<String, String> skillIds,
-) => WorkspaceConfigurationEntry(
-  kind: entry.kind,
-  id: entry.id,
-  data: {...entry.data, 'skillId': skillIds[_string(entry.data, 'skillId')]},
-);
 
 List<_CloudResourceCreate> _baseSkillResources(
   List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> appSkillIds,
 ) => [
   for (final entry in entries.where((item) => item.kind == .skill))
-    if (_cloudSkillId(entry, appSkillIds) == entry.id)
-      (
-        kind: .skill,
-        id: _cloudSkillId(entry, appSkillIds),
-        data: _skillResourceData(entry),
-      ),
+    (kind: .skill, id: entry.id, data: _skillResourceData(entry)),
 ];
-
-String _cloudSkillId(
-  WorkspaceConfigurationEntry entry,
-  Map<String, String> appSkillIds,
-) => entry.data['source'] == 'app'
-    ? appSkillIds[_string(entry.data, 'slug')]!
-    : entry.id;
 
 Map<String, Object?> _skillResourceData(WorkspaceConfigurationEntry entry) => {
   'source': entry.data['source'],
@@ -845,11 +1073,9 @@ Map<String, Object?> _skillResourceData(WorkspaceConfigurationEntry entry) => {
 
 List<_CloudResourceCreate> _baseToolResources(
   List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> toolIds,
 ) => [
   for (final entry in entries.where((item) => item.kind == .tool))
-    if (toolIds[entry.id] == entry.id)
-      (kind: .tool, id: toolIds[entry.id]!, data: _toolUpdateData(entry)),
+    (kind: .tool, id: entry.id, data: _toolUpdateData(entry)),
 ];
 
 List<_CloudResourceCreate> _baseAgentResources(
@@ -867,125 +1093,39 @@ Map<String, Object?> _agentResourceData(WorkspaceConfigurationEntry entry) => {
   'visibility': entry.data['visibility'],
 };
 
-List<_CloudResourceCreate> _agentSkillResources(
-  List<WorkspaceConfigurationEntry> entries,
-) => [
-  for (final entry in entries.where((item) => item.kind == .agentSkill))
-    (kind: .agentAssociation, id: entry.id, data: _agentSkillData(entry)),
-];
-
-Map<String, Object?> _agentSkillData(WorkspaceConfigurationEntry entry) {
+Map<String, Object?> _agentSkillData(
+  WorkspaceConfigurationEntry entry,
+  Map<String, String> appSkillIds,
+) {
   final isAppSkill = entry.data['source'] == 'app';
-  final skillId = _string(entry.data, 'skillId');
+  final skillIdentifier = _string(entry.data, 'skillId');
+  final skillId = isAppSkill ? appSkillIds[skillIdentifier]! : skillIdentifier;
 
   return {
     'agentId': entry.data['agentId'],
     'skillId': skillId,
-    if (isAppSkill) 'appSkillIdentifier': skillId,
+    if (isAppSkill) 'appSkillIdentifier': skillIdentifier,
   };
 }
 
-List<_CloudResourceCreate> _agentToolPermissionResources(
-  List<WorkspaceConfigurationEntry> entries,
-  Map<String, String> toolIds,
-) => [
-  for (final entry in entries.where(
-    (item) => item.kind == .agentToolPermission,
-  ))
-    (
-      kind: .agentAssociation,
-      id: entry.id,
-      data: _agentToolPermissionData(entry, toolIds),
-    ),
-];
-
 Map<String, Object?> _agentToolPermissionData(
   WorkspaceConfigurationEntry entry,
-  Map<String, String> toolIds,
 ) => {
   'agentId': entry.data['agentId'],
-  'toolId': toolIds[_string(entry.data, 'toolId')],
+  'toolId': entry.data['toolId'],
   'permissionMode': entry.data['permissionMode'],
 };
-
-List<_CloudResourceCreate> _newSkillSettingResources(
-  List<WorkspaceConfigurationEntry> entries,
-  List<WorkspaceResource> active,
-  Map<String, String> appSkillIds,
-) => [
-  for (final entry in entries.where(
-    (item) => item.kind == .skillSetting && item.data['source'] == 'app',
-  ))
-    if (_existingAppSkillSetting(active, entry, appSkillIds) == null)
-      (
-        kind: .skillSetting,
-        id: _settingId(entry, appSkillIds),
-        data: _skillSettingData(entry, appSkillIds),
-      ),
-];
-
-WorkspaceResource? _existingAppSkillSetting(
-  List<WorkspaceResource> active,
-  WorkspaceConfigurationEntry entry,
-  Map<String, String> appSkillIds,
-) => active
-    .where(
-      (resource) =>
-          resource.resourceKind == .skillSetting &&
-          resource.resourceId == _settingId(entry, appSkillIds),
-    )
-    .firstOrNull;
 
 Map<String, Object?> _skillSettingData(
   WorkspaceConfigurationEntry entry,
   Map<String, String> appSkillIds,
-) {
-  final id = _settingId(entry, appSkillIds);
-
-  return {'id': id, 'skillId': id, 'isEnabled': entry.data['isEnabled']};
-}
-
-Future<void> _updateExistingSkillSettings(_SkillSettingUpdates updates) async {
-  final entries = updates.entries.where(
-    (item) => item.kind == .skillSetting && item.data['source'] == 'app',
-  );
-  for (final entry in entries) {
-    await _updateAppSkillSetting(updates, entry);
-  }
-}
-
-Future<void> _updateAppSkillSetting(
-  _SkillSettingUpdates updates,
-  WorkspaceConfigurationEntry entry,
-) async {
-  final existing = _existingAppSkillSetting(
-    updates.active,
-    entry,
-    updates.appSkillIds,
-  );
-  if (existing == null) return;
-  await updates.store.update(
-    kind: .skillSetting,
-    id: existing.resourceId,
-    revision: existing.revision,
-    data: _skillSettingData(entry, updates.appSkillIds),
-  );
-}
-
-Future<void> _updateExistingTool(
-  CloudWorkspaceResourceStore store,
-  WorkspaceConfigurationEntry entry,
-  List<WorkspaceResource> active,
   String id,
-) async {
-  final existing = _resourceById(active, .tool, id);
-  if (existing == null) return;
-  await store.update(
-    kind: .tool,
-    id: id,
-    revision: existing.revision,
-    data: _toolUpdateData(entry),
-  );
+) {
+  final skillId = entry.data['source'] == 'app'
+      ? appSkillIds[_string(entry.data, 'skillId')]!
+      : _string(entry.data, 'skillId');
+
+  return {'id': id, 'skillId': skillId, 'isEnabled': entry.data['isEnabled']};
 }
 
 WorkspaceResource? _resourceById(
@@ -997,6 +1137,30 @@ WorkspaceResource? _resourceById(
       (resource) => resource.resourceKind == kind && resource.resourceId == id,
     )
     .firstOrNull;
+
+bool _resourceDataMatches(
+  WorkspaceResource resource,
+  Map<String, Object?> expected,
+) {
+  final current = CloudResourceMapper.decode(resource);
+
+  return expected.entries.every((entry) => current[entry.key] == entry.value);
+}
+
+Map<String, Object?> _mergeResourceData(
+  WorkspaceResource resource,
+  Map<String, Object?> values,
+) => {...CloudResourceMapper.decode(resource), ...values};
+
+bool _skillResourceMatches(
+  SkillResourceView resource,
+  WorkspaceConfigurationEntry entry,
+) =>
+    resource.skillId == _string(entry.data, 'skillId') &&
+    resource.title == _string(entry.data, 'title') &&
+    resource.slug == _string(entry.data, 'slug') &&
+    resource.description == _string(entry.data, 'description') &&
+    resource.content == _string(entry.data, 'content');
 
 Map<String, Object?> _toolUpdateData(WorkspaceConfigurationEntry entry) => {
   'toolId': entry.data['toolId'],
@@ -1016,6 +1180,8 @@ Future<void> _upsertToolPermission(
 
     return;
   }
+  final data = _toolPermissionData(entry, toolId);
+  if (_resourceDataMatches(existing, data)) return;
   await _updateToolPermission(store, entry, existing, toolId);
 }
 
@@ -1048,7 +1214,7 @@ Future<void> _updateToolPermission(
   kind: .toolPermission,
   id: existing.resourceId,
   revision: existing.revision,
-  data: _toolPermissionData(entry, toolId),
+  data: _mergeResourceData(existing, _toolPermissionData(entry, toolId)),
 );
 
 Map<String, Object?> _toolPermissionData(
@@ -1081,10 +1247,11 @@ Future<void> _saveCompactionSetting(
 
     return;
   }
+  if (_resourceDataMatches(existing, data)) return;
   await store.update(
     kind: .compactionSetting,
     id: existing.resourceId,
     revision: existing.revision,
-    data: data,
+    data: _mergeResourceData(existing, data),
   );
 }

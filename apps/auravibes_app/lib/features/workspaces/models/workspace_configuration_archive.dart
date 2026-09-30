@@ -159,6 +159,11 @@ abstract final class WorkspaceConfigurationArchiveCodec {
 
     return remapped;
   }
+
+  static void validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
+    _validate(archive);
+    _validateNaturalIdentities(archive);
+  }
 }
 
 String? _publicUri(Uri? uri) {
@@ -557,6 +562,50 @@ void _permission(Object? mode) {
 Never _invalid() => throw const WorkspaceConfigurationArchiveException(
   'workspace_archive.invalid',
 );
+
+typedef _ArchiveIdentity = ({WorkspaceConfigurationKind kind, String value});
+
+void _validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
+  final identities = <_ArchiveIdentity>{};
+  for (final entry in archive.entries) {
+    final identity = jsonEncode(switch (entry.kind) {
+      .agent => [_requiredString(entry.data, 'name').trim()],
+      .agentSkill => [
+        _requiredString(entry.data, 'agentId'),
+        _requiredString(entry.data, 'source'),
+        _requiredString(entry.data, 'skillId'),
+      ],
+      .agentToolPermission => [
+        _requiredString(entry.data, 'agentId'),
+        _requiredString(entry.data, 'toolId'),
+      ],
+      .compactionSetting => const ['workspace'],
+      .modelConnection => [
+        _requiredString(entry.data, 'providerId'),
+        _requiredString(entry.data, 'name'),
+        entry.data['url'],
+      ],
+      .modelSelection => [
+        _requiredString(entry.data, 'modelConnectionId'),
+        _requiredString(entry.data, 'modelId'),
+      ],
+      .skill => [
+        _requiredString(entry.data, 'source'),
+        _requiredString(entry.data, 'slug'),
+      ],
+      .skillResource => [
+        _requiredString(entry.data, 'skillId'),
+        _requiredString(entry.data, 'slug'),
+      ],
+      .skillSetting => [
+        _requiredString(entry.data, 'source'),
+        _requiredString(entry.data, 'skillId'),
+      ],
+      .tool => [_requiredString(entry.data, 'toolId')],
+    });
+    if (!identities.add((kind: entry.kind, value: identity))) _invalid();
+  }
+}
 
 Map<WorkspaceConfigurationKind, int> _countEntriesByKind(
   List<WorkspaceConfigurationEntry> entries,

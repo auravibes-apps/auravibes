@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
@@ -42,56 +40,11 @@ Future<String> _importArchiveJson(
   String? targetWorkspaceId,
 ) {
   final archive = WorkspaceConfigurationArchiveCodec.decode(json);
-  _validateArchiveIdentities(archive);
+  WorkspaceConfigurationArchiveCodec.validateNaturalIdentities(archive);
 
   return database.transaction(
     () => _importArchive(database, archive, targetWorkspaceId),
   );
-}
-
-typedef _ArchiveIdentity = ({WorkspaceConfigurationKind kind, String value});
-
-void _validateArchiveIdentities(WorkspaceConfigurationArchive archive) {
-  final identities = <_ArchiveIdentity>{};
-  for (final entry in archive.entries) {
-    final identity = jsonEncode(switch (entry.kind) {
-      .agent => [_string(entry.data, 'name').trim()],
-      .agentSkill => [
-        _string(entry.data, 'agentId'),
-        _string(entry.data, 'source'),
-        _string(entry.data, 'skillId'),
-      ],
-      .agentToolPermission => [
-        _string(entry.data, 'agentId'),
-        _string(entry.data, 'toolId'),
-      ],
-      .compactionSetting => const ['workspace'],
-      .modelConnection => [
-        _string(entry.data, 'providerId'),
-        _string(entry.data, 'name'),
-        entry.data['url'],
-      ],
-      .modelSelection => [
-        _string(entry.data, 'modelConnectionId'),
-        _string(entry.data, 'modelId'),
-      ],
-      .skill => [_string(entry.data, 'source'), _string(entry.data, 'slug')],
-      .skillResource => [
-        _string(entry.data, 'skillId'),
-        _string(entry.data, 'slug'),
-      ],
-      .skillSetting => [
-        _string(entry.data, 'source'),
-        _string(entry.data, 'skillId'),
-      ],
-      .tool => [_string(entry.data, 'toolId')],
-    });
-    if (!identities.add((kind: entry.kind, value: identity))) {
-      throw const WorkspaceConfigurationArchiveException(
-        'workspace_archive.invalid',
-      );
-    }
-  }
 }
 
 Future<Map<WorkspaceConfigurationArchiveEntryId, String>> _existingEntryIds(
