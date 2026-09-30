@@ -435,13 +435,14 @@ void main() {
 
   group('McpAuthenticationTypeOptions', () {
     test('has all expected values', () {
-      expect(McpAuthenticationTypeOptions.values, hasLength(3));
+      expect(McpAuthenticationTypeOptions.values, hasLength(4));
       expect(
         McpAuthenticationTypeOptions.values,
         containsAll([
           McpAuthenticationTypeOptions.none,
           McpAuthenticationTypeOptions.oauth,
           McpAuthenticationTypeOptions.bearerToken,
+          McpAuthenticationTypeOptions.httpHeaders,
         ]),
       );
     });

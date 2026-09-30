@@ -19,6 +19,43 @@ void main() {
   });
 
   group('ServiceConnectionRepository', () {
+    test('encrypts MCP headers in the active workspace only', () async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      await _insertWorkspace(database, 'workspace-1');
+      await _insertWorkspace(database, 'workspace-2');
+      final repository = ServiceConnectionRepository(
+        database,
+        .new(_FakeSecretKeyManager()),
+      );
+      final id = await repository.createMcpServiceConnection(
+        workspaceId: 'workspace-1',
+        profile: const McpServiceConnectionProfile(
+          name: 'Catalog server',
+          authenticationType: .httpHeaders(
+            headers: {'X-API-Key': 'secret-value'},
+          ),
+        ),
+      );
+      if (id == null) fail('Expected a workspace credential');
+      final stored = await (database.select(
+        database.serviceConnections,
+      )..where((table) => table.id.equals(id))).getSingle();
+      expect(stored.workspaceId, 'workspace-1');
+      expect(stored.encryptedAuthValue, isNot(contains('secret-value')));
+      final secret = await repository.readSecret(id);
+      expect((secret as ServiceConnectionSecretHttpHeaders).headers, {
+        'X-API-Key': 'secret-value',
+      });
+      expect(
+        await repository.watchWorkspaceConnections('workspace-2').first,
+        isEmpty,
+      );
+      expect(secret.toString(), isNot(contains('secret-value')));
+    });
+
     test('lists app skill and compatible model provider candidates', () async {
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),

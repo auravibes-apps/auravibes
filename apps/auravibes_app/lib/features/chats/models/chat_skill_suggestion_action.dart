@@ -1,0 +1,1 @@
+enum ChatSkillSuggestionAction { add, useNow }

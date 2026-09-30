@@ -12,10 +12,7 @@ class ConversationSkillContextRuntime
 
   int begin(String conversationId) {
     final generation = _nextGeneration(conversationId);
-    _set(
-      conversationId,
-      const ConversationSkillContextSnapshot(phase: .preparing),
-    );
+    _set(conversationId, const .new(phase: .preparing));
 
     return generation;
   }
@@ -39,17 +36,22 @@ class ConversationSkillContextRuntime
   }
 
   void error(String conversationId, int generation) {
+    errorWithCause(conversationId, generation, .preparationFailed);
+  }
+
+  void errorWithCause(
+    String conversationId,
+    int generation,
+    ConversationSkillContextFailure failure,
+  ) {
     if (_generations[conversationId] != generation) return;
 
-    _set(conversationId, const ConversationSkillContextSnapshot(phase: .error));
+    _set(conversationId, .new(phase: .error, failure: failure));
   }
 
   void markNeedsContext(String conversationId) {
     final _ = _nextGeneration(conversationId);
-    _set(
-      conversationId,
-      const ConversationSkillContextSnapshot(phase: .needsContext),
-    );
+    _set(conversationId, const .new(phase: .needsContext));
   }
 
   int _nextGeneration(String conversationId) {
@@ -66,8 +68,15 @@ class ConversationSkillContextRuntime
 
 enum ConversationSkillContextPhase { preparing, ready, needsContext, error }
 
+enum ConversationSkillContextFailure {
+  missingCredentials,
+  unavailableMetadata,
+  preparationFailed,
+}
+
 class const ConversationSkillContextSnapshot({
   required final ConversationSkillContextPhase phase,
   final Map<String, String> selectedRevisions = const {},
   final bool canActivate = false,
+  final ConversationSkillContextFailure? failure,
 });

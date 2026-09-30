@@ -162,6 +162,7 @@ import '../features/accounts/account_endpoint.dart' as _iytsp81w;
 import '../features/agents/agent_catalog_endpoint.dart' as _ivvm0cyi;
 import '../features/codex_oauth/codex_oauth_endpoint.dart' as _igisrqgh;
 import '../features/conversations/conversation_endpoint.dart' as _ie3ymqip;
+import '../features/mcp_catalog/mcp_catalog_endpoint.dart' as _iuv55i4c;
 import '../features/mcp_servers/mcp_server_endpoint.dart' as _im1tu8co;
 import '../features/model_connections/model_connection_endpoint.dart'
     as _irncar1s;
@@ -211,6 +212,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'conversation',
+          null,
+        ),
+      'mcpCatalog': _iuv55i4c.McpCatalogEndpoint()
+        ..initialize(
+          server,
+          'mcpCatalog',
           null,
         ),
       'mcpServer': _im1tu8co.McpServerEndpoint()
@@ -1097,6 +1104,23 @@ class Endpoints extends _is.EndpointDispatch {
                     session,
                     params['request'],
                   ),
+        ),
+      },
+    );
+    connectors['mcpCatalog'] = _is.EndpointConnector(
+      name: 'mcpCatalog',
+      endpoint: endpoints['mcpCatalog']!,
+      methodConnectors: {
+        'list': _is.MethodConnector(
+          name: 'list',
+          params: {},
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['mcpCatalog'] as _iuv55i4c.McpCatalogEndpoint)
+                      .list(session),
         ),
       },
     );

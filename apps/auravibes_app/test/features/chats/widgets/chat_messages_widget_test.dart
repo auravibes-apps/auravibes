@@ -14,6 +14,7 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/chat_a2ui_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -22,9 +23,15 @@ import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.da
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -33,11 +40,14 @@ import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
-        AppSkillDefinitionKind,
         AgentToolOutputPolicy,
+        AppSkillDefinitionKind,
+        ChatMessage,
         defaultToolOutputBytes,
         maxPersistedToolOutputBytes,
-        projectToolOutput;
+        projectToolOutput,
+        skillCatalogMetadataKind,
+        skillCatalogRevisionMetadataKey;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
@@ -170,9 +180,14 @@ void main() {
     List<Map<String, Object?>> components, {
     Map<String, Object?> data = const {},
     bool form = false,
+    bool a2uiEnabled = false,
     String content = '',
+    List<Object> overrides = const [],
   }) async {
-    final runtime = ChatA2uiRuntime(conversationId: 'conv-1');
+    final runtime = ChatA2uiRuntime(
+      conversationId: 'conv-1',
+      enabled: a2uiEnabled,
+    );
     addTearDown(runtime.dispose);
     final message = _createMessage(
       content: content,
@@ -250,11 +265,16 @@ void main() {
               hasPendingTools: false,
             ),
           ),
+          ...overrides,
         ],
       ),
     );
     final _ = await tester.pumpAndSettle();
-    expect(runtime.hasSurfaceIssue(message.id), isFalse);
+    expect(
+      runtime.hasSurfaceIssue(message.id),
+      isFalse,
+      reason: '${runtime.a2uiIssuesBySurfaceFor(message.id)}',
+    );
     expect(tester.takeException(), isNull);
     return (runtime: runtime, copies: copies);
   }
@@ -1515,6 +1535,95 @@ void main() {
         ),
       );
 
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('opens skill picker when A2UI suggestion is stale', (
+      tester,
+    ) async {
+      const suggestedRevision =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      const currentRevision =
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+      const skill = AvailableSkill(
+        source: SkillSource.user,
+        id: 'skill-1',
+        slug: 'research',
+        title: 'Research',
+        description: 'Find sources',
+        content: 'Use primary sources',
+        kind: .template,
+        credentialReadiness: .ready,
+      );
+      var loadCalls = 0;
+      var sendCalls = 0;
+      final action = ApplyConversationSkillActionUsecase(
+        workspaceIdForConversation: (_) async => 'ws-1',
+        listSkills: (_, _, filter) async =>
+            filter == .catalog ? const [skill] : const <AvailableSkill>[],
+        buildContextMessages: (_, _) async => [
+          ChatMessage(
+            role: .system,
+            content: '<skill_catalog />',
+            metadata: {
+              'kind': skillCatalogMetadataKind,
+              skillCatalogRevisionMetadataKey: currentRevision,
+            },
+          ),
+        ],
+        loadSkill: (_, _, _) async {
+          loadCalls++;
+        },
+        sendMessage: (_, _, _) async {
+          sendCalls++;
+        },
+      );
+
+      final result = await pumpCopySurface(
+        tester,
+        [
+          {
+            'id': 'root',
+            'component': 'Column',
+            'children': ['suggestion'],
+          },
+          {
+            'id': 'suggestion',
+            'component': 'SkillSuggestion',
+            'slug': skill.slug,
+            'catalogRevision': suggestedRevision,
+          },
+        ],
+        a2uiEnabled: true,
+        overrides: [
+          conversationSkillSelectorProvider('ws-1', 'conv-1').overrideWith(
+            (_) async => const ConversationSkillSelectorState(
+              loaded: [],
+              loadable: [skill],
+            ),
+          ),
+          applyConversationSkillActionUsecaseProvider.overrideWith(
+            (_) => action,
+          ),
+        ],
+      );
+      await tester.pumpAndSettle();
+      expect(result.runtime.hasSkillSuggestions, isTrue);
+      expect(find.text('Research'), findsOneWidget);
+
+      expect(
+        result.runtime.submitSkillSuggestion(
+          surfaceId: result.runtime.surfaceIdsFor('msg-1').single,
+          componentId: 'suggestion',
+          action: ChatSkillSuggestionAction.add,
+        ),
+        isTrue,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ConversationSkillSelectorModal), findsOneWidget);
+      expect(loadCalls, 0);
+      expect(sendCalls, 0);
       expect(tester.takeException(), isNull);
     });
 

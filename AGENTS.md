@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-09-29 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-09-30 -->
 
 ## Entrypoint
 
@@ -115,7 +115,7 @@
 - Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
 
 ## Skill routing
-- Agent instruction maintenance: at task completion, check whether the work exposed a missing, stale, conflicting, ignored, or burdensome reusable rule. If so, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing `AGENTS.md` or a skill; skip broad audits when no concrete gap surfaced.
+- Agent instruction maintenance: at task completion, check whether work exposed a missing, stale, conflicting, ignored, or burdensome reusable rule. If so, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing `AGENTS.md`, a skill, or related harness/CI checks; skip broad audits when no concrete gap surfaced.
 - UX clarity: for every user-visible UI edit in the app, shared UI package, or Widgetbook, load `.agents/skills/ux-view-clarity/SKILL.md`; for a standalone audit or simplification of an existing journey, load `.agents/skills/ux-task-audit/SKILL.md`. Load both when the requested work includes both an existing-flow audit and a UI edit. Small edits get the clarity skill's brief check.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.

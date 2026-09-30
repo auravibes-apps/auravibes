@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 21);
+      expect(fixture.database.schemaVersion, 23);
     });
 
     test('migration defaults advanced capabilities to false', () async {
@@ -72,6 +72,77 @@ void main() {
         expect(row.read<bool>(column), isFalse, reason: column);
       }
     });
+
+    test('migration adds MCP columns to the PR version 21 schema', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 21
+        ..execute('''
+          CREATE TABLE api_models (
+            id TEXT PRIMARY KEY,
+            supports_prompt_cache_markers INTEGER NOT NULL DEFAULT 0,
+            supports_mid_conversation_system_messages INTEGER NOT NULL DEFAULT 0,
+            supports_tool_deltas INTEGER NOT NULL DEFAULT 0,
+            supports_deferred_tools INTEGER NOT NULL DEFAULT 0,
+            cost_cache_write REAL
+          );
+        ''')
+        ..execute('CREATE TABLE model_usage_records (id TEXT PRIMARY KEY)')
+        ..execute('CREATE TABLE mcp_servers (id TEXT PRIMARY KEY)');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(mcp_servers)')
+          .get();
+
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        containsAll(['catalog_snapshot_json', 'test_summary_json']),
+      );
+    });
+
+    test(
+      'migration adds model columns to the main version 21 schema',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 21
+          ..execute('CREATE TABLE api_models (id TEXT PRIMARY KEY)')
+          ..execute('''
+          CREATE TABLE mcp_servers (
+            id TEXT PRIMARY KEY,
+            catalog_snapshot_json TEXT,
+            test_summary_json TEXT
+          );
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final modelColumns = await fixture.database
+            .customSelect('PRAGMA table_info(api_models)')
+            .get();
+        final usageTables = await fixture.database
+            .customSelect(
+              'SELECT name FROM sqlite_master WHERE type = ? AND name = ?',
+              variables: [
+                const Variable<String>('table'),
+                const Variable<String>('model_usage_records'),
+              ],
+            )
+            .get();
+
+        expect(
+          modelColumns.map((row) => row.read<String>('name')),
+          containsAll([
+            'supports_prompt_cache_markers',
+            'supports_mid_conversation_system_messages',
+            'supports_tool_deltas',
+            'supports_deferred_tools',
+            'cost_cache_write',
+          ]),
+        );
+        expect(usageTables, isNotEmpty);
+      },
+    );
 
     test('creates successfully with in-memory connection', () {
       expect(fixture.database, isNotNull);
@@ -132,6 +203,28 @@ void main() {
         expect(row.read<String?>('output_schema'), isNull);
       },
     );
+
+    test('migration adds normalized MCP test summaries', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 20
+        ..execute('''
+          CREATE TABLE mcp_servers (
+            id TEXT NOT NULL PRIMARY KEY,
+            catalog_snapshot_json TEXT
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(mcp_servers)')
+          .get();
+
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        contains('test_summary_json'),
+      );
+    });
 
     test('workspace deletion cascades to sensitive child records', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(

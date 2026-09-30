@@ -5,6 +5,8 @@ import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
+import '../../mcp_servers/mcp_server_headers.dart';
+import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
@@ -301,6 +303,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         code: CloudWorkspaceErrorCode.validationFailed,
       );
     }
+    if (request.secretKind == WorkspaceSecretKind.mcp) _validationFailed();
     final hash = base64UrlEncode(
       (await Sha256().hash(utf8.encode(jsonEncode(request.toJson())))).bytes,
     );
@@ -439,8 +442,18 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (request.requestId.isEmpty || operation.resourceId.isEmpty) {
       _validationFailed();
     }
-    if (operation.resourceKind != WorkspaceResourceKind.serviceConnection ||
-        request.secretKind != WorkspaceSecretKind.skillCredential) {
+    final isServiceCredential =
+        operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
+        request.secretKind == WorkspaceSecretKind.skillCredential;
+    final isMcpCredential =
+        operation.resourceKind == WorkspaceResourceKind.mcpServer &&
+        request.secretKind == WorkspaceSecretKind.mcp &&
+        request.scope == WorkspaceSecretScope.workspace;
+    if (!isServiceCredential && !isMcpCredential) {
+      _validationFailed();
+    }
+    if (isMcpCredential &&
+        operation.operation != WorkspacePatchOperationKind.update) {
       _validationFailed();
     }
     try {
@@ -503,12 +516,23 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       final writesSecret =
           request.secret != null ||
           (request.clearSecret && existing?.deletedAt == null);
-      if (writesSecret &&
-          request.expectedSecretRevision != existing?.revision) {
-        _staleRevision();
+      var expectedSecretRevision = request.expectedSecretRevision;
+      if (writesSecret && expectedSecretRevision != existing?.revision) {
+        if (!await _isLegacyMcpSecretUpdate(
+          session,
+          operation: operation,
+          workspaceId: request.workspaceId,
+          expectedSecretRevision: expectedSecretRevision,
+          existing: existing,
+          transaction: transaction,
+        )) {
+          _staleRevision();
+        }
+        expectedSecretRevision = existing?.revision;
       }
       final isSkillCredential =
           operation.operation != WorkspacePatchOperationKind.delete &&
+          operation.resourceKind == WorkspaceResourceKind.serviceConnection &&
           _credentialKind(operation) == 'skillCredential';
       final secret = writesSecret
           ? isSkillCredential
@@ -521,7 +545,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
                       scope: request.scope,
                       resourceId: operation.resourceId,
                       secret: request.clearSecret ? null : request.secret,
-                      expectedRevision: request.expectedSecretRevision,
+                      expectedRevision: expectedSecretRevision,
                     ),
                     existing: existing,
                   )
@@ -531,6 +555,9 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           : existing?.deletedAt == null
           ? await const WorkspaceSecretCipher().decrypt(session, existing!)
           : null;
+      if (isMcpCredential) {
+        _validateMcpSecret(operation.data!, secret);
+      }
       final secretRevision = writesSecret
           ? (existing?.revision ?? 0) + 1
           : existing?.revision;
@@ -540,6 +567,22 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         displaySuffix: secret == null ? null : _suffix(secret),
         secretRevision: secretRevision,
       );
+      final previousResource = isMcpCredential
+          ? await _repository.findResource(
+              session,
+              workspaceId: request.workspaceId,
+              kind: WorkspaceResourceKind.mcpServer,
+              resourceId: operation.resourceId,
+              transaction: transaction,
+            )
+          : null;
+      final resetMcpPermissions =
+          previousResource != null &&
+          _mcpIdentityChanged(
+            previousResource.data,
+            sanitized.data!,
+            secretChanged: writesSecret,
+          );
       final resource = await _applyOperation(
         session,
         sanitized,
@@ -547,9 +590,18 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         now,
         transaction,
       );
+      final resetResources = resetMcpPermissions
+          ? await _resetMcpPermissions(
+              session,
+              workspaceId: request.workspaceId,
+              mcpServerId: operation.resourceId,
+              now: now,
+              transaction: transaction,
+            )
+          : const <WorkspaceResource>[];
       if (!writesSecret) {
         final resourceEvent = WorkspaceResourceValidation.eventFor(resource);
-        final sequence = workspace.sequence + 1;
+        var sequence = workspace.sequence + 1;
         await _recordEvent(
           session,
           workspaceId: request.workspaceId,
@@ -560,6 +612,19 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
           resourceId: resourceEvent.resourceId,
           transaction: transaction,
         );
+        for (final resetResource in resetResources) {
+          sequence++;
+          await _recordEvent(
+            session,
+            workspaceId: request.workspaceId,
+            sequence: sequence,
+            userId: userId,
+            kind: 'updated',
+            resourceKind: resetResource.resourceKind.name,
+            resourceId: resetResource.resourceId,
+            transaction: transaction,
+          );
+        }
         await CloudWorkspace.db.updateRow(
           session,
           workspace.copyWith(sequence: sequence, updatedAt: now),
@@ -623,7 +688,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
               transaction: transaction,
             );
       final resourceEvent = WorkspaceResourceValidation.eventFor(resource);
-      final sequence = workspace.sequence + 1;
+      var sequence = workspace.sequence + 1;
       await _recordEvent(
         session,
         workspaceId: request.workspaceId,
@@ -634,16 +699,30 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         resourceId: resourceEvent.resourceId,
         transaction: transaction,
       );
+      sequence++;
       await _recordEvent(
         session,
         workspaceId: request.workspaceId,
-        sequence: sequence + 1,
+        sequence: sequence,
         userId: userId,
         kind: secret == null ? 'deleted' : 'updated',
         resourceKind: 'secretConfiguredState',
         transaction: transaction,
       );
-      final finalSequence = sequence + 1;
+      for (final resetResource in resetResources) {
+        sequence++;
+        await _recordEvent(
+          session,
+          workspaceId: request.workspaceId,
+          sequence: sequence,
+          userId: userId,
+          kind: 'updated',
+          resourceKind: resetResource.resourceKind.name,
+          resourceId: resetResource.resourceId,
+          transaction: transaction,
+        );
+      }
+      final finalSequence = sequence;
       await CloudWorkspace.db.updateRow(
         session,
         workspace.copyWith(sequence: finalSequence, updatedAt: now),
@@ -686,6 +765,9 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     if (decoded is! Map<String, dynamic> || _containsSecretData(decoded)) {
       _validationFailed();
     }
+    if (operation.resourceKind == WorkspaceResourceKind.mcpServer) {
+      _validateMcpCredentialData(decoded, configured: configured);
+    }
     decoded
       ..remove('hasSecret')
       ..remove('keySuffix')
@@ -701,6 +783,186 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       fieldMask: operation.fieldMask,
       expectedRevision: operation.expectedRevision,
     );
+  }
+
+  void _validateMcpCredentialData(
+    Map<String, dynamic> data, {
+    required bool configured,
+  }) {
+    if (data['name'] is! String ||
+        (data['name'] as String).trim().isEmpty ||
+        data['url'] is! String) {
+      _validationFailed();
+    }
+    try {
+      McpServerPolicy.validateUri(data['url']! as String);
+    } on FormatException {
+      _validationFailed();
+    }
+    final transport = data['transport'];
+    if (transport is! Map ||
+        !const {'streamableHttp', 'sse'}.contains(transport['type']) ||
+        (transport['useHttp2'] != null && transport['useHttp2'] is! bool)) {
+      _validationFailed();
+    }
+    if (data['isEnabled'] != null && data['isEnabled'] is! bool) {
+      _validationFailed();
+    }
+    if (data['authStatus'] != null &&
+        !const {
+          'active',
+          'reauthRequired',
+          'needsReauth',
+          'failed',
+        }.contains(data['authStatus'])) {
+      _validationFailed();
+    }
+    final authType = data['authType'];
+    if (!const {'none', 'bearerToken', 'httpHeaders', 'oauth'}.contains(
+          authType,
+        ) ||
+        configured != (authType != 'none')) {
+      _validationFailed();
+    }
+  }
+
+  void _validateMcpSecret(String dataJson, String? secret) {
+    final data = jsonDecode(dataJson) as Map<String, dynamic>;
+    switch (data['authType']) {
+      case 'none':
+        if (secret != null) _validationFailed();
+      case 'bearerToken':
+        if (secret == null ||
+            secret.isEmpty ||
+            secret.contains(RegExp(r'[\r\n]'))) {
+          _validationFailed();
+        }
+      case 'httpHeaders':
+        try {
+          if (parseMcpHttpHeaders(secret).isEmpty) _validationFailed();
+        } on FormatException {
+          _validationFailed();
+        }
+      case 'oauth':
+        if (secret == null || secret.isEmpty) _validationFailed();
+      default:
+        _validationFailed();
+    }
+  }
+
+  Future<bool> _isLegacyMcpSecretUpdate(
+    Session session, {
+    required WorkspacePatchOperation operation,
+    required int workspaceId,
+    required int? expectedSecretRevision,
+    required WorkspaceSecret? existing,
+    required Transaction transaction,
+  }) async {
+    if (operation.resourceKind != WorkspaceResourceKind.mcpServer ||
+        expectedSecretRevision != null ||
+        existing?.deletedAt != null ||
+        existing == null) {
+      return false;
+    }
+    final resource = await _repository.findResource(
+      session,
+      workspaceId: workspaceId,
+      kind: WorkspaceResourceKind.mcpServer,
+      resourceId: operation.resourceId,
+      transaction: transaction,
+    );
+    if (resource == null || resource.revision != operation.expectedRevision) {
+      return false;
+    }
+    final data = jsonDecode(resource.data);
+
+    return data is Map<String, dynamic> && data['secretRevision'] == null;
+  }
+
+  bool _mcpIdentityChanged(
+    String previousJson,
+    String nextJson, {
+    required bool secretChanged,
+  }) {
+    final previous = jsonDecode(previousJson) as Map<String, dynamic>;
+    final next = jsonDecode(nextJson) as Map<String, dynamic>;
+
+    return previous['url'] != next['url'] ||
+        jsonEncode(previous['transport']) != jsonEncode(next['transport']) ||
+        previous['authType'] != next['authType'] ||
+        secretChanged;
+  }
+
+  Future<List<WorkspaceResource>> _resetMcpPermissions(
+    Session session, {
+    required int workspaceId,
+    required String mcpServerId,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.resourceKind.inSet({
+            WorkspaceResourceKind.tool,
+            WorkspaceResourceKind.toolGroup,
+            WorkspaceResourceKind.toolPermission,
+          }) &
+          table.deletedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final groups = resources.where((resource) {
+      if (resource.resourceKind != WorkspaceResourceKind.toolGroup) {
+        return false;
+      }
+      final data = jsonDecode(resource.data);
+
+      return data is Map<String, dynamic> && data['mcpServerId'] == mcpServerId;
+    });
+    final groupIds = groups.map((group) => group.resourceId).toSet();
+    final tools = resources.where((resource) {
+      if (resource.resourceKind != WorkspaceResourceKind.tool) return false;
+      final data = jsonDecode(resource.data);
+      if (data is! Map<String, dynamic>) return false;
+
+      return data['mcpServerId'] == mcpServerId ||
+          groupIds.contains(data['toolGroupId']);
+    });
+    final toolIds = tools.map((tool) => tool.resourceId).toSet();
+    final changed = <WorkspaceResource>[];
+    for (final resource in resources) {
+      final data = jsonDecode(resource.data);
+      if (data is! Map<String, dynamic> ||
+          data['permissionMode'] == 'alwaysAsk') {
+        continue;
+      }
+      final isAffected = switch (resource.resourceKind) {
+        WorkspaceResourceKind.toolGroup => groupIds.contains(
+          resource.resourceId,
+        ),
+        WorkspaceResourceKind.tool => toolIds.contains(resource.resourceId),
+        WorkspaceResourceKind.toolPermission =>
+          groupIds.contains(data['toolGroupId']) ||
+              toolIds.contains(data['toolId']),
+        _ => false,
+      };
+      if (!isAffected) continue;
+      data['permissionMode'] = 'alwaysAsk';
+      final updated = await WorkspaceResource.db.updateRow(
+        session,
+        resource.copyWith(
+          data: jsonEncode(data),
+          revision: resource.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      changed.add(updated);
+    }
+
+    return changed;
   }
 
   String _credentialKind(WorkspacePatchOperation operation) {

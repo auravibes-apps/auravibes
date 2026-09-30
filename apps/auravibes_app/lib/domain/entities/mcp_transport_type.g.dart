@@ -95,3 +95,17 @@ Map<String, dynamic> _$McpAuthenticationTypeBearerTokenToJson(
   'bearerToken': instance.bearerToken,
   'runtimeType': instance.$type,
 };
+
+McpAuthenticationTypeHttpHeaders _$McpAuthenticationTypeHttpHeadersFromJson(
+  Map<String, dynamic> json,
+) => McpAuthenticationTypeHttpHeaders(
+  headers: Map<String, String>.from(json['headers'] as Map),
+  $type: json['runtimeType'] as String?,
+);
+
+Map<String, dynamic> _$McpAuthenticationTypeHttpHeadersToJson(
+  McpAuthenticationTypeHttpHeaders instance,
+) => <String, dynamic>{
+  'headers': instance.headers,
+  'runtimeType': instance.$type,
+};

@@ -79,6 +79,15 @@ class const _FakeLoadConversationToolSpecsUsecase({
   )).specs;
 
   @override
+  Future<List<ToolSpec>> preview({
+    required String conversationId,
+    required String workspaceId,
+  }) async => (await buildCatalog(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+  )).specs;
+
+  @override
   Future<ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,

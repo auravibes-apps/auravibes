@@ -6,6 +6,8 @@ import 'package:a2ui_core/a2ui_core.dart' as core;
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genui/genui.dart';
@@ -1302,6 +1304,69 @@ void main() {
     expect(jsonDecode(runtime.diagnosticPayloadsFor('assistant-1').single), {
       'rawPayload': payload,
     });
+  });
+
+  test('emits one current passive skill suggestion intent', () async {
+    const catalogRevision =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    final runtime = copyRuntime([
+      {
+        'id': 'root',
+        'component': 'SkillSuggestion',
+        'slug': 'research',
+        'catalogRevision': catalogRevision,
+      },
+    ])..setWorkspaceId('workspace-1');
+    final intents = <ChatSkillSuggestionIntent>[];
+    final subscription = runtime.skillSuggestions.listen(intents.add);
+    addTearDown(subscription.cancel);
+
+    runtime.closeMessage('assistant-1');
+
+    expect(runtime.hasSkillSuggestions, isTrue);
+    expect(
+      runtime.submitSkillSuggestion(
+        surfaceId: 'assistant-1:main',
+        componentId: 'root',
+        action: ChatSkillSuggestionAction.add,
+      ),
+      isTrue,
+    );
+    expect(
+      runtime.submitSkillSuggestion(
+        surfaceId: 'assistant-1:main',
+        componentId: 'root',
+        action: ChatSkillSuggestionAction.add,
+      ),
+      isFalse,
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(intents, hasLength(1));
+    expect(intents.single.action, ChatSkillSuggestionAction.add);
+    expect(intents.single.catalogRevision, catalogRevision);
+
+    runtime.beginGeneration();
+    expect(runtime.hasSkillSuggestions, isFalse);
+    expect(
+      runtime.submitSkillSuggestion(
+        surfaceId: 'assistant-1:main',
+        componentId: 'root',
+        action: ChatSkillSuggestionAction.useNow,
+      ),
+      isFalse,
+    );
+
+    runtime.bindMessage('assistant-2');
+    expect(
+      runtime.submitSkillSuggestion(
+        surfaceId: 'assistant-1:main',
+        componentId: 'root',
+        action: ChatSkillSuggestionAction.useNow,
+      ),
+      isFalse,
+    );
+    expect(intents, hasLength(1));
   });
 
   test('restores developer diagnostic payloads', () {

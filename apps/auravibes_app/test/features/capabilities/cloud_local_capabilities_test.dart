@@ -36,13 +36,14 @@ void main() {
     });
     expect(cloud.capabilities.modelBrowserOAuth, isTrue);
     expect(cloud.capabilities.modelDeviceOAuth, isFalse);
-    expect(cloud.capabilities.mcpTransports, {
-      WorkspaceMcpTransport.streamableHttp,
-    });
-    expect(cloud.capabilities.mcpAuthentication, {
-      WorkspaceMcpAuthentication.none,
-      WorkspaceMcpAuthentication.bearerToken,
-    });
+    expect(
+      cloud.capabilities.mcpTransports,
+      WorkspaceMcpTransport.values.toSet(),
+    );
+    expect(
+      cloud.capabilities.mcpAuthentication,
+      WorkspaceMcpAuthentication.values.toSet(),
+    );
     expect(cloud.capabilities.nativeTools, isFalse);
     expect(cloud.capabilities.skills, isTrue);
     expect(cloud.capabilities.attachments, isTrue);
@@ -69,37 +70,32 @@ void main() {
     },
   );
 
-  test('unsupported cloud paths fail typed before local fallback', () async {
-    final container = ProviderContainer(
-      overrides: [
-        workspaceSessionProvider(cloud).overrideWithValue(cloud),
-        workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
-      ],
-    );
-    addTearDown(container.dispose);
-    final _ = await container.read(
-      workspaceSessionForRouteProvider('mirror').future,
-    );
+  test(
+    'unsupported cloud conversation paths fail before local fallback',
+    () async {
+      final container = ProviderContainer(
+        overrides: [
+          workspaceSessionProvider(cloud).overrideWithValue(cloud),
+          workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
+        ],
+      );
+      addTearDown(container.dispose);
+      final _ = await container.read(
+        workspaceSessionForRouteProvider('mirror').future,
+      );
 
-    expect(
-      () => cloud.capabilities.require(
-        supported: cloud.capabilities.conversationToolOverrides,
-      ),
-      throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
-    );
-    expect(
-      () => cloud.capabilities.require(
-        supported: cloud.capabilities.mcpTransports.contains(
-          WorkspaceMcpTransport.sse,
+      expect(
+        () => cloud.capabilities.require(
+          supported: cloud.capabilities.conversationToolOverrides,
         ),
-      ),
-      throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
-    );
-    expect(
-      () => container
-          .read(mcpFormProvider('mirror').notifier)
-          .setAuthenticationType(.oauth),
-      throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
-    );
-  });
+        throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
+      );
+      expect(
+        () => container
+            .read(mcpFormProvider('mirror').notifier)
+            .setAuthenticationType(.oauth),
+        returnsNormally,
+      );
+    },
+  );
 }

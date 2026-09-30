@@ -1,5 +1,7 @@
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +50,19 @@ class _StubMcpServersRepository implements McpServersRepository {
   @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async =>
       byIdResult;
+
+  @override
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) async {
+    final _ = (serverId: serverId, summary: summary);
+  }
+
+  @override
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update) async {
+    final _ = update;
+  }
 }
 
 void main() {

@@ -67,4 +67,16 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
 
     return await getMcpServerById(id);
   }
+
+  Future<bool> saveTestSummary(String id, String summaryJson) async {
+    final count = await (update(mcpServers)..where((t) => t.id.equals(id)))
+        .write(
+          McpServersCompanion(
+            updatedAt: .new(DateTime.now()),
+            testSummaryJson: .new(summaryJson),
+          ),
+        );
+
+    return count > 0;
+  }
 }

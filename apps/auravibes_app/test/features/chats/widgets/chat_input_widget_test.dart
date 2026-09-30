@@ -2,11 +2,15 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -72,6 +76,8 @@ void main() {
     ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
     ValueListenable<String?>? activeConversation,
+    VoidCallback? onSkillsPress,
+    ConversationSkillSelectorState? skillSelectorState,
   }) {
     return EasyLocalization(
       child: TestProviderScope(
@@ -83,6 +89,11 @@ void main() {
           ),
           if (attachmentService case final service?)
             localChatAttachmentServiceProvider.overrideWithValue(service),
+          if (skillSelectorState case final state?)
+            conversationSkillSelectorProvider(
+              'ws-1',
+              'conversation-1',
+            ).overrideWith((_) async => state),
         ],
         child: Builder(
           builder: (context) {
@@ -99,6 +110,7 @@ void main() {
               reasoningControl: reasoningControl,
               draftToLoad: draftToLoad,
               modalitiesInput: modalitiesInput,
+              onSkillsPress: onSkillsPress,
               onContinueAgent: onContinueAgent,
               continueDisabledHint: continueDisabledHint,
               disabledHint: disabledHint,
@@ -188,6 +200,59 @@ void main() {
     await tester.enterText(find.byType(EditableText), '');
     await tester.pump();
     expect(draftStatuses.last, isFalse);
+  });
+
+  testWidgets('skills control shows selected count and opens picker', (
+    tester,
+  ) async {
+    final conversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(conversation.dispose);
+    var opened = false;
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          onSendMessage: (_) => Future<void>.value(),
+          activeConversation: conversation,
+          onSkillsPress: () => opened = true,
+          skillSelectorState: _skillSelectorState(1),
+        ),
+      );
+
+      final button = find.byKey(const ValueKey<String>('chat_skills_button'));
+      expect(find.byIcon(Icons.psychology_alt_outlined), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(tester.getSemantics(button).label, 'Skills, 1 added');
+
+      await tester.tap(button);
+      expect(opened, isTrue);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('skills count stays visible at zero and narrow width', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final conversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(conversation.dispose);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) => Future<void>.value(),
+        activeConversation: conversation,
+        onSkillsPress: _noop,
+        skillSelectorState: _skillSelectorState(0),
+      ),
+    );
+    expect(find.text('0'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('reports loaded attachment as a draft', (tester) async {
@@ -1518,6 +1583,24 @@ void main() {
     expect(find.text('sheet agent'), findsOneWidget);
   });
 }
+
+ConversationSkillSelectorState _skillSelectorState(int count) =>
+    ConversationSkillSelectorState(
+      loaded: [
+        for (var index = 0; index < count; index++)
+          AvailableSkill(
+            source: SkillSource.user,
+            id: 'skill-$index',
+            slug: 'skill-$index',
+            title: 'Skill $index',
+            description: 'Description $index',
+            content: '',
+            kind: .template,
+            credentialReadiness: .ready,
+          ),
+      ],
+      loadable: const [],
+    );
 
 void _noop() {
   final _ = Object();

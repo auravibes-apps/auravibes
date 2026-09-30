@@ -2,6 +2,8 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
@@ -69,4 +71,68 @@ void main() {
       verify(() => selections.getById('selection')).called(1);
     },
   );
+
+  test('previews selected conversation model tool capability', () async {
+    final conversations = _ConversationRepository();
+    final selections = _ModelSelectionStore();
+    var supportsToolCalls = true;
+    when(() => conversations.getConversationById('conversation')).thenAnswer(
+      (_) async => ConversationEntity(
+        id: 'conversation',
+        title: 'title',
+        workspaceId: 'workspace',
+        isPinned: false,
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+        modelId: 'selection',
+      ),
+    );
+    when(() => selections.getById('selection'))
+        .thenAnswer((_) async => _model(supportsToolCalls));
+    final adapter = AppAgentContinuationAdapter(
+      conversationRepository: conversations,
+      messageRepository: _MessageRepository(),
+      modelSelectionStore: (_) async => selections,
+      apiModelRepository: _ApiModelRepository(),
+      selectPromptMessagesUsecase: _SelectPromptMessages(),
+      buildSkillContextMessagesUsecase: _BuildSkillContext(),
+      loadApprovalStates: ({
+        required conversationId,
+        required workspaceId,
+      }) async => const {},
+      loadConversationToolSpecsUsecase: _LoadTools(),
+    );
+
+    expect(await adapter.supportsToolsForConversation('conversation'), isTrue);
+    supportsToolCalls = false;
+    expect(await adapter.supportsToolsForConversation('conversation'), isFalse);
+    verify(() => conversations.getConversationById('conversation')).called(2);
+    verify(() => selections.getById('selection')).called(2);
+  });
 }
+
+WorkspaceModelSelectionWithConnectionEntity _model(bool supportsToolCalls) =>
+    WorkspaceModelSelectionWithConnectionEntity(
+      workspaceModelSelection: .new(
+        id: 'selection',
+        modelId: 'model-1',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        modelConnectionId: 'credential-1',
+        supportsToolCalls: supportsToolCalls,
+      ),
+      modelConnection: .new(
+        id: 'credential-1',
+        name: 'Main credential',
+        modelId: 'model-1',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        workspaceId: 'workspace',
+        hasKey: true,
+      ),
+      modelsProvider: const ApiModelProviderEntity(
+        id: 'provider-1',
+        name: 'OpenAI',
+        type: .openai,
+      ),
+    );

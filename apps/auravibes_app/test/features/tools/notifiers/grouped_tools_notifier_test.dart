@@ -4,6 +4,8 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -303,6 +305,16 @@ class _FakeMcpServersRepository implements McpServersRepository {
 
   @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async => null;
+
+  @override
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update) =>
+      throw UnimplementedError();
 
   @override
   Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId) {

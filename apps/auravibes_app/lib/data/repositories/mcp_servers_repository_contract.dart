@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 
@@ -18,4 +20,9 @@ abstract interface class McpServersRepositoryContract {
     String workspaceId,
   );
   Future<McpServerEntity?> getMcpServerById(String serverId);
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  });
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update);
 }

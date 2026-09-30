@@ -44,6 +44,8 @@ conversation:
   - cancelTurn:
   - compact:
   - restoreCompactionCheckpoint:
+mcpCatalog:
+  - list:
 mcpServer:
   - verify:
   - create:

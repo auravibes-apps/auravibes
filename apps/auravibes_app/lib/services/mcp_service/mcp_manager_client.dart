@@ -309,6 +309,7 @@ Future<mcp.ClientTransport> _createSseTransportConfig(
 
   return mcp.SseAuthClientTransport.create(
     serverUrl: server.url,
+    headers: _httpHeaders(authType),
     oauthToken: _getOauthToken(authType),
     oauthClient: _oauthClient(authType),
     bearerToken: _bearerToken(authType),
@@ -406,6 +407,7 @@ Map<String, String> _httpHeaders(McpAuthenticationType authType) =>
         'Bearer token is required'
         ' for bearer token authentication.',
       ),
+      McpAuthenticationTypeHttpHeaders(:final headers) => headers,
       McpAuthenticationTypeNone() ||
       McpAuthenticationTypeOAuth() => <String, String>{},
     };
@@ -440,13 +442,17 @@ mcp.OAuthConfig? _getOauthConfig(McpAuthenticationType authType) =>
           tokenEndpoint: tokenEndpoint,
           clientId: clientId,
         ),
-      McpAuthenticationTypeNone() || McpAuthenticationTypeBearerToken() => null,
+      McpAuthenticationTypeNone() ||
+      McpAuthenticationTypeBearerToken() ||
+      McpAuthenticationTypeHttpHeaders() => null,
     };
 
 mcp.OAuthToken? _getOauthToken(McpAuthenticationType authType) =>
     switch (authType) {
       McpAuthenticationTypeOAuth(:final token) => _mcpOAuthToken(token),
-      McpAuthenticationTypeNone() || McpAuthenticationTypeBearerToken() => null,
+      McpAuthenticationTypeNone() ||
+      McpAuthenticationTypeBearerToken() ||
+      McpAuthenticationTypeHttpHeaders() => null,
     };
 
 mcp.OAuthToken _mcpOAuthToken(OAuthTokenEntity token) => .new(

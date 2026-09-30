@@ -205,9 +205,10 @@
       "attempted_at": "Tested {time}",
       "recovery_auth": "Reconnect this MCP server to restore access.",
       "recovery_network": "Check your network and try the connection test again.",
-      "recovery_protocol": "Review this MCP server in Tools. To change its URL or authentication, add a replacement connection.",
+      "recovery_protocol": "Review this MCP server's connection settings.",
       "retry": "Retry test",
-      "open_tools": "Open Tools"
+      "open_settings": "Open settings",
+      "result_details": "Found {count} tools in {duration} ms"
     },
     "diagnostics": {
       "transport": "Transport",
@@ -679,6 +680,8 @@
   "skills_selector": {
     "title": "Conversation skills",
     "error": "Error loading conversation skills",
+    "search_placeholder": "Search skills",
+    "search_empty": "No skills match your search",
     "loaded_title": "Loaded",
     "loaded_empty": "No skills loaded",
     "available_title": "Available",
@@ -687,9 +690,31 @@
     "credentials_missing": "Missing credentials",
     "credentials_unknown": "Credential status unknown",
     "context_added": "Added",
+    "context_preparing": "Preparing context…",
     "context_ready": "Ready in context",
     "context_needs_context": "Needs context",
-    "context_error": "Context error"
+    "context_error": "Context error",
+    "use_now_request": "Use the {skill} skill to answer my latest request.",
+    "using": "Using…",
+    "use_now": "Use now",
+    "adding": "Adding…",
+    "add": "Add",
+    "credential_setup": "Set up credentials",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "error_credentials": "Set up skill credentials before using it.",
+    "error_metadata": "Skill details changed. Refresh skills and try again.",
+    "error_preparation": "Could not prepare skill context. Retry.",
+    "error_stale": "Skill suggestion is out of date. Refresh skills and try again.",
+    "error_unavailable": "Skill is unavailable right now.",
+    "error_unauthorized": "This skill is unavailable in this conversation.",
+    "error_credentials_unknown": "Could not verify skill credentials. Check the connection and retry.",
+    "suggestion": "Suggested skill",
+    "suggestion_unavailable": "This skill suggestion is unavailable.",
+    "suggestion_open_picker": "Open skills"
+  },
+  "chat_input": {
+    "skills_control_count": "Skills, {count} added"
   },
   "skills_tool": {
     "section_title": "Template tools",
@@ -1023,6 +1048,31 @@
     "no_recent_chats": "Chats will appear here",
     "view_all_chats": "View All"
   },
+  "mcp_catalog": {
+    "back": "Back",
+    "browse": "Browse MCP catalog",
+    "title": "MCP catalog",
+    "search": "Search name or description",
+    "transport": "Transport",
+    "authentication": "Authentication",
+    "all": "All",
+    "empty": "No MCP catalog entries are available.",
+    "no_match": "No entries match these filters.",
+    "load_error": "Could not load the MCP catalog. Try again.",
+    "sign_in_required": "Sign in to a cloud account to browse the MCP catalog.",
+    "option": "Connection option",
+    "required": "Required",
+    "optional": "Optional",
+    "help": "Field help",
+    "verify": "Verify connection",
+    "install": "Add to workspace",
+    "verification_success": "Connection verified. {count} tools discovered.",
+    "verification_error": "Connection verification failed. Check the fields and retry.",
+    "install_success": "MCP connection added to this workspace.",
+    "install_error": "Could not add the MCP connection. Retry.",
+    "missing_fields": "Complete all required fields.",
+    "unsupported_option": "This option is unavailable in this workspace."
+  },
   "mcp_modal": {
     "title": "Add MCP Server",
     "add_mcp_tooltip": "Add MCP Server",
@@ -1033,7 +1083,8 @@
     "auth": {
       "none": "None",
       "oauth": "OAuth",
-      "bearer_token": "Bearer Token"
+      "bearer_token": "Bearer Token",
+      "http_headers": "HTTP Headers"
     },
     "oauth": {
       "configuration": "MCP OAuth is not configured.",
@@ -1092,6 +1143,9 @@
         "label": "Bearer Token",
         "placeholder": "Enter your bearer token",
         "hint": "This token will be stored securely"
+      },
+      "http_headers": {
+        "label": "HTTP Headers"
       }
     },
     "save_success": "MCP server configuration saved",
@@ -1101,6 +1155,10 @@
     "verification_required": "Verify the connection before saving.",
     "verification_expired": "Verification expired. Verify the connection again.",
     "legacy_sse_unavailable": "Streamable HTTP was rejected. This endpoint may require legacy SSE, which the web app cannot use. Connect from a native app or configure the server for Streamable HTTP."
+  },
+  "mcp_edit": {
+    "secret_saved": "Saved securely",
+    "secret_hint": "Leave blank to keep the saved value. Enter a replacement to change it."
   },
   "compaction": {
     "settings": {

@@ -28,7 +28,6 @@ class const CloudConversationSkillSelection({
   required final String conversationId,
   required final String skillId,
   required final bool isAppSkill,
-  required final bool selected,
   required final int? expectedRevision,
 });
 
@@ -153,32 +152,20 @@ Future<void> _patchConversationSkill(
 WorkspacePatchOperation _conversationSkillPatch(
   CloudConversationSkillSelection selection,
 ) => WorkspacePatchOperation(
-  operation: _conversationSkillOperation(selection),
+  operation: selection.expectedRevision == null
+      ? WorkspacePatchOperationKind.create
+      : WorkspacePatchOperationKind.update,
   resourceKind: .conversationSkillSelection,
   resourceId: '${selection.conversationId}:${selection.skillId}',
-  data: _conversationSkillData(selection),
+  data: jsonEncode({
+    'id': '${selection.conversationId}:${selection.skillId}',
+    'conversationId': selection.conversationId,
+    'skillId': selection.skillId,
+    if (selection.isAppSkill) 'source': 'app',
+  }),
   fieldMask: const [],
   expectedRevision: selection.expectedRevision,
 );
-
-WorkspacePatchOperationKind _conversationSkillOperation(
-  CloudConversationSkillSelection selection,
-) {
-  if (!selection.selected) return .delete;
-  if (selection.expectedRevision == null) return .create;
-
-  return .update;
-}
-
-String? _conversationSkillData(CloudConversationSkillSelection selection) =>
-    selection.selected
-    ? jsonEncode({
-        'id': '${selection.conversationId}:${selection.skillId}',
-        'conversationId': selection.conversationId,
-        'skillId': selection.skillId,
-        if (selection.isAppSkill) 'source': 'app',
-      })
-    : null;
 
 ({CompactionSettings settings, int? revision}) _compactionSettingsState(
   List<WorkspaceResource> resources,

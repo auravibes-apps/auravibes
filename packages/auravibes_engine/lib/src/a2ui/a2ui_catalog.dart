@@ -66,6 +66,17 @@ const a2uiChatIconNames = <String>[
 const Map<String, Object?> _a2uiIdSchema = {'type': 'string'};
 const Map<String, Object?> _a2uiComponentSchema = {'type': 'string'};
 const Map<String, Object?> _a2uiStringSchema = {'type': 'string'};
+const Map<String, Object?> _a2uiSkillSlugSchema = {
+  'type': 'string',
+  'minLength': 1,
+  'maxLength': 128,
+};
+const Map<String, Object?> _a2uiCatalogRevisionSchema = {
+  'type': 'string',
+  'minLength': 64,
+  'maxLength': 64,
+  'pattern': r'^[0-9a-f]{64}$',
+};
 const Map<String, Object?> _a2uiNumberSchema = {'type': 'number'};
 const Map<String, Object?> _a2uiIntegerSchema = {'type': 'integer'};
 const Map<String, Object?> _a2uiReferenceSchema = {
@@ -1104,6 +1115,15 @@ const a2uiChatComponentSchemas = <String, Map<String, Object?>>{
       'child': _a2uiStringSchema,
     },
   },
+  'SkillSuggestion': {
+    'type': 'object',
+    'required': ['id', 'component', 'slug', 'catalogRevision'],
+    'properties': {
+      ..._a2uiBaseProperties,
+      'slug': _a2uiSkillSlugSchema,
+      'catalogRevision': _a2uiCatalogRevisionSchema,
+    },
+  },
 };
 
 const a2uiChatComponentExamples = <String, Map<String, Object?>>{
@@ -1354,5 +1374,12 @@ const a2uiChatComponentExamples = <String, Map<String, Object?>>{
     'component': 'Section',
     'title': 'Summary',
     'child': 'section-content',
+  },
+  'SkillSuggestion': {
+    'id': 'skill-suggestion',
+    'component': 'SkillSuggestion',
+    'slug': 'research',
+    'catalogRevision':
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   },
 };

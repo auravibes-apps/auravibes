@@ -23,16 +23,66 @@ class const TestMcpConnectionUsecase({
 }) {
   static const _timeout = Duration(seconds: 10);
 
-  Future<McpConnectionTestResult> call(String serverId) async {
-    final testedAt = clock();
-    McpTransportType? transport;
-    try {
-      final server = await _requiredServer(serverId);
-      transport = server.transport;
+  Future<McpConnectionTestResult> call(String serverId) =>
+      _testAndPersist(serverId);
 
-      return await _runConnectionTest(server, testedAt);
+  Future<McpConnectionTestResult> _testAndPersist(String serverId) async {
+    final testedAt = clock();
+    final outcome = await _testWithDuration(serverId, testedAt);
+    await _persistSummary(serverId, outcome.server, outcome.result);
+
+    return outcome.result;
+  }
+
+  Future<({McpServerEntity? server, McpConnectionTestResult result})>
+  _testWithDuration(String serverId, DateTime testedAt) async {
+    final stopwatch = Stopwatch()..start();
+    final outcome = await _testSafely(serverId, testedAt);
+    stopwatch.stop();
+
+    return (
+      server: outcome.server,
+      result: outcome.result.copyWithDuration(stopwatch.elapsedMilliseconds),
+    );
+  }
+
+  Future<void> _persistSummary(
+    String serverId,
+    McpServerEntity? server,
+    McpConnectionTestResult result,
+  ) async {
+    if (server case final server?) {
+      await repository.saveMcpTestSummary(
+        serverId: serverId,
+        summary: .new(
+          status: result.status.name,
+          testedAt: result.testedAt,
+          transport: server.transport,
+          toolCount: result.toolCount,
+          durationMilliseconds: result.durationMilliseconds,
+        ),
+      );
+    }
+  }
+
+  Future<({McpServerEntity? server, McpConnectionTestResult result})>
+  _testSafely(String serverId, DateTime testedAt) async {
+    McpTransportType? transport;
+    McpServerEntity? server;
+    try {
+      final loadedServer = await _requiredServer(serverId);
+      server = loadedServer;
+      transport = loadedServer.transport;
+
+      return (
+        server: loadedServer,
+        result: await _runConnectionTest(loadedServer, testedAt),
+      );
     } on Object catch (error) {
-      return _failedResult(error, testedAt, transport);
+      return (
+        server: server,
+        result: _failedResult(error, testedAt, transport),
+      );
     }
   }
 
@@ -42,17 +92,19 @@ class const TestMcpConnectionUsecase({
   ) async {
     final client = await _connect(server);
     try {
-      await _discoverTools(client);
+      final toolCount = await _discoverTools(client);
+
+      return (
+        status: McpConnectionTestStatus.success,
+        testedAt: testedAt,
+        transport: server.transport,
+        toolCount: toolCount,
+        durationMilliseconds: 0,
+        errorDetails: null,
+      );
     } finally {
       await manager.disconnect(client);
     }
-
-    return (
-      status: McpConnectionTestStatus.success,
-      testedAt: testedAt,
-      transport: server.transport,
-      errorDetails: null,
-    );
   }
 
   Future<McpServerEntity> _requiredServer(String serverId) async {
@@ -77,9 +129,8 @@ class const TestMcpConnectionUsecase({
     );
   }
 
-  Future<void> _discoverTools(McpManagerClient client) async {
-    final _ = await manager.getTools(client).timeout(_timeout);
-  }
+  Future<int> _discoverTools(McpManagerClient client) async =>
+      (await manager.getTools(client).timeout(_timeout)).length;
 }
 
 McpConnectionTestResult _failedResult(
@@ -90,8 +141,21 @@ McpConnectionTestResult _failedResult(
   status: _statusFor(error),
   testedAt: testedAt,
   transport: transport,
+  toolCount: 0,
+  durationMilliseconds: 0,
   errorDetails: LogRedaction.redact(error.toString()),
 );
+
+extension on McpConnectionTestResult {
+  McpConnectionTestResult copyWithDuration(int milliseconds) => (
+    status: status,
+    testedAt: testedAt,
+    transport: transport,
+    toolCount: toolCount,
+    durationMilliseconds: milliseconds,
+    errorDetails: errorDetails,
+  );
+}
 
 Future<void> _disconnectAfterLateConnect(
   Future<McpManagerClient> pendingConnection,

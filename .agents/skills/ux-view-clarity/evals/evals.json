@@ -42,6 +42,12 @@
       "prompt": "Fix the typo in the Markdown architecture guide.",
       "expected_output": "Does not load ux-view-clarity because the change is documentation-only.",
       "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "A Flutter screen golden passes on macOS but fails on Linux CI with only text and icon edge pixels changed. Make CI pass without dropping visual coverage.",
+      "expected_output": "Loads ux-view-clarity, verifies platform rasterization differences, keeps platform-specific baselines, and validates each on its target platform without dropping the golden assertion or redesigning the screen.",
+      "files": []
     }
   ]
 }

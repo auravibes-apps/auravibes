@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -29,8 +30,8 @@ typedef _AdditionalConnectionLists = ({
 
 typedef _McpCredentialItemRequest = ({
   McpServersTable server,
-  ServiceConnectionTable credential,
-  ({ServiceConnectionMetadata metadata, bool hasError}) metadataResult,
+  ServiceConnectionTable? credential,
+  ({ServiceConnectionMetadata metadata, bool hasError})? metadataResult,
 });
 
 class const WatchServiceConnectionListItemsUsecase(
@@ -63,7 +64,7 @@ class const WatchServiceConnectionListItemsUsecase(
     String workspaceId,
   ) {
     final query = _database.select(_database.mcpServers).join([
-      innerJoin(
+      leftOuterJoin(
         _database.serviceConnections,
         _database.serviceConnections.id.equalsExp(
           _database.mcpServers.serviceConnectionId,
@@ -103,13 +104,13 @@ class const WatchServiceConnectionListItemsUsecase(
 
   ServiceConnectionListItem _mcpCredentialItem(TypedResult row) {
     final server = row.readTable(_database.mcpServers);
-    final credential = row.readTable(_database.serviceConnections);
+    final credential = row.readTableOrNull(_database.serviceConnections);
 
     return ServiceConnectionListItem.fromMcpCredential(
       _buildMcpCredentialItem((
         server: server,
         credential: credential,
-        metadataResult: _decodeMetadata(credential),
+        metadataResult: credential == null ? null : _decodeMetadata(credential),
       )),
     );
   }
@@ -122,8 +123,8 @@ class const WatchServiceConnectionListItemsUsecase(
     canRefresh: _canRefresh(request.credential),
   ).value;
 
-  bool _canRefresh(ServiceConnectionTable credential) =>
-      credential.authenticationType == ServiceAuthenticationTypeTable.oauth2;
+  bool _canRefresh(ServiceConnectionTable? credential) =>
+      credential?.authenticationType == ServiceAuthenticationTypeTable.oauth2;
 
   ({ServiceConnectionMetadata metadata, bool hasError}) _decodeMetadata(
     ServiceConnectionTable credential,
@@ -154,22 +155,28 @@ class _McpCredentialItem {
     DateTime now, {
     required bool canRefresh,
   }) : value = (
-         id: request.credential.id,
-         workspaceId: request.credential.workspaceId,
+         id: request.server.id,
+         workspaceId: request.server.workspaceId,
          name: request.server.name,
          url: request.server.url,
          mcpServerId: request.server.id,
          transport: request.server.transport,
-         authenticationType: request.credential.authenticationType.value,
-         isEnabled: request.credential.isEnabled,
-         authStatus: request.credential.authStatus,
-         expiresAt: request.credential.expiresAt,
-         lastRefreshedAt: request.credential.lastRefreshedAt,
-         lastAuthError: request.credential.lastAuthError,
-         metadata: request.metadataResult.metadata,
+         authenticationType:
+             request.credential?.authenticationType.value ?? 'none',
+         isEnabled: request.credential?.isEnabled ?? true,
+         authStatus: request.credential?.authStatus,
+         expiresAt: request.credential?.expiresAt,
+         lastRefreshedAt: request.credential?.lastRefreshedAt,
+         lastAuthError: request.credential?.lastAuthError,
+         metadata:
+             request.metadataResult?.metadata ??
+             const ServiceConnectionMetadata(),
          canRefresh: canRefresh,
          now: now,
-         hasMetadataError: request.metadataResult.hasError,
+         hasMetadataError: request.metadataResult?.hasError ?? false,
+         lastTestSummary: McpConnectionTestSummary.fromJson(
+           request.server.testSummaryJson,
+         ),
        );
 
   final ServiceConnectionMcpCredential value;

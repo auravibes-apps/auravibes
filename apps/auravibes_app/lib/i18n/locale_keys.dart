@@ -290,8 +290,10 @@ abstract class LocaleKeys {
       'service_connections.test.recovery_protocol';
   static const service_connections_test_retry =
       'service_connections.test.retry';
-  static const service_connections_test_open_tools =
-      'service_connections.test.open_tools';
+  static const service_connections_test_open_settings =
+      'service_connections.test.open_settings';
+  static const service_connections_test_result_details =
+      'service_connections.test.result_details';
   static const service_connections_diagnostics_transport =
       'service_connections.diagnostics.transport';
   static const service_connections_diagnostics_category =
@@ -948,6 +950,9 @@ abstract class LocaleKeys {
   static const skills_resource_content_empty = 'skills_resource.content_empty';
   static const skills_selector_title = 'skills_selector.title';
   static const skills_selector_error = 'skills_selector.error';
+  static const skills_selector_search_placeholder =
+      'skills_selector.search_placeholder';
+  static const skills_selector_search_empty = 'skills_selector.search_empty';
   static const skills_selector_loaded_title = 'skills_selector.loaded_title';
   static const skills_selector_loaded_empty = 'skills_selector.loaded_empty';
   static const skills_selector_available_title =
@@ -961,10 +966,42 @@ abstract class LocaleKeys {
   static const skills_selector_credentials_unknown =
       'skills_selector.credentials_unknown';
   static const skills_selector_context_added = 'skills_selector.context_added';
+  static const skills_selector_context_preparing =
+      'skills_selector.context_preparing';
   static const skills_selector_context_ready = 'skills_selector.context_ready';
   static const skills_selector_context_needs_context =
       'skills_selector.context_needs_context';
   static const skills_selector_context_error = 'skills_selector.context_error';
+  static const skills_selector_use_now_request =
+      'skills_selector.use_now_request';
+  static const skills_selector_using = 'skills_selector.using';
+  static const skills_selector_use_now = 'skills_selector.use_now';
+  static const skills_selector_adding = 'skills_selector.adding';
+  static const skills_selector_add = 'skills_selector.add';
+  static const skills_selector_credential_setup =
+      'skills_selector.credential_setup';
+  static const skills_selector_retry = 'skills_selector.retry';
+  static const skills_selector_refresh = 'skills_selector.refresh';
+  static const skills_selector_error_credentials =
+      'skills_selector.error_credentials';
+  static const skills_selector_error_metadata =
+      'skills_selector.error_metadata';
+  static const skills_selector_error_preparation =
+      'skills_selector.error_preparation';
+  static const skills_selector_error_stale = 'skills_selector.error_stale';
+  static const skills_selector_error_unavailable =
+      'skills_selector.error_unavailable';
+  static const skills_selector_error_unauthorized =
+      'skills_selector.error_unauthorized';
+  static const skills_selector_error_credentials_unknown =
+      'skills_selector.error_credentials_unknown';
+  static const skills_selector_suggestion = 'skills_selector.suggestion';
+  static const skills_selector_suggestion_unavailable =
+      'skills_selector.suggestion_unavailable';
+  static const skills_selector_suggestion_open_picker =
+      'skills_selector.suggestion_open_picker';
+  static const chat_input_skills_control_count =
+      'chat_input.skills_control_count';
   static const skills_tool_section_title = 'skills_tool.section_title';
   static const skills_tool_empty = 'skills_tool.empty';
   static const skills_tool_create_title = 'skills_tool.create_title';
@@ -1321,6 +1358,32 @@ abstract class LocaleKeys {
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';
+  static const mcp_catalog_back = 'mcp_catalog.back';
+  static const mcp_catalog_browse = 'mcp_catalog.browse';
+  static const mcp_catalog_title = 'mcp_catalog.title';
+  static const mcp_catalog_search = 'mcp_catalog.search';
+  static const mcp_catalog_transport = 'mcp_catalog.transport';
+  static const mcp_catalog_authentication = 'mcp_catalog.authentication';
+  static const mcp_catalog_all = 'mcp_catalog.all';
+  static const mcp_catalog_empty = 'mcp_catalog.empty';
+  static const mcp_catalog_no_match = 'mcp_catalog.no_match';
+  static const mcp_catalog_load_error = 'mcp_catalog.load_error';
+  static const mcp_catalog_sign_in_required = 'mcp_catalog.sign_in_required';
+  static const mcp_catalog_option = 'mcp_catalog.option';
+  static const mcp_catalog_required = 'mcp_catalog.required';
+  static const mcp_catalog_optional = 'mcp_catalog.optional';
+  static const mcp_catalog_help = 'mcp_catalog.help';
+  static const mcp_catalog_verify = 'mcp_catalog.verify';
+  static const mcp_catalog_install = 'mcp_catalog.install';
+  static const mcp_catalog_verification_success =
+      'mcp_catalog.verification_success';
+  static const mcp_catalog_verification_error =
+      'mcp_catalog.verification_error';
+  static const mcp_catalog_install_success = 'mcp_catalog.install_success';
+  static const mcp_catalog_install_error = 'mcp_catalog.install_error';
+  static const mcp_catalog_missing_fields = 'mcp_catalog.missing_fields';
+  static const mcp_catalog_unsupported_option =
+      'mcp_catalog.unsupported_option';
   static const mcp_modal_title = 'mcp_modal.title';
   static const mcp_modal_add_mcp_tooltip = 'mcp_modal.add_mcp_tooltip';
   static const mcp_modal_transport_sse = 'mcp_modal.transport.sse';
@@ -1329,6 +1392,7 @@ abstract class LocaleKeys {
   static const mcp_modal_auth_none = 'mcp_modal.auth.none';
   static const mcp_modal_auth_oauth = 'mcp_modal.auth.oauth';
   static const mcp_modal_auth_bearer_token = 'mcp_modal.auth.bearer_token';
+  static const mcp_modal_auth_http_headers = 'mcp_modal.auth.http_headers';
   static const mcp_modal_oauth_configuration = 'mcp_modal.oauth.configuration';
   static const mcp_modal_oauth_client_id_required =
       'mcp_modal.oauth.client_id_required';
@@ -1389,6 +1453,8 @@ abstract class LocaleKeys {
       'mcp_modal.fields.bearer_token.placeholder';
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
+  static const mcp_modal_fields_http_headers_label =
+      'mcp_modal.fields.http_headers.label';
   static const mcp_modal_save_success = 'mcp_modal.save_success';
   static const mcp_modal_test_connection = 'mcp_modal.test_connection';
   static const mcp_modal_test_connection_success =
@@ -1401,6 +1467,8 @@ abstract class LocaleKeys {
       'mcp_modal.verification_expired';
   static const mcp_modal_legacy_sse_unavailable =
       'mcp_modal.legacy_sse_unavailable';
+  static const mcp_edit_secret_saved = 'mcp_edit.secret_saved';
+  static const mcp_edit_secret_hint = 'mcp_edit.secret_hint';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
   static const compaction_settings_model_budgets_title =

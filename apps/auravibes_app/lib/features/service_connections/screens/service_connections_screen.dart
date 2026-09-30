@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/features/models/notifiers/model_catalog_sync_notifier.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_diagnostic_report.dart';
@@ -10,6 +11,7 @@ import 'package:auravibes_app/features/service_connections/models/service_connec
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
+import 'package:auravibes_app/features/service_connections/widgets/mcp_catalog_browser.dart';
 import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -236,6 +238,16 @@ void _openCreateConnection(BuildContext context, String workspaceId) =>
       ),
     );
 
+Future<void> _openMcpCatalog(BuildContext context, String workspaceId) async {
+  final installed = await McpCatalogBrowser.show(context, workspaceId);
+  if (installed != true || !context.mounted) return;
+  final _ = AuraSnackBars.show(
+    context: context,
+    content: const TextLocale(LocaleKeys.mcp_catalog_install_success),
+    variant: .success,
+  );
+}
+
 class const _ServiceConnectionsView({
   required final AsyncValue<List<ServiceConnectionListItem>> connectionsAsync,
   required final VoidCallback onAddConnection,
@@ -387,6 +399,11 @@ class const _ServiceConnectionsAppBar({
       title: const TextLocale(LocaleKeys.service_connections_title),
       actions: [
         _SyncModelCatalogButton(workspaceId: workspaceId),
+        AuraIconButton(
+          icon: Icons.hub_outlined,
+          onPressed: () => unawaited(_openMcpCatalog(context, workspaceId)),
+          tooltip: LocaleKeys.mcp_catalog_browse.tr(context: context),
+        ),
         _ConnectionsAddButton(onPressed: onAddConnection),
       ],
       leading: const _ConnectionsBackButton(),
@@ -928,7 +945,7 @@ class _McpConnectionTestControlState
     return _McpTestControlContents(
       state: (
         connection: widget.connection,
-        result: _result,
+        result: _result ?? _storedResult(widget.connection.lastTestSummary),
         isTesting: _testing,
         onTest: () => unawaited(_test()),
         onViewDetails: (result) => unawaited(_showDetails(result)),
@@ -966,6 +983,8 @@ class _McpConnectionTestControlState
       status: .unknown,
       testedAt: .now(),
       transport: widget.connection.transport,
+      toolCount: 0,
+      durationMilliseconds: 0,
       errorDetails: error.runtimeType.toString(),
     ));
   }
@@ -977,6 +996,19 @@ class _McpConnectionTestControlState
         errorMessage: result.errorDetails,
         copyText: () => _mcpDiagnosticReportText(context, .fromTest(result)),
       );
+}
+
+McpConnectionTestResult? _storedResult(McpConnectionTestSummary? summary) {
+  if (summary == null) return null;
+
+  return (
+    status: McpConnectionTestStatus.values.byName(summary.status),
+    testedAt: summary.testedAt,
+    transport: summary.transport,
+    toolCount: summary.toolCount,
+    durationMilliseconds: summary.durationMilliseconds,
+    errorDetails: null,
+  );
 }
 
 class const _McpTestControlContents({
@@ -1058,12 +1090,8 @@ class const _McpTestResultSummary({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       TextLocale(_mcpTestSummaryKey(result.status)),
-      Text(
-        LocaleKeys.service_connections_test_attempted_at.tr(
-          namedArgs: {'time': _localTestTime(context, result.testedAt)},
-          context: context,
-        ),
-      ),
+      _McpTestAttemptedAt(result: result),
+      _McpTestMetrics(result: result),
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
@@ -1152,21 +1180,58 @@ class const _McpTestRecovery({
   String _recoveryLabelKey() => switch (status) {
     .authentication => LocaleKeys.service_connections_action_reconnect,
     .network => LocaleKeys.service_connections_test_retry,
-    .protocol => LocaleKeys.service_connections_test_open_tools,
+    .protocol => LocaleKeys.service_connections_test_open_settings,
     .success || .unknown => LocaleKeys.common_close,
   };
 
   VoidCallback _recoveryAction(BuildContext context, WidgetRef ref) =>
       switch (status) {
-        .authentication => () => unawaited(
-          _reconnectMcpServer(context, ref, connection),
-        ),
+        .authentication => _mcpReconnectAction(context, ref, connection),
         .network || .success || .unknown => onRetry,
-        .protocol => () => context.push<void>(
-          '/workspaces/${connection.workspaceId}/more/tools',
-        ),
+        .protocol => _mcpSettingsAction(context, connection),
       };
 }
+
+class const _McpTestAttemptedAt({required final McpConnectionTestResult result})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.service_connections_test_attempted_at.tr(
+      namedArgs: {'time': _localTestTime(context, result.testedAt)},
+      context: context,
+    ),
+  );
+}
+
+class const _McpTestMetrics({required final McpConnectionTestResult result})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Text(
+    LocaleKeys.service_connections_test_result_details.tr(
+      namedArgs: {
+        'count': '${result.toolCount}',
+        'duration': '${result.durationMilliseconds}',
+      },
+      context: context,
+    ),
+  );
+}
+
+VoidCallback _mcpReconnectAction(
+  BuildContext context,
+  WidgetRef ref,
+  ServiceConnectionListItem connection,
+) =>
+    () => unawaited(_reconnectMcpServer(context, ref, connection));
+
+VoidCallback _mcpSettingsAction(
+  BuildContext context,
+  ServiceConnectionListItem connection,
+) =>
+    () => context.push<void>(
+      '/workspaces/${connection.workspaceId}/more/service-connections/'
+      '${connection.mcpServerId ?? connection.id}',
+    );
 
 String _localTestTime(BuildContext context, DateTime attemptedAt) {
   final date = attemptedAt.toLocal();
@@ -1505,7 +1570,8 @@ Future<void> _showStoredMcpErrorDetails(
 
 bool _canEditConnection(ServiceConnectionListItem connection) {
   return connection.kind == ServiceConnectionListItemKind.modelProvider ||
-      connection.kind == ServiceConnectionListItemKind.skillCredential;
+      connection.kind == ServiceConnectionListItemKind.skillCredential ||
+      connection.kind == ServiceConnectionListItemKind.mcpServer;
 }
 
 bool _canDeleteConnection(ServiceConnectionListItem connection) {
@@ -1542,11 +1608,13 @@ AuraPopupMenuItem _editMenuItem(
   BuildContext context,
   ServiceConnectionListItem connection,
 ) {
+  final connectionId = connection.mcpServerId ?? connection.id;
+
   return AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.common_edit),
     onTap: () => context.push<bool>(
       '/workspaces/${connection.workspaceId}/more/'
-      'service-connections/${connection.id}',
+      'service-connections/$connectionId',
     ),
     leading: const AuraIcon(Icons.edit_outlined),
   );

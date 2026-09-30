@@ -19,7 +19,9 @@ AppSkillDefinition a2uiSkillDefinitionForComponents(
     interactionModes: const {'passive'},
   );
   final formsProfile = A2uiChatPromptProfile(
-    supportedComponentIds: componentIds,
+    supportedComponentIds: componentIds.difference({
+      a2uiChatSkillSuggestionComponentId,
+    }),
     interactionModes: const {'requiresUserAction'},
   );
 

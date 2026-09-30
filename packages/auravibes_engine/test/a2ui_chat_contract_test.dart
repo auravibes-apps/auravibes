@@ -238,6 +238,34 @@ void main() {
     );
   });
 
+  test('validates passive skill suggestions with bounded identity only', () {
+    final revision = List.filled(64, 'a').join();
+    final valid = <String, Object?>{
+      'id': 'suggestion',
+      'component': 'SkillSuggestion',
+      'slug': 'research',
+      'catalogRevision': revision,
+    };
+
+    A2uiIssueCode? validate(Map<String, Object?> component, String mode) =>
+        A2uiChatContract.validateMessage({
+          'version': a2uiChatWireVersion,
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [component],
+          },
+        }, interactionMode: mode);
+
+    expect(validate(valid, 'passive'), isNull);
+    expect(validate(valid, 'requiresUserAction'), isNotNull);
+    expect(validate({...valid, 'slug': ''}, 'passive'), isNotNull);
+    expect(
+      validate({...valid, 'catalogRevision': 'stale'}, 'passive'),
+      isNotNull,
+    );
+    expect(validate({...valid, 'title': 'Untrusted'}, 'passive'), isNotNull);
+  });
+
   test('validates the catalog envelope and component names', () {
     final valid = {
       'version': a2uiChatWireVersion,

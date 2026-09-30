@@ -14,6 +14,7 @@ const a2uiChatCatalogIds = <String>{a2uiChatCatalogId, a2uiChatFormCatalogId};
 const a2uiChatActionMetadataKey = 'a2uiAction';
 const a2uiChatFormSubmitComponentId = '__aura_form_submit__';
 const a2uiChatFormSubmitActionName = 'submit';
+const a2uiChatSkillSuggestionComponentId = 'SkillSuggestion';
 const int maxA2uiChatPayloadBytes = 512 * 1024;
 const maxA2uiChatNestingDepth = 32;
 
@@ -67,6 +68,7 @@ const supportedA2uiChatComponents = <String>{
   'Timeline',
   'Tooltip',
   'Wrap',
+  a2uiChatSkillSuggestionComponentId,
 };
 
 const a2uiChatInteractionModes = <String>{'passive', 'requiresUserAction'};
@@ -115,7 +117,12 @@ abstract final class A2uiChatContract {
     final sections = <String>[
       if (includeCore)
         _profileCorePrompt(interactionModes, supportedComponents),
-      if (interactionModes.contains('passive')) _profilePassivePrompt(),
+      if (interactionModes.contains('passive'))
+        _profilePassivePrompt(
+          supportsSkillSuggestion: supportedComponents.contains(
+            a2uiChatSkillSuggestionComponentId,
+          ),
+        ),
       if (interactionModes.contains('requiresUserAction'))
         _profileFormsPrompt(),
       if (includeCatalogSchemas) _profileCatalogPrompt(supportedComponents),
@@ -158,11 +165,19 @@ BOUND_TABS_EXAMPLE_END
 ''' : ''}A2UI_CORE_INSTRUCTIONS_END
 ''';
 
-  static String _profilePassivePrompt() =>
+  static String _profilePassivePrompt({
+    required bool supportsSkillSuggestion,
+  }) =>
       '''
 For passive responses, use interactionMode "passive" and catalog
 "$a2uiChatCatalogId". Passive response controls may use literal values or
 data-model path bindings. Use only read-only response surfaces.
+${supportsSkillSuggestion ? '''
+For SkillSuggestion, use only a skill slug and the current catalogRevision from
+the skill_catalog context. Do not add display text or executable arguments.
+The application owns Add and Use now actions; Add is promptless and Use now
+requires a direct user action.
+''' : ''}
 ''';
 
   static String _profileFormsPrompt() =>
@@ -1081,6 +1096,12 @@ CATALOG_END
     if (interactionIssue != null) return interactionIssue;
     final formIssue = _validateFormInteraction(component, interactionMode);
     if (formIssue != null) return formIssue;
+    if (component == a2uiChatSkillSuggestionComponentId) {
+      if (interactionMode != 'passive') {
+        return A2uiIssueCode.malformedPayload;
+      }
+      return _validateSkillSuggestion(value);
+    }
     return switch (component) {
       'Avatar' => _validateAvatar(value),
       'AvatarGroup' => _validateAvatarGroup(value),
@@ -1101,6 +1122,18 @@ CATALOG_END
       'TextField' => _validateTextField(value),
       _ => null,
     };
+  }
+
+  static A2uiIssueCode? _validateSkillSuggestion(Map<Object?, Object?> value) {
+    final slug = value['slug'];
+    final revision = value['catalogRevision'];
+    if (slug is! String || slug.isEmpty || slug.length > 128) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    if (revision is! String || !RegExp(r'^[0-9a-f]{64}$').hasMatch(revision)) {
+      return A2uiIssueCode.malformedPayload;
+    }
+    return null;
   }
 
   static A2uiIssueCode? _validateTextField(Map<Object?, Object?> value) {

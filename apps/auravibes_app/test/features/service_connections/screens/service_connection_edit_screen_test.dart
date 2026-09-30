@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
@@ -5,6 +8,7 @@ import 'package:auravibes_app/features/models/models/model_connection_store.dart
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
@@ -18,6 +22,7 @@ import '../../../helpers/test_app.dart';
 const _workspaceId = 'test-workspace';
 const _modelConnectionId = 'model-connection';
 const _genericConnectionId = 'generic-connection';
+const _mcpConnectionId = 'mcp-connection';
 const _credentialId = 'credential-1';
 const _definitionId = 'definition-1';
 
@@ -48,6 +53,41 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(saveCount, 1);
+  });
+
+  testWidgets('MCP edit preserves saved secret without exposing it', (
+    tester,
+  ) async {
+    const secret = 'mcp-private-token';
+    McpServerSettingsUpdate? savedUpdate;
+    await _pumpEditor(
+      tester,
+      connectionId: _mcpConnectionId,
+      mcpServer: _mcpServer(),
+      onMcpUpdate: (update) => savedUpdate = update,
+    );
+    await _openEditor(tester);
+
+    final golden = Platform.isLinux
+        ? 'goldens/mcp_connection_edit_linux.png'
+        : 'goldens/mcp_connection_edit.png';
+    await expectLater(
+      find.byType(ServiceConnectionEditScreen),
+      matchesGoldenFile(golden),
+    );
+    expect(find.text(secret), findsNothing);
+    expect(find.text('Saved securely'), findsOneWidget);
+    await tester.enterText(find.byType(EditableText).first, 'Renamed MCP');
+    final saveButton = find.text('Save');
+    await tester.ensureVisible(saveButton);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(saveButton);
+    final _ = await tester.pumpAndSettle();
+
+    expect(savedUpdate?.name, 'Renamed MCP');
+    expect(savedUpdate?.secretChange, McpServerSecretChange.preserve);
+    expect(savedUpdate?.secret, isNull);
+    expect(find.text(secret), findsNothing);
   });
 
   testWidgets('model provider key replacement prompts without exposing value', (
@@ -213,8 +253,10 @@ Future<void> _pumpEditor(
   GenericServiceConnectionForEdit? genericConnection,
   SkillCredentialForEdit? skillCredential,
   SkillCredentialDefinitionEntity? definition,
+  McpServerForEdit? mcpServer,
   void Function(GenericServiceConnectionUpdate)? onGenericUpdate,
   void Function(SkillCredentialToUpdate)? onSkillUpdate,
+  void Function(McpServerSettingsUpdate)? onMcpUpdate,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -243,7 +285,9 @@ Future<void> _pumpEditor(
           serviceConnectionOperationsProvider(_workspaceId).overrideWith(
             (_) async => _serviceOperations(
               genericConnection: genericConnection,
+              mcpServer: mcpServer,
               onUpdate: onGenericUpdate,
+              onMcpUpdate: onMcpUpdate,
             ),
           ),
           skillCredentialOperationsProvider(_workspaceId).overrideWithValue(
@@ -271,7 +315,9 @@ Future<void> _openEditor(WidgetTester tester) async {
 
 ServiceConnectionOperations _serviceOperations({
   GenericServiceConnectionForEdit? genericConnection,
+  McpServerForEdit? mcpServer,
   void Function(GenericServiceConnectionUpdate)? onUpdate,
+  void Function(McpServerSettingsUpdate)? onMcpUpdate,
 }) => ServiceConnectionOperations(
   createAppSkillCredential: ({
     required workspaceId,
@@ -282,6 +328,8 @@ ServiceConnectionOperations _serviceOperations({
   getGenericForEdit: (id) =>
       Future.value(genericConnection?.id == id ? genericConnection : null),
   updateGeneric: (_, update) async => onUpdate?.call(update),
+  getMcpForEdit: (id) => Future.value(mcpServer?.id == id ? mcpServer : null),
+  updateMcp: (_, update) async => onMcpUpdate?.call(update),
 );
 
 SkillCredentialOperations _skillOperations({
@@ -325,6 +373,17 @@ GenericServiceConnectionForEdit _genericConnection() =>
       hasSecret: true,
       keySuffix: '1234',
     );
+
+McpServerForEdit _mcpServer() => const (
+  id: _mcpConnectionId,
+  name: 'MCP server',
+  url: 'https://mcp.example.com',
+  transport: McpTransportTypeSSE(),
+  authMode: .bearerToken,
+  hasSecret: true,
+  revision: 4,
+  secretRevision: 2,
+);
 
 SkillCredentialForEdit _skillCredential() => const SkillCredentialForEdit(
   id: _credentialId,

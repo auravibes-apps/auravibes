@@ -608,4 +608,5 @@ WorkspaceMcpAuthentication _mcpAuthenticationCapability(
   .none => .none,
   .bearerToken => .bearerToken,
   .oauth => .oauth,
+  .httpHeaders => .httpHeaders,
 };

@@ -1,3 +1,5 @@
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
@@ -7,8 +9,11 @@ import 'package:auravibes_app/features/service_connections/usecases/cloud_servic
 import 'package:auravibes_app/features/service_connections/usecases/watch_service_connection_list_items_usecase.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_resource_mapper.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -47,17 +52,50 @@ Stream<List<ServiceConnectionListItem>> _watchCloudServiceConnections(
   String workspaceId,
   CloudWorkspaceStateGateway gateway,
 ) async* {
+  yield* _combineCloudServiceConnectionStreams(
+    await _cloudServiceConnectionStreams(ref, workspaceId, gateway),
+  );
+}
+
+Future<_CloudServiceConnectionStreams> _cloudServiceConnectionStreams(
+  Ref ref,
+  String workspaceId,
+  CloudWorkspaceStateGateway gateway,
+) async {
   final modelStore = await ref.watch(
     modelConnectionStoreProvider(workspaceId).future,
   );
   final serviceUsecases = CloudServiceConnectionUsecases(.new(gateway));
-  yield* Rx.combineLatest2(
-    modelStore.watchModelConnections(.new(workspaces: [workspaceId])),
-    serviceUsecases.watch(),
-    (models, services) =>
-        _sortedCloudConnections(models, services, workspaceId),
+  final resourceStore = CloudWorkspaceResourceStore(gateway);
+
+  return (
+    models: modelStore.watchModelConnections(.new(workspaces: [workspaceId])),
+    services: serviceUsecases.watch(),
+    mcpServers: resourceStore.watch(.mcpServer),
+    workspaceId: workspaceId,
   );
 }
+
+typedef _CloudServiceConnectionStreams = ({
+  Stream<List<ModelConnectionEntity>> models,
+  Stream<List<CloudServiceConnection>> services,
+  Stream<List<WorkspaceResource>> mcpServers,
+  String workspaceId,
+});
+
+Stream<List<ServiceConnectionListItem>> _combineCloudServiceConnectionStreams(
+  _CloudServiceConnectionStreams streams,
+) => Rx.combineLatest3(
+  streams.models,
+  streams.services,
+  streams.mcpServers,
+  (models, services, mcpServers) => _sortedCloudConnections(
+    models,
+    services,
+    mcpServers,
+    streams.workspaceId,
+  ),
+);
 
 Stream<List<ServiceConnectionListItem>> _watchLocalServiceConnections(
   Ref ref,
@@ -77,13 +115,77 @@ Stream<List<ServiceConnectionListItem>> _watchLocalServiceConnections(
 List<ServiceConnectionListItem> _sortedCloudConnections(
   List<ModelConnectionEntity> models,
   List<CloudServiceConnection> services,
+  List<WorkspaceResource> mcpServers,
   String workspaceId,
 ) => [
   ...models.map(ServiceConnectionListItem.fromModelConnection),
   ...services.map(
     (connection) => _cloudServiceConnectionItem(connection, workspaceId),
   ),
+  ...mcpServers.map(_cloudMcpConnectionItem),
 ]..sort((a, b) => a.name.compareTo(b.name));
+
+ServiceConnectionListItem _cloudMcpConnectionItem(WorkspaceResource resource) {
+  final fields = _cloudMcpConnectionFields(resource);
+
+  return serviceConnectionListItemFromCloudMcp(fields);
+}
+
+ServiceConnectionCloudMcp _cloudMcpConnectionFields(
+  WorkspaceResource resource,
+) {
+  final data = CloudResourceMapper.decode(resource);
+  final identity = _cloudMcpIdentity(resource, data);
+  final authType = identity.authenticationType;
+  final isOAuth = authType == 'oauth';
+
+  return (
+    identity: identity,
+    displayStatus: _cloudMcpDisplayStatus(data['authStatus'], authType),
+    lastTestSummary: _cloudMcpTestSummary(data),
+    canRefresh: isOAuth,
+    canReconnect: isOAuth,
+  );
+}
+
+McpConnectionTestSummary? _cloudMcpTestSummary(Map<String, dynamic> data) =>
+    .fromJson(data['testSummaryJson'] as String?);
+
+({
+  String id,
+  String workspaceId,
+  String name,
+  String url,
+  String authenticationType,
+  McpTransportType transport,
+})
+_cloudMcpIdentity(WorkspaceResource resource, Map<String, dynamic> data) => (
+  id: resource.resourceId,
+  workspaceId: '${resource.workspaceId}',
+  name: data['name'] as String,
+  url: data['url'] as String,
+  authenticationType: data['authType'] as String? ?? 'none',
+  transport: _cloudMcpTransport(data['transport']),
+);
+
+McpTransportType _cloudMcpTransport(Object? raw) =>
+    McpTransportType.fromJson(_cloudMcpTransportMap(raw));
+
+Map<String, dynamic> _cloudMcpTransportMap(Object? raw) => switch (raw) {
+  final Map<Object?, Object?> transport => Map<String, dynamic>.from(transport),
+  _ => throw const FormatException('Invalid MCP transport.'),
+};
+
+ServiceConnectionDisplayStatus _cloudMcpDisplayStatus(
+  Object? authStatus,
+  String authType,
+) => switch (authStatus) {
+  'needsReauth' ||
+  'reauthRequired' => ServiceConnectionDisplayStatus.needsReauth,
+  'failed' => ServiceConnectionDisplayStatus.failed,
+  _ when authType == 'none' => ServiceConnectionDisplayStatus.unknown,
+  _ => ServiceConnectionDisplayStatus.connected,
+};
 
 ServiceConnectionListItem _cloudServiceConnectionItem(
   CloudServiceConnection connection,

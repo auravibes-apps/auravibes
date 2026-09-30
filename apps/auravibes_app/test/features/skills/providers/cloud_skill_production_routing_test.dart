@@ -23,7 +23,6 @@ import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
@@ -254,10 +253,21 @@ void main() {
         workspaceId: workspaceId,
         slug: 'agents',
       );
-      await container.read(unloadConversationSkillUsecaseProvider(workspaceId))(
+      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: 'agents',
+      );
+      expect(
+        resources
+            .where(
+              (item) =>
+                  item.resourceKind ==
+                      WorkspaceResourceKind.conversationSkillSelection &&
+                  item.resourceId == 'conversation-1:agents',
+            )
+            .length,
+        1,
       );
       final updatedSkill = await container.read(
         updateSkillUsecaseProvider(workspaceId),
@@ -349,10 +359,21 @@ void main() {
         workspaceId: workspaceId,
         slug: credentialSkill.slug,
       );
-      await container.read(unloadConversationSkillUsecaseProvider(workspaceId))(
+      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: credentialSkill.slug,
+      );
+      expect(
+        resources
+            .where(
+              (item) =>
+                  item.resourceKind ==
+                      WorkspaceResourceKind.conversationSkillSelection &&
+                  item.resourceId == 'conversation-1:${credentialSkill.id}',
+            )
+            .length,
+        1,
       );
 
       expect(
