@@ -36,15 +36,6 @@ class const WorkspaceConfigurationArchiveUsecase({
     return await _fileService.saveArchiveJson(json);
   }
 
-  Future<bool> importArchive([WorkspaceEntity? workspace]) async {
-    final json = await _fileService.pickArchiveJson();
-    if (json == null) return false;
-
-    await _importArchive(workspace, json);
-
-    return true;
-  }
-
   Future<WorkspaceConfigurationArchivePreview?> pickArchivePreview() async {
     final json = await _fileService.pickArchiveJson();
     if (json == null) return null;

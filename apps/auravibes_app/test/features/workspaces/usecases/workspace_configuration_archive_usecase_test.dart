@@ -64,6 +64,26 @@ void main() {
     await usecase.applyArchivePreview(preview);
     expect(await database.workspaceDao.getWorkspaceCount(), 1);
   });
+
+  test('invalid archive preview leaves stores unchanged', () async {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    addTearDown(database.close);
+    final usecase = WorkspaceConfigurationArchiveUsecase(
+      localRepository: .new(database),
+      localImporter: .new(database),
+      cloudRepositoryFor: (_) async =>
+          throw StateError('Local import must not request a cloud repository.'),
+      fileService: _MemoryFileService(pickedJson: 'not an archive'),
+    );
+
+    await expectLater(
+      usecase.pickArchivePreview(),
+      throwsA(isA<WorkspaceConfigurationArchiveException>()),
+    );
+    expect(await database.workspaceDao.getWorkspaceCount(), 0);
+  });
 }
 
 class _MemoryFileService({final String? pickedJson})

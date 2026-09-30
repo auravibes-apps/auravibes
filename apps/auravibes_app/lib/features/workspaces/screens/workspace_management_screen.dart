@@ -45,7 +45,7 @@ const _removeConfirmationActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_remove),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
 );
-const _switchConfirmationActions = AuraConfirmDialogActions(
+const _confirmCancelActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_confirm),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
 );
@@ -933,9 +933,12 @@ class const _WorkspaceListActions({
 extension on _WorkspaceListActions {
   Future<void> exportConfiguration(WorkspaceEntity workspace) async {
     try {
+      final selectedKinds = await _selectWorkspaceArchiveKinds(context);
+      if (selectedKinds == null || !context.mounted) return;
+
       final saved = await ref
           .read(workspaceConfigurationArchiveUsecaseProvider)
-          .exportArchive(workspace);
+          .exportArchive(workspace, selectedKinds: selectedKinds);
       if (saved && context.mounted) {
         _showArchiveSuccess(context, LocaleKeys.workspace_archive_exported);
       }
@@ -953,10 +956,23 @@ extension on _WorkspaceListActions {
 
   Future<void> importConfiguration([WorkspaceEntity? workspace]) async {
     try {
-      final imported = await ref
-          .read(workspaceConfigurationArchiveUsecaseProvider)
-          .importArchive(workspace);
-      if (!imported || !context.mounted) return;
+      final usecase = ref.read(workspaceConfigurationArchiveUsecaseProvider);
+      final preview = await usecase.pickArchivePreview();
+      if (preview == null || !context.mounted) return;
+
+      final confirmed = await AuraDialogs.confirm(
+        context: context,
+        title: const TextLocale(LocaleKeys.workspace_archive_preview_title),
+        message: _WorkspaceArchivePreviewMessage(
+          preview: preview,
+          workspace: workspace,
+        ),
+        actions: _confirmCancelActions,
+      );
+      if (confirmed != true || !context.mounted) return;
+
+      await usecase.applyArchivePreview(preview, workspace: workspace);
+      if (!context.mounted) return;
       ref.invalidate(allWorkspacesProvider);
       _showArchiveSuccess(context, LocaleKeys.workspace_archive_imported);
     } on Object catch (error, stackTrace) {
@@ -1016,7 +1032,7 @@ extension on _WorkspaceListActions {
           namedArgs: {'name': workspace.name},
         ),
       ),
-      actions: _switchConfirmationActions,
+      actions: _confirmCancelActions,
     );
   }
 
@@ -1057,6 +1073,134 @@ extension on _WorkspaceListActions {
     AsyncLoading() || AsyncError() => null,
   };
 }
+
+Future<Set<WorkspaceConfigurationKind>?> _selectWorkspaceArchiveKinds(
+  BuildContext context,
+) {
+  final selectedKinds = WorkspaceConfigurationKind.values.toSet();
+
+  return showDialog<Set<WorkspaceConfigurationKind>>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
+        title: const TextLocale(
+          LocaleKeys.workspace_archive_export_selection_title,
+        ),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
+            children: [
+              const TextLocale(
+                LocaleKeys.workspace_archive_export_selection_message,
+              ),
+              const SizedBox(height: 12),
+              if (selectedKinds.isEmpty) ...[
+                const TextLocale(
+                  LocaleKeys.workspace_archive_export_selection_empty,
+                ),
+                const SizedBox(height: 8),
+              ],
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: .min,
+                    children: [
+                      for (final kind in WorkspaceConfigurationKind.values)
+                        AuraCheckboxListTile(
+                          value: selectedKinds.contains(kind),
+                          onChanged: (selected) => setDialogState(() {
+                            if (selected) {
+                              final _ = selectedKinds.add(kind);
+                            } else {
+                              final _ = selectedKinds.remove(kind);
+                            }
+                          }),
+                          title: TextLocale(_workspaceArchiveKindLabel(kind)),
+                          key: ValueKey('workspace-archive-kind-${kind.name}'),
+                          semanticLabel: _workspaceArchiveKindLabel(kind)
+                              .tr(context: context),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const TextLocale(
+                LocaleKeys.workspace_archive_export_dependencies,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const ValueKey('workspace-archive-export-cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+          TextButton(
+            key: const ValueKey('workspace-archive-export-confirm'),
+            onPressed: selectedKinds.isEmpty
+                ? null
+                : () => Navigator.of(context).pop(Set.of(selectedKinds)),
+            child: const TextLocale(LocaleKeys.workspace_archive_export),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class const _WorkspaceArchivePreviewMessage({
+  required final WorkspaceConfigurationArchivePreview preview,
+  required final WorkspaceEntity? workspace,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      TextLocale(
+        LocaleKeys.workspace_archive_preview_source,
+        args: [preview.workspaceName],
+      ),
+      const SizedBox(height: 8),
+      if (workspace case final target?)
+        TextLocale(
+          LocaleKeys.workspace_archive_preview_existing_destination,
+          args: [target.name],
+        )
+      else
+        const TextLocale(LocaleKeys.workspace_archive_preview_new_destination),
+      const SizedBox(height: 12),
+      const TextLocale(LocaleKeys.workspace_archive_preview_configuration),
+      for (final kind in WorkspaceConfigurationKind.values)
+        Row(
+          children: [
+            Expanded(child: TextLocale(_workspaceArchiveKindLabel(kind))),
+            Text('${preview.countsByKind[kind] ?? 0}'),
+          ],
+        ),
+    ],
+  );
+}
+
+String _workspaceArchiveKindLabel(WorkspaceConfigurationKind kind) =>
+    switch (kind) {
+      .agent => LocaleKeys.workspace_archive_kind_agent,
+      .agentSkill => LocaleKeys.workspace_archive_kind_agent_skill,
+      .agentToolPermission =>
+        LocaleKeys.workspace_archive_kind_agent_tool_permission,
+      .compactionSetting =>
+        LocaleKeys.workspace_archive_kind_compaction_setting,
+      .modelConnection => LocaleKeys.workspace_archive_kind_model_connection,
+      .modelSelection => LocaleKeys.workspace_archive_kind_model_selection,
+      .skill => LocaleKeys.workspace_archive_kind_skill,
+      .skillResource => LocaleKeys.workspace_archive_kind_skill_resource,
+      .skillSetting => LocaleKeys.workspace_archive_kind_skill_setting,
+      .tool => LocaleKeys.workspace_archive_kind_tool,
+    };
 
 void _showArchiveSuccess(BuildContext context, String localizationKey) {
   final _ = AuraSnackBars.show(

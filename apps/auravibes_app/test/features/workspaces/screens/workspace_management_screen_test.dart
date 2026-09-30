@@ -2,6 +2,7 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -10,13 +11,18 @@ import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/features/workspaces/services/workspace_configuration_file_service.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_configuration_archive_usecase.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
+import 'package:drift/drift.dart' show DatabaseConnection, Value;
+import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +41,57 @@ class _FakeGoRouter implements GoRouter {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
+
+class _MemoryArchiveFileService({final String? pickedJson})
+    extends WorkspaceConfigurationFileService {
+  String? savedJson;
+  int pickCount = 0;
+
+  @override
+  Future<String?> pickArchiveJson() async {
+    pickCount++;
+
+    return pickedJson;
+  }
+
+  @override
+  Future<bool> saveArchiveJson(String json) async {
+    savedJson = json;
+
+    return true;
+  }
+}
+
+String _agentArchiveJson({String workspaceName = 'Portable'}) =>
+    WorkspaceConfigurationArchiveCodec.encode(
+      .new(
+        workspaceName: workspaceName,
+        entries: const [
+          WorkspaceConfigurationEntry(
+            kind: .agent,
+            id: 'archive-agent',
+            data: {
+              'name': 'Imported assistant',
+              'description': 'Archive preview',
+              'content': 'Instructions',
+              'isEnabled': true,
+              'visibility': 'both',
+            },
+          ),
+        ],
+      ),
+    );
+
+WorkspaceConfigurationArchiveUsecase _archiveUsecase(
+  AppDatabase database,
+  _MemoryArchiveFileService fileService,
+) => WorkspaceConfigurationArchiveUsecase(
+  localRepository: .new(database),
+  localImporter: .new(database),
+  cloudRepositoryFor: (_) async =>
+      throw StateError('Local archive actions must not request a cloud repo.'),
+  fileService: fileService,
+);
 
 class _FakeWorkspaceSelectionRepository
     implements WorkspaceSelectionRepository {
@@ -89,6 +146,11 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     _emit();
 
     return entity;
+  }
+
+  void addWorkspaceForTest(WorkspaceEntity workspace) {
+    _workspaces.add(workspace);
+    _emit();
   }
 
   @override
@@ -256,6 +318,7 @@ void main() {
           const {},
       bool cloudAuthenticationRequired = false,
       WorkspaceSelectionRepository? selectionRepository,
+      WorkspaceConfigurationArchiveUsecase? archiveUsecase,
     }) {
       final useRepo = repo ?? repository;
 
@@ -268,6 +331,13 @@ void main() {
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
+            if (archiveUsecase != null) {
+              overrides.add(
+                workspaceConfigurationArchiveUsecaseProvider.overrideWithValue(
+                  archiveUsecase,
+                ),
+              );
+            }
             if (selectionRepository != null) {
               overrides.add(
                 lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
@@ -420,6 +490,235 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(find.text('Export configuration'), findsOneWidget);
       expect(find.text('Import configuration here'), findsOneWidget);
+    });
+
+    testWidgets('previews import source, counts, and new destination', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+      final screenRepository = _FakeWorkspaceRepository();
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Source: Portable'), findsOneWidget);
+      expect(find.text('Destination: a new local workspace'), findsOneWidget);
+      expect(find.text('Agents'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(await database.workspaceDao.getWorkspaceCount(), 0);
+      expect(fileService.pickCount, 1);
+    });
+
+    testWidgets('canceling import leaves workspace data unchanged', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspaceRepository = WorkspaceRepository(database);
+      final workspace = await workspaceRepository.createWorkspace(
+        const WorkspaceToCreate(name: 'Target', type: .local),
+      );
+      final screenRepository = _FakeWorkspaceRepository()
+        ..addWorkspaceForTest(workspace);
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: workspace.id,
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(ValueKey('workspace_menu_${workspace.id}')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Import configuration here'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Destination: Target'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), isEmpty);
+      expect(fileService.pickCount, 1);
+    });
+
+    testWidgets('confirms import once and rejects invalid archives', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final screenRepository = _FakeWorkspaceRepository();
+      final fileService = _MemoryArchiveFileService(
+        pickedJson: _agentArchiveJson(),
+      );
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), hasLength(1));
+      expect(fileService.pickCount, 1);
+
+      final invalidFileService = _MemoryArchiveFileService(
+        pickedJson: 'not an archive',
+      );
+      await tester.pumpWidget(
+        _buildScreen(
+          workspaceId: 'unused',
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, invalidFileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-archive-import-new')),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This workspace configuration archive is invalid or damaged.',
+        ),
+        findsOneWidget,
+      );
+      expect(await database.workspaceDao.getWorkspaceCount(), 1);
+      expect(await database.select(database.agents).get(), hasLength(1));
+    });
+
+    testWidgets('selects export types and includes required dependencies', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspaceRepository = WorkspaceRepository(database);
+      final workspace = await workspaceRepository.createWorkspace(
+        const WorkspaceToCreate(name: 'Workspace', type: .local),
+      );
+      final screenRepository = _FakeWorkspaceRepository()
+        ..addWorkspaceForTest(workspace);
+      final _ = await database
+          .into(database.serviceConnections)
+          .insert(
+            ServiceConnectionsCompanion.insert(
+              id: const Value('connection-1'),
+              name: 'Provider',
+              serviceId: 'openai',
+              kind: .modelProvider,
+              authenticationType: .apiKey,
+              workspaceId: workspace.id,
+            ),
+          );
+      final _ = await database
+          .into(database.workspaceModelSelections)
+          .insert(
+            WorkspaceModelSelectionsCompanion.insert(
+              id: const Value('selection-1'),
+              modelId: 'gpt-4o',
+              modelConnectionId: 'connection-1',
+              toolSamplingPolicy: const Value('prefer'),
+            ),
+          );
+      final fileService = _MemoryArchiveFileService();
+
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: workspace.id,
+          repo: screenRepository,
+          archiveUsecase: _archiveUsecase(database, fileService),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(ValueKey('workspace_menu_${workspace.id}')));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Export configuration'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        find.text('Required linked configuration is included automatically.'),
+        findsOneWidget,
+      );
+      for (final kind in WorkspaceConfigurationKind.values) {
+        final option = find.byKey(
+          ValueKey('workspace-archive-kind-${kind.name}'),
+        );
+        await tester.ensureVisible(option);
+        await tester.tap(option);
+        await tester.pump();
+      }
+
+      final exportButton = find.byKey(
+        const ValueKey('workspace-archive-export-confirm'),
+      );
+      expect(tester.widget<TextButton>(exportButton).onPressed, isNull);
+      expect(fileService.savedJson, isNull);
+
+      final modelSelection = find.byKey(
+        const ValueKey('workspace-archive-kind-modelSelection'),
+      );
+      await tester.ensureVisible(modelSelection);
+      await tester.tap(modelSelection);
+      await tester.pump();
+      expect(tester.widget<TextButton>(exportButton).onPressed, isNotNull);
+
+      await tester.tap(exportButton);
+      final _ = await tester.pumpAndSettle();
+
+      final savedJson = fileService.savedJson;
+      if (savedJson == null) fail('No selected archive was saved.');
+      final exported = WorkspaceConfigurationArchiveCodec.decode(savedJson);
+      expect(
+        exported.entries.map((entry) => entry.kind),
+        unorderedEquals([
+          WorkspaceConfigurationKind.modelConnection,
+          WorkspaceConfigurationKind.modelSelection,
+        ]),
+      );
     });
 
     testWidgets(
