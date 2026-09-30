@@ -120,11 +120,13 @@ class McpServerProbe {
       });
       await session.notify('notifications/initialized', const {});
       var requestId = 2;
-      final tools = await collectCloudMcpTools((cursor) => session.request(
-        requestId++,
-        'tools/list',
-        {'cursor': ?cursor},
-      )).timeout(const Duration(seconds: 30));
+      final tools = await collectCloudMcpTools(
+        (cursor) => session.request(
+          requestId++,
+          'tools/list',
+          {'cursor': ?cursor},
+        ),
+      ).timeout(const Duration(seconds: 30));
       final serverInfo = initialized['serverInfo'];
       final info = serverInfo is Map<Object?, Object?> ? serverInfo : null;
       return DiscoverMcpServerResult(

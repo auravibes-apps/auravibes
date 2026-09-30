@@ -49,7 +49,8 @@ class McpOAuthCredentials {
         accessToken.isEmpty ||
         accessToken.contains(RegExp(r'[\r\n]')) ||
         refreshToken != null &&
-            (refreshToken is! String || refreshToken.contains(RegExp(r'[\r\n]'))) ||
+            (refreshToken is! String ||
+                refreshToken.contains(RegExp(r'[\r\n]'))) ||
         issuedAt == null ||
         expiresIn != null && (expiresIn is! int || expiresIn <= 0) ||
         token['tokenType'] != null &&
@@ -84,9 +85,11 @@ class McpOAuthCredentials {
     final lifetime = expiresIn;
     if (lifetime == null) return true;
     return !now.toUtc().isBefore(
-      issuedAt.add(Duration(seconds: lifetime)).subtract(
-        const Duration(minutes: 5),
-      ),
+      issuedAt
+          .add(Duration(seconds: lifetime))
+          .subtract(
+            const Duration(minutes: 5),
+          ),
     );
   }
 

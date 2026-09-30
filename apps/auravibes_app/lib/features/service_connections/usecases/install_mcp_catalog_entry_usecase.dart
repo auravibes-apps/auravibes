@@ -6,18 +6,14 @@ class const InstallMcpCatalogEntryUseCase({
   required final Future<McpConnectionVerification> Function(
     McpServerFormToCreate,
     String,
-  ) prepare,
-  required final Future<void> Function(
-    McpServerFormToCreate,
-    String,
-    String,
-  ) commit,
+  )
+  prepare,
+  required final Future<void> Function(McpServerFormToCreate, String, String)
+  commit,
 }) {
   Future<McpConnectionVerification> verify(McpCatalogInstallation request) =>
       prepare(request.toForm(), request.workspaceId);
 
-  Future<void> install(
-    McpCatalogInstallation request,
-    String verificationId,
-  ) => commit(request.toForm(), request.workspaceId, verificationId);
+  Future<void> install(McpCatalogInstallation request, String verificationId) =>
+      commit(request.toForm(), request.workspaceId, verificationId);
 }
