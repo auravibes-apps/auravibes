@@ -1,9 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
-import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
@@ -11,11 +8,8 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
-import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,45 +88,6 @@ class _FakeBuildAppSkillNativeToolSpecsUsecase
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async => result;
-}
-
-class _NeverSkillsRepository implements SkillsRepository {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _NeverConversationSkillsRepository
-    implements ConversationSkillsRepository {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class _NeverAppSkillSettingsRepository
-    implements AppSkillWorkspaceSettingsRepository {
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
-
-class const _NoAppSkillCandidates()
-    implements ListAppSkillCredentialCandidatesUsecase {
-  @override
-  Future<List<AppSkillCredentialCandidate>> call({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    return const [];
-  }
-
-  @override
-  bool isCredentialRequired(AppSkillDefinition skill) => false;
-
-  @override
-  Future<bool> hasUsableNativeTool({
-    required String workspaceId,
-    required AppSkillDefinition skill,
-  }) async {
-    return true;
-  }
 }
 
 class _CapturingRepo({

@@ -25,7 +25,8 @@ class const WorkspaceConfigurationArchiveUsecase({
 }) {
   Future<bool> exportArchive(
     WorkspaceEntity workspace, {
-    Set<WorkspaceConfigurationKind>? selectedKinds,
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
   }) async {
     final archive = await _workspaceArchive(
       workspace,
@@ -50,7 +51,8 @@ class const WorkspaceConfigurationArchiveUsecase({
 
   Future<WorkspaceConfigurationArchive> _workspaceArchive(
     WorkspaceEntity workspace, {
-    Set<WorkspaceConfigurationKind>? selectedKinds,
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
   }) async {
     final cloudWorkspaceId = workspace.cloudWorkspaceId;
     if (cloudWorkspaceId == null) {

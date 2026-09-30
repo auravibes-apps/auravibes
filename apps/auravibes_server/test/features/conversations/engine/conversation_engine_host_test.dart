@@ -59,7 +59,9 @@ void main() {
       everyElement(ToolSamplingOutcome.ordinary),
     );
     expect(
-      (off.definitions!.first['function'] as Map).containsKey('strict'),
+      (off.definitions?.firstOrNull?['function'] as Map?)?.containsKey(
+        'strict',
+      ),
       isFalse,
     );
     final result = evaluateCloudToolSampling(

@@ -17,7 +17,20 @@ enum WorkspaceConfigurationKind {
   skill,
   skillResource,
   skillSetting,
-  tool,
+  tool;
+
+  static const all = <WorkspaceConfigurationKind>{
+    agent,
+    agentSkill,
+    agentToolPermission,
+    compactionSetting,
+    modelConnection,
+    modelSelection,
+    skill,
+    skillResource,
+    skillSetting,
+    tool,
+  };
 }
 
 typedef WorkspaceConfigurationArchiveEntryId = ({

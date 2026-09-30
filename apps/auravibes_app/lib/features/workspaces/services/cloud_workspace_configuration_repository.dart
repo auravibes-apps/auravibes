@@ -62,9 +62,10 @@ class CloudWorkspaceConfigurationRepository {
   final CloudWorkspaceConfigurationCalls _calls;
 
   Future<WorkspaceConfigurationArchive> export({
-    Set<WorkspaceConfigurationKind>? selectedKinds,
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
   }) async {
-    if (selectedKinds?.isEmpty ?? false) {
+    if (selectedKinds.isEmpty) {
       return WorkspaceConfigurationArchive(
         workspaceName: workspaceName,
         entries: const [],
@@ -78,7 +79,7 @@ class CloudWorkspaceConfigurationRepository {
 
     return WorkspaceConfigurationArchiveCodec.selectKinds(
       .new(workspaceName: workspaceName, entries: entries),
-      selectedKinds ?? WorkspaceConfigurationKind.values.toSet(),
+      selectedKinds,
     );
   }
 
@@ -955,19 +956,16 @@ Future<void> _appendExternalEntries(
   CloudWorkspaceConfigurationCalls calls,
   List<WorkspaceConfigurationEntry> entries,
   List<WorkspaceResource> skills,
-  Set<WorkspaceConfigurationKind>? selectedKinds,
+  Set<WorkspaceConfigurationKind> selectedKinds,
 ) async {
-  if (selectedKinds == null ||
-      selectedKinds.contains(WorkspaceConfigurationKind.modelConnection) ||
+  if (selectedKinds.contains(WorkspaceConfigurationKind.modelConnection) ||
       selectedKinds.contains(WorkspaceConfigurationKind.modelSelection)) {
     await _appendModelConnections(calls, entries);
   }
-  if (selectedKinds == null ||
-      selectedKinds.contains(WorkspaceConfigurationKind.modelSelection)) {
+  if (selectedKinds.contains(WorkspaceConfigurationKind.modelSelection)) {
     await _appendModelSelections(calls, entries);
   }
-  if (selectedKinds == null ||
-      selectedKinds.contains(WorkspaceConfigurationKind.skillResource)) {
+  if (selectedKinds.contains(WorkspaceConfigurationKind.skillResource)) {
     await _appendSkillResources(calls, entries, skills);
   }
 }

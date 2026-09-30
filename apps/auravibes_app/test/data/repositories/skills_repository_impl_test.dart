@@ -486,12 +486,12 @@ void main() {
       );
       final loadedManifests = BuildLoadedSkillManifestsUsecase(
         (_) => listAvailableSkillsUsecase,
-        BuildSkillTemplateToolSpecsUsecase(
+        .new(
           (_) => listAvailableSkillsUsecase,
           toolsRepository,
           skillCredentialsRepository,
         ),
-        BuildAppSkillNativeToolSpecsUsecase(
+        .new(
           (_) => listAvailableSkillsUsecase,
           .new(() => serviceConnectionRepository),
         ),

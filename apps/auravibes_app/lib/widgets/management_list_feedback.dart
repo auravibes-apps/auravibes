@@ -70,6 +70,8 @@ abstract final class ManagementListFeedback {
                   return;
                 }
                 setState(() => failures = nextFailures);
+              } on Object {
+                // Keep the current items listed as failures for another retry.
               } finally {
                 if (dialogContext.mounted) {
                   setState(() => isRetrying = false);

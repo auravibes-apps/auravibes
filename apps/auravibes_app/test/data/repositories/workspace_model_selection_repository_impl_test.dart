@@ -222,10 +222,7 @@ void main() {
         when(() => mockDao.updateToolSamplingPolicy('sel-1', 'require'))
             .thenAnswer((_) async => 1);
 
-        await repository.updateToolSamplingPolicy(
-          'sel-1',
-          .require,
-        );
+        await repository.updateToolSamplingPolicy('sel-1', .require);
 
         verify(() => mockDao.updateToolSamplingPolicy('sel-1', 'require'))
             .called(1);

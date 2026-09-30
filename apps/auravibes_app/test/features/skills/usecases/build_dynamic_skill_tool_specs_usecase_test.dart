@@ -27,7 +27,6 @@ void main() {
             SkillManifestTool(
               name: 'search',
               description: 'Search sources.',
-              optionalNullMeansOmission: true,
               inputJsonSchema: const {
                 'type': 'object',
                 'properties': {
@@ -37,6 +36,7 @@ void main() {
                 'required': ['query'],
                 'additionalProperties': false,
               },
+              optionalNullMeansOmission: true,
             ),
           ],
         ),

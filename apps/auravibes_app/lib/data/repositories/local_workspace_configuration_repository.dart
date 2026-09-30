@@ -5,10 +5,11 @@ import 'package:auravibes_app/features/workspaces/models/workspace_configuration
 class LocalWorkspaceConfigurationRepository(final AppDatabase _database) {
   Future<WorkspaceConfigurationArchive> export(
     String workspaceId, {
-    Set<WorkspaceConfigurationKind>? selectedKinds,
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
   }) async {
     final workspaceName = await _localWorkspaceName(_database, workspaceId);
-    if (selectedKinds?.isEmpty ?? false) {
+    if (selectedKinds.isEmpty) {
       return WorkspaceConfigurationArchive(
         workspaceName: workspaceName,
         entries: const [],
@@ -26,7 +27,7 @@ class LocalWorkspaceConfigurationRepository(final AppDatabase _database) {
         workspaceName: workspaceName,
         entries: _configurationEntries(rows, relations),
       ),
-      selectedKinds ?? WorkspaceConfigurationKind.values.toSet(),
+      selectedKinds,
     );
   }
 }
