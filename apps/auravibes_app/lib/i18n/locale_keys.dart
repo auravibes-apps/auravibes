@@ -453,6 +453,10 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_unpin';
   static const chats_screens_chats_list_bulk_delete =
       'chats_screens.chats_list.bulk_delete';
+  static const chats_screens_chats_list_bulk_archive_export =
+      'chats_screens.chats_list.bulk_archive_export';
+  static const chats_screens_chats_list_archive_imported_many =
+      'chats_screens.chats_list.archive_imported_many';
   static const chats_screens_chats_list_bulk_delete_title =
       'chats_screens.chats_list.bulk_delete_title';
   static const chats_screens_chats_list_bulk_delete_confirm =

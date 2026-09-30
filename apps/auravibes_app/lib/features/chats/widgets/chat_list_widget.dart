@@ -911,16 +911,48 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
       _ChatListBulkActionBar(
         selected: selected,
         isWorking: _isWorking,
+        canExportArchive: _shouldShowArchiveAction(ref, widget.workspaceId),
         callbacks: (
           onPin: (isPinned) =>
               unawaited(_setPins(selected.values.toList(), isPinned)),
           onDelete: () => unawaited(_deleteSelected()),
+          onArchiveExport: () => unawaited(_exportSelected(selected.values)),
           onClear: () {
             if (_isWorking) return;
             widget.selectedChats.value = {};
           },
         ),
       );
+
+  Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
+    if (_isWorking) return;
+    await _withWorking(() async {
+      try {
+        final archiveJson = await ref
+            .read(conversationArchiveUsecaseProvider)
+            .exportConversations(
+              workspaceId: widget.workspaceId,
+              conversationIds: [for (final chat in selected) chat.id],
+            );
+        final saved = await ref
+            .read(conversationArchiveFileServiceProvider)
+            .saveArchiveJson(
+              archiveJson,
+              fileName: 'conversations.auravibes.json',
+            );
+        if (!saved || !mounted) return;
+        ConversationArchiveFeedback.showExported(context);
+      } on Object catch (error, stackTrace) {
+        _logger.warning(
+          'Failed to export conversation archive',
+          error,
+          stackTrace,
+        );
+        if (!mounted) return;
+        ConversationArchiveFeedback.showError(context, error);
+      }
+    });
+  }
 
   Future<void> _setPins(List<ConversationEntity> chats, bool isPinned) async {
     if (_isWorking) return;
@@ -1042,12 +1074,14 @@ void _showConversationFailures(
 typedef _ChatListBulkActionCallbacks = ({
   ValueChanged<bool> onPin,
   VoidCallback onDelete,
+  VoidCallback onArchiveExport,
   VoidCallback onClear,
 });
 
 class const _ChatListBulkActionBar({
   required final Map<String, ConversationEntity> selected,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1061,6 +1095,7 @@ class const _ChatListBulkActionBar({
       count: selected.length,
       shouldPin: !selected.values.every((chat) => chat.isPinned),
       isWorking: isWorking,
+      canExportArchive: canExportArchive,
       callbacks: callbacks,
     ),
   );
@@ -1070,6 +1105,7 @@ class const _ChatListBulkActionLayout({
   required final int count,
   required final bool shouldPin,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1085,6 +1121,7 @@ class const _ChatListBulkActionLayout({
           count: count,
           shouldPin: shouldPin,
           isWorking: isWorking,
+          canExportArchive: canExportArchive,
           callbacks: callbacks,
         ),
         _ChatListManagementActions(isWorking: isWorking, callbacks: callbacks),
@@ -1097,6 +1134,7 @@ class const _ChatListSelectionActions({
   required final int count,
   required final bool shouldPin,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1114,9 +1152,29 @@ class const _ChatListSelectionActions({
           isWorking: isWorking,
           onPin: callbacks.onPin,
         ),
+        if (canExportArchive)
+          _ChatListBulkArchiveExportButton(
+            isWorking: isWorking,
+            onExport: callbacks.onArchiveExport,
+          ),
       ],
     );
   }
+}
+
+class const _ChatListBulkArchiveExportButton({
+  required final bool isWorking,
+  required final VoidCallback onExport,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onExport,
+    child: const TextLocale(
+      LocaleKeys.chats_screens_chats_list_bulk_archive_export,
+    ),
+    size: .small,
+    isLoading: isWorking,
+  );
 }
 
 class const _ChatListManagementActions({

@@ -340,6 +340,8 @@
       "bulk_pin": "Pin selected",
       "bulk_unpin": "Unpin selected",
       "bulk_delete": "Delete selected",
+      "bulk_archive_export": "Export selected",
+      "archive_imported_many": "Imported {} conversations.",
       "bulk_delete_title": "Delete selected conversations",
       "bulk_delete_confirm": "Delete all selected conversations? This action cannot be undone.",
       "bulk_pin_failures": "Could not update pin for: {}",

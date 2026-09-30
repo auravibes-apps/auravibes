@@ -340,6 +340,8 @@
       "bulk_pin": "Fijar seleccionadas",
       "bulk_unpin": "Desfijar seleccionadas",
       "bulk_delete": "Eliminar seleccionadas",
+      "bulk_archive_export": "Exportar seleccionadas",
+      "archive_imported_many": "Se importaron {} conversaciones.",
       "bulk_delete_title": "Eliminar conversaciones seleccionadas",
       "bulk_delete_confirm": "¿Eliminar todas las conversaciones seleccionadas? Esta acción no se puede deshacer.",
       "bulk_pin_failures": "No se pudo cambiar la fijación de: {}",

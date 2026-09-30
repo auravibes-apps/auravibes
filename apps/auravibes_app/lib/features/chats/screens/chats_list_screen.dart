@@ -117,23 +117,29 @@ Future<void> _importConversationArchive(
         .read(conversationArchiveFileServiceProvider)
         .pickArchiveJson();
     if (archiveJson == null || !context.mounted) return;
-    await _importAndOpenArchive(context, ref, workspaceId, archiveJson);
+    await _importArchive(context, ref, workspaceId, archiveJson);
   } on Object catch (error) {
     if (!context.mounted) return;
     ConversationArchiveFeedback.showError(context, error);
   }
 }
 
-Future<void> _importAndOpenArchive(
+Future<void> _importArchive(
   BuildContext context,
   WidgetRef ref,
   String workspaceId,
   String archiveJson,
 ) async {
-  final conversation = await ref
+  final conversations = await ref
       .read(conversationArchiveUsecaseProvider)
-      .importConversation(workspaceId: workspaceId, archiveJson: archiveJson);
+      .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
   if (!context.mounted) return;
+  if (conversations.length > 1) {
+    ConversationArchiveFeedback.showImportedMany(context, conversations.length);
+
+    return;
+  }
+  final conversation = conversations.single;
   ConversationRoute(
     workspaceId: workspaceId,
     chatId: conversation.id,

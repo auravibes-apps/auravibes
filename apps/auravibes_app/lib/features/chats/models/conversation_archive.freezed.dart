@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ConversationArchive {
 
- String get title; DateTime get createdAt; DateTime get updatedAt; List<ConversationArchiveMessage> get messages; String? get modelLabel;
+ String get title; DateTime get createdAt; DateTime get updatedAt; List<ConversationArchiveMessage> get messages; String? get modelLabel; ConversationArchiveAgentContext? get agentContext;
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $ConversationArchiveCopyWith<ConversationArchive> get copyWith => _$Conversation
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationArchive;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchive&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.messages, _this.messages)&&(identical(other.modelLabel, _this.modelLabel) || other.modelLabel == _this.modelLabel));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationArchive&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.messages, _this.messages)&&(identical(other.modelLabel, _this.modelLabel) || other.modelLabel == _this.modelLabel)&&(identical(other.agentContext, _this.agentContext) || other.agentContext == _this.agentContext));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationArchive;
-  return Object.hash(runtimeType,_this.title,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.messages),_this.modelLabel);
+  return Object.hash(runtimeType,_this.title,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.messages),_this.modelLabel,_this.agentContext);
 }
 
 @override
 String toString() {
   final _this = this as ConversationArchive;
-  return 'ConversationArchive(title: ${_this.title}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, messages: ${_this.messages}, modelLabel: ${_this.modelLabel})';
+  return 'ConversationArchive(title: ${_this.title}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, messages: ${_this.messages}, modelLabel: ${_this.modelLabel}, agentContext: ${_this.agentContext})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $ConversationArchiveCopyWith<$Res>  {
   factory $ConversationArchiveCopyWith(ConversationArchive value, $Res Function(ConversationArchive) _then) = _$ConversationArchiveCopyWithImpl;
 @useResult
 $Res call({
- String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel
+ String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationArchiveAgentContext? agentContext
 });
 
 
@@ -68,14 +68,15 @@ class _$ConversationArchiveCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? agentContext = freezed,}) {
   return _then(ConversationArchive(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,messages: null == messages ? _self.messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ConversationArchiveMessage>,modelLabel: freezed == modelLabel ? _self.modelLabel : modelLabel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
+as ConversationArchiveAgentContext?,
   ));
 }
 
@@ -160,10 +161,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationArchive() when $default != null:
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
   return orElse();
 
 }
@@ -181,10 +182,10 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchive():
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +202,10 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  DateTime createdAt,  DateTime updatedAt,  List<ConversationArchiveMessage> messages,  String? modelLabel,  ConversationArchiveAgentContext? agentContext)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationArchive() when $default != null:
-return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel);case _:
+return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that.modelLabel,_that.agentContext);case _:
   return null;
 
 }
@@ -216,7 +217,7 @@ return $default(_that.title,_that.createdAt,_that.updatedAt,_that.messages,_that
 
 
 class _ConversationArchive implements ConversationArchive {
-  const _ConversationArchive({required this.title, required this.createdAt, required this.updatedAt, required  List<ConversationArchiveMessage> messages, this.modelLabel}): _messages = messages;
+  const _ConversationArchive({required this.title, required this.createdAt, required this.updatedAt, required  List<ConversationArchiveMessage> messages, this.modelLabel, this.agentContext}): _messages = messages;
   
 
 @override final  String title;
@@ -230,6 +231,7 @@ class _ConversationArchive implements ConversationArchive {
 }
 
 @override final  String? modelLabel;
+@override final  ConversationArchiveAgentContext? agentContext;
 
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
@@ -241,18 +243,18 @@ _$ConversationArchiveCopyWith<_ConversationArchive> get copyWith => __$Conversat
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchive&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.messages, _messages)&&(identical(other.modelLabel, modelLabel) || other.modelLabel == modelLabel));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationArchive&&(identical(other.title, title) || other.title == title)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.messages, _messages)&&(identical(other.modelLabel, modelLabel) || other.modelLabel == modelLabel)&&(identical(other.agentContext, agentContext) || other.agentContext == agentContext));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,title,createdAt,updatedAt,const DeepCollectionEquality().hash(_messages),modelLabel);
+    return Object.hash(runtimeType,title,createdAt,updatedAt,const DeepCollectionEquality().hash(_messages),modelLabel,agentContext);
 }
 
 @override
 String toString() {
-    return 'ConversationArchive(title: $title, createdAt: $createdAt, updatedAt: $updatedAt, messages: $messages, modelLabel: $modelLabel)';
+    return 'ConversationArchive(title: $title, createdAt: $createdAt, updatedAt: $updatedAt, messages: $messages, modelLabel: $modelLabel, agentContext: $agentContext)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$ConversationArchiveCopyWith<$Res> implements $Conversatio
   factory _$ConversationArchiveCopyWith(_ConversationArchive value, $Res Function(_ConversationArchive) _then) = __$ConversationArchiveCopyWithImpl;
 @override @useResult
 $Res call({
- String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel
+ String title, DateTime createdAt, DateTime updatedAt, List<ConversationArchiveMessage> messages, String? modelLabel, ConversationArchiveAgentContext? agentContext
 });
 
 
@@ -280,14 +282,15 @@ class __$ConversationArchiveCopyWithImpl<$Res>
 
 /// Create a copy of ConversationArchive
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? createdAt = null,Object? updatedAt = null,Object? messages = null,Object? modelLabel = freezed,Object? agentContext = freezed,}) {
   return _then(_ConversationArchive(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,messages: null == messages ? _self._messages : messages // ignore: cast_nullable_to_non_nullable
 as List<ConversationArchiveMessage>,modelLabel: freezed == modelLabel ? _self.modelLabel : modelLabel // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,agentContext: freezed == agentContext ? _self.agentContext : agentContext // ignore: cast_nullable_to_non_nullable
+as ConversationArchiveAgentContext?,
   ));
 }
 

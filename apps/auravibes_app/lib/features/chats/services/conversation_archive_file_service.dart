@@ -15,14 +15,17 @@ class const ConversationArchiveFileService() {
     return await _readArchive(file);
   }
 
-  Future<bool> saveArchiveJson(String json) async {
+  Future<bool> saveArchiveJson(
+    String json, {
+    String fileName = 'conversation.auravibes.json',
+  }) async {
     final bytes = Uint8List.fromList(utf8.encode(json));
     if (bytes.length > ConversationArchiveCodec.maxArchiveBytes) {
       throw const MalformedConversationArchiveException();
     }
 
     final saved = await FilePicker.saveFile(
-      fileName: 'conversation.auravibes.json',
+      fileName: fileName,
       bytes: bytes,
       mimeType: 'application/json',
     );
