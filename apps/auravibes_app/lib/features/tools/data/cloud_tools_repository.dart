@@ -4,10 +4,12 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/tools/services/cloud_mcp_gateway.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
@@ -93,7 +95,11 @@ abstract class _CloudToolsRepositoryBase {
 }
 
 class CloudToolsRepository extends _CloudToolsRepositoryBase
-    with _WorkspaceToolOperations, _McpServerOperations, _ToolsGroupOperations
+    with
+        _WorkspaceToolOperations,
+        _McpServerOperations,
+        _McpServerSettingsOperations,
+        _ToolsGroupOperations
     implements
         WorkspaceToolsRepositoryContract,
         ToolsGroupsRepositoryContract,
@@ -266,23 +272,12 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
     required String verificationReceipt,
   }) async {
     _validateCloudMcpServer(server);
-    final result =
-        server.catalogSnapshotJson == null &&
-            server.httpHeaders == null &&
-            server.oauthJson == null &&
-            server.transport is McpTransportTypeStreamableHttp
-        ? await _createMcpServer(
-            _createMcpRequest(
-              server,
-              requestId: requestId,
-              verificationReceipt: verificationReceipt,
-            ),
-          )
-        : await CloudMcpGateway(await _gateway).createCatalogMcpServer(
-            server,
-            requestId: requestId,
-            verificationReceipt: verificationReceipt,
-          );
+    final result = await _createCloudMcpServer(
+      this,
+      server,
+      requestId,
+      verificationReceipt,
+    );
 
     return (
       server: _toMcpServerEntity(workspaceId, server, result),
@@ -303,13 +298,7 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
   }) async {
     final _ = workspaceId;
     _validateCloudMcpServer(server);
-    final result =
-        server.catalogSnapshotJson == null &&
-            server.httpHeaders == null &&
-            server.oauthJson == null &&
-            server.transport is McpTransportTypeStreamableHttp
-        ? await _verifyMcpServer(_verifyMcpRequest(server))
-        : await CloudMcpGateway(await _gateway).verifyCatalogMcpServer(server);
+    final result = await _verifyCloudMcpServer(this, server);
 
     return (
       discovery: result.discovery,
@@ -356,6 +345,413 @@ mixin _McpServerOperations on _CloudToolsRepositoryBase {
     return resource == null ? null : _server(resource);
   }
 }
+
+mixin _McpServerSettingsOperations on _CloudToolsRepositoryBase {
+  Future<McpServerForEdit?> getMcpServerForEdit(String id) async {
+    final resource = await _find(.mcpServer, id);
+    if (resource == null) return null;
+
+    return _mcpServerForEdit(resource, _data(resource));
+  }
+
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) async {
+    final resource = await _find(.mcpServer, serverId);
+    if (resource == null) throw StateError('Cloud MCP server not found.');
+    final data = _data(resource)..['testSummaryJson'] = summary.toJson();
+    final _ = await _update(resource, data);
+  }
+
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update) async {
+    final resource = await _requiredMcpServerResource(update.serverId);
+    final mutation = _prepareCloudMcpSettingsMutation(
+      resource,
+      update,
+      _data(resource),
+    );
+    await _persistCloudMcpSettingsMutation(update, mutation);
+  }
+
+  Future<WorkspaceResource> _requiredMcpServerResource(String serverId) async {
+    final resource = await _find(.mcpServer, serverId);
+    if (resource == null) throw StateError('Cloud MCP server not found.');
+
+    return resource;
+  }
+
+  Future<void> _persistCloudMcpSettingsMutation(
+    McpServerSettingsUpdate update,
+    _CloudMcpSettingsMutation mutation,
+  ) async {
+    final _ = await _requiredResourceStore.updateMcpCredential(
+      _cloudMcpCredentialMutationInput(update, mutation),
+    );
+  }
+}
+
+typedef _CloudMcpCredentialMutationInput = ({
+  String id,
+  Map<String, Object?> data,
+  int? resourceRevision,
+  String? secret,
+  bool clearSecret,
+  int? secretRevision,
+});
+
+_CloudMcpCredentialMutationInput _cloudMcpCredentialMutationInput(
+  McpServerSettingsUpdate update,
+  _CloudMcpSettingsMutation mutation,
+) => (
+  id: update.serverId,
+  data: mutation.data,
+  resourceRevision: _cloudMcpResourceRevision(update, mutation),
+  secret: _cloudMcpSecret(update),
+  clearSecret: update.secretChange == .clear,
+  secretRevision: _cloudMcpSecretRevision(update, mutation),
+);
+
+int? _cloudMcpResourceRevision(
+  McpServerSettingsUpdate update,
+  _CloudMcpSettingsMutation mutation,
+) => update.expectedRevision ?? mutation.resource.revision;
+
+String? _cloudMcpSecret(McpServerSettingsUpdate update) =>
+    update.secretChange == .replace ? update.secret : null;
+
+int? _cloudMcpSecretRevision(
+  McpServerSettingsUpdate update,
+  _CloudMcpSettingsMutation mutation,
+) => update.expectedSecretRevision ?? mutation.currentSecretRevision;
+
+bool _requiresCatalogMcpRequest(McpServerFormToCreate server) =>
+    server.catalogSnapshotJson != null ||
+    server.httpHeaders != null ||
+    server.oauthJson != null ||
+    server.transport is! McpTransportTypeStreamableHttp;
+
+Future<CreateMcpServerResult> _createCloudMcpServer(
+  _CloudToolsRepositoryBase repository,
+  McpServerFormToCreate server,
+  String requestId,
+  String verificationReceipt,
+) async {
+  final gateway = await repository._gateway;
+  if (_requiresCatalogMcpRequest(server)) {
+    return await CloudMcpGateway(gateway).createCatalogMcpServer(
+      server,
+      requestId: requestId,
+      verificationReceipt: verificationReceipt,
+    );
+  }
+
+  return await repository._createMcpServer(
+    _createMcpRequest(
+      server,
+      requestId: requestId,
+      verificationReceipt: verificationReceipt,
+    ),
+  );
+}
+
+Future<VerifyMcpServerResult> _verifyCloudMcpServer(
+  _CloudToolsRepositoryBase repository,
+  McpServerFormToCreate server,
+) async {
+  final gateway = await repository._gateway;
+  if (_requiresCatalogMcpRequest(server)) {
+    return await CloudMcpGateway(gateway).verifyCatalogMcpServer(server);
+  }
+
+  return await repository._verifyMcpServer(_verifyMcpRequest(server));
+}
+
+typedef _CloudMcpSettingsMutation = ({
+  WorkspaceResource resource,
+  Map<String, dynamic> data,
+  int? currentSecretRevision,
+});
+
+typedef _CloudMcpCurrentSettings = ({
+  String? authType,
+  String? url,
+  Object? transport,
+  McpServerAuthMode authMode,
+  bool hasSecret,
+  int? secretRevision,
+});
+
+_CloudMcpSettingsMutation _prepareCloudMcpSettingsMutation(
+  WorkspaceResource resource,
+  McpServerSettingsUpdate update,
+  Map<String, dynamic> data,
+) {
+  final current = _cloudMcpCurrentSettings(data);
+  _validateCloudMcpSettings(resource, update, current);
+
+  return _writeAndPrepareCloudMcpSettings(resource, update, data, current);
+}
+
+void _validateCloudMcpSettings(
+  WorkspaceResource resource,
+  McpServerSettingsUpdate update,
+  _CloudMcpCurrentSettings current,
+) {
+  _validateCloudMcpRevision(resource, update, current.secretRevision);
+  _validateMcpSettingsUpdate(update, current.authMode, current.hasSecret);
+}
+
+_CloudMcpSettingsMutation _writeAndPrepareCloudMcpSettings(
+  WorkspaceResource resource,
+  McpServerSettingsUpdate update,
+  Map<String, dynamic> data,
+  _CloudMcpCurrentSettings current,
+) {
+  final authType = _cloudMcpAuthType(update.authMode);
+  final identityChanged = _cloudMcpIdentityChanged(update, current, authType);
+  _writeCloudMcpSettings((
+    data: data,
+    update: update,
+    current: current,
+    authType: authType,
+    identityChanged: identityChanged,
+  ));
+
+  return _cloudMcpSettingsMutation(resource, data, current);
+}
+
+_CloudMcpSettingsMutation _cloudMcpSettingsMutation(
+  WorkspaceResource resource,
+  Map<String, dynamic> data,
+  _CloudMcpCurrentSettings current,
+) => (
+  resource: resource,
+  data: data,
+  currentSecretRevision: current.secretRevision,
+);
+
+_CloudMcpCurrentSettings _cloudMcpCurrentSettings(Map<String, dynamic> data) {
+  final authMode = _mcpAuthMode(data['authType']);
+
+  return (
+    authType: data['authType'] as String?,
+    url: data['url'] as String?,
+    transport: data['transport'],
+    authMode: authMode,
+    hasSecret: data['hasSecret'] as bool? ?? authMode != .none,
+    secretRevision: data['secretRevision'] as int?,
+  );
+}
+
+McpServerForEdit _mcpServerForEdit(
+  WorkspaceResource resource,
+  Map<String, dynamic> data,
+) {
+  final identity = _cloudMcpEditIdentity(resource, data);
+  final configuration = _cloudMcpEditConfiguration(resource, data);
+
+  return (
+    id: identity.id,
+    name: identity.name,
+    url: identity.url,
+    transport: identity.transport,
+    authMode: configuration.authMode,
+    hasSecret: configuration.hasSecret,
+    revision: configuration.revision,
+    secretRevision: configuration.secretRevision,
+  );
+}
+
+typedef _CloudMcpEditIdentity = ({
+  String id,
+  String name,
+  String url,
+  McpTransportType transport,
+});
+
+typedef _CloudMcpEditConfiguration = ({
+  McpServerAuthMode authMode,
+  bool hasSecret,
+  int? revision,
+  int? secretRevision,
+});
+
+_CloudMcpEditIdentity _cloudMcpEditIdentity(
+  WorkspaceResource resource,
+  Map<String, dynamic> data,
+) => (
+  id: resource.resourceId,
+  name: data['name'] as String,
+  url: data['url'] as String,
+  transport: .fromJson(Map<String, dynamic>.from(data['transport'] as Map)),
+);
+
+_CloudMcpEditConfiguration _cloudMcpEditConfiguration(
+  WorkspaceResource resource,
+  Map<String, dynamic> data,
+) {
+  final authMode = _mcpAuthMode(data['authType']);
+
+  return (
+    authMode: authMode,
+    hasSecret: data['hasSecret'] as bool? ?? authMode != .none,
+    revision: resource.revision,
+    secretRevision: data['secretRevision'] as int?,
+  );
+}
+
+void _validateCloudMcpRevision(
+  WorkspaceResource resource,
+  McpServerSettingsUpdate update,
+  int? currentSecretRevision,
+) {
+  if (update.expectedRevision != null &&
+      update.expectedRevision != resource.revision) {
+    throw StateError('Cloud MCP server changed. Reload settings and retry.');
+  }
+  if (update.expectedSecretRevision != null &&
+      update.expectedSecretRevision != currentSecretRevision) {
+    throw StateError(
+      'Cloud MCP credential changed. Reload settings and retry.',
+    );
+  }
+}
+
+String _cloudMcpAuthType(McpServerAuthMode authMode) => switch (authMode) {
+  .none => 'none',
+  .bearerToken => 'bearerToken',
+  .httpHeaders => 'httpHeaders',
+  .oauth => 'oauth',
+};
+
+bool _cloudMcpIdentityChanged(
+  McpServerSettingsUpdate update,
+  _CloudMcpCurrentSettings current,
+  String authType,
+) =>
+    current.authType != authType ||
+    current.url != update.url ||
+    jsonEncode(current.transport) != jsonEncode(update.transport.toJson());
+
+typedef _CloudMcpSettingsWrite = ({
+  Map<String, dynamic> data,
+  McpServerSettingsUpdate update,
+  _CloudMcpCurrentSettings current,
+  String authType,
+  bool identityChanged,
+});
+
+void _writeCloudMcpSettings(_CloudMcpSettingsWrite write) {
+  _writeCloudMcpIdentity(write);
+  _updateCloudMcpAuthStatus(write);
+  if (write.update.secretChange != .preserve || write.identityChanged) {
+    final _ = write.data.remove('testSummaryJson');
+  }
+}
+
+void _writeCloudMcpIdentity(_CloudMcpSettingsWrite write) {
+  final data = write.data;
+  final update = write.update;
+  final authType = write.authType;
+  final transport = update.transport.toJson();
+  data
+    ..['name'] = update.name
+    ..['url'] = update.url
+    ..['transport'] = transport
+    ..['authType'] = authType;
+}
+
+void _updateCloudMcpAuthStatus(_CloudMcpSettingsWrite write) {
+  if (_clearCloudMcpAuthStatus(write)) {
+    final _ = write.data.remove('authStatus');
+
+    return;
+  }
+  if (_requiresCloudMcpReauth(write)) {
+    write.data['authStatus'] = 'reauthRequired';
+
+    return;
+  }
+  if (_preserveCloudMcpAuthStatus(write)) return;
+  write.data['authStatus'] = 'active';
+}
+
+bool _clearCloudMcpAuthStatus(_CloudMcpSettingsWrite write) =>
+    write.authType == 'none';
+
+bool _requiresCloudMcpReauth(_CloudMcpSettingsWrite write) =>
+    write.authType == 'oauth' && write.identityChanged;
+
+bool _preserveCloudMcpAuthStatus(_CloudMcpSettingsWrite write) =>
+    write.current.authType == write.authType &&
+    write.update.secretChange != .replace;
+
+McpServerAuthMode _mcpAuthMode(Object? authType) => switch (authType) {
+  'bearerToken' => .bearerToken,
+  'httpHeaders' => .httpHeaders,
+  'oauth' => .oauth,
+  _ => .none,
+};
+
+void _validateMcpSettingsUpdate(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+  bool hasSecret,
+) {
+  if (update.name.trim().isEmpty || update.url.trim().isEmpty) {
+    throw const FormatException('MCP name and URL are required.');
+  }
+  _validateCloudMcpSecretTransition(update, currentAuthMode);
+  _validateCloudMcpSecretAvailability(update, currentAuthMode, hasSecret);
+}
+
+void _validateCloudMcpSecretTransition(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+) {
+  if (_invalidMcpSecretClear(update) ||
+      _invalidMcpSecretNone(update) ||
+      _invalidMcpSecretOAuth(update, currentAuthMode)) {
+    throw const FormatException('MCP authentication settings are invalid.');
+  }
+}
+
+bool _invalidMcpSecretClear(McpServerSettingsUpdate update) =>
+    update.secretChange == .clear && update.authMode != .none;
+
+bool _invalidMcpSecretNone(McpServerSettingsUpdate update) =>
+    update.authMode == .none && update.secretChange == .replace;
+
+bool _invalidMcpSecretOAuth(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+) =>
+    update.authMode == .oauth &&
+    (currentAuthMode != .oauth || update.secretChange != .preserve);
+
+void _validateCloudMcpSecretAvailability(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+  bool hasSecret,
+) {
+  if (update.authMode == .none || update.authMode == .oauth) return;
+  if (_missingPreservedMcpSecret(update, currentAuthMode, hasSecret) ||
+      _missingReplacementMcpSecret(update)) {
+    throw const FormatException('MCP authentication settings are invalid.');
+  }
+}
+
+bool _missingPreservedMcpSecret(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+  bool hasSecret,
+) =>
+    update.secretChange == .preserve &&
+    (update.authMode != currentAuthMode || !hasSecret);
+
+bool _missingReplacementMcpSecret(McpServerSettingsUpdate update) =>
+    update.secretChange == .replace && update.secret?.trim().isNotEmpty != true;
 
 mixin _ToolsGroupOperations on _CloudToolsRepositoryBase {
   Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(String _) async =>
@@ -690,6 +1086,7 @@ McpServerEntity _createMcpServerEntity(
     DateTime updatedAt,
     String? description,
     String? catalogSnapshotJson,
+    String? testSummaryJson,
     bool isEnabled,
   })
   metadata,
@@ -705,12 +1102,26 @@ McpServerEntity _createMcpServerEntity(
     updatedAt: metadata.updatedAt,
   );
 
-  return server.copyWith(
-    description: metadata.description,
-    catalogSnapshotJson: metadata.catalogSnapshotJson,
-    isEnabled: metadata.isEnabled,
-  );
+  return _withMcpServerMetadata(server, metadata);
 }
+
+McpServerEntity _withMcpServerMetadata(
+  McpServerEntity server,
+  ({
+    DateTime createdAt,
+    DateTime updatedAt,
+    String? description,
+    String? catalogSnapshotJson,
+    String? testSummaryJson,
+    bool isEnabled,
+  })
+  metadata,
+) => server.copyWith(
+  description: metadata.description,
+  catalogSnapshotJson: metadata.catalogSnapshotJson,
+  lastTestSummary: McpConnectionTestSummary.fromJson(metadata.testSummaryJson),
+  isEnabled: metadata.isEnabled,
+);
 
 ({
   String id,
@@ -732,6 +1143,7 @@ _mcpServerIdentity(WorkspaceResource resource, Map<String, dynamic> data) => (
   DateTime updatedAt,
   String? description,
   String? catalogSnapshotJson,
+  String? testSummaryJson,
   bool isEnabled,
 })
 _mcpServerMetadata(WorkspaceResource resource, Map<String, dynamic> data) => (
@@ -739,6 +1151,7 @@ _mcpServerMetadata(WorkspaceResource resource, Map<String, dynamic> data) => (
   updatedAt: resource.updatedAt,
   description: data['description'] as String?,
   catalogSnapshotJson: data['catalogSnapshotJson'] as String?,
+  testSummaryJson: data['testSummaryJson'] as String?,
   isEnabled: data['isEnabled'] != false,
 );
 

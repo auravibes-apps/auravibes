@@ -20,14 +20,27 @@ class const McpOAuthReauthRequired() implements Exception {
 
 class McpOAuthTokenResolver {
   new({McpOAuthExchange? exchange, DateTime Function()? now})
-      : _exchange = exchange ?? refreshMcpOAuthToken,
-        _now = now ?? DateTime.now;
+    : _exchange = exchange ?? refreshMcpOAuthToken,
+      _now = now ?? DateTime.now;
 
   final McpOAuthExchange _exchange;
   final DateTime Function() _now;
 
-  Future<String> resolve(Session session, WorkspaceSecret selected) async {
+  Future<String> resolve(
+    Session session,
+    WorkspaceSecret selected, {
+    required String actorUserId,
+  }) async {
     final token = await session.db.transaction((transaction) async {
+      final workspace = await CloudWorkspace.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(selected.workspaceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (workspace == null) return null;
       final secret = await WorkspaceSecret.db.findFirstRow(
         session,
         where: (table) =>
@@ -46,12 +59,34 @@ class McpOAuthTokenResolver {
           await cipher.decrypt(session, secret),
         );
       } on FormatException {
-        await _setReauth(session, secret, transaction);
+        await _setReauth(
+          session,
+          secret,
+          workspace,
+          transaction,
+          actorUserId,
+        );
         return null;
       }
-      if (!credentials.needsRefresh(_now())) return credentials.accessToken;
+      if (!credentials.needsRefresh(_now())) {
+        await _setActive(
+          session,
+          secret,
+          secret.revision,
+          workspace,
+          transaction,
+          actorUserId,
+        );
+        return credentials.accessToken;
+      }
       if (credentials.refreshToken?.isNotEmpty != true) {
-        await _setReauth(session, secret, transaction);
+        await _setReauth(
+          session,
+          secret,
+          workspace,
+          transaction,
+          actorUserId,
+        );
         return null;
       }
       try {
@@ -65,7 +100,7 @@ class McpOAuthTokenResolver {
           workspaceId: secret.workspaceId,
           resourceId: secret.resourceId,
         );
-        await WorkspaceSecret.db.updateRow(
+        final nextSecret = await WorkspaceSecret.db.updateRow(
           session,
           secret.copyWith(
             ciphertext: encrypted.ciphertext,
@@ -76,10 +111,23 @@ class McpOAuthTokenResolver {
           ),
           transaction: transaction,
         );
-        await _setActive(session, secret, transaction);
+        await _setActive(
+          session,
+          nextSecret,
+          nextSecret.revision,
+          workspace,
+          transaction,
+          actorUserId,
+        );
         return refreshed.accessToken;
       } on Exception {
-        await _setReauth(session, secret, transaction);
+        await _setReauth(
+          session,
+          secret,
+          workspace,
+          transaction,
+          actorUserId,
+        );
         return null;
       }
     });
@@ -90,19 +138,43 @@ class McpOAuthTokenResolver {
   Future<void> _setReauth(
     Session session,
     WorkspaceSecret secret,
+    CloudWorkspace workspace,
     Transaction transaction,
-  ) => _setStatus(session, secret, transaction, 'reauthRequired');
+    String actorUserId,
+  ) => _setStatus(
+    session,
+    secret,
+    secret.revision,
+    workspace,
+    transaction,
+    actorUserId,
+    'reauthRequired',
+  );
 
   Future<void> _setActive(
     Session session,
     WorkspaceSecret secret,
+    int secretRevision,
+    CloudWorkspace workspace,
     Transaction transaction,
-  ) => _setStatus(session, secret, transaction, 'active');
+    String actorUserId,
+  ) => _setStatus(
+    session,
+    secret,
+    secretRevision,
+    workspace,
+    transaction,
+    actorUserId,
+    'active',
+  );
 
   Future<void> _setStatus(
     Session session,
     WorkspaceSecret secret,
+    int secretRevision,
+    CloudWorkspace workspace,
     Transaction transaction,
+    String actorUserId,
     String status,
   ) async {
     final resource = await WorkspaceResource.db.findFirstRow(
@@ -117,15 +189,42 @@ class McpOAuthTokenResolver {
     );
     if (resource == null) return;
     final data = jsonDecode(resource.data) as Map<String, dynamic>;
-    if (data['authStatus'] == status) return;
-    data['authStatus'] = status;
-    await WorkspaceResource.db.updateRow(
+    if (data['authStatus'] == status &&
+        data['secretRevision'] == secretRevision) {
+      return;
+    }
+    data
+      ..['authStatus'] = status
+      ..['secretRevision'] = secretRevision
+      ..['hasSecret'] = true;
+    final now = _now().toUtc();
+    final updated = await WorkspaceResource.db.updateRow(
       session,
       resource.copyWith(
         data: jsonEncode(data),
         revision: resource.revision + 1,
-        updatedAt: _now().toUtc(),
+        updatedAt: now,
       ),
+      transaction: transaction,
+    );
+    final sequence = workspace.sequence + 1;
+    await WorkspaceEvent.db.insertRow(
+      session,
+      WorkspaceEvent(
+        eventId: const Uuid().v7(),
+        workspaceId: secret.workspaceId,
+        sequence: sequence,
+        actorUserId: actorUserId,
+        kind: 'updated',
+        resourceKind: updated.resourceKind.name,
+        resourceId: updated.resourceId,
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    await CloudWorkspace.db.updateRow(
+      session,
+      workspace.copyWith(sequence: sequence, updatedAt: now),
       transaction: transaction,
     );
   }
@@ -143,9 +242,11 @@ Future<McpOAuthCredentials> refreshMcpOAuthToken(
     ..connectionTimeout = const Duration(seconds: 10)
     ..autoUncompress = false;
   try {
-    final request = await client.postUrl(uri).timeout(
-      const Duration(seconds: 10),
-    );
+    final request = await client
+        .postUrl(uri)
+        .timeout(
+          const Duration(seconds: 10),
+        );
     request
       ..followRedirects = false
       ..maxRedirects = 0
@@ -154,11 +255,15 @@ Future<McpOAuthCredentials> refreshMcpOAuthToken(
         'x-www-form-urlencoded',
       )
       ..headers.set(HttpHeaders.acceptHeader, 'application/json');
-    request.write(Uri(queryParameters: {
-      'grant_type': 'refresh_token',
-      'refresh_token': credentials.refreshToken!,
-      'client_id': credentials.clientId,
-    }).query);
+    request.write(
+      Uri(
+        queryParameters: {
+          'grant_type': 'refresh_token',
+          'refresh_token': credentials.refreshToken!,
+          'client_id': credentials.clientId,
+        },
+      ).query,
+    );
     final response = await request.close().timeout(const Duration(seconds: 10));
     if (response.isRedirect || response.statusCode != HttpStatus.ok) {
       throw const McpOAuthReauthRequired();

@@ -117,6 +117,18 @@ class ServiceConnectionRepository(
     required McpServiceConnectionProfile profile,
   }) => _createMcpServiceConnection(this, workspaceId, profile);
 
+  Future<String?> updateMcpAuthentication({
+    required String? connectionId,
+    required String workspaceId,
+    required String name,
+    required McpAuthenticationType authenticationType,
+  }) => _updateMcpAuthentication(this, (
+    connectionId: connectionId,
+    workspaceId: workspaceId,
+    name: name,
+    authenticationType: authenticationType,
+  ));
+
   Future<void> updateOAuthToken({
     required String id,
     required OAuthTokenEntity token,
@@ -492,22 +504,29 @@ Future<String> _createHeadersForAuthentication(
   _McpAuthenticationRequest request,
   Map<String, String> headers,
 ) async {
+  final repository = request.repository;
   final encrypted = await _encryptedSecret(
-    request.repository,
+    repository,
     ServiceConnectionSecretHttpHeaders(headers: headers),
   );
   final row = await _insertConnection(
-    request.repository,
-    _baseConnectionCompanion((
-      name: request.profile.name,
-      serviceId: request.profile.serviceId(),
-      kind: .mcpServer,
-      authenticationType: .apiKey,
-      workspaceId: request.workspaceId,
-    )).copyWith(encryptedAuthValue: .new(encrypted)),
+    repository,
+    _headersAuthenticationCompanion(request, encrypted),
   );
+
   return row.id;
 }
+
+ServiceConnectionsCompanion _headersAuthenticationCompanion(
+  _McpAuthenticationRequest request,
+  String encrypted,
+) => _baseConnectionCompanion((
+  name: request.profile.name,
+  serviceId: request.profile.serviceId(),
+  kind: .mcpServer,
+  authenticationType: .apiKey,
+  workspaceId: request.workspaceId,
+)).copyWith(encryptedAuthValue: .new(encrypted));
 
 Future<String> _createBearerForAuthentication(
   _McpAuthenticationRequest request,
@@ -727,6 +746,143 @@ Future<void> _deleteOwnedMcpCredential(
   final _ = delete.where((table) => _ownedMcpCredentialFilter(table, id));
   final _ = await delete.go();
 }
+
+typedef _McpAuthenticationUpdateRequest = ({
+  String? connectionId,
+  String workspaceId,
+  String name,
+  McpAuthenticationType authenticationType,
+});
+
+typedef _McpCredentialUpdate = ({
+  ServiceConnectionSecret secret,
+  String? suffix,
+  ServiceAuthenticationTypeTable authenticationType,
+});
+
+Future<String?> _updateMcpAuthentication(
+  ServiceConnectionRepository repository,
+  _McpAuthenticationUpdateRequest request,
+) async {
+  final connection = await _ownedMcpConnection(repository, request);
+  if (request.authenticationType is McpAuthenticationTypeNone) {
+    return await _removeMcpCredential(repository, request.connectionId);
+  }
+  if (request.authenticationType is McpAuthenticationTypeOAuth) {
+    throw StateError('OAuth credentials must use the reconnect flow.');
+  }
+  if (connection == null) {
+    return await _createMcpCredential(repository, request);
+  }
+
+  return await _replaceMcpCredential(repository, connection, request);
+}
+
+Future<ServiceConnectionTable?> _ownedMcpConnection(
+  ServiceConnectionRepository repository,
+  _McpAuthenticationUpdateRequest request,
+) async {
+  final connectionId = request.connectionId;
+  if (connectionId == null) return null;
+  final connection = await _getRowById(repository, connectionId);
+  if (connection == null ||
+      connection.workspaceId != request.workspaceId ||
+      connection.kind != ServiceConnectionKindTable.mcpServer) {
+    throw StateError('MCP credential not found.');
+  }
+
+  return connection;
+}
+
+Future<String?> _removeMcpCredential(
+  ServiceConnectionRepository repository,
+  String? connectionId,
+) async {
+  if (connectionId != null) {
+    await _deleteOwnedMcpCredential(repository, connectionId);
+  }
+
+  return null;
+}
+
+Future<String?> _createMcpCredential(
+  ServiceConnectionRepository repository,
+  _McpAuthenticationUpdateRequest request,
+) => repository.createMcpServiceConnection(
+  workspaceId: request.workspaceId,
+  profile: .new(
+    name: request.name,
+    authenticationType: request.authenticationType,
+  ),
+);
+
+Future<String> _replaceMcpCredential(
+  ServiceConnectionRepository repository,
+  ServiceConnectionTable connection,
+  _McpAuthenticationUpdateRequest request,
+) async {
+  final update = _mcpCredentialUpdate(request.authenticationType);
+  final encrypted = await _encryptedSecret(repository, update.secret);
+  final _ = await _writeConnectionUpdate(
+    repository,
+    connection.id,
+    _mcpCredentialCompanion(request, update, encrypted),
+  );
+
+  return connection.id;
+}
+
+ServiceConnectionsCompanion _mcpCredentialCompanion(
+  _McpAuthenticationUpdateRequest request,
+  _McpCredentialUpdate update,
+  String encrypted,
+) => _mcpCredentialValuesCompanion(
+  _mcpCredentialBaseCompanion(request, update),
+  update,
+  encrypted,
+);
+
+ServiceConnectionsCompanion _mcpCredentialBaseCompanion(
+  _McpAuthenticationUpdateRequest request,
+  _McpCredentialUpdate update,
+) => _baseConnectionCompanion((
+  name: request.name,
+  serviceId: 'mcp:${request.name}',
+  kind: .mcpServer,
+  authenticationType: update.authenticationType,
+  workspaceId: request.workspaceId,
+));
+
+ServiceConnectionsCompanion _mcpCredentialValuesCompanion(
+  ServiceConnectionsCompanion base,
+  _McpCredentialUpdate update,
+  String encrypted,
+) => base.copyWith(
+  encryptedAuthValue: .new(encrypted),
+  keySuffix: .new(update.suffix),
+  metadataJson: const Value(null),
+  authStatus: const Value(ServiceConnectionAuthStatus.connected),
+  expiresAt: const Value(null),
+  lastRefreshedAt: const Value(null),
+  lastAuthError: const Value(null),
+);
+
+_McpCredentialUpdate _mcpCredentialUpdate(
+  McpAuthenticationType authenticationType,
+) => switch (authenticationType) {
+  McpAuthenticationTypeBearerToken(:final bearerToken) => (
+    secret: ServiceConnectionSecretBearerToken(bearerToken: bearerToken),
+    suffix: _suffix(bearerToken),
+    authenticationType: ServiceAuthenticationTypeTable.bearerToken,
+  ),
+  McpAuthenticationTypeHttpHeaders(:final headers) => (
+    secret: ServiceConnectionSecretHttpHeaders(headers: headers),
+    suffix: null,
+    authenticationType: ServiceAuthenticationTypeTable.apiKey,
+  ),
+  McpAuthenticationTypeNone() || McpAuthenticationTypeOAuth() =>
+    throw StateError('Unsupported MCP authentication update.'),
+};
 
 Future<void> _deleteAppSkillCredential(
   ServiceConnectionRepository repository,

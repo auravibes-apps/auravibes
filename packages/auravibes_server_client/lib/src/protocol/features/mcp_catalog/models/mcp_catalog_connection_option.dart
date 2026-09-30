@@ -13,6 +13,7 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
 import '../../../features/mcp_catalog/models/mcp_catalog_credential_field.dart'
     as _i3x0ibmr;
 

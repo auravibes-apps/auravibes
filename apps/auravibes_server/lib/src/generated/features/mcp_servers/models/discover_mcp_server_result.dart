@@ -12,6 +12,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
+
 import '../../../features/mcp_servers/models/discovered_mcp_tool.dart'
     as _ihus3ex7;
 import '../../../features/mcp_servers/models/mcp_server_health.dart'

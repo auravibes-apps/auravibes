@@ -176,6 +176,19 @@ class McpServerUseCases(
       final now = DateTime.now().toUtc();
       final serverId = const Uuid().v7();
       final groupId = const Uuid().v7();
+      final secretValue = oauth == null
+          ? headers.isNotEmpty
+                ? jsonEncode(headers)
+                : request.bearerToken
+          : request.oauthJson;
+      final authType = oauth != null
+          ? 'oauth'
+          : headers.isNotEmpty
+          ? 'httpHeaders'
+          : request.bearerToken?.isNotEmpty == true
+          ? 'bearerToken'
+          : 'none';
+      final hasSecret = secretValue?.isNotEmpty == true;
       final resources = [
         WorkspaceResource(
           workspaceId: request.workspaceId,
@@ -191,13 +204,10 @@ class McpServerUseCases(
             },
             'description': description,
             'catalogSnapshotJson': ?catalogSnapshotJson,
-            'authType': oauth != null
-                ? 'oauth'
-                : headers.isNotEmpty
-                ? 'httpHeaders'
-                : request.bearerToken?.isNotEmpty == true
-                ? 'bearerToken'
-                : 'none',
+            'authType': authType,
+            'hasSecret': hasSecret,
+            if (hasSecret) 'secretRevision': 1,
+            if (hasSecret) 'authStatus': 'active',
             'isEnabled': true,
           }),
           revision: 1,
@@ -247,11 +257,6 @@ class McpServerUseCases(
           transaction: transaction,
         );
       }
-      final secretValue = oauth == null
-          ? headers.isNotEmpty
-          ? jsonEncode(headers)
-          : request.bearerToken
-          : request.oauthJson;
       if (secretValue case final token? when token.isNotEmpty) {
         final encrypted = await const WorkspaceSecretCipher().encrypt(
           session,
@@ -779,7 +784,11 @@ class McpServerUseCases(
       final decrypted = secret == null
           ? null
           : metadata.authType == 'oauth'
-          ? await McpOAuthTokenResolver().resolve(session, secret)
+          ? await McpOAuthTokenResolver().resolve(
+              session,
+              secret,
+              actorUserId: userId,
+            )
           : await const WorkspaceSecretCipher().decrypt(session, secret);
       return await _probe(
         uri: McpServerPolicy.validateUri(metadata.url),

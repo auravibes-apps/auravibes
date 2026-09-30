@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -27,5 +28,8 @@ McpServersRepositoryContract mcpServersRepository(
   }
   final appDatabase = ref.watch(appDatabaseProvider);
 
-  return McpServersRepository(appDatabase);
+  return McpServersRepository(
+    appDatabase,
+    ref.watch(serviceConnectionRepositoryProvider),
+  );
 }

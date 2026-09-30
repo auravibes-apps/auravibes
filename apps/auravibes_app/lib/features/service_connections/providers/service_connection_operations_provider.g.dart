@@ -69,7 +69,7 @@ final class ServiceConnectionOperationsProvider
 }
 
 String _$serviceConnectionOperationsHash() =>
-    r'4044cd0598c06c3f5c1c095f0eb1c3deb55f16ac';
+    r'50bf80d8a626e3daf1d264915071e97743134b8c';
 
 final class ServiceConnectionOperationsFamily extends $Family
     with

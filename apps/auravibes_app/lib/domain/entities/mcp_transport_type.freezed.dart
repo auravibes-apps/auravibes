@@ -1375,7 +1375,7 @@ mixin _$McpServerEntity {
  DateTime get createdAt;/// Timestamp when this configuration was last updated.
  DateTime get updatedAt;/// Optional credential record used to authenticate this MCP server.
  String? get serviceConnectionId;/// Optional description of what this MCP server provides.
- String? get description; String? get catalogSnapshotJson;/// Whether the MCP server is enabled.
+ String? get description; String? get catalogSnapshotJson; McpConnectionTestSummary? get lastTestSummary;/// Whether the MCP server is enabled.
  bool get isEnabled;
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -1388,20 +1388,20 @@ $McpServerEntityCopyWith<McpServerEntity> get copyWith => _$McpServerEntityCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as McpServerEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.catalogSnapshotJson, _this.catalogSnapshotJson) || other.catalogSnapshotJson == _this.catalogSnapshotJson)&&(identical(other.lastTestSummary, _this.lastTestSummary) || other.lastTestSummary == _this.lastTestSummary)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
 int get hashCode {
   final _this = this as McpServerEntity;
-  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.url,_this.transport,_this.authenticationType,_this.createdAt,_this.updatedAt,_this.serviceConnectionId,_this.description,_this.catalogSnapshotJson,_this.isEnabled);
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.url,_this.transport,_this.authenticationType,_this.createdAt,_this.updatedAt,_this.serviceConnectionId,_this.description,_this.catalogSnapshotJson,_this.lastTestSummary,_this.isEnabled);
 }
 
 @override
 String toString() {
   final _this = this as McpServerEntity;
-  return 'McpServerEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, catalogSnapshotJson: ${_this.catalogSnapshotJson}, isEnabled: ${_this.isEnabled})';
+  return 'McpServerEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, catalogSnapshotJson: ${_this.catalogSnapshotJson}, lastTestSummary: ${_this.lastTestSummary}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -1412,7 +1412,7 @@ abstract mixin class $McpServerEntityCopyWith<$Res> implements $McpServerToCreat
   factory $McpServerEntityCopyWith(McpServerEntity value, $Res Function(McpServerEntity) _then) = _$McpServerEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, McpConnectionTestSummary? lastTestSummary, bool isEnabled
 });
 
 
@@ -1429,7 +1429,7 @@ class _$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? isEnabled = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? lastTestSummary = freezed,Object? isEnabled = null,}) {
   return _then(McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1442,7 +1442,8 @@ as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore
 as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
-as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as String?,lastTestSummary: freezed == lastTestSummary ? _self.lastTestSummary : lastTestSummary // ignore: cast_nullable_to_non_nullable
+as McpConnectionTestSummary?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -1537,10 +1538,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  McpConnectionTestSummary? lastTestSummary,  bool isEnabled)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.lastTestSummary,_that.isEnabled);case _:
   return orElse();
 
 }
@@ -1558,10 +1559,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  McpConnectionTestSummary? lastTestSummary,  bool isEnabled)  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity():
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.lastTestSummary,_that.isEnabled);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1578,10 +1579,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  bool isEnabled)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String url,  McpTransportType transport,  McpAuthenticationType authenticationType,  DateTime createdAt,  DateTime updatedAt,  String? serviceConnectionId,  String? description,  String? catalogSnapshotJson,  McpConnectionTestSummary? lastTestSummary,  bool isEnabled)?  $default,) {final _that = this;
 switch (_that) {
 case _McpServerEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.isEnabled);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,_that.authenticationType,_that.createdAt,_that.updatedAt,_that.serviceConnectionId,_that.description,_that.catalogSnapshotJson,_that.lastTestSummary,_that.isEnabled);case _:
   return null;
 
 }
@@ -1593,7 +1594,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.url,_that.transport,
 
 
 class _McpServerEntity extends McpServerEntity {
-  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.serviceConnectionId, this.description, this.catalogSnapshotJson, this.isEnabled = true}): super._();
+  const _McpServerEntity({required this.id, required this.workspaceId, required this.name, required this.url, required this.transport, required this.authenticationType, required this.createdAt, required this.updatedAt, this.serviceConnectionId, this.description, this.catalogSnapshotJson, this.lastTestSummary, this.isEnabled = true}): super._();
   
 
 /// Unique ID of this MCP server record in the database.
@@ -1617,6 +1618,7 @@ class _McpServerEntity extends McpServerEntity {
 /// Optional description of what this MCP server provides.
 @override final  String? description;
 @override final  String? catalogSnapshotJson;
+@override final  McpConnectionTestSummary? lastTestSummary;
 /// Whether the MCP server is enabled.
 @override@JsonKey() final  bool isEnabled;
 
@@ -1630,18 +1632,18 @@ _$McpServerEntityCopyWith<_McpServerEntity> get copyWith => __$McpServerEntityCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.catalogSnapshotJson, catalogSnapshotJson) || other.catalogSnapshotJson == catalogSnapshotJson)&&(identical(other.lastTestSummary, lastTestSummary) || other.lastTestSummary == lastTestSummary)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,catalogSnapshotJson,isEnabled);
+    return Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,catalogSnapshotJson,lastTestSummary,isEnabled);
 }
 
 @override
 String toString() {
-    return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, catalogSnapshotJson: $catalogSnapshotJson, isEnabled: $isEnabled)';
+    return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, catalogSnapshotJson: $catalogSnapshotJson, lastTestSummary: $lastTestSummary, isEnabled: $isEnabled)';
 }
 
 
@@ -1652,7 +1654,7 @@ abstract mixin class _$McpServerEntityCopyWith<$Res> implements $McpServerEntity
   factory _$McpServerEntityCopyWith(_McpServerEntity value, $Res Function(_McpServerEntity) _then) = __$McpServerEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, bool isEnabled
+ String id, String workspaceId, String name, String url, McpTransportType transport, McpAuthenticationType authenticationType, DateTime createdAt, DateTime updatedAt, String? serviceConnectionId, String? description, String? catalogSnapshotJson, McpConnectionTestSummary? lastTestSummary, bool isEnabled
 });
 
 
@@ -1669,7 +1671,7 @@ class __$McpServerEntityCopyWithImpl<$Res>
 
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? isEnabled = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? catalogSnapshotJson = freezed,Object? lastTestSummary = freezed,Object? isEnabled = null,}) {
   return _then(_McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -1682,7 +1684,8 @@ as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore
 as DateTime,serviceConnectionId: freezed == serviceConnectionId ? _self.serviceConnectionId : serviceConnectionId // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,catalogSnapshotJson: freezed == catalogSnapshotJson ? _self.catalogSnapshotJson : catalogSnapshotJson // ignore: cast_nullable_to_non_nullable
-as String?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as String?,lastTestSummary: freezed == lastTestSummary ? _self.lastTestSummary : lastTestSummary // ignore: cast_nullable_to_non_nullable
+as McpConnectionTestSummary?,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

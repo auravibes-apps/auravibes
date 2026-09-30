@@ -96,7 +96,19 @@ void main() {
           now: DateTime.utc(2026, 1, 1, 2),
         ),
       );
-      expect(await resolver.resolve(fixture.session, secret), 'rotated-access');
+      final beforeRefresh = await fixture.counts();
+      final sequenceBeforeRefresh = (await CloudWorkspace.db.findById(
+        fixture.session,
+        fixture.workspaceId,
+      ))!.sequence;
+      expect(
+        await resolver.resolve(
+          fixture.session,
+          secret,
+          actorUserId: fixture.userId,
+        ),
+        'rotated-access',
+      );
       final persisted = (await WorkspaceSecret.db.find(
         fixture.session,
         where: (table) => table.workspaceId.equals(fixture.workspaceId),
@@ -108,20 +120,48 @@ void main() {
       expect(encrypted, contains('rotated-refresh'));
       expect(encrypted, isNot(contains('refresh-secret')));
       expect(created.mcpServerId, persisted.resourceId);
+      final rotatedResource = await WorkspaceResource.db.findFirstRow(
+        fixture.session,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.resourceId.equals(created.mcpServerId),
+      );
+      final rotatedData = jsonDecode(rotatedResource!.data) as Map;
+      expect(rotatedData['secretRevision'], persisted.revision);
+      expect(rotatedData['authStatus'], 'active');
+      expect(rotatedResource.revision, 2);
+      final afterRefresh = await fixture.counts();
+      expect(afterRefresh.events, beforeRefresh.events + 1);
+      expect(
+        (await CloudWorkspace.db.findById(
+          fixture.session,
+          fixture.workspaceId,
+        ))!.sequence,
+        sequenceBeforeRefresh + 1,
+      );
       final stillValid = McpOAuthTokenResolver(
         now: () => DateTime.utc(2026, 1, 1, 2, 1),
         exchange: (_) => throw StateError('Must not refresh'),
       );
       expect(
-        await stillValid.resolve(fixture.session, persisted),
+        await stillValid.resolve(
+          fixture.session,
+          persisted,
+          actorUserId: fixture.userId,
+        ),
         'rotated-access',
       );
+      expect((await fixture.counts()).events, afterRefresh.events);
       final failed = McpOAuthTokenResolver(
         now: () => DateTime.utc(2026, 1, 2),
         exchange: (_) => throw const FormatException('refresh failed'),
       );
       await expectLater(
-        failed.resolve(fixture.session, persisted),
+        failed.resolve(
+          fixture.session,
+          persisted,
+          actorUserId: fixture.userId,
+        ),
         throwsA(isA<McpOAuthReauthRequired>()),
       );
       final resource = await WorkspaceResource.db.findFirstRow(
@@ -134,6 +174,7 @@ void main() {
         (jsonDecode(resource!.data) as Map)['authStatus'],
         'reauthRequired',
       );
+      expect((await fixture.counts()).events, afterRefresh.events + 1);
       final noRefresh = encrypted
           .replaceFirst(
             '"refreshToken":"rotated-refresh"',
@@ -158,7 +199,11 @@ void main() {
         McpOAuthTokenResolver(
           now: () => DateTime.utc(2026, 1, 2),
           exchange: (_) => throw StateError('Must not exchange'),
-        ).resolve(fixture.session, withoutRefresh),
+        ).resolve(
+          fixture.session,
+          withoutRefresh,
+          actorUserId: fixture.userId,
+        ),
         throwsA(isA<McpOAuthReauthRequired>()),
       );
     });

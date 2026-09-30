@@ -831,16 +831,22 @@ class const _AuthenticationSelector({required final String workspaceId})
   static List<McpAuthenticationTypeOptions> _supportedTypes(
     WorkspaceCapabilities capabilities,
   ) => McpAuthenticationTypeOptions.values
-      .where((type) => type != McpAuthenticationTypeOptions.httpHeaders)
-      .where(
-        (type) => capabilities.mcpAuthentication.contains(switch (type) {
-          .none => WorkspaceMcpAuthentication.none,
-          .bearerToken => WorkspaceMcpAuthentication.bearerToken,
-          .oauth => WorkspaceMcpAuthentication.oauth,
-          .httpHeaders => WorkspaceMcpAuthentication.httpHeaders,
-        }),
-      )
+      .where((type) => _isSupportedAuthentication(type, capabilities))
       .toList();
+
+  static bool _isSupportedAuthentication(
+    McpAuthenticationTypeOptions type,
+    WorkspaceCapabilities capabilities,
+  ) {
+    if (type == McpAuthenticationTypeOptions.httpHeaders) return false;
+
+    return capabilities.mcpAuthentication.contains(switch (type) {
+      .none => WorkspaceMcpAuthentication.none,
+      .bearerToken => WorkspaceMcpAuthentication.bearerToken,
+      .oauth => WorkspaceMcpAuthentication.oauth,
+      .httpHeaders => WorkspaceMcpAuthentication.httpHeaders,
+    });
+  }
 
   static List<AuraButtonGroupItem<McpAuthenticationTypeOptions>> _items(
     List<McpAuthenticationTypeOptions> types,

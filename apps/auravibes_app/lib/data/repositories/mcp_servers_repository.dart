@@ -10,7 +10,11 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository_contract.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart';
 
@@ -29,12 +33,13 @@ final _mcpServerTemplate = McpServerEntity(
 
 class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.
-  new(this._database)
+  new(this._database, [this._serviceConnections])
     : _mcpServersDao = _database.mcpServersDao,
       _toolsGroupsDao = _database.toolsGroupsDao,
       _workspaceToolsDao = _database.workspaceToolsDao;
 
   final AppDatabase _database;
+  final ServiceConnectionRepository? _serviceConnections;
   final McpServersDao _mcpServersDao;
   final ToolsGroupsDao _toolsGroupsDao;
   final WorkspaceToolsDao _workspaceToolsDao;
@@ -140,6 +145,361 @@ class McpServersRepository implements McpServersRepositoryContract {
       );
     }
   }
+
+  @override
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) async {
+    final saved = await _mcpServersDao.saveTestSummary(
+      serverId,
+      summary.toJson(),
+    );
+    if (!saved) throw McpServerNotFoundException(serverId);
+  }
+
+  @override
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update) =>
+      _updateMcpServerSettings(this, update);
+}
+
+typedef _McpServerSettingsMutation = ({
+  McpServersRepository repository,
+  McpServerEntity server,
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+});
+
+Future<void> _updateMcpServerSettings(
+  McpServersRepository repository,
+  McpServerSettingsUpdate update,
+) async {
+  final mutation = await _prepareMcpServerSettingsMutation(repository, update);
+  await repository._database.transaction(
+    () => _applyMcpServerSettings(mutation),
+  );
+}
+
+Future<_McpServerSettingsMutation> _prepareMcpServerSettingsMutation(
+  McpServersRepository repository,
+  McpServerSettingsUpdate update,
+) async {
+  final server = await repository.getMcpServerById(update.serverId);
+  if (server == null) throw McpServerNotFoundException(update.serverId);
+  final currentAuthMode = await _localAuthMode(
+    repository._serviceConnections,
+    server.serviceConnectionId,
+  );
+  _validateMcpSettingsUpdate(update, currentAuthMode);
+
+  return (
+    repository: repository,
+    server: server,
+    update: update,
+    currentAuthMode: currentAuthMode,
+  );
+}
+
+Future<void> _applyMcpServerSettings(
+  _McpServerSettingsMutation mutation,
+) async {
+  final identityChanged = _mcpSettingsAffectIdentity(mutation);
+  final nextConnectionId = await _updateMcpCredential(mutation);
+  await _writeMcpServerSettings(mutation, nextConnectionId, identityChanged);
+  await _updateMcpToolGroup(mutation, identityChanged);
+}
+
+Future<void> _updateMcpToolGroup(
+  _McpServerSettingsMutation mutation,
+  bool identityChanged,
+) async {
+  final repository = mutation.repository;
+  final group = await repository._toolsGroupsDao.getToolsGroupByMcpServerId(
+    mutation.update.serverId,
+  );
+  if (group == null) return;
+  await _updateMcpToolGroupName(repository, group, mutation.update);
+  if (identityChanged) {
+    await _resetMcpToolGroupPermissions(repository, group.id);
+  }
+}
+
+bool _mcpSettingsAffectIdentity(_McpServerSettingsMutation mutation) {
+  final server = mutation.server;
+  final update = mutation.update;
+
+  return server.url != update.url ||
+      !_sameTransport(server.transport, update.transport) ||
+      update.authMode != mutation.currentAuthMode ||
+      update.secretChange != .preserve;
+}
+
+Future<String?> _updateMcpCredential(
+  _McpServerSettingsMutation mutation,
+) async {
+  final connectionId = mutation.server.serviceConnectionId;
+  final nextConnectionId = await _replaceMcpCredential(mutation, connectionId);
+  await _markMcpOAuthReauthIfNeeded(mutation, connectionId);
+
+  return nextConnectionId;
+}
+
+Future<String?> _replaceMcpCredential(
+  _McpServerSettingsMutation mutation,
+  String? connectionId,
+) async {
+  final update = mutation.update;
+  if (update.secretChange == .preserve) return connectionId;
+
+  return await _requiredServiceConnectionRepository(
+    mutation.repository._serviceConnections,
+  ).updateMcpAuthentication(
+    connectionId: connectionId,
+    workspaceId: mutation.server.workspaceId,
+    name: update.name,
+    authenticationType: _updatedAuthentication(update),
+  );
+}
+
+Future<void> _markMcpOAuthReauthIfNeeded(
+  _McpServerSettingsMutation mutation,
+  String? connectionId,
+) async {
+  if (connectionId == null ||
+      mutation.currentAuthMode != .oauth ||
+      !_mcpSettingsAffectIdentity(mutation)) {
+    return;
+  }
+  await _requiredServiceConnectionRepository(
+    mutation.repository._serviceConnections,
+  ).markReauthRequired(connectionId);
+}
+
+ServiceConnectionRepository _requiredServiceConnectionRepository(
+  ServiceConnectionRepository? repository,
+) {
+  if (repository == null) {
+    throw StateError('MCP credential repository is unavailable.');
+  }
+
+  return repository;
+}
+
+Future<void> _writeMcpServerSettings(
+  _McpServerSettingsMutation mutation,
+  String? connectionId,
+  bool clearSummary,
+) async {
+  final update = mutation.update;
+  final updatedServers = await _persistMcpServerSettings(
+    mutation.repository,
+    update,
+    connectionId,
+    clearSummary,
+  );
+  if (updatedServers != 1) {
+    throw McpServerNotFoundException(update.serverId);
+  }
+}
+
+Future<int> _persistMcpServerSettings(
+  McpServersRepository repository,
+  McpServerSettingsUpdate update,
+  String? connectionId,
+  bool clearSummary,
+) =>
+    (repository._database.update(repository._database.mcpServers)
+          ..where((row) => row.id.equals(update.serverId)))
+        .write(_mcpServerSettingsCompanion(update, connectionId, clearSummary));
+
+McpServersCompanion _mcpServerSettingsCompanion(
+  McpServerSettingsUpdate update,
+  String? connectionId,
+  bool clearSummary,
+) => McpServersCompanion(
+  updatedAt: .new(DateTime.now()),
+  name: .new(update.name),
+  url: .new(update.url),
+  transport: .new(update.transport),
+  serviceConnectionId: .new(connectionId),
+  testSummaryJson: clearSummary ? const .new(null) : const .absent(),
+);
+
+Future<void> _updateMcpToolGroupName(
+  McpServersRepository repository,
+  ToolsGroupsTable group,
+  McpServerSettingsUpdate update,
+) async {
+  if (group.name == update.name) return;
+  final _ =
+      await (repository._database.update(repository._database.toolsGroups)
+            ..where((row) => row.id.equals(group.id)))
+          .write(_toolsGroupNameCompanion(update.name));
+}
+
+ToolsGroupsCompanion _toolsGroupNameCompanion(String name) =>
+    ToolsGroupsCompanion(updatedAt: .new(DateTime.now()), name: .new(name));
+
+Future<void> _resetMcpToolGroupPermissions(
+  McpServersRepository repository,
+  String groupId,
+) async {
+  await _resetMcpToolGroupPermission(repository, groupId);
+  await _resetMcpToolsPermissions(repository, groupId);
+}
+
+Future<void> _resetMcpToolGroupPermission(
+  McpServersRepository repository,
+  String groupId,
+) async {
+  final _ =
+      await (repository._database.update(
+        repository._database.toolsGroups,
+      )..where((row) => row.id.equals(groupId))).write(
+        const ToolsGroupsCompanion(permissions: .new(PermissionAccess.ask)),
+      );
+}
+
+Future<void> _resetMcpToolsPermissions(
+  McpServersRepository repository,
+  String groupId,
+) async {
+  final _ =
+      await (repository._database.update(
+        repository._database.tools,
+      )..where((row) => row.workspaceToolsGroupId.equals(groupId))).write(
+        ToolsCompanion(
+          updatedAt: .new(DateTime.now()),
+          permissions: const .new(PermissionAccess.ask),
+        ),
+      );
+}
+
+bool _sameTransport(McpTransportType first, McpTransportType second) {
+  if (first is McpTransportTypeSSE && second is McpTransportTypeSSE) {
+    return true;
+  }
+  if (first is McpTransportTypeStreamableHttp &&
+      second is McpTransportTypeStreamableHttp) {
+    return first.useHttp2 == second.useHttp2;
+  }
+
+  return false;
+}
+
+Future<McpServerAuthMode> _localAuthMode(
+  ServiceConnectionRepository? repository,
+  String? connectionId,
+) async {
+  if (connectionId == null) return .none;
+  if (repository == null) {
+    throw StateError('MCP credential repository is unavailable.');
+  }
+  final secret = await repository.readSecret(connectionId);
+
+  return switch (secret) {
+    ServiceConnectionSecretBearerToken() ||
+    ServiceConnectionSecretApiKey() => .bearerToken,
+    ServiceConnectionSecretHttpHeaders() => .httpHeaders,
+    ServiceConnectionSecretOAuth2() => .oauth,
+  };
+}
+
+void _validateMcpSettingsUpdate(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+) {
+  _validateMcpSettingsNameAndUrl(update);
+  _validateMcpAuthTransition(update, currentAuthMode);
+  _validateMcpSecretChange(update);
+}
+
+void _validateMcpSettingsNameAndUrl(McpServerSettingsUpdate update) {
+  if (update.name.trim().isEmpty || update.url.trim().isEmpty) {
+    throw const FormatException('MCP name and URL are required.');
+  }
+}
+
+void _validateMcpAuthTransition(
+  McpServerSettingsUpdate update,
+  McpServerAuthMode currentAuthMode,
+) {
+  if (update.secretChange == .preserve && update.authMode != currentAuthMode) {
+    throw const FormatException('New MCP authentication requires a secret.');
+  }
+  if (update.authMode == .oauth &&
+      (update.secretChange != .preserve || currentAuthMode != .oauth)) {
+    throw const FormatException('Use reconnect to configure MCP OAuth.');
+  }
+}
+
+void _validateMcpSecretChange(McpServerSettingsUpdate update) {
+  if (update.authMode == .none && update.secretChange == .replace) {
+    throw const FormatException('MCP authentication secret is not required.');
+  }
+  if (update.secretChange == .clear && update.authMode != .none) {
+    throw const FormatException(
+      'MCP credentials can only be cleared with no authentication.',
+    );
+  }
+  _validateReplacementMcpSecret(update);
+}
+
+void _validateReplacementMcpSecret(McpServerSettingsUpdate update) {
+  if (update.secretChange != .replace ||
+      update.authMode == .none ||
+      update.authMode == .oauth) {
+    return;
+  }
+  if (update.secret?.trim().isNotEmpty != true) {
+    throw const FormatException('MCP authentication secret is required.');
+  }
+}
+
+McpAuthenticationType _updatedAuthentication(McpServerSettingsUpdate update) {
+  if (update.secretChange == .clear) return const McpAuthenticationType.none();
+  final secret = update.secret;
+  if (secret == null || secret.isEmpty) {
+    throw const FormatException('MCP authentication secret is required.');
+  }
+
+  return switch (update.authMode) {
+    .none => const .none(),
+    .bearerToken => McpAuthenticationType.bearerToken(bearerToken: secret),
+    .httpHeaders => McpAuthenticationType.httpHeaders(
+      headers: _decodeHeaders(secret),
+    ),
+    .oauth => throw const FormatException(
+      'Use reconnect to configure MCP OAuth.',
+    ),
+  };
+}
+
+Map<String, String> _decodeHeaders(String json) {
+  final Object? decoded;
+  try {
+    decoded = jsonDecode(json);
+  } on FormatException catch (_, stackTrace) {
+    Error.throwWithStackTrace(
+      const FormatException('MCP headers must be valid JSON.'),
+      stackTrace,
+    );
+  }
+  if (decoded is! Map<String, dynamic> || decoded.isEmpty) {
+    throw const FormatException('MCP headers must be a non-empty object.');
+  }
+
+  return _validatedMcpHeaders(decoded);
+}
+
+Map<String, String> _validatedMcpHeaders(Map<String, dynamic> decoded) => {
+  for (final entry in decoded.entries)
+    entry.key: _requiredMcpHeaderValue(entry.value),
+};
+
+String _requiredMcpHeaderValue(Object? value) {
+  if (value is String && value.trim().isNotEmpty) return value;
+  throw const FormatException('MCP header values must be non-empty text.');
 }
 
 extension McpServersRepositoryOperations on McpServersRepository {
@@ -405,6 +765,7 @@ extension on McpServersRepository {
       serviceConnectionId: table.serviceConnectionId,
       description: table.description,
       catalogSnapshotJson: table.catalogSnapshotJson,
+      lastTestSummary: McpConnectionTestSummary.fromJson(table.testSummaryJson),
       isEnabled: table.isEnabled,
     );
   }

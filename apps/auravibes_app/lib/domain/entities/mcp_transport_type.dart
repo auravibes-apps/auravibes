@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -140,6 +141,8 @@ Future<String?> _encryptNullable(
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated union members in the part file.
+// ignore: weight-of-class
 sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
   const factory none() = McpAuthenticationTypeNone;
 
@@ -270,6 +273,8 @@ abstract class const McpServerEntity._()
     /// Optional description of what this MCP server provides.
     String? description,
     String? catalogSnapshotJson,
+
+    McpConnectionTestSummary? lastTestSummary,
 
     /// Whether the MCP server is enabled.
     @Default(true) bool isEnabled,

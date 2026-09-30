@@ -13,6 +13,7 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
 import '../../../features/conversations/models/conversation_summary.dart'
     as _ihi7wpgt;
 

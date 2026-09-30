@@ -3,22 +3,37 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-List<McpCatalogListing> filterMcpCatalog(
-  List<McpCatalogListing> listings, {
-  String query = '',
+typedef McpCatalogFilter = ({
+  String query,
   String? transport,
   String? authType,
-}) {
-  final term = query.trim().toLowerCase();
-  return listings.where((listing) {
-    return (term.isEmpty ||
-            listing.name.toLowerCase().contains(term) ||
-            listing.description.toLowerCase().contains(term)) &&
-        (transport == null || listing.transport == transport) &&
-        (authType == null ||
-            listing.options.any((option) => option.authType == authType));
-  }).toList();
+});
+
+List<McpCatalogListing> filterMcpCatalog(
+  List<McpCatalogListing> listings,
+  McpCatalogFilter filter,
+) {
+  final query = filter.query.trim().toLowerCase();
+
+  return listings
+      .where((listing) => _matchesMcpCatalogFilter(listing, query, filter))
+      .toList();
 }
+
+bool _matchesMcpCatalogFilter(
+  McpCatalogListing listing,
+  String query,
+  McpCatalogFilter filter,
+) =>
+    _matchesMcpCatalogText(listing, query) &&
+    (filter.transport == null || listing.transport == filter.transport) &&
+    (filter.authType == null ||
+        listing.options.any((option) => option.authType == filter.authType));
+
+bool _matchesMcpCatalogText(McpCatalogListing listing, String query) =>
+    query.isEmpty ||
+    listing.name.toLowerCase().contains(query) ||
+    listing.description.toLowerCase().contains(query);
 
 /// Transient field values never enter the copied catalog metadata.
 class McpCatalogInstallation {
@@ -66,75 +81,131 @@ class McpCatalogInstallation {
         field.key,
   ];
 
-  McpServerFormToCreate toForm() {
+  @override
+  String toString() =>
+      'McpCatalogInstallation(workspaceId: $workspaceId, '
+      'listingId: ${listing.id}, optionKey: ${option.key})';
+}
+
+extension _McpCatalogInstallationValidation on McpCatalogInstallation {
+  void _validateRequiredFields() {
     if (missingRequiredFields.isNotEmpty) {
       throw const FormatException('Required catalog fields are missing.');
     }
+  }
+
+  void _validateOption() {
+    _validateOAuthFields();
+    _validateUniqueHeaderNames();
+    _validateSingleSecretField('apiKey');
+    _validateSingleSecretField('bearerToken');
+  }
+
+  void _validateOAuthFields() {
     if (option.authType == 'oauth' &&
         option.fields.any(
           (field) => field.key != 'clientId' || field.isSecret,
         )) {
       throw const FormatException('Unsupported OAuth catalog field.');
     }
-    if ({'none', 'apiKey', 'httpHeaders'}.contains(option.authType)) {
-      final names = <String>{};
-      if (option.fields.any(
-        (field) => !names.add(field.key.toLowerCase()),
-      )) {
-        throw const FormatException('Duplicate catalog HTTP header.');
-      }
-    }
-    final submitted = {
-      for (final field in option.fields)
-        if (values[field.key]?.trim().isNotEmpty == true)
-          field.key: values[field.key]!.trim(),
-    };
-    if (option.authType == 'apiKey' &&
-        (option.fields.length != 1 || !option.fields.single.isSecret)) {
-      throw const FormatException('Invalid API key catalog option.');
-    }
-    if (option.authType == 'bearerToken' &&
-        (option.fields.length != 1 || !option.fields.single.isSecret)) {
-      throw const FormatException('Invalid bearer catalog option.');
-    }
-    final auth = switch (option.authType) {
-      'none' when submitted.isEmpty => McpAuthenticationTypeOptions.none,
-      'none' ||
-      'apiKey' ||
-      'httpHeaders' => McpAuthenticationTypeOptions.httpHeaders,
-      'bearerToken' => McpAuthenticationTypeOptions.bearerToken,
-      'oauth' => McpAuthenticationTypeOptions.oauth,
-      _ => throw const FormatException('Unsupported catalog auth type.'),
-    };
-    final headers = auth == McpAuthenticationTypeOptions.httpHeaders
-        ? submitted
-        : null;
-    if (headers != null) _validateHeaderFields(headers);
-    return McpServerFormToCreate(
-      name: snapshot['name']! as String,
-      url: snapshot['url']! as String,
-      transport: switch (snapshot['transport']) {
-        'streamableHttp' => const McpTransportTypeStreamableHttp(),
-        'sse' => const McpTransportTypeSSE(),
-        _ => throw const FormatException('Unsupported catalog transport.'),
-      },
-      authenticationType: auth,
-      bearerToken: auth == McpAuthenticationTypeOptions.bearerToken
-          ? submitted.values.firstOrNull
-          : null,
-      oauthClientId: auth == McpAuthenticationTypeOptions.oauth
-          ? submitted['clientId']
-          : null,
-      description: snapshot['description']! as String,
-      httpHeaders: headers,
-      catalogSnapshotJson: jsonEncode(snapshot),
-    );
   }
 
-  @override
-  String toString() =>
-      'McpCatalogInstallation(workspaceId: $workspaceId, '
-      'listingId: ${listing.id}, optionKey: ${option.key})';
+  void _validateUniqueHeaderNames() {
+    if (!{'none', 'apiKey', 'httpHeaders'}.contains(option.authType)) return;
+    final names = <String>{};
+    if (option.fields.any((field) => !names.add(field.key.toLowerCase()))) {
+      throw const FormatException('Duplicate catalog HTTP header.');
+    }
+  }
+
+  void _validateSingleSecretField(String authType) {
+    if (option.authType != authType) return;
+    if (option.fields.length == 1 && option.fields.single.isSecret) return;
+    final message = authType == 'apiKey'
+        ? 'Invalid API key catalog option.'
+        : 'Invalid bearer catalog option.';
+    throw FormatException(message);
+  }
+}
+
+extension McpCatalogInstallationForm on McpCatalogInstallation {
+  McpServerFormToCreate toForm() {
+    _validateRequiredFields();
+    _validateOption();
+    final submitted = _submittedValues();
+    final auth = _authenticationType(submitted);
+    final headers = _headersFor(auth, submitted);
+
+    return _formFor(auth, submitted, headers);
+  }
+
+  Map<String, String> _submittedValues() => {
+    for (final field in option.fields)
+      if (values[field.key]?.trim().isNotEmpty == true)
+        field.key: values[field.key]!.trim(),
+  };
+
+  McpAuthenticationTypeOptions _authenticationType(
+    Map<String, String> submitted,
+  ) => switch (option.authType) {
+    'none' when submitted.isEmpty => McpAuthenticationTypeOptions.none,
+    'none' ||
+    'apiKey' ||
+    'httpHeaders' => McpAuthenticationTypeOptions.httpHeaders,
+    'bearerToken' => McpAuthenticationTypeOptions.bearerToken,
+    'oauth' => McpAuthenticationTypeOptions.oauth,
+    _ => throw const FormatException('Unsupported catalog auth type.'),
+  };
+
+  Map<String, String>? _headersFor(
+    McpAuthenticationTypeOptions auth,
+    Map<String, String> submitted,
+  ) {
+    if (auth != McpAuthenticationTypeOptions.httpHeaders) return null;
+    _validateHeaderFields(submitted);
+
+    return submitted;
+  }
+
+  McpServerFormToCreate _formFor(
+    McpAuthenticationTypeOptions auth,
+    Map<String, String> submitted,
+    Map<String, String>? headers,
+  ) => _catalogFormBase(auth).copyWith(
+    bearerToken: _catalogBearerToken(auth, submitted),
+    oauthClientId: _catalogOAuthClientId(auth, submitted),
+    httpHeaders: headers,
+  );
+
+  McpServerFormToCreate _catalogFormBase(McpAuthenticationTypeOptions auth) =>
+      McpServerFormToCreate(
+        name: snapshot['name']! as String,
+        url: snapshot['url']! as String,
+        transport: _transportFromSnapshot(),
+        authenticationType: auth,
+        bearerToken: null,
+        description: snapshot['description']! as String,
+        catalogSnapshotJson: jsonEncode(snapshot),
+      );
+
+  String? _catalogBearerToken(
+    McpAuthenticationTypeOptions auth,
+    Map<String, String> submitted,
+  ) => auth == McpAuthenticationTypeOptions.bearerToken
+      ? submitted.values.firstOrNull
+      : null;
+
+  String? _catalogOAuthClientId(
+    McpAuthenticationTypeOptions auth,
+    Map<String, String> submitted,
+  ) =>
+      auth == McpAuthenticationTypeOptions.oauth ? submitted['clientId'] : null;
+
+  McpTransportType _transportFromSnapshot() => switch (snapshot['transport']) {
+    'streamableHttp' => const McpTransportTypeStreamableHttp(),
+    'sse' => const McpTransportTypeSSE(),
+    _ => throw const FormatException('Unsupported catalog transport.'),
+  };
 }
 
 void _validateHeaderFields(Map<String, String> headers) {

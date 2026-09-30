@@ -205,9 +205,10 @@
       "attempted_at": "Tested {time}",
       "recovery_auth": "Reconnect this MCP server to restore access.",
       "recovery_network": "Check your network and try the connection test again.",
-      "recovery_protocol": "Review this MCP server in Tools. To change its URL or authentication, add a replacement connection.",
+      "recovery_protocol": "Review this MCP server's connection settings.",
       "retry": "Retry test",
-      "open_tools": "Open Tools"
+      "open_settings": "Open settings",
+      "result_details": "Found {count} tools in {duration} ms"
     },
     "diagnostics": {
       "transport": "Transport",
@@ -1052,7 +1053,8 @@
     "auth": {
       "none": "None",
       "oauth": "OAuth",
-      "bearer_token": "Bearer Token"
+      "bearer_token": "Bearer Token",
+      "http_headers": "HTTP Headers"
     },
     "oauth": {
       "configuration": "MCP OAuth is not configured.",
@@ -1111,6 +1113,9 @@
         "label": "Bearer Token",
         "placeholder": "Enter your bearer token",
         "hint": "This token will be stored securely"
+      },
+      "http_headers": {
+        "label": "HTTP Headers"
       }
     },
     "save_success": "MCP server configuration saved",
@@ -1119,6 +1124,10 @@
     "verification_success": "Connection verified · {} tools found",
     "verification_required": "Verify the connection before saving.",
     "verification_expired": "Verification expired. Verify the connection again."
+  },
+  "mcp_edit": {
+    "secret_saved": "Saved securely",
+    "secret_hint": "Leave blank to keep the saved value. Enter a replacement to change it."
   },
   "compaction": {
     "settings": {

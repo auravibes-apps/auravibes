@@ -13,6 +13,7 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
 import '../../../features/mcp_servers/models/discovered_mcp_tool.dart'
     as _ihus3ex7;
 import '../../../features/mcp_servers/models/mcp_server_health.dart'

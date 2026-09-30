@@ -13,6 +13,7 @@
 import 'package:auravibes_server_client/src/protocol/protocol.dart'
     as _isctvzjc;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
+
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
     as _iou6lkaa;
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'

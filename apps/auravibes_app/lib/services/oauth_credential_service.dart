@@ -153,6 +153,7 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
     if (secret is! ServiceConnectionSecretHttpHeaders) {
       return const McpAuthenticationType.none();
     }
+
     return McpAuthenticationType.httpHeaders(headers: secret.headers);
   }
 
@@ -208,7 +209,9 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
 
     throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_configuration);
   }
+}
 
+extension _OAuthCredentialCachedTokenOperations on OAuthCredentialService {
   Future<_OAuthCachedTokenContext> _loadCachedTokenContext(String id) async {
     final row = await _requiredServiceConnection(id);
     final secret = await _serviceConnectionRepository.readSecret(row.id);

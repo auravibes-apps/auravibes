@@ -2,7 +2,6 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
-import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/legacy_api_key_storage.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -29,13 +28,13 @@ void main() {
       await _insertWorkspace(database, 'workspace-2');
       final repository = ServiceConnectionRepository(
         database,
-        EncryptionService(_FakeSecretKeyManager()),
+        .new(_FakeSecretKeyManager()),
       );
       final id = await repository.createMcpServiceConnection(
         workspaceId: 'workspace-1',
         profile: const McpServiceConnectionProfile(
           name: 'Catalog server',
-          authenticationType: McpAuthenticationType.httpHeaders(
+          authenticationType: .httpHeaders(
             headers: {'X-API-Key': 'secret-value'},
           ),
         ),

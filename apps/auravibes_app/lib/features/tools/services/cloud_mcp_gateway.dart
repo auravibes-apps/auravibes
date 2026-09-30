@@ -12,18 +12,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   ) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.verify(
-      .new(
-        workspaceId: _stateGateway.workspace.cloudWorkspaceId,
-        requestId: const UuidV7().generate(),
-        url: server.url.trim(),
-        transport: server.transport.toJson()['type']! as String,
-        useHttp2: false,
-        bearerToken: server.bearerToken,
-        httpHeadersJson: server.httpHeaders == null
-            ? null
-            : jsonEncode(server.httpHeaders),
-        oauthJson: server.oauthJson,
-      ),
+      _catalogVerificationRequest(server),
     ),
   );
 
@@ -34,23 +23,7 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.create(
-      .new(
-        workspaceId: _stateGateway.workspace.cloudWorkspaceId,
-        requestId: requestId,
-        name: server.name.trim(),
-        url: server.url.trim(),
-        transport: server.transport.toJson()['type']! as String,
-        useHttp2: false,
-        description: server.description?.trim(),
-        bearerToken: server.bearerToken,
-        httpHeadersJson: server.httpHeaders == null
-            ? null
-            : jsonEncode(server.httpHeaders),
-        oauthJson: server.oauthJson,
-        catalogListingId: _snapshotField(server, 'id'),
-        catalogOptionKey: _snapshotOptionKey(server),
-        verificationReceipt: verificationReceipt,
-      ),
+      _catalogCreateRequest(server, requestId, verificationReceipt),
     ),
   );
 
@@ -149,6 +122,54 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
     transport: request.transport,
     useHttp2: request.useHttp2,
     bearerToken: request.bearerToken,
+  );
+
+  VerifyMcpServerRequest _catalogVerificationRequest(
+    McpServerFormToCreate server,
+  ) =>
+      _verifyRequest((
+        requestId: const UuidV7().generate(),
+        url: server.url.trim(),
+        transport: server.transport.toJson()['type']! as String,
+        useHttp2: false,
+        bearerToken: server.bearerToken,
+      )).copyWith(
+        httpHeadersJson: server.httpHeaders == null
+            ? null
+            : jsonEncode(server.httpHeaders),
+        oauthJson: server.oauthJson,
+      );
+}
+
+extension _CloudMcpCatalogRequests on CloudMcpGateway {
+  CreateMcpServerRequest _catalogCreateRequest(
+    McpServerFormToCreate server,
+    String requestId,
+    String verificationReceipt,
+  ) => _withCatalogCreateMetadata(
+    _createMcpServerRequest((
+      requestId: requestId,
+      name: server.name.trim(),
+      url: server.url.trim(),
+      transport: server.transport.toJson()['type']! as String,
+      useHttp2: false,
+      description: server.description?.trim(),
+      bearerToken: server.bearerToken,
+      verificationReceipt: verificationReceipt,
+    )),
+    server,
+  );
+
+  CreateMcpServerRequest _withCatalogCreateMetadata(
+    CreateMcpServerRequest request,
+    McpServerFormToCreate server,
+  ) => request.copyWith(
+    httpHeadersJson: server.httpHeaders == null
+        ? null
+        : jsonEncode(server.httpHeaders),
+    oauthJson: server.oauthJson,
+    catalogListingId: _snapshotField(server, 'id'),
+    catalogOptionKey: _snapshotOptionKey(server),
   );
 }
 

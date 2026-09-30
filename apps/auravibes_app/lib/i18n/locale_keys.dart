@@ -290,8 +290,10 @@ abstract class LocaleKeys {
       'service_connections.test.recovery_protocol';
   static const service_connections_test_retry =
       'service_connections.test.retry';
-  static const service_connections_test_open_tools =
-      'service_connections.test.open_tools';
+  static const service_connections_test_open_settings =
+      'service_connections.test.open_settings';
+  static const service_connections_test_result_details =
+      'service_connections.test.result_details';
   static const service_connections_diagnostics_transport =
       'service_connections.diagnostics.transport';
   static const service_connections_diagnostics_category =
@@ -1343,6 +1345,7 @@ abstract class LocaleKeys {
   static const mcp_modal_auth_none = 'mcp_modal.auth.none';
   static const mcp_modal_auth_oauth = 'mcp_modal.auth.oauth';
   static const mcp_modal_auth_bearer_token = 'mcp_modal.auth.bearer_token';
+  static const mcp_modal_auth_http_headers = 'mcp_modal.auth.http_headers';
   static const mcp_modal_oauth_configuration = 'mcp_modal.oauth.configuration';
   static const mcp_modal_oauth_client_id_required =
       'mcp_modal.oauth.client_id_required';
@@ -1403,6 +1406,8 @@ abstract class LocaleKeys {
       'mcp_modal.fields.bearer_token.placeholder';
   static const mcp_modal_fields_bearer_token_hint =
       'mcp_modal.fields.bearer_token.hint';
+  static const mcp_modal_fields_http_headers_label =
+      'mcp_modal.fields.http_headers.label';
   static const mcp_modal_save_success = 'mcp_modal.save_success';
   static const mcp_modal_test_connection = 'mcp_modal.test_connection';
   static const mcp_modal_test_connection_success =
@@ -1413,6 +1418,8 @@ abstract class LocaleKeys {
       'mcp_modal.verification_required';
   static const mcp_modal_verification_expired =
       'mcp_modal.verification_expired';
+  static const mcp_edit_secret_saved = 'mcp_edit.secret_saved';
+  static const mcp_edit_secret_hint = 'mcp_edit.secret_hint';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
   static const compaction_settings_model_budgets_title =

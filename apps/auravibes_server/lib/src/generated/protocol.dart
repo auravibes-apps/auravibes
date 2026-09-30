@@ -43,6 +43,7 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _iais;
+
 import 'features/accounts/models/account_summary.dart' as _i0kh9vnq;
 import 'features/agents/models/agent_catalog_item.dart' as _iczr9u8f;
 import 'features/agents/models/agent_catalog_page.dart' as _ib4whsrz;
@@ -6065,9 +6066,8 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == Map<String, String>) {
       return (data as Map).map(
-            (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
-          )
-          as T;
+        (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
+      ) as T;
     }
     if (t == List<_iolo6w4a.WorkspacePatchOperation>) {
       return (data as List)

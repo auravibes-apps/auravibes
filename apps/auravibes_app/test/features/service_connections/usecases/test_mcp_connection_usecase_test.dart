@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/mcp_servers_repository_contract.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_diagnostic_report.dart';
@@ -27,6 +28,8 @@ void main() {
       expect(result.status, McpConnectionTestStatus.success);
       expect(result.testedAt, attemptedAt);
       expect(result.transport, isA<McpTransportTypeStreamableHttp>());
+      expect(result.toolCount, 0);
+      expect(result.durationMilliseconds, greaterThanOrEqualTo(0));
       expect(authenticationCalls, ['credential']);
       expect(manager.calls, ['connect', 'list', 'disconnect']);
       expect(manager.toolCalls, 0);
@@ -40,6 +43,29 @@ void main() {
           currentTools: any(named: 'currentTools'),
         ),
       );
+    },
+  );
+
+  test(
+    'records zero and populated discovery counts with elapsed duration',
+    () async {
+      final fixture = _createFixture(attemptedAt);
+      final manager = fixture.manager;
+      final usecase = fixture.usecase;
+
+      final emptyResult = await usecase('server');
+      expect(emptyResult.toolCount, 0);
+      expect(emptyResult.durationMilliseconds, greaterThanOrEqualTo(0));
+      expect(fixture.repository.lastSummary?.toolCount, 0);
+
+      manager.discoveredTools = const [
+        McpToolInfo(toolName: 'one', description: '', inputSchema: {}),
+        McpToolInfo(toolName: 'two', description: '', inputSchema: {}),
+      ];
+      final populatedResult = await usecase('server');
+      expect(populatedResult.toolCount, 2);
+      expect(populatedResult.durationMilliseconds, greaterThanOrEqualTo(0));
+      expect(fixture.repository.lastSummary?.toolCount, 2);
     },
   );
 
@@ -115,6 +141,8 @@ void main() {
       status: McpConnectionTestStatus.network,
       testedAt: attemptedAt,
       transport: const McpTransportTypeStreamableHttp(),
+      toolCount: 0,
+      durationMilliseconds: 0,
       errorDetails:
           'https://mcp.example.com/path?api_key=secret Authorization: Bearer secret '
           'arguments={"message":"private conversation"}',
@@ -196,6 +224,16 @@ _createFixture(DateTime attemptedAt) {
 
 class _Repository extends Mock implements McpServersRepositoryContract {
   new();
+
+  McpConnectionTestSummary? lastSummary;
+
+  @override
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) async {
+    lastSummary = summary;
+  }
 }
 
 class _Manager extends McpManagerService {
@@ -204,6 +242,7 @@ class _Manager extends McpManagerService {
   void Function()? connectFailure;
   void Function()? listFailure;
   int toolCalls = 0;
+  List<McpToolInfo> discoveredTools = const [];
   final _client = _Client();
 
   @override
@@ -220,7 +259,7 @@ class _Manager extends McpManagerService {
     calls.add('list');
     listFailure?.call();
 
-    return const [];
+    return discoveredTools;
   }
 
   @override

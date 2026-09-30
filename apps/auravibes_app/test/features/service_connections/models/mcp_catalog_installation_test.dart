@@ -36,19 +36,48 @@ void main() {
   );
 
   test('searches name and description and filters transport and auth', () {
-    expect(filterMcpCatalog([listing], query: 'SEARCH'), [listing]);
-    expect(filterMcpCatalog([listing], query: 'web pages'), [listing]);
-    expect(filterMcpCatalog([listing], query: 'missing'), isEmpty);
     expect(
       filterMcpCatalog(
         [listing],
-        transport: 'streamableHttp',
-        authType: 'httpHeaders',
+        (query: 'SEARCH', transport: null, authType: null),
       ),
       [listing],
     );
-    expect(filterMcpCatalog([listing], transport: 'sse'), isEmpty);
-    expect(filterMcpCatalog([listing], authType: 'oauth'), isEmpty);
+    expect(
+      filterMcpCatalog(
+        [listing],
+        (query: 'web pages', transport: null, authType: null),
+      ),
+      [listing],
+    );
+    expect(
+      filterMcpCatalog(
+        [listing],
+        (query: 'missing', transport: null, authType: null),
+      ),
+      isEmpty,
+    );
+    expect(
+      filterMcpCatalog(
+        [listing],
+        (query: '', transport: 'streamableHttp', authType: 'httpHeaders'),
+      ),
+      [listing],
+    );
+    expect(
+      filterMcpCatalog(
+        [listing],
+        (query: '', transport: 'sse', authType: null),
+      ),
+      isEmpty,
+    );
+    expect(
+      filterMcpCatalog(
+        [listing],
+        (query: '', transport: null, authType: 'oauth'),
+      ),
+      isEmpty,
+    );
   });
 
   test('validates required fields and snapshots metadata without values', () {
@@ -127,7 +156,7 @@ void main() {
       option: option,
       values: {'clientSecret': 'secret-value'},
     );
-    expect(() => request.toForm(), throwsFormatException);
+    expect(request.toForm, throwsFormatException);
   });
 
   test('rejects case-insensitive duplicate header names', () {
@@ -154,6 +183,6 @@ void main() {
       option: option,
       values: {'X-Key': 'first', 'x-key': 'second'},
     );
-    expect(() => request.toForm(), throwsFormatException);
+    expect(request.toForm, throwsFormatException);
   });
 }

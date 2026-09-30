@@ -1378,7 +1378,11 @@ class const ServerToolExecutorService({
     final decrypted = secret == null
         ? null
         : data['authType'] == 'oauth'
-        ? await McpOAuthTokenResolver().resolve(session, secret)
+        ? await McpOAuthTokenResolver().resolve(
+            session,
+            secret,
+            actorUserId: turn.initiatorUserId,
+          )
         : await const WorkspaceSecretCipher().decrypt(session, secret);
     final bearerToken = data['authType'] == 'httpHeaders' ? null : decrypted;
     final httpHeaders = data['authType'] == 'httpHeaders'
@@ -1396,22 +1400,22 @@ class const ServerToolExecutorService({
             httpHeaders: httpHeaders,
           )
         : await _postJson(
-      session,
-      turn,
-      uri,
-      addresses,
-      {
-        'jsonrpc': '2.0',
-        'id': 1,
-        'method': 'tools/call',
-        'params': {
-          'name': tool.descriptor.toolIdentifier,
-          'arguments': arguments,
-        },
-      },
-      bearerToken: bearerToken,
-      httpHeaders: httpHeaders,
-    );
+            session,
+            turn,
+            uri,
+            addresses,
+            {
+              'jsonrpc': '2.0',
+              'id': 1,
+              'method': 'tools/call',
+              'params': {
+                'name': tool.descriptor.toolIdentifier,
+                'arguments': arguments,
+              },
+            },
+            bearerToken: bearerToken,
+            httpHeaders: httpHeaders,
+          );
     return McpToolResult(
       content: switch (result['content']) {
         final List<dynamic> content =>
@@ -1447,7 +1451,9 @@ class const ServerToolExecutorService({
       httpHeaders: httpHeaders,
     );
     final done = Completer<void>();
-    unawaited(_closeClientOnCancellation(sse.client, serverSession, turn, done));
+    unawaited(
+      _closeClientOnCancellation(sse.client, serverSession, turn, done),
+    );
     try {
       await sse.request(1, 'initialize', {
         'protocolVersion': '2025-06-18',

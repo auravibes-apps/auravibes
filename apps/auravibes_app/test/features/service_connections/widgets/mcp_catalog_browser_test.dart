@@ -4,13 +4,13 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -48,30 +48,30 @@ void main() {
     );
     await tester.runAsync(
       () => tester.pumpWidget(
-        EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          child: ProviderScope(
-            overrides: [
-              mcpCatalogProvider('ws').overrideWithValue(AsyncData([listing])),
-              workspaceSessionForRouteProvider('ws').overrideWithValue(
-                const AsyncData(
-                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws')),
-                ),
+        ProviderScope(
+          overrides: [
+            mcpCatalogProvider('ws').overrideWithValue(AsyncData([listing])),
+            workspaceSessionForRouteProvider('ws').overrideWithValue(
+              const AsyncData(
+                WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws')),
               ),
-            ],
+            ),
+          ],
+          child: EasyLocalization(
             child: Builder(
               builder: (context) => MaterialApp(
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
                 home: const Scaffold(
                   body: McpCatalogBrowser(workspaceId: 'ws'),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
           ),
         ),
       ),
@@ -81,7 +81,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('Search · Team'),
+      find.text('Search ${String.fromCharCode(183)} Team'),
       findsOneWidget,
       reason: tester
           .widgetList<Text>(find.byType(Text))
@@ -94,7 +94,7 @@ void main() {
     expect(find.text('No entries match these filters.'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, 'pages');
     await tester.pump();
-    await tester.tap(find.text('Search · Team'));
+    await tester.tap(find.text('Search ${String.fromCharCode(183)} Team'));
     await tester.pump();
 
     final secret = tester.widget<TextField>(
@@ -125,37 +125,37 @@ void main() {
     );
     await tester.runAsync(
       () => tester.pumpWidget(
-        EasyLocalization(
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          child: ProviderScope(
-            overrides: [
-              mcpCatalogProvider('ws').overrideWithValue(AsyncData([listing])),
-              workspaceSessionForRouteProvider('ws').overrideWithValue(
-                const AsyncData(
-                  WorkspaceSession(
-                    CloudWorkspaceRef(
-                      localWorkspaceId: 'ws',
-                      serverUrl: 'https://cloud.example.com',
-                      accountId: 'account',
-                      cloudWorkspaceId: 1,
-                    ),
+        ProviderScope(
+          overrides: [
+            mcpCatalogProvider('ws').overrideWithValue(AsyncData([listing])),
+            workspaceSessionForRouteProvider('ws').overrideWithValue(
+              const AsyncData(
+                WorkspaceSession(
+                  CloudWorkspaceRef(
+                    localWorkspaceId: 'ws',
+                    serverUrl: 'https://cloud.example.com',
+                    accountId: 'account',
+                    cloudWorkspaceId: 1,
                   ),
                 ),
               ),
-            ],
+            ),
+          ],
+          child: EasyLocalization(
             child: Builder(
               builder: (context) => MaterialApp(
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
                 home: const Scaffold(
                   body: McpCatalogBrowser(workspaceId: 'ws'),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
           ),
         ),
       ),
@@ -164,7 +164,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Event server · OAuth'), findsOneWidget);
+    expect(
+      find.text('Event server ${String.fromCharCode(183)} OAuth'),
+      findsOneWidget,
+    );
     expect(find.textContaining('This option is unavailable'), findsNothing);
     final tile = tester.widget<ListTile>(find.byType(ListTile));
     expect(tile.onTap, isNotNull);
