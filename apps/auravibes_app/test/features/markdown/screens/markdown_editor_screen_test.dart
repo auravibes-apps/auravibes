@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -182,6 +184,147 @@ void main() {
     expect(result, _editedMarkdown);
   });
 
+  testWidgets('preview renders the latest unsaved markdown and empty drafts', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    await tester.enterText(_markdownEditorInput, '# Latest unsaved draft');
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(GptMarkdown), findsOneWidget);
+    expect(
+      tester.widget<GptMarkdown>(find.byType(GptMarkdown)).data,
+      '# Latest unsaved draft',
+    );
+    expect(_markdownEditorInput.hitTestable(), findsNothing);
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(_markdownEditorInput, '');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Nothing to preview yet'), findsOneWidget);
+  });
+
+  testWidgets('source preview restores selection and accessible toggle state', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _openMarkdownEditor(
+        tester,
+        onResult: (value) => fail('Unexpected editor close: $value'),
+      );
+      await tester.showKeyboard(_markdownEditorInput);
+      final editable = tester.widget<EditableText>(_markdownEditorInput);
+      final controller = editable.controller
+        ..value = const TextEditingValue(
+          text: 'before selected after',
+          selection: .new(baseOffset: 7, extentOffset: 15),
+        );
+      final focusNode = editable.focusNode;
+      final sourceValue = controller.value;
+      final _ = await tester.pumpAndSettle();
+
+      final sourceToggle = tester
+          .getSemantics(find.bySemanticsLabel('Preview'))
+          .getSemanticsData();
+      expect(sourceToggle.flagsCollection.isToggled, ui.Tristate.isFalse);
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
+
+      final previewToggle = tester
+          .getSemantics(find.bySemanticsLabel('Preview'))
+          .getSemanticsData();
+      expect(previewToggle.flagsCollection.isToggled, ui.Tristate.isTrue);
+      expect(find.byTooltip('Markdown'), findsOneWidget);
+      expect(controller.value, sourceValue);
+      expect(focusNode.hasFocus, isFalse);
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.value, sourceValue);
+      expect(focusNode.hasFocus, isTrue);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('preview round trip preserves toolbar undo history', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await _openMarkdownEditor(
+        tester,
+        onResult: (value) => fail('Unexpected editor close: $value'),
+      );
+      await tester.showKeyboard(_markdownEditorInput);
+      final editable = tester.widget<EditableText>(_markdownEditorInput);
+      final controller = editable.controller
+        ..value = const TextEditingValue(
+          text: 'text',
+          selection: .new(baseOffset: 0, extentOffset: 4),
+        );
+      final focusNode = editable.focusNode;
+      final originalValue = controller.value;
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.format_bold));
+      final _ = await tester.pumpAndSettle();
+      final boldValue = controller.value;
+      expect(boldValue.text, '**text**');
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isFalse);
+      expect(find.byIcon(Icons.format_bold).hitTestable(), findsNothing);
+      expect(find.bySemanticsLabel('Bold'), findsNothing);
+
+      await tester.tap(find.bySemanticsLabel('Preview'));
+      final _ = await tester.pumpAndSettle();
+      expect(controller.value, boldValue);
+      expect(focusNode.hasFocus, isTrue);
+
+      await tester.tap(find.byIcon(Icons.undo));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.value, originalValue);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('preview does not change the draft returned by Save', (
+    tester,
+  ) async {
+    String? result;
+    await _openMarkdownEditor(tester, onResult: (value) => result = value);
+    await tester.enterText(_markdownEditorInput, '# Saved after preview');
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Preview'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.save_outlined));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.byType(MarkdownEditorScreen), findsNothing);
+    expect(result, '# Saved after preview');
+  });
+
   testWidgets('numbered lists continue and native undo restores', (
     tester,
   ) async {
@@ -216,6 +359,58 @@ void main() {
     expect(controller.text, '1. first\n2. second');
   });
 
+  testWidgets('Tab indentation can be undone in the editor', (tester) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    const original = TextEditingValue(
+      text: '- parent\n- sibling',
+      selection: .collapsed(offset: 3),
+    );
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = original;
+    await tester.pump(const Duration(milliseconds: 600));
+
+    final _ = await tester.sendKeyEvent(.tab);
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(controller.text, '  - parent\n- sibling');
+    expect(controller.selection, const TextSelection.collapsed(offset: 5));
+
+    final _ = await tester.sendKeyDownEvent(.controlLeft);
+    final _ = await tester.sendKeyEvent(.keyZ);
+    final _ = await tester.sendKeyUpEvent(.controlLeft);
+    await tester.pump();
+    expect(controller.value, original);
+  });
+
+  testWidgets('Shift+Tab outdents a nested list item in the editor', (
+    tester,
+  ) async {
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => fail('Unexpected editor close: $value'),
+    );
+    final editor = find.byType(EditableText);
+    await tester.showKeyboard(editor);
+    final controller = tester.widget<EditableText>(editor).controller
+      ..value = const .new(
+        text: '- parent\n  - child',
+        selection: .collapsed(offset: 14),
+      );
+    await tester.pump();
+
+    final _ = await tester.sendKeyDownEvent(.shiftLeft);
+    final _ = await tester.sendKeyEvent(.tab);
+    final _ = await tester.sendKeyUpEvent(.shiftLeft);
+    await tester.pump();
+
+    expect(controller.text, '- parent\n- child');
+    expect(controller.selection, const TextSelection.collapsed(offset: 12));
+  });
+
   testWidgets('editor input exits empty bullet on Enter', (tester) async {
     await _openMarkdownEditor(
       tester,
@@ -244,6 +439,7 @@ Future<void> _openMarkdownEditor(
   WidgetTester tester, {
   required void Function(String?) onResult,
   FocusNode? sourceFocusNode,
+  String initialMarkdown = _initialMarkdown,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -256,7 +452,11 @@ Future<void> _openMarkdownEditor(
                   TextField(focusNode: sourceFocusNode),
                 TextButton(
                   onPressed: () {
-                    final _ = _showMarkdownEditor(context, onResult: onResult);
+                    final _ = _showMarkdownEditor(
+                      context,
+                      initialMarkdown: initialMarkdown,
+                      onResult: onResult,
+                    );
                   },
                   child: const Text('Open editor'),
                 ),
@@ -286,11 +486,12 @@ Finder get _markdownEditorInput => find.descendant(
 
 Future<void> _showMarkdownEditor(
   BuildContext context, {
+  required String initialMarkdown,
   required void Function(String?) onResult,
 }) async {
   final result = await MarkdownEditorLauncher.show(
     context,
-    initialMarkdown: _initialMarkdown,
+    initialMarkdown: initialMarkdown,
   );
   onResult(result);
 }

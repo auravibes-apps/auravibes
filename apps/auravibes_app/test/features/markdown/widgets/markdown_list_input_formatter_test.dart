@@ -157,4 +157,162 @@ void main() {
 
     expect(formatter.formatEditUpdate(oldValue, newValue), newValue);
   });
+
+  test('indent and outdent bullet task and numbered list subtrees', () {
+    for (final marker in ['- ', '- [x] ', '1. ']) {
+      final nextMarker = marker == '1. ' ? '2. ' : marker;
+      final indentedNextMarker = marker == '1. ' ? '1. ' : marker;
+      final original = TextEditingValue(
+        text: '${marker}parent\n  - child\n    - grandchild\n${nextMarker}next',
+        selection: .collapsed(offset: marker.length + 2),
+      );
+
+      final indented = MarkdownListInputFormatter.adjustIndentation(
+        original,
+        outdent: false,
+      );
+      final expected =
+          '  ${marker}parent\n'
+          '    - child\n'
+          '      - grandchild\n'
+          '${indentedNextMarker}next';
+      expect(indented?.text, expected);
+      expect(indented?.selection.baseOffset, original.selection.baseOffset + 2);
+      if (indented == null) {
+        fail('Expected list item to indent');
+      }
+      expect(
+        MarkdownListInputFormatter.adjustIndentation(indented, outdent: true),
+        original,
+      );
+    }
+  });
+
+  test('renumber ordered siblings at each indentation level', () {
+    const original = TextEditingValue(
+      text: '1. first\n  1. child\n  2. sibling\n2. last',
+      selection: .collapsed(offset: 23),
+    );
+
+    final result = MarkdownListInputFormatter.adjustIndentation(
+      original,
+      outdent: true,
+    );
+
+    expect(result?.text, '1. first\n  1. child\n2. sibling\n3. last');
+    expect(result?.selection, const TextSelection.collapsed(offset: 21));
+
+    const firstItem = TextEditingValue(
+      text: '1. first\n2. second\n3. third',
+      selection: .collapsed(offset: 4),
+    );
+    expect(
+      MarkdownListInputFormatter.adjustIndentation(
+        firstItem,
+        outdent: false,
+      )?.text,
+      '  1. first\n1. second\n2. third',
+    );
+
+    const separateGroup = TextEditingValue(
+      text: '1. first\n2. second\n- break\n7. other\n8. next',
+      selection: .collapsed(offset: 4),
+    );
+    expect(
+      MarkdownListInputFormatter.adjustIndentation(
+        separateGroup,
+        outdent: false,
+      )?.text,
+      '  1. first\n1. second\n- break\n7. other\n8. next',
+    );
+  });
+
+  test(
+    'outdent an empty nested item and leave an empty root item unchanged',
+    () {
+      const nested = TextEditingValue(
+        text: '- parent\n  - ',
+        selection: .collapsed(offset: 13),
+      );
+      const root = TextEditingValue(
+        text: '- ',
+        selection: .collapsed(offset: 2),
+      );
+
+      expect(
+        MarkdownListInputFormatter.adjustIndentation(nested, outdent: true),
+        const TextEditingValue(
+          text: '- parent\n- ',
+          selection: .collapsed(offset: 11),
+        ),
+      );
+      expect(
+        MarkdownListInputFormatter.adjustIndentation(root, outdent: true),
+        isNull,
+      );
+    },
+  );
+
+  test('indent selected list lines without changing adjacent prose', () {
+    const original = TextEditingValue(
+      text: 'before\n- one\n- two\nafter',
+      selection: .new(baseOffset: 7, extentOffset: 18),
+    );
+
+    final result = MarkdownListInputFormatter.adjustIndentation(
+      original,
+      outdent: false,
+    );
+
+    expect(result?.text, 'before\n  - one\n  - two\nafter');
+    expect(
+      result?.selection,
+      const TextSelection(baseOffset: 9, extentOffset: 22),
+    );
+  });
+
+  test(
+    'indenting a bullet leaves unrelated nested ordered items unchanged',
+    () {
+      const original = TextEditingValue(
+        text: '- first\n- second\n  7. child\n  9. sibling',
+        selection: .collapsed(offset: 3),
+      );
+
+      final result = MarkdownListInputFormatter.adjustIndentation(
+        original,
+        outdent: false,
+      );
+
+      expect(result?.text, '  - first\n- second\n  7. child\n  9. sibling');
+      expect(result?.selection, const TextSelection.collapsed(offset: 5));
+    },
+  );
+
+  test('indent traverses continuation prose to reach nested list items', () {
+    const original = TextEditingValue(
+      text: '- parent\n  continuation\n  - child',
+      selection: .collapsed(offset: 3),
+    );
+
+    final result = MarkdownListInputFormatter.adjustIndentation(
+      original,
+      outdent: false,
+    );
+
+    expect(result?.text, '  - parent\n  continuation\n    - child');
+    expect(result?.selection, const TextSelection.collapsed(offset: 5));
+  });
+
+  test('outdent removes one existing tab indentation level', () {
+    const original = TextEditingValue(
+      text: '\t- child',
+      selection: .collapsed(offset: 5),
+    );
+
+    expect(
+      MarkdownListInputFormatter.adjustIndentation(original, outdent: true),
+      const TextEditingValue(text: '- child', selection: .collapsed(offset: 4)),
+    );
+  });
 }

@@ -7,16 +7,21 @@ abstract final class MarkdownLinkDialog {
   static Future<({String text, String destination})?> show(
     BuildContext context, {
     required String selectedText,
+    required String selectedDestination,
   }) => showDialog<({String text, String destination})>(
     context: context,
-    builder: (_) => _MarkdownLinkDialog(selectedText: selectedText),
+    builder: (_) => _MarkdownLinkDialog(
+      selectedText: selectedText,
+      selectedDestination: selectedDestination,
+    ),
   );
 }
 
 class _MarkdownLinkDialog extends StatefulWidget {
-  const new({required this.selectedText});
+  const new({required this.selectedText, required this.selectedDestination});
 
   final String selectedText;
+  final String selectedDestination;
 
   @override
   State<_MarkdownLinkDialog> createState() => _MarkdownLinkDialogState();
@@ -31,6 +36,7 @@ class _MarkdownLinkDialogState extends State<_MarkdownLinkDialog> {
   void initState() {
     super.initState();
     _textController.text = widget.selectedText;
+    _destinationController.text = widget.selectedDestination;
   }
 
   @override

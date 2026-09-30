@@ -99,6 +99,352 @@ void main() {
       expect(controller.text, '**bold**');
     });
 
+    testWidgets('escaped inline delimiters are not toggled as formatting', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_italic, marker: '*', wrapper: '*'),
+        (icon: Icons.format_italic, marker: '_', wrapper: '*'),
+        (icon: Icons.code, marker: '`', wrapper: '`'),
+      ]) {
+        final text = '\\${action.marker}word${action.marker}';
+        final contentStart = text.indexOf('word');
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: contentStart,
+            extentOffset: contentStart + 'word'.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(
+          controller.text,
+          '\\${action.marker}${action.wrapper}word'
+          '${action.wrapper}${action.marker}',
+        );
+      }
+
+      const evenBackslashText = r'\\*word*';
+      controller.value = const TextEditingValue(
+        text: evenBackslashText,
+        selection: .new(baseOffset: 3, extentOffset: 7),
+      );
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+
+      expect(controller.text, r'\\word');
+      expect(
+        controller.selection,
+        const TextSelection(baseOffset: 2, extentOffset: 6),
+      );
+    });
+
+    testWidgets('bold wrapping does not cross-pair existing spans', (
+      tester,
+    ) async {
+      const text = '**one** and **two**';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf(' and ');
+      controller.selection = .new(
+        baseOffset: selectionStart,
+        extentOffset: selectionStart + ' and '.length,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_bold));
+      await tester.pump();
+
+      expect(controller.text, '**one**** and ****two**');
+    });
+
+    testWidgets('italic ignores literal multiplication operators', (
+      tester,
+    ) async {
+      const text = '2 * 3 = 6. *word*';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf('word');
+      controller.selection = .new(
+        baseOffset: selectionStart,
+        extentOffset: selectionStart + 'word'.length,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.format_italic));
+      await tester.pump();
+
+      expect(controller.text, '2 * 3 = 6. word');
+    });
+
+    testWidgets('inline actions unwrap selected matching spans', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (
+          icon: Icons.format_bold,
+          marker: '**',
+          content: '${String.fromCharCode(0x1F44B)}bold',
+        ),
+        (icon: Icons.format_italic, marker: '_', content: 'italic'),
+        (icon: Icons.format_italic, marker: '*', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+      ]) {
+        final text =
+            'before ${action.marker}${action.content}'
+            '${action.marker} after';
+        final contentStart = text.indexOf(action.content);
+        final unmarkedStart = contentStart - action.marker.length;
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: contentStart,
+            extentOffset: contentStart + action.content.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(controller.text, 'before ${action.content} after');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: unmarkedStart,
+            extentOffset: unmarkedStart + action.content.length,
+          ),
+        );
+      }
+    });
+
+    testWidgets('selection of full span unwraps markers and selects text', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (icon: Icons.format_italic, marker: '_', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+        (
+          icon: Icons.code,
+          marker: '`',
+          content: '${String.fromCharCode(0x0301)}x',
+        ),
+      ]) {
+        final text =
+            'before ${action.marker}${action.content}'
+            '${action.marker} after';
+        final markedStart = text.indexOf(action.marker);
+        final contentStart = markedStart + action.marker.length;
+        final unmarkedStart = markedStart;
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: markedStart,
+            extentOffset:
+                contentStart + action.content.length + action.marker.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        expect(controller.text, 'before ${action.content} after');
+        expect(
+          controller.selection,
+          TextSelection(
+            baseOffset: unmarkedStart,
+            extentOffset: unmarkedStart + action.content.length,
+          ),
+        );
+      }
+    });
+
+    testWidgets('format actions still wrap unformatted selections', (
+      tester,
+    ) async {
+      final controller = TextEditingController();
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+
+      for (final action in [
+        (icon: Icons.format_bold, marker: '**', content: 'bold'),
+        (icon: Icons.format_italic, marker: '*', content: 'italic'),
+        (icon: Icons.code, marker: '`', content: 'code'),
+      ]) {
+        final text = 'before ${action.content} after';
+        final contentStart = text.indexOf(action.content);
+        controller.value = .new(
+          text: text,
+          selection: .new(
+            baseOffset: contentStart,
+            extentOffset: contentStart + action.content.length,
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(find.byIcon(action.icon));
+        await tester.pump();
+
+        final wrapped = '${action.marker}${action.content}${action.marker}';
+        expect(controller.text, 'before $wrapped after');
+        expect(
+          controller.selection,
+          TextSelection.collapsed(offset: contentStart + wrapped.length),
+        );
+      }
+    });
+
+    testWidgets(
+      'partial selection leaves existing formatting markers unchanged',
+      (tester) async {
+        final controller = TextEditingController();
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+
+        for (final action in [
+          (icon: Icons.format_bold, marker: '**', content: 'bold'),
+          (icon: Icons.format_italic, marker: '_', content: 'italic'),
+          (icon: Icons.code, marker: '`', content: 'code'),
+        ]) {
+          final text =
+              'before ${action.marker}${action.content}'
+              '${action.marker} after';
+          final contentStart = text.indexOf(action.content);
+          final initialValue = TextEditingValue(
+            text: text,
+            selection: .new(
+              baseOffset: contentStart + 1,
+              extentOffset: contentStart + action.content.length - 1,
+            ),
+          );
+          controller.value = initialValue;
+          await tester.pump();
+
+          await tester.tap(find.byIcon(action.icon));
+          await tester.pump();
+
+          expect(controller.value, initialValue);
+          final undoButton = find.byWidgetPredicate(
+            (widget) => widget is AuraIconButton && widget.icon == Icons.undo,
+          );
+          expect(tester.widget<AuraIconButton>(undoButton).onPressed, isNull);
+        }
+      },
+    );
+
+    testWidgets(
+      'undo and redo restore wrapped and unwrapped values and selections',
+      (tester) async {
+        final controller = TextEditingController(text: 'bold');
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        controller.selection = const TextSelection(
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+        final original = controller.value;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+        await tester.tap(find.byIcon(Icons.format_bold));
+        await tester.pump();
+        final wrapped = controller.value;
+        expect(wrapped.text, '**bold**');
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, original);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, wrapped);
+
+        controller.selection = const TextSelection(
+          baseOffset: 2,
+          extentOffset: 6,
+        );
+        await tester.pump();
+        final selectedWrapped = controller.value;
+        await tester.tap(find.byIcon(Icons.format_bold));
+        await tester.pump();
+        final unwrapped = controller.value;
+        expect(unwrapped.text, 'bold');
+        expect(
+          unwrapped.selection,
+          const TextSelection(baseOffset: 0, extentOffset: 4),
+        );
+
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, selectedWrapped);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, unwrapped);
+      },
+    );
+
     for (final action in [
       (icon: Icons.title, prefix: '# '),
       (icon: Icons.format_list_bulleted, prefix: '- '),
@@ -159,6 +505,228 @@ void main() {
       expect(controller.selection.baseOffset, controller.text.length);
       expect(focusNode.hasFocus, isTrue);
       expect(find.bySemanticsLabel('Link'), findsOneWidget);
+    });
+
+    testWidgets('link dialog edits the link at the caret in place', (
+      tester,
+    ) async {
+      const text = 'Read [documentation](https://old.example/guide) carefully';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = .collapsed(
+        offset: text.indexOf('documentation') + 5,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        'documentation',
+      );
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://old.example/guide',
+      );
+      await tester.enterText(fields.at(1), 'API docs');
+      await tester.enterText(fields.last, 'https://new.example/api');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'Read [API docs](https://new.example/api) carefully',
+      );
+      expect(focusNode.hasFocus, isTrue);
+    });
+
+    testWidgets('link dialog detects a caret adjacent to the link', (
+      tester,
+    ) async {
+      const text = 'Read [guide](https://guide.example) now';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = .collapsed(offset: text.indexOf(') now') + 1);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, 'guide');
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://guide.example',
+      );
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'selected markdown link updates without changing surrounding text',
+      (tester) async {
+        const text = 'before [guide](https://old.example) after';
+        final controller = TextEditingController(text: text);
+        final focusNode = FocusNode();
+        addTearDown(controller.dispose);
+        addTearDown(focusNode.dispose);
+        final linkStart = text.indexOf('[guide]');
+        final linkEnd = text.indexOf(') after') + 1;
+        controller.selection = .new(
+          baseOffset: linkEnd,
+          extentOffset: linkStart,
+          isDirectional: true,
+        );
+        final initialValue = controller.value;
+
+        await pumpAndInit(
+          tester,
+          buildSubject(controller: controller, focusNode: focusNode),
+        );
+        await tester.tap(find.byIcon(Icons.link));
+        await tester.pump();
+
+        final fields = find.byType(TextField);
+        expect(
+          tester.widget<TextField>(fields.at(1)).controller?.text,
+          'guide',
+        );
+        expect(
+          tester.widget<TextField>(fields.last).controller?.text,
+          'https://old.example',
+        );
+        await tester.enterText(fields.at(1), 'handbook');
+        await tester.enterText(fields.last, 'https://new.example');
+        await tester.tap(find.text('Confirm'));
+        final _ = await tester.pumpAndSettle();
+
+        expect(controller.text, 'before [handbook](https://new.example) after');
+        final updatedValue = controller.value;
+        await tester.tap(find.byIcon(Icons.undo));
+        await tester.pump();
+        expect(controller.value, initialValue);
+        await tester.tap(find.byIcon(Icons.redo));
+        await tester.pump();
+        expect(controller.value, updatedValue);
+      },
+    );
+
+    testWidgets('canceling link edit preserves text and selection', (
+      tester,
+    ) async {
+      const text = 'before [guide](https://guide.example) after';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final linkStart = text.indexOf('[guide]');
+      final linkEnd = text.indexOf(') after') + 1;
+      controller.selection = .new(
+        baseOffset: linkEnd,
+        extentOffset: linkStart,
+        isDirectional: true,
+      );
+      final initialValue = controller.value;
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+      await tester.tap(find.text('Cancel'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(controller.value, initialValue);
+    });
+
+    testWidgets('edits a link destination containing parentheses', (
+      tester,
+    ) async {
+      const text =
+          'Read [source](https://example.com/path_(with_parentheses)) next';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      controller.selection = .collapsed(
+        offset: text.indexOf('with_parentheses') + 3,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, 'source');
+      expect(
+        tester.widget<TextField>(fields.last).controller?.text,
+        'https://example.com/path_(with_parentheses)',
+      );
+      await tester.enterText(fields.at(1), 'guide');
+      await tester.enterText(fields.last, 'https://new.example/path_(updated)');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'Read [guide](https://new.example/path_(updated)) next',
+      );
+    });
+
+    testWidgets('selection spanning multiple links keeps insertion behavior', (
+      tester,
+    ) async {
+      const text =
+          'See [one](https://one.example) and [two](https://two.example) now';
+      final controller = TextEditingController(text: text);
+      final focusNode = FocusNode();
+      addTearDown(controller.dispose);
+      addTearDown(focusNode.dispose);
+      final selectionStart = text.indexOf('[one]');
+      final selectionEnd =
+          text.indexOf('[two]') + '[two](https://two.example)'.length;
+      controller.selection = .new(
+        baseOffset: selectionStart,
+        extentOffset: selectionEnd,
+      );
+      final selectedText = controller.selection.textInside(text);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(controller: controller, focusNode: focusNode),
+      );
+      await tester.tap(find.byIcon(Icons.link));
+      await tester.pump();
+
+      final fields = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(fields.at(1)).controller?.text,
+        selectedText,
+      );
+      await tester.enterText(fields.last, 'https://combined.example');
+      await tester.tap(find.text('Confirm'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        controller.text,
+        'See [$selectedText](https://combined.example) now',
+      );
     });
 
     testWidgets('link dialog uses localized placeholder for empty selection', (
