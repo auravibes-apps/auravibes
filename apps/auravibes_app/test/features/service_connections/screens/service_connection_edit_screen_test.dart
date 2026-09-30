@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
@@ -66,9 +68,12 @@ void main() {
     );
     await _openEditor(tester);
 
+    final golden = Platform.isLinux
+        ? 'goldens/mcp_connection_edit_linux.png'
+        : 'goldens/mcp_connection_edit.png';
     await expectLater(
       find.byType(ServiceConnectionEditScreen),
-      matchesGoldenFile('goldens/mcp_connection_edit.png'),
+      matchesGoldenFile(golden),
     );
     expect(find.text(secret), findsNothing);
     expect(find.text('Saved securely'), findsOneWidget);

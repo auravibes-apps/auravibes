@@ -437,8 +437,9 @@ Future<CreateMcpServerResult> _createCloudMcpServer(
   String requestId,
   String verificationReceipt,
 ) async {
-  final gateway = await repository._gateway;
   if (_requiresCatalogMcpRequest(server)) {
+    final gateway = await repository._gateway;
+
     return await CloudMcpGateway(gateway).createCatalogMcpServer(
       server,
       requestId: requestId,
@@ -459,8 +460,9 @@ Future<VerifyMcpServerResult> _verifyCloudMcpServer(
   _CloudToolsRepositoryBase repository,
   McpServerFormToCreate server,
 ) async {
-  final gateway = await repository._gateway;
   if (_requiresCatalogMcpRequest(server)) {
+    final gateway = await repository._gateway;
+
     return await CloudMcpGateway(gateway).verifyCatalogMcpServer(server);
   }
 
