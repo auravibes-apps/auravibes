@@ -7,15 +7,20 @@ import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_ad
 import 'package:auravibes_app/features/chats/agent_adapters/chat_a2ui_genui_adapter.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_message_state.dart';
 import 'package:auravibes_app/features/chats/models/chat_a2ui_surface_state.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         A2uiChatAction,
         A2uiChatContract,
         A2uiFormValidationResult,
+        a2uiChatCatalogId,
         a2uiChatCatalogIds,
         a2uiChatFormCatalogId,
         a2uiChatFormSubmitActionName,
         a2uiChatFormSubmitComponentId,
+        a2uiChatSkillSuggestionComponentId,
         a2uiChatInteractionModes,
         a2uiChatProtocolVersion,
         a2uiChatWireVersion,
@@ -24,6 +29,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         maxA2uiChatPayloadBytes,
         supportedA2uiChatComponents;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
 import 'package:logging/logging.dart';
 
@@ -47,19 +53,26 @@ class ChatA2uiRuntime extends ChangeNotifier {
 
   final String conversationId;
   bool enabled;
+  String? _workspaceId;
+  String? _currentSkillSuggestionMessageId;
+  Map<String, AvailableSkill> _skillCatalog = const {};
 
   late final SurfaceController _controller = SurfaceController(
     catalogs: auraChatCatalogsWithTabSelection(
       register: _registerTabSelection,
       onChanged: notifyListeners,
+      skillSuggestionBuilder: _buildSkillSuggestion,
     ),
   );
   late final StreamSubscription<SurfaceUpdate> _surfaceSubscription;
   final StreamController<ChatUiAction> _actions =
       StreamController<ChatUiAction>.broadcast();
+  final StreamController<ChatSkillSuggestionIntent> _skillSuggestions =
+      StreamController<ChatSkillSuggestionIntent>.broadcast();
   final Map<String, ChatA2uiMessageState> _messageStates = {};
   final Map<String, ChatA2uiSurfaceState> _surfaceStates = {};
   final Set<String> _submittedActions = {};
+  final Set<String> _submittedSkillSuggestions = {};
   final Set<ChatA2uiSurfaceIssue> _unboundIssues = {};
   final Set<String> _unboundDiagnosticPayloads = {};
   final Map<String, ({DataModel model, ValueNotifier<Object?> notifier})>
@@ -71,6 +84,9 @@ class ChatA2uiRuntime extends ChangeNotifier {
   SurfaceController get controller => _controller;
 
   Stream<ChatUiAction> get actions => _actions.stream;
+
+  Stream<ChatSkillSuggestionIntent> get skillSuggestions =>
+      _skillSuggestions.stream;
 
   ChatA2uiMessageState _messageState(String messageId) => _messageStates
       .putIfAbsent(messageId, () => ChatA2uiMessageState(messageId));
@@ -85,6 +101,95 @@ class ChatA2uiRuntime extends ChangeNotifier {
   );
 
   String? get currentMessageId => _currentMessageId;
+
+  bool get hasSkillSuggestions {
+    final messageId = _currentMessageId ?? _currentSkillSuggestionMessageId;
+    if (!enabled || messageId == null) return false;
+
+    return _hasPassiveSkillSuggestion(messageId);
+  }
+
+  void setWorkspaceId(String workspaceId) {
+    if (_workspaceId == workspaceId) return;
+    _workspaceId = workspaceId;
+  }
+
+  void setSkillCatalog(Map<String, AvailableSkill> skillsBySlug) {
+    if (mapEquals(_skillCatalog, skillsBySlug)) return;
+    _skillCatalog = Map.unmodifiable(skillsBySlug);
+    notifyListeners();
+  }
+
+  bool submitSkillSuggestion({
+    required String surfaceId,
+    required String componentId,
+    required ChatSkillSuggestionAction action,
+  }) {
+    final workspaceId = _workspaceId;
+    final surface = _surfaceStates[surfaceId];
+    final messageId = surface?.ownerMessageId;
+    if (!enabled ||
+        workspaceId == null ||
+        messageId == null ||
+        (!isCurrentMessage(messageId) &&
+            _currentSkillSuggestionMessageId != messageId) ||
+        !isReadySurface(messageId, surfaceId) ||
+        surface!.catalogId != a2uiChatCatalogId ||
+        surface.interactionMode != 'passive' ||
+        surface.issues.isNotEmpty) {
+      return false;
+    }
+    final component = surface.components[componentId];
+    if (component == null ||
+        component['id'] != componentId ||
+        component['component'] != a2uiChatSkillSuggestionComponentId) {
+      return false;
+    }
+    final slug = component['slug'];
+    final catalogRevision = component['catalogRevision'];
+    if (slug is! String ||
+        slug.isEmpty ||
+        slug.length > 128 ||
+        catalogRevision is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(catalogRevision)) {
+      return false;
+    }
+    final actionKey = '$messageId:$surfaceId:$componentId:${action.name}';
+    if (!_submittedSkillSuggestions.add(actionKey)) return false;
+
+    _skillSuggestions.add(
+      ChatSkillSuggestionIntent(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        messageId: messageId,
+        surfaceId: surfaceId,
+        componentId: componentId,
+        slug: slug,
+        catalogRevision: catalogRevision,
+        action: action,
+      ),
+    );
+    notifyListeners();
+
+    return true;
+  }
+
+  Widget _buildSkillSuggestion(
+    CatalogItemContext context,
+    Map<String, Object?> data,
+  ) {
+    final slug = data['slug'];
+
+    return buildChatSkillSuggestion(
+      context: context,
+      skill: slug is String ? _skillCatalog[slug] : null,
+      onAction: (action) => submitSkillSuggestion(
+        surfaceId: context.surfaceId,
+        componentId: context.id,
+        action: action,
+      ),
+    );
+  }
 
   bool isCurrentMessage(String messageId) =>
       enabled && messageId == _currentMessageId;
@@ -648,7 +753,11 @@ class ChatA2uiRuntime extends ChangeNotifier {
   void enable() => enabled = true;
 
   void bindMessage(String messageId) {
-    if (_currentMessageId != messageId) _submittedActions.clear();
+    if (_currentMessageId != messageId) {
+      _submittedActions.clear();
+      _submittedSkillSuggestions.clear();
+      _currentSkillSuggestionMessageId = null;
+    }
     _currentMessageId = messageId;
     if (_unboundIssues.isNotEmpty) {
       final state = _messageState(messageId);
@@ -674,7 +783,11 @@ class ChatA2uiRuntime extends ChangeNotifier {
     if (!enabled) return;
     final state = _messageState(messageId);
     if (current && !state.closed) {
-      if (_currentMessageId != messageId) _submittedActions.clear();
+      if (_currentMessageId != messageId) {
+        _submittedActions.clear();
+        _submittedSkillSuggestions.clear();
+        _currentSkillSuggestionMessageId = null;
+      }
       _currentMessageId = messageId;
     }
     final savedPayloads = payloads.toList(growable: false);
@@ -876,15 +989,49 @@ class ChatA2uiRuntime extends ChangeNotifier {
   void closeMessage(String messageId) {
     final state = _messageState(messageId)..closed = true;
     state.messageKeys.clear();
-    if (_currentMessageId == messageId) _currentMessageId = null;
+    if (_currentMessageId == messageId) {
+      _currentSkillSuggestionMessageId = _hasPassiveSkillSuggestion(messageId)
+          ? messageId
+          : null;
+      _currentMessageId = null;
+    }
     state.blocking = false;
     notifyListeners();
   }
 
   void beginGeneration() {
     final messageId = _currentMessageId;
-    if (messageId != null) closeMessage(messageId);
+    if (messageId != null) {
+      closeMessage(messageId);
+    }
+    if (_currentSkillSuggestionMessageId == null) return;
+    _currentSkillSuggestionMessageId = null;
+    notifyListeners();
   }
+
+  void restoreCurrentSkillSuggestionMessage(String? messageId) {
+    final currentMessageId =
+        messageId != null && _hasPassiveSkillSuggestion(messageId)
+        ? messageId
+        : null;
+    if (_currentSkillSuggestionMessageId == currentMessageId) return;
+    _currentSkillSuggestionMessageId = currentMessageId;
+    notifyListeners();
+  }
+
+  bool _hasPassiveSkillSuggestion(String messageId) =>
+      _surfaceStates.values.any(
+        (surface) =>
+            surface.ownerMessageId == messageId &&
+            isReadySurface(messageId, surface.scopedSurfaceId) &&
+            surface.catalogId == a2uiChatCatalogId &&
+            surface.interactionMode == 'passive' &&
+            surface.issues.isEmpty &&
+            surface.components.values.any(
+              (component) =>
+                  component['component'] == a2uiChatSkillSuggestionComponentId,
+            ),
+      );
 
   void restore(Iterable<String> payloads) {
     for (final payload in payloads) {
@@ -1478,6 +1625,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
       ..closed = true
       ..blocking = false;
     _currentMessageId = null;
+    _currentSkillSuggestionMessageId = null;
     _actions.add(action);
     notifyListeners();
   }
@@ -1607,6 +1755,7 @@ class ChatA2uiRuntime extends ChangeNotifier {
   void dispose() {
     unawaited(_surfaceSubscription.cancel());
     unawaited(_actions.close());
+    unawaited(_skillSuggestions.close());
     for (final subscription in _dataSubscriptions.values) {
       subscription.notifier
         ..removeListener(notifyListeners)

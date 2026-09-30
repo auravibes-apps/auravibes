@@ -4,13 +4,18 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 A2uiIssueCode? validate(Map<String, Object?> component) =>
-    A2uiChatContract.validateMessage({
-      'version': a2uiChatWireVersion,
-      'updateComponents': {
-        'surfaceId': 'dashboard',
-        'components': [component],
+    A2uiChatContract.validateMessage(
+      {
+        'version': a2uiChatWireVersion,
+        'updateComponents': {
+          'surfaceId': 'dashboard',
+          'components': [component],
+        },
       },
-    });
+      interactionMode: component['component'] == 'Form'
+          ? 'requiresUserAction'
+          : 'passive',
+    );
 
 Map<String, Object?> example(String name, Map<String, Object?> overrides) => {
   ...a2uiChatComponentExamples[name]!,
@@ -61,7 +66,7 @@ void main() {
       );
       expect(A2uiChatContract.systemPromptForComponents({}), isEmpty);
       expect(A2uiChatContract.systemPromptForComponents({'unknown'}), isEmpty);
-      expect(supportedA2uiChatComponents, hasLength(45));
+      expect(supportedA2uiChatComponents, hasLength(46));
     },
   );
 

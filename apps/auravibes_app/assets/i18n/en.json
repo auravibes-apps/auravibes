@@ -675,6 +675,8 @@
   "skills_selector": {
     "title": "Conversation skills",
     "error": "Error loading conversation skills",
+    "search_placeholder": "Search skills",
+    "search_empty": "No skills match your search",
     "loaded_title": "Loaded",
     "loaded_empty": "No skills loaded",
     "available_title": "Available",
@@ -683,9 +685,31 @@
     "credentials_missing": "Missing credentials",
     "credentials_unknown": "Credential status unknown",
     "context_added": "Added",
+    "context_preparing": "Preparing context…",
     "context_ready": "Ready in context",
     "context_needs_context": "Needs context",
-    "context_error": "Context error"
+    "context_error": "Context error",
+    "use_now_request": "Use the {skill} skill to answer my latest request.",
+    "using": "Using…",
+    "use_now": "Use now",
+    "adding": "Adding…",
+    "add": "Add",
+    "credential_setup": "Set up credentials",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "error_credentials": "Set up skill credentials before using it.",
+    "error_metadata": "Skill details changed. Refresh skills and try again.",
+    "error_preparation": "Could not prepare skill context. Retry.",
+    "error_stale": "Skill suggestion is out of date. Refresh skills and try again.",
+    "error_unavailable": "Skill is unavailable right now.",
+    "error_unauthorized": "This skill is unavailable in this conversation.",
+    "error_credentials_unknown": "Could not verify skill credentials. Check the connection and retry.",
+    "suggestion": "Suggested skill",
+    "suggestion_unavailable": "This skill suggestion is unavailable.",
+    "suggestion_open_picker": "Open skills"
+  },
+  "chat_input": {
+    "skills_control_count": "Skills, {count} added"
   },
   "skills_tool": {
     "section_title": "Template tools",

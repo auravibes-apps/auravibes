@@ -29,6 +29,8 @@ import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_wid
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
+import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -561,6 +563,15 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  conversationSkillSelectorProvider(
+                    _workspaceId,
+                    _chatId,
+                  ).overrideWith(
+                    (ref) async => const ConversationSkillSelectorState(
+                      loaded: [],
+                      loadable: [],
+                    ),
+                  ),
                   workspaceSessionForRouteProvider(_workspaceId)
                       .overrideWithValue(
                         const AsyncData(
@@ -648,6 +659,15 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  conversationSkillSelectorProvider(
+                    _workspaceId,
+                    _chatId,
+                  ).overrideWith(
+                    (ref) async => const ConversationSkillSelectorState(
+                      loaded: [],
+                      loadable: [],
+                    ),
+                  ),
                   workspaceSessionForRouteProvider(_workspaceId)
                       .overrideWithValue(
                         const AsyncData(
@@ -740,6 +760,10 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
+          (ref) async =>
+              const ConversationSkillSelectorState(loaded: [], loadable: []),
+        ),
         workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
           const AsyncData(
             WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _workspaceId)),
@@ -855,6 +879,10 @@ void main() {
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
       overrides: [
+        conversationSkillSelectorProvider(_workspaceId, _chatId).overrideWith(
+          (ref) async =>
+              const ConversationSkillSelectorState(loaded: [], loadable: []),
+        ),
         workspaceSessionProvider(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: _workspaceId),
@@ -975,6 +1003,15 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  conversationSkillSelectorProvider(
+                    _workspaceId,
+                    _chatId,
+                  ).overrideWith(
+                    (ref) async => const ConversationSkillSelectorState(
+                      loaded: [],
+                      loadable: [],
+                    ),
+                  ),
                   workspaceSessionForRouteProvider(_workspaceId)
                       .overrideWithValue(
                         const AsyncData(
@@ -1385,6 +1422,15 @@ Future<void> _pumpCloudConversationScreen(
           builder: (context) {
             return TestProviderScope(
               overrides: [
+                conversationSkillSelectorProvider(
+                  _workspaceId,
+                  _chatId,
+                ).overrideWith(
+                  (ref) async => const ConversationSkillSelectorState(
+                    loaded: [],
+                    loadable: [],
+                  ),
+                ),
                 workspaceSessionForRouteProvider(_workspaceId)
                     .overrideWithValue(
                       const AsyncData(

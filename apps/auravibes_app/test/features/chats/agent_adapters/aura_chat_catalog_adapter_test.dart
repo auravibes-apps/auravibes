@@ -2,8 +2,13 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/agent_adapters/aura_chat_catalog_adapter.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
 import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:auravibes_ui/ui.dart';
@@ -175,6 +180,26 @@ void main() {
           .value['properties'],
       isNot(contains('validationRegexp')),
     );
+    final suggestionSchema = catalog.items
+        .firstWhere((item) => item.name == 'SkillSuggestion')
+        .dataSchema
+        .value;
+    expect(
+      (suggestionSchema['properties']! as Map).keys,
+      containsAll(['slug', 'catalogRevision']),
+    );
+    expect(
+      (suggestionSchema['properties']! as Map).keys,
+      isNot(contains('title')),
+    );
+    expect(
+      (suggestionSchema['properties']! as Map).keys,
+      isNot(contains('description')),
+    );
+    expect(
+      (suggestionSchema['properties']! as Map).keys,
+      isNot(contains('action')),
+    );
     final sliderProperties =
         catalog.items
                 .firstWhere((item) => item.name == 'Slider')
@@ -230,11 +255,111 @@ void main() {
       responseTextField.dataSchema.value['properties'],
       isNot(contains('onSubmittedAction')),
     );
-    expect(form.items, hasLength(response.items.length));
+    expect(
+      response.items.map((item) => item.name),
+      contains('SkillSuggestion'),
+    );
+    expect(
+      form.items.map((item) => item.name),
+      isNot(contains('SkillSuggestion')),
+    );
     expect(auraChatCatalogs().map((catalog) => catalog.catalogId), [
       auraChatCatalogId,
       auraChatFormCatalogId,
     ]);
+  });
+
+  testWidgets('renders trusted skill details and emits Use now intent', (
+    tester,
+  ) async {
+    const catalogRevision =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    final runtime =
+        ChatA2uiRuntime(conversationId: 'conversation-1', enabled: true)
+          ..setWorkspaceId('workspace-1')
+          ..setSkillCatalog({
+            'research': const AvailableSkill(
+              source: SkillSource.user,
+              id: 'skill-1',
+              slug: 'research',
+              title: 'Trusted research title',
+              description: 'Trusted research description',
+              content: 'Private content is not rendered.',
+              kind: .template,
+              credentialReadiness: .ready,
+            ),
+          })
+          ..bindMessage('assistant-1');
+    addTearDown(runtime.dispose);
+    runtime
+      ..addMessageJson(
+        jsonEncode({
+          'version': 'v0.9',
+          'createSurface': {
+            'surfaceId': 'main',
+            'catalogId': auraChatCatalogId,
+          },
+        }),
+      )
+      ..addMessageJson(
+        jsonEncode({
+          'version': 'v0.9',
+          'updateComponents': {
+            'surfaceId': 'main',
+            'components': [
+              {
+                'id': 'root',
+                'component': 'SkillSuggestion',
+                'slug': 'research',
+                'catalogRevision': catalogRevision,
+              },
+            ],
+          },
+        }),
+      )
+      ..commitCurrentMessage();
+    final intents = <ChatSkillSuggestionIntent>[];
+    final subscription = runtime.skillSuggestions.listen(intents.add);
+    addTearDown(subscription.cancel);
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+        child: AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            builder: _legacyMaterialBuilder,
+            theme: ThemeData(),
+            home: ChatA2uiSurfaceHost.live(
+              runtime: runtime,
+              messageId: 'assistant-1',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(runtime.hasSkillSuggestions, isTrue);
+    expect(find.text('Trusted research title'), findsOneWidget);
+    expect(find.text('Trusted research description'), findsOneWidget);
+    expect(find.text('Private content is not rendered.'), findsNothing);
+    expect(find.text(LocaleKeys.skills_selector_use_now), findsOneWidget);
+    await tester.tap(find.text(LocaleKeys.skills_selector_use_now));
+    await tester.pump();
+
+    expect(intents, hasLength(1));
+    expect(intents.single.action, ChatSkillSuggestionAction.useNow);
+    expect(intents.single.workspaceId, 'workspace-1');
+    expect(intents.single.conversationId, 'conversation-1');
+    expect(intents.single.messageId, 'assistant-1');
+    expect(intents.single.slug, 'research');
+    expect(intents.single.catalogRevision, catalogRevision);
   });
 
   testWidgets('renders text across multiple historical surfaces', (

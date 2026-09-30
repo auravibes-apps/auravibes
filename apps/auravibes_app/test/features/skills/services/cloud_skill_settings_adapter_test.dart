@@ -188,7 +188,6 @@ void main() {
         conversationId: 'conversation-1',
         skillId: 'agents',
         isAppSkill: true,
-        selected: true,
         expectedRevision: null,
       ),
     );

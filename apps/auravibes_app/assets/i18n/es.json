@@ -675,6 +675,8 @@
   "skills_selector": {
     "title": "Habilidades de la conversación",
     "error": "Error al cargar habilidades de la conversación",
+    "search_placeholder": "Buscar habilidades",
+    "search_empty": "No hay habilidades que coincidan con la búsqueda",
     "loaded_title": "Cargadas",
     "loaded_empty": "No hay habilidades cargadas",
     "available_title": "Disponibles",
@@ -683,9 +685,31 @@
     "credentials_missing": "Faltan credenciales",
     "credentials_unknown": "Estado de credenciales desconocido",
     "context_added": "Agregada",
+    "context_preparing": "Preparando contexto…",
     "context_ready": "Lista en el contexto",
     "context_needs_context": "Necesita contexto",
-    "context_error": "Error de contexto"
+    "context_error": "Error de contexto",
+    "use_now_request": "Usa la habilidad {skill} para responder a mi solicitud más reciente.",
+    "using": "Usando…",
+    "use_now": "Usar ahora",
+    "adding": "Agregando…",
+    "add": "Agregar",
+    "credential_setup": "Configurar credenciales",
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "error_credentials": "Configura las credenciales de la habilidad antes de usarla.",
+    "error_metadata": "Los detalles de la habilidad cambiaron. Actualiza la lista e inténtalo de nuevo.",
+    "error_preparation": "No se pudo preparar el contexto de la habilidad. Reintenta.",
+    "error_stale": "La sugerencia de habilidad está desactualizada. Actualiza la lista e inténtalo de nuevo.",
+    "error_unavailable": "La habilidad no está disponible ahora.",
+    "error_unauthorized": "Esta habilidad no está disponible en esta conversación.",
+    "error_credentials_unknown": "No se pudieron verificar las credenciales. Revisa la conexión e inténtalo de nuevo.",
+    "suggestion": "Habilidad sugerida",
+    "suggestion_unavailable": "Esta sugerencia de habilidad no está disponible.",
+    "suggestion_open_picker": "Abrir habilidades"
+  },
+  "chat_input": {
+    "skills_control_count": "Habilidades, {count} agregadas"
   },
   "skills_tool": {
     "section_title": "Herramientas de plantilla",

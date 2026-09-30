@@ -181,7 +181,6 @@ extension on LoadConversationSkillUsecase {
     await cloud.setConversationSkill(
       conversationId,
       skillId,
-      selected: true,
       isAppSkill: false,
     );
   }
@@ -246,12 +245,7 @@ extension on LoadConversationSkillUsecase {
     String conversationId,
     String skillId,
   ) async {
-    await cloud.setConversationSkill(
-      conversationId,
-      skillId,
-      selected: true,
-      isAppSkill: true,
-    );
+    await cloud.setConversationSkill(conversationId, skillId, isAppSkill: true);
   }
 
   Future<void> _persistLocalAppSkill(

@@ -69,6 +69,10 @@ void main() {
       ConversationSkillContextStatus.added,
     );
     final generation = runtime.begin('conversation');
+    expect(
+      (await container.read(provider.future)).contextStatusBySlug['research'],
+      ConversationSkillContextStatus.preparing,
+    );
     runtime.ready(
       'conversation',
       generation,
@@ -219,6 +223,66 @@ void main() {
     expect(
       state.contextStatusBySlug['research'],
       ConversationSkillContextStatus.error,
+    );
+    expect(
+      state.failureBySlug['research'],
+      ConversationSkillContextFailure.missingCredentials,
+    );
+  });
+
+  test('maps unknown credentials to preparation failure', () async {
+    const unknown = AvailableSkill(
+      source: SkillSource.user,
+      id: 'skill-1',
+      slug: 'research',
+      title: 'Research',
+      description: '',
+      content: '',
+      kind: .template,
+    );
+    final list = _ListSkills();
+    final manifests = _BuildManifests();
+    _stubSkills(list, unknown);
+    when(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+      ),
+    ).thenAnswer((_) async => const []);
+    final container = _container(list, manifests);
+    addTearDown(container.dispose);
+
+    final state = await container.read(
+      conversationSkillSelectorProvider('workspace', 'conversation').future,
+    );
+
+    expect(
+      state.failureBySlug['research'],
+      ConversationSkillContextFailure.preparationFailed,
+    );
+    expect(state.loaded, [unknown]);
+  });
+
+  test('maps missing current metadata separately', () async {
+    final list = _ListSkills();
+    final manifests = _BuildManifests();
+    _stubSkills(list, skill);
+    when(
+      () => manifests.call(
+        conversationId: 'conversation',
+        workspaceId: 'workspace',
+      ),
+    ).thenAnswer((_) async => const []);
+    final container = _container(list, manifests);
+    addTearDown(container.dispose);
+
+    final state = await container.read(
+      conversationSkillSelectorProvider('workspace', 'conversation').future,
+    );
+
+    expect(
+      state.failureBySlug['research'],
+      ConversationSkillContextFailure.unavailableMetadata,
     );
   });
 }
