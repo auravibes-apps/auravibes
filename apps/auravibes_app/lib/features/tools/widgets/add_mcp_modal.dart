@@ -96,7 +96,6 @@ class _AddMcpDialogState extends ConsumerState<_AddMcpDialog> {
 
 bool _hasUnsavedMcpFormChanges(McpFormState state) =>
     _hasMcpTextChanges(state) ||
-    state.transport != McpTransportTypeOptions.streamableHttp ||
     state.authenticationType != McpAuthenticationTypeOptions.none ||
     state.useHttp2;
 
@@ -281,7 +280,6 @@ class _McpFormFieldChildren {
                ? onSubmit
                : null,
          ),
-         _TransportSelector(workspaceId: workspaceId),
          _AuthenticationSelector(workspaceId: workspaceId),
          if (displayState.showOAuthFields)
            _OAuthAdvancedSettings(
@@ -753,74 +751,6 @@ class const _FooterTestConnectionButton({
   );
 }
 
-class const _TransportSelector({required final String workspaceId})
-    extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _TransportSelectorContent(
-        capabilities: _watchMcpCapabilities(ref, workspaceId),
-        value: _watchMcpTransport(ref, workspaceId),
-        onChanged: _watchMcpTransportChanged(ref, workspaceId),
-      );
-}
-
-class const _TransportSelectorContent({
-  required final WorkspaceCapabilities capabilities,
-  required final McpTransportTypeOptions value,
-  required final ValueChanged<McpTransportTypeOptions?>? onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: _TransportSelectorChildren(
-      capabilities: capabilities,
-      value: value,
-      onChanged: onChanged,
-    ).values,
-    spacing: .xs,
-    crossAxisAlignment: .start,
-  );
-}
-
-class _TransportSelectorChildren {
-  new({
-    required WorkspaceCapabilities capabilities,
-    required McpTransportTypeOptions value,
-    required ValueChanged<McpTransportTypeOptions?>? onChanged,
-  }) : values = [
-         const AuraText(
-           child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
-           style: .bodySmall,
-         ),
-         AuraDropdownSelector<McpTransportTypeOptions>(
-           options: _McpTransportOptions(capabilities).values,
-           value: value,
-           onChanged: onChanged,
-         ),
-       ];
-
-  final List<Widget> values;
-}
-
-class _McpTransportOptions {
-  new(WorkspaceCapabilities capabilities)
-    : values = [
-        if (capabilities.mcpTransports.contains(
-          WorkspaceMcpTransport.streamableHttp,
-        ))
-          const AuraDropdownOption(
-            value: McpTransportTypeOptions.streamableHttp,
-            child: TextLocale(LocaleKeys.mcp_modal_transport_streamable_http),
-          ),
-        if (capabilities.mcpTransports.contains(WorkspaceMcpTransport.sse))
-          const AuraDropdownOption(
-            value: McpTransportTypeOptions.sse,
-            child: TextLocale(LocaleKeys.mcp_modal_transport_sse),
-          ),
-      ];
-
-  final List<AuraDropdownOption<McpTransportTypeOptions>> values;
-}
-
 WorkspaceCapabilities _watchMcpCapabilities(
   WidgetRef ref,
   String workspaceId,
@@ -828,17 +758,6 @@ WorkspaceCapabilities _watchMcpCapabilities(
     .watch(workspaceSessionForRouteProvider(workspaceId))
     .requireValue
     .capabilities;
-
-McpTransportTypeOptions _watchMcpTransport(WidgetRef ref, String workspaceId) =>
-    ref.watch(mcpFormProvider(workspaceId).select((state) => state.transport));
-
-ValueChanged<McpTransportTypeOptions?>? _watchMcpTransportChanged(
-  WidgetRef ref,
-  String workspaceId,
-) => ref.watch(
-  mcpFormProvider(workspaceId).notifier
-      .select((notifier) => notifier.setTransport),
-);
 
 /// Renders the available authentication types from [mcpFormProvider]
 /// as a localized single-select button group and updates the selected type.

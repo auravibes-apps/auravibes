@@ -1095,7 +1095,8 @@
     "test_connection_success": "Connection verified",
     "verification_success": "Connection verified · {} tools found",
     "verification_required": "Verify the connection before saving.",
-    "verification_expired": "Verification expired. Verify the connection again."
+    "verification_expired": "Verification expired. Verify the connection again.",
+    "legacy_sse_unavailable": "Streamable HTTP was rejected. This endpoint may require legacy SSE, which the web app cannot use. Connect from a native app or configure the server for Streamable HTTP."
   },
   "compaction": {
     "settings": {

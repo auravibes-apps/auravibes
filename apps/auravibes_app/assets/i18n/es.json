@@ -1095,7 +1095,8 @@
     "test_connection_success": "Conexión verificada",
     "verification_success": "Conexión verificada · {} herramientas encontradas",
     "verification_required": "Verifica la conexión antes de guardar.",
-    "verification_expired": "La verificación expiró. Verifica la conexión de nuevo."
+    "verification_expired": "La verificación expiró. Verifica la conexión de nuevo.",
+    "legacy_sse_unavailable": "El endpoint rechazó HTTP Streamable. Puede requerir SSE heredado, que la aplicación web no admite. Conéctate desde la aplicación nativa o configura el servidor para usar HTTP Streamable."
   },
   "compaction": {
     "settings": {

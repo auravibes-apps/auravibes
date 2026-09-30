@@ -321,6 +321,17 @@ void main() {
       expect(find.byType(SingleChildScrollView), findsOneWidget);
     });
 
+    testWidgets('does not ask for MCP transport', (tester) async {
+      await _pumpAndInit(tester, const _Subject());
+      await _showDialog(tester);
+
+      expect(
+        find.text(LocaleKeys.mcp_modal_fields_transport_label.tr()),
+        findsNothing,
+      );
+      expect(find.text(LocaleKeys.mcp_modal_transport_sse.tr()), findsNothing);
+    });
+
     testWidgets('shows loading overlay when submitting', (tester) async {
       await _pumpAndInit(
         tester,

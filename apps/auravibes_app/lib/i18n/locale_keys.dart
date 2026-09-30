@@ -1391,6 +1391,8 @@ abstract class LocaleKeys {
       'mcp_modal.verification_required';
   static const mcp_modal_verification_expired =
       'mcp_modal.verification_expired';
+  static const mcp_modal_legacy_sse_unavailable =
+      'mcp_modal.legacy_sse_unavailable';
   static const compaction_settings_title = 'compaction.settings.title';
   static const compaction_settings_subtitle = 'compaction.settings.subtitle';
   static const compaction_settings_model_budgets_title =
