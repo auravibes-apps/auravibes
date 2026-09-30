@@ -13,6 +13,7 @@ enum WorkspaceConfigurationKind {
   agentToolPermission,
   compactionSetting,
   modelConnection,
+  modelSelection,
   skill,
   skillResource,
   skillSetting,
@@ -24,6 +25,16 @@ class const WorkspaceConfigurationEntry({
   required final String id,
   required final Map<String, Object?> data,
 });
+
+class WorkspaceConfigurationArchivePreview(
+  final WorkspaceConfigurationArchive archive,
+) {
+  final Map<WorkspaceConfigurationKind, int> countsByKind = _countEntriesByKind(
+    archive.entries,
+  );
+
+  String get workspaceName => archive.workspaceName;
+}
 
 typedef _ArchiveId = ({WorkspaceConfigurationKind kind, String id});
 typedef _ArchiveReference = ({String field, WorkspaceConfigurationKind kind});
@@ -42,7 +53,7 @@ class const WorkspaceConfigurationArchiveException(final String localizationKey)
 
 abstract final class WorkspaceConfigurationArchiveCodec {
   static const String format = 'auravibes.workspace-configuration';
-  static const int version = 1;
+  static const int version = 2;
   static const int maxArchiveBytes = 8 * 1024 * 1024;
   static const int maxEntries = 2000;
 
@@ -70,6 +81,46 @@ abstract final class WorkspaceConfigurationArchiveCodec {
     }
 
     return json;
+  }
+
+  static WorkspaceConfigurationArchivePreview preview(String json) =>
+      .new(decode(json));
+
+  static WorkspaceConfigurationArchive selectKinds(
+    WorkspaceConfigurationArchive archive,
+    Set<WorkspaceConfigurationKind> selectedKinds,
+  ) {
+    _validate(archive);
+    final entriesById = {
+      for (final entry in archive.entries)
+        (kind: entry.kind, id: entry.id): entry,
+    };
+    final included = <_ArchiveId>{};
+    final pending = <_ArchiveId>[];
+    for (final entry in archive.entries.where(
+      (entry) => selectedKinds.contains(entry.kind),
+    )) {
+      final identity = (kind: entry.kind, id: entry.id);
+      if (included.add(identity)) pending.add(identity);
+    }
+    while (pending.isNotEmpty) {
+      final entry = entriesById[pending.removeLast()]!;
+      for (final reference in _referencesFor(entry)) {
+        final identity = (
+          kind: reference.kind,
+          id: _requiredString(entry.data, reference.field),
+        );
+        if (included.add(identity)) pending.add(identity);
+      }
+    }
+
+    return WorkspaceConfigurationArchive(
+      workspaceName: archive.workspaceName,
+      entries: [
+        for (final entry in archive.entries)
+          if (included.contains((kind: entry.kind, id: entry.id))) entry,
+      ],
+    );
   }
 
   static WorkspaceConfigurationArchive decode(String json) {
@@ -127,7 +178,7 @@ WorkspaceConfigurationArchive _decodeArchive(String json) {
   final value = _archiveMap(json);
   final archive = WorkspaceConfigurationArchive(
     workspaceName: value['workspaceName'] as String,
-    entries: _decodeEntries(value['entries']),
+    entries: _decodeEntries(value['entries'], value['version'] as int),
   );
   _validate(archive);
 
@@ -146,7 +197,8 @@ Map<String, dynamic> _archiveMap(String json) {
       value['format'] != WorkspaceConfigurationArchiveCodec.format) {
     throw const FormatException();
   }
-  if (value['version'] != WorkspaceConfigurationArchiveCodec.version) {
+  if (value['version'] != 1 &&
+      value['version'] != WorkspaceConfigurationArchiveCodec.version) {
     throw const WorkspaceConfigurationArchiveException(
       'workspace_archive.unsupported_version',
     );
@@ -155,20 +207,27 @@ Map<String, dynamic> _archiveMap(String json) {
   return value;
 }
 
-List<WorkspaceConfigurationEntry> _decodeEntries(Object? rawEntries) {
+List<WorkspaceConfigurationEntry> _decodeEntries(
+  Object? rawEntries,
+  int version,
+) {
   if (rawEntries is! List<Object?> ||
       rawEntries.length > WorkspaceConfigurationArchiveCodec.maxEntries) {
     throw const FormatException();
   }
 
-  return [for (final raw in rawEntries) _decodeEntry(raw)];
+  return [for (final raw in rawEntries) _decodeEntry(raw, version)];
 }
 
-WorkspaceConfigurationEntry _decodeEntry(Object? raw) {
+WorkspaceConfigurationEntry _decodeEntry(Object? raw, int version) {
   final fields = _entryMap(raw);
+  final kind = WorkspaceConfigurationKind.values.byName(
+    fields['kind'] as String,
+  );
+  if (version == 1 && kind == .modelSelection) _invalid();
 
   return .new(
-    kind: WorkspaceConfigurationKind.values.byName(fields['kind'] as String),
+    kind: kind,
     id: fields['id'] as String,
     data: fields['data'] as Map<String, dynamic>,
   );
@@ -228,6 +287,7 @@ List<_ArchiveReference> _referencesFor(WorkspaceConfigurationEntry entry) =>
       .skillResource || .skillSetting when entry.data['source'] != 'app' => [
         (field: 'skillId', kind: .skill),
       ],
+      .modelSelection => [(field: 'modelConnectionId', kind: .modelConnection)],
       _ => const [],
     };
 
@@ -302,6 +362,7 @@ const _entryFields = <WorkspaceConfigurationKind, Set<String>>{
     'remainingTokenThreshold',
   },
   .modelConnection: {'name', 'providerId', 'url'},
+  .modelSelection: {'modelConnectionId', 'modelId', 'toolSamplingPolicy'},
   .skill: {
     'source',
     'kind',
@@ -338,6 +399,8 @@ void _validateEntryValues(WorkspaceConfigurationEntry entry) {
       _validateCompaction(entry);
     case .modelConnection:
       _validateModelConnection(data);
+    case .modelSelection:
+      _validateModelSelection(data);
     case .skill:
       _validateSkill(data);
     case .skillResource:
@@ -399,6 +462,14 @@ void _validateModelConnection(Map<String, Object?> data) {
       (url is! String ||
           url.length > _maxUrlLength ||
           WorkspaceConfigurationArchiveCodec.publicUrl(url) != url)) {
+    _invalid();
+  }
+}
+
+void _validateModelSelection(Map<String, Object?> data) {
+  _strings(data, const ['modelConnectionId', 'modelId', 'toolSamplingPolicy']);
+  if (data['modelId'] == '' ||
+      !_oneOf(data['toolSamplingPolicy'], const ['off', 'prefer', 'require'])) {
     _invalid();
   }
 }
@@ -473,3 +544,16 @@ void _permission(Object? mode) {
 Never _invalid() => throw const WorkspaceConfigurationArchiveException(
   'workspace_archive.invalid',
 );
+
+Map<WorkspaceConfigurationKind, int> _countEntriesByKind(
+  List<WorkspaceConfigurationEntry> entries,
+) {
+  final counts = {
+    for (final kind in WorkspaceConfigurationKind.values) kind: 0,
+  };
+  for (final entry in entries) {
+    final _ = counts.update(entry.kind, (count) => count + 1);
+  }
+
+  return Map.unmodifiable(counts);
+}

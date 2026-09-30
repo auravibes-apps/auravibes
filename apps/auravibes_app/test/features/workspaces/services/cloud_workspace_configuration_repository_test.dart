@@ -80,6 +80,7 @@ void main() {
               updatedAt: now,
             ),
           ],
+          listModelSelections: () async => [],
           createConnection: (entry) => _record(calls, entry),
           createSkillResource: (entry) => _record(calls, entry),
         ),
@@ -99,6 +100,7 @@ void main() {
         calls: (
           listConnections: () async => [],
           listSkillResources: (_) async => [],
+          listModelSelections: () async => [],
           createConnection: (entry) => _record(calls, entry),
           createSkillResource: (entry) => _record(calls, entry),
         ),
@@ -137,6 +139,81 @@ void main() {
     },
   );
 
+  test(
+    'exports explicit cloud selection policies with their connection',
+    () async {
+      final now = DateTime.utc(2026);
+      final repository = CloudWorkspaceConfigurationRepository(
+        store: _store([], []),
+        workspaceName: 'Cloud',
+        calls: (
+          listConnections: () async => [
+            ModelConnectionView(
+              id: 'connection-1',
+              name: 'Provider',
+              providerId: 'openai',
+              hasSecret: true,
+              keySuffix: 'must-not-export',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ],
+          listSkillResources: (_) async => [],
+          listModelSelections: () async => [
+            WorkspaceModelSelectionView(
+              id: 'selection-1',
+              connectionId: 'connection-1',
+              connectionName: 'Provider',
+              connectionHasSecret: true,
+              connectionKeySuffix: 'must-not-export',
+              providerId: 'openai',
+              modelId: 'gpt-4o',
+              modelName: 'GPT-4o',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+              toolSamplingPolicy: 'off',
+            ),
+            WorkspaceModelSelectionView(
+              id: 'selection-2',
+              connectionId: 'connection-1',
+              connectionName: 'Provider',
+              connectionHasSecret: true,
+              providerId: 'openai',
+              modelId: 'gpt-4.1',
+              modelName: 'GPT-4.1',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          ],
+          createConnection: (_) => Future<void>.value(),
+          createSkillResource: (_) => Future<void>.value(),
+        ),
+      );
+
+      final archive = await repository.export(
+        selectedKinds: const {.modelSelection},
+      );
+      final selection = archive.entries.singleWhere(
+        (entry) => entry.kind == .modelSelection,
+      );
+
+      expect(archive.entries, hasLength(2));
+      expect(selection.id, 'selection-1');
+      expect(selection.data, {
+        'modelConnectionId': 'connection-1',
+        'modelId': 'gpt-4o',
+        'toolSamplingPolicy': 'off',
+      });
+      expect(
+        WorkspaceConfigurationArchiveCodec.encode(archive),
+        isNot(contains('must-not-export')),
+      );
+    },
+  );
+
   test('malformed and unsupported cloud archives make no writes', () async {
     final patches = <WorkspacePatchOperation>[];
     final calls = <WorkspaceConfigurationEntry>[];
@@ -146,6 +223,7 @@ void main() {
       calls: (
         listConnections: () async => [],
         listSkillResources: (_) async => [],
+        listModelSelections: () async => [],
         createConnection: (entry) => _record(calls, entry),
         createSkillResource: (entry) => _record(calls, entry),
       ),
@@ -154,7 +232,7 @@ void main() {
       const WorkspaceConfigurationArchive(workspaceName: 'Cloud', entries: []),
     );
     for (final invalid in [
-      valid.replaceFirst('"version":1', '"version":2'),
+      valid.replaceFirst('"version":2', '"version":3'),
       valid.replaceFirst('"workspaceName":"Cloud"', '"workspaceName":null'),
     ]) {
       await expectLater(
@@ -213,6 +291,7 @@ void main() {
       calls: (
         listConnections: () async => [],
         listSkillResources: (_) async => [],
+        listModelSelections: () async => [],
         createConnection: (entry) => _record(externalEntries, entry),
         createSkillResource: (entry) => _record(externalEntries, entry),
       ),

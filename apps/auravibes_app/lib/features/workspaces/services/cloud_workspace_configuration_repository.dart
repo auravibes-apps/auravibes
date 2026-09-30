@@ -8,6 +8,7 @@ const _resourceBatchSize = 50;
 
 typedef CloudWorkspaceConfigurationCalls = ({
   Future<List<ModelConnectionView>> Function() listConnections,
+  Future<List<WorkspaceModelSelectionView>> Function() listModelSelections,
   Future<List<SkillResourceView>> Function(String skillId) listSkillResources,
   Future<void> Function(WorkspaceConfigurationEntry entry) createConnection,
   Future<void> Function(WorkspaceConfigurationEntry entry) createSkillResource,
@@ -62,16 +63,24 @@ class CloudWorkspaceConfigurationRepository {
   final CloudWorkspaceResourceStore _store;
   final CloudWorkspaceConfigurationCalls _calls;
 
-  Future<WorkspaceConfigurationArchive> export() async {
+  Future<WorkspaceConfigurationArchive> export({
+    Set<WorkspaceConfigurationKind>? selectedKinds,
+  }) async {
+    if (selectedKinds?.isEmpty ?? false) {
+      return WorkspaceConfigurationArchive(
+        workspaceName: workspaceName,
+        entries: const [],
+      );
+    }
     final resources = await _store.watchResources(_kinds).first;
     final active = _activeResources(resources);
     final rows = _cloudExportRows(active);
     final entries = _resourceEntries(active, rows);
-    await _appendExternalEntries(_calls, entries, rows.skills);
+    await _appendExternalEntries(_calls, entries, rows.skills, selectedKinds);
 
-    return WorkspaceConfigurationArchive(
-      workspaceName: workspaceName,
-      entries: entries,
+    return WorkspaceConfigurationArchiveCodec.selectKinds(
+      .new(workspaceName: workspaceName, entries: entries),
+      selectedKinds ?? WorkspaceConfigurationKind.values.toSet(),
     );
   }
 
@@ -180,6 +189,7 @@ CloudWorkspaceConfigurationCalls _productionCalls(
   CloudWorkspaceResourceStore store,
 ) => (
   listConnections: () => _listModelConnections(store),
+  listModelSelections: () => _listModelSelections(store),
   listSkillResources: (skillId) => _listSkillResources(store, skillId),
   createConnection: (entry) => _createModelConnection(store, entry),
   createSkillResource: (entry) => _createSkillResource(store, entry),
@@ -203,6 +213,16 @@ Future<List<SkillResourceView>> _listSkillResources(
 
   return await api.client.skillResource.list(
     .new(workspaceId: api.workspaceId, skillId: skillId),
+  );
+}
+
+Future<List<WorkspaceModelSelectionView>> _listModelSelections(
+  CloudWorkspaceResourceStore store,
+) async {
+  final api = await _api(store);
+
+  return await api.client.modelConnection.listSelections(
+    .new(workspaceId: api.workspaceId),
   );
 }
 
@@ -700,9 +720,21 @@ Future<void> _appendExternalEntries(
   CloudWorkspaceConfigurationCalls calls,
   List<WorkspaceConfigurationEntry> entries,
   List<WorkspaceResource> skills,
+  Set<WorkspaceConfigurationKind>? selectedKinds,
 ) async {
-  await _appendModelConnections(calls, entries);
-  await _appendSkillResources(calls, entries, skills);
+  if (selectedKinds == null ||
+      selectedKinds.contains(WorkspaceConfigurationKind.modelConnection) ||
+      selectedKinds.contains(WorkspaceConfigurationKind.modelSelection)) {
+    await _appendModelConnections(calls, entries);
+  }
+  if (selectedKinds == null ||
+      selectedKinds.contains(WorkspaceConfigurationKind.modelSelection)) {
+    await _appendModelSelections(calls, entries);
+  }
+  if (selectedKinds == null ||
+      selectedKinds.contains(WorkspaceConfigurationKind.skillResource)) {
+    await _appendSkillResources(calls, entries, skills);
+  }
 }
 
 Future<void> _appendModelConnections(
@@ -711,6 +743,26 @@ Future<void> _appendModelConnections(
 ) async {
   final connections = await calls.listConnections();
   entries.addAll(connections.map(_modelConnectionEntry));
+}
+
+Future<void> _appendModelSelections(
+  CloudWorkspaceConfigurationCalls calls,
+  List<WorkspaceConfigurationEntry> entries,
+) async {
+  final selections = await calls.listModelSelections();
+  entries.addAll([
+    for (final selection in selections)
+      if (selection.toolSamplingPolicy case final String policy)
+        WorkspaceConfigurationEntry(
+          kind: .modelSelection,
+          id: selection.id,
+          data: {
+            'modelConnectionId': selection.connectionId,
+            'modelId': selection.modelId,
+            'toolSamplingPolicy': policy,
+          },
+        ),
+  ]);
 }
 
 Future<void> _appendSkillResources(

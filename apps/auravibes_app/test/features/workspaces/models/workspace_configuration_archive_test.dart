@@ -53,6 +53,115 @@ void main() {
     expect(json, isNot(contains('conversation')));
   });
 
+  test('decodes version 1 and writes version 2', () {
+    const version1 =
+        '{"format":"auravibes.workspace-configuration","version":1,'
+        '"workspaceName":"Legacy","entries":[]}';
+
+    expect(
+      WorkspaceConfigurationArchiveCodec.decode(version1).workspaceName,
+      'Legacy',
+    );
+    expect(
+      (jsonDecode(
+        WorkspaceConfigurationArchiveCodec.encode(
+          const WorkspaceConfigurationArchive(
+            workspaceName: 'Current',
+            entries: [],
+          ),
+        ),
+      ) as Map<String, dynamic>)['version'],
+      2,
+    );
+  });
+
+  test('selects entries with recursive reference closure', () {
+    final selected = WorkspaceConfigurationArchiveCodec.selectKinds(
+      archive,
+      const {.agentSkill},
+    );
+
+    expect(
+      selected.entries.map((entry) => entry.kind),
+      unorderedEquals([
+        WorkspaceConfigurationKind.agent,
+        WorkspaceConfigurationKind.skill,
+        WorkspaceConfigurationKind.agentSkill,
+      ]),
+    );
+    expect(
+      WorkspaceConfigurationArchiveCodec.selectKinds(archive, const {}).entries,
+      isEmpty,
+    );
+  });
+
+  test(
+    'preserves explicit model selection policy and connection reference',
+    () {
+      const policyArchive = WorkspaceConfigurationArchive(
+        workspaceName: 'Example',
+        entries: [
+          WorkspaceConfigurationEntry(
+            kind: .modelConnection,
+            id: 'connection-1',
+            data: {'name': 'Provider', 'providerId': 'openai', 'url': null},
+          ),
+          WorkspaceConfigurationEntry(
+            kind: .modelSelection,
+            id: 'selection-1',
+            data: {
+              'modelConnectionId': 'connection-1',
+              'modelId': 'gpt-4o',
+              'toolSamplingPolicy': 'require',
+            },
+          ),
+        ],
+      );
+
+      final selected = WorkspaceConfigurationArchiveCodec.selectKinds(
+        policyArchive,
+        const {.modelSelection},
+      );
+      final selection = selected.entries.singleWhere(
+        (entry) => entry.kind == .modelSelection,
+      );
+
+      expect(selected.entries, hasLength(2));
+      expect(selection.data, {
+        'modelConnectionId': 'connection-1',
+        'modelId': 'gpt-4o',
+        'toolSamplingPolicy': 'require',
+      });
+      expect(
+        WorkspaceConfigurationArchiveCodec.decode(
+          WorkspaceConfigurationArchiveCodec.encode(policyArchive),
+        ).entries,
+        hasLength(2),
+      );
+      final invalidPolicyJson =
+          WorkspaceConfigurationArchiveCodec.encode(policyArchive).replaceFirst(
+            '"toolSamplingPolicy":"require"',
+            '"toolSamplingPolicy":"automatic"',
+          );
+      expect(
+        () => WorkspaceConfigurationArchiveCodec.decode(invalidPolicyJson),
+        throwsA(isA<WorkspaceConfigurationArchiveException>()),
+      );
+    },
+  );
+
+  test('summarizes counts for every archive kind', () {
+    final preview = WorkspaceConfigurationArchiveCodec.preview(
+      WorkspaceConfigurationArchiveCodec.encode(archive),
+    );
+
+    expect(preview.workspaceName, 'Example');
+    expect(preview.countsByKind.keys, WorkspaceConfigurationKind.values);
+    expect(preview.countsByKind[WorkspaceConfigurationKind.agent], 1);
+    expect(preview.countsByKind[WorkspaceConfigurationKind.agentSkill], 1);
+    expect(preview.countsByKind[WorkspaceConfigurationKind.tool], 0);
+  });
+
   test('remaps resource IDs and references together', () {
     final imported = WorkspaceConfigurationArchiveCodec.remapIds(archive);
     final agent = imported.entries.singleWhere((entry) => entry.kind == .agent);
@@ -99,7 +208,7 @@ void main() {
     final safe = jsonDecode(
       WorkspaceConfigurationArchiveCodec.encode(archive),
     ) as Map<String, dynamic>;
-    safe['version'] = 2;
+    safe['version'] = 3;
     expect(
       () => WorkspaceConfigurationArchiveCodec.decode(jsonEncode(safe)),
       throwsA(
