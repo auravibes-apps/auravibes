@@ -61,6 +61,30 @@ abstract class LocaleKeys {
       'models_screens.no_models_available';
   static const models_screens_model_unavailable =
       'models_screens.model_unavailable';
+  static const models_screens_tool_sampling_settings_for_model =
+      'models_screens.tool_sampling_settings_for_model';
+  static const models_screens_tool_sampling_policy =
+      'models_screens.tool_sampling_policy';
+  static const models_screens_tool_sampling_automatic =
+      'models_screens.tool_sampling_automatic';
+  static const models_screens_tool_sampling_off =
+      'models_screens.tool_sampling_off';
+  static const models_screens_tool_sampling_prefer =
+      'models_screens.tool_sampling_prefer';
+  static const models_screens_tool_sampling_require =
+      'models_screens.tool_sampling_require';
+  static const models_screens_tool_sampling_verified =
+      'models_screens.tool_sampling_verified';
+  static const models_screens_tool_sampling_unverified =
+      'models_screens.tool_sampling_unverified';
+  static const models_screens_tool_sampling_no_tool_calls =
+      'models_screens.tool_sampling_no_tool_calls';
+  static const models_screens_tool_sampling_unsupported =
+      'models_screens.tool_sampling_unsupported';
+  static const models_screens_tool_sampling_unverified_explanation =
+      'models_screens.tool_sampling_unverified_explanation';
+  static const models_screens_tool_sampling_update_error =
+      'models_screens.tool_sampling_update_error';
   static const models_screens_title = 'models_screens.title';
   static const models_screens_list_error = 'models_screens.list_error';
   static const models_screens_list_empty_title =
