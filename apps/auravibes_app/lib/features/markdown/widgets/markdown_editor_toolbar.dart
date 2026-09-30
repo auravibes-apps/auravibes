@@ -124,9 +124,9 @@ extension on _MarkdownEditorToolbarState {
   bool _applyInlineAction(_ToolbarActionKind action) {
     switch (action) {
       case .bold:
-        _wrapSelection('**', '**');
+        _toggleSelection('**');
       case .italic:
-        _wrapSelection('*', '*');
+        _toggleSelection('*', alternateMarker: '_');
       case .code:
         _formatCode();
       case .heading ||
@@ -160,6 +160,22 @@ extension on _MarkdownEditorToolbarState {
 }
 
 extension on _MarkdownEditorToolbarState {
+  void _toggleSelection(String marker, {String? alternateMarker}) {
+    final selection = _safeSelection;
+    final text = _controller.text;
+    final toggle = _inlineToggleEdit(selection, text, marker, alternateMarker);
+    if (!toggle.matchedSpan) {
+      _wrapSelection(marker, marker);
+
+      return;
+    }
+
+    final edit = toggle.edit;
+    if (edit == null) return;
+
+    _replace(edit.range, edit.content, edit.selection);
+  }
+
   void _wrapSelection(String before, String after) {
     final selection = _safeSelection;
     final selected = selection.textInside(_controller.text);
@@ -189,45 +205,166 @@ extension on _MarkdownEditorToolbarState {
       .collapsed(offset: range.start + replacement.length),
     );
   }
+}
 
-  TextSelection _lineRange(TextSelection selection, String text) {
-    final bounds = _selectionBounds(selection, text);
-    final lineEnd = _toolbarLineEnd(text, bounds.end);
+typedef _InlineToggleResult = ({bool matchedSpan, _InlineUnwrapEdit? edit});
 
-    return TextSelection(
-      baseOffset: _toolbarLineStart(text, bounds.start),
-      extentOffset: lineEnd == -1 ? text.length : lineEnd,
-    );
+_InlineToggleResult _inlineToggleEdit(
+  TextSelection selection,
+  String text,
+  String marker,
+  String? alternateMarker,
+) {
+  final bounds = _selectionBounds(selection, text);
+  final markers = [marker, ?alternateMarker];
+  final span = _matchingInlineSpan(text, bounds, markers);
+  if (span == null) return (matchedSpan: false, edit: null);
+
+  return (matchedSpan: true, edit: _inlineUnwrapEdit(selection, text, span));
+}
+
+TextSelection _lineRange(TextSelection selection, String text) {
+  final bounds = _selectionBounds(selection, text);
+  final lineEnd = _toolbarLineEnd(text, bounds.end);
+
+  return TextSelection(
+    baseOffset: _toolbarLineStart(text, bounds.start),
+    extentOffset: lineEnd == -1 ? text.length : lineEnd,
+  );
+}
+
+({String replacement, int cursorOffset}) _wrapSelectionResult(
+  ({TextSelection selection, String selected, String before, String after})
+  input,
+) {
+  final replacement = '${input.before}${input.selected}${input.after}';
+  final cursorOffset = input.selected.isEmpty
+      ? input.selection.start + input.before.length
+      : input.selection.start + replacement.length;
+
+  return (replacement: replacement, cursorOffset: cursorOffset);
+}
+
+typedef _InlineUnwrapEdit = ({
+  TextSelection range,
+  String content,
+  TextSelection selection,
+});
+
+({int start, int end}) _selectionBounds(TextSelection selection, String text) {
+  final start = selection.start.clamp(0, text.length);
+
+  return (start: start, end: selection.end.clamp(start, text.length));
+}
+
+_InlineUnwrapEdit? _inlineUnwrapEdit(
+  TextSelection selection,
+  String text,
+  ({int start, int contentStart, int contentEnd, int end}) span,
+) {
+  final bounds = _selectionBounds(selection, text);
+  if (!_selectsWholeInlineSpan(bounds, span)) return null;
+
+  final content = _textInside(text, span.contentStart, span.contentEnd);
+
+  return (
+    range: TextSelection(baseOffset: span.start, extentOffset: span.end),
+    content: content,
+    selection: _selectionAfterUnwrap(selection, span, content),
+  );
+}
+
+bool _selectsWholeInlineSpan(
+  ({int start, int end}) bounds,
+  ({int start, int contentStart, int contentEnd, int end}) span,
+) =>
+    (bounds.start == span.contentStart && bounds.end == span.contentEnd) ||
+    (bounds.start == span.start && bounds.end == span.end);
+
+TextSelection _selectionAfterUnwrap(
+  TextSelection selection,
+  ({int start, int contentStart, int contentEnd, int end}) span,
+  String content,
+) {
+  final start = span.start;
+  final contentEnd = start + content.length;
+  final isReversed = selection.baseOffset > selection.extentOffset;
+
+  return TextSelection(
+    baseOffset: isReversed ? contentEnd : start,
+    extentOffset: isReversed ? start : contentEnd,
+    affinity: selection.affinity,
+    isDirectional: selection.isDirectional,
+  );
+}
+
+({int start, int contentStart, int contentEnd, int end})? _matchingInlineSpan(
+  String text,
+  ({int start, int end}) selection,
+  List<String> markers,
+) {
+  ({int start, int contentStart, int contentEnd, int end})? bestSpan;
+
+  for (final marker in markers) {
+    final span = _matchingSpanForMarker(text, selection, marker);
+    if (_isNarrowerInlineSpan(bestSpan, span)) bestSpan = span;
   }
 
-  ({String replacement, int cursorOffset}) _wrapSelectionResult(
-    ({TextSelection selection, String selected, String before, String after})
-    input,
-  ) {
-    final replacement = '${input.before}${input.selected}${input.after}';
-    final cursorOffset = input.selected.isEmpty
-        ? input.selection.start + input.before.length
-        : input.selection.start + replacement.length;
+  return bestSpan;
+}
 
-    return (replacement: replacement, cursorOffset: cursorOffset);
+bool _isNarrowerInlineSpan(
+  ({int start, int contentStart, int contentEnd, int end})? current,
+  ({int start, int contentStart, int contentEnd, int end})? candidate,
+) =>
+    candidate != null &&
+    (current == null ||
+        candidate.end - candidate.start < current.end - current.start);
+
+({int start, int contentStart, int contentEnd, int end})?
+_matchingSpanForMarker(
+  String text,
+  ({int start, int end}) selection,
+  String marker,
+) {
+  var searchOffset = 0;
+  while (searchOffset < text.length) {
+    final span = _inlineSpanAt(text, marker, searchOffset);
+    if (span == null) return null;
+    if (selection.start >= span.start && selection.end <= span.end) return span;
+
+    searchOffset = span.end;
   }
 
-  ({int start, int end}) _selectionBounds(
-    TextSelection selection,
-    String text,
-  ) {
-    final start = selection.start.clamp(0, text.length);
+  return null;
+}
 
-    return (start: start, end: selection.end.clamp(start, text.length));
-  }
+({int start, int contentStart, int contentEnd, int end})? _inlineSpanAt(
+  String text,
+  String marker,
+  int searchOffset,
+) {
+  final start = _nextInlineMarker(text, marker, searchOffset, opening: true);
+  if (start == -1) return null;
+
+  final contentStart = start + marker.length;
+  final contentEnd = _nextInlineMarker(
+    text,
+    marker,
+    contentStart,
+    opening: false,
+  );
+  if (contentEnd == -1) return null;
+
+  return (
+    start: start,
+    contentStart: contentStart,
+    contentEnd: contentEnd,
+    end: contentEnd + marker.length,
+  );
 }
 
 extension on _MarkdownEditorToolbarState {
-  String _prefixReplacement(String selected, String prefix) => selected
-      .split('\n')
-      .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
-      .join('\n');
-
   void _prefixNumberedLines() {
     final selection = _safeSelection;
     final text = _controller.text;
@@ -240,21 +377,44 @@ extension on _MarkdownEditorToolbarState {
       .collapsed(offset: range.start + replacement.length),
     );
   }
-
-  String _numberedReplacement(String selected) {
-    final existingPrefix = RegExp(r'^\d+\. ');
-
-    return selected
-        .split('\n')
-        .indexed
-        .map((entry) {
-          final line = entry.$2.replaceFirst(existingPrefix, '');
-
-          return '${entry.$1 + 1}. $line';
-        })
-        .join('\n');
-  }
 }
+
+String _prefixReplacement(String selected, String prefix) => selected
+    .split('\n')
+    .map((line) => line.startsWith(prefix) ? line : '$prefix$line')
+    .join('\n');
+
+String _numberedReplacement(String selected) {
+  final existingPrefix = RegExp(r'^\d+\. ');
+
+  return selected
+      .split('\n')
+      .indexed
+      .map((entry) {
+        final line = entry.$2.replaceFirst(existingPrefix, '');
+
+        return '${entry.$1 + 1}. $line';
+      })
+      .join('\n');
+}
+
+TextSelection _linkSourceRange(_LinkEditSnapshot snapshot) {
+  final link = snapshot.link;
+  if (link == null) return snapshot.selection;
+
+  return TextSelection(baseOffset: link.start, extentOffset: link.end);
+}
+
+Future<({String text, String destination})?> _showLinkDialog(
+  BuildContext context,
+  _LinkEditSnapshot snapshot,
+) => MarkdownLinkDialog.show(
+  context,
+  selectedText:
+      snapshot.link?.label ??
+      snapshot.selection.textInside(snapshot.value.text),
+  selectedDestination: snapshot.link?.destination ?? '',
+);
 
 extension on _MarkdownEditorToolbarState {
   void _formatTaskList() {
@@ -267,35 +427,54 @@ extension on _MarkdownEditorToolbarState {
   }
 
   Future<void> _formatLink(BuildContext context) async {
-    final before = _controller.value;
-    final selection = _safeSelection;
-    final result = await MarkdownLinkDialog.show(
-      context,
-      selectedText: selection.textInside(before.text),
-    );
-    if (!context.mounted || _controller.text != before.text) return;
+    final snapshot = _linkEditSnapshot();
+    final result = await _showLinkDialog(context, snapshot);
+    if (!context.mounted || _controller.text != snapshot.value.text) return;
 
-    _completeLink((value: before, selection: selection), result, context);
+    _completeLink(snapshot, result, context);
+  }
+
+  _LinkEditSnapshot _linkEditSnapshot() {
+    final value = _controller.value;
+    final selection = _safeSelection;
+
+    return (
+      value: value,
+      selection: selection,
+      link: _markdownLinkAtSelection(value.text, selection),
+    );
+  }
+
+  void _applyLink(
+    _LinkEditSnapshot snapshot,
+    ({String label, String destination, bool isPlaceholder}) linkValue,
+  ) {
+    final sourceRange = _linkSourceRange(snapshot);
+    final markdownLink = _markdownLinkText(linkValue);
+    final start = snapshot.link?.start ?? sourceRange.start;
+    final insertedSelection = _linkSelection(start, markdownLink, linkValue);
+    _toolbarEdit(() => _replace(sourceRange, markdownLink, insertedSelection));
+    _rememberAction(snapshot.value);
   }
 
   void _completeLink(
-    ({TextEditingValue value, TextSelection selection}) snapshot,
+    _LinkEditSnapshot snapshot,
     ({String text, String destination})? result,
     BuildContext context,
   ) {
     if (result == null) {
-      _restoreLinkSelection(snapshot.value.selection);
+      _restoreLinkValue(snapshot.value);
 
       return;
     }
 
-    _insertLink(snapshot, _linkValue(result, context));
+    _applyLink(snapshot, _linkValue(result, context));
   }
 
-  void _restoreLinkSelection(TextSelection selection) {
-    if (_controller.selection == selection) return;
+  void _restoreLinkValue(TextEditingValue value) {
+    if (_controller.value == value) return;
 
-    _toolbarEdit(() => _controller.selection = selection);
+    _toolbarEdit(() => _controller.value = value);
   }
 
   ({String label, String destination, bool isPlaceholder}) _linkValue(
@@ -316,18 +495,6 @@ extension on _MarkdownEditorToolbarState {
     );
   }
 
-  void _insertLink(
-    ({TextEditingValue value, TextSelection selection}) snapshot,
-    ({String label, String destination, bool isPlaceholder}) linkValue,
-  ) {
-    final before = snapshot.value;
-    final selection = snapshot.selection;
-    final link = '[${linkValue.label}](${linkValue.destination})';
-    final insertedSelection = _linkSelection(selection.start, link, linkValue);
-    _toolbarEdit(() => _replace(selection, link, insertedSelection));
-    _rememberAction(before);
-  }
-
   void _formatCode() {
     final selection = _safeSelection;
     final selected = selection.textInside(_controller.text);
@@ -342,7 +509,7 @@ extension on _MarkdownEditorToolbarState {
       return;
     }
 
-    _wrapSelection('`', '`');
+    _toggleSelection('`');
   }
 
   void _replace(
@@ -361,6 +528,67 @@ extension on _MarkdownEditorToolbarState {
   void _requestFocus() {
     if (!_focusNode.hasFocus) _focusNode.requestFocus();
   }
+}
+
+String _markdownLinkText(
+  ({String label, String destination, bool isPlaceholder}) value,
+) => '[${value.label}](${value.destination})';
+
+int _nextInlineMarker(
+  String text,
+  String marker,
+  int start, {
+  required bool opening,
+}) {
+  final search = (text: text, marker: marker, opening: opening);
+  var offset = text.indexOf(marker, start);
+  while (offset != -1) {
+    final nextOffset = offset + marker.length;
+    if (_isValidInlineMarker(search, offset, nextOffset)) return offset;
+
+    offset = text.indexOf(marker, nextOffset);
+  }
+
+  return -1;
+}
+
+bool _isValidInlineMarker(
+  _InlineMarkerSearch search,
+  int offset,
+  int nextOffset,
+) {
+  final text = search.text;
+  if (_hasAdjacentInlineMarker(search, offset, nextOffset) ||
+      _isEscapedMarkdownCharacter(text, offset)) {
+    return false;
+  }
+
+  return search.marker[0] == '`' || _hasEmphasisBoundary(search, offset);
+}
+
+bool _hasAdjacentInlineMarker(
+  _InlineMarkerSearch search,
+  int offset,
+  int nextOffset,
+) {
+  final marker = search.marker;
+  final text = search.text;
+  final markerCharacter = marker[0];
+  final previousMatches = offset > 0 && text[offset - 1] == markerCharacter;
+  final nextMatches =
+      nextOffset < text.length && text[nextOffset] == markerCharacter;
+
+  return previousMatches || nextMatches;
+}
+
+bool _hasEmphasisBoundary(_InlineMarkerSearch search, int offset) {
+  final boundaryOffset = search.opening
+      ? offset + search.marker.length
+      : offset - 1;
+  final text = search.text;
+  if (boundaryOffset < 0 || boundaryOffset >= text.length) return false;
+
+  return text[boundaryOffset].trim().isNotEmpty;
 }
 
 int _toolbarLineStart(String text, int selectionStart) =>
@@ -382,6 +610,138 @@ TextSelection _linkSelection(
         extentOffset: start + 1 + value.label.length,
       )
     : TextSelection.collapsed(offset: start + link.length);
+
+typedef _InlineMarkerSearch = ({String text, String marker, bool opening});
+
+typedef _MarkdownLink = ({
+  int start,
+  int end,
+  String label,
+  String destination,
+});
+typedef _MarkdownLinkOffsets = ({int labelEnd, int destinationEnd});
+
+typedef _LinkEditSnapshot = ({
+  TextEditingValue value,
+  TextSelection selection,
+  _MarkdownLink? link,
+});
+
+_MarkdownLink? _markdownLinkAtSelection(String text, TextSelection selection) {
+  _MarkdownLink? match;
+  for (final link in _markdownLinks(text)) {
+    if (!_selectionMatchesLink(selection, link)) continue;
+    if (match != null) return null;
+
+    match = link;
+  }
+
+  return match;
+}
+
+bool _selectionMatchesLink(TextSelection selection, _MarkdownLink link) =>
+    selection.isCollapsed
+    ? selection.start >= link.start && selection.start <= link.end
+    : selection.start < link.end && selection.end > link.start;
+
+List<_MarkdownLink> _markdownLinks(String text) {
+  final links = <_MarkdownLink>[];
+  var start = text.indexOf('[');
+  while (start != -1) {
+    final link = _markdownLinkAt(text, start);
+    if (link == null) {
+      start = text.indexOf('[', start + '['.length);
+      continue;
+    }
+
+    links.add(link);
+    start = text.indexOf('[', link.end);
+  }
+
+  return links;
+}
+
+_MarkdownLink? _markdownLinkAt(String text, int start) {
+  if (!_isMarkdownLinkStart(text, start)) return null;
+  final offsets = _markdownLinkOffsets(text, start);
+  if (offsets == null) return null;
+
+  return (
+    start: start,
+    end: offsets.destinationEnd + ')'.length,
+    label: _textInside(text, start + '['.length, offsets.labelEnd),
+    destination: _textInside(
+      text,
+      offsets.labelEnd + '(['.length,
+      offsets.destinationEnd,
+    ),
+  );
+}
+
+bool _isMarkdownLinkStart(String text, int start) =>
+    !_isEscapedMarkdownCharacter(text, start) &&
+    !_isImageLinkStart(text, start);
+
+_MarkdownLinkOffsets? _markdownLinkOffsets(String text, int start) {
+  final labelEnd = _matchingMarkdownBracket(text, start);
+  if (labelEnd == -1) return null;
+
+  final destinationEnd = _markdownDestinationEnd(text, labelEnd);
+  if (destinationEnd == null) return null;
+
+  return (labelEnd: labelEnd, destinationEnd: destinationEnd);
+}
+
+bool _isImageLinkStart(String text, int start) =>
+    start > 0 && text[start - '['.length] == '!';
+
+int? _markdownDestinationEnd(String text, int labelEnd) {
+  final openParenthesis = labelEnd + ']'.length;
+  if (openParenthesis >= text.length || text[openParenthesis] != '(') {
+    return null;
+  }
+
+  final destinationEnd = _matchingMarkdownParenthesis(text, openParenthesis);
+
+  return destinationEnd == -1 ? null : destinationEnd;
+}
+
+int _matchingMarkdownBracket(String text, int start) {
+  var depth = 1;
+  for (var index = start + 1; index < text.length; index++) {
+    if (_isEscapedMarkdownCharacter(text, index)) continue;
+    if (text[index] == '[') depth++;
+    if (text[index] == ']') {
+      depth--;
+      if (depth == 0) return index;
+    }
+  }
+
+  return -1;
+}
+
+int _matchingMarkdownParenthesis(String text, int start) {
+  var depth = 0;
+  for (var index = start; index < text.length; index++) {
+    if (_isEscapedMarkdownCharacter(text, index)) continue;
+    if (text[index] == '(') depth++;
+    if (text[index] == ')') {
+      depth--;
+      if (depth == 0) return index;
+    }
+  }
+
+  return -1;
+}
+
+bool _isEscapedMarkdownCharacter(String text, int offset) {
+  var backslashCount = 0;
+  for (var index = offset - 1; index >= 0 && text[index] == r'\'; index--) {
+    backslashCount++;
+  }
+
+  return backslashCount.isOdd;
+}
 
 typedef _TaskEdit = ({int start, int end, String replacement});
 

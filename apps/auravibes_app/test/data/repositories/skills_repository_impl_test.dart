@@ -33,7 +33,6 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
@@ -427,6 +426,46 @@ void main() {
       },
     );
 
+    test('re-adds a legacy false row without replacing it', () async {
+      final workspace = await workspaceRepository.createWorkspace(
+        const WorkspaceToCreate(name: 'Test Workspace', type: .local),
+      );
+      final conversation = await conversationRepository.createConversation(
+        .new(title: 'Test Conversation', workspaceId: workspace.id),
+      );
+      final skill = await createSkillUsecase.call(
+        workspace.id,
+        const SkillToCreate(
+          kind: .template,
+          title: 'Example Services',
+          description: 'Call Example APIs',
+          content: 'Use Example Services for company data.',
+        ),
+      );
+      final legacyRow = await conversationSkillsRepository
+          .setWorkspaceSkillLoaded(conversation.id, skill.id, isLoaded: false);
+      final loadSkill = LoadConversationSkillUsecase(
+        skillsRepository,
+        conversationSkillsRepository,
+        appSkillSettingsRepository,
+        const AppSkillRegistry(),
+      );
+
+      await loadSkill.call(
+        conversationId: conversation.id,
+        workspaceId: workspace.id,
+        slug: skill.slug,
+      );
+
+      final savedRow =
+          (await conversationSkillsRepository.getConversationSkills(
+            conversation.id,
+          )).single;
+      expect(legacyRow.isLoaded, isFalse);
+      expect(savedRow.id, legacyRow.id);
+      expect(savedRow.isLoaded, isTrue);
+    });
+
     test('app skill disablement is scoped to workspace', () async {
       final firstWorkspace = await workspaceRepository.createWorkspace(
         const WorkspaceToCreate(name: 'First Workspace', type: .local),
@@ -457,7 +496,7 @@ void main() {
       );
     });
 
-    test('builds dynamic load and unload skill tool specs', () async {
+    test('builds dynamic skill tool specs after load', () async {
       final workspace = await workspaceRepository.createWorkspace(
         const WorkspaceToCreate(name: 'Test Workspace', type: .local),
       );
@@ -477,11 +516,6 @@ void main() {
         skillsRepository,
         conversationSkillsRepository,
         appSkillSettingsRepository,
-        const AppSkillRegistry(),
-      );
-      final unloadSkillUsecase = UnloadConversationSkillUsecase(
-        skillsRepository,
-        conversationSkillsRepository,
         const AppSkillRegistry(),
       );
       final loadedManifests = BuildLoadedSkillManifestsUsecase(
@@ -536,7 +570,7 @@ void main() {
         fixedSchemas,
       );
 
-      await unloadSkillUsecase.call(
+      await loadSkillUsecase.call(
         conversationId: conversation.id,
         workspaceId: workspace.id,
         slug: skill.slug,
@@ -549,7 +583,7 @@ void main() {
 
       expect(
         loadableSkills.map((skill) => skill.slug),
-        contains('example_services'),
+        isNot(contains('example_services')),
       );
     });
 

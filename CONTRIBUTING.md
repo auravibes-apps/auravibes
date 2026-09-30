@@ -9,8 +9,8 @@ Install:
 
 - FVM 4.0.5 or later
 - Flutter 3.47.5, selected by `.fvmrc`
-- Dart 3.13.0 or later, provided by Flutter
-- Melos 8.7.0 or later
+- Dart `^3.13.0`, provided by the pinned Flutter SDK
+- Melos `^8.7.0`, provided by the root `pubspec.yaml` dev dependencies
 
 See [README.md](README.md) for platform-specific requirements and app setup.
 Use FVM for every Dart and Flutter command so the repository SDK is used:
@@ -24,15 +24,33 @@ fvm dart --version
 
 1. Fork and clone the repository.
 2. Create a branch from `main`.
-3. Bootstrap the workspace:
+3. Select the Flutter SDK pinned in `.fvmrc` and resolve Dart dependencies:
+
+   ```bash
+   fvm use
+   ```
+
+   FVM selects the SDK pinned in `.fvmrc`, updates the local SDK link and VS
+   Code setting, and runs `flutter pub get` by default when the SDK changes.
+   This repository enables that behavior; use `--skip-pub-get` to skip
+   resolution.
+
+4. Run the repository's Melos workspace bootstrap:
 
    ```bash
    fvm dart run melos bootstrap
    ```
 
-4. Make the smallest change that solves the problem. Follow the standards in
+   The root Pub workspace declares package membership. Melos bootstrap
+   resolves the workspace and generates ignored IntelliJ module files for its
+   six packages. CI runs this command before checking for dependency artifact
+   drift. Keep it in the fresh-checkout setup sequence even though Pub handles
+   workspace package resolution; setup should leave no tracked or untracked
+   dependency changes.
+
+5. Make the smallest change that solves the problem. Follow the standards in
    [`AGENTS.md`](AGENTS.md) and the relevant package instructions.
-5. Run focused checks while iterating:
+6. Run focused checks while iterating:
 
    ```bash
    fvm dart run melos run validate:quick
@@ -41,8 +59,8 @@ fvm dart --version
    For the full pull request gate, see [Pull requests](#pull-requests) and
    [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-6. Commit with a Conventional Commits message.
-7. Open a pull request against `main`, `dev`, or `stage`, as appropriate.
+7. Commit with a Conventional Commits message.
+8. Open a pull request against `main`, `dev`, or `stage`, as appropriate.
 
 ## Coding standards
 

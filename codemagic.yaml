@@ -81,6 +81,24 @@ scripts:
       echo "RELEASE_TAG=$RELEASE_TAG" >> $CM_ENV
 
 workflows:
+  marketing-screenshots:
+    name: Marketing Screenshots
+    <<: *release_build
+    environment:
+      flutter: fvm
+    cache:
+      cache_paths:
+        - ~/.pub-cache
+        - $FLUTTER_ROOT/.pub-cache
+    scripts:
+      - *script_setup_environment
+      - *script_install_melos
+      - *script_melos_bootstrap
+      - name: Generate screenshots
+        script: dart run tool/generate_marketing_screenshots.dart --flutter=flutter
+    artifacts:
+      - build/marketing_screenshots/**
+
   # iOS Release Workflow
   release-ios:
     name: Release iOS

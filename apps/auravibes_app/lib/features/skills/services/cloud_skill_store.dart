@@ -578,7 +578,6 @@ extension CloudSkillStoreRuntimeOperations on CloudSkillStore {
   Future<void> Function(
     String conversationId,
     String skillId, {
-    required bool selected,
     required bool isAppSkill,
   })
   get setConversationSkill => _setConversationSkillHandler(this);
@@ -1314,18 +1313,6 @@ extension _CloudSkillStoreConversationMapping on CloudSkillStore {
           .where((item) => item.resourceId == id)
           .firstOrNull;
 
-  Future<void> _deleteConversationSkill(
-    String id,
-    WorkspaceResource? existing,
-  ) async {
-    if (existing == null) return;
-    await _store.delete(
-      kind: .conversationSkillSelection,
-      id: id,
-      revision: existing.revision,
-    );
-  }
-
   Future<void> _createConversationSkill(_ConversationSkillRequest request) =>
       _store.create(
         kind: .conversationSkillSelection,
@@ -1734,51 +1721,30 @@ Future<void> _setAppSkillEnabledForRequest(
 typedef _SetConversationSkill = Future<void> Function(
   String conversationId,
   String skillId, {
-  required bool selected,
   required bool isAppSkill,
 });
 
 _SetConversationSkill _setConversationSkillHandler(CloudSkillStore store) =>
-    (conversationId, skillId, {required selected, required isAppSkill}) =>
+    (conversationId, skillId, {required isAppSkill}) =>
         _setConversationSkillForRequest(store, (
           id: '$conversationId:$skillId',
           conversationId: conversationId,
           skillId: skillId,
           isAppSkill: isAppSkill,
-          selected: selected,
         ));
 
 Future<void> _setConversationSkillForRequest(
   CloudSkillStore store,
-  ({
-    String id,
-    String conversationId,
-    String skillId,
-    bool isAppSkill,
-    bool selected,
-  })
-  request,
+  ({String id, String conversationId, String skillId, bool isAppSkill}) request,
 ) async {
   final existing = await store._conversationSkill(request.id);
-  if (!request.selected) {
-    await store._deleteConversationSkill(request.id, existing);
-
-    return;
-  }
   if (existing != null) return;
 
   await store._createConversationSkill(_conversationSkillRequest(request));
 }
 
 _ConversationSkillRequest _conversationSkillRequest(
-  ({
-    String id,
-    String conversationId,
-    String skillId,
-    bool isAppSkill,
-    bool selected,
-  })
-  request,
+  ({String id, String conversationId, String skillId, bool isAppSkill}) request,
 ) => (
   id: request.id,
   conversationId: request.conversationId,

@@ -449,7 +449,7 @@ class const _DropdownMenu<T>({
                         ],
                         Expanded(
                           child: AuraText(
-                            child: DefaultTextStyle(
+                            child: DefaultTextStyle.merge(
                               style: TextStyle(
                                 color: option.isEnabled
                                     ? auraColors.onSurface

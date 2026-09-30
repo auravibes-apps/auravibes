@@ -4,16 +4,20 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/agent_adapters/aura_dashboard_catalog_adapter.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/aura_extended_catalog_adapter.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_adapter.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_action.dart';
+import 'package:auravibes_app/features/chats/models/chat_skill_suggestion_intent.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_text_field.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:auravibes_app/features/chats/agent_adapters/chat_catalog_image_adapter.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:genui/genui.dart';
-import 'package:intl/intl.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -114,16 +118,28 @@ const _implementedProperties = <String, Set<String>>{
   },
 };
 
-Catalog auraChatResponseCatalog() =>
-    _buildCatalog(catalogId: auraChatCatalogId, rules: _responseA2uiRules);
+Catalog auraChatResponseCatalog({
+  ChatSkillSuggestionBuilder? skillSuggestionBuilder,
+}) => _buildCatalog(
+  catalogId: auraChatCatalogId,
+  rules: _responseA2uiRules,
+  skillSuggestionBuilder: skillSuggestionBuilder,
+);
 
 Catalog auraChatFormCatalog() =>
     _buildCatalog(catalogId: auraChatFormCatalogId, rules: _formA2uiRules);
 
-List<Catalog> auraChatCatalogs() => [
-  auraChatResponseCatalog(),
+List<Catalog> auraChatCatalogs({
+  ChatSkillSuggestionBuilder? skillSuggestionBuilder,
+}) => [
+  auraChatResponseCatalog(skillSuggestionBuilder: skillSuggestionBuilder),
   auraChatFormCatalog(),
 ];
+
+typedef ChatSkillSuggestionBuilder = Widget Function(
+  CatalogItemContext context,
+  Map<String, Object?> data,
+);
 
 typedef ChatA2uiTabSelectionRegistrar = VoidCallback Function(
   CatalogItemContext context,
@@ -133,8 +149,11 @@ typedef ChatA2uiTabSelectionRegistrar = VoidCallback Function(
 List<Catalog> auraChatCatalogsWithTabSelection({
   required ChatA2uiTabSelectionRegistrar register,
   required VoidCallback onChanged,
+  required ChatSkillSuggestionBuilder skillSuggestionBuilder,
 }) => [
-  for (final catalog in auraChatCatalogs())
+  for (final catalog in auraChatCatalogs(
+    skillSuggestionBuilder: skillSuggestionBuilder,
+  ))
     catalog.copyWith(
       newItems: [
         for (final item in catalog.items)
@@ -155,6 +174,17 @@ List<Catalog> auraChatCatalogsWithTabSelection({
 ];
 
 /// Observes the existing catalog's tab selection without changing its bindings.
+Widget buildChatSkillSuggestion({
+  required CatalogItemContext context,
+  required AvailableSkill? skill,
+  required bool Function(ChatSkillSuggestionAction action) onAction,
+}) => _ChatSkillSuggestionCard(
+  key: ValueKey('${context.surfaceId}:${context.id}'),
+  skill: skill,
+  onAdd: () => onAction(.add),
+  onUseNow: () => onAction(.useNow),
+);
+
 Widget _trackChatA2uiTabSelection(
   Widget child,
   VoidCallback Function(ValueGetter<int>) register,
@@ -258,7 +288,11 @@ class _CopyableTabsState extends State<_CopyableTabs> {
   );
 }
 
-Catalog _buildCatalog({required String catalogId, required String rules}) {
+Catalog _buildCatalog({
+  required String catalogId,
+  required String rules,
+  ChatSkillSuggestionBuilder? skillSuggestionBuilder,
+}) {
   CatalogItem replace(CatalogItem source, CatalogWidgetBuilder builder) =>
       _replace(
         source,
@@ -291,9 +325,110 @@ Catalog _buildCatalog({required String catalogId, required String rules}) {
           replace(BasicCatalogItems.textField, _textField),
           ...AuraDashboardCatalogAdapter.items(resolveIcon: auraChatIconData),
           ...auraExtendedCatalogItems(resolveIcon: auraChatIconData),
+          if (catalogId == auraChatCatalogId)
+            _skillSuggestionItem(
+              skillSuggestionBuilder ?? _unavailableSkillSuggestion,
+            ),
         ],
         systemPromptFragments: [rules],
       );
+}
+
+CatalogItem _skillSuggestionItem(ChatSkillSuggestionBuilder builder) =>
+    CatalogItem(
+      name: 'SkillSuggestion',
+      dataSchema: Schema.fromMap({
+        ...a2uiChatComponentSchemas['SkillSuggestion']!,
+        'required': ['component', 'slug', 'catalogRevision'],
+      }),
+      widgetBuilder: (context) => builder(context, _data(context)),
+      exampleData: [
+        () => jsonEncode([a2uiChatComponentExamples['SkillSuggestion']!]),
+      ],
+    );
+
+Widget _unavailableSkillSuggestion(
+  CatalogItemContext _,
+  Map<String, Object?> _,
+) => _ChatSkillSuggestionCard(skill: null, onAdd: null, onUseNow: null);
+
+class _ChatSkillSuggestionCard extends StatefulWidget {
+  const new({
+    required this.skill,
+    required this.onAdd,
+    required this.onUseNow,
+    super.key,
+  });
+
+  final AvailableSkill? skill;
+  final VoidCallback? onAdd;
+  final VoidCallback? onUseNow;
+
+  @override
+  State<_ChatSkillSuggestionCard> createState() =>
+      _ChatSkillSuggestionCardState();
+}
+
+class _ChatSkillSuggestionCardState extends State<_ChatSkillSuggestionCard> {
+  var _handled = false;
+
+  void _submit(VoidCallback? action) {
+    if (_handled || action == null) return;
+    setState(() => _handled = true);
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final skill = widget.skill;
+    final title = skill?.title ?? LocaleKeys.skills_selector_suggestion.tr();
+    final description =
+        skill?.description ??
+        LocaleKeys.skills_selector_suggestion_unavailable.tr();
+    final controls = skill == null
+        ? AuraButton(
+            onPressed: () => _submit(widget.onAdd),
+            size: .small,
+            variant: .outlined,
+            disabled: _handled || widget.onAdd == null,
+            child: Text(LocaleKeys.skills_selector_suggestion_open_picker.tr()),
+          )
+        : Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              AuraButton(
+                onPressed: () => _submit(widget.onAdd),
+                size: .small,
+                disabled: _handled || widget.onAdd == null,
+                child: Text(LocaleKeys.skills_selector_add.tr()),
+              ),
+              AuraButton(
+                onPressed: () => _submit(widget.onUseNow),
+                size: .small,
+                variant: .outlined,
+                disabled: _handled || widget.onUseNow == null,
+                child: Text(LocaleKeys.skills_selector_use_now.tr()),
+              ),
+            ],
+          );
+
+    return AuraCard(
+      style: AuraCardStyle.border,
+      child: AuraColumn(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: .sm,
+        children: [
+          AuraText(child: Text(title), style: .heading5),
+          AuraText(child: Text(description), style: .bodySmall),
+          AuraInteractionScope(
+            policy: const AuraInteractionPolicy.interactive(),
+            child: controls,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 CatalogItem _replace(

@@ -17,4 +17,33 @@ void main() {
     );
     expect(result.single.metadata['kind'], skillContextMetadataKind);
   });
+
+  test('publishes the same catalog revision in context metadata', () {
+    const entries = [
+      SkillCatalogEntry(
+        slug: 'research',
+        title: 'Research',
+        description: 'Find sources',
+        revision: 'skill-r1',
+        active: true,
+      ),
+    ];
+    final messages = const BuildSkillContextMessages().compose(
+      conversationSkills: const [],
+      agentSkills: const [],
+      skillCatalog: entries,
+    );
+    final catalogMessage = messages.single;
+
+    expect(
+      catalogMessage.metadata[skillCatalogRevisionMetadataKey],
+      buildSkillCatalogRevision(entries),
+    );
+    expect(
+      catalogMessage.content,
+      contains(
+        catalogMessage.metadata[skillCatalogRevisionMetadataKey]! as String,
+      ),
+    );
+  });
 }

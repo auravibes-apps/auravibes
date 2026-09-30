@@ -885,7 +885,12 @@ class const _NavigationTitle({
       child: Row(
         children: [
           const _NavigationIcon(),
-          _NavigationCount(currentIndex: currentIndex, totalCount: totalCount),
+          Flexible(
+            child: _NavigationCount(
+              currentIndex: currentIndex,
+              totalCount: totalCount,
+            ),
+          ),
         ],
       ),
     );

@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:auravibes_ui/src/organisms/aura_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,6 +139,102 @@ void main() {
       );
 
       await tester.tap(find.text('Settings'));
+      expect(tappedIndex, 1);
+    });
+
+    testWidgets('exposes selected and unselected semantics', (tester) async {
+      int? tappedIndex;
+      final semantics = tester.ensureSemantics();
+
+      Widget buildSidebar(int selectedIndex) => MaterialApp(
+        home: Scaffold(
+          body: AuraSidebar(
+            navigationItems: const [
+              AuraNavigationData(
+                icon: Icon(Icons.home),
+                label: Text('Home'),
+                semanticLabel: 'Home',
+              ),
+              AuraNavigationData(
+                icon: Icon(Icons.settings),
+                label: Text('Settings'),
+                semanticLabel: 'Settings',
+              ),
+              AuraNavigationData(
+                icon: Icon(Icons.logout),
+                label: Text('Logout'),
+                footer: true,
+                semanticLabel: 'Logout',
+              ),
+            ],
+            onNavigationTap: (index) => tappedIndex = index,
+            selectedIndex: selectedIndex,
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(buildSidebar(1));
+
+      final home = tester.getSemantics(find.bySemanticsLabel('Home'));
+      final settings = tester.getSemantics(find.bySemanticsLabel('Settings'));
+      final logout = tester.getSemantics(find.bySemanticsLabel('Logout'));
+      expect(home.flagsCollection.isSelected, Tristate.isFalse);
+      expect(settings.flagsCollection.isSelected, Tristate.isTrue);
+      expect(logout.flagsCollection.isSelected, Tristate.isFalse);
+      expect(settings.label, 'Settings');
+      final settingsData = settings.getSemanticsData();
+      expect(settingsData.flagsCollection.isButton, isTrue);
+      expect(settingsData.hasAction(.tap), isTrue);
+
+      await tester.tap(find.bySemanticsLabel('Settings'));
+      expect(tappedIndex, 1);
+
+      await tester.pumpWidget(buildSidebar(2));
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('Settings'))
+            .flagsCollection
+            .isSelected,
+        Tristate.isFalse,
+      );
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('Logout'))
+            .flagsCollection
+            .isSelected,
+        Tristate.isTrue,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('keeps keyboard activation', (tester) async {
+      int? tappedIndex;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraSidebar(
+              navigationItems: const [
+                AuraNavigationData(
+                  icon: Icon(Icons.home),
+                  label: Text('Home'),
+                  semanticLabel: 'Home',
+                ),
+                AuraNavigationData(
+                  icon: Icon(Icons.settings),
+                  label: Text('Settings'),
+                  semanticLabel: 'Settings',
+                ),
+              ],
+              onNavigationTap: (index) => tappedIndex = index,
+            ),
+          ),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.tab), isTrue);
+      expect(await tester.sendKeyEvent(.enter), isTrue);
       expect(tappedIndex, 1);
     });
 
