@@ -81,6 +81,21 @@ _ResolvedActionSkill _failedActionSkill(
   ConversationSkillActionResult failure,
 ) => (skill: null, loadedSkills: const [], failure: failure);
 
+ConversationSkillActionResult _loadFailure(
+  LoadConversationSkillException error,
+) {
+  if (error.localizationKey ==
+      LocaleKeys.skills_screen_error_requires_credential) {
+    return .credentialsMissing;
+  }
+  if (error.localizationKey ==
+      LocaleKeys.skills_screen_error_app_skill_disabled) {
+    return .unavailable;
+  }
+
+  return .unavailable;
+}
+
 extension on ApplyConversationSkillActionUsecase {
   Future<ConversationSkillActionResult> _apply(
     ConversationSkillActionRequest request,
@@ -238,21 +253,6 @@ extension on ApplyConversationSkillActionUsecase {
     } on Object {
       return false;
     }
-  }
-
-  ConversationSkillActionResult _loadFailure(
-    LoadConversationSkillException error,
-  ) {
-    if (error.localizationKey ==
-        LocaleKeys.skills_screen_error_requires_credential) {
-      return .credentialsMissing;
-    }
-    if (error.localizationKey ==
-        LocaleKeys.skills_screen_error_app_skill_disabled) {
-      return .unavailable;
-    }
-
-    return .unavailable;
   }
 }
 
