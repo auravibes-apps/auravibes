@@ -3,12 +3,21 @@ import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:path/path.dart' as p;
 
 part 'conversation_archive.freezed.dart';
+
+typedef ConversationArchiveCreationInput = ({
+  ConversationEntity conversation,
+  List<MessageEntity> messages,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  String? modelLabel,
+  ConversationArchiveAgentContext? agentContext,
+});
 
 @freezed
 // DCL cannot see Freezed-generated members in the part file.
@@ -20,8 +29,35 @@ abstract class ConversationArchive with _$ConversationArchive {
     required DateTime updatedAt,
     required List<ConversationArchiveMessage> messages,
     String? modelLabel,
+    ConversationArchiveAgentContext? agentContext,
   }) = _ConversationArchive;
 }
+
+class ConversationArchiveAgentContext({
+  required final bool isComplete,
+  required List<ConversationArchiveAgentContextEntry> entriesInput,
+  required List<ConversationArchiveToolSelection> toolSelectionsInput,
+}) {
+  final List<ConversationArchiveAgentContextEntry> entries = .unmodifiable(
+    entriesInput,
+  );
+  final List<ConversationArchiveToolSelection> toolSelections = .unmodifiable(
+    toolSelectionsInput,
+  );
+}
+
+class const ConversationArchiveAgentContextEntry({
+  required final int? afterMessageIndex,
+  required final DateTime createdAt,
+  required final String updateJson,
+});
+
+class const ConversationArchiveToolSelection({
+  required final String? groupName,
+  required final String toolName,
+  required final bool isEnabled,
+  required final ToolPermissionMode permissionMode,
+});
 
 @freezed
 // DCL cannot see Freezed-generated members in the part file.
@@ -84,44 +120,70 @@ abstract class ConversationArchiveAttachment
 
 abstract final class ConversationArchiveCodec {
   static const format = 'auravibes.conversation';
-  static const version = 1;
+  static const bundleFormat = 'auravibes.conversations';
+  static const version = 2;
+  static const legacyVersion = 1;
+  static const bundleVersion = 1;
+  static const agentContextVersion = 1;
   static const int maxArchiveBytes = 8 * 1024 * 1024;
   static const int maxAttachmentBytes = 5 * 1024 * 1024;
   static const int maxAttachmentBytesTotal = 6 * 1024 * 1024;
   static const int maxMessages = 10000;
+  static const int maxConversations = 100;
+  static const int maxAgentContextUpdates = 10000;
+  static const int maxAgentContextTools = 500;
+  static const int maxAgentContextMessages = 1000;
   static const int maxAttachmentsPerMessage = 25;
   static const int maxToolCallsPerMessage = 100;
   static const int maxA2uiMessagesPerMessage = 100;
   static const int maxJsonDepth = 32;
   static const int maxStringLength = 1024 * 1024;
 
-  static Future<String> exportConversation({
-    required ConversationEntity conversation,
-    required List<MessageEntity> messages,
-    required Future<Uint8List> Function(String localPath) readAttachmentBytes,
-    String? modelLabel,
-  }) async {
+  static Future<String> exportConversation(
+    ConversationArchiveCreationInput input,
+  ) async => encode(await createConversationArchive(input));
+
+  static Future<ConversationArchive> createConversationArchive(
+    ConversationArchiveCreationInput input,
+  ) async {
+    final (
+      :conversation,
+      :messages,
+      :readAttachmentBytes,
+      :modelLabel,
+      :agentContext,
+    ) = input;
     final archivedMessages = await _archiveMessages(
       messages,
       readAttachmentBytes,
     );
 
-    return encode(
-      .new(
-        title: conversation.title,
-        createdAt: conversation.createdAt,
-        updatedAt: conversation.updatedAt,
-        messages: archivedMessages,
-        modelLabel: modelLabel,
-      ),
+    return ConversationArchive(
+      title: conversation.title,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+      messages: archivedMessages,
+      modelLabel: modelLabel,
+      agentContext: agentContext,
     );
   }
 
+  static String encodeMany(List<ConversationArchive> archives) {
+    final archiveJson = _encodeArchives(archives);
+    final encoded = _encodeArchiveBundle(archiveJson);
+    _validateJsonDepth(encoded);
+
+    return encoded;
+  }
+
   static String encode(ConversationArchive archive) {
-    final json = jsonEncode(_archiveToJson(archive));
+    final archiveJson = _archiveToJson(archive);
+    final _ = _decodeArchive(archiveJson);
+    final json = jsonEncode(archiveJson);
     if (utf8.encode(json).length > maxArchiveBytes) {
       throw const MalformedConversationArchiveException();
     }
+    _validateJsonDepth(json);
 
     return json;
   }
@@ -134,6 +196,55 @@ abstract final class ConversationArchiveCodec {
 
     return _decodeArchive(_decodeJson(json));
   }
+
+  static List<ConversationArchive> decodeMany(String json) {
+    if (!_hasValidUtf8Length(json, maxArchiveBytes)) {
+      throw const MalformedConversationArchiveException();
+    }
+    _validateJsonDepth(json);
+    final root = _jsonMap(_decodeJson(json));
+    if (root['format'] == format) return [_decodeArchive(root)];
+
+    return _decodeArchiveBundle(root);
+  }
+}
+
+List<Map<String, Object?>> _encodeArchives(List<ConversationArchive> archives) {
+  if (archives.isEmpty ||
+      archives.length > ConversationArchiveCodec.maxConversations) {
+    throw const MalformedConversationArchiveException();
+  }
+  final archiveJson = [for (final archive in archives) _archiveToJson(archive)];
+  _validateArchiveBundleTotals(archiveJson);
+
+  return archiveJson;
+}
+
+void _validateArchiveBundleTotals(List<Map<String, Object?>> archives) {
+  var messageCount = 0;
+  var attachmentBytes = 0;
+  for (final archiveJson in archives) {
+    final decoded = _decodeArchive(archiveJson);
+    messageCount += decoded.messages.length;
+    attachmentBytes += _archiveAttachmentBytes(decoded);
+    if (messageCount > ConversationArchiveCodec.maxMessages ||
+        attachmentBytes > ConversationArchiveCodec.maxAttachmentBytesTotal) {
+      throw const MalformedConversationArchiveException();
+    }
+  }
+}
+
+String _encodeArchiveBundle(List<Map<String, Object?>> archives) {
+  final encoded = jsonEncode({
+    'format': ConversationArchiveCodec.bundleFormat,
+    'version': ConversationArchiveCodec.bundleVersion,
+    'conversations': archives,
+  });
+  if (!_hasValidUtf8Length(encoded, ConversationArchiveCodec.maxArchiveBytes)) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return encoded;
 }
 
 Future<ConversationArchiveAttachment> _exportAttachment(
@@ -157,7 +268,62 @@ Map<String, Object?> _archiveToJson(ConversationArchive archive) => {
   'version': ConversationArchiveCodec.version,
   'conversation': _conversationToJson(archive),
   'messages': [for (final message in archive.messages) _messageToJson(message)],
+  'agentContext': _agentContextToJson(archive.agentContext),
 };
+
+Map<String, Object?>? _agentContextToJson(
+  ConversationArchiveAgentContext? context,
+) {
+  if (context == null) return null;
+  _validateAgentContextForEncoding(context);
+
+  return {
+    'version': ConversationArchiveCodec.agentContextVersion,
+    'complete': context.isComplete,
+    'entries': _agentContextEntriesToJson(context.entries),
+    'toolSelections': _agentContextSelectionsToJson(context.toolSelections),
+  };
+}
+
+void _validateAgentContextForEncoding(ConversationArchiveAgentContext context) {
+  if (context.entries.length >
+          ConversationArchiveCodec.maxAgentContextUpdates ||
+      context.toolSelections.length >
+          ConversationArchiveCodec.maxAgentContextTools ||
+      !context.isComplete && context.entries.isNotEmpty) {
+    throw const MalformedConversationArchiveException();
+  }
+}
+
+List<Map<String, Object?>> _agentContextEntriesToJson(
+  List<ConversationArchiveAgentContextEntry> entries,
+) => [
+  for (final entry in entries)
+    {
+      'afterMessageIndex': entry.afterMessageIndex,
+      'createdAt': entry.createdAt.toIso8601String(),
+      'update': _agentContextUpdateToJson(entry.updateJson),
+    },
+];
+
+List<Map<String, Object?>> _agentContextSelectionsToJson(
+  List<ConversationArchiveToolSelection> selections,
+) => [
+  for (final selection in selections)
+    {
+      'groupName': selection.groupName,
+      'toolName': selection.toolName,
+      'isEnabled': selection.isEnabled,
+      'permissionMode': selection.permissionMode.name,
+    },
+];
+
+Map<String, Object?> _agentContextUpdateToJson(String updateJson) {
+  final update = _jsonMap(_decodeJson(updateJson));
+  _validateAgentContextUpdate(update);
+
+  return update;
+}
 
 Map<String, Object?> _metadataToJson(ConversationArchiveMetadata metadata) => {
   ..._metadataTokenFieldsToJson(metadata),
@@ -223,6 +389,38 @@ void _validateMessageIndexes(List<ConversationArchiveMessage> messages) {
   }
 }
 
+void _validateAgentContextMessageIndexes(ConversationArchive archive) {
+  final context = archive.agentContext;
+  if (context == null) return;
+  var state = (lastAnchor: -1, sawVisibleAnchor: false);
+  for (final entry in context.entries) {
+    state = _nextAgentContextAnchorState(
+      entry.afterMessageIndex,
+      state,
+      archive.messages.length,
+    );
+  }
+}
+
+({int lastAnchor, bool sawVisibleAnchor}) _nextAgentContextAnchorState(
+  int? anchor,
+  ({int lastAnchor, bool sawVisibleAnchor}) state,
+  int messageCount,
+) {
+  if (anchor == null) {
+    if (state.sawVisibleAnchor) {
+      throw const MalformedConversationArchiveException();
+    }
+
+    return state;
+  }
+  if (anchor < state.lastAnchor || anchor >= messageCount) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return (lastAnchor: anchor, sawVisibleAnchor: true);
+}
+
 Map<String, Object?> _jsonMap(Object? value) {
   if (value is Map<String, Object?>) return value;
   throw const MalformedConversationArchiveException();
@@ -236,6 +434,17 @@ List<Object?> _jsonList(Object? value) {
 void _requireKeys(Map<String, Object?> json, Set<String> expected) {
   if (json.keys.toSet().difference(expected).isNotEmpty ||
       expected.difference(json.keys.toSet()).isNotEmpty) {
+    throw const MalformedConversationArchiveException();
+  }
+}
+
+void _requireAllowedKeys(
+  Map<String, Object?> json,
+  Set<String> allowed,
+  Set<String> required,
+) {
+  if (json.keys.toSet().difference(allowed).isNotEmpty ||
+      required.difference(json.keys.toSet()).isNotEmpty) {
     throw const MalformedConversationArchiveException();
   }
 }
@@ -453,9 +662,10 @@ void _validateJsonDepth(String json) {
 ConversationArchive _decodeArchive(Object? value) {
   final root = _jsonMap(value);
   _validateArchiveRoot(root);
-  _validateArchiveResourceLimits(root);
+  final _ = _validateArchiveResourceLimits(root);
   final archive = _decodeArchiveContents(root);
   _validateMessageIndexes(archive.messages);
+  _validateAgentContextMessageIndexes(archive);
 
   return archive;
 }
@@ -469,13 +679,306 @@ ConversationArchive _decodeArchiveContents(Map<String, Object?> root) {
     updatedAt: conversation.updatedAt,
     messages: _decodeMessages(root['messages']),
     modelLabel: conversation.modelLabel,
+    agentContext: root['version'] == ConversationArchiveCodec.version
+        ? _decodeAgentContext(root['agentContext'])
+        : null,
   );
 }
+
+ConversationArchiveAgentContext? _decodeAgentContext(Object? value) {
+  if (value == null) return null;
+  final json = _jsonMap(value);
+  _validateAgentContextHeader(json);
+  final isComplete = _boolean(json['complete']);
+
+  return ConversationArchiveAgentContext(
+    isComplete: isComplete,
+    entriesInput: _decodeAgentContextEntries(json['entries'], isComplete),
+    toolSelectionsInput: _decodeAgentContextSelections(json['toolSelections']),
+  );
+}
+
+void _validateAgentContextHeader(Map<String, Object?> json) {
+  final version = _integer(json['version']);
+  if (version != ConversationArchiveCodec.agentContextVersion) {
+    throw UnsupportedArchiveVersionException(version);
+  }
+  _requireKeys(json, const {
+    'version',
+    'complete',
+    'entries',
+    'toolSelections',
+  });
+}
+
+List<ConversationArchiveAgentContextEntry> _decodeAgentContextEntries(
+  Object? value,
+  bool isComplete,
+) {
+  final entries = _limitedList(
+    value,
+    ConversationArchiveCodec.maxAgentContextUpdates,
+  ).map(_decodeAgentContextEntry).toList(growable: false);
+  if (!isComplete && entries.isNotEmpty) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return entries;
+}
+
+List<ConversationArchiveToolSelection> _decodeAgentContextSelections(
+  Object? value,
+) => _limitedList(
+  value,
+  ConversationArchiveCodec.maxAgentContextTools,
+).map(_decodeToolSelection).toList(growable: false);
+
+ConversationArchiveAgentContextEntry _decodeAgentContextEntry(Object? value) {
+  final json = _jsonMap(value);
+  _requireKeys(json, const {'afterMessageIndex', 'createdAt', 'update'});
+  final update = _jsonMap(json['update']);
+  _validateAgentContextUpdate(update);
+
+  return ConversationArchiveAgentContextEntry(
+    afterMessageIndex: _nullableInteger(json['afterMessageIndex']),
+    createdAt: _dateTime(json['createdAt']),
+    updateJson: jsonEncode(update),
+  );
+}
+
+ConversationArchiveToolSelection _decodeToolSelection(Object? value) {
+  final json = _jsonMap(value);
+  _requireKeys(json, const {
+    'groupName',
+    'toolName',
+    'isEnabled',
+    'permissionMode',
+  });
+
+  return ConversationArchiveToolSelection(
+    groupName: _nullableString(json['groupName']),
+    toolName: _nonEmptyString(json['toolName']),
+    isEnabled: _boolean(json['isEnabled']),
+    permissionMode: _enumByName(
+      ToolPermissionMode.values,
+      json['permissionMode'],
+    ),
+  );
+}
+
+void _validateAgentContextResourceLimits(Object? value) {
+  if (value == null) return;
+  final json = _jsonMap(value);
+  _validateAgentContextHeader(json);
+  final isComplete = _boolean(json['complete']);
+  final entries = _limitedList(
+    json['entries'],
+    ConversationArchiveCodec.maxAgentContextUpdates,
+  );
+  if (!isComplete && entries.isNotEmpty) {
+    throw const MalformedConversationArchiveException();
+  }
+  entries.forEach(_validateAgentContextEntryResources);
+  _limitedList(
+    json['toolSelections'],
+    ConversationArchiveCodec.maxAgentContextTools,
+  ).forEach(_validateAgentContextSelectionResources);
+}
+
+void _validateAgentContextEntryResources(Object? value) {
+  final item = _jsonMap(value);
+  _requireKeys(item, const {'afterMessageIndex', 'createdAt', 'update'});
+  final anchor = _nullableInteger(item['afterMessageIndex']);
+  if (anchor != null && anchor < 0) {
+    throw const MalformedConversationArchiveException();
+  }
+  final _ = _dateTime(item['createdAt']);
+  _validateAgentContextUpdate(_jsonMap(item['update']));
+}
+
+void _validateAgentContextSelectionResources(Object? value) {
+  final item = _jsonMap(value);
+  _requireKeys(item, const {
+    'groupName',
+    'toolName',
+    'isEnabled',
+    'permissionMode',
+  });
+  final _ = _nullableString(item['groupName']);
+  final _ = _nonEmptyString(item['toolName']);
+  final _ = _boolean(item['isEnabled']);
+  final _ = _enumByName(ToolPermissionMode.values, item['permissionMode']);
+}
+
+void _validateAgentContextUpdate(Map<String, Object?> json) {
+  _requireAllowedKeys(
+    json,
+    const {
+      'version',
+      'toolsAdded',
+      'toolsRemoved',
+      'contextMessages',
+      'toolOrder',
+      'approvalStates',
+    },
+    const {'version', 'toolsAdded', 'toolsRemoved'},
+  );
+  final version = _integer(json['version']);
+  if (version != ConversationArchiveCodec.agentContextVersion) {
+    throw UnsupportedArchiveVersionException(version);
+  }
+  _limitedList(
+    json['toolsAdded'],
+    ConversationArchiveCodec.maxAgentContextTools,
+  ).forEach(_validateAgentContextAddedTool);
+  _limitedList(
+    json['toolsRemoved'],
+    ConversationArchiveCodec.maxAgentContextTools,
+  ).forEach(_nonEmptyString);
+  _validateOptionalAgentContextLists(json);
+  _validateAgentContextApprovals(json['approvalStates']);
+}
+
+void _validateAgentContextAddedTool(Object? value) {
+  final item = _jsonMap(value);
+  _requireKeys(item, const {
+    'name',
+    'description',
+    'inputJsonSchema',
+    'requiresCredential',
+  });
+  final _ = _nonEmptyString(item['name']);
+  final _ = _string(item['description']);
+  final _ = _jsonMap(item['inputJsonSchema']);
+  final _ = _boolean(item['requiresCredential']);
+}
+
+void _validateOptionalAgentContextLists(Map<String, Object?> json) {
+  if (json['contextMessages'] case final contextMessages?) {
+    _limitedList(
+      contextMessages,
+      ConversationArchiveCodec.maxAgentContextMessages,
+    ).forEach(_validateAgentContextMessage);
+  }
+  if (json['toolOrder'] case final order?) {
+    _limitedList(
+      order,
+      ConversationArchiveCodec.maxAgentContextTools,
+    ).forEach(_nonEmptyString);
+  }
+}
+
+void _validateAgentContextApprovals(Object? value) {
+  if (value == null) return;
+  final map = _jsonMap(value);
+  if (map.length > ConversationArchiveCodec.maxAgentContextTools) {
+    throw const MalformedConversationArchiveException();
+  }
+  map.entries.forEach(_validateAgentContextApproval);
+}
+
+void _validateAgentContextMessage(Object? value) {
+  final item = _jsonMap(value);
+  _requireAllowedKeys(
+    item,
+    const {'role', 'content', 'kind'},
+    const {'role', 'content'},
+  );
+  final role = _string(item['role']);
+  if (role != 'system' && role != 'skill') {
+    throw const MalformedConversationArchiveException();
+  }
+  final _ = _string(item['content']);
+  final _ = _nullableString(item['kind']);
+}
+
+void _validateAgentContextApproval(MapEntry<String, Object?> entry) {
+  final _ = _nonEmptyString(entry.key);
+  final _ = _string(entry.value);
+}
+
+List<ConversationArchive> _decodeArchiveBundle(Map<String, Object?> root) {
+  _validateArchiveBundleHeader(root);
+  final items = _limitedList(
+    root['conversations'],
+    ConversationArchiveCodec.maxConversations,
+  );
+  if (items.isEmpty) throw const MalformedConversationArchiveException();
+
+  return _validatedArchiveBundleRoots(items)
+      .map(_decodeArchive)
+      .toList(growable: false);
+}
+
+void _validateArchiveBundleHeader(Map<String, Object?> root) {
+  if (root['format'] != ConversationArchiveCodec.bundleFormat) {
+    throw const MalformedConversationArchiveException();
+  }
+  final version = _integer(root['version']);
+  if (version != ConversationArchiveCodec.bundleVersion) {
+    throw UnsupportedArchiveVersionException(version);
+  }
+  _requireKeys(root, const {'format', 'version', 'conversations'});
+}
+
+List<Map<String, Object?>> _validatedArchiveBundleRoots(List<Object?> items) {
+  final archiveRoots = <Map<String, Object?>>[];
+  var totals = (messages: 0, attachmentBytes: 0);
+  for (final item in items) {
+    final validated = _validateArchiveBundleItem(item);
+    totals = _addArchiveBundleItem(totals, validated);
+    archiveRoots.add(validated.root);
+  }
+
+  return archiveRoots;
+}
+
+typedef _ValidatedArchiveBundleItem = ({
+  Map<String, Object?> root,
+  int messages,
+  int attachmentBytes,
+});
+
+_ValidatedArchiveBundleItem _validateArchiveBundleItem(Object? value) {
+  final root = _jsonMap(value);
+  _validateArchiveRoot(root);
+
+  return (
+    root: root,
+    messages: _limitedList(
+      root['messages'],
+      ConversationArchiveCodec.maxMessages,
+    ).length,
+    attachmentBytes: _validateArchiveResourceLimits(root),
+  );
+}
+
+({int messages, int attachmentBytes}) _addArchiveBundleItem(
+  ({int messages, int attachmentBytes}) totals,
+  _ValidatedArchiveBundleItem item,
+) {
+  final messages = totals.messages + item.messages;
+  final attachmentBytes = totals.attachmentBytes + item.attachmentBytes;
+  if (messages > ConversationArchiveCodec.maxMessages ||
+      attachmentBytes > ConversationArchiveCodec.maxAttachmentBytesTotal) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return (messages: messages, attachmentBytes: attachmentBytes);
+}
+
+int _archiveAttachmentBytes(ConversationArchive archive) =>
+    archive.messages.fold<int>(
+      0,
+      (total, message) =>
+          total +
+          message.attachments.fold(0, (sum, item) => sum + item.bytes.length),
+    );
 
 List<ConversationArchiveMessage> _decodeMessages(Object? value) =>
     _jsonList(value).map(_decodeMessage).toList(growable: false);
 
-void _validateArchiveResourceLimits(Map<String, Object?> root) {
+int _validateArchiveResourceLimits(Map<String, Object?> root) {
   final messages = _limitedList(
     root['messages'],
     ConversationArchiveCodec.maxMessages,
@@ -487,6 +990,12 @@ void _validateArchiveResourceLimits(Map<String, Object?> root) {
       throw const MalformedConversationArchiveException();
     }
   }
+  final agentContext = root['agentContext'];
+  if (root['version'] == ConversationArchiveCodec.version) {
+    _validateAgentContextResourceLimits(agentContext);
+  }
+
+  return attachmentBytes;
 }
 
 int _validateMessageResourceLimits(Object? value) {
@@ -531,10 +1040,22 @@ void _validateArchiveRoot(Map<String, Object?> root) {
     throw const MalformedConversationArchiveException();
   }
   final version = _integer(root['version']);
-  if (version != ConversationArchiveCodec.version) {
+  if (version != ConversationArchiveCodec.legacyVersion &&
+      version != ConversationArchiveCodec.version) {
     throw UnsupportedArchiveVersionException(version);
   }
-  _requireKeys(root, const {'format', 'version', 'conversation', 'messages'});
+  _requireKeys(
+    root,
+    version == ConversationArchiveCodec.legacyVersion
+        ? const {'format', 'version', 'conversation', 'messages'}
+        : const {
+            'format',
+            'version',
+            'conversation',
+            'messages',
+            'agentContext',
+          },
+  );
 }
 
 ({String title, DateTime createdAt, DateTime updatedAt, String? modelLabel})

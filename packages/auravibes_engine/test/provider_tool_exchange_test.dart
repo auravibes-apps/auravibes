@@ -53,8 +53,12 @@ void main() {
       promptTokens: 2,
       responseTokens: 3,
       totalTokens: 5,
+      cacheReadInputTokens: 7,
+      cacheCreationInputTokens: 11,
     );
     expect(result.finishReason, ChatFinishReason.length);
     expect(result.usage?.totalTokens, 5);
+    expect(result.usage?.cacheReadInputTokens, 7);
+    expect(result.usage?.cacheCreationInputTokens, 11);
   });
 }

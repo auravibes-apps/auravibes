@@ -30,4 +30,14 @@ abstract final class ConversationArchiveFeedback {
       ),
     );
   }
+
+  static void showImportedMany(BuildContext context, int count) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: TextLocale(
+        LocaleKeys.chats_screens_chats_list_archive_imported_many,
+        args: [count.toString()],
+      ),
+    );
+  }
 }

@@ -1,23 +1,62 @@
 import 'dart:convert';
 
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 abstract final class AgentTranscriptContextCodec {
+  static const int version = 1;
+
   static String encodeUpdate(AgentTranscriptContextUpdate update) =>
       jsonEncode(_updateToJson(update));
 
-  static AgentTranscriptContextUpdate decodeUpdate(String content) {
-    final update = _tryDecodeUpdate(content);
-    if (update == null) {
-      throw const AgentTranscriptContextException('invalid stored update');
+  static AgentTranscriptContextUpdate decodeUpdate(String content) =>
+      _decodeVersionedUpdate(_decodeJsonObject(content));
+
+  static Map<String, Object?> _decodeJsonObject(String content) {
+    Object? decoded;
+    try {
+      decoded = jsonDecode(content);
+    } on Object catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const MalformedTranscriptContextException(),
+        stackTrace,
+      );
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw const MalformedTranscriptContextException();
     }
 
-    return update;
+    return decoded;
+  }
+
+  static AgentTranscriptContextUpdate _decodeVersionedUpdate(
+    Map<String, Object?> decoded,
+  ) {
+    final schemaVersion = decoded['version'];
+    if (schemaVersion is int) {
+      if (schemaVersion == version) return _decodeVersion1(decoded);
+      throw UnsupportedTranscriptVersionException(schemaVersion);
+    }
+
+    throw const MalformedTranscriptContextException();
+  }
+
+  static AgentTranscriptContextUpdate _decodeVersion1(
+    Map<String, Object?> data,
+  ) {
+    try {
+      return _decodeUpdate(data);
+    } on Object catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        const MalformedTranscriptContextException(),
+        stackTrace,
+      );
+    }
   }
 }
 
 Map<String, Object?> _updateToJson(AgentTranscriptContextUpdate update) => {
-  'version': 1,
+  'version': AgentTranscriptContextCodec.version,
   'toolsAdded': _encodeTools(update.toolsAdded),
   'toolsRemoved': update.toolsRemoved,
   if (update.contextMessages case final messages?)
@@ -45,17 +84,6 @@ Map<String, Object?> _encodeMessage(AgentContextMessage message) => {
   'content': message.content,
   'kind': ?message.kind,
 };
-
-AgentTranscriptContextUpdate? _tryDecodeUpdate(String content) {
-  try {
-    final data = jsonDecode(content);
-    if (data is! Map<String, Object?> || data['version'] != 1) return null;
-
-    return _decodeUpdate(data);
-  } on Object catch (_) {
-    return null;
-  }
-}
 
 AgentTranscriptContextUpdate _decodeUpdate(Map<String, Object?> data) =>
     AgentTranscriptContextUpdate(

@@ -455,6 +455,10 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_unpin';
   static const chats_screens_chats_list_bulk_delete =
       'chats_screens.chats_list.bulk_delete';
+  static const chats_screens_chats_list_bulk_archive_export =
+      'chats_screens.chats_list.bulk_archive_export';
+  static const chats_screens_chats_list_archive_imported_many =
+      'chats_screens.chats_list.archive_imported_many';
   static const chats_screens_chats_list_bulk_delete_title =
       'chats_screens.chats_list.bulk_delete_title';
   static const chats_screens_chats_list_bulk_delete_confirm =
@@ -629,6 +633,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.a2ui_form_invalid';
   static const chats_screens_chat_conversation_continue_error =
       'chats_screens.chat_conversation.continue_error';
+  static const chats_screens_chat_conversation_transcript_context_unsupported =
+      'chats_screens.chat_conversation.transcript_context_unsupported';
+  static const chats_screens_chat_conversation_transcript_context_malformed =
+      'chats_screens.chat_conversation.transcript_context_malformed';
   static const chats_screens_chat_conversation_retry_error =
       'chats_screens.chat_conversation.retry_error';
   static const chats_screens_chat_conversation_generation_credits_error =

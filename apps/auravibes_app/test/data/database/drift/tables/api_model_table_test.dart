@@ -60,6 +60,7 @@ void main() {
           'cost_input',
           'cost_output',
           'cost_cache_read',
+          'cost_cache_write',
           'limit_context',
           'limit_output',
           'supports_reasoning',
@@ -71,8 +72,8 @@ void main() {
       );
     });
 
-    test('has 17 columns', () {
-      expect(columns.length, 17);
+    test('has 22 columns', () {
+      expect(columns.length, 22);
     });
 
     test('composite primary key on id and model_provider', () {

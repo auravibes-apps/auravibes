@@ -15,8 +15,10 @@ import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
+import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
@@ -67,6 +69,7 @@ typedef _StoppedAssistantPatch = ({
 typedef _ContinueAgentCoreDependencies = ({
   ChatbotService chatbotService,
   MessageRepository messageRepository,
+  RecordModelUsageUsecase recordModelUsageUsecase,
   AgentContinuationProvider<
     WorkspaceModelSelectionWithConnectionEntity,
     MessageEntity,
@@ -91,6 +94,7 @@ typedef _ContinueAgentConversationDependencies = ({
 typedef _ContinueAgentDependencies = ({
   ChatbotService chatbotService,
   MessageRepository messageRepository,
+  RecordModelUsageUsecase recordModelUsageUsecase,
   AgentContinuationProvider<
     WorkspaceModelSelectionWithConnectionEntity,
     MessageEntity,
@@ -120,6 +124,7 @@ abstract class _ContinueAgentServiceDependencies({
   required final ConversationStreamingRuntime conversationStreamingRuntime,
   required final AgentCancellationRuntime agentCancellationRuntime,
   required final MonitoringService monitoringService,
+  final RecordModelUsageUsecase? recordModelUsageUsecase,
   final ConversationSkillContextRuntime? skillContextRuntime,
   final ChatA2uiRuntime Function(String conversationId)?
   a2uiRuntimeForConversation,
@@ -136,6 +141,7 @@ class ContinueAgentService({
   required super.conversationStreamingRuntime,
   required super.agentCancellationRuntime,
   required super.monitoringService,
+  super.recordModelUsageUsecase,
   super.skillContextRuntime,
   super.a2uiRuntimeForConversation,
   super.isTopLevelConversation,
@@ -833,6 +839,10 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
 
   Stream<ChatResult<ChatMessage>> _createResponseStream(
     _ContinueAgentRequest request,
+  ) => _recordResponseUsage(request, _sendResponseStream(request));
+
+  Stream<ChatResult<ChatMessage>> _sendResponseStream(
+    _ContinueAgentRequest request,
   ) {
     final preparedInput = request.preparedInput;
 
@@ -841,10 +851,30 @@ extension _ContinueAgentContinuation on _ContinueAgentServiceDependencies {
       preparedInput.chatHistory,
       options: .new(
         tools: preparedInput.enabledTools,
+        transcriptContextEntries: preparedInput.transcriptContextEntries,
         sessionId: request.conversationId,
         reasoningConfiguration: preparedInput.reasoningConfiguration,
       ),
       a2uiRuntime: request.a2uiRuntime,
+    );
+  }
+
+  Stream<ChatResult<ChatMessage>> _recordResponseUsage(
+    _ContinueAgentRequest request,
+    Stream<ChatResult<ChatMessage>> responseStream,
+  ) {
+    final recorder = recordModelUsageUsecase;
+    if (recorder == null) return responseStream;
+    final preparedInput = request.preparedInput;
+
+    return recorder.trackRequest(
+      request: (
+        conversationId: request.conversationId,
+        providerId: preparedInput.model.modelsProvider.id,
+        modelId: preparedInput.model.workspaceModelSelection.modelId,
+        requestKind: .generation,
+      ),
+      stream: responseStream,
     );
   }
 
@@ -1053,6 +1083,7 @@ ContinueAgentService _createContinueAgentService(
     conversationStreamingRuntime: dependencies.conversationStreamingRuntime,
     agentCancellationRuntime: dependencies.agentCancellationRuntime,
     monitoringService: dependencies.monitoringService,
+    recordModelUsageUsecase: dependencies.recordModelUsageUsecase,
     skillContextRuntime: skillContextRuntime,
     a2uiRuntimeForConversation: dependencies.a2uiRuntimeForConversation,
     isTopLevelConversation: dependencies.isTopLevelConversation,
@@ -1075,6 +1106,7 @@ _ContinueAgentDependencies _mergeContinueAgentDependencies(
   return (
     chatbotService: core.chatbotService,
     messageRepository: core.messageRepository,
+    recordModelUsageUsecase: core.recordModelUsageUsecase,
     agentContinuationProvider: core.agentContinuationProvider,
     messagesStreamingRuntime: runtime.messagesStreamingRuntime,
     conversationStreamingRuntime: runtime.conversationStreamingRuntime,
@@ -1088,6 +1120,7 @@ _ContinueAgentDependencies _mergeContinueAgentDependencies(
 _ContinueAgentCoreDependencies _continueAgentCoreDependencies(Ref ref) => (
   chatbotService: ref.watch(chatbotServiceProvider),
   messageRepository: ref.watch(messageRepositoryProvider),
+  recordModelUsageUsecase: ref.watch(recordModelUsageUsecaseProvider),
   agentContinuationProvider: ref.watch(appAgentContinuationProvider),
 );
 
@@ -1124,7 +1157,7 @@ Future<bool> _isTopLevelConversation(Ref ref, String conversationId) async {
 
 final continueAgentServiceProvider = Provider<ContinueAgentService>(
   _continueAgentService,
-  dependencies: [appAgentContinuationProvider],
+  dependencies: [appAgentContinuationProvider, recordModelUsageUsecaseProvider],
 );
 
 class const _AppChunkSink(

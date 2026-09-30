@@ -2488,6 +2488,65 @@ class $ApiModelsTable extends ApiModels
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _supportsPromptCacheMarkersMeta =
+      const VerificationMeta('supportsPromptCacheMarkers');
+  @override
+  late final GeneratedColumn<bool> supportsPromptCacheMarkers =
+      GeneratedColumn<bool>(
+        'supports_prompt_cache_markers',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_prompt_cache_markers" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _supportsMidConversationSystemMessagesMeta =
+      const VerificationMeta('supportsMidConversationSystemMessages');
+  @override
+  late final GeneratedColumn<bool> supportsMidConversationSystemMessages =
+      GeneratedColumn<bool>(
+        'supports_mid_conversation_system_messages',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_mid_conversation_system_messages" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
+  static const VerificationMeta _supportsToolDeltasMeta =
+      const VerificationMeta('supportsToolDeltas');
+  @override
+  late final GeneratedColumn<bool> supportsToolDeltas = GeneratedColumn<bool>(
+    'supports_tool_deltas',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("supports_tool_deltas" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _supportsDeferredToolsMeta =
+      const VerificationMeta('supportsDeferredTools');
+  @override
+  late final GeneratedColumn<bool> supportsDeferredTools =
+      GeneratedColumn<bool>(
+        'supports_deferred_tools',
+        aliasedName,
+        false,
+        type: DriftSqlType.bool,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("supports_deferred_tools" IN (0, 1))',
+        ),
+        defaultValue: const Constant(false),
+      );
   static const VerificationMeta _costInputMeta = const VerificationMeta(
     'costInput',
   );
@@ -2516,6 +2575,17 @@ class $ApiModelsTable extends ApiModels
   @override
   late final GeneratedColumn<double> costCacheRead = GeneratedColumn<double>(
     'cost_cache_read',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _costCacheWriteMeta = const VerificationMeta(
+    'costCacheWrite',
+  );
+  @override
+  late final GeneratedColumn<double> costCacheWrite = GeneratedColumn<double>(
+    'cost_cache_write',
     aliasedName,
     true,
     type: DriftSqlType.double,
@@ -2557,9 +2627,14 @@ class $ApiModelsTable extends ApiModels
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
+    supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages,
+    supportsToolDeltas,
+    supportsDeferredTools,
     costInput,
     costOutput,
     costCacheRead,
+    costCacheWrite,
     limitContext,
     limitOutput,
   ];
@@ -2659,6 +2734,42 @@ class $ApiModelsTable extends ApiModels
         ),
       );
     }
+    if (data.containsKey('supports_prompt_cache_markers')) {
+      context.handle(
+        _supportsPromptCacheMarkersMeta,
+        supportsPromptCacheMarkers.isAcceptableOrUnknown(
+          data['supports_prompt_cache_markers']!,
+          _supportsPromptCacheMarkersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_mid_conversation_system_messages')) {
+      context.handle(
+        _supportsMidConversationSystemMessagesMeta,
+        supportsMidConversationSystemMessages.isAcceptableOrUnknown(
+          data['supports_mid_conversation_system_messages']!,
+          _supportsMidConversationSystemMessagesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_tool_deltas')) {
+      context.handle(
+        _supportsToolDeltasMeta,
+        supportsToolDeltas.isAcceptableOrUnknown(
+          data['supports_tool_deltas']!,
+          _supportsToolDeltasMeta,
+        ),
+      );
+    }
+    if (data.containsKey('supports_deferred_tools')) {
+      context.handle(
+        _supportsDeferredToolsMeta,
+        supportsDeferredTools.isAcceptableOrUnknown(
+          data['supports_deferred_tools']!,
+          _supportsDeferredToolsMeta,
+        ),
+      );
+    }
     if (data.containsKey('cost_input')) {
       context.handle(
         _costInputMeta,
@@ -2677,6 +2788,15 @@ class $ApiModelsTable extends ApiModels
         costCacheRead.isAcceptableOrUnknown(
           data['cost_cache_read']!,
           _costCacheReadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cost_cache_write')) {
+      context.handle(
+        _costCacheWriteMeta,
+        costCacheWrite.isAcceptableOrUnknown(
+          data['cost_cache_write']!,
+          _costCacheWriteMeta,
         ),
       );
     }
@@ -2763,6 +2883,22 @@ class $ApiModelsTable extends ApiModels
         DriftSqlType.bool,
         data['${effectivePrefix}supports_tool_calls'],
       )!,
+      supportsPromptCacheMarkers: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_prompt_cache_markers'],
+      )!,
+      supportsMidConversationSystemMessages: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_mid_conversation_system_messages'],
+      )!,
+      supportsToolDeltas: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_tool_deltas'],
+      )!,
+      supportsDeferredTools: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}supports_deferred_tools'],
+      )!,
       costInput: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cost_input'],
@@ -2774,6 +2910,10 @@ class $ApiModelsTable extends ApiModels
       costCacheRead: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}cost_cache_read'],
+      ),
+      costCacheWrite: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost_cache_write'],
       ),
       limitContext: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -2823,9 +2963,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final bool isCanonical;
   final bool supportsPriorityMode;
   final bool supportsToolCalls;
+  final bool supportsPromptCacheMarkers;
+  final bool supportsMidConversationSystemMessages;
+  final bool supportsToolDeltas;
+  final bool supportsDeferredTools;
   final double? costInput;
   final double? costOutput;
   final double? costCacheRead;
+  final double? costCacheWrite;
   final int limitContext;
   final int limitOutput;
   const ApiModelsTable({
@@ -2841,9 +2986,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     required this.isCanonical,
     required this.supportsPriorityMode,
     required this.supportsToolCalls,
+    required this.supportsPromptCacheMarkers,
+    required this.supportsMidConversationSystemMessages,
+    required this.supportsToolDeltas,
+    required this.supportsDeferredTools,
     this.costInput,
     this.costOutput,
     this.costCacheRead,
+    this.costCacheWrite,
     required this.limitContext,
     required this.limitOutput,
   });
@@ -2876,6 +3026,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     map['is_canonical'] = Variable<bool>(isCanonical);
     map['supports_priority_mode'] = Variable<bool>(supportsPriorityMode);
     map['supports_tool_calls'] = Variable<bool>(supportsToolCalls);
+    map['supports_prompt_cache_markers'] = Variable<bool>(
+      supportsPromptCacheMarkers,
+    );
+    map['supports_mid_conversation_system_messages'] = Variable<bool>(
+      supportsMidConversationSystemMessages,
+    );
+    map['supports_tool_deltas'] = Variable<bool>(supportsToolDeltas);
+    map['supports_deferred_tools'] = Variable<bool>(supportsDeferredTools);
     if (!nullToAbsent || costInput != null) {
       map['cost_input'] = Variable<double>(costInput);
     }
@@ -2884,6 +3042,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     }
     if (!nullToAbsent || costCacheRead != null) {
       map['cost_cache_read'] = Variable<double>(costCacheRead);
+    }
+    if (!nullToAbsent || costCacheWrite != null) {
+      map['cost_cache_write'] = Variable<double>(costCacheWrite);
     }
     map['limit_context'] = Variable<int>(limitContext);
     map['limit_output'] = Variable<int>(limitOutput);
@@ -2914,6 +3075,12 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       isCanonical: Value(isCanonical),
       supportsPriorityMode: Value(supportsPriorityMode),
       supportsToolCalls: Value(supportsToolCalls),
+      supportsPromptCacheMarkers: Value(supportsPromptCacheMarkers),
+      supportsMidConversationSystemMessages: Value(
+        supportsMidConversationSystemMessages,
+      ),
+      supportsToolDeltas: Value(supportsToolDeltas),
+      supportsDeferredTools: Value(supportsDeferredTools),
       costInput: costInput == null && nullToAbsent
           ? const Value.absent()
           : Value(costInput),
@@ -2923,6 +3090,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       costCacheRead: costCacheRead == null && nullToAbsent
           ? const Value.absent()
           : Value(costCacheRead),
+      costCacheWrite: costCacheWrite == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costCacheWrite),
       limitContext: Value(limitContext),
       limitOutput: Value(limitOutput),
     );
@@ -2954,9 +3124,20 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         json['supportsPriorityMode'],
       ),
       supportsToolCalls: serializer.fromJson<bool>(json['supportsToolCalls']),
+      supportsPromptCacheMarkers: serializer.fromJson<bool>(
+        json['supportsPromptCacheMarkers'],
+      ),
+      supportsMidConversationSystemMessages: serializer.fromJson<bool>(
+        json['supportsMidConversationSystemMessages'],
+      ),
+      supportsToolDeltas: serializer.fromJson<bool>(json['supportsToolDeltas']),
+      supportsDeferredTools: serializer.fromJson<bool>(
+        json['supportsDeferredTools'],
+      ),
       costInput: serializer.fromJson<double?>(json['costInput']),
       costOutput: serializer.fromJson<double?>(json['costOutput']),
       costCacheRead: serializer.fromJson<double?>(json['costCacheRead']),
+      costCacheWrite: serializer.fromJson<double?>(json['costCacheWrite']),
       limitContext: serializer.fromJson<int>(json['limitContext']),
       limitOutput: serializer.fromJson<int>(json['limitOutput']),
     );
@@ -2981,9 +3162,18 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       'isCanonical': serializer.toJson<bool>(isCanonical),
       'supportsPriorityMode': serializer.toJson<bool>(supportsPriorityMode),
       'supportsToolCalls': serializer.toJson<bool>(supportsToolCalls),
+      'supportsPromptCacheMarkers': serializer.toJson<bool>(
+        supportsPromptCacheMarkers,
+      ),
+      'supportsMidConversationSystemMessages': serializer.toJson<bool>(
+        supportsMidConversationSystemMessages,
+      ),
+      'supportsToolDeltas': serializer.toJson<bool>(supportsToolDeltas),
+      'supportsDeferredTools': serializer.toJson<bool>(supportsDeferredTools),
       'costInput': serializer.toJson<double?>(costInput),
       'costOutput': serializer.toJson<double?>(costOutput),
       'costCacheRead': serializer.toJson<double?>(costCacheRead),
+      'costCacheWrite': serializer.toJson<double?>(costCacheWrite),
       'limitContext': serializer.toJson<int>(limitContext),
       'limitOutput': serializer.toJson<int>(limitOutput),
     };
@@ -3002,9 +3192,14 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     bool? isCanonical,
     bool? supportsPriorityMode,
     bool? supportsToolCalls,
+    bool? supportsPromptCacheMarkers,
+    bool? supportsMidConversationSystemMessages,
+    bool? supportsToolDeltas,
+    bool? supportsDeferredTools,
     Value<double?> costInput = const Value.absent(),
     Value<double?> costOutput = const Value.absent(),
     Value<double?> costCacheRead = const Value.absent(),
+    Value<double?> costCacheWrite = const Value.absent(),
     int? limitContext,
     int? limitOutput,
   }) => ApiModelsTable(
@@ -3026,11 +3221,21 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     isCanonical: isCanonical ?? this.isCanonical,
     supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
     supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
+    supportsPromptCacheMarkers:
+        supportsPromptCacheMarkers ?? this.supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages:
+        supportsMidConversationSystemMessages ??
+        this.supportsMidConversationSystemMessages,
+    supportsToolDeltas: supportsToolDeltas ?? this.supportsToolDeltas,
+    supportsDeferredTools: supportsDeferredTools ?? this.supportsDeferredTools,
     costInput: costInput.present ? costInput.value : this.costInput,
     costOutput: costOutput.present ? costOutput.value : this.costOutput,
     costCacheRead: costCacheRead.present
         ? costCacheRead.value
         : this.costCacheRead,
+    costCacheWrite: costCacheWrite.present
+        ? costCacheWrite.value
+        : this.costCacheWrite,
     limitContext: limitContext ?? this.limitContext,
     limitOutput: limitOutput ?? this.limitOutput,
   );
@@ -3066,6 +3271,19 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       supportsToolCalls: data.supportsToolCalls.present
           ? data.supportsToolCalls.value
           : this.supportsToolCalls,
+      supportsPromptCacheMarkers: data.supportsPromptCacheMarkers.present
+          ? data.supportsPromptCacheMarkers.value
+          : this.supportsPromptCacheMarkers,
+      supportsMidConversationSystemMessages:
+          data.supportsMidConversationSystemMessages.present
+          ? data.supportsMidConversationSystemMessages.value
+          : this.supportsMidConversationSystemMessages,
+      supportsToolDeltas: data.supportsToolDeltas.present
+          ? data.supportsToolDeltas.value
+          : this.supportsToolDeltas,
+      supportsDeferredTools: data.supportsDeferredTools.present
+          ? data.supportsDeferredTools.value
+          : this.supportsDeferredTools,
       costInput: data.costInput.present ? data.costInput.value : this.costInput,
       costOutput: data.costOutput.present
           ? data.costOutput.value
@@ -3073,6 +3291,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       costCacheRead: data.costCacheRead.present
           ? data.costCacheRead.value
           : this.costCacheRead,
+      costCacheWrite: data.costCacheWrite.present
+          ? data.costCacheWrite.value
+          : this.costCacheWrite,
       limitContext: data.limitContext.present
           ? data.limitContext.value
           : this.limitContext,
@@ -3097,9 +3318,16 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
+          ..write('supportsPromptCacheMarkers: $supportsPromptCacheMarkers, ')
+          ..write(
+            'supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, ',
+          )
+          ..write('supportsToolDeltas: $supportsToolDeltas, ')
+          ..write('supportsDeferredTools: $supportsDeferredTools, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
+          ..write('costCacheWrite: $costCacheWrite, ')
           ..write('limitContext: $limitContext, ')
           ..write('limitOutput: $limitOutput')
           ..write(')'))
@@ -3107,7 +3335,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     modelProvider,
     id,
     name,
@@ -3120,12 +3348,17 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     isCanonical,
     supportsPriorityMode,
     supportsToolCalls,
+    supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages,
+    supportsToolDeltas,
+    supportsDeferredTools,
     costInput,
     costOutput,
     costCacheRead,
+    costCacheWrite,
     limitContext,
     limitOutput,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3142,9 +3375,15 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.isCanonical == this.isCanonical &&
           other.supportsPriorityMode == this.supportsPriorityMode &&
           other.supportsToolCalls == this.supportsToolCalls &&
+          other.supportsPromptCacheMarkers == this.supportsPromptCacheMarkers &&
+          other.supportsMidConversationSystemMessages ==
+              this.supportsMidConversationSystemMessages &&
+          other.supportsToolDeltas == this.supportsToolDeltas &&
+          other.supportsDeferredTools == this.supportsDeferredTools &&
           other.costInput == this.costInput &&
           other.costOutput == this.costOutput &&
           other.costCacheRead == this.costCacheRead &&
+          other.costCacheWrite == this.costCacheWrite &&
           other.limitContext == this.limitContext &&
           other.limitOutput == this.limitOutput);
 }
@@ -3162,9 +3401,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<bool> isCanonical;
   final Value<bool> supportsPriorityMode;
   final Value<bool> supportsToolCalls;
+  final Value<bool> supportsPromptCacheMarkers;
+  final Value<bool> supportsMidConversationSystemMessages;
+  final Value<bool> supportsToolDeltas;
+  final Value<bool> supportsDeferredTools;
   final Value<double?> costInput;
   final Value<double?> costOutput;
   final Value<double?> costCacheRead;
+  final Value<double?> costCacheWrite;
   final Value<int> limitContext;
   final Value<int> limitOutput;
   final Value<int> rowid;
@@ -3181,9 +3425,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
+    this.supportsPromptCacheMarkers = const Value.absent(),
+    this.supportsMidConversationSystemMessages = const Value.absent(),
+    this.supportsToolDeltas = const Value.absent(),
+    this.supportsDeferredTools = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
+    this.costCacheWrite = const Value.absent(),
     this.limitContext = const Value.absent(),
     this.limitOutput = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3201,9 +3450,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.isCanonical = const Value.absent(),
     this.supportsPriorityMode = const Value.absent(),
     this.supportsToolCalls = const Value.absent(),
+    this.supportsPromptCacheMarkers = const Value.absent(),
+    this.supportsMidConversationSystemMessages = const Value.absent(),
+    this.supportsToolDeltas = const Value.absent(),
+    this.supportsDeferredTools = const Value.absent(),
     this.costInput = const Value.absent(),
     this.costOutput = const Value.absent(),
     this.costCacheRead = const Value.absent(),
+    this.costCacheWrite = const Value.absent(),
     required int limitContext,
     required int limitOutput,
     this.rowid = const Value.absent(),
@@ -3225,9 +3479,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<bool>? isCanonical,
     Expression<bool>? supportsPriorityMode,
     Expression<bool>? supportsToolCalls,
+    Expression<bool>? supportsPromptCacheMarkers,
+    Expression<bool>? supportsMidConversationSystemMessages,
+    Expression<bool>? supportsToolDeltas,
+    Expression<bool>? supportsDeferredTools,
     Expression<double>? costInput,
     Expression<double>? costOutput,
     Expression<double>? costCacheRead,
+    Expression<double>? costCacheWrite,
     Expression<int>? limitContext,
     Expression<int>? limitOutput,
     Expression<int>? rowid,
@@ -3247,9 +3506,19 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (supportsPriorityMode != null)
         'supports_priority_mode': supportsPriorityMode,
       if (supportsToolCalls != null) 'supports_tool_calls': supportsToolCalls,
+      if (supportsPromptCacheMarkers != null)
+        'supports_prompt_cache_markers': supportsPromptCacheMarkers,
+      if (supportsMidConversationSystemMessages != null)
+        'supports_mid_conversation_system_messages':
+            supportsMidConversationSystemMessages,
+      if (supportsToolDeltas != null)
+        'supports_tool_deltas': supportsToolDeltas,
+      if (supportsDeferredTools != null)
+        'supports_deferred_tools': supportsDeferredTools,
       if (costInput != null) 'cost_input': costInput,
       if (costOutput != null) 'cost_output': costOutput,
       if (costCacheRead != null) 'cost_cache_read': costCacheRead,
+      if (costCacheWrite != null) 'cost_cache_write': costCacheWrite,
       if (limitContext != null) 'limit_context': limitContext,
       if (limitOutput != null) 'limit_output': limitOutput,
       if (rowid != null) 'rowid': rowid,
@@ -3269,9 +3538,14 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<bool>? isCanonical,
     Value<bool>? supportsPriorityMode,
     Value<bool>? supportsToolCalls,
+    Value<bool>? supportsPromptCacheMarkers,
+    Value<bool>? supportsMidConversationSystemMessages,
+    Value<bool>? supportsToolDeltas,
+    Value<bool>? supportsDeferredTools,
     Value<double?>? costInput,
     Value<double?>? costOutput,
     Value<double?>? costCacheRead,
+    Value<double?>? costCacheWrite,
     Value<int>? limitContext,
     Value<int>? limitOutput,
     Value<int>? rowid,
@@ -3289,9 +3563,18 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       isCanonical: isCanonical ?? this.isCanonical,
       supportsPriorityMode: supportsPriorityMode ?? this.supportsPriorityMode,
       supportsToolCalls: supportsToolCalls ?? this.supportsToolCalls,
+      supportsPromptCacheMarkers:
+          supportsPromptCacheMarkers ?? this.supportsPromptCacheMarkers,
+      supportsMidConversationSystemMessages:
+          supportsMidConversationSystemMessages ??
+          this.supportsMidConversationSystemMessages,
+      supportsToolDeltas: supportsToolDeltas ?? this.supportsToolDeltas,
+      supportsDeferredTools:
+          supportsDeferredTools ?? this.supportsDeferredTools,
       costInput: costInput ?? this.costInput,
       costOutput: costOutput ?? this.costOutput,
       costCacheRead: costCacheRead ?? this.costCacheRead,
+      costCacheWrite: costCacheWrite ?? this.costCacheWrite,
       limitContext: limitContext ?? this.limitContext,
       limitOutput: limitOutput ?? this.limitOutput,
       rowid: rowid ?? this.rowid,
@@ -3347,6 +3630,24 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     if (supportsToolCalls.present) {
       map['supports_tool_calls'] = Variable<bool>(supportsToolCalls.value);
     }
+    if (supportsPromptCacheMarkers.present) {
+      map['supports_prompt_cache_markers'] = Variable<bool>(
+        supportsPromptCacheMarkers.value,
+      );
+    }
+    if (supportsMidConversationSystemMessages.present) {
+      map['supports_mid_conversation_system_messages'] = Variable<bool>(
+        supportsMidConversationSystemMessages.value,
+      );
+    }
+    if (supportsToolDeltas.present) {
+      map['supports_tool_deltas'] = Variable<bool>(supportsToolDeltas.value);
+    }
+    if (supportsDeferredTools.present) {
+      map['supports_deferred_tools'] = Variable<bool>(
+        supportsDeferredTools.value,
+      );
+    }
     if (costInput.present) {
       map['cost_input'] = Variable<double>(costInput.value);
     }
@@ -3355,6 +3656,9 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     }
     if (costCacheRead.present) {
       map['cost_cache_read'] = Variable<double>(costCacheRead.value);
+    }
+    if (costCacheWrite.present) {
+      map['cost_cache_write'] = Variable<double>(costCacheWrite.value);
     }
     if (limitContext.present) {
       map['limit_context'] = Variable<int>(limitContext.value);
@@ -3383,9 +3687,16 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('isCanonical: $isCanonical, ')
           ..write('supportsPriorityMode: $supportsPriorityMode, ')
           ..write('supportsToolCalls: $supportsToolCalls, ')
+          ..write('supportsPromptCacheMarkers: $supportsPromptCacheMarkers, ')
+          ..write(
+            'supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, ',
+          )
+          ..write('supportsToolDeltas: $supportsToolDeltas, ')
+          ..write('supportsDeferredTools: $supportsDeferredTools, ')
           ..write('costInput: $costInput, ')
           ..write('costOutput: $costOutput, ')
           ..write('costCacheRead: $costCacheRead, ')
+          ..write('costCacheWrite: $costCacheWrite, ')
           ..write('limitContext: $limitContext, ')
           ..write('limitOutput: $limitOutput, ')
           ..write('rowid: $rowid')
@@ -14087,6 +14398,979 @@ class RecentModelSelectionsCompanion
   }
 }
 
+class $ModelUsageRecordsTable extends ModelUsageRecords
+    with TableInfo<$ModelUsageRecordsTable, ModelUsageRecordsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ModelUsageRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelIdMeta = const VerificationMeta(
+    'modelId',
+  );
+  @override
+  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
+    'model_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestKindMeta = const VerificationMeta(
+    'requestKind',
+  );
+  @override
+  late final GeneratedColumn<String> requestKind = GeneratedColumn<String>(
+    'request_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _usageReportedMeta = const VerificationMeta(
+    'usageReported',
+  );
+  @override
+  late final GeneratedColumn<bool> usageReported = GeneratedColumn<bool>(
+    'usage_reported',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("usage_reported" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _promptTokensMeta = const VerificationMeta(
+    'promptTokens',
+  );
+  @override
+  late final GeneratedColumn<int> promptTokens = GeneratedColumn<int>(
+    'prompt_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _responseTokensMeta = const VerificationMeta(
+    'responseTokens',
+  );
+  @override
+  late final GeneratedColumn<int> responseTokens = GeneratedColumn<int>(
+    'response_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalTokensMeta = const VerificationMeta(
+    'totalTokens',
+  );
+  @override
+  late final GeneratedColumn<int> totalTokens = GeneratedColumn<int>(
+    'total_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cacheReadInputTokensMeta =
+      const VerificationMeta('cacheReadInputTokens');
+  @override
+  late final GeneratedColumn<int> cacheReadInputTokens = GeneratedColumn<int>(
+    'cache_read_input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cacheCreationInputTokensMeta =
+      const VerificationMeta('cacheCreationInputTokens');
+  @override
+  late final GeneratedColumn<int> cacheCreationInputTokens =
+      GeneratedColumn<int>(
+        'cache_creation_input_tokens',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _costStatusMeta = const VerificationMeta(
+    'costStatus',
+  );
+  @override
+  late final GeneratedColumn<String> costStatus = GeneratedColumn<String>(
+    'cost_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _costUsdMeta = const VerificationMeta(
+    'costUsd',
+  );
+  @override
+  late final GeneratedColumn<double> costUsd = GeneratedColumn<double>(
+    'cost_usd',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    providerId,
+    modelId,
+    requestKind,
+    outcome,
+    usageReported,
+    promptTokens,
+    responseTokens,
+    totalTokens,
+    cacheReadInputTokens,
+    cacheCreationInputTokens,
+    costStatus,
+    costUsd,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'model_usage_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ModelUsageRecordsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('model_id')) {
+      context.handle(
+        _modelIdMeta,
+        modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelIdMeta);
+    }
+    if (data.containsKey('request_kind')) {
+      context.handle(
+        _requestKindMeta,
+        requestKind.isAcceptableOrUnknown(
+          data['request_kind']!,
+          _requestKindMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestKindMeta);
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outcomeMeta);
+    }
+    if (data.containsKey('usage_reported')) {
+      context.handle(
+        _usageReportedMeta,
+        usageReported.isAcceptableOrUnknown(
+          data['usage_reported']!,
+          _usageReportedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_usageReportedMeta);
+    }
+    if (data.containsKey('prompt_tokens')) {
+      context.handle(
+        _promptTokensMeta,
+        promptTokens.isAcceptableOrUnknown(
+          data['prompt_tokens']!,
+          _promptTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('response_tokens')) {
+      context.handle(
+        _responseTokensMeta,
+        responseTokens.isAcceptableOrUnknown(
+          data['response_tokens']!,
+          _responseTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_tokens')) {
+      context.handle(
+        _totalTokensMeta,
+        totalTokens.isAcceptableOrUnknown(
+          data['total_tokens']!,
+          _totalTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_read_input_tokens')) {
+      context.handle(
+        _cacheReadInputTokensMeta,
+        cacheReadInputTokens.isAcceptableOrUnknown(
+          data['cache_read_input_tokens']!,
+          _cacheReadInputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cache_creation_input_tokens')) {
+      context.handle(
+        _cacheCreationInputTokensMeta,
+        cacheCreationInputTokens.isAcceptableOrUnknown(
+          data['cache_creation_input_tokens']!,
+          _cacheCreationInputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cost_status')) {
+      context.handle(
+        _costStatusMeta,
+        costStatus.isAcceptableOrUnknown(data['cost_status']!, _costStatusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_costStatusMeta);
+    }
+    if (data.containsKey('cost_usd')) {
+      context.handle(
+        _costUsdMeta,
+        costUsd.isAcceptableOrUnknown(data['cost_usd']!, _costUsdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ModelUsageRecordsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ModelUsageRecordsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      modelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_id'],
+      )!,
+      requestKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_kind'],
+      )!,
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      )!,
+      usageReported: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}usage_reported'],
+      )!,
+      promptTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}prompt_tokens'],
+      ),
+      responseTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}response_tokens'],
+      ),
+      totalTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_tokens'],
+      ),
+      cacheReadInputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cache_read_input_tokens'],
+      ),
+      cacheCreationInputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cache_creation_input_tokens'],
+      ),
+      costStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cost_status'],
+      )!,
+      costUsd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cost_usd'],
+      ),
+    );
+  }
+
+  @override
+  $ModelUsageRecordsTable createAlias(String alias) {
+    return $ModelUsageRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class ModelUsageRecordsTable extends DataClass
+    implements Insertable<ModelUsageRecordsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String conversationId;
+  final String providerId;
+  final String modelId;
+  final String requestKind;
+  final String outcome;
+  final bool usageReported;
+  final int? promptTokens;
+  final int? responseTokens;
+  final int? totalTokens;
+  final int? cacheReadInputTokens;
+  final int? cacheCreationInputTokens;
+  final String costStatus;
+  final double? costUsd;
+  const ModelUsageRecordsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.conversationId,
+    required this.providerId,
+    required this.modelId,
+    required this.requestKind,
+    required this.outcome,
+    required this.usageReported,
+    this.promptTokens,
+    this.responseTokens,
+    this.totalTokens,
+    this.cacheReadInputTokens,
+    this.cacheCreationInputTokens,
+    required this.costStatus,
+    this.costUsd,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['provider_id'] = Variable<String>(providerId);
+    map['model_id'] = Variable<String>(modelId);
+    map['request_kind'] = Variable<String>(requestKind);
+    map['outcome'] = Variable<String>(outcome);
+    map['usage_reported'] = Variable<bool>(usageReported);
+    if (!nullToAbsent || promptTokens != null) {
+      map['prompt_tokens'] = Variable<int>(promptTokens);
+    }
+    if (!nullToAbsent || responseTokens != null) {
+      map['response_tokens'] = Variable<int>(responseTokens);
+    }
+    if (!nullToAbsent || totalTokens != null) {
+      map['total_tokens'] = Variable<int>(totalTokens);
+    }
+    if (!nullToAbsent || cacheReadInputTokens != null) {
+      map['cache_read_input_tokens'] = Variable<int>(cacheReadInputTokens);
+    }
+    if (!nullToAbsent || cacheCreationInputTokens != null) {
+      map['cache_creation_input_tokens'] = Variable<int>(
+        cacheCreationInputTokens,
+      );
+    }
+    map['cost_status'] = Variable<String>(costStatus);
+    if (!nullToAbsent || costUsd != null) {
+      map['cost_usd'] = Variable<double>(costUsd);
+    }
+    return map;
+  }
+
+  ModelUsageRecordsCompanion toCompanion(bool nullToAbsent) {
+    return ModelUsageRecordsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      conversationId: Value(conversationId),
+      providerId: Value(providerId),
+      modelId: Value(modelId),
+      requestKind: Value(requestKind),
+      outcome: Value(outcome),
+      usageReported: Value(usageReported),
+      promptTokens: promptTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(promptTokens),
+      responseTokens: responseTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseTokens),
+      totalTokens: totalTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalTokens),
+      cacheReadInputTokens: cacheReadInputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cacheReadInputTokens),
+      cacheCreationInputTokens: cacheCreationInputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cacheCreationInputTokens),
+      costStatus: Value(costStatus),
+      costUsd: costUsd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(costUsd),
+    );
+  }
+
+  factory ModelUsageRecordsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ModelUsageRecordsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      modelId: serializer.fromJson<String>(json['modelId']),
+      requestKind: serializer.fromJson<String>(json['requestKind']),
+      outcome: serializer.fromJson<String>(json['outcome']),
+      usageReported: serializer.fromJson<bool>(json['usageReported']),
+      promptTokens: serializer.fromJson<int?>(json['promptTokens']),
+      responseTokens: serializer.fromJson<int?>(json['responseTokens']),
+      totalTokens: serializer.fromJson<int?>(json['totalTokens']),
+      cacheReadInputTokens: serializer.fromJson<int?>(
+        json['cacheReadInputTokens'],
+      ),
+      cacheCreationInputTokens: serializer.fromJson<int?>(
+        json['cacheCreationInputTokens'],
+      ),
+      costStatus: serializer.fromJson<String>(json['costStatus']),
+      costUsd: serializer.fromJson<double?>(json['costUsd']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'providerId': serializer.toJson<String>(providerId),
+      'modelId': serializer.toJson<String>(modelId),
+      'requestKind': serializer.toJson<String>(requestKind),
+      'outcome': serializer.toJson<String>(outcome),
+      'usageReported': serializer.toJson<bool>(usageReported),
+      'promptTokens': serializer.toJson<int?>(promptTokens),
+      'responseTokens': serializer.toJson<int?>(responseTokens),
+      'totalTokens': serializer.toJson<int?>(totalTokens),
+      'cacheReadInputTokens': serializer.toJson<int?>(cacheReadInputTokens),
+      'cacheCreationInputTokens': serializer.toJson<int?>(
+        cacheCreationInputTokens,
+      ),
+      'costStatus': serializer.toJson<String>(costStatus),
+      'costUsd': serializer.toJson<double?>(costUsd),
+    };
+  }
+
+  ModelUsageRecordsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? conversationId,
+    String? providerId,
+    String? modelId,
+    String? requestKind,
+    String? outcome,
+    bool? usageReported,
+    Value<int?> promptTokens = const Value.absent(),
+    Value<int?> responseTokens = const Value.absent(),
+    Value<int?> totalTokens = const Value.absent(),
+    Value<int?> cacheReadInputTokens = const Value.absent(),
+    Value<int?> cacheCreationInputTokens = const Value.absent(),
+    String? costStatus,
+    Value<double?> costUsd = const Value.absent(),
+  }) => ModelUsageRecordsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    conversationId: conversationId ?? this.conversationId,
+    providerId: providerId ?? this.providerId,
+    modelId: modelId ?? this.modelId,
+    requestKind: requestKind ?? this.requestKind,
+    outcome: outcome ?? this.outcome,
+    usageReported: usageReported ?? this.usageReported,
+    promptTokens: promptTokens.present ? promptTokens.value : this.promptTokens,
+    responseTokens: responseTokens.present
+        ? responseTokens.value
+        : this.responseTokens,
+    totalTokens: totalTokens.present ? totalTokens.value : this.totalTokens,
+    cacheReadInputTokens: cacheReadInputTokens.present
+        ? cacheReadInputTokens.value
+        : this.cacheReadInputTokens,
+    cacheCreationInputTokens: cacheCreationInputTokens.present
+        ? cacheCreationInputTokens.value
+        : this.cacheCreationInputTokens,
+    costStatus: costStatus ?? this.costStatus,
+    costUsd: costUsd.present ? costUsd.value : this.costUsd,
+  );
+  ModelUsageRecordsTable copyWithCompanion(ModelUsageRecordsCompanion data) {
+    return ModelUsageRecordsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      requestKind: data.requestKind.present
+          ? data.requestKind.value
+          : this.requestKind,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      usageReported: data.usageReported.present
+          ? data.usageReported.value
+          : this.usageReported,
+      promptTokens: data.promptTokens.present
+          ? data.promptTokens.value
+          : this.promptTokens,
+      responseTokens: data.responseTokens.present
+          ? data.responseTokens.value
+          : this.responseTokens,
+      totalTokens: data.totalTokens.present
+          ? data.totalTokens.value
+          : this.totalTokens,
+      cacheReadInputTokens: data.cacheReadInputTokens.present
+          ? data.cacheReadInputTokens.value
+          : this.cacheReadInputTokens,
+      cacheCreationInputTokens: data.cacheCreationInputTokens.present
+          ? data.cacheCreationInputTokens.value
+          : this.cacheCreationInputTokens,
+      costStatus: data.costStatus.present
+          ? data.costStatus.value
+          : this.costStatus,
+      costUsd: data.costUsd.present ? data.costUsd.value : this.costUsd,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModelUsageRecordsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('providerId: $providerId, ')
+          ..write('modelId: $modelId, ')
+          ..write('requestKind: $requestKind, ')
+          ..write('outcome: $outcome, ')
+          ..write('usageReported: $usageReported, ')
+          ..write('promptTokens: $promptTokens, ')
+          ..write('responseTokens: $responseTokens, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('cacheReadInputTokens: $cacheReadInputTokens, ')
+          ..write('cacheCreationInputTokens: $cacheCreationInputTokens, ')
+          ..write('costStatus: $costStatus, ')
+          ..write('costUsd: $costUsd')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    providerId,
+    modelId,
+    requestKind,
+    outcome,
+    usageReported,
+    promptTokens,
+    responseTokens,
+    totalTokens,
+    cacheReadInputTokens,
+    cacheCreationInputTokens,
+    costStatus,
+    costUsd,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ModelUsageRecordsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.conversationId == this.conversationId &&
+          other.providerId == this.providerId &&
+          other.modelId == this.modelId &&
+          other.requestKind == this.requestKind &&
+          other.outcome == this.outcome &&
+          other.usageReported == this.usageReported &&
+          other.promptTokens == this.promptTokens &&
+          other.responseTokens == this.responseTokens &&
+          other.totalTokens == this.totalTokens &&
+          other.cacheReadInputTokens == this.cacheReadInputTokens &&
+          other.cacheCreationInputTokens == this.cacheCreationInputTokens &&
+          other.costStatus == this.costStatus &&
+          other.costUsd == this.costUsd);
+}
+
+class ModelUsageRecordsCompanion
+    extends UpdateCompanion<ModelUsageRecordsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> conversationId;
+  final Value<String> providerId;
+  final Value<String> modelId;
+  final Value<String> requestKind;
+  final Value<String> outcome;
+  final Value<bool> usageReported;
+  final Value<int?> promptTokens;
+  final Value<int?> responseTokens;
+  final Value<int?> totalTokens;
+  final Value<int?> cacheReadInputTokens;
+  final Value<int?> cacheCreationInputTokens;
+  final Value<String> costStatus;
+  final Value<double?> costUsd;
+  final Value<int> rowid;
+  const ModelUsageRecordsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.modelId = const Value.absent(),
+    this.requestKind = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.usageReported = const Value.absent(),
+    this.promptTokens = const Value.absent(),
+    this.responseTokens = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.cacheReadInputTokens = const Value.absent(),
+    this.cacheCreationInputTokens = const Value.absent(),
+    this.costStatus = const Value.absent(),
+    this.costUsd = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ModelUsageRecordsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String conversationId,
+    required String providerId,
+    required String modelId,
+    required String requestKind,
+    required String outcome,
+    required bool usageReported,
+    this.promptTokens = const Value.absent(),
+    this.responseTokens = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.cacheReadInputTokens = const Value.absent(),
+    this.cacheCreationInputTokens = const Value.absent(),
+    required String costStatus,
+    this.costUsd = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : conversationId = Value(conversationId),
+       providerId = Value(providerId),
+       modelId = Value(modelId),
+       requestKind = Value(requestKind),
+       outcome = Value(outcome),
+       usageReported = Value(usageReported),
+       costStatus = Value(costStatus);
+  static Insertable<ModelUsageRecordsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? conversationId,
+    Expression<String>? providerId,
+    Expression<String>? modelId,
+    Expression<String>? requestKind,
+    Expression<String>? outcome,
+    Expression<bool>? usageReported,
+    Expression<int>? promptTokens,
+    Expression<int>? responseTokens,
+    Expression<int>? totalTokens,
+    Expression<int>? cacheReadInputTokens,
+    Expression<int>? cacheCreationInputTokens,
+    Expression<String>? costStatus,
+    Expression<double>? costUsd,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (providerId != null) 'provider_id': providerId,
+      if (modelId != null) 'model_id': modelId,
+      if (requestKind != null) 'request_kind': requestKind,
+      if (outcome != null) 'outcome': outcome,
+      if (usageReported != null) 'usage_reported': usageReported,
+      if (promptTokens != null) 'prompt_tokens': promptTokens,
+      if (responseTokens != null) 'response_tokens': responseTokens,
+      if (totalTokens != null) 'total_tokens': totalTokens,
+      if (cacheReadInputTokens != null)
+        'cache_read_input_tokens': cacheReadInputTokens,
+      if (cacheCreationInputTokens != null)
+        'cache_creation_input_tokens': cacheCreationInputTokens,
+      if (costStatus != null) 'cost_status': costStatus,
+      if (costUsd != null) 'cost_usd': costUsd,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ModelUsageRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? conversationId,
+    Value<String>? providerId,
+    Value<String>? modelId,
+    Value<String>? requestKind,
+    Value<String>? outcome,
+    Value<bool>? usageReported,
+    Value<int?>? promptTokens,
+    Value<int?>? responseTokens,
+    Value<int?>? totalTokens,
+    Value<int?>? cacheReadInputTokens,
+    Value<int?>? cacheCreationInputTokens,
+    Value<String>? costStatus,
+    Value<double?>? costUsd,
+    Value<int>? rowid,
+  }) {
+    return ModelUsageRecordsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      conversationId: conversationId ?? this.conversationId,
+      providerId: providerId ?? this.providerId,
+      modelId: modelId ?? this.modelId,
+      requestKind: requestKind ?? this.requestKind,
+      outcome: outcome ?? this.outcome,
+      usageReported: usageReported ?? this.usageReported,
+      promptTokens: promptTokens ?? this.promptTokens,
+      responseTokens: responseTokens ?? this.responseTokens,
+      totalTokens: totalTokens ?? this.totalTokens,
+      cacheReadInputTokens: cacheReadInputTokens ?? this.cacheReadInputTokens,
+      cacheCreationInputTokens:
+          cacheCreationInputTokens ?? this.cacheCreationInputTokens,
+      costStatus: costStatus ?? this.costStatus,
+      costUsd: costUsd ?? this.costUsd,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (modelId.present) {
+      map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (requestKind.present) {
+      map['request_kind'] = Variable<String>(requestKind.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (usageReported.present) {
+      map['usage_reported'] = Variable<bool>(usageReported.value);
+    }
+    if (promptTokens.present) {
+      map['prompt_tokens'] = Variable<int>(promptTokens.value);
+    }
+    if (responseTokens.present) {
+      map['response_tokens'] = Variable<int>(responseTokens.value);
+    }
+    if (totalTokens.present) {
+      map['total_tokens'] = Variable<int>(totalTokens.value);
+    }
+    if (cacheReadInputTokens.present) {
+      map['cache_read_input_tokens'] = Variable<int>(
+        cacheReadInputTokens.value,
+      );
+    }
+    if (cacheCreationInputTokens.present) {
+      map['cache_creation_input_tokens'] = Variable<int>(
+        cacheCreationInputTokens.value,
+      );
+    }
+    if (costStatus.present) {
+      map['cost_status'] = Variable<String>(costStatus.value);
+    }
+    if (costUsd.present) {
+      map['cost_usd'] = Variable<double>(costUsd.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ModelUsageRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('providerId: $providerId, ')
+          ..write('modelId: $modelId, ')
+          ..write('requestKind: $requestKind, ')
+          ..write('outcome: $outcome, ')
+          ..write('usageReported: $usageReported, ')
+          ..write('promptTokens: $promptTokens, ')
+          ..write('responseTokens: $responseTokens, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('cacheReadInputTokens: $cacheReadInputTokens, ')
+          ..write('cacheCreationInputTokens: $cacheCreationInputTokens, ')
+          ..write('costStatus: $costStatus, ')
+          ..write('costUsd: $costUsd, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -14124,6 +15408,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AppSkillWorkspaceSettingsTable(this);
   late final $RecentModelSelectionsTable recentModelSelections =
       $RecentModelSelectionsTable(this);
+  late final $ModelUsageRecordsTable modelUsageRecords =
+      $ModelUsageRecordsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -14176,6 +15462,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'app_skill_workspace_settings_workspace_app_skill',
     'CREATE UNIQUE INDEX app_skill_workspace_settings_workspace_app_skill ON app_skill_workspace_settings (workspace_id, app_skill_identifier)',
   );
+  late final Index modelUsageRecordsConversationCreatedIdx = Index(
+    'model_usage_records_conversation_created_idx',
+    'CREATE INDEX model_usage_records_conversation_created_idx ON model_usage_records (conversation_id, created_at)',
+  );
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
   late final ModelConnectionsDao modelConnectionsDao = ModelConnectionsDao(
     this as AppDatabase,
@@ -14221,6 +15511,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       AppSkillWorkspaceSettingsDao(this as AppDatabase);
   late final RecentModelSelectionsDao recentModelSelectionsDao =
       RecentModelSelectionsDao(this as AppDatabase);
+  late final ModelUsageRecordsDao modelUsageRecordsDao = ModelUsageRecordsDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -14249,6 +15542,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversationSkills,
     appSkillWorkspaceSettings,
     recentModelSelections,
+    modelUsageRecords,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -14262,6 +15556,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversationSkillsWorkspaceSkill,
     conversationSkillsAppSkill,
     appSkillWorkspaceSettingsWorkspaceAppSkill,
+    modelUsageRecordsConversationCreatedIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -14496,6 +15791,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('app_skill_workspace_settings', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('model_usage_records', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -17345,9 +18647,14 @@ typedef $$ApiModelsTableCreateCompanionBuilder = ApiModelsCompanion Function({
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
+  Value<bool> supportsPromptCacheMarkers,
+  Value<bool> supportsMidConversationSystemMessages,
+  Value<bool> supportsToolDeltas,
+  Value<bool> supportsDeferredTools,
   Value<double?> costInput,
   Value<double?> costOutput,
   Value<double?> costCacheRead,
+  Value<double?> costCacheWrite,
   required int limitContext,
   required int limitOutput,
   Value<int> rowid,
@@ -17365,9 +18672,14 @@ typedef $$ApiModelsTableUpdateCompanionBuilder = ApiModelsCompanion Function({
   Value<bool> isCanonical,
   Value<bool> supportsPriorityMode,
   Value<bool> supportsToolCalls,
+  Value<bool> supportsPromptCacheMarkers,
+  Value<bool> supportsMidConversationSystemMessages,
+  Value<bool> supportsToolDeltas,
+  Value<bool> supportsDeferredTools,
   Value<double?> costInput,
   Value<double?> costOutput,
   Value<double?> costCacheRead,
+  Value<double?> costCacheWrite,
   Value<int> limitContext,
   Value<int> limitOutput,
   Value<int> rowid,
@@ -17462,6 +18774,27 @@ class $$ApiModelsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  ColumnFilters<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<double> get costInput => $composableBuilder(
     column: $table.costInput,
     builder: (column) => ColumnFilters(column),
@@ -17474,6 +18807,11 @@ class $$ApiModelsTableFilterComposer
 
   ColumnFilters<double> get costCacheRead => $composableBuilder(
     column: $table.costCacheRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get costCacheWrite => $composableBuilder(
+    column: $table.costCacheWrite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17575,6 +18913,27 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get costInput => $composableBuilder(
     column: $table.costInput,
     builder: (column) => ColumnOrderings(column),
@@ -17587,6 +18946,11 @@ class $$ApiModelsTableOrderingComposer
 
   ColumnOrderings<double> get costCacheRead => $composableBuilder(
     column: $table.costCacheRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get costCacheWrite => $composableBuilder(
+    column: $table.costCacheWrite,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -17684,6 +19048,27 @@ class $$ApiModelsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get supportsPromptCacheMarkers => $composableBuilder(
+    column: $table.supportsPromptCacheMarkers,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsMidConversationSystemMessages =>
+      $composableBuilder(
+        column: $table.supportsMidConversationSystemMessages,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get supportsToolDeltas => $composableBuilder(
+    column: $table.supportsToolDeltas,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get supportsDeferredTools => $composableBuilder(
+    column: $table.supportsDeferredTools,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get costInput =>
       $composableBuilder(column: $table.costInput, builder: (column) => column);
 
@@ -17694,6 +19079,11 @@ class $$ApiModelsTableAnnotationComposer
 
   GeneratedColumn<double> get costCacheRead => $composableBuilder(
     column: $table.costCacheRead,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get costCacheWrite => $composableBuilder(
+    column: $table.costCacheWrite,
     builder: (column) => column,
   );
 
@@ -17772,9 +19162,15 @@ class $$ApiModelsTableTableManager
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
+                Value<bool> supportsPromptCacheMarkers = const Value.absent(),
+                Value<bool> supportsMidConversationSystemMessages =
+                    const Value.absent(),
+                Value<bool> supportsToolDeltas = const Value.absent(),
+                Value<bool> supportsDeferredTools = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
+                Value<double?> costCacheWrite = const Value.absent(),
                 Value<int> limitContext = const Value.absent(),
                 Value<int> limitOutput = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -17791,9 +19187,15 @@ class $$ApiModelsTableTableManager
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
+                supportsPromptCacheMarkers: supportsPromptCacheMarkers,
+                supportsMidConversationSystemMessages:
+                    supportsMidConversationSystemMessages,
+                supportsToolDeltas: supportsToolDeltas,
+                supportsDeferredTools: supportsDeferredTools,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,
+                costCacheWrite: costCacheWrite,
                 limitContext: limitContext,
                 limitOutput: limitOutput,
                 rowid: rowid,
@@ -17812,9 +19214,15 @@ class $$ApiModelsTableTableManager
                 Value<bool> isCanonical = const Value.absent(),
                 Value<bool> supportsPriorityMode = const Value.absent(),
                 Value<bool> supportsToolCalls = const Value.absent(),
+                Value<bool> supportsPromptCacheMarkers = const Value.absent(),
+                Value<bool> supportsMidConversationSystemMessages =
+                    const Value.absent(),
+                Value<bool> supportsToolDeltas = const Value.absent(),
+                Value<bool> supportsDeferredTools = const Value.absent(),
                 Value<double?> costInput = const Value.absent(),
                 Value<double?> costOutput = const Value.absent(),
                 Value<double?> costCacheRead = const Value.absent(),
+                Value<double?> costCacheWrite = const Value.absent(),
                 required int limitContext,
                 required int limitOutput,
                 Value<int> rowid = const Value.absent(),
@@ -17831,9 +19239,15 @@ class $$ApiModelsTableTableManager
                 isCanonical: isCanonical,
                 supportsPriorityMode: supportsPriorityMode,
                 supportsToolCalls: supportsToolCalls,
+                supportsPromptCacheMarkers: supportsPromptCacheMarkers,
+                supportsMidConversationSystemMessages:
+                    supportsMidConversationSystemMessages,
+                supportsToolDeltas: supportsToolDeltas,
+                supportsDeferredTools: supportsDeferredTools,
                 costInput: costInput,
                 costOutput: costOutput,
                 costCacheRead: costCacheRead,
+                costCacheWrite: costCacheWrite,
                 limitContext: limitContext,
                 limitOutput: limitOutput,
                 rowid: rowid,
@@ -18769,6 +20183,30 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ModelUsageRecordsTable,
+    List<ModelUsageRecordsTable>
+  >
+  _modelUsageRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.modelUsageRecords,
+        aliasName: 'conversations__id__model_usage_records__conversation_id',
+      );
+
+  $$ModelUsageRecordsTableProcessedTableManager get modelUsageRecordsRefs {
+    final manager = $$ModelUsageRecordsTableTableManager(
+      $_db,
+      $_db.modelUsageRecords,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _modelUsageRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -18994,6 +20432,31 @@ class $$ConversationsTableFilterComposer
           }) => $$ConversationSkillsTableFilterComposer(
             $db: $db,
             $table: $db.conversationSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> modelUsageRecordsRefs(
+    Expression<bool> Function($$ModelUsageRecordsTableFilterComposer f) f,
+  ) {
+    final $$ModelUsageRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.modelUsageRecords,
+      getReferencedColumn: (t) => t.conversationId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ModelUsageRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.modelUsageRecords,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -19387,6 +20850,32 @@ class $$ConversationsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> modelUsageRecordsRefs<T extends Object>(
+    Expression<T> Function($$ModelUsageRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$ModelUsageRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.modelUsageRecords,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ModelUsageRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.modelUsageRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -19410,6 +20899,7 @@ class $$ConversationsTableTableManager
             bool messagesRefs,
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
+            bool modelUsageRecordsRefs,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -19514,6 +21004,7 @@ class $$ConversationsTableTableManager
                 messagesRefs = false,
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
+                modelUsageRecordsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -19521,6 +21012,7 @@ class $$ConversationsTableTableManager
                     if (messagesRefs) db.messages,
                     if (conversationToolsRefs) db.conversationTools,
                     if (conversationSkillsRefs) db.conversationSkills,
+                    if (modelUsageRecordsRefs) db.modelUsageRecords,
                   ],
                   addJoins:
                       <
@@ -19650,6 +21142,27 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (modelUsageRecordsRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          ModelUsageRecordsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._modelUsageRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).modelUsageRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -19678,6 +21191,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool messagesRefs,
         bool conversationToolsRefs,
         bool conversationSkillsRefs,
+        bool modelUsageRecordsRefs,
       })
     >;
 typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
@@ -27865,6 +29379,565 @@ typedef $$RecentModelSelectionsTableProcessedTableManager =
       RecentModelSelectionTable,
       PrefetchHooks Function()
     >;
+typedef $$ModelUsageRecordsTableCreateCompanionBuilder =
+    ModelUsageRecordsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String conversationId,
+      required String providerId,
+      required String modelId,
+      required String requestKind,
+      required String outcome,
+      required bool usageReported,
+      Value<int?> promptTokens,
+      Value<int?> responseTokens,
+      Value<int?> totalTokens,
+      Value<int?> cacheReadInputTokens,
+      Value<int?> cacheCreationInputTokens,
+      required String costStatus,
+      Value<double?> costUsd,
+      Value<int> rowid,
+    });
+typedef $$ModelUsageRecordsTableUpdateCompanionBuilder =
+    ModelUsageRecordsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> conversationId,
+      Value<String> providerId,
+      Value<String> modelId,
+      Value<String> requestKind,
+      Value<String> outcome,
+      Value<bool> usageReported,
+      Value<int?> promptTokens,
+      Value<int?> responseTokens,
+      Value<int?> totalTokens,
+      Value<int?> cacheReadInputTokens,
+      Value<int?> cacheCreationInputTokens,
+      Value<String> costStatus,
+      Value<double?> costUsd,
+      Value<int> rowid,
+    });
+
+final class $$ModelUsageRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ModelUsageRecordsTable,
+          ModelUsageRecordsTable
+        > {
+  $$ModelUsageRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('model_usage_records__conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ModelUsageRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $ModelUsageRecordsTable> {
+  $$ModelUsageRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestKind => $composableBuilder(
+    column: $table.requestKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get usageReported => $composableBuilder(
+    column: $table.usageReported,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get promptTokens => $composableBuilder(
+    column: $table.promptTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get responseTokens => $composableBuilder(
+    column: $table.responseTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cacheReadInputTokens => $composableBuilder(
+    column: $table.cacheReadInputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cacheCreationInputTokens => $composableBuilder(
+    column: $table.cacheCreationInputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get costStatus => $composableBuilder(
+    column: $table.costStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get costUsd => $composableBuilder(
+    column: $table.costUsd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ModelUsageRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ModelUsageRecordsTable> {
+  $$ModelUsageRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestKind => $composableBuilder(
+    column: $table.requestKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get usageReported => $composableBuilder(
+    column: $table.usageReported,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get promptTokens => $composableBuilder(
+    column: $table.promptTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get responseTokens => $composableBuilder(
+    column: $table.responseTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cacheReadInputTokens => $composableBuilder(
+    column: $table.cacheReadInputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cacheCreationInputTokens => $composableBuilder(
+    column: $table.cacheCreationInputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get costStatus => $composableBuilder(
+    column: $table.costStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get costUsd => $composableBuilder(
+    column: $table.costUsd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ModelUsageRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ModelUsageRecordsTable> {
+  $$ModelUsageRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get modelId =>
+      $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get requestKind => $composableBuilder(
+    column: $table.requestKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<bool> get usageReported => $composableBuilder(
+    column: $table.usageReported,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get promptTokens => $composableBuilder(
+    column: $table.promptTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get responseTokens => $composableBuilder(
+    column: $table.responseTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cacheReadInputTokens => $composableBuilder(
+    column: $table.cacheReadInputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cacheCreationInputTokens => $composableBuilder(
+    column: $table.cacheCreationInputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get costStatus => $composableBuilder(
+    column: $table.costStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get costUsd =>
+      $composableBuilder(column: $table.costUsd, builder: (column) => column);
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ModelUsageRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ModelUsageRecordsTable,
+          ModelUsageRecordsTable,
+          $$ModelUsageRecordsTableFilterComposer,
+          $$ModelUsageRecordsTableOrderingComposer,
+          $$ModelUsageRecordsTableAnnotationComposer,
+          $$ModelUsageRecordsTableCreateCompanionBuilder,
+          $$ModelUsageRecordsTableUpdateCompanionBuilder,
+          (ModelUsageRecordsTable, $$ModelUsageRecordsTableReferences),
+          ModelUsageRecordsTable,
+          PrefetchHooks Function({bool conversationId})
+        > {
+  $$ModelUsageRecordsTableTableManager(
+    _$AppDatabase db,
+    $ModelUsageRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ModelUsageRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ModelUsageRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ModelUsageRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> modelId = const Value.absent(),
+                Value<String> requestKind = const Value.absent(),
+                Value<String> outcome = const Value.absent(),
+                Value<bool> usageReported = const Value.absent(),
+                Value<int?> promptTokens = const Value.absent(),
+                Value<int?> responseTokens = const Value.absent(),
+                Value<int?> totalTokens = const Value.absent(),
+                Value<int?> cacheReadInputTokens = const Value.absent(),
+                Value<int?> cacheCreationInputTokens = const Value.absent(),
+                Value<String> costStatus = const Value.absent(),
+                Value<double?> costUsd = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ModelUsageRecordsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                providerId: providerId,
+                modelId: modelId,
+                requestKind: requestKind,
+                outcome: outcome,
+                usageReported: usageReported,
+                promptTokens: promptTokens,
+                responseTokens: responseTokens,
+                totalTokens: totalTokens,
+                cacheReadInputTokens: cacheReadInputTokens,
+                cacheCreationInputTokens: cacheCreationInputTokens,
+                costStatus: costStatus,
+                costUsd: costUsd,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String conversationId,
+                required String providerId,
+                required String modelId,
+                required String requestKind,
+                required String outcome,
+                required bool usageReported,
+                Value<int?> promptTokens = const Value.absent(),
+                Value<int?> responseTokens = const Value.absent(),
+                Value<int?> totalTokens = const Value.absent(),
+                Value<int?> cacheReadInputTokens = const Value.absent(),
+                Value<int?> cacheCreationInputTokens = const Value.absent(),
+                required String costStatus,
+                Value<double?> costUsd = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ModelUsageRecordsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                providerId: providerId,
+                modelId: modelId,
+                requestKind: requestKind,
+                outcome: outcome,
+                usageReported: usageReported,
+                promptTokens: promptTokens,
+                responseTokens: responseTokens,
+                totalTokens: totalTokens,
+                cacheReadInputTokens: cacheReadInputTokens,
+                cacheCreationInputTokens: cacheCreationInputTokens,
+                costStatus: costStatus,
+                costUsd: costUsd,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ModelUsageRecordsTable, ModelUsageRecordsTable>(
+                    table,
+                  ),
+                  $$ModelUsageRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({conversationId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (conversationId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.conversationId,
+                        referencedTable: $$ModelUsageRecordsTableReferences
+                            ._conversationIdTable(db),
+                        referencedColumn: $$ModelUsageRecordsTableReferences
+                            ._conversationIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ModelUsageRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ModelUsageRecordsTable,
+      ModelUsageRecordsTable,
+      $$ModelUsageRecordsTableFilterComposer,
+      $$ModelUsageRecordsTableOrderingComposer,
+      $$ModelUsageRecordsTableAnnotationComposer,
+      $$ModelUsageRecordsTableCreateCompanionBuilder,
+      $$ModelUsageRecordsTableUpdateCompanionBuilder,
+      (ModelUsageRecordsTable, $$ModelUsageRecordsTableReferences),
+      ModelUsageRecordsTable,
+      PrefetchHooks Function({bool conversationId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -27929,4 +30002,6 @@ class $AppDatabaseManager {
       );
   $$RecentModelSelectionsTableTableManager get recentModelSelections =>
       $$RecentModelSelectionsTableTableManager(_db, _db.recentModelSelections);
+  $$ModelUsageRecordsTableTableManager get modelUsageRecords =>
+      $$ModelUsageRecordsTableTableManager(_db, _db.modelUsageRecords);
 }

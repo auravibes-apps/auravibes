@@ -45,6 +45,9 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
     /// Cost per 1M cache read tokens.
     double? costCacheRead,
 
+    /// Cost per 1M cache creation tokens.
+    double? costCacheWrite,
+
     /// Cost per 1M output tokens.
     double? costOutput,
 
@@ -65,6 +68,10 @@ abstract class const ApiModelEntity._() with _$ApiModelEntity {
 
     /// Whether models.dev reports tool-call support for this model.
     @Default(false) bool supportsToolCalls,
+    @Default(false) bool supportsPromptCacheMarkers,
+    @Default(false) bool supportsMidConversationSystemMessages,
+    @Default(false) bool supportsToolDeltas,
+    @Default(false) bool supportsDeferredTools,
   }) = _ApiModelEntity;
 
   factory fromJson(
@@ -127,6 +134,7 @@ ApiModelEntity _applyModelCosts(
   family: capabilities.family,
   costInput: capabilities.costInput,
   costCacheRead: capabilities.costCacheRead,
+  costCacheWrite: capabilities.costCacheWrite,
   costOutput: capabilities.costOutput,
 );
 
@@ -140,6 +148,11 @@ ApiModelEntity _applyModelFlags(
   isCanonical: capabilities.isCanonical,
   supportsPriorityMode: capabilities.supportsPriorityMode,
   supportsToolCalls: capabilities.supportsToolCalls,
+  supportsPromptCacheMarkers: capabilities.supportsPromptCacheMarkers,
+  supportsMidConversationSystemMessages:
+      capabilities.supportsMidConversationSystemMessages,
+  supportsToolDeltas: capabilities.supportsToolDeltas,
+  supportsDeferredTools: capabilities.supportsDeferredTools,
 );
 
 extension ApiModelEntityCapabilities on ApiModelEntity {

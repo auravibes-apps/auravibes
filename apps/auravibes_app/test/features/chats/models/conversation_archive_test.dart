@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -86,16 +87,17 @@ void main() {
           ),
         ];
 
-        final encoded = await ConversationArchiveCodec.exportConversation(
+        final encoded = await ConversationArchiveCodec.exportConversation((
           conversation: conversation,
           messages: messages,
           modelLabel: 'Example model',
+          agentContext: null,
           readAttachmentBytes: (path) async {
             expect(path, 'file:///private/attachment/report.pdf');
 
             return Uint8List.fromList([1, 2, 3]);
           },
-        );
+        ));
         final decodedJson = jsonDecode(encoded) as Map<String, dynamic>;
         final transcript = decodedJson['conversation'] as Map<String, dynamic>;
         final archivedMessages = decodedJson['messages'] as List<dynamic>;
@@ -259,6 +261,158 @@ void main() {
 
       expect(
         () => ConversationArchiveCodec.decode(archiveJson),
+        throwsA(isA<MalformedConversationArchiveException>()),
+      );
+    });
+
+    test('round-trips versioned bundles with safe agent context', () {
+      final createdAt = DateTime.utc(2025, 1, 2);
+      final update = jsonEncode({
+        'version': 1,
+        'toolsAdded': [
+          {
+            'name': 'mcp_search',
+            'description': 'Search documents',
+            'inputJsonSchema': <String, Object?>{},
+            'requiresCredential': false,
+          },
+        ],
+        'toolsRemoved': <String>[],
+        'contextMessages': [
+          {'role': 'system', 'content': 'Trusted prompt'},
+        ],
+        'toolOrder': ['mcp_search'],
+        'approvalStates': {'mcp_search': 'granted'},
+      });
+      final message = ConversationArchiveMessage(
+        content: 'Transcript message',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        createdAt: createdAt,
+        metadata: const .new(
+          toolCalls: [],
+          a2uiMessages: [],
+          isCompactionSummary: false,
+          compactedMessageIndexes: [],
+        ),
+        attachments: [],
+      );
+      final first = ConversationArchive(
+        title: 'First',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+        messages: [message],
+        agentContext: .new(
+          isComplete: true,
+          entriesInput: [
+            ConversationArchiveAgentContextEntry(
+              afterMessageIndex: 0,
+              createdAt: createdAt,
+              updateJson: update,
+            ),
+          ],
+          toolSelectionsInput: [
+            const ConversationArchiveToolSelection(
+              groupName: null,
+              toolName: 'calculator',
+              isEnabled: false,
+              permissionMode: .alwaysAsk,
+            ),
+          ],
+        ),
+      );
+      final second = ConversationArchive(
+        title: 'Second',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+        messages: [],
+      );
+
+      final encoded = ConversationArchiveCodec.encodeMany([first, second]);
+      final decoded = ConversationArchiveCodec.decodeMany(encoded);
+      final bundle = jsonDecode(encoded) as Map<String, dynamic>;
+      final firstContext =
+          decoded.firstOrNull?.agentContext ?? fail('Missing context');
+      final contextUpdate = jsonDecode(
+        firstContext.entries.single.updateJson,
+      ) as Map<String, dynamic>;
+
+      expect(bundle['format'], ConversationArchiveCodec.bundleFormat);
+      expect(bundle['version'], ConversationArchiveCodec.bundleVersion);
+      expect(decoded.map((archive) => archive.title), ['First', 'Second']);
+      expect(firstContext.entries.single.afterMessageIndex, 0);
+      expect(firstContext.toolSelections.single.toolName, 'calculator');
+      expect(contextUpdate['toolOrder'], ['mcp_search']);
+      expect(contextUpdate['approvalStates'], {'mcp_search': 'granted'});
+    });
+
+    test('decodes legacy single archives inside the multi-import API', () {
+      final createdAt = DateTime.utc(2025, 1, 2);
+      final current = jsonDecode(
+        ConversationArchiveCodec.encode(
+          .new(
+            title: 'Legacy',
+            createdAt: createdAt,
+            updatedAt: createdAt,
+            messages: [],
+          ),
+        ),
+      ) as Map<String, dynamic>;
+      current['version'] = ConversationArchiveCodec.legacyVersion;
+      final _ = current.remove('agentContext');
+
+      final decoded = ConversationArchiveCodec.decodeMany(jsonEncode(current));
+
+      expect(decoded.single.title, 'Legacy');
+      expect(decoded.single.agentContext, isNull);
+    });
+
+    test('encoding rejects archives beyond supported JSON depth', () {
+      final createdAt = DateTime.utc(2025, 1, 2);
+      var schema = <String, Object?>{};
+      for (
+        var index = 0;
+        index < ConversationArchiveCodec.maxJsonDepth;
+        index++
+      ) {
+        schema = {'nested': schema};
+      }
+      final archive = ConversationArchive(
+        title: 'Deep archive',
+        createdAt: createdAt,
+        updatedAt: createdAt,
+        messages: [],
+        agentContext: .new(
+          isComplete: true,
+          entriesInput: [
+            ConversationArchiveAgentContextEntry(
+              afterMessageIndex: null,
+              createdAt: createdAt,
+              updateJson: jsonEncode({
+                'version': 1,
+                'toolsAdded': [
+                  {
+                    'name': 'nested_tool',
+                    'description': 'Nested schema',
+                    'inputJsonSchema': schema,
+                    'requiresCredential': false,
+                  },
+                ],
+                'toolsRemoved': <String>[],
+              }),
+            ),
+          ],
+          toolSelectionsInput: const [],
+        ),
+      );
+
+      expect(
+        () => ConversationArchiveCodec.encode(archive),
+        throwsA(isA<MalformedConversationArchiveException>()),
+      );
+      expect(
+        () => ConversationArchiveCodec.encodeMany([archive]),
         throwsA(isA<MalformedConversationArchiveException>()),
       );
     });

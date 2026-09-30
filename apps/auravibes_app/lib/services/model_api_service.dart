@@ -143,6 +143,11 @@ ApiModelEntity _modelFlags(
   isCanonical: capabilities.isCanonical,
   supportsPriorityMode: capabilities.supportsPriorityMode,
   supportsToolCalls: capabilities.supportsToolCalls,
+  supportsPromptCacheMarkers: capabilities.supportsPromptCacheMarkers,
+  supportsMidConversationSystemMessages:
+      capabilities.supportsMidConversationSystemMessages,
+  supportsToolDeltas: capabilities.supportsToolDeltas,
+  supportsDeferredTools: capabilities.supportsDeferredTools,
 );
 
 ApiProviderDto _providerDto(

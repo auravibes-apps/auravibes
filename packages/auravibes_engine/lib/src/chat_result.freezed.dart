@@ -606,7 +606,7 @@ as Map<String, dynamic>,
 /// @nodoc
 mixin _$LanguageModelUsage {
 
- int? get promptTokens; int? get responseTokens; int? get totalTokens;
+ int? get promptTokens; int? get responseTokens; int? get totalTokens; int? get cacheReadInputTokens; int? get cacheCreationInputTokens;
 /// Create a copy of LanguageModelUsage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -618,20 +618,20 @@ $LanguageModelUsageCopyWith<LanguageModelUsage> get copyWith => _$LanguageModelU
 @override
 bool operator ==(Object other) {
   final _this = this as LanguageModelUsage;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LanguageModelUsage&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.responseTokens, _this.responseTokens) || other.responseTokens == _this.responseTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LanguageModelUsage&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.responseTokens, _this.responseTokens) || other.responseTokens == _this.responseTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens)&&(identical(other.cacheReadInputTokens, _this.cacheReadInputTokens) || other.cacheReadInputTokens == _this.cacheReadInputTokens)&&(identical(other.cacheCreationInputTokens, _this.cacheCreationInputTokens) || other.cacheCreationInputTokens == _this.cacheCreationInputTokens));
 }
 
 
 @override
 int get hashCode {
   final _this = this as LanguageModelUsage;
-  return Object.hash(runtimeType,_this.promptTokens,_this.responseTokens,_this.totalTokens);
+  return Object.hash(runtimeType,_this.promptTokens,_this.responseTokens,_this.totalTokens,_this.cacheReadInputTokens,_this.cacheCreationInputTokens);
 }
 
 @override
 String toString() {
   final _this = this as LanguageModelUsage;
-  return 'LanguageModelUsage(promptTokens: ${_this.promptTokens}, responseTokens: ${_this.responseTokens}, totalTokens: ${_this.totalTokens})';
+  return 'LanguageModelUsage(promptTokens: ${_this.promptTokens}, responseTokens: ${_this.responseTokens}, totalTokens: ${_this.totalTokens}, cacheReadInputTokens: ${_this.cacheReadInputTokens}, cacheCreationInputTokens: ${_this.cacheCreationInputTokens})';
 }
 
 
@@ -642,7 +642,7 @@ abstract mixin class $LanguageModelUsageCopyWith<$Res>  {
   factory $LanguageModelUsageCopyWith(LanguageModelUsage value, $Res Function(LanguageModelUsage) _then) = _$LanguageModelUsageCopyWithImpl;
 @useResult
 $Res call({
- int? promptTokens, int? responseTokens, int? totalTokens
+ int? promptTokens, int? responseTokens, int? totalTokens, int? cacheReadInputTokens, int? cacheCreationInputTokens
 });
 
 
@@ -659,11 +659,13 @@ class _$LanguageModelUsageCopyWithImpl<$Res>
 
 /// Create a copy of LanguageModelUsage
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? promptTokens = freezed,Object? responseTokens = freezed,Object? totalTokens = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? promptTokens = freezed,Object? responseTokens = freezed,Object? totalTokens = freezed,Object? cacheReadInputTokens = freezed,Object? cacheCreationInputTokens = freezed,}) {
   return _then(LanguageModelUsage(
 promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,responseTokens: freezed == responseTokens ? _self.responseTokens : responseTokens // ignore: cast_nullable_to_non_nullable
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
+as int?,cacheReadInputTokens: freezed == cacheReadInputTokens ? _self.cacheReadInputTokens : cacheReadInputTokens // ignore: cast_nullable_to_non_nullable
+as int?,cacheCreationInputTokens: freezed == cacheCreationInputTokens ? _self.cacheCreationInputTokens : cacheCreationInputTokens // ignore: cast_nullable_to_non_nullable
 as int?,
   ));
 }
@@ -749,10 +751,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? promptTokens,  int? responseTokens,  int? totalTokens)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int? promptTokens,  int? responseTokens,  int? totalTokens,  int? cacheReadInputTokens,  int? cacheCreationInputTokens)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LanguageModelUsage() when $default != null:
-return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case _:
+return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens,_that.cacheReadInputTokens,_that.cacheCreationInputTokens);case _:
   return orElse();
 
 }
@@ -770,10 +772,10 @@ return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? promptTokens,  int? responseTokens,  int? totalTokens)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int? promptTokens,  int? responseTokens,  int? totalTokens,  int? cacheReadInputTokens,  int? cacheCreationInputTokens)  $default,) {final _that = this;
 switch (_that) {
 case _LanguageModelUsage():
-return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case _:
+return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens,_that.cacheReadInputTokens,_that.cacheCreationInputTokens);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -790,10 +792,10 @@ return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? promptTokens,  int? responseTokens,  int? totalTokens)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int? promptTokens,  int? responseTokens,  int? totalTokens,  int? cacheReadInputTokens,  int? cacheCreationInputTokens)?  $default,) {final _that = this;
 switch (_that) {
 case _LanguageModelUsage() when $default != null:
-return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case _:
+return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens,_that.cacheReadInputTokens,_that.cacheCreationInputTokens);case _:
   return null;
 
 }
@@ -805,12 +807,14 @@ return $default(_that.promptTokens,_that.responseTokens,_that.totalTokens);case 
 
 
 class _LanguageModelUsage extends LanguageModelUsage {
-  const _LanguageModelUsage({this.promptTokens, this.responseTokens, this.totalTokens}): super._();
+  const _LanguageModelUsage({this.promptTokens, this.responseTokens, this.totalTokens, this.cacheReadInputTokens, this.cacheCreationInputTokens}): super._();
   
 
 @override final  int? promptTokens;
 @override final  int? responseTokens;
 @override final  int? totalTokens;
+@override final  int? cacheReadInputTokens;
+@override final  int? cacheCreationInputTokens;
 
 /// Create a copy of LanguageModelUsage
 /// with the given fields replaced by the non-null parameter values.
@@ -822,18 +826,18 @@ _$LanguageModelUsageCopyWith<_LanguageModelUsage> get copyWith => __$LanguageMod
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LanguageModelUsage&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.responseTokens, responseTokens) || other.responseTokens == responseTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LanguageModelUsage&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.responseTokens, responseTokens) || other.responseTokens == responseTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.cacheReadInputTokens, cacheReadInputTokens) || other.cacheReadInputTokens == cacheReadInputTokens)&&(identical(other.cacheCreationInputTokens, cacheCreationInputTokens) || other.cacheCreationInputTokens == cacheCreationInputTokens));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,promptTokens,responseTokens,totalTokens);
+    return Object.hash(runtimeType,promptTokens,responseTokens,totalTokens,cacheReadInputTokens,cacheCreationInputTokens);
 }
 
 @override
 String toString() {
-    return 'LanguageModelUsage(promptTokens: $promptTokens, responseTokens: $responseTokens, totalTokens: $totalTokens)';
+    return 'LanguageModelUsage(promptTokens: $promptTokens, responseTokens: $responseTokens, totalTokens: $totalTokens, cacheReadInputTokens: $cacheReadInputTokens, cacheCreationInputTokens: $cacheCreationInputTokens)';
 }
 
 
@@ -844,7 +848,7 @@ abstract mixin class _$LanguageModelUsageCopyWith<$Res> implements $LanguageMode
   factory _$LanguageModelUsageCopyWith(_LanguageModelUsage value, $Res Function(_LanguageModelUsage) _then) = __$LanguageModelUsageCopyWithImpl;
 @override @useResult
 $Res call({
- int? promptTokens, int? responseTokens, int? totalTokens
+ int? promptTokens, int? responseTokens, int? totalTokens, int? cacheReadInputTokens, int? cacheCreationInputTokens
 });
 
 
@@ -861,11 +865,13 @@ class __$LanguageModelUsageCopyWithImpl<$Res>
 
 /// Create a copy of LanguageModelUsage
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? promptTokens = freezed,Object? responseTokens = freezed,Object? totalTokens = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? promptTokens = freezed,Object? responseTokens = freezed,Object? totalTokens = freezed,Object? cacheReadInputTokens = freezed,Object? cacheCreationInputTokens = freezed,}) {
   return _then(_LanguageModelUsage(
 promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,responseTokens: freezed == responseTokens ? _self.responseTokens : responseTokens // ignore: cast_nullable_to_non_nullable
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable
+as int?,cacheReadInputTokens: freezed == cacheReadInputTokens ? _self.cacheReadInputTokens : cacheReadInputTokens // ignore: cast_nullable_to_non_nullable
+as int?,cacheCreationInputTokens: freezed == cacheCreationInputTokens ? _self.cacheCreationInputTokens : cacheCreationInputTokens // ignore: cast_nullable_to_non_nullable
 as int?,
   ));
 }
