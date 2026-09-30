@@ -14,13 +14,14 @@ class MockModelUsageRepository extends Mock implements ModelUsageRepository;
 class _Fixture {
   factory() {
     final repository = MockModelUsageRepository();
-    return new _(
+
+    return _Fixture._(
       repository,
       .new(repository: repository, getModel: (_, _) async => _pricedModel()),
     );
   }
 
-  new _(this.repository, this.usecase);
+  _(this.repository, this.usecase);
 
   final MockModelUsageRepository repository;
   final RecordModelUsageUsecase usecase;

@@ -135,7 +135,6 @@ void main() {
       usecase = ContinueAgentService(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
-        recordModelUsageUsecase: recordModelUsageUsecase,
         agentContinuationProvider: _appAgentContinuationAdapter(
           conversationRepository: conversationRepository,
           messageRepository: messageRepository,
@@ -168,6 +167,7 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
+        recordModelUsageUsecase: recordModelUsageUsecase,
       );
 
       when(() => conversationRepository.getConversationById('conversation-1'))
@@ -202,6 +202,7 @@ void main() {
           .thenAnswer((invocation) async {
             final input =
                 invocation.positionalArguments.single as ModelUsageRecordInput;
+
             return .new(
               id: 'usage-1',
               conversationId: input.conversationId,

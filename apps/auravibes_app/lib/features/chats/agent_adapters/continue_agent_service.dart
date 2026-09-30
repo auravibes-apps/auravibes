@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/domain/entities/model_usage_record.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -1066,12 +1065,12 @@ ContinueAgentService _createContinueAgentService(
   return ContinueAgentService(
     chatbotService: dependencies.chatbotService,
     messageRepository: dependencies.messageRepository,
-    recordModelUsageUsecase: dependencies.recordModelUsageUsecase,
     agentContinuationProvider: dependencies.agentContinuationProvider,
     messagesStreamingRuntime: dependencies.messagesStreamingRuntime,
     conversationStreamingRuntime: dependencies.conversationStreamingRuntime,
     agentCancellationRuntime: dependencies.agentCancellationRuntime,
     monitoringService: dependencies.monitoringService,
+    recordModelUsageUsecase: dependencies.recordModelUsageUsecase,
     skillContextRuntime: skillContextRuntime,
     a2uiRuntimeForConversation: dependencies.a2uiRuntimeForConversation,
     isTopLevelConversation: dependencies.isTopLevelConversation,

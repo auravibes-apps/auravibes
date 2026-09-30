@@ -124,7 +124,7 @@ Future<AppDatabase> _seedDatabase(
           for (var index = 0; index < messageCount; index++)
             MessagesCompanion.insert(
               id: .new('message-$index'),
-              createdAt: .new(createdAt.add(Duration(seconds: index))),
+              createdAt: .new(createdAt.add(.new(seconds: index))),
               conversationId: conversationId,
               content: 'Message $index ${'content ' * 32}',
               messageType: .text,
