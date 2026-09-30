@@ -20,6 +20,11 @@ enum WorkspaceConfigurationKind {
   tool,
 }
 
+typedef WorkspaceConfigurationArchiveEntryId = ({
+  WorkspaceConfigurationKind kind,
+  String id,
+});
+
 class const WorkspaceConfigurationEntry({
   required final WorkspaceConfigurationKind kind,
   required final String id,
@@ -36,7 +41,7 @@ class WorkspaceConfigurationArchivePreview(
   String get workspaceName => archive.workspaceName;
 }
 
-typedef _ArchiveId = ({WorkspaceConfigurationKind kind, String id});
+typedef _ArchiveId = WorkspaceConfigurationArchiveEntryId;
 typedef _ArchiveReference = ({String field, WorkspaceConfigurationKind kind});
 
 const _maxWorkspaceNameLength = 200;
@@ -140,15 +145,19 @@ abstract final class WorkspaceConfigurationArchiveCodec {
   }
 
   static WorkspaceConfigurationArchive remapIds(
-    WorkspaceConfigurationArchive archive,
-  ) {
+    WorkspaceConfigurationArchive archive, {
+    Map<WorkspaceConfigurationArchiveEntryId, String> idMapping = const {},
+  }) {
     _validate(archive);
-    final ids = _newIds(archive.entries);
+    final ids = _newIds(archive.entries, idMapping);
 
-    return WorkspaceConfigurationArchive(
+    final remapped = WorkspaceConfigurationArchive(
       workspaceName: archive.workspaceName,
       entries: [for (final entry in archive.entries) _remapEntry(entry, ids)],
     );
+    _validate(remapped);
+
+    return remapped;
   }
 }
 
@@ -245,11 +254,15 @@ Map<String, dynamic> _entryMap(Object? raw) {
   return raw;
 }
 
-Map<_ArchiveId, String> _newIds(List<WorkspaceConfigurationEntry> entries) => {
+Map<_ArchiveId, String> _newIds(
+  List<WorkspaceConfigurationEntry> entries,
+  Map<WorkspaceConfigurationArchiveEntryId, String> idMapping,
+) => {
   for (final entry in entries)
     (kind: entry.kind, id: entry.id): entry.kind == .compactionSetting
         ? 'workspace'
-        : const UuidV7().generate(),
+        : idMapping[(kind: entry.kind, id: entry.id)] ??
+              const UuidV7().generate(),
 };
 
 WorkspaceConfigurationEntry _remapEntry(

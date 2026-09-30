@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
@@ -11,11 +14,6 @@ class LocalWorkspaceConfigurationImporter(final AppDatabase _database) {
       Future.sync(() => _importArchiveJson(_database, json, targetWorkspaceId));
 }
 
-WorkspaceConfigurationArchive _decodeAndRemap(String json) =>
-    WorkspaceConfigurationArchiveCodec.remapIds(
-      WorkspaceConfigurationArchiveCodec.decode(json),
-    );
-
 Future<String> _importArchive(
   AppDatabase database,
   WorkspaceConfigurationArchive archive,
@@ -26,7 +24,14 @@ Future<String> _importArchive(
     archive.workspaceName,
     targetWorkspaceId,
   );
-  await _insertEntries(database, workspaceId, archive.entries);
+  final idMapping = targetWorkspaceId == null
+      ? const <WorkspaceConfigurationArchiveEntryId, String>{}
+      : await _existingEntryIds(database, workspaceId, archive);
+  final imported = WorkspaceConfigurationArchiveCodec.remapIds(
+    archive,
+    idMapping: idMapping,
+  );
+  await _insertEntries(database, workspaceId, imported.entries);
 
   return workspaceId;
 }
@@ -36,12 +41,250 @@ Future<String> _importArchiveJson(
   String json,
   String? targetWorkspaceId,
 ) {
-  final archive = _decodeAndRemap(json);
+  final archive = WorkspaceConfigurationArchiveCodec.decode(json);
+  _validateArchiveIdentities(archive);
 
   return database.transaction(
     () => _importArchive(database, archive, targetWorkspaceId),
   );
 }
+
+typedef _ArchiveIdentity = ({WorkspaceConfigurationKind kind, String value});
+
+void _validateArchiveIdentities(WorkspaceConfigurationArchive archive) {
+  final identities = <_ArchiveIdentity>{};
+  for (final entry in archive.entries) {
+    final identity = jsonEncode(switch (entry.kind) {
+      .agent => [_string(entry.data, 'name').trim()],
+      .agentSkill => [
+        _string(entry.data, 'agentId'),
+        _string(entry.data, 'source'),
+        _string(entry.data, 'skillId'),
+      ],
+      .agentToolPermission => [
+        _string(entry.data, 'agentId'),
+        _string(entry.data, 'toolId'),
+      ],
+      .compactionSetting => const ['workspace'],
+      .modelConnection => [
+        _string(entry.data, 'providerId'),
+        _string(entry.data, 'name'),
+        entry.data['url'],
+      ],
+      .modelSelection => [
+        _string(entry.data, 'modelConnectionId'),
+        _string(entry.data, 'modelId'),
+      ],
+      .skill => [_string(entry.data, 'source'), _string(entry.data, 'slug')],
+      .skillResource => [
+        _string(entry.data, 'skillId'),
+        _string(entry.data, 'slug'),
+      ],
+      .skillSetting => [
+        _string(entry.data, 'source'),
+        _string(entry.data, 'skillId'),
+      ],
+      .tool => [_string(entry.data, 'toolId')],
+    });
+    if (!identities.add((kind: entry.kind, value: identity))) {
+      throw const WorkspaceConfigurationArchiveException(
+        'workspace_archive.invalid',
+      );
+    }
+  }
+}
+
+Future<Map<WorkspaceConfigurationArchiveEntryId, String>> _existingEntryIds(
+  AppDatabase database,
+  String workspaceId,
+  WorkspaceConfigurationArchive archive,
+) async {
+  final ids = <WorkspaceConfigurationArchiveEntryId, String>{};
+  void remember(WorkspaceConfigurationEntry entry, String targetId) {
+    ids[(kind: entry.kind, id: entry.id)] = targetId;
+  }
+
+  final agents = await (database.select(
+    database.agents,
+  )..where((row) => row.workspaceId.equals(workspaceId))).get();
+  for (final entry in _entriesOf(archive, .agent)) {
+    final name = _string(entry.data, 'name').trim();
+    final match = agents.where((row) => row.name.trim() == name).firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final skills = await (database.select(
+    database.skills,
+  )..where((row) => row.workspaceId.equals(workspaceId))).get();
+  for (final entry in _entriesOf(archive, .skill)) {
+    final source = _string(entry.data, 'source');
+    final slug = _string(entry.data, 'slug');
+    final match = skills
+        .where((row) => row.source.name == source && row.slug == slug)
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final modelConnections =
+      await (database.select(database.serviceConnections)..where(
+            (row) =>
+                row.workspaceId.equals(workspaceId) &
+                row.kind.equals(ServiceConnectionKindTable.modelProvider.name),
+          ))
+          .get();
+  for (final entry in _entriesOf(archive, .modelConnection)) {
+    final providerId = _string(entry.data, 'providerId');
+    final name = _string(entry.data, 'name');
+    final url = entry.data['url'] as String?;
+    final match = modelConnections
+        .where(
+          (row) =>
+              row.serviceId == providerId &&
+              row.name == name &&
+              WorkspaceConfigurationArchiveCodec.publicUrl(row.url) == url,
+        )
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final tools =
+      await (database.select(database.tools)..where(
+            (row) =>
+                row.workspaceId.equals(workspaceId) &
+                row.workspaceToolsGroupId.isNull(),
+          ))
+          .get();
+  for (final entry in _entriesOf(archive, .tool)) {
+    final toolId = _string(entry.data, 'toolId');
+    final match = tools.where((row) => row.toolId == toolId).firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final matchedAgentIds = ids.entries
+      .where((entry) => entry.key.kind == .agent)
+      .map((entry) => entry.value)
+      .toSet();
+  final matchedSkillIds = ids.entries
+      .where((entry) => entry.key.kind == .skill)
+      .map((entry) => entry.value)
+      .toSet();
+  final matchedConnectionIds = ids.entries
+      .where((entry) => entry.key.kind == .modelConnection)
+      .map((entry) => entry.value)
+      .toSet();
+
+  final agentSkills = matchedAgentIds.isEmpty
+      ? <AgentSkillsTable>[]
+      : await (database.select(
+          database.agentSkills,
+        )..where((row) => row.agentId.isIn(matchedAgentIds))).get();
+  for (final entry in _entriesOf(archive, .agentSkill)) {
+    final agentId =
+        ids[(
+          kind: WorkspaceConfigurationKind.agent,
+          id: _string(entry.data, 'agentId'),
+        )];
+    final source = _string(entry.data, 'source');
+    final sourceSkillId = _string(entry.data, 'skillId');
+    final skillId = source == 'user'
+        ? ids[(kind: WorkspaceConfigurationKind.skill, id: sourceSkillId)]
+        : sourceSkillId;
+    if (agentId == null || skillId == null) continue;
+    final match = agentSkills
+        .where(
+          (row) =>
+              row.agentId == agentId &&
+              (source == 'user'
+                  ? row.workspaceSkillId == skillId
+                  : row.appSkillIdentifier == skillId),
+        )
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final agentTools = matchedAgentIds.isEmpty
+      ? <AgentToolsTable>[]
+      : await (database.select(
+          database.agentTools,
+        )..where((row) => row.agentId.isIn(matchedAgentIds))).get();
+  for (final entry in _entriesOf(archive, .agentToolPermission)) {
+    final agentId =
+        ids[(
+          kind: WorkspaceConfigurationKind.agent,
+          id: _string(entry.data, 'agentId'),
+        )];
+    final toolId =
+        ids[(
+          kind: WorkspaceConfigurationKind.tool,
+          id: _string(entry.data, 'toolId'),
+        )];
+    if (agentId == null || toolId == null) continue;
+    final match = agentTools
+        .where((row) => row.agentId == agentId && row.toolId == toolId)
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final modelSelections = matchedConnectionIds.isEmpty
+      ? <WorkspaceModelSelectionTable>[]
+      : await (database.select(
+              database.workspaceModelSelections,
+            )..where((row) => row.modelConnectionId.isIn(matchedConnectionIds)))
+            .get();
+  for (final entry in _entriesOf(archive, .modelSelection)) {
+    final connectionId =
+        ids[(
+          kind: WorkspaceConfigurationKind.modelConnection,
+          id: _string(entry.data, 'modelConnectionId'),
+        )];
+    if (connectionId == null) continue;
+    final modelId = _string(entry.data, 'modelId');
+    final match = modelSelections
+        .where(
+          (row) =>
+              row.modelConnectionId == connectionId && row.modelId == modelId,
+        )
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  final resources = matchedSkillIds.isEmpty
+      ? <SkillResourcesTable>[]
+      : await (database.select(
+          database.skillResources,
+        )..where((row) => row.skillId.isIn(matchedSkillIds))).get();
+  for (final entry in _entriesOf(archive, .skillResource)) {
+    final skillId =
+        ids[(
+          kind: WorkspaceConfigurationKind.skill,
+          id: _string(entry.data, 'skillId'),
+        )];
+    if (skillId == null) continue;
+    final slug = _string(entry.data, 'slug');
+    final match = resources
+        .where((row) => row.skillId == skillId && row.slug == slug)
+        .firstOrNull;
+    if (match != null) remember(entry, match.id);
+  }
+
+  for (final entry in _entriesOf(
+    archive,
+    .skillSetting,
+  ).where((entry) => entry.data['source'] == 'app')) {
+    final setting = await database.appSkillWorkspaceSettingsDao.getSetting(
+      workspaceId,
+      _string(entry.data, 'skillId'),
+    );
+    if (setting != null) remember(entry, setting.id);
+  }
+
+  return ids;
+}
+
+Iterable<WorkspaceConfigurationEntry> _entriesOf(
+  WorkspaceConfigurationArchive archive,
+  WorkspaceConfigurationKind kind,
+) => archive.entries.where((entry) => entry.kind == kind);
 
 typedef _ImportContext = ({
   AppDatabase database,
@@ -104,6 +347,7 @@ Future<void> _insertDefinitions(_ImportContext context) async {
   await _insertSkills(context);
   await _insertAgents(context);
   await _insertModelConnections(context);
+  await _insertModelSelections(context);
   await _insertTools(context);
 }
 
@@ -143,11 +387,27 @@ Future<void> _insertSkill(
   _SkillNames names,
 ) async {
   final data = entry.data;
+  final existing = await (context.database.select(
+    context.database.skills,
+  )..where((row) => row.id.equals(entry.id))).getSingleOrNull();
+  if (existing != null) {
+    final _ = names.titles.remove(existing.title);
+    final _ = names.slugs.remove(existing.slug);
+  }
   final title = _unique(_string(data, 'title'), names.titles);
   final slug = _unique(_string(data, 'slug'), names.slugs);
-  final _ = await context.database
-      .into(context.database.skills)
-      .insert(_skillCompanion(context.workspaceId, entry, title, slug));
+  final companion = _skillCompanion(context.workspaceId, entry, title, slug);
+  if (existing == null) {
+    final _ = await context.database
+        .into(context.database.skills)
+        .insert(companion);
+  } else {
+    final _ = await (context.database.update(
+      context.database.skills,
+    )..where((row) => row.id.equals(existing.id))).write(companion);
+  }
+  final _ = names.titles.add(title);
+  final _ = names.slugs.add(slug);
 }
 
 SkillsCompanion _skillCompanion(
@@ -189,10 +449,31 @@ _SkillValues _skillValues(Map<String, Object?> data) => (
 
 Future<void> _insertAgents(_ImportContext context) async {
   for (final entry in _entriesOfKind(context, .agent)) {
-    final _ = await context.database
-        .into(context.database.agents)
-        .insert(_agentCompanion(context.workspaceId, entry));
+    final existing = await (context.database.select(
+      context.database.agents,
+    )..where((row) => row.id.equals(entry.id))).getSingleOrNull();
+    if (existing == null) {
+      final _ = await context.database
+          .into(context.database.agents)
+          .insert(_agentCompanion(context.workspaceId, entry));
+      continue;
+    }
+    final _ = await (context.database.update(
+      context.database.agents,
+    )..where((row) => row.id.equals(existing.id))).write(_agentValues(entry));
   }
+}
+
+AgentsCompanion _agentValues(WorkspaceConfigurationEntry entry) {
+  final data = entry.data;
+
+  return AgentsCompanion(
+    name: .new(_string(data, 'name').trim()),
+    description: .new(_string(data, 'description')),
+    content: .new(_string(data, 'content')),
+    isEnabled: .new(_bool(data, 'isEnabled')),
+    visibility: .new(_string(data, 'visibility')),
+  );
 }
 
 AgentsCompanion _agentCompanion(
@@ -214,11 +495,51 @@ AgentsCompanion _agentCompanion(
 
 Future<void> _insertModelConnections(_ImportContext context) async {
   for (final entry in _entriesOfKind(context, .modelConnection)) {
+    final existing = await (context.database.select(
+      context.database.serviceConnections,
+    )..where((row) => row.id.equals(entry.id))).getSingleOrNull();
+    if (existing != null) continue;
     final _ = await context.database.modelConnectionsDao.insertModelConnection(
       _modelConnectionCompanion(context.workspaceId, entry),
     );
   }
 }
+
+Future<void> _insertModelSelections(_ImportContext context) async {
+  for (final entry in _entriesOfKind(context, .modelSelection)) {
+    final connectionId = _string(entry.data, 'modelConnectionId');
+    final modelId = _string(entry.data, 'modelId');
+    final existing =
+        await (context.database.select(
+              context.database.workspaceModelSelections,
+            )..where(
+              (row) =>
+                  row.modelConnectionId.equals(connectionId) &
+                  row.modelId.equals(modelId),
+            ))
+            .getSingleOrNull();
+    if (existing == null) {
+      final _ = await context.database
+          .into(context.database.workspaceModelSelections)
+          .insert(_modelSelectionCompanion(entry));
+      continue;
+    }
+    final _ = await context.database.workspaceModelSelectionsDao
+        .updateToolSamplingPolicy(
+          existing.id,
+          _string(entry.data, 'toolSamplingPolicy'),
+        );
+  }
+}
+
+WorkspaceModelSelectionsCompanion _modelSelectionCompanion(
+  WorkspaceConfigurationEntry entry,
+) => WorkspaceModelSelectionsCompanion.insert(
+  id: .new(entry.id),
+  modelId: _string(entry.data, 'modelId'),
+  modelConnectionId: _string(entry.data, 'modelConnectionId'),
+  toolSamplingPolicy: .new(_string(entry.data, 'toolSamplingPolicy')),
+);
 
 ServiceConnectionsCompanion _modelConnectionCompanion(
   String workspaceId,
@@ -319,9 +640,21 @@ ToolsCompanion _toolSettings(WorkspaceConfigurationEntry entry) {
 
 Future<void> _insertSkillResources(_ImportContext context) async {
   for (final entry in _entriesOfKind(context, .skillResource)) {
-    final _ = await context.database
-        .into(context.database.skillResources)
-        .insert(_skillResourceCompanion(entry));
+    final skillId = _string(entry.data, 'skillId');
+    final existing = await context.database.skillResourcesDao.getResourceBySlug(
+      skillId,
+      _string(entry.data, 'slug'),
+    );
+    if (existing == null) {
+      final _ = await context.database
+          .into(context.database.skillResources)
+          .insert(_skillResourceCompanion(entry));
+      continue;
+    }
+    final _ = await context.database.skillResourcesDao.updateResource(
+      existing.id,
+      _skillResourceValues(entry),
+    );
   }
 }
 
@@ -339,6 +672,16 @@ SkillResourcesCompanion _skillResourceCompanion(
     content: _string(data, 'content'),
   );
 }
+
+SkillResourcesCompanion _skillResourceValues(
+  WorkspaceConfigurationEntry entry,
+) => SkillResourcesCompanion(
+  skillId: .new(_string(entry.data, 'skillId')),
+  title: .new(_string(entry.data, 'title')),
+  slug: .new(_string(entry.data, 'slug')),
+  description: .new(_string(entry.data, 'description')),
+  content: .new(_string(entry.data, 'content')),
+);
 
 Future<void> _insertSkillSettings(_ImportContext context) async {
   for (final entry in _entriesOfKind(context, .skillSetting)) {
@@ -381,10 +724,34 @@ Future<void> _insertAgentLinks(_ImportContext context) async {
 
 Future<void> _insertAgentSkills(_ImportContext context) async {
   for (final entry in _entriesOfKind(context, .agentSkill)) {
+    if (await _findAgentSkill(context, entry) != null) continue;
     final _ = await context.database
         .into(context.database.agentSkills)
         .insert(_agentSkillCompanion(entry));
   }
+}
+
+Future<AgentSkillsTable?> _findAgentSkill(
+  _ImportContext context,
+  WorkspaceConfigurationEntry entry,
+) {
+  final agentId = _string(entry.data, 'agentId');
+  final skillId = _string(entry.data, 'skillId');
+  if (entry.data['source'] == 'user') {
+    return (context.database.select(context.database.agentSkills)..where(
+          (row) =>
+              row.agentId.equals(agentId) &
+              row.workspaceSkillId.equals(skillId),
+        ))
+        .getSingleOrNull();
+  }
+
+  return (context.database.select(context.database.agentSkills)..where(
+        (row) =>
+            row.agentId.equals(agentId) &
+            row.appSkillIdentifier.equals(skillId),
+      ))
+      .getSingleOrNull();
 }
 
 AgentSkillsCompanion _agentSkillCompanion(WorkspaceConfigurationEntry entry) {
@@ -415,9 +782,23 @@ Future<void> _insertAgentToolPermission(
       'workspace_archive.invalid',
     );
   }
-  final _ = await context.database
-      .into(context.database.agentTools)
-      .insert(_agentToolCompanion(entry, toolId));
+  final agentId = _string(entry.data, 'agentId');
+  final existing = await context.database.agentToolsDao.getAgentTool(
+    agentId,
+    toolId,
+  );
+  if (existing == null) {
+    final _ = await context.database
+        .into(context.database.agentTools)
+        .insert(_agentToolCompanion(entry, toolId));
+
+    return;
+  }
+  final _ = await context.database.agentToolsDao.setAgentToolPermission(
+    agentId,
+    toolId,
+    permission: _localPermission(_string(entry.data, 'permissionMode')),
+  );
 }
 
 AgentToolsCompanion _agentToolCompanion(
