@@ -106,6 +106,13 @@ extension on ApplyConversationSkillActionUsecase {
     final credentialFailure = _credentialFailure(skill);
     if (credentialFailure != null) return credentialFailure;
 
+    return await _loadAndFinishAction(request, skill);
+  }
+
+  Future<ConversationSkillActionResult> _loadAndFinishAction(
+    ConversationSkillActionRequest request,
+    AvailableSkill skill,
+  ) async {
     final loadFailure = await _loadActionSkill(request);
     if (loadFailure != null) return loadFailure;
 
