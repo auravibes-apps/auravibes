@@ -20,15 +20,12 @@ void main() {
       final streamTimer = Stopwatch()..start();
       final subscription = streamRepository
           .watchMessagesByConversation(conversationId)
-          .listen(
-            (value) {
-              if (!firstValue.isCompleted && value.isNotEmpty) {
-                streamTimer.stop();
-                firstValue.complete(value);
-              }
-            },
-            onError: firstValue.completeError,
-          );
+          .listen((value) {
+            if (!firstValue.isCompleted && value.isNotEmpty) {
+              streamTimer.stop();
+              firstValue.complete(value);
+            }
+          }, onError: firstValue.completeError);
       addTearDown(subscription.cancel);
       final streamed = await firstValue.future.timeout(
         const Duration(seconds: 30),

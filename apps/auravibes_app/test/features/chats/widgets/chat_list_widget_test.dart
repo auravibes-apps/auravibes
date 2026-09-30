@@ -912,10 +912,7 @@ void main() {
         conversationRepository: archiveConversations,
         messageRepository: .new(database),
         attachmentService: .new(),
-        conversationToolsRepository: .new(
-          database,
-          workspaceTools,
-        ),
+        conversationToolsRepository: .new(database, workspaceTools),
         workspaceToolsRepository: workspaceTools,
         toolsGroupsRepository: .new(database),
       );
