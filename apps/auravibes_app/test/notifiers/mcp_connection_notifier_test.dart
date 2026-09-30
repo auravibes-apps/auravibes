@@ -1214,6 +1214,13 @@ class _FailingMcpManagerService extends McpManagerService {
   Future<McpManagerClient> connectMcp(McpServerToCreate serverInfo) async {
     throw Exception('Connection refused');
   }
+
+  @override
+  Future<McpManagerClient> connectMcpWithAutoTransport(
+    McpConnectionRequest request,
+  ) {
+    throw Exception('Connection refused');
+  }
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
@@ -1234,6 +1241,22 @@ class _SuccessfulMcpManagerService extends McpManagerService {
     connectedServers.add(serverInfo);
 
     return _client;
+  }
+
+  @override
+  Future<McpManagerClient> connectMcpWithAutoTransport(
+    McpConnectionRequest request,
+  ) {
+    final serverInfo = McpServerToCreate(
+      name: request.name,
+      url: request.url,
+      transport: _client.resolvedTransport,
+      authenticationType: request.authenticationType,
+      serviceConnectionId: request.serviceConnectionId,
+      description: request.description,
+    );
+
+    return connectMcp(serverInfo);
   }
 
   @override
@@ -1272,6 +1295,9 @@ class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
 
   @override
   bool get isConnected => connected;
+
+  @override
+  McpTransportType get resolvedTransport => const McpTransportTypeSSE();
 
   @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;

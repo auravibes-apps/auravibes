@@ -88,8 +88,11 @@ void main() {
       throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
     );
     expect(
-      () =>
-          container.read(mcpFormProvider('mirror').notifier).setTransport(.sse),
+      () => cloud.capabilities.require(
+        supported: cloud.capabilities.mcpTransports.contains(
+          WorkspaceMcpTransport.sse,
+        ),
+      ),
       throwsA(isA<UnsupportedWorkspaceCapabilityException>()),
     );
     expect(

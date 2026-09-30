@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-09-24 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-09-29 -->
 
 ## Entrypoint
 
@@ -18,7 +18,7 @@
 
 ## Workspace source of truth
 
-- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.6.0`.
+- Dart SDK: `^3.13.0`; Flutter: `.fvmrc` (`3.47.5`); Melos: `^8.7.0`.
 - Commands and package membership live in root `pubspec.yaml`.
 - Diagnostics and scoped exceptions live in `analysis_options.yaml`.
 - Required CI gates live in `.github/workflows/ci.yml`.
@@ -32,73 +32,56 @@
 | App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
 | App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
 | Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
-| Quick validation        | `fvm dart run melos run validate:quick`                                      |
-| Full validation         | `fvm dart run melos run validate`                                            |
-| CI tests                | `fvm dart run melos run test:ci`                                             |
+| Validation              | Prefix `fvm dart run melos run`: `validate:quick` (quick), `validate` (full), `test:ci` (CI) |
 | Asset/clean scripts      | `fvm dart run melos run clean`, `fvm dart run melos run generate:flavors`, `fvm dart run melos run generate:icons` |
 | DCL metrics check       | `fvm dart run melos run dcl:analyze`                                         |
-| Code generation         | `fvm dart run melos run generate`                                            |
-| Localization generation | `fvm dart run melos run generate:localization`                               |
-| Serverpod generation   | `fvm dart run melos run generate:serverpod`                           |
+| Code generation         | Prefix `fvm dart run melos run`: `generate`, `generate:localization`, `generate:serverpod` |
 
 ## DCL and lint compliance
 
 - `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Read it before changing Dart; do not infer permitted patterns from nearby code.
-- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Formatter runs are allowed; bare host `dart format` does not verify pinned-toolchain output. Before PR/broad refactors, run `fvm dart run melos run validate` and `fvm dart run melos run dcl:analyze`; do not run full-repository checks after every edit.
+- During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Formatter runs are allowed; bare host `dart format` does not verify pinned-toolchain output.
+- Run `dcl:analyze` when changing DCL or architecture boundaries, or when CI reports a relevant failure. Run full `validate` only when explicitly requested or when a multi-package behavior change needs full-workspace coverage beyond focused checks. Never run it solely because a PR is being opened or updated.
 - CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
 
 ## CI failure triage
 
 - `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
 - `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
-- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default (`--skip-pub-get` skips it). Use the workspace bootstrap command above for Melos package links. Commit `.vscode/settings.json` sync.
+- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
 - Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
 - DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
 
 ### Scoped database queries
 
-- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query the dev database scoped by VS Code's `DB_HASH_SOURCE`.
-- The current repo path is the default hash source. Use
-  `--hash-source PATH` for another workspace or `--database-directory PATH`
-  when the platform documents directory needs an override.
-- Results print as JSON lines. A missing scoped database fails without creating
-  a new database file.
+- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query the dev database scoped by VS Code's `DB_HASH_SOURCE`, which defaults to the current repo path. Use `--hash-source PATH` for another workspace.
+- Use `--database-directory PATH` when the platform documents directory needs an override. Results print as JSON lines; a missing scoped database fails without creating a file.
 
 ## Flutter MCP Control
 
-- Use `dev Debug` for manual testing; it preserves the native keyboard.
-- Use the `dev Driver` VS Code launch profile, or run from `apps/auravibes_app`:
-  `fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ --dart-define=ENABLE_FLUTTER_DRIVER=true`.
-- Driver mode enables Flutter text-entry emulation. The native keyboard is
-  intentionally unavailable; enter text through MCP after focusing a field.
-- Control the running app with `mcp__dart_mcp_server__flutter_driver_command`:
-  call `get_health`, then `tap` with a finder, `enter_text` with `text`, and
-  verify with `get_text` or `screenshot`. Set `appUri` when multiple apps are
-  connected.
+- Use `dev Debug` for manual testing with the native keyboard. Use the `dev Driver` VS Code launch profile, or run from `apps/auravibes_app`: `fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ --dart-define=ENABLE_FLUTTER_DRIVER=true`.
+- Driver mode emulates text entry; the native keyboard is unavailable. Through `mcp__dart_mcp_server__flutter_driver_command`, call `get_health`, focus and `tap` a finder, `enter_text`, then verify with `get_text` or `screenshot`. Set `appUri` when multiple apps are connected.
 - Do not use driver mode to verify real iOS keyboard behavior.
 
 ## Verification
 
 - Run the smallest focused check; invoke root scripts via `fvm dart run melos run <script>`. Quiet wrappers buffer child output until exit, print `Command succeeded.` on success, and replay both streams plus exit code on failure; keep tests/watch/start/fix/upgrade/result scripts visible.
-- For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
 - Assign one owner per validation command.
-- Run broad validation once, only after implementation stabilizes and scope requires it.
-- Do not repeat a completed command unless relevant files or configuration changed.
+- Do not rerun completed checks or suites already covered by an aggregate gate unless relevant files or configuration changed.
 - Before a long-running command, announce the exact command and expected duration.
 - In handoffs, include each command, result, duration, and relevant failures.
 - Report decision blockers immediately. Before retrying or replacing delegated work, inspect its current state and preserved output.
 
-| Scope | Required validation |
+| Scope | Local validation |
 | --- | --- |
-| Focused file/bug | Focused test or analyzer |
-| Shared app logic/broad refactor | `validate:quick` |
-| PR update/merge prep | `validate`, dependency, and import gates |
-| CI reproduction/explicit request | `test:ci` |
-| Workflow/config-only | Diff, YAML, and action validation; no Dart suites unless Dart behavior changes |
+| Focused file/bug | Focused test or analyzer; format changed Dart when relevant |
+| Shared app logic/broad refactor | Focused tests and `validate:quick` once after stabilization |
+| CI reproduction/explicit request | Requested CI command, such as `test:ci` |
+| Documentation/skill-only | Relevant documentation checks and diff; no Dart suites |
+| Workflow/config-only | Syntax/action checks for changed files; no unrelated Dart suites |
 
 - When focused validation passes and a wider gate reports only unrelated diagnostics, report those diagnostics; do not escalate to broader local suites.
 - A timeout or background job is incomplete: wait for its exit status; do not duplicate or retry it.
-- Do not rerun a suite already included in `validate`.
 - Distinguish known baseline test failures from failures caused by the change.
 - Before interpreting slow CI scope selection, verify CI head, base, and run attempt.
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
@@ -136,13 +119,13 @@
 - UX clarity: for every user-visible UI edit in the app, shared UI package, or Widgetbook, load `.agents/skills/ux-view-clarity/SKILL.md`; for a standalone audit or simplification of an existing journey, load `.agents/skills/ux-task-audit/SKILL.md`. Load both when the requested work includes both an existing-flow audit and a UI edit. Small edits get the clarity skill's brief check.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
-- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.6.0.
+- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.7.0.
 - Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.
 
 ## PR Gates
 
 - PR titles use Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
-- Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
+- Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes, and import sorting when imports change. GitHub's required checks own repository-wide gates.
 
 ## Agent skills
 

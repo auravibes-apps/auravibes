@@ -457,6 +457,8 @@
       "activity_thinking": "Razonamiento",
       "activity_arguments": "Argumentos",
       "activity_result": "Resultado",
+      "activity_context_truncated": "Respuesta de la herramienta: {originalBytes} bytes. Límite del contexto del modelo: {limitBytes} bytes; se conserva la respuesta completa.",
+      "activity_persisted_truncated": "Respuesta de la herramienta: {originalBytes} bytes. Límite del contexto del modelo: {limitBytes} bytes; la respuesta guardada también se recortó.",
       "activity_open_sub_agent": "Abrir subagente",
       "active_sub_agents_count": {
         "one": "1 subagente en ejecución",
@@ -1097,7 +1099,8 @@
     "test_connection_success": "Conexión verificada",
     "verification_success": "Conexión verificada · {} herramientas encontradas",
     "verification_required": "Verifica la conexión antes de guardar.",
-    "verification_expired": "La verificación expiró. Verifica la conexión de nuevo."
+    "verification_expired": "La verificación expiró. Verifica la conexión de nuevo.",
+    "legacy_sse_unavailable": "El endpoint rechazó HTTP Streamable. Puede requerir SSE heredado, que la aplicación web no admite. Conéctate desde la aplicación nativa o configura el servidor para usar HTTP Streamable."
   },
   "compaction": {
     "settings": {

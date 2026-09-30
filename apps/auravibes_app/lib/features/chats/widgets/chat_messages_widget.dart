@@ -31,6 +31,7 @@ import 'package:auravibes_app/features/chats/widgets/skill_tool_call_display.dar
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -405,13 +406,18 @@ Widget _buildChatTimelineItem({
       childConversations: childConversations,
       workspaceId: workspaceId,
       a2uiRuntime: a2uiRuntime,
+      a2uiReplayPayloadsByMessageId: replayPayloadsByMessageId,
       a2uiReplayPayloads: run.responseMessageId == null
           ? const []
           : replayPayloadsByMessageId[run.responseMessageId] ?? const [],
       canRetry: run.responseMessageId == retryableMessageId,
       onRetryMessage: onRetryMessage,
     ),
-    _MessageTimelineItem(:final source, :final activityRenderedInSession) =>
+    _MessageTimelineItem(
+      :final source,
+      :final activityRenderedInSession,
+      :final showResponseActions,
+    ) =>
       _ChatMessageTimelineItem(
         key: ValueKey(source.message.id),
         source: source,
@@ -423,6 +429,7 @@ Widget _buildChatTimelineItem({
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads:
             replayPayloadsByMessageId[source.message.id] ?? const [],
+        showResponseActions: showResponseActions,
         canRetry: source.message.id == retryableMessageId,
         onRetryMessage: onRetryMessage,
       ),
@@ -472,22 +479,26 @@ class _MessageTimelineItem extends _ChatTimelineItem {
   const _MessageTimelineItem(
     this.source, {
     this.activityRenderedInSession = false,
+    this.showResponseActions = true,
   });
 
   final _ResolvedChatMessage source;
   final bool activityRenderedInSession;
+  final bool showResponseActions;
 }
 
 class _ActivityRun {
   const _ActivityRun(
     this.sources, {
     this.activityContentMessageIds = const {},
+    this.richResponseMessageIds = const {},
     this.pendingToolCallKeys = const {},
     this.responseMessageId,
   });
 
   final List<_ResolvedChatMessage> sources;
   final Set<String> activityContentMessageIds;
+  final Set<String> richResponseMessageIds;
   final Set<String> pendingToolCallKeys;
   final String? responseMessageId;
 
@@ -530,7 +541,10 @@ class _ActivityThinkingEntry extends _ActivityRunEntry {
 }
 
 class _ActivityResponseEntry extends _ActivityRunEntry {
-  const _ActivityResponseEntry();
+  const _ActivityResponseEntry(this.source, {required this.isFinal});
+
+  final _ResolvedChatMessage source;
+  final bool isFinal;
 }
 
 class _ActivityToolGroupEntry extends _ActivityRunEntry {
@@ -561,7 +575,10 @@ List<_ActivityRunEntry> _buildActivityRunEntries(_ActivityRun run) {
     }
 
     if (run.responseMessageId == messageId) {
-      entries.add(const _ActivityResponseEntry());
+      entries.add(_ActivityResponseEntry(source, isFinal: true));
+    } else if (run.richResponseMessageIds.contains(messageId)) {
+      addToolGroup();
+      entries.add(_ActivityResponseEntry(source, isFinal: false));
     } else if (run.activityContentMessageIds.contains(messageId)) {
       final content = source.message.content.trim();
       if (content.isNotEmpty) {
@@ -609,12 +626,14 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
   final items = <_ChatTimelineItem>[];
   final activitySources = <_ResolvedChatMessage>[];
   final activityContentMessageIds = <String>{};
+  final richResponseMessageIds = <String>{};
 
   void addActivityRun({String? responseMessageId}) {
     if (activitySources.isEmpty) return;
     final run = _ActivityRun(
       List.of(activitySources),
       activityContentMessageIds: Set.of(activityContentMessageIds),
+      richResponseMessageIds: Set.of(richResponseMessageIds),
       pendingToolCallKeys: pendingToolCallKeys,
       responseMessageId: responseMessageId,
     );
@@ -623,6 +642,7 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     }
     activitySources.clear();
     activityContentMessageIds.clear();
+    richResponseMessageIds.clear();
   }
 
   for (var index = 0; index < messages.length; index++) {
@@ -652,19 +672,33 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
             (hasVisibleResponse && hasFollowingAssistantActivity));
 
     if (hasActivity) {
-      if (requiresMessageItem) {
+      final awaitsA2uiAction =
+          message.status == MessageStatus.unfinished &&
+          _hasA2uiMessageState(message);
+      final isFinalResponse =
+          message.status == MessageStatus.sent &&
+          hasVisibleResponse &&
+          !hasFollowingAssistantActivity &&
+          !hasToolCalls;
+      if (requiresMessageItem && (awaitsA2uiAction || isFinalResponse)) {
         activitySources.add(source);
         addActivityRun();
         items.add(
-          _MessageTimelineItem(source, activityRenderedInSession: true),
+          _MessageTimelineItem(
+            source,
+            activityRenderedInSession: true,
+            showResponseActions: isFinalResponse && !source.isStreaming,
+          ),
         );
         continue;
       }
-      final isFinalResponse =
-          hasVisibleResponse && !hasFollowingAssistantActivity && !hasToolCalls;
       activitySources.add(source);
       if (hasVisibleResponse && !isFinalResponse) {
-        activityContentMessageIds.add(message.id);
+        if (requiresMessageItem) {
+          richResponseMessageIds.add(message.id);
+        } else {
+          activityContentMessageIds.add(message.id);
+        }
       }
       if (isFinalResponse) {
         addActivityRun(responseMessageId: message.id);
@@ -673,7 +707,14 @@ List<_ChatTimelineItem> _buildChatTimelineItems(
     }
 
     addActivityRun();
-    items.add(_MessageTimelineItem(source));
+    items.add(
+      _MessageTimelineItem(
+        source,
+        showResponseActions:
+            message.isUser ||
+            (!source.isStreaming && message.status == MessageStatus.sent),
+      ),
+    );
   }
   addActivityRun();
 
@@ -684,14 +725,10 @@ bool _hasFollowingAssistantActivity(
   List<_ResolvedChatMessage?> messages,
   int index,
 ) {
-  for (var nextIndex = index + 1; nextIndex < messages.length; nextIndex++) {
-    final next = messages[nextIndex];
-    if (next == null || _isTimelineBoundary(next.message)) return false;
+  if (index + 1 >= messages.length) return false;
+  final next = messages[index + 1];
 
-    if (_hasAssistantActivity(next.message)) return true;
-  }
-
-  return false;
+  return next == null || !_isTimelineBoundary(next.message);
 }
 
 bool _hasAssistantActivity(MessageEntity message) =>
@@ -758,6 +795,7 @@ class const _ChatMessageTimelineItem({
   required final String workspaceId,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
+  final bool showResponseActions = true,
   required final bool canRetry,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
@@ -807,6 +845,7 @@ class const _ChatMessageTimelineItem({
           conversationId: parentConversationId,
           a2uiRuntime: a2uiRuntime,
           a2uiReplayPayloads: a2uiReplayPayloads,
+          showResponseActions: showResponseActions,
           canRetry: canRetry,
           onRetryMessage: onRetryMessage,
         ),
@@ -822,6 +861,7 @@ class const _ChatMessageContent({
   required final String conversationId,
   required final ChatA2uiRuntime? a2uiRuntime,
   required final List<String> a2uiReplayPayloads,
+  final bool showResponseActions = true,
   required final bool canRetry,
   required final Future<void> Function(MessageEntity message)? onRetryMessage,
 }) extends StatelessWidget {
@@ -852,6 +892,7 @@ class const _ChatMessageContent({
         conversationId: conversationId,
         a2uiRuntime: a2uiRuntime,
         a2uiReplayPayloads: a2uiReplayPayloads,
+        showResponseActions: showResponseActions,
         canRetry: canRetry,
         onRetryMessage: onRetryMessage,
       ),
@@ -893,6 +934,7 @@ List<Widget> _messageContentChildren({
   required String conversationId,
   required ChatA2uiRuntime? a2uiRuntime,
   required List<String> a2uiReplayPayloads,
+  required bool showResponseActions,
   required bool canRetry,
   required Future<void> Function(MessageEntity message)? onRetryMessage,
 }) {
@@ -901,8 +943,9 @@ List<Widget> _messageContentChildren({
       _MessageTextContent(
         message: message,
         hasContent: hasContent,
-        hasA2uiResponse: hasA2uiResponse,
         status: status,
+        showMetadata:
+            message.isUser || (showResponseActions && !hasA2uiResponse),
       ),
     if (message.attachments.isNotEmpty) _MessageAttachments(message: message),
     if (!message.isUser && !message.isForkReference && a2uiRuntime != null)
@@ -926,7 +969,8 @@ List<Widget> _messageContentChildren({
           children: selectableChildren,
         ),
       ),
-    if (!hasA2uiResponse &&
+    if (showResponseActions &&
+        !hasA2uiResponse &&
         (_messageCopyText(message, a2uiRuntime) != null ||
             (canRetry && onRetryMessage != null)))
       _MessageActions(
@@ -936,7 +980,7 @@ List<Widget> _messageContentChildren({
         conversationId: conversationId,
         onRetryMessage: canRetry ? onRetryMessage : null,
       ),
-    if (hasA2uiResponse)
+    if (showResponseActions && hasA2uiResponse)
       _MessageFooter(
         key: ValueKey('message_footer_${message.id}'),
         createdAt: message.createdAt,
@@ -1109,8 +1153,8 @@ class const _AttachmentPreview({
 class const _MessageTextContent({
   required final MessageEntity message,
   required final bool hasContent,
-  required final bool hasA2uiResponse,
   required final AuraMessageDeliveryStatus status,
+  required final bool showMetadata,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1127,6 +1171,10 @@ class const _MessageTextContent({
           key: ValueKey(message.id),
           status: status,
           timestamp: message.createdAt,
+          timestampLabel: RelativeTimeFormatter.format(
+            message.createdAt,
+            translate: (key, {args}) => context.tr(key, args: args),
+          ),
         ),
       );
     }
@@ -1140,7 +1188,7 @@ class const _MessageTextContent({
             timestamp: message.createdAt,
             key: ValueKey(message.id),
             status: status,
-            showMetadata: !hasA2uiResponse,
+            showMetadata: showMetadata,
           ),
       ],
     );
@@ -1525,6 +1573,7 @@ class const _AssistantActivityRun({
   required final String workspaceId,
   final ChatA2uiRuntime? a2uiRuntime,
   final List<String> a2uiReplayPayloads = const [],
+  final Map<String, List<String>> a2uiReplayPayloadsByMessageId = const {},
   final bool canRetry = false,
   final Future<void> Function(MessageEntity message)? onRetryMessage,
   super.key,
@@ -1533,7 +1582,7 @@ class const _AssistantActivityRun({
   Widget build(BuildContext context, WidgetRef ref) {
     final activityEntries = _buildActivityRunEntries(run);
     final responseEntryIndex = activityEntries.indexWhere(
-      (entry) => entry is _ActivityResponseEntry,
+      (entry) => entry is _ActivityResponseEntry && entry.isFinal,
     );
     final entriesBeforeResponse = responseEntryIndex < 0
         ? activityEntries
@@ -1543,9 +1592,8 @@ class const _AssistantActivityRun({
         : activityEntries.skip(responseEntryIndex + 1).toList(growable: false);
     final responseSource = responseEntryIndex < 0
         ? null
-        : run.sources.firstWhere(
-            (source) => source.message.id == run.responseMessageId,
-          );
+        : (activityEntries[responseEntryIndex] as _ActivityResponseEntry)
+              .source;
     final toolGroupEntries = [
       for (final entry in activityEntries)
         if (entry is _ActivityToolGroupEntry) entry,
@@ -1740,6 +1788,20 @@ class const _AssistantActivityRun({
           ),
         );
       }
+      if (entry case _ActivityResponseEntry(:final source)) {
+        return _ChatMessageContent(
+          message: source.message,
+          isStreaming: source.isStreaming,
+          workspaceId: workspaceId,
+          conversationId: parentConversationId,
+          a2uiRuntime: a2uiRuntime,
+          a2uiReplayPayloads:
+              a2uiReplayPayloadsByMessageId[source.message.id] ?? const [],
+          showResponseActions: false,
+          canRetry: false,
+          onRetryMessage: null,
+        );
+      }
       final toolContent =
           toolContents[_activityToolGroupId(entry as _ActivityToolGroupEntry)]!;
       return toolContent;
@@ -1759,6 +1821,7 @@ class const _AssistantActivityRun({
             conversationId: parentConversationId,
             a2uiRuntime: a2uiRuntime,
             a2uiReplayPayloads: a2uiReplayPayloads,
+            showResponseActions: !responseSource.isStreaming,
             canRetry: canRetry,
             onRetryMessage: onRetryMessage,
           );
@@ -2391,6 +2454,19 @@ class const _ActivityToolCallDetails({
   Widget build(BuildContext context) {
     final theme = context.auraTheme;
     final colors = context.auraColors;
+    final responseRaw = toolCall.responseRaw;
+    final contextProjection = responseRaw == null
+        ? null
+        : readToolOutputProjectionMetadata(
+            toolCall.responseContextRaw ?? responseRaw,
+          );
+    final persistedProjection = responseRaw == null
+        ? null
+        : readToolOutputProjectionMetadata(responseRaw);
+    final truncationKey = persistedProjection == null
+        ? LocaleKeys.chats_screens_chat_conversation_activity_context_truncated
+        : LocaleKeys
+              .chats_screens_chat_conversation_activity_persisted_truncated;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -2413,6 +2489,21 @@ class const _ActivityToolCallDetails({
                     fontSize: theme.typography.fontSizeXs,
                     fontFamily: theme.typography.monoFontFamily,
                   ),
+                ),
+              ),
+            if (contextProjection != null)
+              Text(
+                truncationKey.tr(
+                  namedArgs: {
+                    'originalBytes': contextProjection.originalBytes.toString(),
+                    'limitBytes': contextProjection.limitBytes.toString(),
+                  },
+                ),
+                key: ValueKey('activity_tool_truncation_${toolCall.id}'),
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontSize: theme.typography.fontSizeXs,
+                  fontFamily: theme.typography.bodyFontFamily,
                 ),
               ),
             if (decodedResponse case final value? when value.isNotEmpty)
@@ -2630,7 +2721,7 @@ class const _ErrorMessageWidget({
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final visibleContent = isProviderError
-        ? content
+        ? LogRedaction.redact(content)
         : content.tr(context: context);
     const iconSize = 16.0;
     const containerBorderRadius = 10.0;

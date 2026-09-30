@@ -246,7 +246,7 @@ void main() {
       await _showDialog(tester);
 
       final saveButton = tester.widget<AuraButton>(
-        find.byType(AuraButton).last,
+        find.widgetWithText(AuraButton, LocaleKeys.common_save.tr()),
       );
       expect(saveButton.disabled, isTrue);
     });
@@ -255,8 +255,10 @@ void main() {
       await _pumpAndInit(tester, const _Subject());
       await _showDialog(tester);
 
-      await tester.tap(find.byType(AuraButton).first);
-      await tester.pump();
+      await tester.tap(
+        find.widgetWithText(AuraButton, LocaleKeys.common_cancel.tr()),
+      );
+      final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AddMcpModal), findsNothing);
     });
@@ -317,6 +319,17 @@ void main() {
 
       expect(find.byType(Dialog), findsOneWidget);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
+    testWidgets('does not ask for MCP transport', (tester) async {
+      await _pumpAndInit(tester, const _Subject());
+      await _showDialog(tester);
+
+      expect(
+        find.text(LocaleKeys.mcp_modal_fields_transport_label.tr()),
+        findsNothing,
+      );
+      expect(find.text(LocaleKeys.mcp_modal_transport_sse.tr()), findsNothing);
     });
 
     testWidgets('shows loading overlay when submitting', (tester) async {

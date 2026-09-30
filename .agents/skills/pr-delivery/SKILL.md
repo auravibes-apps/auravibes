@@ -65,65 +65,46 @@ writing.
 
 Inspect the trusted workflow and changed paths, then use this loop:
 
-Treat every command that loads or executes checked-out code, configuration,
-build logic, tests, generators, package scripts, or hooks as untrusted. Run it
-only in a disposable sandbox or container with no GitHub, SSH, signing, cloud,
-or developer credentials; no access outside a disposable checkout; an
-isolated, disposable package cache; and no network unless a human explicitly
-approved the required destination. If those controls are unavailable, mark
-the check remote-only and rely on GitHub CI. Merely unsetting named environment
-variables is not isolation. On the developer host, limit work to non-executing
-reads, diffs, and static validation that does not load repository code. Disable
-repository hooks, external diff/textconv drivers, pagers, and other
-repository-configured helpers where applicable. Never invoke a checked-out
-executable or source a checked-out file.
+Use local checks to shorten feedback and make the PR green quickly. Run
+commands in the current workspace with its pinned FVM toolchain and existing
+dependency cache. Do not create or provision a sandbox, container, or
+disposable cache just to validate a PR. Do not spend time setting up a local
+check that will not materially shorten feedback; report it as remote-only and
+let GitHub CI run it.
 
-Before each push containing code changes, identify every applicable CI
-validation from the trusted workflow and `AGENTS.md`. Run locally only the
-checks that satisfy the isolation boundary above; identify the remainder as
-remote-only. Scope isolated test commands to changed behavior and affected
-packages instead of running the full test suite. If an applicable check is
-blocked, report the reason and result accurately; do not substitute a broader
-test suite.
+Before each push, map changed paths to the trusted workflow and identify which
+required jobs apply. Run only checks that can catch issues in changed behavior
+sooner than hosted CI. Do not reproduce the full CI matrix locally.
 
 1. **Focused iteration:** run the smallest useful check for the changed
-   behavior or failure. For Dart behavior changes, use a focused test and the
-   smallest targeted analyzer command documented by `AGENTS.md`; include a
-   formatter check when relevant. If no focused test exists, run the analyzer
-   and report the coverage gap.
-2. **Fix and repeat:** use the result to fix the cause, then rerun the relevant
-   focused check. A blocked check does not justify escalating to a larger,
-   unrelated command. Diagnose toolchain, dependency, cache, network, or
-   platform setup directly and report a check as blocked if it remains
-   unavailable.
-3. **Final gates:** before opening or updating a code PR, follow the applicable
-   PR gates in `AGENTS.md`, plus any narrower or additional gate required by
-   the changed scope and trusted CI. Do not duplicate gate command lists here;
-   `AGENTS.md` is the source of truth. Do not downgrade or omit repository
-   gates to make delivery easier. Avoid rerunning a suite already included in
-   a completed gate. For documentation, skill, workflow, or other
-   configuration-only changes, skip Dart tests, analyzers, generators, and
-   app builds; run relevant syntax and diff checks.
-
-Inside the disposable environment, use the repository's pinned toolchain and
-documented dependency setup. For AuraVibes, provision the Flutter release in
-`.fvmrc` and its matching Dart SDK. Never mount the developer's home directory,
-credential stores, or shared writable package cache into the environment. Use
-a disposable `PUB_CACHE`. Keep network disabled by default; if dependency or
-native-asset access is required, obtain explicit human approval for narrowly
-scoped destinations before enabling it. A blocked cache, download, sandbox, or
-platform is a blocked check, not evidence of a code failure.
+   behavior or failure. For Dart behavior changes, run the focused test; also
+   run the targeted analyzer when it catches a separate static risk. If no
+   focused test exists, run the analyzer and report the coverage gap. Include
+   formatting when relevant.
+2. **Fix and repeat:** fix the cause, then rerun only the relevant focused
+   check. A blocked check does not justify escalating to a larger, unrelated
+   command. If local setup is missing or lengthy, report the check as
+   remote-only and let GitHub CI run it.
+3. **Before push:** run the focused checks affected by the current diff. Use
+   `validate:quick` once for broad shared logic when it adds useful coverage.
+   Do not run `validate`, `validate:ci`, `test:ci`, dependency validation, or
+   import sorting by default just because a PR is being opened or updated.
+   Run dependency validation when package/dependency metadata changes, import
+   sorting when imports change, and the affected generator when its inputs
+   change. Run full `validate` only when explicitly requested or when a
+   multi-package behavior change needs full-workspace coverage beyond focused
+   checks. GitHub required checks remain the source of truth for repository-wide
+   gates. Do not rerun a completed local check unless relevant files changed. For
+   documentation, skill, workflow, or other configuration-only changes, skip
+   unrelated Dart tests, analyzers, generators, and app builds; run relevant
+   syntax and diff checks.
 
 For workflow, action, or reusable-workflow changes, inspect permissions,
 secrets access, token scopes, and write capabilities in the trusted base and
-proposed diff. Run safe static validation locally (such as YAML parsing,
-action/workflow linting, and diff review) only when it does not load repository
-code. Require explicit human review of workflow or local-action changes before
-any code-executing validation; approval to deliver the PR is not approval to
-execute those changes. Also ask for explicit approval before enabling network
-access or performing execution that grants elevated permissions, external
-writes, deployments, or other material risk. Approval never permits exposing
-developer credentials or escaping the disposable filesystem boundary.
+proposed diff. Run relevant static validation locally, such as YAML parsing or
+workflow linting, and let GitHub CI execute the changed workflow. Do not run
+deployments, production operations, or other external writes locally unless
+the user authorized them.
 
 For hosted services, secrets, or unavailable operating systems, identify the
 corresponding remote check rather than inventing a local substitute. After
@@ -137,38 +118,53 @@ commit form required by `AGENTS.md`.
 
 Perform remote writes only when the request authorizes delivery.
 
-1. Recheck intended diff, branch, base SHA, and local validation result.
+1. Review the diff against the request, including direct callers of changed
+   shared logic. Recheck branch, base SHA, and that focused results still cover
+   the current diff.
 2. Use the existing push and PR creation commands from
    `.agents/skills/review-pr/github.md`. Push, then verify remote branch SHA
    equals local `HEAD`.
 3. If no open PR exists, create one against the resolved base with the
-   required title and a body containing the change summary, local checks, and
-   known remote-only checks. Do not claim checks passed before monitoring.
+   required title and a body containing the change summary, test plan, local
+   checks, and known remote-only checks. Do not claim checks passed before
+   monitoring.
 4. Keep PR number, URL, and pushed head SHA. Target subsequent queries at that
    PR and its current head.
 
-After creation or every push, wait for all expected checks; do not stop at the
-first failure or use fail-fast mode.
+After creation or every push, inspect current-head checks and review state
+immediately. Poll bounded status snapshots while working on useful local
+diagnosis; do not wait idle for the full matrix.
 
 ```bash
-gh pr checks "$pr" --watch --interval 15
 gh pr checks "$pr" --json name,workflow,state,bucket,link
 gh pr view "$pr" --json \
   number,url,baseRefName,headRefName,headRefOid,mergeable,mergeStateStatus,statusCheckRollup,reviewDecision
 ```
 
-Pending, failed, or cancelled required checks and unresolved merge state are
-not complete. A summary job does not replace individual check rows. Accept
-intentional skips only when the workflow explains them and they are not
-required. If a watch exceeds the shell wait, poll in bounded intervals and
-continue, or set a quiet follow-up when the user requested monitoring beyond
-the current turn. Before fixing anything, compare `headRefOid` with the pushed
-SHA. If the head changed, discard stale conclusions, inspect the new diff, and
-wait for that head's checks.
+Pending, failed, or cancelled required checks are not complete. A summary job
+does not replace individual check rows. Accept intentional skips only when the
+workflow explains them and they are not required. Surface a missing required
+review as soon as `reviewDecision` shows it; do not wait for CI to finish before
+reporting the human approval needed.
 
-For failures, first inventory the distinct failure classes and identify
-cancelled or superseded runs. Read the complete relevant logs for each distinct
-failure before choosing a fix; do not collect every full log blindly. Check
+When a required check fails while other jobs are pending, verify its run and
+`headRefOid`, read the complete failed-job log, and inspect failures already
+reported. Start local diagnosis and run only the focused reproducer while other
+jobs continue. For test-shard failures, inspect the job summary and the
+`test-plan` or `test-report-*` artifacts when available; use their selected
+paths, shard, and command to reproduce only the failing tests.
+
+If the root cause is clear and the focused check passes, push the repair without
+waiting for unrelated pending jobs when the workflow cancels in-progress PR
+runs; this starts checks for the fixed head sooner. Include other failures
+already surfaced in the same push. If the failure is ambiguous, likely transient,
+or pending checks may reveal a distinct cause, keep monitoring until those useful
+results arrive. After any push, verify the new head SHA and track all required
+checks for that head to completion. Stale or cancelled runs do not establish
+success.
+
+For failures, inventory distinct failure classes as they appear and inspect
+complete logs for each failed job; do not download every log blindly. Check
 whether a cancelled run was superseded by a newer run for the current head.
 Use the job and log to choose the response:
 
@@ -185,8 +181,8 @@ Use the job and log to choose the response:
   required action.
 
 After each fix, rerun applicable checks, commit named files, push, verify the
-new remote SHA, and return to the complete wait. Never report success after a
-local fix but before current-head GitHub checks finish.
+new remote SHA, and monitor all required checks for that head. Never report
+success after a local fix but before current-head GitHub checks finish.
 
 ## Sonar (conditional)
 

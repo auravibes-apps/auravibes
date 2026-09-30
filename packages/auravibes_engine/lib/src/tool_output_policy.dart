@@ -28,6 +28,23 @@ final class const AgentToolOutputProjection({
   required final bool fullOutputForContext,
 });
 
+final class const AgentToolOutputProjectionMetadata({
+  required final int originalBytes,
+  required final int limitBytes,
+});
+
+AgentToolOutputProjectionMetadata? readToolOutputProjectionMetadata(
+  String source,
+) {
+  final projection = _readExistingProjection(source);
+  if (projection == null) return null;
+
+  return AgentToolOutputProjectionMetadata(
+    originalBytes: projection.projection.originalBytes,
+    limitBytes: projection.limitBytes,
+  );
+}
+
 AgentToolOutputProjection projectToolOutput(
   String source, {
   AgentToolOutputPolicy policy = const AgentToolOutputPolicy(),

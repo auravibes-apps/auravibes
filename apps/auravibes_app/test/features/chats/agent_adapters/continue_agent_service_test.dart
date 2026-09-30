@@ -1455,6 +1455,85 @@ void main() {
       );
     });
 
+    for (final hasInitialChunk in [false, true]) {
+      for (final hasDetails in [false, true]) {
+        test(
+          'persists safe provider detail when stream fails '
+          '${hasInitialChunk ? 'after a chunk' : 'before a chunk'} '
+          '${hasDetails ? 'with details' : 'with message fallback'}',
+          () async {
+            final inlineError = _unfinishedAssistantMessage.copyWith(
+              id: 'provider-error',
+              messageType: .system,
+              status: .sending,
+            );
+            when(
+              () =>
+                  conversationRepository.getConversationById('conversation-1'),
+            ).thenAnswer((_) async => _conversation);
+            when(
+              () =>
+                  messageRepository.getMessagesByConversation('conversation-1'),
+            ).thenAnswer((_) async => []);
+            when(
+              () => workspaceModelSelectionsRepository
+                  .getWorkspaceModelSelectionById('model-1'),
+            ).thenAnswer((_) async => _model);
+            when(
+              () => loadConversationToolSpecsUsecase.call(
+                conversationId: 'conversation-1',
+                workspaceId: 'workspace-1',
+              ),
+            ).thenAnswer((_) async => const []);
+            when(() => messageRepository.createMessage(any()))
+                .thenAnswer((_) async => inlineError);
+            when(() => messageRepository.patchMessage(any(), any()))
+                .thenAnswer((_) async => inlineError);
+            when(
+              () => chatbotService.sendMessage(
+                _model,
+                any(),
+                options: any(named: 'options'),
+              ),
+            ).thenAnswer((_) async* {
+              if (hasInitialChunk) {
+                yield ChatResult<ChatMessage>(
+                  output: ChatMessage.model('Partial answer'),
+                  finishReason: .stop,
+                  usage: const LanguageModelUsage(),
+                );
+              }
+              throw GenkitException(
+                'Provider rejected request. Bearer bearer-secret',
+                details: hasDetails
+                    ? 'Quota exceeded. Bearer bearer-secret; sk-live-secret'
+                    : null,
+              );
+            });
+
+            await expectLater(
+              usecase.call(conversationId: 'conversation-1'),
+              throwsA(isA<GenkitException>()),
+            );
+
+            final created = verify(
+              () => messageRepository.createMessage(captureAny()),
+            ).captured.cast<MessageToCreate>();
+            expect(
+              created.where((message) => message.messageType == .system),
+              hasLength(1),
+            );
+            expect(
+              created.last.content,
+              hasDetails
+                  ? 'Quota exceeded. Bearer [REDACTED]; [REDACTED]'
+                  : 'Provider rejected request. Bearer [REDACTED]',
+            );
+          },
+        );
+      }
+    }
+
     test('keeps the previous inline error when a retry fails', () async {
       final errorMessage = MessageEntity(
         id: 'system-error-1',
@@ -1522,8 +1601,13 @@ void main() {
         (_) => Stream.error(
           GenkitException(
             'OpenRouter provider request failed.',
-            details:
-                'The provider rejected this request for an unknown reason.',
+            details: jsonEncode({
+              'headers': {
+                'x-api-key': 'fixture-provider-credential',
+                'Authorization': 'Basic fixture-auth-secret',
+              },
+              'reason': 'The provider rejected this request.',
+            }),
           ),
         ),
       );
@@ -1541,7 +1625,13 @@ void main() {
       ).captured.cast<MessageToCreate>();
       expect(created, hasLength(1));
       expect(created.single.conversationId, 'conversation-1');
-      expect(created.single.content, errorMessage.content);
+      expect(
+        created.single.content,
+        jsonEncode({
+          'headers': {'x-api-key': '[REDACTED]', 'Authorization': '[REDACTED]'},
+          'reason': 'The provider rejected this request.',
+        }),
+      );
       expect(created.single.messageType, MessageType.system);
       expect(created.single.isUser, isFalse);
       expect(created.single.status, MessageStatus.sending);

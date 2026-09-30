@@ -21,6 +21,7 @@ import 'package:auravibes_app/features/chats/services/chatbot/chat_result.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
@@ -529,10 +530,24 @@ AgentIterationContext? _contextWithRetryUsers(
 
 String? _providerErrorDetail(Object error) {
   if (error is! GenkitException) return null;
-  final details = error.details?.trim();
-  if (details == null || details.isEmpty) return null;
+  final cause = error.underlyingException;
+  final content = _firstNonEmptyProviderDetail([
+    error.details,
+    if (cause is GenkitException) cause.details,
+    error.message,
+  ]);
+  if (content == null) return null;
 
-  return details;
+  return LogRedaction.redact(content);
+}
+
+String? _firstNonEmptyProviderDetail(Iterable<String?> candidates) {
+  for (final candidate in candidates) {
+    final detail = candidate?.trim();
+    if (detail != null && detail.isNotEmpty) return detail;
+  }
+
+  return null;
 }
 
 String? _providerErrorMetadataJson() => JsonCodec.encode(
