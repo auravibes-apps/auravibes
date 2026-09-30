@@ -105,16 +105,15 @@ Map<String, String> _selectedRevisions(List<ChatMessage> messages) {
 Map<String, String> _stringEntries(Map<Object?, Object?> raw) {
   final entries = <String, String>{};
   for (final entry in raw.entries) {
-    if (_isStringPair(entry.key, entry.value)) {
-      entries[entry.key as String] = entry.value as String;
+    final key = entry.key;
+    final value = entry.value;
+    if (key is String && value is String) {
+      entries[key] = value;
     }
   }
 
   return entries;
 }
-
-bool _isStringPair(Object? key, Object? value) =>
-    key is String && value is String;
 
 bool _hasMissingCredentials(List<AvailableSkill> skills) =>
     skills.any((skill) => skill.credentialReadiness == .missing);
