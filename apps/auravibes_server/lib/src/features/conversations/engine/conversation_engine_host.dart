@@ -1434,6 +1434,14 @@ final class const ServerConversationEngineHost({
     if (selection == null) {
       throw const ConversationEngineConfigurationException('model');
     }
+    final selectionPolicy = await WorkspaceModelSelectionToolSamplingPolicy.db
+        .findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.connectionId.equals(selection.connection.connectionId) &
+              table.modelId.equals(selection.model.modelId),
+        );
     final reasoningOptions = _reasoningOptions(
       selection.model.reasoningOptionsJson,
       selection.model.supportsReasoning,
@@ -1515,17 +1523,20 @@ final class const ServerConversationEngineHost({
     final providerSupportsStrict = profile != null;
     final modelSupportsStrict =
         providerSupportsStrict && selection.model.supportsToolCalls;
+    final toolSamplingPolicy = selectionPolicy != null
+        ? ToolSamplingPolicy.fromJson(selectionPolicy.toolSamplingPolicy)
+        : payloadObject.containsKey('toolSamplingPolicy')
+        ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+        : modelSupportsStrict
+        ? ToolSamplingPolicy.prefer
+        : ToolSamplingPolicy.off;
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
       providerSupportsStrictToolSampling: providerSupportsStrict,
       modelSupportsStrictToolSampling: modelSupportsStrict,
       strictToolSamplingProfile: profile,
-      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
-          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
-          : modelSupportsStrict
-          ? ToolSamplingPolicy.prefer
-          : ToolSamplingPolicy.off,
+      toolSamplingPolicy: toolSamplingPolicy,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(

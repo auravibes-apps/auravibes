@@ -57,6 +57,7 @@ modelConnection:
   - update:
   - delete:
   - listSelections:
+  - updateToolSamplingPolicy:
   - listRecentSelections:
   - recordRecentSelection:
   - testAndSync:

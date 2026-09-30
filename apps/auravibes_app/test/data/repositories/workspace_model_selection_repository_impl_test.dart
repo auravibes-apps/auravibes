@@ -4,6 +4,7 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -86,6 +87,7 @@ void main() {
             updatedAt: now,
             modelId: 'openai',
             modelConnectionId: 'conn-1',
+            toolSamplingPolicy: 'prefer',
           ),
           modelConnection: .new(
             id: 'conn-1',
@@ -131,6 +133,10 @@ void main() {
         expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
         expect(result.firstOrNull?.workspaceModelSelection.modelId, 'openai');
         expect(result.firstOrNull?.workspaceModelSelection.modelName, 'GPT-4');
+        expect(
+          result.firstOrNull?.workspaceModelSelection.toolSamplingPolicy,
+          ToolSamplingPolicy.prefer,
+        );
         expect(
           result.firstOrNull?.workspaceModelSelection.supportsToolCalls,
           false,
@@ -210,6 +216,19 @@ void main() {
         );
 
         expect(result, isNull);
+      });
+
+      test('updates policy for a selection', () async {
+        when(() => mockDao.updateToolSamplingPolicy('sel-1', 'require'))
+            .thenAnswer((_) async => 1);
+
+        await repository.updateToolSamplingPolicy(
+          'sel-1',
+          .require,
+        );
+
+        verify(() => mockDao.updateToolSamplingPolicy('sel-1', 'require'))
+            .called(1);
       });
     });
 

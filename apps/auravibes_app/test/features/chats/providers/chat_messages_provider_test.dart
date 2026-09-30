@@ -653,6 +653,12 @@ class _FakeWorkspaceModelSelectionRepository({
       getWorkspaceModelSelectionById(id);
 
   @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => throw UnimplementedError();
+
+  @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     throw UnimplementedError();

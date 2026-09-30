@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 abstract interface class ModelConnectionStore {
   Future<ModelProviderVerification> verifyModelConnection(
@@ -31,6 +32,10 @@ abstract interface class ModelConnectionStore {
 
 abstract interface class ModelSelectionStore {
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id);
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  );
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
   );

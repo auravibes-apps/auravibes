@@ -48,6 +48,20 @@ void main() {
       tool('compatible', compatibleSchema),
       tool('incompatible', incompatibleSchema),
     ];
+    final off = evaluateCloudToolSampling(
+      codec,
+      tools,
+      policy: ToolSamplingPolicy.off,
+      modelSupportsStrict: true,
+    );
+    expect(
+      off.decisions.map((decision) => decision.outcome),
+      everyElement(ToolSamplingOutcome.ordinary),
+    );
+    expect(
+      (off.definitions!.first['function'] as Map).containsKey('strict'),
+      isFalse,
+    );
     final result = evaluateCloudToolSampling(
       codec,
       tools,

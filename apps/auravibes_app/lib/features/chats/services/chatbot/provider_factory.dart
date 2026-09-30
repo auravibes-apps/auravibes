@@ -37,6 +37,7 @@ typedef _ProviderRequest = ({
   String? sessionId,
   ReasoningConfiguration? reasoningConfiguration,
   _ProviderToolSampling toolSampling,
+  ToolSamplingPolicy toolSamplingPolicy,
 });
 typedef _RuntimeRequest = ({
   String providerId,
@@ -177,6 +178,19 @@ extension _ProviderFactoryCreation on ProviderFactory {
   ) async {
     final connectionUrl = _blankToNull(config.modelConnection.url);
     final toolSampling = _providerToolSampling(config, connectionUrl);
+    final selection = config.workspaceModelSelection;
+    final toolSamplingPolicy =
+        selection.toolSamplingPolicy ??
+        _strictToolSamplingPolicy(toolSampling.strictToolSampling);
+    if (toolSamplingPolicy == ToolSamplingPolicy.require &&
+        !toolSampling.strictToolSampling) {
+      throw ToolSamplingValidationException(
+        reason: toolSampling.profile == null
+            ? ToolSamplingValidationReason.unsupportedProvider
+            : ToolSamplingValidationReason.unsupportedModel,
+        detail: 'Selected provider or model does not support strict sampling.',
+      );
+    }
 
     return (
       config: config,
@@ -187,6 +201,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
       sessionId: sessionId,
       reasoningConfiguration: reasoningConfiguration,
       toolSampling: toolSampling,
+      toolSamplingPolicy: toolSamplingPolicy,
     );
   }
 
@@ -212,7 +227,7 @@ extension _ProviderFactoryCreation on ProviderFactory {
     return (
       officialOpenAI: officialOpenAI,
       strictToolSampling: supportsStrict,
-      profile: supportsStrict ? profile : null,
+      profile: profile,
     );
   }
 
@@ -278,6 +293,7 @@ extension _ProviderFactoryPlugins on ProviderFactory {
         ),
       },
       httpClient: httpClient,
+      defaultToolSamplingPolicy: request.toolSamplingPolicy,
     );
   }
 
@@ -307,14 +323,15 @@ extension _ProviderFactoryPlugins on ProviderFactory {
 
   GenkitPlugin _openAIPlugin(_ProviderRequest request) {
     final profile = request.toolSampling.profile;
-    if (profile == null) {
+    if (profile == null &&
+        request.config.workspaceModelSelection.toolSamplingPolicy == null) {
       return openAI(apiKey: request.apiKey, baseUrl: request.baseUrl);
     }
 
     return _openAICompatPlugin(request, (
       name: 'openai',
       codec: _openAICodec(profile),
-      modelSupportsStrictToolSampling: true,
+      modelSupportsStrictToolSampling: request.toolSampling.strictToolSampling,
       httpClient: httpClient,
     ));
   }
@@ -330,9 +347,7 @@ extension _ProviderFactoryPlugins on ProviderFactory {
     models: [ChatCompletionsModelDefinition(name: request.modelId)],
     httpClient: options.httpClient,
     modelSupportsStrictToolSampling: options.modelSupportsStrictToolSampling,
-    defaultToolSamplingPolicy: _strictToolSamplingPolicy(
-      options.modelSupportsStrictToolSampling,
-    ),
+    defaultToolSamplingPolicy: request.toolSamplingPolicy,
     onToolSamplingDecision: _logToolSamplingDecision,
   );
 }
@@ -501,11 +516,11 @@ ChatCompletionsCodec _openRouterCodec() => const ChatCompletionsCodec(
   customize: _customizeOpenRouter,
 );
 
-ChatCompletionsCodec _openAICodec(StrictToolSamplingProfile profile) =>
+ChatCompletionsCodec _openAICodec(StrictToolSamplingProfile? profile) =>
     ChatCompletionsCodec(
       errorLabel: 'OpenAI',
       customize: _customizeOpenAI,
-      supportsStrictToolSampling: true,
+      supportsStrictToolSampling: profile != null,
       strictToolSamplingProfile: profile,
     );
 

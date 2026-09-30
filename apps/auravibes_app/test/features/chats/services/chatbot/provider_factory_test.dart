@@ -32,6 +32,7 @@ void main() {
       ModelProviderAuthMode authMode = ModelProviderAuthMode.apiKey,
       bool supportsReasoning = false,
       List<ReasoningOption> reasoningOptions = const [],
+      ToolSamplingPolicy? toolSamplingPolicy,
     }) {
       return WorkspaceModelSelectionWithConnectionEntity(
         workspaceModelSelection: .new(
@@ -42,6 +43,7 @@ void main() {
           modelConnectionId: 'mc1',
           supportsReasoning: supportsReasoning,
           reasoningOptions: reasoningOptions,
+          toolSamplingPolicy: toolSamplingPolicy,
         ),
         modelConnection: .new(
           id: 'mc1',
@@ -115,6 +117,123 @@ void main() {
                 as Map<String, dynamic>?;
         expect(function?['strict'], isTrue);
         expect(function?['parameters'], schema);
+      },
+    );
+
+    test('explicit off policy stays off for a verified model', () async {
+      final client = _FakeHttpClient();
+      final policyFactory = ProviderFactory(
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+        httpClient: client,
+      );
+      final config = makeConfig(
+        type: .openai,
+        providerUrl: 'https://api.openai.com/v1',
+        toolSamplingPolicy: .off,
+      );
+      final ai = await policyFactory.createGenkit(config);
+      final tool = ai.defineTool<Map<String, Object?>, Object?>(
+        name: 'search',
+        description: 'Search.',
+        inputSchema: SchemanticType.from<Map<String, Object?>>(
+          jsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+            },
+            'required': ['query'],
+            'additionalProperties': false,
+          },
+          parse: (value) => value as Map<String, Object?>,
+        ),
+        fn: (_, _) async => const ToolResponseResult<Object?>(null),
+      );
+
+      final response = await ai.generate<Object?, Object?>(
+        model: policyFactory.getModelReference(config),
+        prompt: 'Hi',
+        tools: [tool],
+        returnToolRequests: true,
+      );
+
+      expect(response.text, 'ok.');
+      final tools = client.body?['tools'] as List<dynamic>?;
+      final function =
+          (tools?.single as Map<String, dynamic>?)?['function']
+              as Map<String, dynamic>?;
+      expect(function?.containsKey('strict'), isFalse);
+    });
+
+    test(
+      'explicit prefer policy reaches an unprofiled model request',
+      () async {
+        final client = _FakeHttpClient();
+        final policyFactory = ProviderFactory(
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+          httpClient: client,
+        );
+        final config = makeConfig(
+          type: .openai,
+          modelId: 'unknown-model',
+          providerUrl: 'https://api.openai.com/v1',
+          toolSamplingPolicy: .prefer,
+        );
+        final ai = await policyFactory.createGenkit(config);
+        final tool = ai.defineTool<Map<String, Object?>, Object?>(
+          name: 'search',
+          description: 'Search.',
+          inputSchema: SchemanticType.from<Map<String, Object?>>(
+            jsonSchema: const {
+              'type': 'object',
+              'properties': {
+                'query': {'type': 'string'},
+              },
+              'required': ['query'],
+              'additionalProperties': false,
+            },
+            parse: (value) => value as Map<String, Object?>,
+          ),
+          fn: (_, _) async => const ToolResponseResult<Object?>(null),
+        );
+
+        final response = await ai.generate<Object?, Object?>(
+          model: policyFactory.getModelReference(config),
+          prompt: 'Hi',
+          tools: [tool],
+          returnToolRequests: true,
+        );
+
+        expect(client.body, isNotNull);
+        expect(response.text, 'ok.');
+        final tools = client.body?['tools'] as List<dynamic>?;
+        final function =
+            (tools?.single as Map<String, dynamic>?)?['function']
+                as Map<String, dynamic>?;
+        expect(function?.containsKey('strict'), isFalse);
+      },
+    );
+
+    test(
+      'unsupported require policy fails before provider transport',
+      () async {
+        final client = _FakeHttpClient();
+        final policyFactory = ProviderFactory(
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+          httpClient: client,
+        );
+        final config = makeConfig(
+          type: .openai,
+          modelId: 'unknown-model',
+          providerUrl: 'https://api.openai.com/v1',
+          toolSamplingPolicy: .require,
+        );
+
+        await expectLater(
+          policyFactory.createGenkit(config),
+          throwsA(isA<ToolSamplingValidationException>()),
+        );
+
+        expect(client.body, isNull);
       },
     );
 

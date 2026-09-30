@@ -8,6 +8,12 @@ class const _LocalModelSelectionStore(
       _repository.getWorkspaceModelSelectionById(id);
 
   @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => _repository.updateToolSamplingPolicy(selectionId, policy);
+
+  @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
   ) => _repository.watchWorkspaceModelSelections(

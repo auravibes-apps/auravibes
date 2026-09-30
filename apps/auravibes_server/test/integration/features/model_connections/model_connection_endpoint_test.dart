@@ -125,6 +125,54 @@ void main() {
         );
         expect(selections.single.modelId, 'gpt-test');
         expect(selections.single.modelName, 'GPT Test');
+        expect(selections.single.toolSamplingPolicy, isNull);
+
+        for (final policy in ['off', 'prefer', 'require', null]) {
+          await endpoints.modelConnection.updateToolSamplingPolicy(
+            session,
+            UpdateWorkspaceModelSelectionPolicyRequest(
+              workspaceId: workspaceId,
+              requestId: 'policy-${policy ?? 'legacy'}',
+              selectionId: selections.single.id,
+              toolSamplingPolicy: policy,
+            ),
+          );
+          final listedSelections = await endpoints.modelConnection
+              .listSelections(
+                session,
+                ListWorkspaceModelSelectionsRequest(workspaceId: workspaceId),
+              );
+          expect(listedSelections.single.toolSamplingPolicy, policy);
+        }
+
+        final ownerMembership = await WorkspaceMember.db.findFirstRow(
+          databaseSession,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.userId.equals(userId),
+        );
+        expect(ownerMembership, isNotNull);
+        final owner = ownerMembership!;
+        await WorkspaceMember.db.updateRow(
+          databaseSession,
+          owner.copyWith(role: 'member'),
+        );
+        await expectLater(
+          endpoints.modelConnection.updateToolSamplingPolicy(
+            session,
+            UpdateWorkspaceModelSelectionPolicyRequest(
+              workspaceId: workspaceId,
+              requestId: 'policy-non-manager',
+              selectionId: selections.single.id,
+              toolSamplingPolicy: 'off',
+            ),
+          ),
+          throwsA(isA<CloudWorkspaceException>()),
+        );
+        await WorkspaceMember.db.updateRow(
+          databaseSession,
+          owner.copyWith(role: 'owner'),
+        );
 
         expect(
           await endpoints.modelConnection.listRecentSelections(

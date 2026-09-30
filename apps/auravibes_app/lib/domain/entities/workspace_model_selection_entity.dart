@@ -23,6 +23,7 @@ abstract class WorkspaceModelSelectionEntity
     @Default(false) bool supportsReasoning,
     @Default([]) List<ReasoningOption> reasoningOptions,
     @Default(true) bool supportsToolCalls,
+    ToolSamplingPolicy? toolSamplingPolicy,
   }) = _WorkspaceModelSelectionEntity;
 }
 

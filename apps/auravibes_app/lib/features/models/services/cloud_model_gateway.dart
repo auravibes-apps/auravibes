@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 typedef _PutSecret = WorkspaceSecretCall;
@@ -34,6 +35,10 @@ typedef CloudRecentModelSelectionRecorder = Future<void> Function(
   RecordRecentModelSelectionRequest request,
 );
 
+typedef _UpdateToolSamplingPolicy = Future<void> Function(
+  UpdateWorkspaceModelSelectionPolicyRequest request,
+);
+
 class CloudModelGateway {
   new(this._stateGateway)
     : _testAndSync = null,
@@ -43,6 +48,7 @@ class CloudModelGateway {
       _update = null,
       _delete = null,
       _listSelections = null,
+      _updateToolSamplingPolicy = null,
       _listRecentSelections = null,
       _recordRecentSelection = null,
       _listCatalogProviders = null,
@@ -59,6 +65,7 @@ class CloudModelGateway {
     this._update,
     this._delete,
     this._listSelections,
+    this._updateToolSamplingPolicy,
     this._listRecentSelections,
     this._recordRecentSelection,
     this._listCatalogProviders,
@@ -87,6 +94,7 @@ class CloudModelGateway {
     ListWorkspaceModelSelectionsRequest request,
   )?
   _listSelections;
+  final _UpdateToolSamplingPolicy? _updateToolSamplingPolicy;
   final CloudRecentModelSelectionsLoader? _listRecentSelections;
   final CloudRecentModelSelectionRecorder? _recordRecentSelection;
   final Future<List<ApiModelProvider>> Function()? _listCatalogProviders;
@@ -270,6 +278,25 @@ extension CloudModelGatewaySelections on CloudModelGateway {
       () =>
           _listSelections?.call(request) ??
           _client.modelConnection.listSelections(request),
+    );
+  }
+
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) {
+    final request = UpdateWorkspaceModelSelectionPolicyRequest(
+      workspaceId: _workspaceId,
+      requestId: const Uuid().v4(),
+      selectionId: selectionId,
+      toolSamplingPolicy: policy?.name,
+    );
+
+    return CloudAppErrors.guardCall(
+      .model,
+      () =>
+          _updateToolSamplingPolicy?.call(request) ??
+          _client.modelConnection.updateToolSamplingPolicy(request),
     );
   }
 

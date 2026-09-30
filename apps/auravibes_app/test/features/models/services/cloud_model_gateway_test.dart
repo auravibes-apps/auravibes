@@ -57,6 +57,27 @@ void main() {
 
     expect(recorded, 'selection');
   });
+
+  test(
+    'updates a virtual selection tool sampling policy through cloud',
+    () async {
+      UpdateWorkspaceModelSelectionPolicyRequest? saved;
+      final gateway = CloudModelGateway.forTesting(
+        stateGateway: _stateGateway(),
+        updateToolSamplingPolicy: (request) {
+          saved = request;
+
+          return Future<void>.value();
+        },
+      );
+
+      await gateway.updateToolSamplingPolicy('selection-id', .require);
+
+      expect(saved?.workspaceId, 1);
+      expect(saved?.selectionId, 'selection-id');
+      expect(saved?.toolSamplingPolicy, 'require');
+    },
+  );
 }
 
 CloudWorkspaceStateGateway _stateGateway() =>

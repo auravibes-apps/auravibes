@@ -1659,6 +1659,17 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
           'REFERENCES service_connections (id) ON DELETE CASCADE',
         ),
       );
+  static const VerificationMeta _toolSamplingPolicyMeta =
+      const VerificationMeta('toolSamplingPolicy');
+  @override
+  late final GeneratedColumn<String> toolSamplingPolicy =
+      GeneratedColumn<String>(
+        'tool_sampling_policy',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1666,6 +1677,7 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
     updatedAt,
     modelId,
     modelConnectionId,
+    toolSamplingPolicy,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1713,6 +1725,15 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
     } else if (isInserting) {
       context.missing(_modelConnectionIdMeta);
     }
+    if (data.containsKey('tool_sampling_policy')) {
+      context.handle(
+        _toolSamplingPolicyMeta,
+        toolSamplingPolicy.isAcceptableOrUnknown(
+          data['tool_sampling_policy']!,
+          _toolSamplingPolicyMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1745,6 +1766,10 @@ class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
         DriftSqlType.string,
         data['${effectivePrefix}model_connection_id'],
       )!,
+      toolSamplingPolicy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_sampling_policy'],
+      ),
     );
   }
 
@@ -1768,12 +1793,14 @@ class WorkspaceModelSelectionTable extends DataClass
   /// Model unique identifier.
   final String modelId;
   final String modelConnectionId;
+  final String? toolSamplingPolicy;
   const WorkspaceModelSelectionTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
     required this.modelId,
     required this.modelConnectionId,
+    this.toolSamplingPolicy,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1783,6 +1810,9 @@ class WorkspaceModelSelectionTable extends DataClass
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['model_id'] = Variable<String>(modelId);
     map['model_connection_id'] = Variable<String>(modelConnectionId);
+    if (!nullToAbsent || toolSamplingPolicy != null) {
+      map['tool_sampling_policy'] = Variable<String>(toolSamplingPolicy);
+    }
     return map;
   }
 
@@ -1793,6 +1823,9 @@ class WorkspaceModelSelectionTable extends DataClass
       updatedAt: Value(updatedAt),
       modelId: Value(modelId),
       modelConnectionId: Value(modelConnectionId),
+      toolSamplingPolicy: toolSamplingPolicy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolSamplingPolicy),
     );
   }
 
@@ -1807,6 +1840,9 @@ class WorkspaceModelSelectionTable extends DataClass
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       modelId: serializer.fromJson<String>(json['modelId']),
       modelConnectionId: serializer.fromJson<String>(json['modelConnectionId']),
+      toolSamplingPolicy: serializer.fromJson<String?>(
+        json['toolSamplingPolicy'],
+      ),
     );
   }
   @override
@@ -1818,6 +1854,7 @@ class WorkspaceModelSelectionTable extends DataClass
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'modelId': serializer.toJson<String>(modelId),
       'modelConnectionId': serializer.toJson<String>(modelConnectionId),
+      'toolSamplingPolicy': serializer.toJson<String?>(toolSamplingPolicy),
     };
   }
 
@@ -1827,12 +1864,16 @@ class WorkspaceModelSelectionTable extends DataClass
     DateTime? updatedAt,
     String? modelId,
     String? modelConnectionId,
+    Value<String?> toolSamplingPolicy = const Value.absent(),
   }) => WorkspaceModelSelectionTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     modelId: modelId ?? this.modelId,
     modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+    toolSamplingPolicy: toolSamplingPolicy.present
+        ? toolSamplingPolicy.value
+        : this.toolSamplingPolicy,
   );
   WorkspaceModelSelectionTable copyWithCompanion(
     WorkspaceModelSelectionsCompanion data,
@@ -1845,6 +1886,9 @@ class WorkspaceModelSelectionTable extends DataClass
       modelConnectionId: data.modelConnectionId.present
           ? data.modelConnectionId.value
           : this.modelConnectionId,
+      toolSamplingPolicy: data.toolSamplingPolicy.present
+          ? data.toolSamplingPolicy.value
+          : this.toolSamplingPolicy,
     );
   }
 
@@ -1855,14 +1899,21 @@ class WorkspaceModelSelectionTable extends DataClass
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('modelId: $modelId, ')
-          ..write('modelConnectionId: $modelConnectionId')
+          ..write('modelConnectionId: $modelConnectionId, ')
+          ..write('toolSamplingPolicy: $toolSamplingPolicy')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, modelId, modelConnectionId);
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    modelId,
+    modelConnectionId,
+    toolSamplingPolicy,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1871,7 +1922,8 @@ class WorkspaceModelSelectionTable extends DataClass
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.modelId == this.modelId &&
-          other.modelConnectionId == this.modelConnectionId);
+          other.modelConnectionId == this.modelConnectionId &&
+          other.toolSamplingPolicy == this.toolSamplingPolicy);
 }
 
 class WorkspaceModelSelectionsCompanion
@@ -1881,6 +1933,7 @@ class WorkspaceModelSelectionsCompanion
   final Value<DateTime> updatedAt;
   final Value<String> modelId;
   final Value<String> modelConnectionId;
+  final Value<String?> toolSamplingPolicy;
   final Value<int> rowid;
   const WorkspaceModelSelectionsCompanion({
     this.id = const Value.absent(),
@@ -1888,6 +1941,7 @@ class WorkspaceModelSelectionsCompanion
     this.updatedAt = const Value.absent(),
     this.modelId = const Value.absent(),
     this.modelConnectionId = const Value.absent(),
+    this.toolSamplingPolicy = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceModelSelectionsCompanion.insert({
@@ -1896,6 +1950,7 @@ class WorkspaceModelSelectionsCompanion
     this.updatedAt = const Value.absent(),
     required String modelId,
     required String modelConnectionId,
+    this.toolSamplingPolicy = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : modelId = Value(modelId),
        modelConnectionId = Value(modelConnectionId);
@@ -1905,6 +1960,7 @@ class WorkspaceModelSelectionsCompanion
     Expression<DateTime>? updatedAt,
     Expression<String>? modelId,
     Expression<String>? modelConnectionId,
+    Expression<String>? toolSamplingPolicy,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1913,6 +1969,8 @@ class WorkspaceModelSelectionsCompanion
       if (updatedAt != null) 'updated_at': updatedAt,
       if (modelId != null) 'model_id': modelId,
       if (modelConnectionId != null) 'model_connection_id': modelConnectionId,
+      if (toolSamplingPolicy != null)
+        'tool_sampling_policy': toolSamplingPolicy,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1923,6 +1981,7 @@ class WorkspaceModelSelectionsCompanion
     Value<DateTime>? updatedAt,
     Value<String>? modelId,
     Value<String>? modelConnectionId,
+    Value<String?>? toolSamplingPolicy,
     Value<int>? rowid,
   }) {
     return WorkspaceModelSelectionsCompanion(
@@ -1931,6 +1990,7 @@ class WorkspaceModelSelectionsCompanion
       updatedAt: updatedAt ?? this.updatedAt,
       modelId: modelId ?? this.modelId,
       modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+      toolSamplingPolicy: toolSamplingPolicy ?? this.toolSamplingPolicy,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1953,6 +2013,9 @@ class WorkspaceModelSelectionsCompanion
     if (modelConnectionId.present) {
       map['model_connection_id'] = Variable<String>(modelConnectionId.value);
     }
+    if (toolSamplingPolicy.present) {
+      map['tool_sampling_policy'] = Variable<String>(toolSamplingPolicy.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1967,6 +2030,7 @@ class WorkspaceModelSelectionsCompanion
           ..write('updatedAt: $updatedAt, ')
           ..write('modelId: $modelId, ')
           ..write('modelConnectionId: $modelConnectionId, ')
+          ..write('toolSamplingPolicy: $toolSamplingPolicy, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -16450,6 +16514,7 @@ typedef $$WorkspaceModelSelectionsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       required String modelId,
       required String modelConnectionId,
+      Value<String?> toolSamplingPolicy,
       Value<int> rowid,
     });
 typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
@@ -16459,6 +16524,7 @@ typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<String> modelId,
       Value<String> modelConnectionId,
+      Value<String?> toolSamplingPolicy,
       Value<int> rowid,
     });
 
@@ -16543,6 +16609,11 @@ class $$WorkspaceModelSelectionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ServiceConnectionsTableFilterComposer get modelConnectionId {
     final $$ServiceConnectionsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -16621,6 +16692,11 @@ class $$WorkspaceModelSelectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ServiceConnectionsTableOrderingComposer get modelConnectionId {
     final $$ServiceConnectionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -16665,6 +16741,11 @@ class $$WorkspaceModelSelectionsTableAnnotationComposer
 
   GeneratedColumn<String> get modelId =>
       $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  GeneratedColumn<String> get toolSamplingPolicy => $composableBuilder(
+    column: $table.toolSamplingPolicy,
+    builder: (column) => column,
+  );
 
   $$ServiceConnectionsTableAnnotationComposer get modelConnectionId {
     final $$ServiceConnectionsTableAnnotationComposer composer =
@@ -16766,6 +16847,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> modelId = const Value.absent(),
                 Value<String> modelConnectionId = const Value.absent(),
+                Value<String?> toolSamplingPolicy = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceModelSelectionsCompanion(
                 id: id,
@@ -16773,6 +16855,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 updatedAt: updatedAt,
                 modelId: modelId,
                 modelConnectionId: modelConnectionId,
+                toolSamplingPolicy: toolSamplingPolicy,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -16782,6 +16865,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String modelId,
                 required String modelConnectionId,
+                Value<String?> toolSamplingPolicy = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspaceModelSelectionsCompanion.insert(
                 id: id,
@@ -16789,6 +16873,7 @@ class $$WorkspaceModelSelectionsTableTableManager
                 updatedAt: updatedAt,
                 modelId: modelId,
                 modelConnectionId: modelConnectionId,
+                toolSamplingPolicy: toolSamplingPolicy,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

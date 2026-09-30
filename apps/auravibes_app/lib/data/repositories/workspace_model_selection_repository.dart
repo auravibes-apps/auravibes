@@ -135,6 +135,18 @@ class WorkspaceModelSelectionRepository(final AppDatabase _database)
       getWorkspaceModelSelectionById(id);
 
   @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) async {
+    final updated = await _database.workspaceModelSelectionsDao
+        .updateToolSamplingPolicy(selectionId, policy?.name);
+    if (updated == 0) {
+      throw StateError('Workspace model selection not found: $selectionId');
+    }
+  }
+
+  @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
     String workspaceId,
   ) => watchWorkspaceModelSelections(.new(workspaces: [workspaceId]));
@@ -199,6 +211,9 @@ extension on WorkspaceModelSelectionRepository {
       createdAt: withProvider.model.createdAt,
       updatedAt: withProvider.model.updatedAt,
       modelConnectionId: withProvider.model.modelConnectionId,
+      toolSamplingPolicy: _decodeToolSamplingPolicy(
+        withProvider.model.toolSamplingPolicy,
+      ),
     );
 
     return _withModelCapabilities(selection, apiModel);
@@ -257,6 +272,9 @@ extension on WorkspaceModelSelectionRepository {
     ),
   );
 }
+
+ToolSamplingPolicy? _decodeToolSamplingPolicy(String? policy) =>
+    policy == null ? null : ToolSamplingPolicy.fromJson(policy);
 
 List<ReasoningOption> _decodeReasoningOptions(
   String? value,

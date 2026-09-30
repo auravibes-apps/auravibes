@@ -151,7 +151,9 @@ class AppDatabase extends _$AppDatabase {
       _mcpOutputSchemaVersion + 1;
   static const int _compactionCheckpointSchemaVersion =
       _compactionBudgetsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _compactionCheckpointSchemaVersion;
+  static const int _toolSamplingPolicySchemaVersion =
+      _compactionCheckpointSchemaVersion + 1;
+  static const int _currentSchemaVersion = _toolSamplingPolicySchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -206,6 +208,7 @@ extension on AppDatabase {
     await _upgradeAgentCatalogSchema(from);
     await _upgradeMcpOutputSchema(m, from);
     await _runConversationUpgrades(m, from);
+    await _upgradeToolSamplingPolicySchema(m, from);
   }
 
   Future<void> _upgradeMcpOutputSchema(Migrator m, int from) async {
@@ -389,6 +392,21 @@ extension on AppDatabase {
     await m.addColumn(
       conversations,
       conversations.activeCompactionCheckpointId,
+    );
+  }
+
+  Future<void> _upgradeToolSamplingPolicySchema(Migrator m, int from) async {
+    if (from >= AppDatabase._toolSamplingPolicySchemaVersion ||
+        !await _tableExists('workspace_model_selections') ||
+        await _columnExists(
+          'workspace_model_selections',
+          'tool_sampling_policy',
+        )) {
+      return;
+    }
+    await m.addColumn(
+      workspaceModelSelections,
+      workspaceModelSelections.toolSamplingPolicy,
     );
   }
 

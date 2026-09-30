@@ -6,10 +6,48 @@ import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart'
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('maps cloud selection tool sampling policy', () async {
+    final now = DateTime.utc(2026);
+    final gateway = CloudModelGateway.forTesting(
+      stateGateway: _stateGateway(
+        readState: (_) async => ReadWorkspaceStateResponse(
+          pages: [],
+          currentSequence: 1,
+          events: [],
+          requiresSnapshot: false,
+        ),
+      ),
+      listSelections: (_) async => [
+        WorkspaceModelSelectionView(
+          id: 'selection-id',
+          connectionId: 'connection',
+          connectionName: 'OpenAI',
+          connectionHasSecret: true,
+          providerId: 'openai',
+          modelId: 'gpt-4o',
+          modelName: 'GPT-4o',
+          revision: 1,
+          createdAt: now,
+          updatedAt: now,
+          toolSamplingPolicy: 'prefer',
+        ),
+      ],
+    );
+    final store = CloudModelStore('workspace', .new(gateway));
+
+    final selections = await store.watch('workspace').first;
+
+    expect(
+      selections.single.workspaceModelSelection.toolSamplingPolicy,
+      ToolSamplingPolicy.prefer,
+    );
+  });
+
   test(
     'does not save a cloud connection when its provider test fails',
     () async {

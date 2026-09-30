@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 19);
+      expect(fixture.database.schemaVersion, 20);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -82,6 +82,40 @@ void main() {
       final _ = await fixture.database.customSelect('SELECT 1').getSingle();
       expect(strategy, isNotNull);
     });
+
+    test(
+      'migration from schema 19 adds nullable tool sampling policy',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 19
+          ..execute('''
+          CREATE TABLE workspace_model_selections (
+            id TEXT PRIMARY KEY NOT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            model_id TEXT NOT NULL,
+            model_connection_id TEXT NOT NULL
+          )
+        ''')
+          ..execute('''
+          INSERT INTO workspace_model_selections
+            (id, created_at, updated_at, model_id, model_connection_id)
+          VALUES ('selection-1', 1, 1, 'gpt-4o', 'connection-1')
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final selection = await fixture.database
+            .customSelect(
+              'SELECT tool_sampling_policy FROM workspace_model_selections '
+              'WHERE id = ?',
+              variables: [const Variable<String>('selection-1')],
+            )
+            .getSingle();
+
+        expect(selection.read<String?>('tool_sampling_policy'), isNull);
+      },
+    );
 
     test(
       'migration adds MCP output schema without changing existing tools',
