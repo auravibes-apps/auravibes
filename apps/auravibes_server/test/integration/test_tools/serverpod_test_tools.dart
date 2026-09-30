@@ -95,6 +95,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/upd
     as _i8uhzhf3;
 import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
     as _iwnddrxr;
+import 'package:auravibes_server/src/generated/features/mcp_catalog/models/mcp_catalog_listing.dart'
+    as _ii9o7wlj;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
     as _ij06ag3u;
 import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_result.dart'
@@ -378,6 +380,8 @@ class TestEndpoints {
 
   late final _ConversationEndpoint conversation;
 
+  late final _McpCatalogEndpoint mcpCatalog;
+
   late final _McpServerEndpoint mcpServer;
 
   late final _ModelConnectionEndpoint modelConnection;
@@ -423,6 +427,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     conversation = _ConversationEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    mcpCatalog = _McpCatalogEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1702,6 +1710,45 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ih1nup0c.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _McpCatalogEndpoint {
+  _McpCatalogEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<List<_ii9o7wlj.McpCatalogListing>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpCatalog',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpCatalog',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_ii9o7wlj.McpCatalogListing>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

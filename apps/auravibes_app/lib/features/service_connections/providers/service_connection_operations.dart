@@ -15,4 +15,10 @@ class const ServiceConnectionOperations({
     GenericServiceConnectionUpdate update,
   )
   updateGeneric,
+  final Future<McpServerForEdit?> Function(String id)? getMcpForEdit,
+  final Future<void> Function(
+    McpServerForEdit server,
+    McpServerSettingsUpdate update,
+  )?
+  updateMcp,
 });

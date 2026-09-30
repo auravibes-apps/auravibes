@@ -2,8 +2,11 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -72,6 +75,38 @@ void main() {
     }
 
     group('addMcpServerWithTools', () {
+      test('stores copied catalog metadata for the active workspace', () async {
+        final serverRow = createServerRow(workspaceId: 'workspace-a')
+            .copyWith(catalogSnapshotJson: const Value('{"name":"Original"}'));
+        final groupRow = createGroupRow(workspaceId: 'workspace-a');
+        when(() => fixture.mockMcpServersDao.insertMcpServer(any()))
+            .thenAnswer((_) async => serverRow);
+        when(() => fixture.mockToolsGroupsDao.insertToolsGroup(any()))
+            .thenAnswer((_) async => groupRow);
+
+        const serverToCreate = McpServerToCreate(
+          name: 'Original',
+          url: 'http://localhost:3000',
+          transport: McpTransportTypeSSE(),
+          authenticationType: .none(),
+          catalogSnapshotJson: '{"name":"Original"}',
+        );
+        final result = await fixture.repository.addMcpServerWithTools(
+          workspaceId: 'workspace-a',
+          serverToCreate: serverToCreate,
+          tools: [],
+        );
+
+        final inserted =
+            verify(
+                  () => fixture.mockMcpServersDao.insertMcpServer(captureAny()),
+                ).captured.single
+                as McpServersCompanion;
+        expect(inserted.workspaceId.value, 'workspace-a');
+        expect(inserted.catalogSnapshotJson.value, '{"name":"Original"}');
+        expect(result.catalogSnapshotJson, '{"name":"Original"}');
+      });
+
       test('creates server with tools in transaction', () async {
         final serverRow = createServerRow();
         final groupRow = createGroupRow(mcpServerId: 'mcp-1');
@@ -521,6 +556,188 @@ void main() {
         expect(result, isNull);
       });
     });
+
+    group('updateMcpServerSettings', () {
+      Future<({McpServersTable server, ToolsGroupsTable group})> seedServer({
+        bool oauth = false,
+      }) async {
+        final db = fixture.database;
+        final _ = await db
+            .into(db.workspaces)
+            .insert(
+              WorkspacesCompanion.insert(
+                id: const Value('ws-1'),
+                name: 'Workspace',
+                type: .local,
+              ),
+            );
+        final connection = oauth
+            ? await db
+                  .into(db.serviceConnections)
+                  .insertReturning(
+                    ServiceConnectionsCompanion.insert(
+                      name: 'OAuth MCP',
+                      serviceId: 'mcp-1',
+                      kind: .mcpServer,
+                      authenticationType: .oauth2,
+                      encryptedAuthValue: const .new('encrypted-oauth'),
+                      workspaceId: 'ws-1',
+                    ),
+                  )
+            : null;
+        if (connection != null) {
+          when(
+            () => fixture.mockEncryptionService.decrypt('encrypted-oauth'),
+          ).thenAnswer((_) async => '{"type":"oauth2","access_token":"token"}');
+        }
+        final summary = McpConnectionTestSummary(
+          status: 'success',
+          testedAt: now,
+          transport: const McpTransportTypeSSE(),
+          toolCount: 2,
+          durationMilliseconds: 150,
+        );
+        final _ = await db
+            .into(db.mcpServers)
+            .insert(
+              McpServersCompanion.insert(
+                id: const Value('mcp-1'),
+                workspaceId: 'ws-1',
+                name: 'Test Server',
+                url: 'https://old.example.com/mcp',
+                transport: const McpTransportTypeSSE(),
+                serviceConnectionId: .new(connection?.id),
+                testSummaryJson: .new(summary.toJson()),
+              ),
+            );
+        final _ = await db
+            .into(db.toolsGroups)
+            .insert(
+              ToolsGroupsCompanion.insert(
+                id: const Value('group-1'),
+                workspaceId: 'ws-1',
+                mcpServerId: const Value('mcp-1'),
+                name: 'Test Group',
+                permissions: .granted,
+              ),
+            );
+        final _ = await db
+            .into(db.tools)
+            .insert(
+              ToolsCompanion.insert(
+                id: const Value('tool-1'),
+                workspaceId: 'ws-1',
+                workspaceToolsGroupId: const Value('group-1'),
+                toolId: 'lookup',
+                isEnabled: const .new(true),
+                permissions: const .new(PermissionAccess.granted),
+              ),
+            );
+        final server = await (db.select(
+          db.mcpServers,
+        )..where((row) => row.id.equals('mcp-1'))).getSingle();
+        final group = await (db.select(
+          db.toolsGroups,
+        )..where((row) => row.id.equals('group-1'))).getSingle();
+        when(() => fixture.mockMcpServersDao.getMcpServerById('mcp-1'))
+            .thenAnswer((_) async => server);
+        when(
+          () => fixture.mockToolsGroupsDao.getToolsGroupByMcpServerId('mcp-1'),
+        ).thenAnswer((_) async => group);
+
+        return (server: server, group: group);
+      }
+
+      test(
+        'clears summary and resets permissions when endpoint changes',
+        () async {
+          final server = (await seedServer()).server;
+
+          await fixture.repository.updateMcpServerSettings(
+            .new(
+              serverId: server.id,
+              name: server.name,
+              url: 'https://new.example.com/mcp',
+              transport: server.transport,
+              authMode: .none,
+              secretChange: .preserve,
+              secret: null,
+            ),
+          );
+
+          final updatedServer = await (fixture.database.select(
+            fixture.database.mcpServers,
+          )..where((row) => row.id.equals(server.id))).getSingle();
+          final updatedGroup = await (fixture.database.select(
+            fixture.database.toolsGroups,
+          )..where((row) => row.id.equals('group-1'))).getSingle();
+          final updatedTool = await (fixture.database.select(
+            fixture.database.tools,
+          )..where((row) => row.id.equals('tool-1'))).getSingle();
+
+          expect(updatedServer.url, 'https://new.example.com/mcp');
+          expect(updatedServer.testSummaryJson, isNull);
+          expect(updatedGroup.permissions, PermissionAccess.ask);
+          expect(updatedTool.permissions, PermissionAccess.ask);
+        },
+      );
+
+      test('preserves summary and permissions on a name-only edit', () async {
+        final server = (await seedServer()).server;
+        final savedSummary = server.testSummaryJson;
+
+        await fixture.repository.updateMcpServerSettings(
+          .new(
+            serverId: server.id,
+            name: 'Renamed Server',
+            url: server.url,
+            transport: server.transport,
+            authMode: .none,
+            secretChange: .preserve,
+            secret: null,
+          ),
+        );
+
+        final updatedServer = await (fixture.database.select(
+          fixture.database.mcpServers,
+        )..where((row) => row.id.equals(server.id))).getSingle();
+        final updatedGroup = await (fixture.database.select(
+          fixture.database.toolsGroups,
+        )..where((row) => row.id.equals('group-1'))).getSingle();
+        final updatedTool = await (fixture.database.select(
+          fixture.database.tools,
+        )..where((row) => row.id.equals('tool-1'))).getSingle();
+
+        expect(updatedServer.name, 'Renamed Server');
+        expect(updatedServer.testSummaryJson, savedSummary);
+        expect(updatedGroup.permissions, PermissionAccess.granted);
+        expect(updatedTool.permissions, PermissionAccess.granted);
+      });
+
+      test('marks OAuth for reauth when transport changes', () async {
+        final server = (await seedServer(oauth: true)).server;
+
+        await fixture.repository.updateMcpServerSettings(
+          .new(
+            serverId: server.id,
+            name: server.name,
+            url: server.url,
+            transport: const McpTransportTypeStreamableHttp(),
+            authMode: .oauth,
+            secretChange: .preserve,
+            secret: null,
+          ),
+        );
+
+        final connectionId = server.serviceConnectionId;
+        if (connectionId == null) fail('Expected OAuth connection.');
+        final connection = await (fixture.database.select(
+          fixture.database.serviceConnections,
+        )..where((row) => row.id.equals(connectionId))).getSingle();
+
+        expect(connection.authStatus, ServiceConnectionAuthStatus.needsReauth);
+      });
+    });
   });
 }
 
@@ -528,6 +745,7 @@ class const _McpServersRepositoryFixture._({
   required final MockMcpServersDao mockMcpServersDao,
   required final MockToolsGroupsDao mockToolsGroupsDao,
   required final MockWorkspaceToolsDao mockWorkspaceToolsDao,
+  required final MockEncryptionService mockEncryptionService,
   required final _TestAppDatabase database,
   required final McpServersRepository repository,
 }) {
@@ -535,6 +753,7 @@ class const _McpServersRepositoryFixture._({
     final mcpServersDao = MockMcpServersDao();
     final toolsGroupsDao = MockToolsGroupsDao();
     final workspaceToolsDao = MockWorkspaceToolsDao();
+    final encryptionService = MockEncryptionService();
     final database = _TestAppDatabase(
       mcpServersDao,
       toolsGroupsDao,
@@ -545,8 +764,9 @@ class const _McpServersRepositoryFixture._({
       mockMcpServersDao: mcpServersDao,
       mockToolsGroupsDao: toolsGroupsDao,
       mockWorkspaceToolsDao: workspaceToolsDao,
+      mockEncryptionService: encryptionService,
       database: database,
-      repository: .new(database),
+      repository: .new(database, .new(database, encryptionService)),
     );
   }
 }

@@ -7,5 +7,7 @@ typedef McpConnectionTestResult = ({
   McpConnectionTestStatus status,
   DateTime testedAt,
   McpTransportType? transport,
+  int toolCount,
+  int durationMilliseconds,
   String? errorDetails,
 });

@@ -148,6 +148,8 @@ void main() {
         'transport',
         'service_connection_id',
         'description',
+        'catalog_snapshot_json',
+        'test_summary_json',
         'is_enabled',
         'created_at',
         'updated_at',

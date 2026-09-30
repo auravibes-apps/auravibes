@@ -1,0 +1,8 @@
+class: McpCatalogListing
+fields:
+  id: String
+  name: String
+  description: String
+  url: String
+  transport: String
+  options: List<McpCatalogConnectionOption>

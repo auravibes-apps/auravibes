@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 19);
+      expect(fixture.database.schemaVersion, 21);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -108,6 +108,28 @@ void main() {
         expect(row.read<String?>('output_schema'), isNull);
       },
     );
+
+    test('migration adds normalized MCP test summaries', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 20
+        ..execute('''
+          CREATE TABLE mcp_servers (
+            id TEXT NOT NULL PRIMARY KEY,
+            catalog_snapshot_json TEXT
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(mcp_servers)')
+          .get();
+
+      expect(
+        columns.map((row) => row.read<String>('name')),
+        contains('test_summary_json'),
+      );
+    });
 
     test('workspace deletion cascades to sensitive child records', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(

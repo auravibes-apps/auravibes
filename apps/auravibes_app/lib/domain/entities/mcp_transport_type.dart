@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -140,6 +141,8 @@ Future<String?> _encryptNullable(
 
 @immutable
 @Freezed(toStringOverride: false)
+// DCL cannot see Freezed-generated union members in the part file.
+// ignore: weight-of-class
 sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
   const factory none() = McpAuthenticationTypeNone;
 
@@ -154,6 +157,9 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
 
   const factory bearerToken({required String bearerToken}) =
       McpAuthenticationTypeBearerToken;
+
+  const factory httpHeaders({required Map<String, String> headers}) =
+      McpAuthenticationTypeHttpHeaders;
 
   factory fromJson(Map<String, dynamic> json) =>
       _$McpAuthenticationTypeFromJson(json);
@@ -174,6 +180,13 @@ sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
       case McpAuthenticationTypeBearerToken(:final bearerToken):
         return McpAuthenticationType.bearerToken(
           bearerToken: await encryptor(bearerToken),
+        );
+      case McpAuthenticationTypeHttpHeaders(:final headers):
+        return McpAuthenticationType.httpHeaders(
+          headers: {
+            for (final entry in headers.entries)
+              entry.key: await encryptor(entry.value),
+          },
         );
     }
   }
@@ -202,6 +215,7 @@ abstract class const McpServerToCreate._() with _$McpServerToCreate {
 
     /// Optional description of what this MCP server provides.
     String? description,
+    String? catalogSnapshotJson,
   }) = _McpServerToCreate;
 
   String get slugServerName {
@@ -258,6 +272,9 @@ abstract class const McpServerEntity._()
 
     /// Optional description of what this MCP server provides.
     String? description,
+    String? catalogSnapshotJson,
+
+    McpConnectionTestSummary? lastTestSummary,
 
     /// Whether the MCP server is enabled.
     @Default(true) bool isEnabled,
@@ -265,7 +282,7 @@ abstract class const McpServerEntity._()
   this : super._();
 }
 
-enum McpAuthenticationTypeOptions { none, oauth, bearerToken }
+enum McpAuthenticationTypeOptions { none, oauth, bearerToken, httpHeaders }
 
 enum McpTransportTypeOptions { streamableHttp, sse }
 
@@ -288,6 +305,12 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
     String? oauthClientId,
 
     String? description,
+
+    Map<String, String>? httpHeaders,
+
+    String? oauthJson,
+
+    String? catalogSnapshotJson,
   }) = _McpServerFormToCreate;
 
   bool get isValid {
@@ -303,6 +326,8 @@ abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
         return true;
       case .bearerToken:
         return hasValidAuthentication();
+      case .httpHeaders:
+        return httpHeaders?.isNotEmpty == true;
     }
   }
 

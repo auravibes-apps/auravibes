@@ -25,4 +25,6 @@ For a new view or a substantial change to a task path, write a short view/flow b
 
 Treat missing user evidence as an assumption or question. Do not invent a persona, behavior, or requirement. Fewer views is not automatically simpler; preserve context when users need to compare or use information together.
 
+For screenshot golden tests, capture each baseline on the same Flutter renderer and OS that will run it. If verified rasterization differences remain between platforms, keep platform-specific baselines and verify each on its target platform; do not replace one platform's image with another's.
+
 Do not replace app architecture, visual design, or accessibility guidance with this skill.

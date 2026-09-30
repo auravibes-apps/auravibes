@@ -21,6 +21,8 @@ abstract class VerifyMcpServerRequest
     required this.transport,
     required this.useHttp2,
     this.bearerToken,
+    this.httpHeadersJson,
+    this.oauthJson,
   });
 
   factory VerifyMcpServerRequest({
@@ -30,6 +32,8 @@ abstract class VerifyMcpServerRequest
     required String transport,
     required bool useHttp2,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
   }) = _VerifyMcpServerRequestImpl;
 
   factory VerifyMcpServerRequest.fromJson(
@@ -42,6 +46,8 @@ abstract class VerifyMcpServerRequest
       transport: jsonSerialization['transport'] as String,
       useHttp2: _is.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
       bearerToken: jsonSerialization['bearerToken'] as String?,
+      httpHeadersJson: jsonSerialization['httpHeadersJson'] as String?,
+      oauthJson: jsonSerialization['oauthJson'] as String?,
     );
   }
 
@@ -57,6 +63,10 @@ abstract class VerifyMcpServerRequest
 
   String? bearerToken;
 
+  String? httpHeadersJson;
+
+  String? oauthJson;
+
   /// Returns a shallow copy of this [VerifyMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -67,6 +77,8 @@ abstract class VerifyMcpServerRequest
     String? transport,
     bool? useHttp2,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -78,6 +90,8 @@ abstract class VerifyMcpServerRequest
       'transport': transport,
       'useHttp2': useHttp2,
       if (bearerToken != null) 'bearerToken': bearerToken,
+      if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
     };
   }
 
@@ -91,6 +105,8 @@ abstract class VerifyMcpServerRequest
       'transport': transport,
       'useHttp2': useHttp2,
       if (bearerToken != null) 'bearerToken': bearerToken,
+      if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
     };
   }
 
@@ -110,6 +126,8 @@ class _VerifyMcpServerRequestImpl extends VerifyMcpServerRequest {
     required String transport,
     required bool useHttp2,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
   }) : super._(
          workspaceId: workspaceId,
          requestId: requestId,
@@ -117,6 +135,8 @@ class _VerifyMcpServerRequestImpl extends VerifyMcpServerRequest {
          transport: transport,
          useHttp2: useHttp2,
          bearerToken: bearerToken,
+         httpHeadersJson: httpHeadersJson,
+         oauthJson: oauthJson,
        );
 
   /// Returns a shallow copy of this [VerifyMcpServerRequest]
@@ -130,6 +150,8 @@ class _VerifyMcpServerRequestImpl extends VerifyMcpServerRequest {
     String? transport,
     bool? useHttp2,
     Object? bearerToken = _Undefined,
+    Object? httpHeadersJson = _Undefined,
+    Object? oauthJson = _Undefined,
   }) {
     return VerifyMcpServerRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -138,6 +160,10 @@ class _VerifyMcpServerRequestImpl extends VerifyMcpServerRequest {
       transport: transport ?? this.transport,
       useHttp2: useHttp2 ?? this.useHttp2,
       bearerToken: bearerToken is String? ? bearerToken : this.bearerToken,
+      httpHeadersJson: httpHeadersJson is String?
+          ? httpHeadersJson
+          : this.httpHeadersJson,
+      oauthJson: oauthJson is String? ? oauthJson : this.oauthJson,
     );
   }
 }

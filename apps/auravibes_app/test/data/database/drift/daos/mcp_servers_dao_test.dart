@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -183,6 +184,33 @@ void main() {
         (toggled ?? fail('Expected toggled to be non-null')).isEnabled,
         isFalse,
       );
+    });
+
+    test('persists only normalized test summary fields', () async {
+      final server = await fixture.database.mcpServersDao.insertMcpServer(
+        _testServer(workspaceId: workspaceId),
+      );
+      final summary = McpConnectionTestSummary(
+        status: 'success',
+        testedAt: .utc(2026, 9, 27, 12, 30),
+        transport: const McpTransportTypeSSE(),
+        toolCount: 0,
+        durationMilliseconds: 14,
+      );
+
+      expect(
+        await fixture.database.mcpServersDao.saveTestSummary(
+          server.id,
+          summary.toJson(),
+        ),
+        isTrue,
+      );
+      final saved = await fixture.database.mcpServersDao.getMcpServerById(
+        server.id,
+      );
+
+      expect(saved?.testSummaryJson, summary.toJson());
+      expect(saved?.testSummaryJson, isNot(contains('errorDetails')));
     });
   });
 }

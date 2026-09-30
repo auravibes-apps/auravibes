@@ -19,7 +19,7 @@ void main() {
     );
   });
 
-  test('does not treat SSE as streamable HTTP', () async {
+  test('rejects HTTP/2 for legacy SSE before connecting', () async {
     final probe = McpServerProbe(
       lookup: (_) async => [InternetAddress('8.8.8.8')],
     );
@@ -28,7 +28,7 @@ void main() {
       probe(
         uri: Uri.parse('https://example.com/sse'),
         transport: 'sse',
-        useHttp2: false,
+        useHttp2: true,
       ),
       throwsFormatException,
     );

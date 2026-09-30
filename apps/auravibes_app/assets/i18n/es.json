@@ -205,9 +205,10 @@
       "attempted_at": "Prueba realizada {time}",
       "recovery_auth": "Reconecta este servidor MCP para restablecer el acceso.",
       "recovery_network": "Revisa tu conexión de red y vuelve a probar el servidor.",
-      "recovery_protocol": "Revisa este servidor MCP en Herramientas. Para cambiar su URL o autenticación, agrega una conexión nueva.",
+      "recovery_protocol": "Revisa la configuración de conexión de este servidor MCP.",
       "retry": "Reintentar prueba",
-      "open_tools": "Abrir Herramientas"
+      "open_settings": "Abrir configuración",
+      "result_details": "Se encontraron {count} herramientas en {duration} ms"
     },
     "diagnostics": {
       "transport": "Transporte",
@@ -1043,6 +1044,31 @@
     "no_recent_chats": "Los chats aparecerán aquí",
     "view_all_chats": "Ver Todos"
   },
+  "mcp_catalog": {
+    "back": "Volver",
+    "browse": "Explorar catálogo MCP",
+    "title": "Catálogo MCP",
+    "search": "Buscar por nombre o descripción",
+    "transport": "Transporte",
+    "authentication": "Autenticación",
+    "all": "Todos",
+    "empty": "No hay entradas disponibles en el catálogo MCP.",
+    "no_match": "Ninguna entrada coincide con estos filtros.",
+    "load_error": "No se pudo cargar el catálogo MCP. Inténtalo de nuevo.",
+    "sign_in_required": "Inicia sesión en una cuenta en la nube para explorar el catálogo MCP.",
+    "option": "Opción de conexión",
+    "required": "Obligatorio",
+    "optional": "Opcional",
+    "help": "Ayuda del campo",
+    "verify": "Verificar conexión",
+    "install": "Agregar al espacio de trabajo",
+    "verification_success": "Conexión verificada. Se descubrieron {count} herramientas.",
+    "verification_error": "Falló la verificación. Revisa los campos e inténtalo de nuevo.",
+    "install_success": "Se agregó la conexión MCP a este espacio de trabajo.",
+    "install_error": "No se pudo agregar la conexión MCP. Inténtalo de nuevo.",
+    "missing_fields": "Completa todos los campos obligatorios.",
+    "unsupported_option": "Esta opción no está disponible en este espacio de trabajo."
+  },
   "mcp_modal": {
     "title": "Agregar Servidor MCP",
     "add_mcp_tooltip": "Agregar Servidor MCP",
@@ -1053,7 +1079,8 @@
     "auth": {
       "none": "Ninguna",
       "oauth": "OAuth",
-      "bearer_token": "Token Bearer"
+      "bearer_token": "Token Bearer",
+      "http_headers": "Encabezados HTTP"
     },
     "oauth": {
       "configuration": "OAuth de MCP no está configurado.",
@@ -1112,6 +1139,9 @@
         "label": "Token Bearer",
         "placeholder": "Ingresa tu token bearer",
         "hint": "Este token se almacenará de forma segura"
+      },
+      "http_headers": {
+        "label": "Encabezados HTTP"
       }
     },
     "save_success": "Configuración del servidor MCP guardada",
@@ -1121,6 +1151,10 @@
     "verification_required": "Verifica la conexión antes de guardar.",
     "verification_expired": "La verificación expiró. Verifica la conexión de nuevo.",
     "legacy_sse_unavailable": "El endpoint rechazó HTTP Streamable. Puede requerir SSE heredado, que la aplicación web no admite. Conéctate desde la aplicación nativa o configura el servidor para usar HTTP Streamable."
+  },
+  "mcp_edit": {
+    "secret_saved": "Guardado de forma segura",
+    "secret_hint": "Déjalo vacío para conservar el valor guardado. Ingresa otro valor para cambiarlo."
   },
   "compaction": {
     "settings": {

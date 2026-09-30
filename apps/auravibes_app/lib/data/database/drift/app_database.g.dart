@@ -6782,6 +6782,28 @@ class $McpServersTable extends McpServers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _catalogSnapshotJsonMeta =
+      const VerificationMeta('catalogSnapshotJson');
+  @override
+  late final GeneratedColumn<String> catalogSnapshotJson =
+      GeneratedColumn<String>(
+        'catalog_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _testSummaryJsonMeta = const VerificationMeta(
+    'testSummaryJson',
+  );
+  @override
+  late final GeneratedColumn<String> testSummaryJson = GeneratedColumn<String>(
+    'test_summary_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isEnabledMeta = const VerificationMeta(
     'isEnabled',
   );
@@ -6808,6 +6830,8 @@ class $McpServersTable extends McpServers
     transport,
     serviceConnectionId,
     description,
+    catalogSnapshotJson,
+    testSummaryJson,
     isEnabled,
   ];
   @override
@@ -6882,6 +6906,24 @@ class $McpServersTable extends McpServers
         ),
       );
     }
+    if (data.containsKey('catalog_snapshot_json')) {
+      context.handle(
+        _catalogSnapshotJsonMeta,
+        catalogSnapshotJson.isAcceptableOrUnknown(
+          data['catalog_snapshot_json']!,
+          _catalogSnapshotJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('test_summary_json')) {
+      context.handle(
+        _testSummaryJsonMeta,
+        testSummaryJson.isAcceptableOrUnknown(
+          data['test_summary_json']!,
+          _testSummaryJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_enabled')) {
       context.handle(
         _isEnabledMeta,
@@ -6935,6 +6977,14 @@ class $McpServersTable extends McpServers
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      catalogSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catalog_snapshot_json'],
+      ),
+      testSummaryJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}test_summary_json'],
+      ),
       isEnabled: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_enabled'],
@@ -6979,6 +7029,12 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
   /// Optional description of what this MCP server provides.
   final String? description;
 
+  /// Copied catalog definition without submitted field values.
+  final String? catalogSnapshotJson;
+
+  /// Normalized self-test result without transient error details.
+  final String? testSummaryJson;
+
   /// Whether the MCP server is enabled for connections.
   final bool isEnabled;
   const McpServersTable({
@@ -6991,6 +7047,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     required this.transport,
     this.serviceConnectionId,
     this.description,
+    this.catalogSnapshotJson,
+    this.testSummaryJson,
     required this.isEnabled,
   });
   @override
@@ -7013,6 +7071,12 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
     }
+    if (!nullToAbsent || catalogSnapshotJson != null) {
+      map['catalog_snapshot_json'] = Variable<String>(catalogSnapshotJson);
+    }
+    if (!nullToAbsent || testSummaryJson != null) {
+      map['test_summary_json'] = Variable<String>(testSummaryJson);
+    }
     map['is_enabled'] = Variable<bool>(isEnabled);
     return map;
   }
@@ -7032,6 +7096,12 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      catalogSnapshotJson: catalogSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catalogSnapshotJson),
+      testSummaryJson: testSummaryJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(testSummaryJson),
       isEnabled: Value(isEnabled),
     );
   }
@@ -7055,6 +7125,10 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
         json['serviceConnectionId'],
       ),
       description: serializer.fromJson<String?>(json['description']),
+      catalogSnapshotJson: serializer.fromJson<String?>(
+        json['catalogSnapshotJson'],
+      ),
+      testSummaryJson: serializer.fromJson<String?>(json['testSummaryJson']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
     );
   }
@@ -7073,6 +7147,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       ),
       'serviceConnectionId': serializer.toJson<String?>(serviceConnectionId),
       'description': serializer.toJson<String?>(description),
+      'catalogSnapshotJson': serializer.toJson<String?>(catalogSnapshotJson),
+      'testSummaryJson': serializer.toJson<String?>(testSummaryJson),
       'isEnabled': serializer.toJson<bool>(isEnabled),
     };
   }
@@ -7087,6 +7163,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     McpTransportType? transport,
     Value<String?> serviceConnectionId = const Value.absent(),
     Value<String?> description = const Value.absent(),
+    Value<String?> catalogSnapshotJson = const Value.absent(),
+    Value<String?> testSummaryJson = const Value.absent(),
     bool? isEnabled,
   }) => McpServersTable(
     id: id ?? this.id,
@@ -7100,6 +7178,12 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
         ? serviceConnectionId.value
         : this.serviceConnectionId,
     description: description.present ? description.value : this.description,
+    catalogSnapshotJson: catalogSnapshotJson.present
+        ? catalogSnapshotJson.value
+        : this.catalogSnapshotJson,
+    testSummaryJson: testSummaryJson.present
+        ? testSummaryJson.value
+        : this.testSummaryJson,
     isEnabled: isEnabled ?? this.isEnabled,
   );
   McpServersTable copyWithCompanion(McpServersCompanion data) {
@@ -7119,6 +7203,12 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      catalogSnapshotJson: data.catalogSnapshotJson.present
+          ? data.catalogSnapshotJson.value
+          : this.catalogSnapshotJson,
+      testSummaryJson: data.testSummaryJson.present
+          ? data.testSummaryJson.value
+          : this.testSummaryJson,
       isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
     );
   }
@@ -7135,6 +7225,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           ..write('transport: $transport, ')
           ..write('serviceConnectionId: $serviceConnectionId, ')
           ..write('description: $description, ')
+          ..write('catalogSnapshotJson: $catalogSnapshotJson, ')
+          ..write('testSummaryJson: $testSummaryJson, ')
           ..write('isEnabled: $isEnabled')
           ..write(')'))
         .toString();
@@ -7151,6 +7243,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
     transport,
     serviceConnectionId,
     description,
+    catalogSnapshotJson,
+    testSummaryJson,
     isEnabled,
   );
   @override
@@ -7166,6 +7260,8 @@ class McpServersTable extends DataClass implements Insertable<McpServersTable> {
           other.transport == this.transport &&
           other.serviceConnectionId == this.serviceConnectionId &&
           other.description == this.description &&
+          other.catalogSnapshotJson == this.catalogSnapshotJson &&
+          other.testSummaryJson == this.testSummaryJson &&
           other.isEnabled == this.isEnabled);
 }
 
@@ -7179,6 +7275,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
   final Value<McpTransportType> transport;
   final Value<String?> serviceConnectionId;
   final Value<String?> description;
+  final Value<String?> catalogSnapshotJson;
+  final Value<String?> testSummaryJson;
   final Value<bool> isEnabled;
   final Value<int> rowid;
   const McpServersCompanion({
@@ -7191,6 +7289,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     this.transport = const Value.absent(),
     this.serviceConnectionId = const Value.absent(),
     this.description = const Value.absent(),
+    this.catalogSnapshotJson = const Value.absent(),
+    this.testSummaryJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -7204,6 +7304,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     required McpTransportType transport,
     this.serviceConnectionId = const Value.absent(),
     this.description = const Value.absent(),
+    this.catalogSnapshotJson = const Value.absent(),
+    this.testSummaryJson = const Value.absent(),
     this.isEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -7220,6 +7322,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Expression<String>? transport,
     Expression<String>? serviceConnectionId,
     Expression<String>? description,
+    Expression<String>? catalogSnapshotJson,
+    Expression<String>? testSummaryJson,
     Expression<bool>? isEnabled,
     Expression<int>? rowid,
   }) {
@@ -7234,6 +7338,9 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       if (serviceConnectionId != null)
         'service_connection_id': serviceConnectionId,
       if (description != null) 'description': description,
+      if (catalogSnapshotJson != null)
+        'catalog_snapshot_json': catalogSnapshotJson,
+      if (testSummaryJson != null) 'test_summary_json': testSummaryJson,
       if (isEnabled != null) 'is_enabled': isEnabled,
       if (rowid != null) 'rowid': rowid,
     });
@@ -7249,6 +7356,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     Value<McpTransportType>? transport,
     Value<String?>? serviceConnectionId,
     Value<String?>? description,
+    Value<String?>? catalogSnapshotJson,
+    Value<String?>? testSummaryJson,
     Value<bool>? isEnabled,
     Value<int>? rowid,
   }) {
@@ -7262,6 +7371,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
       transport: transport ?? this.transport,
       serviceConnectionId: serviceConnectionId ?? this.serviceConnectionId,
       description: description ?? this.description,
+      catalogSnapshotJson: catalogSnapshotJson ?? this.catalogSnapshotJson,
+      testSummaryJson: testSummaryJson ?? this.testSummaryJson,
       isEnabled: isEnabled ?? this.isEnabled,
       rowid: rowid ?? this.rowid,
     );
@@ -7301,6 +7412,14 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (catalogSnapshotJson.present) {
+      map['catalog_snapshot_json'] = Variable<String>(
+        catalogSnapshotJson.value,
+      );
+    }
+    if (testSummaryJson.present) {
+      map['test_summary_json'] = Variable<String>(testSummaryJson.value);
+    }
     if (isEnabled.present) {
       map['is_enabled'] = Variable<bool>(isEnabled.value);
     }
@@ -7322,6 +7441,8 @@ class McpServersCompanion extends UpdateCompanion<McpServersTable> {
           ..write('transport: $transport, ')
           ..write('serviceConnectionId: $serviceConnectionId, ')
           ..write('description: $description, ')
+          ..write('catalogSnapshotJson: $catalogSnapshotJson, ')
+          ..write('testSummaryJson: $testSummaryJson, ')
           ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -21553,6 +21674,8 @@ typedef $$McpServersTableCreateCompanionBuilder = McpServersCompanion Function({
   required McpTransportType transport,
   Value<String?> serviceConnectionId,
   Value<String?> description,
+  Value<String?> catalogSnapshotJson,
+  Value<String?> testSummaryJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -21566,6 +21689,8 @@ typedef $$McpServersTableUpdateCompanionBuilder = McpServersCompanion Function({
   Value<McpTransportType> transport,
   Value<String?> serviceConnectionId,
   Value<String?> description,
+  Value<String?> catalogSnapshotJson,
+  Value<String?> testSummaryJson,
   Value<bool> isEnabled,
   Value<int> rowid,
 });
@@ -21671,6 +21796,16 @@ class $$McpServersTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catalogSnapshotJson => $composableBuilder(
+    column: $table.catalogSnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get testSummaryJson => $composableBuilder(
+    column: $table.testSummaryJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -21795,6 +21930,16 @@ class $$McpServersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get catalogSnapshotJson => $composableBuilder(
+    column: $table.catalogSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get testSummaryJson => $composableBuilder(
+    column: $table.testSummaryJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isEnabled => $composableBuilder(
     column: $table.isEnabled,
     builder: (column) => ColumnOrderings(column),
@@ -21876,6 +22021,16 @@ class $$McpServersTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get catalogSnapshotJson => $composableBuilder(
+    column: $table.catalogSnapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get testSummaryJson => $composableBuilder(
+    column: $table.testSummaryJson,
     builder: (column) => column,
   );
 
@@ -21996,6 +22151,8 @@ class $$McpServersTableTableManager
                 Value<McpTransportType> transport = const Value.absent(),
                 Value<String?> serviceConnectionId = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<String?> catalogSnapshotJson = const Value.absent(),
+                Value<String?> testSummaryJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => McpServersCompanion(
@@ -22008,6 +22165,8 @@ class $$McpServersTableTableManager
                 transport: transport,
                 serviceConnectionId: serviceConnectionId,
                 description: description,
+                catalogSnapshotJson: catalogSnapshotJson,
+                testSummaryJson: testSummaryJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),
@@ -22022,6 +22181,8 @@ class $$McpServersTableTableManager
                 required McpTransportType transport,
                 Value<String?> serviceConnectionId = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<String?> catalogSnapshotJson = const Value.absent(),
+                Value<String?> testSummaryJson = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => McpServersCompanion.insert(
@@ -22034,6 +22195,8 @@ class $$McpServersTableTableManager
                 transport: transport,
                 serviceConnectionId: serviceConnectionId,
                 description: description,
+                catalogSnapshotJson: catalogSnapshotJson,
+                testSummaryJson: testSummaryJson,
                 isEnabled: isEnabled,
                 rowid: rowid,
               ),

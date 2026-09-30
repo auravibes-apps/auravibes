@@ -1,0 +1,16 @@
+class: McpCatalogEntry
+table: mcp_catalog_entry
+fields:
+  catalogId: String
+  name: String
+  description: String
+  url: String
+  transport: String
+  isEnabled: bool
+  optionsJson: String
+indexes:
+  mcp_catalog_entry_catalog_id_idx:
+    fields: catalogId
+    unique: true
+  mcp_catalog_entry_enabled_name_idx:
+    fields: isEnabled, name
