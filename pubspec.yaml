@@ -201,7 +201,7 @@ melos:
         - melos run unnecessary:nullable
         - melos run format:check
         - melos run test:local
-      description: Full validation pipeline (no coverage, fast)
+      description: Full workspace validation without coverage
 
     validate:ci:
       steps:
