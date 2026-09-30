@@ -271,6 +271,11 @@ void main() {
         (icon: Icons.format_bold, marker: '**', content: 'bold'),
         (icon: Icons.format_italic, marker: '_', content: 'italic'),
         (icon: Icons.code, marker: '`', content: 'code'),
+        (
+          icon: Icons.code,
+          marker: '`',
+          content: '${String.fromCharCode(0x0301)}x',
+        ),
       ]) {
         final text =
             'before ${action.marker}${action.content}'

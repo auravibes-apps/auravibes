@@ -76,21 +76,41 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   void _togglePreview() {
     final isPreview = !_isPreview;
     if (isPreview) {
-      _sourceValue = _controller.value;
-      _focusNode.unfocus();
+      _enterPreview();
     } else {
-      final sourceValue = _sourceValue;
-      if (sourceValue != null && _controller.value != sourceValue) {
-        _controller.value = sourceValue;
-      }
-      _sourceValue = null;
+      _leavePreview();
     }
     setState(() => _isPreview = isPreview);
-    if (!isPreview) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusNode.requestFocus();
-      });
+    if (!isPreview) _restoreEditorFocus();
+  }
+
+  void _pop(BuildContext context, [String? result]) {
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop<String>(result);
+    });
+  }
+}
+
+extension on _MarkdownEditorScreenState {
+  void _enterPreview() {
+    _sourceValue = _controller.value;
+    _focusNode.unfocus();
+  }
+
+  void _leavePreview() {
+    final sourceValue = _sourceValue;
+    if (sourceValue != null && _controller.value != sourceValue) {
+      _controller.value = sourceValue;
     }
+    _sourceValue = null;
+  }
+
+  void _restoreEditorFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
   }
 
   KeyEventResult _onEditorKey(FocusNode _, KeyEvent event) {
@@ -113,16 +133,6 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  void _pop(BuildContext context, [String? result]) {
-    setState(() => _allowPop = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop<String>(result);
-    });
-  }
-}
-
-extension on _MarkdownEditorScreenState {
   Widget _markdownEditorView(BuildContext context) => _MarkdownEditorView(
     controller: _controller,
     focusNode: _focusNode,
@@ -440,30 +450,30 @@ class const _MarkdownPreviewToggle({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final semanticLabel = LocaleKeys.markdown_editor_preview_label.tr(
-      context: context,
-    );
-    final tooltip =
-        (isPreview
-                ? LocaleKeys.markdown_editor_editor_label
-                : LocaleKeys.markdown_editor_preview_label)
-            .tr(context: context);
-
     return Semantics(
       child: ExcludeSemantics(
         child: AuraIconButton(
           icon: isPreview ? Icons.edit_outlined : Icons.visibility_outlined,
           onPressed: onToggle,
-          tooltip: tooltip,
+          tooltip: _markdownPreviewTooltip(context, isPreview),
         ),
       ),
       toggled: isPreview,
       button: true,
-      label: semanticLabel,
+      label: _markdownPreviewLabel(context),
       onTap: onToggle,
     );
   }
 }
+
+String _markdownPreviewLabel(BuildContext context) =>
+    LocaleKeys.markdown_editor_preview_label.tr(context: context);
+
+String _markdownPreviewTooltip(BuildContext context, bool isPreview) =>
+    (isPreview
+            ? LocaleKeys.markdown_editor_editor_label
+            : LocaleKeys.markdown_editor_preview_label)
+        .tr(context: context);
 
 class const _MarkdownSaveButton({
   required final TextEditingController controller,

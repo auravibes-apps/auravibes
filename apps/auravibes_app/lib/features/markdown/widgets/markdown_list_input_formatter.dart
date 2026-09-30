@@ -3,11 +3,38 @@ import 'package:flutter/services.dart';
 final _listMarker = RegExp(r'^([ \t]*)(- \[[ xX]\] |- |\d+\. )');
 final _numberedMarker = RegExp(r'^([ \t]*)(\d+)\. ');
 const _numberGroup = 2;
+const _noIndentation = 0;
+const _oneCharacter = 1;
+const _indentationWidth = 2;
+const _firstOrderedNumber = 1;
 
 typedef _ListLine = ({String text, int start, int end, RegExpMatch marker});
 typedef _NumberEdit = ({int start, int end, String replacement});
 typedef _NumberedBlock = ({int start, String indentation, int firstNumber});
 typedef _OrderedGroup = ({int level, int start});
+typedef _IndexRange = ({int first, int last});
+typedef _NumberedLine = ({RegExpMatch marker, int number});
+typedef _OldListItem = ({int indentation, int? number});
+typedef _GroupChanges = ({
+  Set<int> affected,
+  Map<int, _OrderedGroup> oldGroups,
+  Set<_OrderedGroup> movedGroups,
+});
+typedef _RenumberSource = ({
+  List<String> lines,
+  List<String> oldLines,
+  _IndexRange range,
+});
+typedef _RenumberGroups = ({
+  _GroupChanges changes,
+  Map<int, _OrderedGroup> newGroups,
+  Set<_OrderedGroup> touchedGroups,
+});
+typedef _RenumberContext = ({
+  _RenumberSource source,
+  _RenumberGroups groups,
+  Map<int, int> nextNumbers,
+});
 
 /// Keeps Markdown list markers in the same edit as the user's keystroke.
 class MarkdownListInputFormatter extends TextInputFormatter {
@@ -17,52 +44,12 @@ class MarkdownListInputFormatter extends TextInputFormatter {
     TextEditingValue value, {
     required bool outdent,
   }) {
-    if (!value.selection.isValid || !value.composing.isCollapsed) return null;
+    if (!_canFormat(value, value)) return null;
 
-    final lines = value.text.split('\n');
-    final first = _lineIndex(value.text, value.selection.start);
-    final last = _lineIndex(
-      value.text,
-      value.selection.isCollapsed
-          ? value.selection.end
-          : value.selection.end - 1,
-    );
-    final affected = <int>{};
-    for (var index = first; index <= last; index++) {
-      final marker = _listMarker.firstMatch(lines[index]);
-      if (marker == null) continue;
-      final indentation = marker.group(1)?.length ?? 0;
-      if (outdent && _outdentWidth(marker.group(1) ?? '') == 0) continue;
-      final _ = affected.add(index);
-      for (var child = index + 1; child < lines.length; child++) {
-        final childMarker = _listMarker.firstMatch(lines[child]);
-        if (childMarker == null) {
-          if (lines[child].trim().isNotEmpty &&
-              _leadingIndentation(lines[child]) > indentation) {
-            continue;
-          }
-          break;
-        }
-        if ((childMarker.group(1)?.length ?? 0) <= indentation) {
-          break;
-        }
-        final _ = affected.add(child);
-      }
-    }
+    final affected = _affectedListLines(value, outdent: outdent);
     if (affected.isEmpty) return null;
 
-    final edits = <_NumberEdit>[];
-    for (final index in affected.toList()..sort()) {
-      final start = _lineOffset(lines, index);
-      final width = _outdentWidth(
-        _listMarker.firstMatch(lines[index])?.group(1) ?? '',
-      );
-      edits.add(
-        outdent
-            ? (start: start, end: start + width, replacement: '')
-            : (start: start, end: start, replacement: '  '),
-      );
-    }
+    final edits = _indentationEdits(value.text, affected, outdent: outdent);
     final adjusted = _applyNumberEdits(value, edits);
 
     return _renumberIndentedBlock(adjusted, affected, oldText: value.text);
@@ -80,113 +67,397 @@ class MarkdownListInputFormatter extends TextInputFormatter {
   }
 }
 
-int _outdentWidth(String indentation) {
-  if (indentation.startsWith('\t')) return 1;
+Set<int> _affectedListLines(TextEditingValue value, {required bool outdent}) {
+  final lines = value.text.split('\n');
+  final range = _selectedLineRange(value);
+  final affected = <int>{};
+  for (var index = range.first; index <= range.last; index++) {
+    _addAffectedListLine(lines, index, outdent: outdent, affected: affected);
+  }
 
-  return indentation.length >= 2 ? 2 : 0;
+  return affected;
 }
+
+_IndexRange _selectedLineRange(TextEditingValue value) {
+  final selection = value.selection;
+  final lastOffset = selection.isCollapsed
+      ? selection.end
+      : selection.end - _oneCharacter;
+
+  return (
+    first: _lineIndex(value.text, selection.start),
+    last: _lineIndex(value.text, lastOffset),
+  );
+}
+
+void _addAffectedListLine(
+  List<String> lines,
+  int index, {
+  required bool outdent,
+  required Set<int> affected,
+}) {
+  final marker = _listMarker.firstMatch(lines[index]);
+  if (marker == null) return;
+
+  final indentation = _markerIndentation(marker);
+  if (outdent && _outdentWidth(marker.group(1) ?? '') == _noIndentation) {
+    return;
+  }
+
+  final _ = affected.add(index);
+  _addIndentedDescendants(lines, index, indentation, affected);
+}
+
+void _addIndentedDescendants(
+  List<String> lines,
+  int index,
+  int indentation,
+  Set<int> affected,
+) {
+  for (var child = index + 1; child < lines.length; child++) {
+    final childLine = lines[child];
+    final childMarker = _listMarker.firstMatch(childLine);
+    if (childMarker == null) {
+      if (_isIndentedContinuation(childLine, indentation)) continue;
+      break;
+    }
+    if (_markerIndentation(childMarker) <= indentation) break;
+
+    final _ = affected.add(child);
+  }
+}
+
+bool _isIndentedContinuation(String line, int indentation) =>
+    line.trim().isNotEmpty && _leadingIndentation(line) > indentation;
+
+List<_NumberEdit> _indentationEdits(
+  String text,
+  Set<int> affected, {
+  required bool outdent,
+}) {
+  final lines = text.split('\n');
+  final indices = affected.toList()..sort();
+
+  return [
+    for (final index in indices)
+      _indentationEdit(lines, index, outdent: outdent),
+  ];
+}
+
+_NumberEdit _indentationEdit(
+  List<String> lines,
+  int index, {
+  required bool outdent,
+}) {
+  final start = _lineOffset(lines, index);
+  final width = _outdentWidth(
+    _listMarker.firstMatch(lines[index])?.group(1) ?? '',
+  );
+
+  return outdent
+      ? (start: start, end: start + width, replacement: '')
+      : (start: start, end: start, replacement: '  ');
+}
+
+int _outdentWidth(String indentation) {
+  if (indentation.startsWith('\t')) return _oneCharacter;
+
+  return indentation.length >= _indentationWidth
+      ? _indentationWidth
+      : _noIndentation;
+}
+
+int _markerIndentation(RegExpMatch marker) =>
+    marker.group(1)?.length ?? _noIndentation;
+
+_RenumberContext _renumberContext(
+  TextEditingValue value,
+  Set<int> affected,
+  String oldText,
+) {
+  final source = _renumberSource(value, affected, oldText);
+
+  return (
+    source: source,
+    groups: _renumberGroups(source, affected),
+    nextNumbers: <int, int>{},
+  );
+}
+
+_RenumberSource _renumberSource(
+  TextEditingValue value,
+  Set<int> affected,
+  String oldText,
+) {
+  final lines = value.text.split('\n');
+
+  return (
+    lines: lines,
+    oldLines: oldText.split('\n'),
+    range: _expandedListRange(lines, affected),
+  );
+}
+
+_RenumberGroups _renumberGroups(_RenumberSource source, Set<int> affected) {
+  final oldGroups = _orderedGroups(source.oldLines, source.range);
+  final newGroups = _orderedGroups(source.lines, source.range);
+  final changes = _groupChanges(affected, oldGroups);
+
+  return (
+    changes: changes,
+    newGroups: newGroups,
+    touchedGroups: _touchedGroups(changes, newGroups),
+  );
+}
+
+_GroupChanges _groupChanges(
+  Set<int> affected,
+  Map<int, _OrderedGroup> oldGroups,
+) => (
+  affected: affected,
+  oldGroups: oldGroups,
+  movedGroups: {for (final index in affected) ?oldGroups[index]},
+);
 
 TextEditingValue _renumberIndentedBlock(
   TextEditingValue value,
   Set<int> affected, {
   required String oldText,
 }) {
-  final lines = value.text.split('\n');
-  var first = affected.reduce((a, b) => a < b ? a : b);
-  var last = affected.reduce((a, b) => a > b ? a : b);
-  while (first > 0 && _listMarker.hasMatch(lines[first - 1])) {
-    first--;
-  }
-  while (last + 1 < lines.length && _listMarker.hasMatch(lines[last + 1])) {
-    last++;
-  }
-
-  final oldLines = oldText.split('\n');
-  final oldGroups = _orderedGroups(oldLines, first, last);
-  final newGroups = _orderedGroups(lines, first, last);
-  final movedGroups = {for (final index in affected) ?oldGroups[index]};
-  final touchedGroups = <_OrderedGroup>{};
-  for (final entry in newGroups.entries) {
-    final index = entry.key;
-    if (affected.contains(index) ||
-        oldGroups[index] != entry.value ||
-        movedGroups.contains(oldGroups[index])) {
-      final _ = touchedGroups.add(entry.value);
-    }
-  }
-
-  final nextNumbers = <int, int>{};
-  final edits = <_NumberEdit>[];
-  for (var index = first; index <= last; index++) {
-    final marker = _listMarker.firstMatch(lines[index]);
-    if (marker == null) continue;
-    final indentation = marker.group(1)?.length ?? 0;
-    nextNumbers.removeWhere((level, _) => level > indentation);
-    final numbered = _numberedMarker.firstMatch(lines[index]);
-    if (numbered == null) {
-      final _ = nextNumbers.remove(indentation);
-      continue;
-    }
-    final number =
-        nextNumbers[indentation] ??
-        _oldGroupStartNumber(oldLines, index, first, indentation);
-    final edit = _numberEdit(numbered, number, _lineOffset(lines, index));
-    if (edit != null && touchedGroups.contains(newGroups[index])) {
-      edits.add(edit);
-    }
-    nextNumbers[indentation] = number + 1;
-  }
+  final context = _renumberContext(value, affected, oldText);
+  final edits = _renumberEdits(context);
 
   return edits.isEmpty ? value : _applyNumberEdits(value, edits);
 }
 
-Map<int, _OrderedGroup> _orderedGroups(
-  List<String> lines,
-  int first,
-  int last,
-) {
+_IndexRange _expandedListRange(List<String> lines, Set<int> affected) {
+  final bounds = _affectedListBounds(affected);
+
+  return (
+    first: _expandedListStart(lines, bounds.first),
+    last: _expandedListEnd(lines, bounds.last),
+  );
+}
+
+_IndexRange _affectedListBounds(Set<int> affected) => (
+  first: affected.reduce((a, b) => a < b ? a : b),
+  last: affected.reduce((a, b) => a > b ? a : b),
+);
+
+int _expandedListStart(List<String> lines, int first) {
+  var start = first;
+  while (start > _noIndentation &&
+      _listMarker.hasMatch(lines[start - _oneCharacter])) {
+    start--;
+  }
+
+  return start;
+}
+
+int _expandedListEnd(List<String> lines, int last) {
+  var end = last;
+  while (end + _oneCharacter < lines.length &&
+      _listMarker.hasMatch(lines[end + _oneCharacter])) {
+    end++;
+  }
+
+  return end;
+}
+
+Map<int, _OrderedGroup> _orderedGroups(List<String> lines, _IndexRange range) {
   final starts = <int, int>{};
   final groups = <int, _OrderedGroup>{};
-  for (var index = first; index <= last; index++) {
-    final marker = _listMarker.firstMatch(lines[index]);
-    if (marker == null) continue;
-    final level = marker.group(1)?.length ?? 0;
-    starts.removeWhere((depth, _) => depth > level);
-    if (!_numberedMarker.hasMatch(lines[index])) {
-      final _ = starts.remove(level);
-      continue;
-    }
-    final start = starts.putIfAbsent(level, () => index);
-    groups[index] = (level: level, start: start);
+  for (var index = range.first; index <= range.last; index++) {
+    final group = _orderedGroupForLine(lines[index], index, starts);
+    if (group == null) continue;
+
+    groups[index] = group;
   }
 
   return groups;
 }
 
+_OrderedGroup? _orderedGroupForLine(
+  String line,
+  int index,
+  Map<int, int> starts,
+) {
+  final marker = _listMarker.firstMatch(line);
+  if (marker == null) return null;
+
+  final level = _markerIndentation(marker);
+  _removeDeeperOrderedGroups(starts, level);
+  final numberedMarker = _numberedMarker.firstMatch(line);
+  if (numberedMarker == null) {
+    final _ = starts.remove(level);
+
+    return null;
+  }
+
+  return (level: level, start: starts.putIfAbsent(level, () => index));
+}
+
+void _removeDeeperOrderedGroups(Map<int, int> starts, int level) {
+  starts.removeWhere((depth, _) => depth > level);
+}
+
+Set<_OrderedGroup> _touchedGroups(
+  _GroupChanges changes,
+  Map<int, _OrderedGroup> newGroups,
+) {
+  final touchedGroups = <_OrderedGroup>{};
+  for (final entry in newGroups.entries) {
+    if (_isTouchedGroup(changes, entry.key, entry.value)) {
+      final _ = touchedGroups.add(entry.value);
+    }
+  }
+
+  return touchedGroups;
+}
+
+bool _isTouchedGroup(_GroupChanges changes, int index, _OrderedGroup group) =>
+    changes.affected.contains(index) ||
+    changes.oldGroups[index] != group ||
+    changes.movedGroups.contains(changes.oldGroups[index]);
+
+List<_NumberEdit> _renumberEdits(_RenumberContext context) {
+  final edits = <_NumberEdit>[];
+  for (
+    var index = context.source.range.first;
+    index <= context.source.range.last;
+    index++
+  ) {
+    final edit = _renumberLine(context, index);
+    if (edit != null) edits.add(edit);
+  }
+
+  return edits;
+}
+
+_NumberEdit? _renumberLine(_RenumberContext context, int index) {
+  final numberedLine = _numberedLine(context, index);
+  if (numberedLine == null) return null;
+
+  final group = context.groups.newGroups[index];
+  if (group == null || !context.groups.touchedGroups.contains(group)) {
+    return null;
+  }
+
+  return _numberEdit(
+    numberedLine.marker,
+    numberedLine.number,
+    _lineOffset(context.source.lines, index),
+  );
+}
+
+_NumberedLine? _numberedLine(_RenumberContext context, int index) {
+  final marker = _renumberMarker(context, index);
+  if (marker == null) return null;
+
+  return (
+    marker: marker.marker,
+    number: _currentLineNumber(context, index, marker.indentation),
+  );
+}
+
+({RegExpMatch marker, int indentation})? _renumberMarker(
+  _RenumberContext context,
+  int index,
+) {
+  final line = context.source.lines[index];
+  final listMarker = _listMarker.firstMatch(line);
+  if (listMarker == null) return null;
+
+  final indentation = _markerIndentation(listMarker);
+  _prepareNumberSequence(context.nextNumbers, indentation);
+  final numberedMarker = _numberedMarkerForLine(
+    line,
+    indentation,
+    context.nextNumbers,
+  );
+  if (numberedMarker == null) return null;
+
+  return (marker: numberedMarker, indentation: indentation);
+}
+
+RegExpMatch? _numberedMarkerForLine(
+  String line,
+  int indentation,
+  Map<int, int> nextNumbers,
+) {
+  final marker = _numberedMarker.firstMatch(line);
+  if (marker != null) return marker;
+
+  final _ = nextNumbers.remove(indentation);
+
+  return null;
+}
+
+void _prepareNumberSequence(Map<int, int> nextNumbers, int indentation) {
+  nextNumbers.removeWhere((level, _) => level > indentation);
+}
+
+int _currentLineNumber(_RenumberContext context, int index, int indentation) {
+  final number =
+      context.nextNumbers[indentation] ??
+      _oldGroupStartNumber(context, index, indentation);
+  context.nextNumbers[indentation] = number + _oneCharacter;
+
+  return number;
+}
+
 int _leadingIndentation(String line) =>
-    RegExp(r'^[ \t]*').firstMatch(line)?.end ?? 0;
+    RegExp(r'^[ \t]*').firstMatch(line)?.end ?? _noIndentation;
 
 int _oldGroupStartNumber(
+  _RenumberContext context,
+  int index,
+  int indentation,
+) => _firstOldGroupNumber(context, index, indentation) ?? _firstOrderedNumber;
+
+int? _firstOldGroupNumber(
+  _RenumberContext context,
+  int index,
+  int indentation,
+) => _firstPriorNumber(
+  context.source.oldLines,
+  index,
+  context.source.range.first,
+  indentation,
+);
+
+int? _firstPriorNumber(
   List<String> lines,
   int index,
-  int first,
+  int firstLine,
   int indentation,
 ) {
   int? firstNumber;
-  for (var previous = index; previous >= first; previous--) {
-    final marker = _listMarker.firstMatch(lines[previous]);
-    if (marker == null) break;
-    final level = marker.group(1)?.length ?? 0;
-    if (level < indentation) break;
-    if (level > indentation) continue;
-    final numbered = _numberedMarker.firstMatch(lines[previous]);
-    if (numbered == null) break;
-    final numberText = numbered.group(_numberGroup);
-    if (numberText == null) break;
-    firstNumber = int.parse(numberText);
+  for (var previous = index; previous >= firstLine; previous--) {
+    final item = _oldListItem(lines[previous]);
+    if (item == null) break;
+    if (_endsOldNumberGroup(item, indentation)) break;
+    if (item.indentation > indentation) continue;
+    firstNumber = item.number;
   }
 
-  return firstNumber ?? 1;
+  return firstNumber;
+}
+
+bool _endsOldNumberGroup(_OldListItem item, int indentation) =>
+    item.indentation < indentation ||
+    (item.indentation == indentation && item.number == null);
+
+_OldListItem? _oldListItem(String line) {
+  final marker = _listMarker.firstMatch(line);
+  if (marker == null) return null;
+
+  final numbered = _numberedMarker.firstMatch(line);
+
+  return (
+    indentation: _markerIndentation(marker),
+    number: int.tryParse(numbered?.group(_numberGroup) ?? ''),
+  );
 }
 
 bool _canFormat(TextEditingValue oldValue, TextEditingValue newValue) =>
@@ -474,18 +745,27 @@ int _lineOffset(List<String> lines, int index) => lines
 int _mappedOffset(int offset, List<_NumberEdit> edits) {
   var shift = 0;
   for (final edit in edits) {
-    if (offset < edit.start ||
-        (offset == edit.start && edit.start != edit.end)) {
-      break;
-    }
-    if (offset < edit.end) {
-      return edit.start + shift + edit.replacement.length;
-    }
-    shift += edit.replacement.length - (edit.end - edit.start);
+    final start = edit.start;
+    final end = edit.end;
+    if (_offsetPrecedesEdit(offset, start, end)) break;
+
+    final mappedOffset = _offsetInsideEdit(offset, edit, shift);
+    if (mappedOffset != null) return mappedOffset;
+
+    shift = _shiftAfterEdit(edit, shift);
   }
 
   return offset + shift;
 }
+
+bool _offsetPrecedesEdit(int offset, int start, int end) =>
+    offset < start || (offset == start && start != end);
+
+int? _offsetInsideEdit(int offset, _NumberEdit edit, int shift) =>
+    offset < edit.end ? edit.start + shift + edit.replacement.length : null;
+
+int _shiftAfterEdit(_NumberEdit edit, int shift) =>
+    shift + edit.replacement.length - (edit.end - edit.start);
 
 int? _nearbyNumberedLine(List<String> lines, int index) {
   if (_numberedMarker.hasMatch(lines[index])) return index;
