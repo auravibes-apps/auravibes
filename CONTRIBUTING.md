@@ -7,10 +7,10 @@ AuraVibes is a Flutter monorepo managed with Melos and FVM. The app lives in
 
 Install:
 
-- FVM 4.0.5 or later
-- Flutter 3.47.5, selected by `.fvmrc`
-- Dart `^3.13.0`, provided by the pinned Flutter SDK
-- Melos `^8.7.0`, provided by the root `pubspec.yaml` dev dependencies
+- FVM version compatible with this repository
+- Flutter version selected by [`.fvmrc`](.fvmrc)
+- Dart SDK constraint in root [`pubspec.yaml`](pubspec.yaml), provided by the pinned Flutter SDK
+- Melos version in root [`pubspec.yaml`](pubspec.yaml) dev dependencies
 
 See [README.md](README.md) for platform-specific requirements and app setup.
 Use FVM for every Dart and Flutter command so the repository SDK is used:

@@ -1,8 +1,8 @@
 # AuraVibes
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47.5-02569B?style=flat-square&logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-%5E3.13.0-0175C2?style=flat-square&logo=dart)](https://dart.dev)
-[![Melos](https://img.shields.io/badge/Melos-%5E8.7.0-42a5f5?style=flat-square)](https://melos.invertase.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-pinned-02569B?style=flat-square&logo=flutter)](.fvmrc)
+[![Dart](https://img.shields.io/badge/Dart-pinned-0175C2?style=flat-square&logo=dart)](pubspec.yaml)
+[![Melos](https://img.shields.io/badge/Melos-pinned-42a5f5?style=flat-square)](pubspec.yaml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Web%20%7C%20Linux%20%7C%20Windows-lightgrey)
 
@@ -30,13 +30,13 @@ Before you begin, ensure you have the following installed:
 
 #### Required Software
 
-- **Flutter SDK**: 3.47.5, pinned in `.fvmrc`
+- **Flutter SDK**: version pinned in [`.fvmrc`](.fvmrc)
   - Download from [Flutter](https://docs.flutter.dev/install)
   - Install [FVM](https://fvm.app) first: `dart pub global activate fvm`
 
-- **Dart SDK**: `^3.13.0` (included with the pinned Flutter SDK)
-- **FVM (Flutter Version Management)**: 4.0.5 or higher
-- **Melos**: `^8.7.0`, provided by the root `pubspec.yaml`; run it through FVM
+- **Dart SDK**: constraint in [`pubspec.yaml`](pubspec.yaml), included with the pinned Flutter SDK
+- **FVM (Flutter Version Management)**: use a version compatible with this repository
+- **Melos**: version in root [`pubspec.yaml`](pubspec.yaml); run it through FVM
   <details>
 
 <summary>Platform-Specific Requirements</summary>
@@ -49,12 +49,12 @@ Before you begin, ensure you have the following installed:
 
 **iOS Development** (macOS only)
 
-- Xcode 14.0 or higher
+- Current Xcode version supported by [Flutter's iOS setup guide](https://docs.flutter.dev/platform-integration/ios/setup)
 - iOS Simulator or physical iOS device
 
 **macOS Development**
 
-- Xcode 14.0 or higher
+- Current Xcode version supported by [Flutter's macOS setup guide](https://docs.flutter.dev/platform-integration/macos/setup)
 
 **Linux Development**
 
