@@ -1,0 +1,23 @@
+{
+  "skill_name": "flutter-riverpod-expert",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fix a provider that updates state after disposal.",
+      "expected_output": "Loads Riverpod guidance for async lifecycle and verifies the affected behavior with a focused check.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Move this mutable controller into generated notifier state.",
+      "expected_output": "Uses notifier/Riverpod guidance and app ownership rules; does not introduce new legacy controller naming.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Adjust padding in a ConsumerWidget without changing its provider reads.",
+      "expected_output": "Follows scoped UI guidance without loading Riverpod lifecycle or generic framework manuals.",
+      "files": []
+    }
+  ]
+}

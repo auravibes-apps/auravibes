@@ -1,0 +1,23 @@
+{
+  "skill_name": "app-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Move app workflow logic out of a widget into its owning layer.",
+      "expected_output": "Loads app-architecture for layer ownership and validates affected boundaries.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "This shared app service now belongs to a single feature; place it correctly.",
+      "expected_output": "Loads app-architecture for feature placement, checks callers, and makes a scoped move.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Fix a null guard inside an established feature helper.",
+      "expected_output": "Does not load the architecture skill for a routine localized fix; follows scoped rules and verifies affected behavior.",
+      "files": []
+    }
+  ]
+}

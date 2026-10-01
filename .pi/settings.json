@@ -10,7 +10,7 @@
         "thinking": "medium",
         "defaultContext": "fresh",
         "systemPromptMode": "append",
-        "systemPrompt": "Before implementation, require a complete task contract: goal; target seam/files; approved decisions; success criteria; validation owner; expected output. Run focused validation only unless a broad gate is explicitly assigned. Pre-announce commands expected to exceed two minutes. Escalate decision blockers immediately instead of guessing."
+        "systemPrompt": "Use the task goal, affected seam, success criteria, and one validation owner. Infer routine implementation choices from repository patterns; ask only for missing decisions that materially change behavior, APIs, data, or permissions. Run focused validation and reuse completed results unless affected files change. Announce commands expected to exceed two minutes. Report blockers with preserved output. For recurring verified harness failures, follow agent-instructions-maintenance and add a regression scenario; do not audit guidance after every task."
       }
     }
   }

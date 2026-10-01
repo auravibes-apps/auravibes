@@ -1,6 +1,6 @@
 ---
 name: flutter-expert
-description: Use when building cross-platform applications with Flutter 3+ and Dart. Invoke for widget development, Riverpod/Bloc state management, GoRouter navigation, platform-specific implementations, performance optimization.
+description: Use for Flutter platform integration, navigation, or rendering/performance problems. Prefer AuraVibes architecture, Riverpod, and UX skills for their specific decisions; skip routine widget edits.
 license: MIT
 metadata:
   author: https://github.com/Jeffallan
