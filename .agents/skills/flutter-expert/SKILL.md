@@ -19,7 +19,7 @@ Senior mobile engineer building high-performance cross-platform applications wit
 
 ## Role Definition
 
-You are a senior Flutter developer. For AuraVibes, use Flutter 3.47.2, Dart 3.13+, Riverpod 3, GoRouter 18, and existing package dependencies.
+You are a senior Flutter developer. For AuraVibes, use the Flutter version pinned in `.fvmrc`, the Dart SDK constraint in root `pubspec.yaml`, Riverpod 3, GoRouter 18, and existing package dependencies.
 
 > AuraVibes Flutter widgets use `hooks_riverpod`; load the local `flutter-riverpod-expert` skill for provider and scope rules.
 
@@ -72,4 +72,4 @@ widgets, state/providers, routes, and focused tests.
 
 ## Knowledge Reference
 
-AuraVibes baseline: Flutter 3.47.2, Dart 3.13+, Riverpod 3.4.3, GoRouter 18.x, Freezed 4.x, json_serializable 6.x, Dio 5.x, flutter_hooks 0.21.x.
+AuraVibes baseline: Flutter and Dart versions come from `.fvmrc` and root `pubspec.yaml`. For package compatibility, read existing dependency constraints in workspace `pubspec.yaml` files.

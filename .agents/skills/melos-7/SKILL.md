@@ -17,9 +17,9 @@ Authoritative guide for Melos 7+ (pub workspace-based). Prevents common AI mista
 
 ## AuraVibes override
 
-- Root workspace uses Dart `^3.13.0` and Melos `^8.7.0`; read root `pubspec.yaml` before changing scripts.
+- Root Dart and Melos constraints live in `pubspec.yaml`; read it before changing scripts.
 - For a fresh checkout, run `fvm use` followed by `fvm dart run melos bootstrap`. FVM runs `flutter pub get` by default when switching SDKs; `--skip-pub-get` skips that resolution. CI runs Melos bootstrap before checking dependency artifact drift, so do not assume the Pub workspace makes the repository bootstrap step redundant.
-- The lockfile currently resolves Melos 8.7.0. Use `fvm dart run melos analyze` for workspace analysis here. Keep `dart analyze` for explicit root scripts such as `validate:quick`.
+- Use `fvm dart run melos analyze` for workspace analysis here. Keep `dart analyze` for explicit root scripts such as `validate:quick`.
 - Do not create `melos.yaml`; this repo has no file and keeps configuration in root `pubspec.yaml`.
 
 ## Critical Breaking Changes (Melos 6 -> 7)
@@ -30,7 +30,7 @@ These are the most common mistakes AI agents make. MEMORIZE THESE:
 |---|---|
 | Creating/editing `melos.yaml` | Config goes in root `pubspec.yaml` under `melos:` key |
 | Expecting `pubspec_overrides.yaml` | Uses Dart pub workspaces (`workspace:` key) instead |
-| Assuming `melos analyze` is unavailable | Check the lockfile; AuraVibes currently resolves Melos 8.7.0, where `fvm dart run melos analyze` is valid. |
+| Assuming `melos analyze` is unavailable | Check the resolved Melos version; `fvm dart run melos analyze` is valid for the version currently selected by the workspace. |
 | Using `packages:` key for package discovery | Use `workspace:` key (Dart pub workspace standard) |
 | Using `name:` in `melos:` section | Removed. Workspace name comes from root `name:` in pubspec.yaml |
 | Omitting `resolution: workspace` in packages | **Required** in every workspace package's pubspec.yaml |
