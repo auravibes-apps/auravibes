@@ -42,7 +42,9 @@ Future<List<ChatMessage>> _buildPromptMessage(
 ) async => [
   for (final chatMessage in agentBuilder.call([_toAgentPromptMessage(message)]))
     await _withAttachments(
-      _toChatMessage(chatMessage),
+      _toChatMessage(chatMessage).copyWith(
+        metadata: {...chatMessage.metadata, 'transcriptMessageId': message.id},
+      ),
       message,
       modalitiesInput,
     ),

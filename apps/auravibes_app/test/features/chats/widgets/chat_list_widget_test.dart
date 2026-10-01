@@ -1,22 +1,31 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/chats/services/conversation_archive_file_service.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_archive_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/delete_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:drift/drift.dart' hide Column, isNotNull, isNull;
+import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -875,6 +884,78 @@ void main() {
       expect(find.text('1 selected'), findsOneWidget);
     });
 
+    testWidgets('exports selected local conversations as one archive', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive UI test', type: .local),
+      );
+      final archiveConversations = ConversationRepository(database);
+      final conversations = [
+        await archiveConversations.createConversation(
+          .new(title: 'Chat One', workspaceId: workspace.id),
+        ),
+        await archiveConversations.createConversation(
+          .new(title: 'Chat Two', workspaceId: workspace.id),
+        ),
+      ];
+      final workspaceTools = WorkspaceToolsRepository(database);
+      final archiveUsecase = ConversationArchiveUsecase(
+        conversationRepository: archiveConversations,
+        messageRepository: .new(database),
+        attachmentService: .new(),
+        conversationToolsRepository: .new(database, workspaceTools),
+        workspaceToolsRepository: workspaceTools,
+        toolsGroupsRepository: .new(database),
+      );
+      final fileService = _RecordingArchiveFileService();
+      final listRepository = _StubConversationRepository(
+        conversationsStream: .value(conversations),
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: workspace.id,
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            conversationRepositoryProvider.overrideWithValue(listRepository),
+            conversationArchiveUsecaseProvider.overrideWithValue(
+              archiveUsecase,
+            ),
+            conversationArchiveFileServiceProvider.overrideWithValue(
+              fileService,
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      for (final conversation in conversations) {
+        await tester.tap(
+          find.byKey(ValueKey('conversation-selection-${conversation.id}')),
+        );
+      }
+      await tester.pump();
+      expect(find.text('Export selected'), findsOneWidget);
+
+      await tester.tap(find.text('Export selected'));
+      final _ = await tester.pumpAndSettle();
+      final decoded = ConversationArchiveCodec.decodeMany(
+        fileService.savedJson ?? fail('Archive was not saved'),
+      );
+
+      expect(fileService.savedFileName, 'conversations.auravibes.json');
+      expect(decoded.map((archive) => archive.title), ['Chat One', 'Chat Two']);
+    });
+
     testWidgets('bulk pin reports failures and keeps failed chats selected', (
       tester,
     ) async {
@@ -938,6 +1019,143 @@ void main() {
             .value,
         isTrue,
       );
+    });
+
+    testWidgets('prevents selection changes while bulk pin is in flight', (
+      tester,
+    ) async {
+      final finishPin = Completer<ConversationEntity>();
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Chat One'),
+          _createConversation(id: 'conv-2', title: 'Chat Two'),
+        ]),
+        onPatch: (id, patch) => finishPin.future,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      final staleClear = tester
+          .widget<AuraIconButton>(
+            find.ancestor(
+              of: find.byTooltip(
+                LocaleKeys.chats_screens_chats_list_clear_selection.tr(),
+              ),
+              matching: find.byType(AuraIconButton),
+            ),
+          )
+          .onPressed;
+      await tester.tap(find.text('Pin selected'));
+      await tester.pump();
+
+      expect(repo.patches, hasLength(1));
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(const ValueKey('conversation-selection-conv-1')),
+            )
+            .onChanged,
+        isNull,
+      );
+      staleClear?.call();
+      await tester.pump();
+      expect(find.text('1 selected'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Chat Two'));
+      await tester.pump();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(repo.patches, hasLength(1));
+
+      finishPin.complete(
+        _createConversation(title: 'Chat One', isPinned: true),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+    });
+
+    testWidgets('prevents selection changes while bulk delete is in flight', (
+      tester,
+    ) async {
+      final finishDelete = Completer<bool>();
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Chat One'),
+          _createConversation(id: 'conv-2', title: 'Chat Two'),
+        ]),
+        onDelete: (id) => finishDelete.future,
+      );
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            deleteConversationUsecaseProvider.overrideWithValue(
+              DeleteConversationUsecase(repo, (_) => Future<void>.value()),
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Delete selected'));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pump();
+
+      expect(repo.deleteCalls, ['conv-1']);
+      expect(
+        tester
+            .widget<AuraCheckbox>(
+              find.byKey(const ValueKey('conversation-selection-conv-1')),
+            )
+            .onChanged,
+        isNull,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('conversation-selection-conv-1')),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Chat Two'));
+      await tester.pump();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(repo.deleteCalls, ['conv-1']);
+
+      finishDelete.complete(true);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsNothing);
+      expect(repo.deleteCalls, ['conv-1']);
     });
 
     testWidgets('cancelled bulk delete leaves conversations unchanged', (
@@ -1111,6 +1329,24 @@ void main() {
       expect(find.text('Show more'), findsNothing);
     });
   });
+}
+
+class _RecordingArchiveFileService extends ConversationArchiveFileService {
+  new();
+
+  String? savedJson;
+  String? savedFileName;
+
+  @override
+  Future<bool> saveArchiveJson(
+    String json, {
+    String fileName = 'conversation.auravibes.json',
+  }) async {
+    savedJson = json;
+    savedFileName = fileName;
+
+    return true;
+  }
 }
 
 class _WorkspaceGateway extends Mock implements CloudWorkspaceStateGateway;

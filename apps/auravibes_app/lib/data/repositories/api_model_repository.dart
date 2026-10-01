@@ -249,20 +249,35 @@ extension ApiModelRepositoryModelMappings on ApiModelRepository {
   ApiModelEntity _addModelCapabilities(
     ApiModelEntity model,
     ApiModelsTable modelTable,
-  ) => model.copyWith(
-    family: modelTable.family,
-    costInput: modelTable.costInput,
-    costCacheRead: modelTable.costCacheRead,
-    costOutput: modelTable.costOutput,
-    openWeights: modelTable.openWeights,
-    supportsReasoning: modelTable.supportsReasoning,
-    reasoningOptions: _decodeReasoningOptions(
-      modelTable.reasoningOptionsJson,
-      modelTable.supportsReasoning,
+  ) => _addModelTransportCapabilities(
+    model.copyWith(
+      family: modelTable.family,
+      costInput: modelTable.costInput,
+      costCacheRead: modelTable.costCacheRead,
+      costCacheWrite: modelTable.costCacheWrite,
+      costOutput: modelTable.costOutput,
+      openWeights: modelTable.openWeights,
+      supportsReasoning: modelTable.supportsReasoning,
+      reasoningOptions: _decodeReasoningOptions(
+        modelTable.reasoningOptionsJson,
+        modelTable.supportsReasoning,
+      ),
+      isCanonical: modelTable.isCanonical,
     ),
-    isCanonical: modelTable.isCanonical,
+    modelTable,
+  );
+
+  ApiModelEntity _addModelTransportCapabilities(
+    ApiModelEntity model,
+    ApiModelsTable modelTable,
+  ) => model.copyWith(
     supportsPriorityMode: modelTable.supportsPriorityMode,
     supportsToolCalls: modelTable.supportsToolCalls,
+    supportsPromptCacheMarkers: modelTable.supportsPromptCacheMarkers,
+    supportsMidConversationSystemMessages:
+        modelTable.supportsMidConversationSystemMessages,
+    supportsToolDeltas: modelTable.supportsToolDeltas,
+    supportsDeferredTools: modelTable.supportsDeferredTools,
   );
 
   ApiModelsCompanion? _mapEntityToCompanion(ApiModelEntity? entity) {
@@ -302,6 +317,14 @@ ApiModelsCompanion _addModelDescriptionMetadata(
 ApiModelsCompanion _addModelCapabilityMetadata(
   ApiModelsCompanion companion,
   ApiModelEntity entity,
+) => _addModelTransportMetadata(
+  _addModelReasoningMetadata(companion, entity),
+  entity,
+);
+
+ApiModelsCompanion _addModelReasoningMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
 ) => companion.copyWith(
   openWeights: .new(entity.openWeights),
   supportsReasoning: .new(entity.supportsReasoning),
@@ -315,6 +338,18 @@ ApiModelsCompanion _addModelCapabilityMetadata(
   supportsToolCalls: .new(entity.supportsToolCalls),
 );
 
+ApiModelsCompanion _addModelTransportMetadata(
+  ApiModelsCompanion companion,
+  ApiModelEntity entity,
+) => companion.copyWith(
+  supportsPromptCacheMarkers: .new(entity.supportsPromptCacheMarkers),
+  supportsMidConversationSystemMessages: .new(
+    entity.supportsMidConversationSystemMessages,
+  ),
+  supportsToolDeltas: .new(entity.supportsToolDeltas),
+  supportsDeferredTools: .new(entity.supportsDeferredTools),
+);
+
 ApiModelsCompanion _addModelCostMetadata(
   ApiModelsCompanion companion,
   ApiModelEntity entity,
@@ -322,6 +357,7 @@ ApiModelsCompanion _addModelCostMetadata(
   costInput: .new(entity.costInput),
   costOutput: .new(entity.costOutput),
   costCacheRead: .new(entity.costCacheRead),
+  costCacheWrite: .new(entity.costCacheWrite),
   limitContext: .new(entity.limitContext),
   limitOutput: .new(entity.limitOutput),
 );

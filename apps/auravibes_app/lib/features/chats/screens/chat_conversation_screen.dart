@@ -12,6 +12,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
@@ -2118,14 +2119,18 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
 void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
+  final messageKey = switch (error) {
+    UnsupportedTranscriptVersionException() =>
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported,
+    MalformedTranscriptContextException() =>
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed,
+    SelectedModelNotFoundException() =>
+      LocaleKeys.chats_screens_chat_conversation_model_missing,
+    _ => LocaleKeys.chats_screens_chat_conversation_continue_error,
+  };
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(
-      (error is SelectedModelNotFoundException
-              ? LocaleKeys.chats_screens_chat_conversation_model_missing
-              : LocaleKeys.chats_screens_chat_conversation_continue_error)
-          .tr(),
-    ),
+    content: Text(messageKey.tr()),
     variant: .error,
   );
 }

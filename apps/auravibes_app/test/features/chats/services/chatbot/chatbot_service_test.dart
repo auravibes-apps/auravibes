@@ -61,7 +61,11 @@ void main() {
                 ),
               ),
             ],
-            metadata: const {'continuation': 'signature'},
+            metadata: const {
+              'continuation': 'signature',
+              'cacheReadInputTokens': 5,
+              'cacheCreationInputTokens': 3,
+            },
           ),
           finishReason: genkit.FinishReason.stop,
           usage: genkit.GenerationUsage(
@@ -119,7 +123,14 @@ void main() {
       expect(results.last.entityPromptTokens(), 12);
       expect(results.last.entityCompletionTokens(), 8);
       expect(results.last.entityTotalTokens(), 20);
+      expect(results.last.usage?.cacheReadInputTokens, 5);
+      expect(results.last.usage?.cacheCreationInputTokens, 3);
       expect(results.last.entityModelMetadata, {'continuation': 'signature'});
+      expect(results.last.metadata, isNot(contains('cacheReadInputTokens')));
+      expect(
+        results.last.metadata,
+        isNot(contains('cacheCreationInputTokens')),
+      );
 
       expect(capturedRequest?.tools?.single.name, 'lookup_weather');
       expect(capturedRequest?.messages.map((message) => message.role.value), [
@@ -910,6 +921,7 @@ class _FakeProviderFactory extends ProviderFactory {
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
     ReasoningConfiguration? reasoningConfiguration,
+    List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   }) async {
     if (throwsOnCreateGenkit) throw Exception('failed to create Genkit');
     return genkit.Genkit(isDevEnv: false)..defineModel(
