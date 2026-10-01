@@ -74,7 +74,7 @@ final class AssessSkillAccessUsecaseProvider
 }
 
 String _$assessSkillAccessUsecaseHash() =>
-    r'8ebcb33286eb2c6dc1c20da5168d73ff0518e0ff';
+    r'249bd1aea6c33c208862303c334278a6a895127a';
 
 final class AssessSkillAccessUsecaseFamily extends $Family
     with $FunctionalFamilyOverride<AssessSkillAccessUsecase, String> {
@@ -152,7 +152,7 @@ final class SkillAccessSummaryProvider
 }
 
 String _$skillAccessSummaryHash() =>
-    r'681a54c94ef00dedc74e6031917a4bec4220c518';
+    r'5ec58f0bef3590a3ac94771fe14dca649b49b639';
 
 final class SkillAccessSummaryFamily extends $Family
     with

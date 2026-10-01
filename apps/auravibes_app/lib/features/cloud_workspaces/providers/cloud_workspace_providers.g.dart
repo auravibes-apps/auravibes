@@ -150,7 +150,7 @@ final class CloudWorkspaceStateProvider
 }
 
 String _$cloudWorkspaceStateHash() =>
-    r'd4aa817ebe6f36c69b03c2e5c299060d925f407b';
+    r'eda7e33e93fbf016a94d23708a8092363d4d88bf';
 
 final class CloudWorkspaceStateFamily extends $Family
     with
@@ -232,7 +232,7 @@ final class CloudWorkspaceDetailProvider
 }
 
 String _$cloudWorkspaceDetailHash() =>
-    r'a8c1075e0351d06f9f80d678939ebf6256d0114d';
+    r'c4aa0dcc9ff9f81facff9bbfd85d5194bb7a6483';
 
 final class CloudWorkspaceDetailFamily extends $Family
     with
@@ -318,7 +318,7 @@ final class CloudWorkspaceRouteAccountProvider
 }
 
 String _$cloudWorkspaceRouteAccountHash() =>
-    r'5b507a1711d3aa1912e74bd7dcec9acb79d3e954';
+    r'6711c51bab44c4ee8439a535c99ba381db02b52a';
 
 /// Old links may omit origin; resolving an ambiguous identity fails closed.
 
