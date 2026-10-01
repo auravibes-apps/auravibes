@@ -293,6 +293,10 @@ void main() {
           secret: {'token': 'synthetic-value'},
           metadata: {'token': 'leaked', 'region': 'east'},
         ),
+        f.credentialRequest(
+          secret: {'token': 'synthetic-value', 'undeclared': 'persisted'},
+          metadata: {'region': 'east'},
+        ),
         f.credentialRequest(secret: {'token': 'synthetic-value'}),
       ]) {
         await expectLater(
@@ -349,6 +353,47 @@ void main() {
       expect(saved!.revision, 3);
       expect(await f.events(), hasLength(5));
     });
+
+    test(
+      'metadata-only credential update preserves its display suffix',
+      () async {
+        final f = await _Fixture.create(sessionBuilder.build());
+        await f.patch(
+          .update,
+          schema: '{"token":{},"region":{"secret":false}}',
+        );
+        await f.mutate(
+          f.credentialRequest(
+            secret: {'token': 'abcdefgh'},
+            metadata: {'region': 'east'},
+          ),
+        );
+        final savedSecret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        await WorkspaceSecret.db.updateRow(
+          f.session,
+          savedSecret!.copyWith(displaySuffix: 'cdef'),
+        );
+
+        final updated = await f.mutate(
+          f.credentialRequest(metadata: {'region': 'west'}, revision: 1),
+        );
+
+        expect(updated.displaySuffix, 'cdef');
+        expect(jsonDecode(updated.resource.data)['keySuffix'], 'cdef');
+        final persistedSecret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        expect(persistedSecret!.displaySuffix, 'cdef');
+      },
+    );
 
     test('direct patch blocks disabled reference-only deletion', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());

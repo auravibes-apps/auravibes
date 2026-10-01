@@ -288,6 +288,7 @@ class _AuraTabBarState extends State<_AuraTabBar> {
           !renderObject.hasSize ||
           position == null ||
           !position.hasContentDimensions) {
+        _scheduleReveal();
         return;
       }
 

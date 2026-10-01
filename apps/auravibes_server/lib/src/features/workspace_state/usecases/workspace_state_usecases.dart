@@ -569,10 +569,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       final secretRevision = writesSecret
           ? (existing?.revision ?? 0) + 1
           : existing?.revision;
+      final displaySuffix = writesSecret
+          ? secret == null
+                ? null
+                : _suffix(secret)
+          : existing?.displaySuffix;
       final sanitized = _credentialOperation(
         operation,
         configured: secret != null,
-        displaySuffix: secret == null ? null : _suffix(secret),
+        displaySuffix: displaySuffix,
         secretRevision: secretRevision,
       );
       final previousResource = isMcpCredential
@@ -642,7 +647,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         final response = MutateWorkspaceCredentialResponse(
           resource: resource,
           configured: secret != null,
-          displaySuffix: secret == null ? null : _suffix(secret),
+          displaySuffix: displaySuffix,
           secretRevision: secretRevision,
           sequence: sequence,
         );

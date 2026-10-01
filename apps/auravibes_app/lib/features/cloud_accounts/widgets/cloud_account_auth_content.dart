@@ -18,13 +18,13 @@ class CloudAccountAuthContent extends StatefulWidget {
     this.initialMode = .login,
     this.onModeChanged,
     this.passwordChanged = false,
-    this.returnTaskLabel,
+    this.returnTaskLabel = '',
     super.key,
   });
   final CloudAuthTarget target;
   final CloudAuthMode initialMode;
   final bool passwordChanged;
-  final String? returnTaskLabel;
+  final String returnTaskLabel;
   final ValueChanged<CloudAccountSession> onSignedIn;
   final VoidCallback onCancel;
   final ValueChanged<CloudAuthNavigation>? onModeChanged;
@@ -126,8 +126,11 @@ class _CloudAccountAuthContentState extends State<CloudAccountAuthContent> {
           ),
         if (mode == .login) ...[
           const TextLocale(LocaleKeys.cloud_accounts_add_body),
-          if (widget.returnTaskLabel case final task?)
-            TextLocale(LocaleKeys.cloud_accounts_return_to_task, args: [task])
+          if (widget.returnTaskLabel.isNotEmpty)
+            TextLocale(
+              LocaleKeys.cloud_accounts_return_to_task,
+              args: [widget.returnTaskLabel],
+            )
           else
             const TextLocale(LocaleKeys.cloud_accounts_return_hint),
           AuraButton(

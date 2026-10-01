@@ -542,10 +542,10 @@ Future<void> _showMarkdownEditor(
     initialMarkdown: initialMarkdown,
     maxCharacters: maxCharacters,
     titleKey: maxCharacters == null
-        ? null
+        ? LocaleKeys.markdown_editor_title
         : LocaleKeys.markdown_editor_resource_description,
     draftHintKey: maxCharacters == null
-        ? null
+        ? LocaleKeys.markdown_editor_draft_hint
         : LocaleKeys.markdown_editor_resource_hint,
   );
   onResult(result);

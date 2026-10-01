@@ -28,23 +28,25 @@ class CreateWorkspaceForm extends ConsumerStatefulWidget {
   /// Creates a workspace form.
   const new({
     required this.onCreated,
-    this.onAddCloudAccount,
+    required this.onAddCloudAccount,
+    required this.onCreatingChanged,
+    this.canAddCloudAccount = false,
     this.onReturn,
-    this.taskId,
-    this.onCreatingChanged,
+    this.taskId = '',
     super.key,
   });
 
-  final String? taskId;
+  final String taskId;
 
   /// Keeps the task owner attached while creation is pending.
-  final ValueChanged<bool>? onCreatingChanged;
+  final ValueChanged<bool> onCreatingChanged;
 
   /// Called after workspace creation succeeds.
   final ValueChanged<WorkspaceEntity> onCreated;
 
   /// Called when a cloud account should be added.
-  final VoidCallback? onAddCloudAccount;
+  final VoidCallback onAddCloudAccount;
+  final bool canAddCloudAccount;
 
   /// Safe return when this form was opened directly.
   final VoidCallback? onReturn;
@@ -78,7 +80,8 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   @override
   void initState() {
     super.initState();
-    if (widget.taskId case final taskId?) {
+    if (widget.taskId.isNotEmpty) {
+      final taskId = widget.taskId;
       final draft = ref.read(workspaceCreationDraftProvider(taskId));
       _name.text = draft.name;
       _targetAccountId = draft.target;
@@ -118,7 +121,9 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
         errorText: _errorText,
         isCreating: _isCreating,
         onTargetAccountChanged: _setTargetAccount,
-        onAddCloudAccount: widget.onAddCloudAccount,
+        onAddCloudAccount: widget.canAddCloudAccount
+            ? widget.onAddCloudAccount
+            : null,
         onCreate: _create,
       ),
     );
@@ -127,7 +132,8 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
   void _onNameChanged() {
     if (!mounted) return;
 
-    if (widget.taskId case final taskId?) {
+    if (widget.taskId.isNotEmpty) {
+      final taskId = widget.taskId;
       ref
           .read(workspaceCreationDraftProvider(taskId).notifier)
           .update(name: _name.text);
@@ -140,7 +146,8 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
 
   void _setTargetAccount(String? accountId) {
     if (_isCreating || accountId == null) return;
-    if (widget.taskId case final taskId?) {
+    if (widget.taskId.isNotEmpty) {
+      final taskId = widget.taskId;
       ref
           .read(workspaceCreationDraftProvider(taskId).notifier)
           .update(
@@ -162,7 +169,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm>
       _isCreating = true;
       _errorText = null;
     });
-    widget.onCreatingChanged?.call(true);
+    widget.onCreatingChanged(true);
     await _runCreate(name);
   }
 
@@ -231,7 +238,7 @@ mixin _CreateWorkspaceFormActions on ConsumerState<CreateWorkspaceForm> {
   void _finishCreating() {
     if (!mounted) return;
     setState(() => _state._isCreating = false);
-    widget.onCreatingChanged?.call(false);
+    widget.onCreatingChanged(false);
   }
 
   void _handleCreatedWorkspace(WorkspaceEntity workspace) {

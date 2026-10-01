@@ -312,7 +312,7 @@ void main() {
       encryptionService: _ThrowingEncryptionService(),
     );
     expect(
-      (await secretFree.getLinkedCredentialSummaries(
+      (await harness.database.skillCredentialsDao.getLinkedCredentialSummaries(
         workspaceId: harness.workspaceId,
         credentialDefinitionId: definition.id,
       )).single.id,

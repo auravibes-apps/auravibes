@@ -141,7 +141,7 @@ class CredentialWriteSafety {
     Map<String, String> secret,
   ) {
     if (metadata.keys.any((key) => fields[key]?.secret != false) ||
-        secret.keys.any((key) => fields[key]?.secret == false)) {
+        secret.keys.any((key) => fields[key]?.secret != true)) {
       _invalid();
     }
     for (final entry in fields.entries) {

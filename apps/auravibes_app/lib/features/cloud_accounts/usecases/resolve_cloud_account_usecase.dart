@@ -9,7 +9,7 @@ abstract final class ResolveCloudAccountUsecase {
     required String accountId,
     required List<CloudAccountSession> accounts,
     List<WorkspaceEntity> mirrors = const [],
-    int? workspaceId,
+    int workspaceId = -1,
     String? serverUrl,
   }) {
     final candidates = <CloudAccountKey>{
@@ -17,7 +17,8 @@ abstract final class ResolveCloudAccountUsecase {
         if (account.userId == accountId) account.key,
       for (final mirror in mirrors)
         if (mirror.cloudAccountId == accountId &&
-            mirror.cloudWorkspaceId == workspaceId?.toString() &&
+            mirror.cloudWorkspaceId ==
+                (workspaceId < 0 ? null : '$workspaceId') &&
             mirror.cloudAccount != null)
           ?mirror.cloudAccount,
     };

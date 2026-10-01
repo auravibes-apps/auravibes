@@ -99,10 +99,11 @@ class _WorkspaceSetupContentState extends ConsumerState<WorkspaceSetupContent> {
           CreateWorkspaceForm(
             onCreated: _completed,
             onAddCloudAccount: _addAccount,
-            onReturn: widget.onReturn,
-            taskId: widget.taskId,
             onCreatingChanged: (creating) =>
                 setState(() => _creating = creating),
+            canAddCloudAccount: true,
+            onReturn: widget.onReturn,
+            taskId: widget.taskId,
             key: ValueKey(draft.intent),
           )
         else ...[
