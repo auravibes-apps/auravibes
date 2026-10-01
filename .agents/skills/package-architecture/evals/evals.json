@@ -1,0 +1,23 @@
+{
+  "skill_name": "package-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Expose a new engine API for an app adapter.",
+      "expected_output": "Loads package-architecture for public API and package boundary decisions.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Can we extract this app-specific widget into auravibes_ui?",
+      "expected_output": "Loads package-architecture and checks reuse/domain boundaries before deciding.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Fix an off-by-one error inside an existing engine implementation.",
+      "expected_output": "Does not load package-architecture for a routine internal fix; verifies affected behavior.",
+      "files": []
+    }
+  ]
+}

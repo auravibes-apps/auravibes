@@ -4,7 +4,7 @@
 ## Scope
 
 - Applies to `packages/auravibes_engine`.
-- Root-run agents must load `.agents/skills/package-architecture/SKILL.md`; it is the package architecture source of truth.
+- Load `.agents/skills/package-architecture/SKILL.md` for package boundary, public API, placement, or architecture changes. Routine edits within an established package can follow nearby code and these scoped rules.
 - Keep this package pure Dart: no Flutter, Riverpod, Drift, app imports, UI imports, or localization.
 
 ## Boundaries

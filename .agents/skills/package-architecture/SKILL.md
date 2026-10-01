@@ -1,6 +1,6 @@
 ---
 name: package-architecture
-description: Use when adding, moving, reviewing, or reading reusable package code, especially packages/auravibes_engine and packages/auravibes_ui. Defines target package boundaries, public API shape, internal src layout, package seams, tests, and AI-agent-friendly structure.
+description: Use when changing package boundaries, public API shape, package placement, or architecture in auravibes_engine, auravibes_ui, or Widgetbook. Skip for routine localized edits within an established package.
 ---
 
 # Package Architecture

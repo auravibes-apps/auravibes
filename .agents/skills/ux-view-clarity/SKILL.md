@@ -1,6 +1,6 @@
 ---
 name: ux-view-clarity
-description: Use for every AuraVibes user-visible UI edit, including screen, dialog, form, navigation, copy, state, layout, or shared-component changes. Check task clarity for small edits and write a view/flow brief for new or reworked experiences. For standalone evaluation of an existing flow, use ux-task-audit instead. Skip non-UI and accessibility-only work.
+description: Use for new views, changed task flows, or visual regression work. Skip local spacing/copy edits, non-UI work, and standalone audits; use ux-task-audit for audits.
 ---
 
 # AuraVibes UX view clarity
@@ -9,7 +9,7 @@ Use this skill only when the request includes changing the experience a user see
 
 ## Choose the depth
 
-For a local change such as spacing, a label, or a state message:
+Local spacing, labels, and state messages do not require loading this skill. Apply this brief check directly:
 
 1. Identify the task and state affected from the request or nearby product context.
 2. Check that the change keeps the purpose, next action, and result understandable. Check that it does not hide needed information, change a consequence, or break an existing recovery path.
