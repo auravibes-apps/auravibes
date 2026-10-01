@@ -36,6 +36,24 @@
       "prompt": "Explain why CI took twenty minutes on the last run; do not change anything.",
       "expected_output": "Inspects trusted run/head/attempt and failure/timing data without pushing, editing guidance, or starting local broad validation.",
       "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "An open app PR changes an @riverpod provider and its focused tests pass. Check the PR instructions and workflow, finish the fix, and keep CI green.",
+      "expected_output": "Reads the root and app-scoped instructions and the Riverpod skill, runs and reviews generated provider output before push, checks applicable local gates, verifies the PR run is for the pushed head, and does not treat focused tests as proof of integrity success.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "I patched the state provider and test. Can you get this branch ready for review without another round of CI fixes?",
+      "expected_output": "Recognizes the PR-delivery task, identifies applicable scoped instructions and generated artifacts, runs relevant pre-push gates together, and monitors CI for the exact updated head.",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "What command regenerates Riverpod providers in this local package? Explain only; I am not preparing a PR.",
+      "expected_output": "Answers with the repository's Riverpod generator command without loading PR monitoring, inspecting GitHub checks, or making changes.",
+      "files": []
     }
   ]
 }

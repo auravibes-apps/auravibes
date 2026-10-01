@@ -6,6 +6,12 @@ After creation or every push, inspect current-head checks and review state
 immediately. Poll bounded status snapshots while working on useful local
 diagnosis; do not wait idle for the full matrix.
 
+If a required workflow has no run for the exact PR head, inspect its trigger,
+branch filters, and path conditions in the trusted workflow. When the workflow
+supports `workflow_dispatch` and the user requested CI verification, dispatch
+it against the PR branch and confirm the run's commit SHA. Do not count a run
+for an older or unrelated head as validation.
+
 ```bash
 gh pr checks "$pr" --json name,workflow,state,bucket,link
 gh pr view "$pr" --json \
@@ -24,6 +30,12 @@ reported. Start local diagnosis and run only the focused reproducer while other
 jobs continue. For test-shard failures, inspect the job summary and the
 `test-plan` or `test-report-*` artifacts when available; use their selected
 paths, shard, and command to reproduce only the failing tests.
+
+Before pushing a repair, snapshot the checks for that head and group every
+currently reported failure by root cause. Record the check, job, head SHA,
+evidence, and proposed repair; fix all confirmed causes already surfaced in
+one batch instead of committing separately for each symptom. Keep monitoring
+when another pending check could expose a distinct cause.
 
 If the root cause is clear and the focused check passes, push the repair without
 waiting for unrelated pending jobs when the workflow cancels in-progress PR

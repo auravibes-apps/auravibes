@@ -1,7 +1,7 @@
 ---
 name: pr-delivery
 description: Push changes or create/update AuraVibes PRs. Load monitoring details only when asked to wait for checks, fix CI, or make a PR green.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # PR delivery
@@ -15,7 +15,7 @@ version: 0.4.0
 
 ## Prepare
 
-1. Use applicable AGENTS already in context; read missing scoped instructions only for affected paths. Preserve unrelated changes.
+1. Identify changed paths, read root `AGENTS.md` and the closest scoped `AGENTS.md` for every affected area before editing, then load task skills those instructions route to. Do not assume a scoped file was read because it is available in the workspace. Preserve unrelated changes.
 2. Confirm branch, status, local HEAD, remote, and PR base. Fetch the base once; inspect the exact changed paths. For an ordinary PR, use established gate mapping from AGENTS. Inspect base-revision workflows and referenced actions when those files change or CI requirements are unclear.
 3. Use [GitHub commands](../review-pr/github.md) for lookup and creation; load review-pr only when handling actual feedback.
 4. If behind base, merge it when conflicts block delivery or the user requests a current-base/green PR. Do not update a conflict-free branch merely to open a PR. Do not rebase or force-push.
@@ -23,7 +23,7 @@ version: 0.4.0
 ## Validate and publish
 
 1. Review the scoped diff and affected callers. Keep one coherent change with related tests; split independently reviewable work when useful.
-2. Run the smallest applicable checks from AGENTS with the pinned FVM toolchain and existing dependencies. Rerun only affected checks after edits. Do not reproduce the whole CI matrix or provision an environment solely to open a PR.
+2. Run the smallest applicable checks from AGENTS with the pinned FVM toolchain and existing dependencies. For sources that feed checked-in generated files, run the scoped generator after source edits stabilize and inspect the generated diff before pushing; focused tests and analysis do not establish generated-artifact integrity. Rerun only affected checks after edits. Do not reproduce the whole CI matrix or provision an environment solely to open a PR.
 3. For docs/skills, run the harness verifier and diff check. For workflows, inspect permissions and credential/write access against the trusted base and run static syntax/action checks. Execute deployment or external writes only when authorized.
 4. If a local check is unavailable or setup would not shorten feedback, report the coverage gap and corresponding remote check. Never claim it passed.
 5. Stage intended files explicitly, commit with Conventional Commits, and push when authorized. Verify remote branch SHA equals local HEAD.
