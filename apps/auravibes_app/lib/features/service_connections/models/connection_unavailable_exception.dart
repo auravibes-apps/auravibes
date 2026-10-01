@@ -3,4 +3,7 @@ class ConnectionUnavailableException implements Exception {
   const new();
 
   String get localizationKey => 'connection_setup.connection_missing';
+
+  @override
+  String toString() => 'ConnectionUnavailableException: $localizationKey';
 }

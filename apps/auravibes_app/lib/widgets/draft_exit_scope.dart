@@ -32,14 +32,29 @@ class _DraftExitScopeState extends ConsumerState<DraftExitScope> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final router = GoRouter.maybeOf(context);
+    _registerCurrentRoute(.maybeOf(context));
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      _DraftExitScopeListener(guard: widget.guard, child: widget.child);
+
+  void _registerCurrentRoute(GoRouter? router) {
     if (router == null) return;
-    final uri = ModalRoute.of(context)?.settings is Page
-        ? GoRouterState.of(context).uri
-        : router.state.uri;
+    final uri = _routeUri(router);
+    _updateRegistration(uri);
+  }
+
+  Uri _routeUri(GoRouter router) {
+    final isPageRoute = ModalRoute.of(context)?.settings is Page;
+
+    return isPageRoute ? GoRouterState.of(context).uri : router.state.uri;
+  }
+
+  void _updateRegistration(Uri uri) {
     final oldUri = _uri;
     if (oldUri != null && oldUri != uri) {
-      _registry?.unregister(oldUri, widget.guard);
+      _unregister(oldUri);
     }
     _uri = uri;
     final registry = ref.read(draftExitRegistryProvider);
@@ -47,21 +62,51 @@ class _DraftExitScopeState extends ConsumerState<DraftExitScope> {
     registry.register(uri, context, widget.guard);
   }
 
+  void _unregister(Uri uri) => _registry?.unregister(uri, widget.guard);
+}
+
+class _DraftExitScopeListener extends StatelessWidget {
+  const new({required this.guard, required this.child});
+
+  final DraftExitGuard guard;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: widget.guard,
-    builder: (context, _) => PopScope<Object?>(
-      child: AbsorbPointer(
-        absorbing: widget.guard.isTransitioning,
-        child: ExcludeFocus(
-          excluding: widget.guard.isTransitioning,
-          child: widget.child,
-        ),
-      ),
-      canPop: widget.guard.isApproved && !widget.guard.isTransitioning,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) unawaited(widget.guard.pop(context, result));
-      },
-    ),
+    listenable: guard,
+    builder: (context, _) => _DraftExitPopScope(guard: guard, child: child),
   );
+}
+
+class _DraftExitPopScope extends StatelessWidget {
+  const new({required this.guard, required this.child});
+
+  final DraftExitGuard guard;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => PopScope<Object?>(
+    child: _DraftExitTransitionShield(guard: guard, child: child),
+    canPop: guard.isApproved && !guard.isTransitioning,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) unawaited(guard.pop(context, result));
+    },
+  );
+}
+
+class _DraftExitTransitionShield extends StatelessWidget {
+  const new({required this.guard, required this.child});
+
+  final DraftExitGuard guard;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final isTransitioning = guard.isTransitioning;
+
+    return AbsorbPointer(
+      absorbing: isTransitioning,
+      child: ExcludeFocus(excluding: isTransitioning, child: child),
+    );
+  }
 }

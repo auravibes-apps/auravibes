@@ -51,17 +51,37 @@ Future<CloudWorkspaceViewState?> cloudWorkspaceState(
     throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
   }
   final useCases = await ref.watch(cloudWorkspaceUseCasesProvider(key).future);
+
+  return await _loadCloudWorkspaceState(ref, key, useCases);
+}
+
+Future<CloudWorkspaceViewState> _loadCloudWorkspaceState(
+  Ref ref,
+  CloudAccountKey key,
+  CloudWorkspaceUseCases? useCases,
+) async {
   if (useCases == null) {
     throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
   }
   try {
     return await useCases.load();
-  } on CloudWorkspaceException catch (error) {
-    if (!CheckCloudAccountUsecase.requiresSignIn(error)) rethrow;
-    ref.invalidate(cloudAccountHealthProvider(key));
-
-    return const CloudWorkspaceViewState.authenticationRequired();
+  } on CloudWorkspaceException catch (error, stackTrace) {
+    return _recoverCloudWorkspaceLoad(ref, key, error, stackTrace);
   }
+}
+
+CloudWorkspaceViewState _recoverCloudWorkspaceLoad(
+  Ref ref,
+  CloudAccountKey key,
+  CloudWorkspaceException error,
+  StackTrace stackTrace,
+) {
+  if (!CheckCloudAccountUsecase.requiresSignIn(error)) {
+    Error.throwWithStackTrace(error, stackTrace);
+  }
+  ref.invalidate(cloudAccountHealthProvider(key));
+
+  return const CloudWorkspaceViewState.authenticationRequired();
 }
 
 @riverpod
@@ -76,8 +96,23 @@ Future<CloudWorkspaceDetailState?> cloudWorkspaceDetail(
   if (useCases == null) {
     throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
   }
+
+  return await _loadCloudWorkspaceDetail(
+    ref,
+    account,
+    key.workspaceId,
+    useCases,
+  );
+}
+
+Future<CloudWorkspaceDetailState> _loadCloudWorkspaceDetail(
+  Ref ref,
+  CloudAccountKey account,
+  int workspaceId,
+  CloudWorkspaceUseCases useCases,
+) async {
   try {
-    return await useCases.loadDetail(key.workspaceId);
+    return await useCases.loadDetail(workspaceId);
   } on CloudWorkspaceException catch (error) {
     if (CheckCloudAccountUsecase.requiresSignIn(error)) {
       ref.invalidate(cloudAccountHealthProvider(account));
@@ -95,11 +130,11 @@ Future<CloudAccountKey> cloudWorkspaceRouteAccount(
   final accounts = await ref.watch(cloudAccountsProvider.future);
   final mirrors = await ref.watch(allWorkspacesProvider.future);
 
-  return ResolveCloudAccountUsecase.call(
+  return ResolveCloudAccountUsecase.call((
     accountId: key.accountId,
     accounts: accounts,
     mirrors: mirrors,
     workspaceId: key.workspaceId,
     serverUrl: key.serverUrl,
-  );
+  ));
 }

@@ -248,8 +248,18 @@ void main() {
             expect(find.byType(BottomSheet), findsOneWidget);
           }
           if (scene == 'workspaces') {
+            if (!ResponsiveShellLayout.isDesktop(screen.width)) {
+              await tester.tap(find.byKey(const ValueKey('app_drawer_menu')));
+              final _ = await tester.pumpAndSettle();
+            }
+            await tester.tap(find.byKey(const ValueKey('workspace_actions')));
+            final _ = await tester.pumpAndSettle();
             await tester.tap(
-              find.byKey(const Key('new_chat_workspace_selector')),
+              find.text(
+                locale == 'es'
+                    ? 'Gestionar Espacios de Trabajo'
+                    : 'Manage Workspaces',
+              ),
             );
             final _ = await tester.pumpAndSettle();
           }
@@ -292,9 +302,7 @@ void main() {
             );
           } else if (scene == 'setup-ai') {
             expect(
-              find.text(
-                locale == 'es' ? _es('newConnection') : 'New Connection',
-              ),
+              find.text(locale == 'es' ? 'Conectar IA' : 'Connect AI'),
               findsWidgets,
             );
           } else if (scene == 'setup-notion') {

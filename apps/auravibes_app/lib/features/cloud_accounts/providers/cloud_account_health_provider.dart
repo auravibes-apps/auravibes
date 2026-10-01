@@ -8,16 +8,14 @@ part 'cloud_account_health_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 CheckCloudAccountUsecase checkCloudAccountUsecase(Ref ref) =>
-    CheckCloudAccountUsecase(
-      check: (key) async {
-        final client = await ref.read(
-          serverpodClientForAccountProvider(key).future,
-        );
-        final account = await client?.account.currentUser();
+    CheckCloudAccountUsecase(check: (key) => _checkCloudAccount(ref, key));
 
-        return account?.userId;
-      },
-    );
+Future<String?> _checkCloudAccount(Ref ref, CloudAccountKey key) async {
+  final client = await ref.read(serverpodClientForAccountProvider(key).future);
+  final account = await client?.account.currentUser();
+
+  return account?.userId;
+}
 
 @Riverpod(keepAlive: true)
 Future<CloudAccountHealth> cloudAccountHealth(Ref ref, CloudAccountKey key) =>

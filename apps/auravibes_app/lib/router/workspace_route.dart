@@ -26,6 +26,7 @@ import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
@@ -205,42 +206,18 @@ class const _WorkspaceSessionGate({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
-    final shell = _WorkspaceShell(
+
+    return _WorkspaceSessionGateContent(
       workspaceId: workspaceId,
+      session: session,
       navigationShell: navigationShell,
+      isAppScoped: WorkspaceNavigation.isAppScoped(
+        GoRouterState.of(context).uri,
+      ),
+      onChooseWorkspace: () => _chooseWorkspace(context),
+      onRetry: () =>
+          ref.invalidate(workspaceSessionForRouteProvider(workspaceId)),
     );
-    // App pages require no workspace data. The resolver still owns first use.
-    if (session.error is! WorkspaceRouteFailure && session.value != null) {
-      final loaded = session.requireValue;
-
-      return WorkspaceAccessGate(
-        workspaceId: workspaceId,
-        session: loaded,
-        child: shell,
-        onChooseWorkspace: () => _chooseWorkspace(context),
-      );
-    }
-    if (WorkspaceNavigation.isAppScoped(GoRouterState.of(context).uri)) {
-      return shell;
-    }
-
-    return switch (session) {
-      AsyncError(error: final WorkspaceRouteFailure failure) =>
-        RouteRecoveryView(
-          messageKey: failure.localizationKey,
-          onReturn: () => _chooseWorkspace(context),
-        ),
-      AsyncError(isLoading: true) || AsyncLoading() => const RouteRecoveryView(
-        messageKey: LocaleKeys.route_state_workspace_loading,
-        isLoading: true,
-      ),
-      AsyncError() || AsyncData() => RouteRecoveryView(
-        messageKey: LocaleKeys.route_state_workspace_error,
-        onRetry: () =>
-            ref.invalidate(workspaceSessionForRouteProvider(workspaceId)),
-        onReturn: () => _chooseWorkspace(context),
-      ),
-    };
   }
 
   void _chooseWorkspace(BuildContext context) {
@@ -250,6 +227,72 @@ class const _WorkspaceSessionGate({
       ),
     );
   }
+}
+
+class const _WorkspaceSessionGateContent({
+  required final String workspaceId,
+  required final AsyncValue<WorkspaceSession> session,
+  required final StatefulNavigationShell navigationShell,
+  required final bool isAppScoped,
+  required final VoidCallback onChooseWorkspace,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final shell = _WorkspaceShell(
+      workspaceId: workspaceId,
+      navigationShell: navigationShell,
+    );
+    final loadedSession = _loadedWorkspaceSession(session);
+    if (loadedSession != null) {
+      return WorkspaceAccessGate(
+        workspaceId: workspaceId,
+        session: loadedSession,
+        child: shell,
+        onChooseWorkspace: onChooseWorkspace,
+      );
+    }
+    if (isAppScoped) return shell;
+
+    return _WorkspaceSessionRecovery(
+      session: session,
+      onChooseWorkspace: onChooseWorkspace,
+      onRetry: onRetry,
+    );
+  }
+}
+
+WorkspaceSession? _loadedWorkspaceSession(
+  AsyncValue<WorkspaceSession> session,
+) {
+  if (session.error is WorkspaceRouteFailure || session.value == null) {
+    return null;
+  }
+
+  return session.requireValue;
+}
+
+class const _WorkspaceSessionRecovery({
+  required final AsyncValue<WorkspaceSession> session,
+  required final VoidCallback onChooseWorkspace,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (session) {
+    AsyncError(error: final WorkspaceRouteFailure failure) => RouteRecoveryView(
+      messageKey: failure.localizationKey,
+      onReturn: onChooseWorkspace,
+    ),
+    AsyncError(isLoading: true) || AsyncLoading() => const RouteRecoveryView(
+      messageKey: LocaleKeys.route_state_workspace_loading,
+      isLoading: true,
+    ),
+    AsyncError() || AsyncData() => RouteRecoveryView(
+      messageKey: LocaleKeys.route_state_workspace_error,
+      onRetry: onRetry,
+      onReturn: onChooseWorkspace,
+    ),
+  };
 }
 
 class const _WorkspaceShell({
@@ -323,52 +366,147 @@ class const _SubAgentConversationGate({
       workspaceId,
       conversationId: chatId,
     );
+    final state = ref.watch(provider);
+    final session = _sessionForState(ref, state);
 
-    return switch (ref.watch(provider)) {
-      AsyncData(:final value)
-          when _isMatchingConversation(
-            value,
-            workspaceId,
-            parentConversationId,
-            chatId,
-          ) =>
-        ChatConversationScreen(
-          workspaceId: workspaceId,
-          chatId: chatId,
-          showInputComposer: false,
-        ),
-      AsyncData() => RouteRecoveryView(
-        messageKey: LocaleKeys.chats_screens_chat_conversation_error_not_found,
-        onReturn: () => _returnToParent(context),
-        returnLabelKey: LocaleKeys.route_state_return_parent,
-      ),
-      AsyncError(:final error)
-          when WorkspaceRouteFailure.requiresAuthentication(error) =>
-        WorkspaceSignInRecovery(
-          workspaceId: workspaceId,
-          session: ref
-              .watch(workspaceSessionForRouteProvider(workspaceId))
-              .value,
-          onReturn: () => _returnToParent(context),
-          returnLabelKey: LocaleKeys.route_state_return_parent,
-        ),
-      AsyncError(isLoading: true) || AsyncLoading() => const RouteRecoveryView(
-        messageKey: LocaleKeys.route_state_child_loading,
-        isLoading: true,
-      ),
-      AsyncError() => RouteRecoveryView(
-        messageKey: LocaleKeys.route_state_child_error,
-        onRetry: () => ref.invalidate(provider),
-        onReturn: () => _returnToParent(context),
-        returnLabelKey: LocaleKeys.route_state_return_parent,
-      ),
-    };
+    return _SubAgentConversationResult(
+      gate: this,
+      state: state,
+      session: session,
+      onReturn: () => _returnToParent(context),
+      onRetry: () => ref.invalidate(provider),
+    );
   }
+
+  WorkspaceSession? _sessionForState(
+    WidgetRef ref,
+    AsyncValue<ConversationEntity?> state,
+  ) => switch (state) {
+    AsyncError(:final error)
+        when WorkspaceRouteFailure.requiresAuthentication(error) =>
+      ref.watch(workspaceSessionForRouteProvider(workspaceId)).value,
+    AsyncError() || AsyncLoading() || AsyncData() => null,
+  };
 
   void _returnToParent(BuildContext context) => ConversationRoute(
     workspaceId: workspaceId,
     chatId: parentConversationId,
   ).go(context);
+}
+
+class const _SubAgentConversationResult({
+  required final _SubAgentConversationGate gate,
+  required final AsyncValue<ConversationEntity?> state,
+  required final WorkspaceSession? session,
+  required final VoidCallback onReturn,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => switch (state) {
+    AsyncData(:final value) => _SubAgentConversationData(
+      gate: gate,
+      conversation: value,
+      onReturn: onReturn,
+    ),
+    AsyncError(:final error) => _SubAgentConversationError(
+      result: this,
+      requiresAuthentication: WorkspaceRouteFailure.requiresAuthentication(
+        error,
+      ),
+    ),
+    AsyncLoading() => const RouteRecoveryView(
+      messageKey: LocaleKeys.route_state_child_loading,
+      isLoading: true,
+    ),
+  };
+}
+
+class const _SubAgentConversationError({
+  required final _SubAgentConversationResult result,
+  required final bool requiresAuthentication,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (requiresAuthentication) {
+      return _SubAgentAuthenticationRecovery(
+        workspaceId: result.gate.workspaceId,
+        session: result.session,
+        onReturn: result.onReturn,
+      );
+    }
+    if (result.state.isLoading) {
+      return const RouteRecoveryView(
+        messageKey: LocaleKeys.route_state_child_loading,
+        isLoading: true,
+      );
+    }
+
+    return _SubAgentLoadError(
+      onReturn: result.onReturn,
+      onRetry: result.onRetry,
+    );
+  }
+}
+
+class const _SubAgentConversationData({
+  required final _SubAgentConversationGate gate,
+  required final ConversationEntity? conversation,
+  required final VoidCallback onReturn,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!_isMatchingConversation(
+      conversation,
+      gate.workspaceId,
+      gate.parentConversationId,
+      gate.chatId,
+    )) {
+      return _SubAgentNotFound(onReturn: onReturn);
+    }
+
+    return ChatConversationScreen(
+      workspaceId: gate.workspaceId,
+      chatId: gate.chatId,
+      showInputComposer: false,
+    );
+  }
+}
+
+class const _SubAgentAuthenticationRecovery({
+  required final String workspaceId,
+  required final WorkspaceSession? session,
+  required final VoidCallback onReturn,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceSignInRecovery(
+    workspaceId: workspaceId,
+    session: session,
+    onReturn: onReturn,
+    returnLabelKey: LocaleKeys.route_state_return_parent,
+  );
+}
+
+class const _SubAgentNotFound({required final VoidCallback onReturn})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => RouteRecoveryView(
+    messageKey: LocaleKeys.chats_screens_chat_conversation_error_not_found,
+    onReturn: onReturn,
+    returnLabelKey: LocaleKeys.route_state_return_parent,
+  );
+}
+
+class const _SubAgentLoadError({
+  required final VoidCallback onReturn,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => RouteRecoveryView(
+    messageKey: LocaleKeys.route_state_child_error,
+    onRetry: onRetry,
+    onReturn: onReturn,
+    returnLabelKey: LocaleKeys.route_state_return_parent,
+  );
 }
 
 bool _isMatchingConversation(
@@ -647,18 +785,8 @@ class ServiceConnectionCreateRoute({
       _canExitDraft(context, state);
 
   @override
-  Future<String?> redirect(BuildContext context, GoRouterState state) async {
-    final router = GoRouter.of(context);
-    final container = ProviderScope.containerOf(context, listen: false);
-    final registry = container.read(draftExitRegistryProvider);
-    if (!registry.hasActiveRoute(router)) return null;
-    final current = router.state.uri;
-    if (current.path != state.uri.path || current == state.uri) return null;
-    if (!await registry.canExitActive(router)) return current.toString();
-    container.read(addModelProviderStateProvider(workspaceId).notifier).reset();
-
-    return null;
-  }
+  Future<String?> redirect(BuildContext context, GoRouterState state) =>
+      _serviceConnectionCreateRedirect(context, state, workspaceId);
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
@@ -671,6 +799,67 @@ class ServiceConnectionCreateRoute({
       key: ValueKey((workspaceId: workspaceId, context: state.uri.query)),
     );
   }
+}
+
+Future<String?> _serviceConnectionCreateRedirect(
+  BuildContext context,
+  GoRouterState state,
+  String workspaceId,
+) {
+  final redirect = _serviceConnectionRedirectRequest(context, state);
+  if (redirect == null) return Future<String?>.value();
+
+  return _completeServiceConnectionRedirect(context, workspaceId, redirect);
+}
+
+typedef _ServiceConnectionRedirect = ({
+  GoRouter router,
+  DraftExitRegistry registry,
+  Uri target,
+});
+
+_ServiceConnectionRedirect? _serviceConnectionRedirectRequest(
+  BuildContext context,
+  GoRouterState state,
+) {
+  final router = GoRouter.of(context);
+  final container = ProviderScope.containerOf(context, listen: false);
+  final registry = container.read(draftExitRegistryProvider);
+  final target = _serviceConnectionRedirectTarget(router, state, registry);
+  if (target == null) return null;
+
+  return (router: router, registry: registry, target: target);
+}
+
+Future<String?> _completeServiceConnectionRedirect(
+  BuildContext context,
+  String workspaceId,
+  _ServiceConnectionRedirect redirect,
+) async {
+  if (!await redirect.registry.canExitActive(redirect.router)) {
+    return redirect.target.toString();
+  }
+  if (context.mounted) _resetAddModel(context, workspaceId);
+
+  return null;
+}
+
+void _resetAddModel(BuildContext context, String workspaceId) =>
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(addModelProviderStateProvider(workspaceId).notifier).reset();
+
+Uri? _serviceConnectionRedirectTarget(
+  GoRouter router,
+  GoRouterState state,
+  DraftExitRegistry registry,
+) {
+  if (!registry.hasActiveRoute(router)) return null;
+  final current = router.state.uri;
+  if (current.path != state.uri.path || current == state.uri) return null;
+
+  return current;
 }
 
 class ServiceConnectionEditRoute({

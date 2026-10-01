@@ -37,6 +37,7 @@ void main() {
 
     expect(find.byType(AuraDropdownSelector<String>), findsNWidgets(2));
     expect(find.text('Research Agent'), findsOneWidget);
+    await _scrollToAgent(tester, 'Release Agent');
     expect(find.text('Release Agent'), findsOneWidget);
 
     await tester.enterText(find.byType(EditableText), 'launch');
@@ -73,11 +74,13 @@ void main() {
     expect(find.text('Show more'), findsOneWidget);
 
     await tester.tap(find.text('Show more'));
-    await tester.pump();
-    await tester.pump();
+    final _ = await tester.pumpAndSettle();
 
-    expect(find.text('First Agent'), findsOneWidget);
+    await _scrollToAgent(tester, 'Second Agent');
     expect(find.text('Second Agent'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('First Agent'), findsOneWidget);
     expect(find.text('Show more'), findsNothing);
   });
 
@@ -120,8 +123,11 @@ void main() {
 
     expect(duplicateCalls, 1);
     expect(repository.queries, hasLength(2));
+    await _scrollToAgent(tester, 'Helper Copy');
     expect(find.text('Helper Copy'), findsOneWidget);
 
+    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Duplicate agent'));
@@ -237,6 +243,12 @@ void main() {
     expect(updateCalls, 1);
     expect(agent.visibility, AgentVisibility.subAgentList);
   });
+}
+
+Future<void> _scrollToAgent(WidgetTester tester, String name) async {
+  if (find.text(name).evaluate().isNotEmpty) return;
+  await tester.drag(find.byType(ListView), const Offset(0, -400));
+  final _ = await tester.pumpAndSettle();
 }
 
 Future<void> _pumpSubject(

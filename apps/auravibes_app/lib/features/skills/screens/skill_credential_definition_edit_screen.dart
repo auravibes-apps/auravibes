@@ -75,8 +75,7 @@ class _SkillCredentialDefinitionEditScreenState
     final definitionAsync = _watchDefinition();
 
     _exitGuard.bind(
-      isDirty: () => _isDirty,
-      isSaving: () => _isSaving,
+      readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
       onReturn: (context) =>
           SkillCredentialDefinitionsRoute(workspaceId: widget.workspaceId)
               .go(context),
@@ -168,22 +167,26 @@ extension on _SkillCredentialDefinitionEditScreenState {
     if (!_validateAttributeRows()) return;
     _updateState(() => _isSaving = true);
     try {
-      await _saveDefinition();
-      if (!context.mounted) return;
-
-      _updateState(() {
-        _savedSnapshot = _currentSnapshot();
-        _isSaving = false;
-      });
-      await _exitGuard.pop(
-        context,
-        widget.returnCreated ? _createdDefinition : null,
-      );
+      await _saveAndClose(context);
     } on Object catch (error) {
       if (context.mounted) _handleSaveError(context, error);
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _saveAndClose(BuildContext context) async {
+    await _saveDefinition();
+    if (!context.mounted) return;
+
+    _updateState(() {
+      _savedSnapshot = _currentSnapshot();
+      _isSaving = false;
+    });
+    await _exitGuard.pop(
+      context,
+      widget.returnCreated ? _createdDefinition : null,
+    );
   }
 
   Future<void> _manageCredentials() async {
@@ -652,21 +655,35 @@ class const _CredentialDefinitionError({
     child: AuraColumn(
       children: [
         const TextLocale(LocaleKeys.skill_credentials_definitions_error),
-        AuraButton(
-          onPressed: () => state.ref.invalidate(
-            skillCredentialDefinitionProvider(
-              state.widget.workspaceId,
-              state.widget.definitionId ?? '',
-            ),
-          ),
-          child: const TextLocale(LocaleKeys.route_state_retry),
-        ),
-        AuraButton(
-          onPressed: () => unawaited(state._exitGuard.pop(context)),
-          child: const TextLocale('connection_setup.return_types'),
-        ),
+        _CredentialDefinitionRetryButton(state: state),
+        _CredentialDefinitionReturnButton(state: state),
       ],
     ),
+  );
+}
+
+class const _CredentialDefinitionRetryButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => state.ref.invalidate(
+      skillCredentialDefinitionProvider(
+        state.widget.workspaceId,
+        state.widget.definitionId ?? '',
+      ),
+    ),
+    child: const TextLocale(LocaleKeys.route_state_retry),
+  );
+}
+
+class const _CredentialDefinitionReturnButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(state._exitGuard.pop(context)),
+    child: const TextLocale('connection_setup.return_types'),
   );
 }
 

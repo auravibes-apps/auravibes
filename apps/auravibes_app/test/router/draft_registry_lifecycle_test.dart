@@ -26,8 +26,10 @@ class _DraftState extends State<_Draft> {
   @override
   Widget build(BuildContext context) {
     guard.bind(
-      isDirty: () => controller.text.isNotEmpty,
-      isSaving: () => false,
+      readers: (
+        isDirty: () => controller.text.isNotEmpty,
+        isSaving: () => false,
+      ),
     );
 
     return DraftExitScope(

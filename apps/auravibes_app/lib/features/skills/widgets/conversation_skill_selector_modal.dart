@@ -633,14 +633,7 @@ class const _SkillTileContents({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _SkillTileIdentity(skill: skill, contextStatus: contextStatus),
-      SkillAccessStatusView(
-        workspaceId: actions.workspaceId,
-        skillId: skill.id,
-        showDependencies: true,
-        isAppSkill: skill.source == .app,
-        onChanged: actions.onRefresh,
-        recoveryEnabled: !pending,
-      ),
+      _SkillTileAccessStatus(skill: skill, actions: actions, pending: pending),
       _SkillTileMessages(
         description: skill.description,
         contextFailure: contextFailure,
@@ -649,6 +642,22 @@ class const _SkillTileContents({
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillTileAccessStatus({
+  required final AvailableSkill skill,
+  required final _SelectorActions actions,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SkillAccessStatusView(
+    workspaceId: actions.workspaceId,
+    skillId: skill.id,
+    showDependencies: true,
+    isAppSkill: skill.source == .app,
+    onChanged: actions.onRefresh,
+    recoveryEnabled: !pending,
   );
 }
 

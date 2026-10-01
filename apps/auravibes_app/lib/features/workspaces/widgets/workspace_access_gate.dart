@@ -24,28 +24,40 @@ class const WorkspaceAccessGate({
     if (WorkspaceNavigation.isAppScoped(uri) || session.cloud == null) {
       return child;
     }
-    final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
-    if (availability.value case WorkspaceAvailable()) return child;
-    if (availability.value case WorkspaceAuthenticationRequired()) {
-      return WorkspaceSignInRecovery(
-        workspaceId: workspaceId,
-        session: session,
-        onReturn: onChooseWorkspace,
-      );
-    }
-    if (availability.isLoading) {
-      return const RouteRecoveryView(
-        messageKey: LocaleKeys.route_state_workspace_loading,
-        isLoading: true,
-      );
-    }
 
-    return RouteRecoveryView(
-      messageKey: LocaleKeys.route_state_workspace_error,
+    return _WorkspaceAvailabilityGate(
+      workspaceId: workspaceId,
+      session: session,
+      child: child,
+      onChooseWorkspace: onChooseWorkspace,
+    );
+  }
+}
+
+class const _WorkspaceAvailabilityGate({
+  required final String workspaceId,
+  required final WorkspaceSession session,
+  required final Widget child,
+  required final VoidCallback onChooseWorkspace,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
+
+    return _WorkspaceAvailabilityStateView(
+      availability: availability,
+      child: child,
+      onAuthenticationRequired: _signInRecovery,
       onRetry: () => _retry(ref),
       onReturn: onChooseWorkspace,
     );
   }
+
+  Widget _signInRecovery() => WorkspaceSignInRecovery(
+    workspaceId: workspaceId,
+    session: session,
+    onReturn: onChooseWorkspace,
+  );
 
   void _retry(WidgetRef ref) {
     final cloud = session.cloud;
@@ -58,4 +70,29 @@ class const WorkspaceAccessGate({
     }
     ref.invalidate(workspaceAvailabilityProvider(workspaceId));
   }
+}
+
+class const _WorkspaceAvailabilityStateView({
+  required final AsyncValue<WorkspaceAvailability> availability,
+  required final Widget child,
+  required final Widget Function() onAuthenticationRequired,
+  required final VoidCallback onRetry,
+  required final VoidCallback onReturn,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      switch ((value: availability.value, loading: availability.isLoading)) {
+        (value: WorkspaceAvailable(), loading: _) => child,
+        (value: WorkspaceAuthenticationRequired(), loading: _) =>
+          onAuthenticationRequired(),
+        (value: _, loading: true) => const RouteRecoveryView(
+          messageKey: LocaleKeys.route_state_workspace_loading,
+          isLoading: true,
+        ),
+        _ => RouteRecoveryView(
+          messageKey: LocaleKeys.route_state_workspace_error,
+          onRetry: onRetry,
+          onReturn: onReturn,
+        ),
+      };
 }

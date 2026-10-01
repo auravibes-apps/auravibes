@@ -2588,68 +2588,131 @@ class const _ConversationOrientation({
     if (data.showInputComposer || parentId == null) {
       return const SizedBox.shrink();
     }
-    final parent = ref
-        .watch(
-          conversationByIdStreamProvider(
-            data.workspaceId,
-            conversationId: parentId,
-          ),
-        )
-        .asData
-        ?.value;
 
-    return AuraColumn(
-      children: [
-        Text(
-          'conversation_orientation.delegated'.tr(
-            namedArgs: {
-              'parent': parent != null && parent.workspaceId == data.workspaceId
-                  ? parent.title
-                  : parentId,
-            },
-          ),
-        ),
-        const TextLocale('conversation_orientation.read_only'),
-        AuraButton(
-          onPressed: () => ConversationRoute(
-            workspaceId: data.workspaceId,
-            chatId: parentId,
-          ).go(context),
-          child: const TextLocale('route_state.return_parent'),
-        ),
-      ],
-      mainAxisSize: .min,
+    return _ConversationOrientationContent(
+      parentTitle: _conversationParentTitle(
+        _conversationParent(ref, data.workspaceId, parentId),
+        parentId,
+        data.workspaceId,
+      ),
+      onReturn: _returnToParentConversation(
+        context,
+        data.workspaceId,
+        parentId,
+      ),
     );
   }
 }
+
+ConversationEntity? _conversationParent(
+  WidgetRef ref,
+  String workspaceId,
+  String parentId,
+) => ref
+    .watch(
+      conversationByIdStreamProvider(workspaceId, conversationId: parentId),
+    )
+    .asData
+    ?.value;
+
+VoidCallback _returnToParentConversation(
+  BuildContext context,
+  String workspaceId,
+  String parentId,
+) =>
+    () => ConversationRoute(
+      workspaceId: workspaceId,
+      chatId: parentId,
+    ).go(context);
+
+class const _ConversationOrientationContent({
+  required final String parentTitle,
+  required final VoidCallback onReturn,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Text(
+        'conversation_orientation.delegated'.tr(
+          namedArgs: {'parent': parentTitle},
+        ),
+      ),
+      const TextLocale('conversation_orientation.read_only'),
+      AuraButton(
+        onPressed: onReturn,
+        child: const TextLocale('route_state.return_parent'),
+      ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+String _conversationParentTitle(
+  ConversationEntity? parent,
+  String parentId,
+  String workspaceId,
+) => parent != null && parent.workspaceId == workspaceId
+    ? parent.title
+    : parentId;
 
 class const _ConversationActivitySummary({
   required final _LoadedChatConversationData data,
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final children = ref.watch(
-      activeSubAgentRuntimeProvider.select(
-        (state) => state[data.conversation.id]?.length ?? 0,
-      ),
-    );
-    final state = data.state;
-    final key = switch (state) {
-      _ when state.hasPendingApprovals => 'approval',
-      _ when data.hidesStoppedRun => 'stopped',
-      _ when state.rateLimitRetryAt != null => 'retry',
-      _ when state.isCompacting => 'compacting',
-      _ when children > 0 => 'delegated',
-      _ when state.isGenerating || state.isInputBusy => 'working',
-      _ when state.queuedDrafts.isNotEmpty => 'queued',
-      _ => 'idle',
-    };
+    final childCount = _activeConversationChildCount(ref, data.conversation.id);
+    final activityKey = _conversationActivityKey((
+      data: data,
+      childCount: childCount,
+    ));
 
-    return Semantics(
-      child: Text(
-        'conversation_activity.$key'.tr(namedArgs: {'count': '$children'}),
-      ),
-      liveRegion: true,
+    return _ConversationActivityLabel(
+      activityKey: activityKey,
+      childCount: childCount,
     );
   }
 }
+
+int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
+    ref.watch(
+      activeSubAgentRuntimeProvider.select(
+        (state) => state[conversationId]?.length ?? 0,
+      ),
+    );
+
+class const _ConversationActivityLabel({
+  required final String activityKey,
+  required final int childCount,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: Text(
+      'conversation_activity.$activityKey'.tr(
+        namedArgs: {'count': '$childCount'},
+      ),
+    ),
+    liveRegion: true,
+  );
+}
+
+String _conversationActivityKey(
+  ({_LoadedChatConversationData data, int childCount}) request,
+) {
+  final state = request.data.state;
+  if (state.hasPendingApprovals) return 'approval';
+  if (request.data.hidesStoppedRun) return 'stopped';
+
+  return _conversationActivityFallbackKey(state, request.childCount);
+}
+
+String _conversationActivityFallbackKey(
+  _LoadedChatConversationState state,
+  int childCount,
+) => switch (state) {
+  _ when state.rateLimitRetryAt != null => 'retry',
+  _ when state.isCompacting => 'compacting',
+  _ when childCount > 0 => 'delegated',
+  _ when state.isGenerating || state.isInputBusy => 'working',
+  _ when state.queuedDrafts.isNotEmpty => 'queued',
+  _ => 'idle',
+};

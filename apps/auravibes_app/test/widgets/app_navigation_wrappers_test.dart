@@ -632,8 +632,7 @@ void main() {
                     path: ':skillId',
                     builder: (_, _) {
                       guard.bind(
-                        isDirty: () => true,
-                        isSaving: () => false,
+                        readers: (isDirty: () => true, isSaving: () => false),
                         confirm: (_) {
                           confirmations++;
 

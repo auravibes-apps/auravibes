@@ -51,22 +51,39 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
   ) async {
     final origin = _targetOrigin(target);
     final result = await _request(target, action);
+    final session = _validateAuthenticationResult(target, origin, result);
+    await _storeAuthenticationResult(origin, result, session);
+    invalidateAccount(origin, session.userId);
+
+    return session;
+  }
+
+  CloudAccountSession _validateAuthenticationResult(
+    CloudAuthTarget target,
+    String origin,
+    CloudAuthResult result,
+  ) {
     final session = result.session;
-    final expectedEmail = target.email?.trim().toLowerCase();
-    if (session.serverUrl != origin ||
-        session.userId != result.auth.authUserId.uuid ||
-        (target.accountId != null && session.userId != target.accountId) ||
-        (expectedEmail != null &&
-            session.email.toLowerCase() != expectedEmail)) {
+    if (!target.matchesAuthenticatedIdentity(
+      origin: origin,
+      authenticatedUserId: result.auth.authUserId.uuid,
+      session: session,
+    )) {
       throw const CloudAuthFailure(LocaleKeys.cloud_accounts_wrong_identity);
     }
+
+    return session;
+  }
+
+  Future<void> _storeAuthenticationResult(
+    String origin,
+    CloudAuthResult result,
+    CloudAccountSession session,
+  ) async {
     await _store
         .authSuccessStorage(serverUrl: origin, userId: session.userId)
         .set(result.auth);
     await _store.saveAccount(session);
-    invalidateAccount(origin, session.userId);
-
-    return session;
   }
 
   Future<T> _request<T>(
@@ -98,7 +115,9 @@ extension CloudAccountUseCasesAuthentication on CloudAccountUseCases {
 
     return origin;
   }
+}
 
+extension CloudAccountUseCasesAccountManagement on CloudAccountUseCases {
   Future<void> remove({
     required String serverUrl,
     required String userId,

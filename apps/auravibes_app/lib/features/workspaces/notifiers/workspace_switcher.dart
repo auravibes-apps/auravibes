@@ -24,7 +24,7 @@ final _logger = Logger('WorkspaceSwitcher');
 /// itself tracks idle/loading/error status.
 @Riverpod(keepAlive: true)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher
-    with _WorkspaceSwitcherActions {
+    with _WorkspaceSwitcherActions, _WorkspaceSwitcherTransitionActions {
   Timer? _debounceTimer;
   final _switchQueue = Queue<({String workspaceId, int generation})>();
   var _isProcessingQueue = false;
@@ -100,6 +100,21 @@ mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
     }
   }
 
+  void _setSwitchError(
+    WorkspaceSwitcher switcher,
+    String workspaceId,
+    int switchGeneration,
+  ) {
+    if (!switcher._isCurrent(switchGeneration)) return;
+    switcher.state = WorkspaceSwitchState(
+      status: .error,
+      targetWorkspaceId: workspaceId,
+      errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
+    );
+  }
+}
+
+mixin _WorkspaceSwitcherTransitionActions on _$WorkspaceSwitcher {
   bool _beginSwitch(String workspaceId, int switchGeneration) {
     if (!_isCurrent(switchGeneration)) return false;
     state = WorkspaceSwitchState(
@@ -133,47 +148,58 @@ mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
 
   Future<void> _performSwitchAttempt(_SwitchAttempt attempt) async {
     final switcher = attempt.switcher;
+    if (!_beginSwitchAttempt(switcher, attempt)) return;
+    if (!await _authorizeSwitch(switcher, attempt)) return;
+
+    final selectedWorkspaceId = await _selectAndReleaseIfStale(
+      switcher,
+      attempt,
+    );
+    _completeSwitchIfCurrent(switcher, selectedWorkspaceId, attempt);
+  }
+
+  bool _beginSwitchAttempt(WorkspaceSwitcher switcher, _SwitchAttempt attempt) {
     _logger.info('Workspace switch started');
 
-    if (!switcher._beginSwitch(attempt.workspaceId, attempt.switchGeneration)) {
-      return;
-    }
-    final registry = ref.read(draftExitRegistryProvider);
-    final allowed = await registry.canExitActive(ref.read(routerProvider));
-    if (!switcher._isCurrent(attempt.switchGeneration)) {
-      registry.releaseApprovals();
+    return switcher._beginSwitch(attempt.workspaceId, attempt.switchGeneration);
+  }
 
-      return;
-    }
-    if (!allowed) {
-      state = const WorkspaceSwitchState();
-      registry.releaseApprovals();
-
-      return;
-    }
-    registry.holdActiveApproval(ref.read(routerProvider));
-    final selectedWorkspaceId = await switcher._selectWorkspace(
+  Future<String> _selectAndReleaseIfStale(
+    WorkspaceSwitcher switcher,
+    _SwitchAttempt attempt,
+  ) async {
+    final workspaceId = await switcher._selectWorkspace(
       attempt.workspaceId,
       attempt.switchGeneration,
     );
     if (!switcher._isCurrent(attempt.switchGeneration)) {
-      registry.releaseApprovals();
+      ref.read(draftExitRegistryProvider).releaseApprovals();
     }
 
-    _completeSwitchIfCurrent(switcher, selectedWorkspaceId, attempt);
+    return workspaceId;
   }
 
-  void _setSwitchError(
+  Future<bool> _authorizeSwitch(
     WorkspaceSwitcher switcher,
-    String workspaceId,
-    int switchGeneration,
-  ) {
-    if (!switcher._isCurrent(switchGeneration)) return;
-    switcher.state = WorkspaceSwitchState(
-      status: .error,
-      targetWorkspaceId: workspaceId,
-      errorLocalizationKey: LocaleKeys.workspace_management_switch_error,
-    );
+    _SwitchAttempt attempt,
+  ) async {
+    final registry = ref.read(draftExitRegistryProvider);
+    final router = ref.read(routerProvider);
+    final allowed = await registry.canExitActive(router);
+    if (!switcher._isCurrent(attempt.switchGeneration)) {
+      registry.releaseApprovals();
+
+      return false;
+    }
+    if (!allowed) {
+      switcher.state = const WorkspaceSwitchState();
+      registry.releaseApprovals();
+
+      return false;
+    }
+    registry.holdActiveApproval(router);
+
+    return true;
   }
 }
 

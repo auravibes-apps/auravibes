@@ -125,10 +125,20 @@ void main() {
         });
         final _ = await tester.pumpAndSettle();
         expect(find.text('Needs access'), findsOneWidget);
-        expect(
-          find.text('This skill needs a credential before it can be loaded.'),
-          findsOneWidget,
-        );
+        if (app) {
+          expect(
+            find.text(
+              'Saved access does not verify remote access. '
+              'Chat instructions are prepared separately.',
+            ),
+            findsOneWidget,
+          );
+        } else {
+          expect(
+            find.text('This skill needs a credential before it can be loaded.'),
+            findsOneWidget,
+          );
+        }
         if (!app) {
           await tester.enterText(
             find.widgetWithText(AuraInput, 'Title'),

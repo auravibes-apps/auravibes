@@ -117,8 +117,10 @@ class _ServiceConnectionEditScreenState
   @override
   Widget build(BuildContext context) {
     _exitGuard.bind(
-      isDirty: () => _isDirty,
-      isSaving: () => _isSaving || _isTestingModelProvider,
+      readers: (
+        isDirty: () => _isDirty,
+        isSaving: () => _isSaving || _isTestingModelProvider,
+      ),
       onReturn: (context) =>
           ServiceConnectionsRoute(workspaceId: widget.workspaceId).go(context),
     );
@@ -161,49 +163,62 @@ class _ServiceConnectionEditScreenState
     });
   }
 
-  Future<void> _saveSkillCredential(BuildContext context) async {
+  Future<void> _saveWithError(
+    BuildContext context,
+    String errorKey,
+    Future<void> Function() operation,
+  ) async {
     setState(() => _isSaving = true);
-    await _runEditSave(
-      context,
-      () => _updateSkillCredential(
-        ref,
-        widget.workspaceId,
-        _skillCredentialUpdateData(this, widget.connectionId),
-      ),
-      LocaleKeys.skill_credentials_save_error,
+    await _runEditSave((
+      context: context,
+      operation: operation,
+      errorKey: errorKey,
       onSaved: _markSaved,
       onClose: () => _exitGuard.pop(context, true),
-    );
+    ));
     if (mounted) setState(() => _isSaving = false);
   }
+}
+
+extension _ConnectionEditSaveActions on _ServiceConnectionEditScreenState {
+  Future<void> _saveSkillCredential(BuildContext context) => _saveWithError(
+    context,
+    LocaleKeys.skill_credentials_save_error,
+    () => _updateSkillCredential(
+      ref,
+      widget.workspaceId,
+      _skillCredentialUpdateData(this, widget.connectionId),
+    ),
+  );
 
   Future<void> _saveGenericConnection(
     BuildContext context,
     _GenericServiceConnectionEditState state,
-  ) async {
-    setState(() => _isSaving = true);
-    await _runEditSave(
-      context,
-      () => _updateGenericConnection(
-        ref,
-        widget.workspaceId,
-        _genericConnectionUpdateData(state, this),
-      ),
-      LocaleKeys.service_connections_save_error,
-      onSaved: _markSaved,
-      onClose: () => _exitGuard.pop(context, true),
-    );
-    if (mounted) setState(() => _isSaving = false);
-  }
+  ) => _saveWithError(
+    context,
+    LocaleKeys.service_connections_save_error,
+    () => _updateGenericConnection(
+      ref,
+      widget.workspaceId,
+      _genericConnectionUpdateData(state, this),
+    ),
+  );
 
   Future<void> _saveMcpServer(
     BuildContext context,
     _McpServerEditState state,
   ) async {
     if (!mounted || !context.mounted) return;
-    setState(() => _isSaving = true);
-    await _runMcpServerEditSave(context, state, this);
-    if (mounted) setState(() => _isSaving = false);
+    await _saveWithError(
+      context,
+      LocaleKeys.service_connections_save_error,
+      () => _saveMcpServerSettings(
+        ref,
+        widget.workspaceId,
+        state.server,
+        _mcpServerSettingsUpdate(state, this),
+      ),
+    );
   }
 }
 
@@ -232,23 +247,6 @@ extension _McpServerEditInitialization on _ServiceConnectionEditScreenState {
     _mcpAuthMode = state.server.authMode;
   }
 }
-
-Future<void> _runMcpServerEditSave(
-  BuildContext context,
-  _McpServerEditState state,
-  _ServiceConnectionEditScreenState owner,
-) => _runEditSave(
-  context,
-  () => _saveMcpServerSettings(
-    owner.ref,
-    owner.widget.workspaceId,
-    state.server,
-    _mcpServerSettingsUpdate(state, owner),
-  ),
-  LocaleKeys.service_connections_save_error,
-  onSaved: owner._markSaved,
-  onClose: () => owner._exitGuard.pop(context, true),
-);
 
 Future<void> _saveMcpServerSettings(
   WidgetRef ref,
@@ -428,28 +426,34 @@ extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
     return !_isTestingModelProvider &&
         _modelProviderVerificationIsCurrent(state);
   }
+}
 
+extension _ModelProviderSaveActions on _ServiceConnectionEditScreenState {
   Future<void> _saveModelProvider(BuildContext context) async {
     _refreshForm(() {
       _isSaving = true;
     });
-    await _runEditSave(
-      context,
-      () => _updateModelProvider(
-        ref,
-        widget.workspaceId,
-        _modelProviderUpdateData(this, widget.connectionId),
-      ),
-      LocaleKeys.service_connections_save_error,
-      onSaved: _markSaved,
-      onClose: () => _exitGuard.pop(context, true),
-    );
+    await _saveModelProviderUpdate(context);
     if (mounted) {
       _refreshForm(() {
         _isSaving = false;
       });
     }
   }
+
+  Future<void> _saveModelProviderUpdate(BuildContext context) => _runEditSave((
+    context: context,
+    operation: _updateModelProviderForEdit,
+    errorKey: LocaleKeys.service_connections_save_error,
+    onSaved: _markSaved,
+    onClose: () => _exitGuard.pop(context, true),
+  ));
+
+  Future<void> _updateModelProviderForEdit() => _updateModelProvider(
+    ref,
+    widget.workspaceId,
+    _modelProviderUpdateData(this, widget.connectionId),
+  );
 }
 
 extension _ModelProviderVerificationActions
@@ -900,21 +904,23 @@ Future<void> _updateGenericConnection(
   );
 }
 
-Future<void> _runEditSave(
+typedef _EditSaveRequest = ({
   BuildContext context,
   Future<void> Function() operation,
-  String errorKey, {
-  required VoidCallback onSaved,
-  required Future<void> Function() onClose,
-}) async {
+  String errorKey,
+  VoidCallback onSaved,
+  Future<void> Function() onClose,
+});
+
+Future<void> _runEditSave(_EditSaveRequest request) async {
   try {
-    await operation();
-    if (!context.mounted) return;
-    onSaved();
-    await onClose();
+    await request.operation();
+    if (!request.context.mounted) return;
+    request.onSaved();
+    await request.onClose();
   } on Object {
-    if (!context.mounted) return;
-    _showEditSaveError(context, errorKey);
+    if (!request.context.mounted) return;
+    _showEditSaveError(request.context, request.errorKey);
   }
 }
 
@@ -933,12 +939,21 @@ class const _ConnectionEditScreenView({
   Widget build(BuildContext context) {
     return FutureBuilder<_ConnectionEditState>(
       future: owner._future,
-      builder: (context, snapshot) => AuraScreen(
-        child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
-        appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
-      ),
+      builder: (context, snapshot) =>
+          _ConnectionEditPage(snapshot: snapshot, owner: owner),
     );
   }
+}
+
+class const _ConnectionEditPage({
+  required final AsyncSnapshot<_ConnectionEditState> snapshot,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraScreen(
+    child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
+    appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
+  );
 }
 
 class const _ConnectionEditAppBar({
@@ -985,43 +1000,77 @@ class const _ConnectionEditSnapshotView({
   @override
   Widget build(BuildContext context) {
     if (snapshot.hasError) {
-      return Center(
-        child: AuraColumn(
-          children: [
-            TextLocale(switch (snapshot.error) {
-              ConnectionUnavailableException(:final localizationKey) =>
-                localizationKey,
-              _ => LocaleKeys.service_connections_load_error,
-            }),
-            if (snapshot.error is! ConnectionUnavailableException)
-              AuraButton(
-                onPressed: owner._retryLoad,
-                child: const TextLocale(LocaleKeys.route_state_retry),
-              ),
-            AuraButton(
-              onPressed: () => unawaited(owner._handleBack(context)),
-              child: const TextLocale('connection_setup.return_connections'),
-            ),
-          ],
-        ),
-      );
+      return _ConnectionEditLoadError(error: snapshot.error, owner: owner);
     }
     final state = snapshot.data;
     if (state == null) return const Center(child: AuraSpinner());
     owner._initialize(state);
 
-    return Column(
-      children: [
-        _ConnectionEditIdentity(
-          state: state,
-          workspaceId: owner.widget.workspaceId,
-        ),
-        Expanded(
-          child: _ConnectionEditFormSelector(state: state, owner: owner),
-        ),
-      ],
-    );
+    return _ConnectionEditLoaded(state: state, owner: owner);
   }
+}
+
+class const _ConnectionEditLoadError({
+  required final Object? error,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: AuraColumn(
+      children: [
+        _ConnectionEditLoadErrorMessage(error: error),
+        if (error is! ConnectionUnavailableException)
+          _ConnectionEditRetryButton(onRetry: owner._retryLoad),
+        _ConnectionEditBackButton(onBack: () => owner._handleBack(context)),
+      ],
+    ),
+  );
+}
+
+class const _ConnectionEditLoadErrorMessage({required final Object? error})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextLocale(switch (error) {
+    ConnectionUnavailableException(:final localizationKey) => localizationKey,
+    _ => LocaleKeys.service_connections_load_error,
+  });
+}
+
+class const _ConnectionEditRetryButton({required final VoidCallback onRetry})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onRetry,
+    child: const TextLocale(LocaleKeys.route_state_retry),
+  );
+}
+
+class const _ConnectionEditBackButton({
+  required final Future<void> Function() onBack,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(onBack()),
+    child: const TextLocale('connection_setup.return_connections'),
+  );
+}
+
+class const _ConnectionEditLoaded({
+  required final _ConnectionEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _ConnectionEditIdentity(
+        state: state,
+        workspaceId: owner.widget.workspaceId,
+      ),
+      Expanded(
+        child: _ConnectionEditFormSelector(state: state, owner: owner),
+      ),
+    ],
+  );
 }
 
 class const _ConnectionEditIdentity({
@@ -1030,28 +1079,34 @@ class const _ConnectionEditIdentity({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final workspace = ref
-        .watch(allWorkspacesProvider)
-        .value
-        ?.where((item) => item.id == workspaceId)
-        .firstOrNull;
-    final typeKey = switch (state) {
-      _ModelProviderEditState() =>
-        LocaleKeys.service_connections_type_model_provider,
-      _SkillCredentialEditState() =>
-        LocaleKeys.service_connections_type_skill_credential,
-      _GenericServiceConnectionEditState() =>
-        LocaleKeys.service_connections_type_app_skill_credential,
-      _McpServerEditState() =>
-        LocaleKeys.service_connections_filter_mcp_servers,
-    };
+    final workspaceName = _connectionEditWorkspaceName(ref, workspaceId);
+    final typeLabel = _connectionEditTypeLabel(state).tr();
 
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Text('${typeKey.tr()} / ${workspace?.name ?? workspaceId}'),
+      child: Text('$typeLabel / $workspaceName'),
     );
   }
 }
+
+String _connectionEditWorkspaceName(WidgetRef ref, String workspaceId) =>
+    ref
+        .watch(allWorkspacesProvider)
+        .value
+        ?.where((item) => item.id == workspaceId)
+        .firstOrNull
+        ?.name ??
+    workspaceId;
+
+String _connectionEditTypeLabel(_ConnectionEditState state) => switch (state) {
+  _ModelProviderEditState() =>
+    LocaleKeys.service_connections_type_model_provider,
+  _SkillCredentialEditState() =>
+    LocaleKeys.service_connections_type_skill_credential,
+  _GenericServiceConnectionEditState() =>
+    LocaleKeys.service_connections_type_app_skill_credential,
+  _McpServerEditState() => LocaleKeys.service_connections_filter_mcp_servers,
+};
 
 class const _ConnectionEditFormSelector({
   required final _ConnectionEditState state,

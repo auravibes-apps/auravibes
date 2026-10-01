@@ -31,6 +31,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('service_connection_create_screen');
+const _minimumCredentialListBottomPadding = 12.0;
 
 typedef _AppSkillCredentialSaveData = ({
   String appSkillId,
@@ -132,48 +133,70 @@ class _ServiceConnectionCreateScreenState
 
   @override
   Widget build(BuildContext context) {
-    _exitGuard.bind(
-      isDirty: () => _isDirty,
-      isSaving: () => _isBusy,
-      preferReturn:
-          TaskReturn.validate(
-            widget.returnPath,
-            workspaceId: widget.workspaceId,
-          ) !=
-          null,
-      onReturn: (context) => context.go(
-        TaskReturn.validate(
-              widget.returnPath,
-              workspaceId: widget.workspaceId,
-            ) ??
-            ServiceConnectionsRoute(workspaceId: widget.workspaceId).location,
-      ),
-    );
+    _bindCreateExitGuard(this);
 
     return DraftExitScope(
       guard: _exitGuard,
-      child: _handoff
-          ? AuraScreen(
-              child: AuraColumn(
-                children: [
-                  const TextLocale('chat_readiness.saved'),
-                  ChatReadinessSummary(
-                    workspaceId: widget.workspaceId,
-                    isSetupHandoff: true,
-                  ),
-                  AuraButton(
-                    onPressed: () => unawaited(_closeAfterSave(this)),
-                    child: const TextLocale('chat_readiness.continue_chat'),
-                  ),
-                ],
-              ),
-              appBar: const AuraAppBarWithDrawer(
-                title: TextLocale('chat_readiness.saved'),
-              ),
-            )
-          : _ServiceConnectionCreateView(form: .fromState(this)),
+      child: _ServiceConnectionCreateScreenContent(state: this),
     );
   }
+}
+
+void _bindCreateExitGuard(_ServiceConnectionCreateScreenState state) {
+  final destination = _createReturnDestination(state);
+  state._exitGuard.bind(
+    readers: (isDirty: () => state._isDirty, isSaving: () => state._isBusy),
+    preferReturn: destination != null,
+    onReturn: (context) =>
+        _returnFromCreate(context, state.widget.workspaceId, destination),
+  );
+}
+
+String? _createReturnDestination(_ServiceConnectionCreateScreenState state) =>
+    TaskReturn.validate(
+      state.widget.returnPath,
+      workspaceId: state.widget.workspaceId,
+    );
+
+void _returnFromCreate(
+  BuildContext context,
+  String workspaceId,
+  String? destination,
+) => context.go(
+  destination ?? ServiceConnectionsRoute(workspaceId: workspaceId).location,
+);
+
+class const _ServiceConnectionCreateScreenContent({
+  required final _ServiceConnectionCreateScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => state._handoff
+      ? _CreateScreenHandoff(state: state)
+      : _ServiceConnectionCreateView(form: .fromState(state));
+}
+
+class const _CreateScreenHandoff({
+  required final _ServiceConnectionCreateScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraScreen(
+    child: AuraColumn(
+      children: [
+        const TextLocale('chat_readiness.saved'),
+        ChatReadinessSummary(
+          workspaceId: state.widget.workspaceId,
+          isSetupHandoff: true,
+        ),
+        AuraButton(
+          onPressed: () => unawaited(_closeAfterSave(state)),
+          child: const TextLocale('chat_readiness.continue_chat'),
+        ),
+      ],
+    ),
+    appBar: const AuraAppBarWithDrawer(
+      title: TextLocale('chat_readiness.saved'),
+    ),
+  );
 }
 
 void _initializeCreateState(_ServiceConnectionCreateScreenState state) {
@@ -191,20 +214,29 @@ void _initializeCreateState(_ServiceConnectionCreateScreenState state) {
 Future<void> _createCredentialType(
   _ServiceConnectionCreateScreenState state,
 ) async {
-  final created = await SkillCredentialDefinitionCreateRoute(
-    workspaceId: state.widget.workspaceId,
-    returnCreated: true,
-  ).push<SkillCredentialDefinitionEntity>(state.context);
-  if (!state.mounted ||
-      created == null ||
-      created.workspaceId != state.widget.workspaceId) {
+  final created = await _openCredentialDefinition(state);
+  if (created == null ||
+      !_isNewCredentialDefinitionForWorkspace(created, state)) {
     return;
   }
+
   state.ref.invalidate(
     skillCredentialDefinitionsProvider(state.widget.workspaceId),
   );
   _onDefinitionChanged(state, created.id);
 }
+
+Future<SkillCredentialDefinitionEntity?> _openCredentialDefinition(
+  _ServiceConnectionCreateScreenState state,
+) => SkillCredentialDefinitionCreateRoute(
+  workspaceId: state.widget.workspaceId,
+  returnCreated: true,
+).push<SkillCredentialDefinitionEntity>(state.context);
+
+bool _isNewCredentialDefinitionForWorkspace(
+  SkillCredentialDefinitionEntity definition,
+  _ServiceConnectionCreateScreenState state,
+) => state.mounted && definition.workspaceId == state.widget.workspaceId;
 
 void _disposeCreateState(_ServiceConnectionCreateScreenState state) {
   state._nameController.dispose();
@@ -510,10 +542,24 @@ Future<void> _closeAfterSave(
   bool resetModelMutation = true,
 }) async {
   if (!state.mounted) return;
+  _markCreateSaved(state, refreshServiceConnections, resetModelMutation);
+  await _navigateAfterCreateSave(state);
+}
+
+void _markCreateSaved(
+  _ServiceConnectionCreateScreenState state,
+  bool refreshServiceConnections,
+  bool resetModelMutation,
+) {
   state
     .._saved = true
     .._isSaving = false;
   _resetAfterSave(state, refreshServiceConnections, resetModelMutation);
+}
+
+Future<void> _navigateAfterCreateSave(
+  _ServiceConnectionCreateScreenState state,
+) async {
   final destination = TaskReturn.validate(
     state.widget.returnPath,
     workspaceId: state.widget.workspaceId,
@@ -559,10 +605,22 @@ Future<void> _replaceCreateType(
   _ServiceConnectionCreateScreenState state,
   ServiceConnectionCreateType value,
 ) async {
-  if (!await state._exitGuard.canExit(state.context) || !state.mounted) return;
+  if (!await _canReplaceCreateType(state)) return;
   state.ref
       .read(addModelProviderStateProvider(state.widget.workspaceId).notifier)
       .reset();
+  _applyCreateType(state, value);
+  state._exitGuard.releaseApproval();
+}
+
+Future<bool> _canReplaceCreateType(
+  _ServiceConnectionCreateScreenState state,
+) async => await state._exitGuard.canExit(state.context) && state.mounted;
+
+void _applyCreateType(
+  _ServiceConnectionCreateScreenState state,
+  ServiceConnectionCreateType value,
+) {
   state.updateState(() {
     state
       .._type = value
@@ -570,7 +628,6 @@ Future<void> _replaceCreateType(
       .._appSkillId = null;
     _resetAttributeControllers(state);
   });
-  state._exitGuard.releaseApproval();
 }
 
 void _onDefinitionChanged(
@@ -756,64 +813,173 @@ class const _SkillCredentialCreateContent({
   Widget build(BuildContext context, WidgetRef ref) {
     final provider = skillCredentialDefinitionsProvider(form.workspaceId);
     final result = ref.watch(provider);
+
+    return _SkillCredentialDefinitionsResult(
+      provider: provider,
+      result: result,
+      form: form,
+    );
+  }
+}
+
+class const _SkillCredentialDefinitionsResult({
+  required final SkillCredentialDefinitionsProvider provider,
+  required final AsyncValue<List<SkillCredentialDefinitionEntity>> result,
+  required final _ServiceConnectionCreateForm form,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     if (result case AsyncError()) {
-      return AuraColumn(
-        children: [
-          const TextLocale('connection_setup.types_load_error'),
-          AuraButton(
-            onPressed: () => ref.invalidate(provider),
-            child: const TextLocale(LocaleKeys.route_state_retry),
-          ),
-          AuraButton(
-            onPressed: () => unawaited(form.routeExitGuard.pop(context)),
-            child: const TextLocale('connection_setup.return_connections'),
-          ),
-        ],
+      return _CredentialDefinitionsLoadError(
+        provider: provider,
+        routeExitGuard: form.routeExitGuard,
       );
     }
     final definitions = _credentialDefinitions(result);
     if (definitions == null) return const Center(child: AuraSpinner());
 
-    return ListView(
-      padding: const EdgeInsets.all(12)
-          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
-      children: [
-        _CredentialFormCard(
-          definitions: definitions,
-          selectedDefinitionId: form.selectedDefinitionId,
-          nameController: form.nameController,
-          attributeControllers: form.attributeControllers,
-          isSaving: form.isSaving,
-          onNameChanged: form.onNameChanged,
-          onDefinitionChanged: form.onDefinitionChanged,
-          onSave: form.onSkillCredentialSave,
-          fixedDefinition: form.fixedDefinition,
-        ),
-        if (!form.fixedDefinition)
-          AuraButton(
-            onPressed: form.onCreateDefinition,
-            child: const TextLocale('connection_setup.create_type'),
-            disabled: form.isSaving,
-          ),
-        if (form.fixedDefinition &&
-            !definitions.any((item) => item.id == form.selectedDefinitionId))
-          AuraColumn(
-            children: [
-              const TextLocale('connection_setup.required_type_missing'),
-              AuraButton(
-                onPressed: () => ref.invalidate(provider),
-                child: const TextLocale(LocaleKeys.route_state_retry),
-              ),
-              AuraButton(
-                onPressed: () => unawaited(form.routeExitGuard.pop(context)),
-                child: const TextLocale('connection_setup.return_task'),
-              ),
-            ],
-          ),
-      ],
-      keyboardDismissBehavior: .onDrag,
+    return _SkillCredentialDefinitionList(
+      definitions: definitions,
+      provider: provider,
+      form: form,
     );
   }
+}
+
+class const _CredentialDefinitionsLoadError({
+  required final SkillCredentialDefinitionsProvider provider,
+  required final DraftExitGuard routeExitGuard,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
+    children: [
+      const TextLocale('connection_setup.types_load_error'),
+      AuraButton(
+        onPressed: () => ref.invalidate(provider),
+        child: const TextLocale(LocaleKeys.route_state_retry),
+      ),
+      AuraButton(
+        onPressed: () => unawaited(routeExitGuard.pop(context)),
+        child: const TextLocale('connection_setup.return_connections'),
+      ),
+    ],
+  );
+}
+
+class const _SkillCredentialDefinitionList({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final SkillCredentialDefinitionsProvider provider,
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(12).copyWith(
+      bottom: BottomPadding.of(
+        context,
+        minimum: _minimumCredentialListBottomPadding,
+      ),
+    ),
+    children: [
+      _SkillCredentialCreateCard(definitions: definitions, form: form),
+      _CredentialDefinitionCreateAction(form: form),
+      _MissingCredentialDefinitionAction(
+        definitions: definitions,
+        form: form,
+        provider: provider,
+      ),
+    ],
+    keyboardDismissBehavior: .onDrag,
+  );
+}
+
+class const _SkillCredentialCreateCard({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _CredentialFormCard(
+    definitions: definitions,
+    selectedDefinitionId: form.selectedDefinitionId,
+    nameController: form.nameController,
+    attributeControllers: form.attributeControllers,
+    isSaving: form.isSaving,
+    onNameChanged: form.onNameChanged,
+    onDefinitionChanged: form.onDefinitionChanged,
+    onSave: form.onSkillCredentialSave,
+    fixedDefinition: form.fixedDefinition,
+  );
+}
+
+bool _missingSelectedCredentialDefinition(
+  List<SkillCredentialDefinitionEntity> definitions,
+  _ServiceConnectionCreateForm form,
+) =>
+    form.fixedDefinition &&
+    !definitions.any((item) => item.id == form.selectedDefinitionId);
+
+class const _CredentialDefinitionCreateAction({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => form.fixedDefinition
+      ? const SizedBox.shrink()
+      : AuraButton(
+          onPressed: form.onCreateDefinition,
+          child: const TextLocale('connection_setup.create_type'),
+          disabled: form.isSaving,
+        );
+}
+
+class const _MissingCredentialDefinitionAction({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final _ServiceConnectionCreateForm form,
+  required final SkillCredentialDefinitionsProvider provider,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!_missingSelectedCredentialDefinition(definitions, form)) {
+      return const SizedBox.shrink();
+    }
+
+    return _MissingCredentialDefinitionNotice(
+      provider: provider,
+      routeExitGuard: form.routeExitGuard,
+    );
+  }
+}
+
+class const _MissingCredentialDefinitionNotice({
+  required final SkillCredentialDefinitionsProvider provider,
+  required final DraftExitGuard routeExitGuard,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
+    children: [
+      const TextLocale('connection_setup.required_type_missing'),
+      _CredentialDefinitionRetryButton(provider: provider),
+      _CredentialDefinitionReturnButton(routeExitGuard: routeExitGuard),
+    ],
+  );
+}
+
+class const _CredentialDefinitionRetryButton({
+  required final SkillCredentialDefinitionsProvider provider,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () => ref.invalidate(provider),
+    child: const TextLocale(LocaleKeys.route_state_retry),
+  );
+}
+
+class const _CredentialDefinitionReturnButton({
+  required final DraftExitGuard routeExitGuard,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(routeExitGuard.pop(context)),
+    child: const TextLocale('connection_setup.return_task'),
+  );
 }
 
 class const _AppSkillCredentialCreateContent({
@@ -821,32 +987,31 @@ class const _AppSkillCredentialCreateContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (form.fixedAppSkill &&
-        _appSkillCredentialOption(form.selectedAppSkillId) == null) {
-      return AuraColumn(
-        children: [
-          const TextLocale('connection_setup.required_service_missing'),
-          AuraButton(
-            onPressed: () => unawaited(form.routeExitGuard.pop(context)),
-            child: const TextLocale('connection_setup.return_task'),
-          ),
-        ],
-      );
+    if (_isMissingFixedAppSkill(form)) {
+      return _MissingFixedAppSkillContent(routeExitGuard: form.routeExitGuard);
     }
 
-    return _AppSkillCredentialForm(
-      selectedAppSkillId: form.selectedAppSkillId,
-      fixedAppSkill: form.fixedAppSkill,
-      nameController: form.nameController,
-      apiKeyController: form.apiKeyController,
-      isSaving: form.isSaving,
-      onNameChanged: form.onNameChanged,
-      onAppSkillChanged: form.onAppSkillChanged,
-      onApiKeyChanged: form.onApiKeyChanged,
-      onSave: form.onAppSkillCredentialSave,
-      canSave: form.canSaveAppSkillCredential(),
-    );
+    return _AppSkillCredentialForm.fromCreateForm(form);
   }
+}
+
+bool _isMissingFixedAppSkill(_ServiceConnectionCreateForm form) =>
+    form.fixedAppSkill &&
+    _appSkillCredentialOption(form.selectedAppSkillId) == null;
+
+class const _MissingFixedAppSkillContent({
+  required final DraftExitGuard routeExitGuard,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const TextLocale('connection_setup.required_service_missing'),
+      AuraButton(
+        onPressed: () => unawaited(routeExitGuard.pop(context)),
+        child: const TextLocale('connection_setup.return_task'),
+      ),
+    ],
+  );
 }
 
 enum ServiceConnectionCreateType {
@@ -936,6 +1101,20 @@ class const _AppSkillCredentialForm({
   required final bool canSave,
 }) extends StatelessWidget {
   static const _contentPadding = 12.0;
+
+  new fromCreateForm(_ServiceConnectionCreateForm form)
+    : this(
+        selectedAppSkillId: form.selectedAppSkillId,
+        fixedAppSkill: form.fixedAppSkill,
+        nameController: form.nameController,
+        apiKeyController: form.apiKeyController,
+        isSaving: form.isSaving,
+        onNameChanged: form.onNameChanged,
+        onAppSkillChanged: form.onAppSkillChanged,
+        onApiKeyChanged: form.onApiKeyChanged,
+        onSave: form.onAppSkillCredentialSave,
+        canSave: form.canSaveAppSkillCredential(),
+      );
 
   @override
   Widget build(BuildContext context) {

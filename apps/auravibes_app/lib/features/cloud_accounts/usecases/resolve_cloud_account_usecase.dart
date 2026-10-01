@@ -5,25 +5,14 @@ import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace
 import 'package:auravibes_app/i18n/locale_keys.dart';
 
 abstract final class ResolveCloudAccountUsecase {
-  static CloudAccountKey call({
-    required String accountId,
-    required List<CloudAccountSession> accounts,
-    List<WorkspaceEntity> mirrors = const [],
-    int workspaceId = -1,
-    String? serverUrl,
-  }) {
+  static CloudAccountKey call(_CloudAccountResolution request) {
     final candidates = <CloudAccountKey>{
-      for (final account in accounts)
-        if (account.userId == accountId) account.key,
-      for (final mirror in mirrors)
-        if (mirror.cloudAccountId == accountId &&
-            mirror.cloudWorkspaceId ==
-                (workspaceId < 0 ? null : '$workspaceId') &&
-            mirror.cloudAccount != null)
-          ?mirror.cloudAccount,
+      ..._sessionAccountKeys(request),
+      ..._workspaceMirrorAccountKeys(request),
     };
+    final serverUrl = request.serverUrl;
     if (serverUrl != null) {
-      final explicit = cloudAccountKey(serverUrl, accountId);
+      final explicit = cloudAccountKey(serverUrl, request.accountId);
       if (candidates.contains(explicit)) return explicit;
     } else if (candidates.length == 1) {
       return candidates.single;
@@ -33,3 +22,33 @@ abstract final class ResolveCloudAccountUsecase {
     );
   }
 }
+
+typedef _CloudAccountResolution = ({
+  String accountId,
+  List<CloudAccountSession> accounts,
+  List<WorkspaceEntity> mirrors,
+  int workspaceId,
+  String? serverUrl,
+});
+
+Iterable<CloudAccountKey> _sessionAccountKeys(
+  _CloudAccountResolution request,
+) => request.accounts
+    .where((account) => account.userId == request.accountId)
+    .map((account) => account.key);
+
+Iterable<CloudAccountKey> _workspaceMirrorAccountKeys(
+  _CloudAccountResolution request,
+) => request.mirrors
+    .where((mirror) => _matchesCloudAccountResolution(mirror, request))
+    .map((mirror) => mirror.cloudAccount)
+    .nonNulls;
+
+bool _matchesCloudAccountResolution(
+  WorkspaceEntity mirror,
+  _CloudAccountResolution request,
+) =>
+    mirror.cloudAccountId == request.accountId &&
+    mirror.cloudWorkspaceId ==
+        (request.workspaceId < 0 ? null : '${request.workspaceId}') &&
+    mirror.cloudAccount != null;

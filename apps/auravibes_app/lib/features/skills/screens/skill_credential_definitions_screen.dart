@@ -48,27 +48,46 @@ class const _SkillCredentialDefinitionsBody({
         AsyncLoading(value: final value?, hasValue: true) =>
           _CredentialDefinitionsLoading(definitions: value),
         AsyncLoading() => const Center(child: AuraSpinner()),
-        AsyncError() => Center(
-          child: AuraColumn(
-            children: [
-              const TextLocale(LocaleKeys.skill_credentials_definitions_error),
-              AuraButton(
-                onPressed: () => ref.invalidate(
-                  skillCredentialDefinitionsProvider(workspaceId),
-                ),
-                child: const TextLocale(LocaleKeys.route_state_retry),
-              ),
-              AuraButton(
-                onPressed: () => ServiceConnectionsRoute(
-                  workspaceId: workspaceId,
-                  view: 'credentials',
-                ).go(context),
-                child: const TextLocale('connection_setup.return_connections'),
-              ),
-            ],
-          ),
-        ),
+        AsyncError() => _CredentialDefinitionsError(workspaceId: workspaceId),
       };
+}
+
+class const _CredentialDefinitionsError({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Center(
+    child: AuraColumn(
+      children: [
+        const TextLocale(LocaleKeys.skill_credentials_definitions_error),
+        _CredentialDefinitionsRetryButton(workspaceId: workspaceId),
+        _CredentialDefinitionsReturnButton(workspaceId: workspaceId),
+      ],
+    ),
+  );
+}
+
+class const _CredentialDefinitionsRetryButton({
+  required final String workspaceId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraButton(
+    onPressed: () =>
+        ref.invalidate(skillCredentialDefinitionsProvider(workspaceId)),
+    child: const TextLocale(LocaleKeys.route_state_retry),
+  );
+}
+
+class const _CredentialDefinitionsReturnButton({
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => ServiceConnectionsRoute(
+      workspaceId: workspaceId,
+      view: 'credentials',
+    ).go(context),
+    child: const TextLocale('connection_setup.return_connections'),
+  );
 }
 
 class const _CredentialDefinitionsData({

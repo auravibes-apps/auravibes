@@ -25,12 +25,13 @@ const _kDeleteMcpTitle = 'tools_screen.delete_mcp_title';
 const _kDeleteMcpConfirm = 'tools_screen.delete_mcp_confirm';
 const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 
-typedef _McpDeleteInput = ({
+typedef _ToolsGroupCardCallbacksRequest = ({
   ToolsGroupWithTools groupWithTools,
   String workspaceId,
   WidgetRef ref,
   BuildContext context,
 });
+typedef _McpDeleteInput = _ToolsGroupCardCallbacksRequest;
 
 /// A collapsible card widget that displays a tools group.
 ///
@@ -50,12 +51,12 @@ class const ToolsGroupCard({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
-    final callbacks = _ToolsGroupCardCallbacks(
+    final callbacks = _ToolsGroupCardCallbacks((
       groupWithTools: groupWithTools,
       workspaceId: workspaceId,
       ref: ref,
       context: context,
-    );
+    ));
 
     return _ToolsGroupCardLayout(
       card: this,
@@ -67,40 +68,12 @@ class const ToolsGroupCard({
 }
 
 class _ToolsGroupCardCallbacks {
-  new({
-    required ToolsGroupWithTools groupWithTools,
-    required String workspaceId,
-    required WidgetRef ref,
-    required BuildContext context,
-  }) : onOpenConnection = groupWithTools.mcpServerId == null
-           ? null
-           : (() => unawaited(
-               _openConnection(groupWithTools, workspaceId, ref, context),
-             )),
-       onToggleEnabled = groupWithTools.isDefaultGroup
-           ? null
-           : ((enabled) =>
-                 _toggleMcpGroup(groupWithTools, workspaceId, ref, enabled)),
-       onReconnect = _shouldShowReconnect(groupWithTools)
-           ? (() => _reconnectMcp(groupWithTools, workspaceId, ref))
-           : null,
-       onDelete = groupWithTools.isMcpGroup
-           ? (() => _deleteMcpGroup((
-               groupWithTools: groupWithTools,
-               workspaceId: workspaceId,
-               ref: ref,
-               context: context,
-             )))
-           : null,
-       onViewError = groupWithTools.hasMcpError()
-           ? (() => unawaited(
-               McpErrorDetails.show(
-                 context,
-                 groupName: groupWithTools.group?.name,
-                 errorMessage: groupWithTools.mcpErrorMessage,
-               ),
-             ))
-           : null;
+  new(_ToolsGroupCardCallbacksRequest request)
+    : onOpenConnection = _openConnectionAction(request),
+      onToggleEnabled = _toggleEnabledAction(request),
+      onReconnect = _reconnectAction(request),
+      onDelete = _deleteAction(request),
+      onViewError = _viewErrorAction(request);
 
   final VoidCallback? onOpenConnection;
   final ValueChanged<bool>? onToggleEnabled;
@@ -109,21 +82,67 @@ class _ToolsGroupCardCallbacks {
   final VoidCallback? onViewError;
 }
 
-Future<void> _openConnection(
-  ToolsGroupWithTools groupWithTools,
-  String workspaceId,
-  WidgetRef ref,
-  BuildContext context,
-) async {
+VoidCallback? _openConnectionAction(_ToolsGroupCardCallbacksRequest request) {
+  if (request.groupWithTools.mcpServerId == null) return null;
+
+  return () => unawaited(_openConnection(request));
+}
+
+ValueChanged<bool>? _toggleEnabledAction(
+  _ToolsGroupCardCallbacksRequest request,
+) => request.groupWithTools.isDefaultGroup
+    ? null
+    : (enabled) => _toggleMcpGroup(
+        request.groupWithTools,
+        request.workspaceId,
+        request.ref,
+        enabled,
+      );
+
+VoidCallback? _reconnectAction(_ToolsGroupCardCallbacksRequest request) =>
+    _shouldShowReconnect(request.groupWithTools)
+    ? () => _reconnectMcp(
+        request.groupWithTools,
+        request.workspaceId,
+        request.ref,
+      )
+    : null;
+
+VoidCallback? _deleteAction(_ToolsGroupCardCallbacksRequest request) =>
+    request.groupWithTools.isMcpGroup ? () => _deleteMcpGroup(request) : null;
+
+VoidCallback? _viewErrorAction(_ToolsGroupCardCallbacksRequest request) =>
+    request.groupWithTools.hasMcpError()
+    ? () => unawaited(
+        McpErrorDetails.show(
+          request.context,
+          groupName: request.groupWithTools.group?.name,
+          errorMessage: request.groupWithTools.mcpErrorMessage,
+        ),
+      )
+    : null;
+
+Future<void> _openConnection(_ToolsGroupCardCallbacksRequest request) async {
+  final (:groupWithTools, :workspaceId, :ref, :context) = request;
   final serverId = groupWithTools.mcpServerId;
   if (serverId == null) return;
 
-  final saved = await ServiceConnectionEditRoute(
-    workspaceId: workspaceId,
-    connectionId: serverId,
-  ).push<bool>(context);
+  final saved = await _pushConnectionEditor(context, workspaceId, serverId);
   if (saved != true || !context.mounted) return;
 
+  _invalidateToolsAfterConnectionEdit(ref, workspaceId);
+}
+
+Future<bool?> _pushConnectionEditor(
+  BuildContext context,
+  String workspaceId,
+  String connectionId,
+) => ServiceConnectionEditRoute(
+  workspaceId: workspaceId,
+  connectionId: connectionId,
+).push<bool>(context);
+
+void _invalidateToolsAfterConnectionEdit(WidgetRef ref, String workspaceId) {
   ref
     ..invalidate(workspaceToolsProvider(workspaceId))
     ..invalidate(groupedToolsProvider(workspaceId));
@@ -226,19 +245,25 @@ class const _ToolsGroupCardContent({
         callbacks: callbacks,
       ),
       if (callbacks.onOpenConnection case final onOpenConnection?)
-        AuraButton(
-          onPressed: onOpenConnection,
-          child: const TextLocale(LocaleKeys.related_lists_open_connection),
-          key: ValueKey(
-            'tools-open-connection-${card.groupWithTools.mcpServerId}',
-          ),
-          variant: .text,
-          size: .small,
-          disabled: card.isDeleting,
-        ),
+        _ToolsOpenConnectionButton(card: card, onPressed: onOpenConnection),
       _ExpandedToolsGroup(card: card, isExpanded: isExpanded),
     ],
     crossAxisAlignment: .start,
+  );
+}
+
+class const _ToolsOpenConnectionButton({
+  required final ToolsGroupCard card,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: const TextLocale(LocaleKeys.related_lists_open_connection),
+    key: ValueKey('tools-open-connection-${card.groupWithTools.mcpServerId}'),
+    variant: .text,
+    size: .small,
+    disabled: card.isDeleting,
   );
 }
 

@@ -52,91 +52,135 @@ class const _AvailableCloudWorkspaceItem({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _AvailableWorkspaceTile(
-      connectedMirror: localWorkspaces.firstWhereOrNull(
-        (local) => _isConnectedElsewhere(local, workspace, account.key),
-      ),
-      workspace: workspace,
-      connectedAccountEmail: _connectedElsewhereEmail((
-        workspace: workspace,
-        account: account.key,
-        accounts: accounts,
-        localWorkspaces: localWorkspaces,
-      )),
+    final data = _availableWorkspaceTileData((
       account: account.key,
+      accounts: accounts,
+      localWorkspaces: localWorkspaces,
+      workspace: workspace,
       onConnect: onConnect,
       onOpen: onOpen,
       onDetails: onDetails,
       onCopyId: onCopyId,
-    );
+    ));
+
+    return _AvailableWorkspaceTile(data: data);
   }
 }
 
+typedef _AvailableWorkspaceRequest = ({
+  CloudAccountKey account,
+  List<CloudAccountSession> accounts,
+  List<WorkspaceEntity> localWorkspaces,
+  CloudWorkspaceSummary workspace,
+  ValueChanged<CloudWorkspaceSummary> onConnect,
+  ValueChanged<WorkspaceEntity> onOpen,
+  ValueChanged<CloudWorkspaceSummary>? onDetails,
+  ValueChanged<String>? onCopyId,
+});
+
+typedef _AvailableWorkspaceTileData = ({
+  WorkspaceEntity? connectedMirror,
+  CloudWorkspaceSummary workspace,
+  String? connectedAccountEmail,
+  CloudAccountKey account,
+  ValueChanged<CloudWorkspaceSummary> onConnect,
+  ValueChanged<WorkspaceEntity> onOpen,
+  ValueChanged<CloudWorkspaceSummary>? onDetails,
+  ValueChanged<String>? onCopyId,
+});
+
+_AvailableWorkspaceTileData _availableWorkspaceTileData(
+  _AvailableWorkspaceRequest request,
+) {
+  final connectedMirror = _findConnectedMirror(request);
+
+  return (
+    connectedMirror: connectedMirror,
+    workspace: request.workspace,
+    connectedAccountEmail: _connectedElsewhereEmail((
+      mirror: connectedMirror,
+      account: request.account,
+      accounts: request.accounts,
+    )),
+    account: request.account,
+    onConnect: request.onConnect,
+    onOpen: request.onOpen,
+    onDetails: request.onDetails,
+    onCopyId: request.onCopyId,
+  );
+}
+
+WorkspaceEntity? _findConnectedMirror(_AvailableWorkspaceRequest request) =>
+    request.localWorkspaces.firstWhereOrNull(
+      (local) =>
+          _isConnectedElsewhere(local, request.workspace, request.account),
+    );
+
 String? _connectedElsewhereEmail(
   ({
-    CloudWorkspaceSummary workspace,
+    WorkspaceEntity? mirror,
     CloudAccountKey account,
     List<CloudAccountSession> accounts,
-    List<WorkspaceEntity> localWorkspaces,
   })
-  input,
+  request,
 ) {
-  final mirror = input.localWorkspaces.firstWhereOrNull(
-    (local) => _isConnectedElsewhere(local, input.workspace, input.account),
-  );
-
+  final mirror = request.mirror;
   if (mirror == null) return null;
 
-  return input.accounts
-          .firstWhereOrNull(
-            (account) =>
-                account.userId == mirror.cloudAccountId &&
-                account.key.serverUrl == input.account.serverUrl,
-          )
-          ?.email ??
-      mirror.cloudAccountId;
+  return _accountEmailForMirror((
+    mirror: mirror,
+    account: request.account,
+    accounts: request.accounts,
+  ));
+}
+
+String? _accountEmailForMirror(
+  ({
+    WorkspaceEntity mirror,
+    CloudAccountKey account,
+    List<CloudAccountSession> accounts,
+  })
+  request,
+) =>
+    request.accounts
+        .firstWhereOrNull(
+          (account) =>
+              account.userId == request.mirror.cloudAccountId &&
+              account.key.serverUrl == request.account.serverUrl,
+        )
+        ?.email ??
+    request.mirror.cloudAccountId;
+
+class const _AvailableWorkspaceTile({
+  required final _AvailableWorkspaceTileData data,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraTile(
+    child: _AvailableWorkspaceDetails(
+      workspace: data.workspace,
+      connectedAccountEmail: data.connectedAccountEmail,
+    ),
+    variant: .ghost,
+    trailing: _AvailableWorkspaceMenu(
+      connectedMirror: data.connectedMirror,
+      workspace: data.workspace,
+      account: data.account,
+      onConnect: data.onConnect,
+      onOpen: data.onOpen,
+      onDetails: data.onDetails,
+      onCopyId: data.onCopyId,
+    ),
+  );
 }
 
 bool _isConnectedElsewhere(
   WorkspaceEntity local,
   CloudWorkspaceSummary workspace,
   CloudAccountKey account,
-) {
-  return local.cloudWorkspaceId == workspace.id.toString() &&
-      local.cloudAccountId != account.accountId &&
-      local.cloudAccount?.serverUrl == account.serverUrl;
-}
-
-class const _AvailableWorkspaceTile({
-  required final WorkspaceEntity? connectedMirror,
-  required final CloudWorkspaceSummary workspace,
-  required final String? connectedAccountEmail,
-  required final CloudAccountKey account,
-  required final ValueChanged<CloudWorkspaceSummary> onConnect,
-  required final ValueChanged<WorkspaceEntity> onOpen,
-  final ValueChanged<CloudWorkspaceSummary>? onDetails,
-  final ValueChanged<String>? onCopyId,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraTile(
-      child: _AvailableWorkspaceDetails(
-        workspace: workspace,
-        connectedAccountEmail: connectedAccountEmail,
-      ),
-      variant: .ghost,
-      trailing: _AvailableWorkspaceMenu(
-        connectedMirror: connectedMirror,
-        workspace: workspace,
-        account: account,
-        onConnect: onConnect,
-        onOpen: onOpen,
-        onDetails: onDetails,
-        onCopyId: onCopyId,
-      ),
-    );
-  }
-}
+) =>
+    local.cloudWorkspaceId == workspace.id.toString() &&
+    local.cloudAccountId != account.accountId &&
+    local.cloudAccount?.serverUrl == account.serverUrl;
 
 class _AvailableWorkspaceDetails extends StatelessWidget {
   new({

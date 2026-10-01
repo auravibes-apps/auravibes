@@ -597,13 +597,17 @@ _SkillsViewData _skillsViewData(
 _SkillsFilterData _skillsFilterData(
   _SkillsLoadedHooks hooks,
   _SkillsViewRuntime runtime,
-) => (
-  skills: runtime.visibleSkills,
-  searchQuery: hooks.view.searchQuery,
-  skillSource: hooks.view.sourceFilter,
-  enabled: hooks.view.enabledFilter,
-  sort: hooks.view.sort,
-);
+) {
+  final view = hooks.view;
+
+  return (
+    skills: runtime.visibleSkills,
+    searchQuery: view.searchQuery,
+    skillSource: view.sourceFilter,
+    enabled: view.enabledFilter,
+    sort: view.sort,
+  );
+}
 
 _SkillsSelectionData _skillsSelectionData(
   _SkillsLoadedHooks hooks,
@@ -638,12 +642,16 @@ _SkillsViewActions _skillsViewActions(_SkillsViewRequest request) {
   );
 }
 
-_SkillsFilterActions _skillsFilterActions(_SkillsLoadedHooks hooks) => (
-  onSearchChanged: hooks.notifier.setSearchQuery,
-  onSourceChanged: hooks.notifier.setSourceFilter,
-  onEnabledChanged: (value) => hooks.notifier.setEnabledFilter(value: value),
-  onSortChanged: hooks.notifier.setSort,
-);
+_SkillsFilterActions _skillsFilterActions(_SkillsLoadedHooks hooks) {
+  final notifier = hooks.notifier;
+
+  return (
+    onSearchChanged: notifier.setSearchQuery,
+    onSourceChanged: notifier.setSourceFilter,
+    onEnabledChanged: (value) => notifier.setEnabledFilter(value: value),
+    onSortChanged: notifier.setSort,
+  );
+}
 
 _SkillsBulkActions _skillsBulkActions(_SkillsViewRequest request) => (
   onSelectAll: _skillsSelectAllCallback(request),
@@ -683,11 +691,15 @@ VoidCallback _skillsDeleteSelectedCallback(_SkillsViewRequest request) {
   return () => unawaited(_confirmDeleteSelectedSkills(bulkDelete));
 }
 
-_SkillsFilterState _loadedSkillFiltersFromHooks(_SkillsLoadedHooks hooks) => (
-  queryTokens: _searchTokens(hooks.view.searchQuery),
-  source: hooks.view.sourceFilter,
-  enabled: hooks.view.enabledFilter,
-);
+_SkillsFilterState _loadedSkillFiltersFromHooks(_SkillsLoadedHooks hooks) {
+  final view = hooks.view;
+
+  return (
+    queryTokens: _searchTokens(view.searchQuery),
+    source: view.sourceFilter,
+    enabled: view.enabledFilter,
+  );
+}
 
 List<WorkspaceSkill> _sortSkills(
   BuildContext context,
@@ -888,27 +900,35 @@ class const _SkillsScreenFilters({required final _SkillsViewState state})
 class const _SkillsScreenFilterFields({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext _) => AuraColumn(
+    children: _SkillsScreenFilterFieldChildren(state).values,
+    spacing: .sm,
+  );
+}
+
+class _SkillsScreenFilterFieldChildren {
+  factory(_SkillsViewState state) {
     final data = state.data.filter;
     final actions = state.actions.filter;
 
-    return AuraColumn(
-      children: [
-        _SkillsScreenSearchInput(
-          searchQuery: state.data.filter.searchQuery,
-          onChanged: actions.onSearchChanged,
-        ),
-        _SkillsScreenFilterRow(
-          source: data.skillSource,
-          enabled: data.enabled,
-          onSourceChanged: actions.onSourceChanged,
-          onEnabledChanged: actions.onEnabledChanged,
-        ),
-        _SkillsManagementRow(state: state),
-      ],
-      spacing: .sm,
-    );
+    return _SkillsScreenFilterFieldChildren._([
+      _SkillsScreenSearchInput(
+        searchQuery: data.searchQuery,
+        onChanged: actions.onSearchChanged,
+      ),
+      _SkillsScreenFilterRow(
+        source: data.skillSource,
+        enabled: data.enabled,
+        onSourceChanged: actions.onSourceChanged,
+        onEnabledChanged: actions.onEnabledChanged,
+      ),
+      _SkillsManagementRow(state: state),
+    ]);
   }
+
+  new _(this.values);
+
+  final List<Widget> values;
 }
 
 class const _SkillsScreenSearchInput({
@@ -980,30 +1000,38 @@ class const _SkillsManagementRow({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final sort = _SkillsSortSelector(state: state);
-      final selectAll = _SkillsSelectAllButton(state: state);
+    builder: (context, constraints) => constraints.maxWidth < 600
+        ? _CompactSkillsManagementRow(state: state)
+        : _WideSkillsManagementRow(state: state),
+  );
+}
 
-      if (constraints.maxWidth < 600) {
-        return Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            sort,
-            const SizedBox(height: _skillScreenSpacing),
-            Align(alignment: .centerRight, child: selectAll),
-          ],
-        );
-      }
+class const _CompactSkillsManagementRow({required final _SkillsViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _SkillsSortSelector(state: state),
+      const SizedBox(height: _skillScreenSpacing),
+      Align(
+        alignment: .centerRight,
+        child: _SkillsSelectAllButton(state: state),
+      ),
+    ],
+  );
+}
 
-      return Row(
-        crossAxisAlignment: .end,
-        children: [
-          Expanded(child: sort),
-          const SizedBox(width: _skillScreenSpacing),
-          selectAll,
-        ],
-      );
-    },
+class const _WideSkillsManagementRow({required final _SkillsViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .end,
+    children: [
+      Expanded(child: _SkillsSortSelector(state: state)),
+      const SizedBox(width: _skillScreenSpacing),
+      _SkillsSelectAllButton(state: state),
+    ],
   );
 }
 

@@ -539,14 +539,16 @@ Future<void> _showMarkdownEditor(
 }) async {
   final result = await MarkdownEditorLauncher.show(
     context,
-    initialMarkdown: initialMarkdown,
-    maxCharacters: maxCharacters,
-    titleKey: maxCharacters == null
-        ? LocaleKeys.markdown_editor_title
-        : LocaleKeys.markdown_editor_resource_description,
-    draftHintKey: maxCharacters == null
-        ? LocaleKeys.markdown_editor_draft_hint
-        : LocaleKeys.markdown_editor_resource_hint,
+    options: (
+      initialMarkdown: initialMarkdown,
+      maxCharacters: maxCharacters,
+      titleKey: maxCharacters == null
+          ? LocaleKeys.markdown_editor_title
+          : LocaleKeys.markdown_editor_resource_description,
+      draftHintKey: maxCharacters == null
+          ? LocaleKeys.markdown_editor_draft_hint
+          : LocaleKeys.markdown_editor_resource_hint,
+    ),
   );
   onResult(result);
 }

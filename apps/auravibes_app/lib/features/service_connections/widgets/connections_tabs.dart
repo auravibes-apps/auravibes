@@ -25,36 +25,33 @@ class const ConnectionsTabs({
     final pending = useState(false);
 
     return AuraTabs<ConnectionDestination>.selector(
-      options: [
-        AuraTabOption(
-          value: .overview,
-          title: const TextLocale(LocaleKeys.related_lists_overview),
-          semanticLabel: LocaleKeys.related_lists_overview.tr(),
-        ),
-        AuraTabOption(
-          value: .providers,
-          title: const TextLocale(LocaleKeys.related_lists_providers),
-          semanticLabel: LocaleKeys.related_lists_providers.tr(),
-        ),
-        AuraTabOption(
-          value: .services,
-          title: const TextLocale(LocaleKeys.related_lists_services),
-          semanticLabel: LocaleKeys.related_lists_services.tr(),
-        ),
-        AuraTabOption(
-          value: .tools,
-          title: const TextLocale(LocaleKeys.related_lists_tools),
-          semanticLabel: LocaleKeys.related_lists_tools.tr(),
-        ),
-        AuraTabOption(
-          value: .credentials,
-          title: const TextLocale(LocaleKeys.related_lists_credentials),
-          semanticLabel: LocaleKeys.related_lists_credentials.tr(),
-        ),
-      ],
+      options: _connectionTabOptions(),
       value: value,
       onChanged: (next) =>
           unawaited(_navigate(context, ref, (pending: pending, next: next))),
+    );
+  }
+
+  List<AuraTabOption<ConnectionDestination>> _connectionTabOptions() => [
+    for (final destination in _connectionTabOrder)
+      _connectionTabOption(destination),
+  ];
+
+  AuraTabOption<ConnectionDestination> _connectionTabOption(
+    ConnectionDestination destination,
+  ) {
+    final key = switch (destination) {
+      .overview => LocaleKeys.related_lists_overview,
+      .providers => LocaleKeys.related_lists_providers,
+      .services => LocaleKeys.related_lists_services,
+      .tools => LocaleKeys.related_lists_tools,
+      .credentials => LocaleKeys.related_lists_credentials,
+    };
+
+    return AuraTabOption(
+      value: destination,
+      title: TextLocale(key),
+      semanticLabel: key.tr(),
     );
   }
 
@@ -63,18 +60,39 @@ class const ConnectionsTabs({
     WidgetRef ref,
     ({ValueNotifier<bool> pending, ConnectionDestination next}) request,
   ) async {
-    if (request.pending.value || request.next == value) return;
-    request.pending.value = true;
+    final pending = request.pending;
+    final next = request.next;
+    if (pending.value || next == value) return;
+    pending.value = true;
+    await _continueNavigation(context, ref, pending, next);
+  }
+
+  Future<void> _continueNavigation(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<bool> pending,
+    ConnectionDestination next,
+  ) async {
     final router = GoRouter.of(context);
     final registry = ref.read(draftExitRegistryProvider);
     try {
-      if (await registry.canExitActive(router) && context.mounted) {
-        router.go(_location(request.next));
-      } else {
-        registry.releaseApprovals();
-      }
+      await _navigateAfterExitApproval(context, registry, router, next);
     } finally {
-      if (context.mounted) request.pending.value = false;
+      if (context.mounted) pending.value = false;
+    }
+  }
+
+  Future<void> _navigateAfterExitApproval(
+    BuildContext context,
+    DraftExitRegistry registry,
+    GoRouter router,
+    ConnectionDestination next,
+  ) async {
+    final canExit = await registry.canExitActive(router);
+    if (canExit && context.mounted) {
+      router.go(_location(next));
+    } else {
+      registry.releaseApprovals();
     }
   }
 
@@ -87,3 +105,11 @@ class const ConnectionsTabs({
     ).location;
   }
 }
+
+const List<ConnectionDestination> _connectionTabOrder = [
+  ConnectionDestination.overview,
+  ConnectionDestination.providers,
+  ConnectionDestination.services,
+  ConnectionDestination.tools,
+  ConnectionDestination.credentials,
+];

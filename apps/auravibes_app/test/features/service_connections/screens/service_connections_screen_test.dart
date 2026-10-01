@@ -913,17 +913,19 @@ void main() {
 
     expect(find.text('Second Token'), findsOneWidget);
 
-    final _ = await database.skillCredentialsDao.createCredential(
-      .insert(
-        name: 'Stale Token',
-        serviceId: 'missing-definition',
-        kind: ServiceConnectionKindTable.skillCredential,
-        authenticationType: ServiceAuthenticationTypeTable.apiKey,
-        encryptedAuthValue: const Value('encrypted-secret'),
-        keySuffix: const Value('value'),
-        workspaceId: workspace.id,
-      ),
-    );
+    final _ = await database
+        .into(database.serviceConnections)
+        .insertReturning(
+          ServiceConnectionsCompanion.insert(
+            name: 'Stale Token',
+            serviceId: 'missing-definition',
+            kind: .skillCredential,
+            authenticationType: .apiKey,
+            encryptedAuthValue: const Value('encrypted-secret'),
+            keySuffix: const Value('value'),
+            workspaceId: workspace.id,
+          ),
+        );
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Stale Token'), findsOneWidget);

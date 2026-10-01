@@ -94,16 +94,7 @@ _remoteWorkspaceMetadata(WorkspaceEntity mirror) {
   final accountId = mirror.cloudAccountId;
   final cloudWorkspaceId = int.tryParse(mirror.cloudWorkspaceId ?? '');
   if (serverUrl == null || accountId == null || accountId.isEmpty) return null;
-  if (cloudWorkspaceId == null) return null;
-  final uri = Uri.tryParse(serverUrl);
-  if (uri == null ||
-      !['http', 'https'].contains(uri.scheme) ||
-      uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty ||
-      uri.hasQuery ||
-      uri.hasFragment) {
-    return null;
-  }
+  if (cloudWorkspaceId == null || !_isValidServerUrl(serverUrl)) return null;
 
   return (
     serverUrl: serverUrl,
@@ -111,6 +102,20 @@ _remoteWorkspaceMetadata(WorkspaceEntity mirror) {
     cloudWorkspaceId: cloudWorkspaceId,
   );
 }
+
+bool _isValidServerUrl(String serverUrl) {
+  final uri = Uri.tryParse(serverUrl);
+  if (uri == null) return false;
+
+  return _hasAllowedServerOrigin(uri);
+}
+
+bool _hasAllowedServerOrigin(Uri uri) =>
+    ['http', 'https'].contains(uri.scheme) &&
+    uri.host.isNotEmpty &&
+    uri.userInfo.isEmpty &&
+    !uri.hasQuery &&
+    !uri.hasFragment;
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)

@@ -30,18 +30,29 @@ class CreateWorkspaceScreen extends StatelessWidget {
 class const _CreateWorkspaceContent({required final String workspaceId})
     extends StatelessWidget {
   @override
+  Widget build(BuildContext context) =>
+      _WorkspaceCreateTaskList(workspaceId: workspaceId);
+}
+
+class const _WorkspaceCreateTaskList({required final String workspaceId})
+    extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16)
         .copyWith(bottom: BottomPadding.of(context)),
-    children: [
-      WorkspaceSetupContent(
-        taskId: WorkspaceCreateRoute(workspaceId: workspaceId).location,
-        onCreated: (workspace) => _openWorkspace(context, workspace.id),
-        onReturn: () =>
-            WorkspaceManagementRoute(workspaceId: workspaceId).go(context),
-      ),
-    ],
+    children: [_WorkspaceCreateTask(workspaceId: workspaceId)],
     keyboardDismissBehavior: .onDrag,
+  );
+}
+
+class const _WorkspaceCreateTask({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => WorkspaceSetupContent(
+    taskId: WorkspaceCreateRoute(workspaceId: workspaceId).location,
+    onCreated: (workspace) => _openWorkspace(context, workspace.id),
+    onReturn: () =>
+        WorkspaceManagementRoute(workspaceId: workspaceId).go(context),
   );
 
   void _openWorkspace(BuildContext context, String workspaceId) =>

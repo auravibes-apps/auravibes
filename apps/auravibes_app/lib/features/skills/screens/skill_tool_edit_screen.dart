@@ -166,16 +166,9 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   Widget build(BuildContext context) {
     final data = _watchData();
     _initializeForView(data);
-    _exitGuard.bind(
-      isDirty: () => _isDirty,
-      isSaving: () => _isSaving,
-      onReturn: (context) => SkillDetailRoute(
-        workspaceId: widget.workspaceId,
-        skillId: widget.skillId,
-      ).go(context),
-    );
+    _bindExitGuard();
 
-    return DraftExitScope(
+    return _SkillToolDraftExitScope(
       guard: _exitGuard,
       child: _SkillToolEditView(data: _viewData(context, data)),
     );
@@ -196,6 +189,16 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 
   void _syncRouteExitGuard() =>
       _exitGuard.update(isDirty: _isDirty, isSaving: _isSaving);
+}
+
+extension on _SkillToolEditScreenState {
+  void _bindExitGuard() => _exitGuard.bind(
+    readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
+    onReturn: (context) => SkillDetailRoute(
+      workspaceId: widget.workspaceId,
+      skillId: widget.skillId,
+    ).go(context),
+  );
 }
 
 extension SkillToolControllerCleanup on _SkillToolEditScreenState {
@@ -503,10 +506,12 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   Future<void> _editDescription(BuildContext context) async {
     final result = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _descriptionController.text,
-      titleKey: LocaleKeys.markdown_editor_tool_description,
-      draftHintKey: LocaleKeys.markdown_editor_tool_hint,
-      maxCharacters: _skillToolDescriptionMaxCharacters,
+      options: (
+        initialMarkdown: _descriptionController.text,
+        maxCharacters: _skillToolDescriptionMaxCharacters,
+        titleKey: LocaleKeys.markdown_editor_tool_description,
+        draftHintKey: LocaleKeys.markdown_editor_tool_hint,
+      ),
     );
     if (result == null || !context.mounted) return;
 
@@ -1210,6 +1215,15 @@ class const _SkillToolEditView({required final _SkillToolEditViewData data})
   );
 }
 
+class const _SkillToolDraftExitScope({
+  required final SkillToolEditRouteGuard guard,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      DraftExitScope(guard: guard, child: child);
+}
+
 class const _SkillToolEditBody({
   required final AsyncValue<SkillTemplateToolEntity?>? toolAsync,
   required final SkillTemplateToolEntity? currentTool,
@@ -1284,24 +1298,38 @@ class const _SkillToolPreviewDialog({
   @override
   Widget build(BuildContext context) => AuraAlertDialog(
     title: const TextLocale(LocaleKeys.skills_tool_preview_label),
-    message: Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        const TextLocale(LocaleKeys.skills_tool_preview_hint),
-        const SizedBox(height: 12),
-        AuraSelectableText(
-          const JsonEncoder.withIndent('  ').convert({
-            'method': preview.method,
-            'url': preview.url,
-            'headers': preview.headers,
-            'query': preview.query,
-            'body': preview.body,
-          }),
-        ),
-      ],
-    ),
+    message: _SkillToolPreviewMessage(preview: preview),
     dismissLabel: Text(LocaleKeys.common_close.tr(context: context)),
+  );
+}
+
+class const _SkillToolPreviewMessage({
+  required final SkillTemplateRequestPreview preview,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      const TextLocale(LocaleKeys.skills_tool_preview_hint),
+      const SizedBox(height: 12),
+      _SkillToolPreviewJson(preview: preview),
+    ],
+  );
+}
+
+class const _SkillToolPreviewJson({
+  required final SkillTemplateRequestPreview preview,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraSelectableText(
+    const JsonEncoder.withIndent('  ').convert({
+      'method': preview.method,
+      'url': preview.url,
+      'headers': preview.headers,
+      'query': preview.query,
+      'body': preview.body,
+    }),
   );
 }
 

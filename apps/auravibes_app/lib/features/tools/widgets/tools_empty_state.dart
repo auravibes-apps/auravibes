@@ -10,11 +10,30 @@ class const ToolsEmptyState({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding,
-      child: _ToolsEmptyContent(canAddNativeTools: canAddNativeTools),
+    return _ToolsEmptyViewport(
+      child: Padding(
+        padding: padding,
+        child: _ToolsEmptyContent(canAddNativeTools: canAddNativeTools),
+      ),
     );
   }
+}
+
+class const _ToolsEmptyViewport({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      if (!constraints.hasBoundedHeight) return child;
+
+      return SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: .new(minHeight: constraints.maxHeight),
+          child: child,
+        ),
+      );
+    },
+  );
 }
 
 class const _ToolsEmptyContent({required final bool canAddNativeTools})
@@ -23,27 +42,43 @@ class const _ToolsEmptyContent({required final bool canAddNativeTools})
   Widget build(BuildContext context) => Center(
     child: AuraColumn(
       children: [
-        const Opacity(
-          opacity: 0.5,
-          child: AuraIcon(Icons.build_circle_outlined, size: .extraLarge),
-        ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
-          style: .heading6,
-          textAlign: .center,
-        ),
-        AuraText(
-          child: TextLocale(
-            canAddNativeTools
-                ? LocaleKeys.tools_screen_add_tools_hint
-                : 'connection_setup.native_tools_restriction',
-          ),
-          style: .bodySmall,
-          textAlign: .center,
-        ),
+        const _ToolsEmptyIcon(),
+        const _ToolsEmptyTitle(),
+        _ToolsEmptyHint(canAddNativeTools: canAddNativeTools),
       ],
       spacing: .md,
       mainAxisSize: .min,
     ),
+  );
+}
+
+class const _ToolsEmptyIcon() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Opacity(
+    opacity: 0.5,
+    child: AuraIcon(Icons.build_circle_outlined, size: .extraLarge),
+  );
+}
+
+class const _ToolsEmptyTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const AuraText(
+    child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
+    style: .heading6,
+    textAlign: .center,
+  );
+}
+
+class const _ToolsEmptyHint({required final bool canAddNativeTools})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraText(
+    child: TextLocale(
+      canAddNativeTools
+          ? LocaleKeys.tools_screen_add_tools_hint
+          : 'connection_setup.native_tools_restriction',
+    ),
+    style: .bodySmall,
+    textAlign: .center,
   );
 }

@@ -37,6 +37,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 final _logger = Logger('service_connections_screen');
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
+const _overviewFilterOptionCount = 4;
+const _connectionMetadataMaxLines = 2;
 const _deleteConfirmationActions = AuraConfirmDialogActions(
   confirmLabel: TextLocale(LocaleKeys.common_delete),
   cancelLabel: TextLocale(LocaleKeys.common_cancel),
@@ -292,27 +294,46 @@ class const _ServiceConnectionsBody({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final connections = _connectionsValue(connectionsAsync);
-    final content = connections == null
-        ? _ConnectionsLoadState(
-            isLoading: connectionsAsync.isLoading,
-            workspaceId: workspaceId,
-          )
-        : _ConnectionsList(
-            workspaceId: workspaceId,
-            view: view,
-            connections: connections
-                .where((connection) => _matchesView(connection, view))
-                .toList(),
-            onAddConnection: onAddConnection,
-          );
-
     return Column(
       crossAxisAlignment: .stretch,
       children: [
         const _ModelCatalogSyncStatus(),
-        Expanded(child: content),
+        Expanded(
+          child: _ServiceConnectionsContent(
+            workspaceId: workspaceId,
+            view: view,
+            connectionsAsync: connectionsAsync,
+            onAddConnection: onAddConnection,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class const _ServiceConnectionsContent({
+  required final String workspaceId,
+  required final ConnectionDestination view,
+  required final AsyncValue<List<ServiceConnectionListItem>> connectionsAsync,
+  required final VoidCallback onAddConnection,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final connections = _connectionsValue(connectionsAsync);
+    if (connections == null) {
+      return _ConnectionsLoadState(
+        isLoading: connectionsAsync.isLoading,
+        workspaceId: workspaceId,
+      );
+    }
+
+    return _ConnectionsList(
+      workspaceId: workspaceId,
+      view: view,
+      connections: connections
+          .where((connection) => _matchesView(connection, view))
+          .toList(),
+      onAddConnection: onAddConnection,
     );
   }
 }
@@ -323,23 +344,39 @@ class const _ConnectionsLoadState({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Center(
-    child: isLoading
-        ? const AuraSpinner()
-        : AuraColumn(
-            children: [
-              const _ConnectionsLoadError(),
-              AuraButton(
-                onPressed: () =>
-                    ref.invalidate(serviceConnectionsProvider(workspaceId)),
-                child: const TextLocale(LocaleKeys.route_state_retry),
-              ),
-              AuraButton(
-                onPressed: () =>
-                    MoreRoute(workspaceId: workspaceId).go(context),
-                child: const TextLocale('connection_setup.return_workspace'),
-              ),
-            ],
-          ),
+    child: _ConnectionsLoadStateContent(
+      isLoading: isLoading,
+      workspaceId: workspaceId,
+    ),
+  );
+}
+
+class const _ConnectionsLoadStateContent({
+  required final bool isLoading,
+  required final String workspaceId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => isLoading
+      ? const AuraSpinner()
+      : _ConnectionsLoadFailure(workspaceId: workspaceId);
+}
+
+class const _ConnectionsLoadFailure({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
+    children: [
+      const _ConnectionsLoadError(),
+      AuraButton(
+        onPressed: () =>
+            ref.invalidate(serviceConnectionsProvider(workspaceId)),
+        child: const TextLocale(LocaleKeys.route_state_retry),
+      ),
+      AuraButton(
+        onPressed: () => MoreRoute(workspaceId: workspaceId).go(context),
+        child: const TextLocale('connection_setup.return_workspace'),
+      ),
+    ],
   );
 }
 
@@ -443,16 +480,22 @@ class const _ServiceConnectionsAppBar({
       title: const TextLocale(LocaleKeys.service_connections_title),
       actions: [
         _SyncModelCatalogButton(workspaceId: workspaceId),
-        AuraIconButton(
-          icon: Icons.hub_outlined,
-          onPressed: () => unawaited(_openMcpCatalog(context, workspaceId)),
-          tooltip: LocaleKeys.mcp_catalog_browse.tr(context: context),
-        ),
+        _BrowseMcpCatalogButton(workspaceId: workspaceId),
         _ConnectionsAddButton(onPressed: onAddConnection),
       ],
       bottom: ConnectionsTabs(workspaceId: workspaceId, value: view),
     );
   }
+}
+
+class const _BrowseMcpCatalogButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.hub_outlined,
+    onPressed: () => unawaited(_openMcpCatalog(context, workspaceId)),
+    tooltip: LocaleKeys.mcp_catalog_browse.tr(context: context),
+  );
 }
 
 class const _SyncModelCatalogButton({required final String workspaceId})
@@ -526,69 +569,183 @@ class const _ConnectionsList({
     final state = ref.watch(provider);
     final notifier = ref.read(provider.notifier);
 
-    return Column(
-      children: [
-        if (view == .credentials)
-          AuraButton(
-            onPressed: () => unawaited(
-              SkillCredentialDefinitionsRoute(workspaceId: workspaceId)
-                  .push<void>(context),
-            ),
-            child: const TextLocale(LocaleKeys.related_lists_credential_types),
-            variant: .ghost,
-          ),
-        if (connections.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AuraColumn(
-              children: [
-                if (view == .overview)
-                  AuraDropdownSelector<ConnectionFilter>(
-                    options: [
-                      for (final option in _connectionFilterData.take(4))
-                        AuraDropdownOption(
-                          value: option.value,
-                          child: TextLocale(option.titleKey),
-                        ),
-                    ],
-                    value: state.kind,
-                    onChanged: (value) {
-                      if (value != null) notifier.setKind(value);
-                    },
-                    label: const TextLocale('connection_setup.kind'),
-                  ),
-                AuraCheckboxListTile(
-                  value: state.oauthOnly,
-                  onChanged: (value) => notifier.setOauthOnly(value: value),
-                  title: const TextLocale(
-                    LocaleKeys.service_connections_filter_oauth,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        Expanded(
-          child: connections.isEmpty
-              ? _EmptyConnections(onAddConnection: onAddConnection)
-              : _ConnectionsListContent(
-                  connections: connections
-                      .where(
-                        (item) =>
-                            _matchesConnectionFilter(item, state.kind) &&
-                            (!state.oauthOnly || _isOauthConnection(item)),
-                      )
-                      .toList(),
-                  filter: state.filter,
-                  onAddConnection: onAddConnection,
-                  onFilterChanged: notifier.setFilter,
-                  onSearchChanged: notifier.setSearchQuery,
-                  searchQuery: state.searchQuery,
-                  key: ValueKey((workspaceId: workspaceId, view: view)),
-                ),
-        ),
-      ],
+    return _ConnectionsListLayout(
+      workspaceId: workspaceId,
+      view: view,
+      connections: connections,
+      onAddConnection: onAddConnection,
+      state: state,
+      notifier: notifier,
     );
   }
+}
+
+class const _ConnectionsListLayout({
+  required final String workspaceId,
+  required final ConnectionDestination view,
+  required final List<ServiceConnectionListItem> connections,
+  required final VoidCallback onAddConnection,
+  required final ConnectionsListViewState state,
+  required final ConnectionsListViewNotifier notifier,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      _ConnectionsListControls(layout: this),
+      Expanded(
+        child: _ConnectionsListResult(
+          layout: this,
+          key: ValueKey((workspaceId: workspaceId, view: view)),
+        ),
+      ),
+    ],
+  );
+}
+
+class const _ConnectionsListControls({
+  required final _ConnectionsListLayout layout,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _CredentialTypesControl(layout: layout),
+      _ConnectionFiltersControl(layout: layout),
+    ],
+  );
+}
+
+class const _CredentialTypesControl({
+  required final _ConnectionsListLayout layout,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => layout.view == .credentials
+      ? _CredentialTypesButton(workspaceId: layout.workspaceId)
+      : const SizedBox.shrink();
+}
+
+class const _ConnectionFiltersControl({
+  required final _ConnectionsListLayout layout,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => layout.connections.isEmpty
+      ? const SizedBox.shrink()
+      : _ConnectionListFilters.fromLayout(layout);
+}
+
+List<ServiceConnectionListItem> _connectionsForList(
+  List<ServiceConnectionListItem> connections,
+  ConnectionFilter kind,
+  bool oauthOnly,
+) => connections
+    .where(
+      (item) =>
+          _matchesConnectionFilter(item, kind) &&
+          (!oauthOnly || _isOauthConnection(item)),
+    )
+    .toList();
+
+class const _CredentialTypesButton({required final String workspaceId})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(
+      SkillCredentialDefinitionsRoute(workspaceId: workspaceId)
+          .push<void>(context),
+    ),
+    child: const TextLocale(LocaleKeys.related_lists_credential_types),
+    variant: .ghost,
+  );
+}
+
+class const _ConnectionListFilters({
+  required final ConnectionDestination view,
+  required final ConnectionFilter kind,
+  required final bool oauthOnly,
+  required final ValueChanged<ConnectionFilter> onKindChanged,
+  required final ValueChanged<bool> onOauthOnlyChanged,
+}) extends StatelessWidget {
+  new fromLayout(_ConnectionsListLayout layout)
+    : this(
+        view: layout.view,
+        kind: layout.state.kind,
+        oauthOnly: layout.state.oauthOnly,
+        onKindChanged: layout.notifier.setKind,
+        onOauthOnlyChanged: (value) =>
+            layout.notifier.setOauthOnly(value: value),
+      );
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: AuraColumn(
+      children: [
+        if (view == .overview)
+          _ConnectionKindFilter(value: kind, onChanged: onKindChanged),
+        _OAuthOnlyFilter(value: oauthOnly, onChanged: onOauthOnlyChanged),
+      ],
+    ),
+  );
+
+  static List<AuraDropdownOption<ConnectionFilter>>
+  _overviewConnectionFilterOptions() => [
+    for (final option in _connectionFilterData.take(_overviewFilterOptionCount))
+      AuraDropdownOption(
+        value: option.value,
+        child: TextLocale(option.titleKey),
+      ),
+  ];
+}
+
+class const _ConnectionKindFilter({
+  required final ConnectionFilter value,
+  required final ValueChanged<ConnectionFilter> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<ConnectionFilter>(
+    options: _ConnectionListFilters._overviewConnectionFilterOptions(),
+    value: value,
+    onChanged: (value) => _selectConnectionKind(value, onChanged),
+    label: const TextLocale('connection_setup.kind'),
+  );
+}
+
+class const _OAuthOnlyFilter({
+  required final bool value,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraCheckboxListTile(
+    value: value,
+    onChanged: onChanged,
+    title: const TextLocale(LocaleKeys.service_connections_filter_oauth),
+  );
+}
+
+void _selectConnectionKind(
+  ConnectionFilter? value,
+  ValueChanged<ConnectionFilter> onChanged,
+) {
+  if (value != null) onChanged(value);
+}
+
+class const _ConnectionsListResult({
+  required final _ConnectionsListLayout layout,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      _ConnectionsListResultView(layout: layout, key: key);
+}
+
+class const _ConnectionsListResultView({
+  required final _ConnectionsListLayout layout,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => layout.connections.isEmpty
+      ? _EmptyConnections(onAddConnection: layout.onAddConnection)
+      : _ConnectionsListContent.fromLayout(layout, key: key);
 }
 
 bool _matchesView(
@@ -672,6 +829,21 @@ class const _ConnectionsListContent({
   required final String searchQuery,
   super.key,
 }) extends StatelessWidget {
+  factory fromLayout(_ConnectionsListLayout layout, {Key? key}) =>
+      _ConnectionsListContent(
+        connections: _connectionsForList(
+          layout.connections,
+          layout.state.kind,
+          layout.state.oauthOnly,
+        ),
+        filter: layout.state.filter,
+        onAddConnection: layout.onAddConnection,
+        onFilterChanged: layout.notifier.setFilter,
+        onSearchChanged: layout.notifier.setSearchQuery,
+        searchQuery: layout.state.searchQuery,
+        key: key,
+      );
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -702,17 +874,28 @@ class const _ConnectionSearchInput({
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
-    child: AuraInput(
-      key: const ValueKey<String>('service_connections_search'),
-      controller: useTextEditingController(text: searchQuery),
-      placeholder: const TextLocale(
-        LocaleKeys.service_connections_search_placeholder,
-      ),
-      prefixIcon: const AuraIcon(Icons.search),
-      size: .small,
-      textInputAction: .search,
+    child: _ConnectionSearchField(
+      searchQuery: searchQuery,
       onChanged: onChanged,
     ),
+  );
+}
+
+class const _ConnectionSearchField({
+  required final String searchQuery,
+  required final ValueChanged<String> onChanged,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    key: const ValueKey<String>('service_connections_search'),
+    controller: useTextEditingController(text: searchQuery),
+    placeholder: const TextLocale(
+      LocaleKeys.service_connections_search_placeholder,
+    ),
+    prefixIcon: const AuraIcon(Icons.search),
+    size: .small,
+    textInputAction: .search,
+    onChanged: onChanged,
   );
 }
 
@@ -720,33 +903,36 @@ class const _ConnectionFilterSelector({
   required final ConnectionFilter value,
   required final ValueChanged<ConnectionFilter> onChanged,
 }) extends StatelessWidget {
+  static final List<AuraDropdownOption<ConnectionFilter>> _healthFilterOptions =
+      [
+        for (final option in _connectionFilterData)
+          if (_healthConnectionFilters.contains(option.value))
+            AuraDropdownOption(
+              value: option.value,
+              child: TextLocale(option.titleKey),
+            ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: AuraDropdownSelector<ConnectionFilter>(
-        options: [
-          for (final option in _connectionFilterData.where(
-            (option) =>
-                option.value == .all ||
-                option.value == .failed ||
-                option.value == .expiringSoon ||
-                option.value == .needsAuth,
-          ))
-            AuraDropdownOption(
-              value: option.value,
-              child: TextLocale(option.titleKey),
-            ),
-        ],
+        options: _healthFilterOptions,
         value: value,
-        onChanged: (value) {
-          if (value != null) onChanged(value);
-        },
+        onChanged: (value) => _selectConnectionKind(value, onChanged),
         label: const TextLocale('connection_setup.health'),
       ),
     );
   }
 }
+
+const Set<ConnectionFilter> _healthConnectionFilters = {
+  ConnectionFilter.all,
+  ConnectionFilter.failed,
+  ConnectionFilter.expiringSoon,
+  ConnectionFilter.needsAuth,
+};
 
 bool _matchesConnectionFilter(
   ServiceConnectionListItem connection,
@@ -2091,7 +2277,7 @@ class const _ConnectionMetadataChipText({
       '${_metadataLabel(context, value.key)}: ${value.value}',
       style: Theme.of(context).textTheme.labelSmall,
       overflow: .ellipsis,
-      maxLines: 2,
+      maxLines: _connectionMetadataMaxLines,
     );
   }
 }

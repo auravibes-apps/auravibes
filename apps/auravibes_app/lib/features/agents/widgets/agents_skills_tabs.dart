@@ -25,18 +25,7 @@ class const AgentsSkillsTabs({
     final pending = useState(false);
 
     return AuraTabs<AgentDestination>.selector(
-      options: [
-        AuraTabOption(
-          value: .agents,
-          title: const TextLocale(LocaleKeys.related_lists_agents),
-          semanticLabel: LocaleKeys.related_lists_agents.tr(),
-        ),
-        AuraTabOption(
-          value: .skills,
-          title: const TextLocale(LocaleKeys.related_lists_skills),
-          semanticLabel: LocaleKeys.related_lists_skills.tr(),
-        ),
-      ],
+      options: _agentsSkillsTabOptions(),
       value: value,
       onChanged: (next) =>
           unawaited(_navigate(context, ref, (pending: pending, next: next))),
@@ -48,24 +37,85 @@ class const AgentsSkillsTabs({
     WidgetRef ref,
     ({ValueNotifier<bool> pending, AgentDestination next}) request,
   ) async {
-    if (request.pending.value || request.next == value) return;
-    request.pending.value = true;
-    final router = GoRouter.of(context);
-    final registry = ref.read(draftExitRegistryProvider);
-    try {
-      if (await registry.canExitActive(router) && context.mounted) {
-        router.go(_location(request.next));
-      } else {
-        registry.releaseApprovals();
-      }
-    } finally {
-      if (context.mounted) request.pending.value = false;
-    }
-  }
+    final pending = request.pending;
+    if (pending.value || request.next == value) return;
 
-  String _location(AgentDestination value) {
-    return value == .agents
-        ? AgentsRoute(workspaceId: workspaceId).location
-        : SkillsRoute(workspaceId: workspaceId).location;
+    await _runPendingAgentTabNavigation((
+      pending: pending,
+      context: context,
+      navigate: () => _finishNavigation(
+        _agentTabNavigation(context, ref, workspaceId, request.next),
+      ),
+    ));
   }
 }
+
+typedef _PendingAgentTabNavigation = ({
+  ValueNotifier<bool> pending,
+  BuildContext context,
+  Future<void> Function() navigate,
+});
+
+Future<void> _runPendingAgentTabNavigation(
+  _PendingAgentTabNavigation request,
+) async {
+  request.pending.value = true;
+  try {
+    await request.navigate();
+  } finally {
+    if (request.context.mounted) request.pending.value = false;
+  }
+}
+
+List<AuraTabOption<AgentDestination>> _agentsSkillsTabOptions() => [
+  _agentTabOption(.agents, LocaleKeys.related_lists_agents),
+  _agentTabOption(.skills, LocaleKeys.related_lists_skills),
+];
+
+AuraTabOption<AgentDestination> _agentTabOption(
+  AgentDestination destination,
+  String titleKey,
+) => AuraTabOption(
+  value: destination,
+  title: TextLocale(titleKey),
+  semanticLabel: titleKey.tr(),
+);
+
+typedef _AgentTabNavigation = ({
+  BuildContext context,
+  GoRouter router,
+  DraftExitRegistry registry,
+  String workspaceId,
+  AgentDestination next,
+});
+
+_AgentTabNavigation _agentTabNavigation(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  AgentDestination next,
+) => (
+  context: context,
+  router: GoRouter.of(context),
+  registry: ref.read(draftExitRegistryProvider),
+  workspaceId: workspaceId,
+  next: next,
+);
+
+Future<void> _finishNavigation(_AgentTabNavigation request) async {
+  final canExit = await request.registry.canExitActive(request.router);
+  if (canExit && request.context.mounted) {
+    request.router.go(
+      _agentDestinationLocation(request.next, request.workspaceId),
+    );
+  } else {
+    request.registry.releaseApprovals();
+  }
+}
+
+String _agentDestinationLocation(
+  AgentDestination destination,
+  String workspaceId,
+) => destination == .agents
+    ? AgentsRoute(workspaceId: workspaceId).location
+    : SkillsRoute(workspaceId: workspaceId).location;

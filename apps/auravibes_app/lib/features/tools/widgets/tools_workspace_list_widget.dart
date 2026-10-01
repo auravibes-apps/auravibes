@@ -319,19 +319,23 @@ class const _ToolsWorkspaceListState({
 class const _ToolsListControls({required final _ToolsWorkspaceViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      ToolsSearchInput(
-        onChanged: state.filter.onSearchChanged,
-        searchQuery: state.filter.searchQuery,
-      ),
-      _ToolsManagementRow(
-        filter: state.filter,
-        selection: state.selection,
-        actions: state.actions,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final filter = state.filter;
+
+    return Column(
+      children: [
+        ToolsSearchInput(
+          onChanged: filter.onSearchChanged,
+          searchQuery: filter.searchQuery,
+        ),
+        _ToolsManagementRow(
+          filter: filter,
+          selection: state.selection,
+          actions: state.actions,
+        ),
+      ],
+    );
+  }
 }
 
 class const _OptionalToolsSelectionActions({
@@ -399,36 +403,77 @@ class const _ToolsManagementControls({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final sort = _ToolsSortSelector(
-        filter: filter,
-        isDeleting: selection.isDeleting,
-      );
-      final selectAll = _ToolsSelectAllButton(
-        selection: selection,
-        onPressed: onSelectAll,
-      );
+    builder: (context, constraints) => _ToolsManagementLayout(
+      compact: constraints.maxWidth < 600,
+      filter: filter,
+      selection: selection,
+      onSelectAll: onSelectAll,
+      spacing: spacing,
+    ),
+  );
+}
 
-      if (constraints.maxWidth < 600) {
-        return Column(
-          crossAxisAlignment: .stretch,
-          children: [
-            sort,
-            SizedBox(height: spacing),
-            Align(alignment: .centerRight, child: selectAll),
-          ],
-        );
-      }
+class const _ToolsManagementLayout({
+  required final bool compact,
+  required final _ToolsFilterState filter,
+  required final _ToolsSelectionData selection,
+  required final VoidCallback onSelectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final sort = _ToolsSortSelector(
+      filter: filter,
+      isDeleting: selection.isDeleting,
+    );
+    final selectAll = _ToolsSelectAllButton(
+      selection: selection,
+      onPressed: onSelectAll,
+    );
 
-      return Row(
-        crossAxisAlignment: .end,
-        children: [
-          Expanded(child: sort),
-          SizedBox(width: spacing),
-          selectAll,
-        ],
-      );
-    },
+    return compact
+        ? _CompactToolsManagementControls(
+            sort: sort,
+            selectAll: selectAll,
+            spacing: spacing,
+          )
+        : _WideToolsManagementControls(
+            sort: sort,
+            selectAll: selectAll,
+            spacing: spacing,
+          );
+  }
+}
+
+class const _CompactToolsManagementControls({
+  required final Widget sort,
+  required final Widget selectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      sort,
+      SizedBox(height: spacing),
+      Align(alignment: .centerRight, child: selectAll),
+    ],
+  );
+}
+
+class const _WideToolsManagementControls({
+  required final Widget sort,
+  required final Widget selectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: .end,
+    children: [
+      Expanded(child: sort),
+      SizedBox(width: spacing),
+      selectAll,
+    ],
   );
 }
 
@@ -584,16 +629,7 @@ class const _ToolsGroupListOrEmpty({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (groups.isEmpty && state.filter.searchQuery.trim().isEmpty) {
-      return ToolsEmptyState(
-        canAddNativeTools:
-            ref
-                .watch(workspaceSessionForRouteProvider(state.workspaceId))
-                .value
-                ?.capabilities
-                .nativeTools ??
-            false,
-        padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
-      );
+      return _ToolsWorkspaceEmptyState(workspaceId: state.workspaceId);
     }
 
     return _FilteredToolsGroupList(
@@ -601,6 +637,21 @@ class const _ToolsGroupListOrEmpty({
       state: state,
     );
   }
+}
+
+class const _ToolsWorkspaceEmptyState({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ToolsEmptyState(
+    canAddNativeTools:
+        ref
+            .watch(workspaceSessionForRouteProvider(workspaceId))
+            .value
+            ?.capabilities
+            .nativeTools ??
+        false,
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
+  );
 }
 
 List<_WorkspaceToolsGroupResult> _visibleWorkspaceGroups(

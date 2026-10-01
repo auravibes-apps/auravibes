@@ -22,15 +22,14 @@ class DraftExitGuard extends ChangeNotifier {
   bool get isDirty => _readDirty?.call() ?? _isDirty;
 
   void bind({
-    required bool Function() isDirty,
-    required bool Function() isSaving,
+    required ({bool Function() isDirty, bool Function() isSaving}) readers,
     Future<bool?> Function(BuildContext)? confirm,
     void Function(BuildContext)? onReturn,
     bool preferReturn = false,
   }) {
     _preferReturn = preferReturn;
-    _readDirty = isDirty;
-    _readSaving = isSaving;
+    _readDirty = readers.isDirty;
+    _readSaving = readers.isSaving;
     _confirm = confirm;
     _onReturn = onReturn;
   }
@@ -52,13 +51,17 @@ class DraftExitGuard extends ChangeNotifier {
     return pending.whenComplete(() => _pending = null);
   }
 
+  void _notifyChanged() => notifyListeners();
+}
+
+extension DraftExitGuardTransitions on DraftExitGuard {
   void holdApproval() {
     if (!_approved) return;
     _transitioning = true;
     _transitionExitAllowed = false;
     _transitionFocus ??= FocusManager.instance.primaryFocus;
     FocusManager.instance.primaryFocus?.unfocus();
-    notifyListeners();
+    _notifyChanged();
   }
 
   void finishTransition() {
@@ -66,36 +69,18 @@ class DraftExitGuard extends ChangeNotifier {
   }
 
   void releaseApproval({bool restoreFocus = true}) {
-    final wasHeld = _transitioning;
-    _approved = false;
-    _transitioning = false;
-    _transitionExitAllowed = false;
-    final focus = _transitionFocus;
-    _transitionFocus = null;
-    notifyListeners();
-    if (!restoreFocus || !wasHeld || focus == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_transitioning && focus.context != null) focus.requestFocus();
-    });
-    WidgetsBinding.instance.scheduleFrame();
+    final shouldRestoreFocus = _transitioning && restoreFocus;
+    final focus = _clearApprovalState();
+    _notifyChanged();
+    if (!shouldRestoreFocus || focus == null) return;
+    _scheduleFocusRestore(focus);
   }
 
   Future<void> pop(BuildContext context, [Object? result]) async {
     if (!await canExit(context) || !context.mounted) return;
     // Let PopScope observe approval before issuing the actual pop.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      if (_preferReturn && _onReturn != null) {
-        _onReturn?.call(context);
-
-        return;
-      }
-      final navigator = Navigator.of(context);
-      if (navigator.canPop()) {
-        navigator.pop(result);
-      } else {
-        _onReturn?.call(context);
-      }
+      _completePop(context, result);
     });
     WidgetsBinding.instance.scheduleFrame();
   }
@@ -115,32 +100,88 @@ class DraftExitGuard extends ChangeNotifier {
     _isDirty = false;
     _isSaving = false;
   }
+}
+
+extension _DraftExitGuardFocus on DraftExitGuard {
+  FocusNode? _clearApprovalState() {
+    _approved = false;
+    _transitioning = false;
+    _transitionExitAllowed = false;
+    final focus = _transitionFocus;
+    _transitionFocus = null;
+
+    return focus;
+  }
+
+  void _scheduleFocusRestore(FocusNode focus) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_transitioning && focus.context != null) {
+        focus.requestFocus();
+      }
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+}
+
+extension _DraftExitGuardExit on DraftExitGuard {
+  void _completePop(BuildContext context, Object? result) {
+    if (!context.mounted) return;
+    if (_preferReturn && _onReturn != null) {
+      _onReturn?.call(context);
+
+      return;
+    }
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop(result);
+    } else {
+      _onReturn?.call(context);
+    }
+  }
 
   Future<bool> _confirmExit(
     BuildContext context, {
     required bool discardConfirmed,
   }) async {
-    if ((_transitioning && !_transitionExitAllowed) ||
-        (_readSaving?.call() ?? _isSaving) ||
-        !context.mounted) {
+    if (!_canStartExit(context)) return false;
+    if (_approved) return true;
+    if (isDirty && !discardConfirmed && !await _confirmDiscard(context)) {
       return false;
     }
-    if (_approved) return true;
-    if (isDirty && !discardConfirmed) {
-      final focus = FocusManager.instance.primaryFocus;
-      final discard = await (_confirm ?? UnsavedChangesDialog.confirm)(context);
-      if (discard != true || !context.mounted) {
-        if (context.mounted && focus?.context != null) focus?.requestFocus();
-
-        return false;
-      }
-      _transitionFocus = focus;
-      // Saving may have started while the confirmation was open.
-      if (_readSaving?.call() ?? _isSaving) return false;
-    }
     _approved = true;
-    notifyListeners();
+    _notifyChanged();
 
     return true;
   }
+
+  bool _canStartExit(BuildContext context) =>
+      !((_transitioning && !_transitionExitAllowed) ||
+          (_readSaving?.call() ?? _isSaving) ||
+          !context.mounted);
+
+  Future<bool> _confirmDiscard(BuildContext context) async {
+    final focus = FocusManager.instance.primaryFocus;
+    if (!await _discardWasConfirmed(context)) {
+      if (context.mounted) _restoreFocusAfterDiscardDeclined(context, focus);
+
+      return false;
+    }
+    _transitionFocus = focus;
+    // Saving may have started while the confirmation was open.
+
+    return !_isSavingNow;
+  }
+
+  Future<bool> _discardWasConfirmed(BuildContext context) async =>
+      await (_confirm ?? UnsavedChangesDialog.confirm)(context) == true &&
+      context.mounted;
+
+  void _restoreFocusAfterDiscardDeclined(
+    BuildContext context,
+    FocusNode? focus,
+  ) {
+    if (context.mounted && focus?.context != null) focus?.requestFocus();
+  }
+
+  bool get _isSavingNow => _readSaving?.call() ?? _isSaving;
 }

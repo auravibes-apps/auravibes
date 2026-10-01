@@ -64,31 +64,73 @@ class const _NewChatAvailable({required final String workspaceId, super.key})
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
     final guard = useMemoized(DraftExitGuard.new);
-    final state = ref.watch(newChatProvider(workspaceId));
-    final actions = _NewChatActions(
-      context: context,
+    final data = _newChatBodyData(
+      _newChatBodyRequest(context, ref, workspaceId, draftStatus),
+    );
+    _bindNewChatGuard((
+      guard: guard,
       ref: ref,
       workspaceId: workspaceId,
       draftStatus: draftStatus,
-    );
-    guard.bind(
-      isDirty: () => draftStatus.value,
-      isSaving: () => ref.read(newChatProvider(workspaceId)).isLoading,
-      confirm: _confirmNewChatWorkspaceDiscard,
-    );
+    ));
 
     return DraftExitScope(
       guard: guard,
-      child: _NewChatBody(
-        data: .new(
-          workspaceId: workspaceId,
-          state: state,
-          draftStatus: draftStatus,
-          actions: actions,
-        ),
-      ),
+      child: _NewChatBody(data: data),
     );
   }
+}
+
+typedef _NewChatBodyRequest = ({
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  NewChatState state,
+  ValueNotifier<bool> draftStatus,
+});
+
+_NewChatBodyRequest _newChatBodyRequest(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  ValueNotifier<bool> draftStatus,
+) => (
+  context: context,
+  ref: ref,
+  workspaceId: workspaceId,
+  state: ref.watch(newChatProvider(workspaceId)),
+  draftStatus: draftStatus,
+);
+
+typedef _NewChatGuardRequest = ({
+  DraftExitGuard guard,
+  WidgetRef ref,
+  String workspaceId,
+  ValueNotifier<bool> draftStatus,
+});
+
+_NewChatBodyData _newChatBodyData(_NewChatBodyRequest request) =>
+    _NewChatBodyData(
+      workspaceId: request.workspaceId,
+      state: request.state,
+      draftStatus: request.draftStatus,
+      actions: .new(
+        context: request.context,
+        ref: request.ref,
+        workspaceId: request.workspaceId,
+        draftStatus: request.draftStatus,
+      ),
+    );
+
+void _bindNewChatGuard(_NewChatGuardRequest request) {
+  request.guard.bind(
+    readers: (
+      isDirty: () => request.draftStatus.value,
+      isSaving: () =>
+          request.ref.read(newChatProvider(request.workspaceId)).isLoading,
+    ),
+    confirm: _confirmNewChatWorkspaceDiscard,
+  );
 }
 
 class const _NewChatActions({

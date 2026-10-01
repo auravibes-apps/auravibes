@@ -17,37 +17,47 @@ void main() {
   );
   test('legacy account URLs resolve a unique stored origin', () {
     expect(
-      ResolveCloudAccountUsecase.call(
+      ResolveCloudAccountUsecase.call((
         accountId: 'same',
         accounts: [one],
-      ).serverUrl,
+        mirrors: const [],
+        workspaceId: -1,
+        serverUrl: null,
+      )).serverUrl,
       'https://one.example',
     );
   });
   test('legacy URLs reject shared account IDs instead of picking a server', () {
     expect(
-      () => ResolveCloudAccountUsecase.call(
+      () => ResolveCloudAccountUsecase.call((
         accountId: 'same',
         accounts: [one, two],
-      ),
+        mirrors: const [],
+        workspaceId: -1,
+        serverUrl: null,
+      )),
       throwsA(isA<AppCloudWorkspaceException>()),
     );
   });
   test('explicit origin resolves ambiguity and rejects unknown origins', () {
     expect(
-      ResolveCloudAccountUsecase.call(
+      ResolveCloudAccountUsecase.call((
         accountId: 'same',
         accounts: [one, two],
+        mirrors: const [],
+        workspaceId: -1,
         serverUrl: 'https://two.example/path',
-      ).serverUrl,
+      )).serverUrl,
       'https://two.example',
     );
     expect(
-      () => ResolveCloudAccountUsecase.call(
+      () => ResolveCloudAccountUsecase.call((
         accountId: 'same',
         accounts: [one, two],
+        mirrors: const [],
+        workspaceId: -1,
         serverUrl: 'https://other.example',
-      ),
+      )),
       throwsA(isA<AppCloudWorkspaceException>()),
     );
   });
@@ -65,12 +75,13 @@ void main() {
         cloudAccountId: 'same',
       );
       expect(
-        ResolveCloudAccountUsecase.call(
+        ResolveCloudAccountUsecase.call((
           accountId: 'same',
-          accounts: [],
+          accounts: const [],
           mirrors: [mirror],
           workspaceId: 11,
-        ).serverUrl,
+          serverUrl: null,
+        )).serverUrl,
         'https://one.example',
       );
     },

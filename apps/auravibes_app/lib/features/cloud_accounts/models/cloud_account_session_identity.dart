@@ -3,16 +3,25 @@ import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 
 extension CloudAccountSessionIdentity on CloudAccountSession {
-  CloudAccountKey get key => cloudAccountKey(serverUrl, userId);
+  CloudAccountKey get key => keyForUser(userId);
+
+  CloudAccountKey keyForUser(String userId) =>
+      cloudAccountKey(serverUrl, userId);
 }
 
 extension WorkspaceCloudAccountIdentity on WorkspaceEntity {
   CloudAccountKey? get cloudAccount {
-    final origin = url;
     final account = cloudAccountId;
-    if (origin == null || account == null) return null;
+    if (account == null) return null;
+
+    return cloudAccountFor(account);
+  }
+
+  CloudAccountKey? cloudAccountFor(String accountId) {
+    final origin = url;
+    if (origin == null) return null;
     try {
-      return cloudAccountKey(origin, account);
+      return cloudAccountKey(origin, accountId);
     } on FormatException {
       // Invalid mirrors remain visible for management and removal.
       return null;

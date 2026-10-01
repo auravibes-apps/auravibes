@@ -207,8 +207,7 @@ class _AgentDetailScreenState extends _AgentDetailScreenStateBase
   @override
   Widget build(BuildContext context) {
     _exitGuard.bind(
-      isDirty: () => _isDirty,
-      isSaving: () => _saving,
+      readers: (isDirty: () => _isDirty, isSaving: () => _saving),
       confirm: (_) => _confirmDiscardChanges(),
       onReturn: (context) =>
           AgentsRoute(workspaceId: widget.workspaceId).go(context),
@@ -361,9 +360,12 @@ mixin _AgentDetailEditing on _AgentDetailScreenStateBase {
   Future<void> _editPrompt() async {
     final markdown = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _contentController.text,
-      titleKey: LocaleKeys.markdown_editor_agent_instructions,
-      draftHintKey: LocaleKeys.markdown_editor_agent_hint,
+      options: (
+        initialMarkdown: _contentController.text,
+        maxCharacters: null,
+        titleKey: LocaleKeys.markdown_editor_agent_instructions,
+        draftHintKey: LocaleKeys.markdown_editor_agent_hint,
+      ),
     );
     if (markdown == null) return;
 
@@ -837,31 +839,84 @@ class const _AgentFormLayout({
   required final List<WorkspaceToolEntity> tools,
   required final _AgentFormSummary summary,
 }) extends StatelessWidget {
+  static List<Widget> childrenFor(_AgentFormLayoutData data) => [
+    _AgentFormWarnings(data: data),
+    _PromptCard(state: data.state),
+    const SizedBox(height: 16),
+    _AgentAdvancedSettings(
+      state: data.state,
+      skills: data.skills,
+      tools: data.tools,
+      summary: data.summary,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16)
         .copyWith(bottom: BottomPadding.of(context)),
-    children: [
-      if (summary.selectedDisabledCount > 0 ||
-          summary.unavailableRefs.isNotEmpty)
-        _SkillsWarning(
-          disabledSelectedCount: summary.selectedDisabledCount,
-          unavailableCount: summary.unavailableRefs.length,
-          onManage: () => state._manageSkillsFromSummary(summary),
-        ),
-      if (summary.missingToolOverrideCount > 0)
-        _AgentToolsSummarySection(state: state, skills: skills, tools: tools),
-      _PromptCard(state: state),
-      const SizedBox(height: 16),
-      _AgentAdvancedSettings(
-        state: state,
-        skills: skills,
-        tools: tools,
-        summary: summary,
-      ),
-    ],
+    children: _AgentFormLayout.childrenFor((
+      state: state,
+      skills: skills,
+      tools: tools,
+      summary: summary,
+    )),
     keyboardDismissBehavior: .onDrag,
   );
+}
+
+typedef _AgentFormLayoutData = ({
+  _AgentDetailScreenState state,
+  List<WorkspaceSkill> skills,
+  List<WorkspaceToolEntity> tools,
+  _AgentFormSummary summary,
+});
+
+class const _AgentFormWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _AgentSkillWarnings(data: data),
+      _AgentToolWarnings(data: data),
+    ],
+  );
+}
+
+class const _AgentSkillWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final summary = data.summary;
+    if (!_hasAgentSkillWarnings(summary)) return const SizedBox.shrink();
+
+    return _SkillsWarning(
+      disabledSelectedCount: summary.selectedDisabledCount,
+      unavailableCount: summary.unavailableRefs.length,
+      onManage: () => data.state._manageSkillsFromSummary(summary),
+    );
+  }
+}
+
+bool _hasAgentSkillWarnings(_AgentFormSummary summary) =>
+    summary.selectedDisabledCount > 0 || summary.unavailableRefs.isNotEmpty;
+
+class const _AgentToolWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final summary = data.summary;
+    if (summary.missingToolOverrideCount <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return _AgentToolsSummarySection(
+      state: data.state,
+      skills: data.skills,
+      tools: data.tools,
+    );
+  }
 }
 
 class const _AgentAdvancedSettings({
@@ -1078,6 +1133,29 @@ class const _PromptCardSettings({
   required final _AgentDetailScreenState state,
   required final ValueChanged<List<AgentVisibility>> onVisibilityChanged,
 }) extends StatelessWidget {
+  static List<Widget> childrenFor(
+    _AgentDetailScreenState state,
+    ValueChanged<List<AgentVisibility>> onVisibilityChanged,
+  ) => [
+    _AgentPromptAvailability(state: state),
+    _AgentEnabledRow(value: state._isEnabled, onChanged: state._setEnabled),
+    _AgentVisibilityField(
+      value: state._visibility,
+      onChanged: onVisibilityChanged,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: _PromptCardSettings.childrenFor(state, onVisibilityChanged),
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _AgentPromptAvailability({
+  required final _AgentDetailScreenState state,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
@@ -1089,11 +1167,6 @@ class const _PromptCardSettings({
         isEnabled: state._isEnabled,
         visibility: state._visibility,
         isSaved: state.widget.agentId != null && !state._isDirty,
-      ),
-      _AgentEnabledRow(value: state._isEnabled, onChanged: state._setEnabled),
-      _AgentVisibilityField(
-        value: state._visibility,
-        onChanged: onVisibilityChanged,
       ),
     ],
     spacing: .md,
@@ -2760,18 +2833,24 @@ class const _AgentSkillTileSurface({required final _AgentSkillTileData data})
     onTap: data.onTap,
     variant: data.selected ? AuraTileVariant.selected : AuraTileVariant.surface,
     leading: _AgentSkillTileLeading(disabled: data.disabled),
-    trailing: Row(
-      mainAxisSize: .min,
-      children: [
-        if (data.onOpen case final onOpen?)
-          AuraIconButton(
-            icon: Icons.open_in_new,
-            onPressed: onOpen,
-            tooltip: LocaleKeys.related_lists_view_skill.tr(),
-          ),
-        _AgentSkillTileTrailing(selected: data.selected),
-      ],
-    ),
+    trailing: _AgentSkillTileActions(data: data),
+  );
+}
+
+class const _AgentSkillTileActions({required final _AgentSkillTileData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      if (data.onOpen case final onOpen?)
+        AuraIconButton(
+          icon: Icons.open_in_new,
+          onPressed: onOpen,
+          tooltip: LocaleKeys.related_lists_view_skill.tr(),
+        ),
+      _AgentSkillTileTrailing(selected: data.selected),
+    ],
   );
 }
 

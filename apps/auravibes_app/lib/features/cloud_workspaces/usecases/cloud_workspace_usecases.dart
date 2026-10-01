@@ -41,15 +41,7 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
   }
 
   Future<WorkspaceEntity> attach(CloudWorkspaceSummary workspace) async {
-    final account = cloudAccountKey(_serverUrl, _cloudAccountId);
-    final mirrors = (await _workspaceRepository.getAllWorkspaces()).where(
-      (item) =>
-          item.cloudWorkspaceId == workspace.id.toString() &&
-          item.cloudAccount?.serverUrl == account.serverUrl,
-    );
-    final existing =
-        mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
-        mirrors.firstOrNull;
+    final existing = await _existingMirror(workspace);
     if (existing != null) return existing;
 
     return await _workspaceRepository.upsertCloudWorkspaceMirror(
@@ -59,6 +51,33 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
       serverUrl: _serverUrl,
     );
   }
+
+  Future<WorkspaceEntity?> _existingMirror(
+    CloudWorkspaceSummary workspace,
+  ) async {
+    final account = cloudAccountKey(_serverUrl, _cloudAccountId);
+    final workspaces = await _workspaceRepository.getAllWorkspaces();
+    final mirrors = workspaces.where(
+      (item) => _isMirrorForWorkspace(item, workspace, account),
+    );
+
+    return _preferredMirror(mirrors, account);
+  }
+
+  bool _isMirrorForWorkspace(
+    WorkspaceEntity item,
+    CloudWorkspaceSummary workspace,
+    CloudAccountKey account,
+  ) =>
+      item.cloudWorkspaceId == workspace.id.toString() &&
+      item.cloudAccount?.serverUrl == account.serverUrl;
+
+  WorkspaceEntity? _preferredMirror(
+    Iterable<WorkspaceEntity> mirrors,
+    CloudAccountKey account,
+  ) =>
+      mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
+      mirrors.firstOrNull;
 
   Future<void> detach(CloudWorkspaceSummary workspace) async {
     final deleted = await _workspaceRepository.deleteCloudWorkspaceMirror(

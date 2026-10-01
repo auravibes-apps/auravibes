@@ -60,8 +60,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   @override
   Widget build(BuildContext context) {
     _exitGuard.bind(
-      isDirty: () => !_allowPop && _isDirty,
-      isSaving: () => false,
+      readers: (isDirty: () => !_allowPop && _isDirty, isSaving: () => false),
       confirm: _confirmDiscard,
     );
 
@@ -148,10 +147,7 @@ extension on _MarkdownEditorScreenState {
     titleKey: widget.titleKey ?? LocaleKeys.markdown_editor_title,
     draftHintKey: widget.draftHintKey ?? LocaleKeys.markdown_editor_draft_hint,
     maxCharacters: widget.maxCharacters,
-    onTogglePreview: _togglePreview,
-    onUnfocus: _unfocusInput,
-    onCancel: () => _cancel(context),
-    onSave: () => _apply(context),
+    actions: _markdownEditorActions(this, context),
   );
 
   Future<bool?> _confirmDiscard(BuildContext context) async {
@@ -164,6 +160,23 @@ extension on _MarkdownEditorScreenState {
   }
 }
 
+typedef _MarkdownEditorActions = ({
+  VoidCallback onTogglePreview,
+  VoidCallback onUnfocus,
+  VoidCallback onCancel,
+  VoidCallback onSave,
+});
+
+_MarkdownEditorActions _markdownEditorActions(
+  _MarkdownEditorScreenState state,
+  BuildContext context,
+) => (
+  onTogglePreview: state._togglePreview,
+  onUnfocus: state._unfocusInput,
+  onCancel: () => state._cancel(context),
+  onSave: () => state._apply(context),
+);
+
 class const _MarkdownEditorView({
   required final TextEditingController controller,
   required final FocusNode focusNode,
@@ -172,10 +185,7 @@ class const _MarkdownEditorView({
   required final String titleKey,
   required final String draftHintKey,
   required final int? maxCharacters,
-  required final VoidCallback onTogglePreview,
-  required final VoidCallback onUnfocus,
-  required final VoidCallback onCancel,
-  required final VoidCallback onSave,
+  required final _MarkdownEditorActions actions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraScreen(
@@ -424,26 +434,26 @@ class _MarkdownEditorAppBar extends StatelessWidget
     : _maxCharacters = view.maxCharacters,
       _appBar = AuraAppBar(
         title: _MarkdownEditorTitle(
-          onUnfocus: view.onUnfocus,
+          onUnfocus: view.actions.onUnfocus,
           titleKey: view.titleKey,
         ),
         actions: [
           _MarkdownPreviewToggle(
             isPreview: view.isPreview,
-            onToggle: view.onTogglePreview,
+            onToggle: view.actions.onTogglePreview,
           ),
           _MarkdownSaveButton(
             controller: view.controller,
             maxCharacters: view.maxCharacters,
-            onSave: view.onSave,
+            onSave: view.actions.onSave,
           ),
         ],
         bottom: _MarkdownOptionalLimitCounter(
           controller: view.controller,
           maxCharacters: view.maxCharacters,
-          onTap: view.onUnfocus,
+          onTap: view.actions.onUnfocus,
         ),
-        leading: _MarkdownEditorCancelButton(onCancel: view.onCancel),
+        leading: _MarkdownEditorCancelButton(onCancel: view.actions.onCancel),
       );
 
   final int? _maxCharacters;

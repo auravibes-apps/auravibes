@@ -11,6 +11,17 @@ class const SelectWorkspaceUsecase({
     required String workspaceId,
     bool Function()? isCurrent,
   }) async {
+    _validateWorkspaceId(workspaceId);
+
+    final previous = isCurrent == null
+        ? null
+        : await _selectionRepository.read();
+    await _saveIfCurrent(workspaceId, previous, isCurrent);
+
+    return workspaceId;
+  }
+
+  void _validateWorkspaceId(String workspaceId) {
     if (workspaceId.isEmpty ||
         workspaceId == '.' ||
         workspaceId == '..' ||
@@ -21,17 +32,18 @@ class const SelectWorkspaceUsecase({
         'Must be a single URI path segment',
       );
     }
+  }
 
-    final previous = isCurrent == null
-        ? null
-        : await _selectionRepository.read();
-    if (isCurrent?.call() == false) return workspaceId;
+  Future<void> _saveIfCurrent(
+    String workspaceId,
+    String? previous,
+    bool Function()? isCurrent,
+  ) async {
+    if (isCurrent?.call() == false) return;
     await _selectionRepository.save(workspaceId);
     if (isCurrent?.call() == false) {
       await _restoreSelection(previous, workspaceId);
     }
-
-    return workspaceId;
   }
 
   Future<void> _restoreSelection(String? previous, String attempted) =>

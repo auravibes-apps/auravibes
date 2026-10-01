@@ -79,19 +79,42 @@ class const _MoreTileList({required final String workspaceId})
   @override
   Widget build(BuildContext context) => AuraList(
     children: [
-      const TextLocale(LocaleKeys.related_lists_workspace_group),
-      for (final tile in _moreTiles.where(
-        (tile) => tile.kind != .cloudAccounts && tile.kind != .workspaces,
-      ))
-        _MoreTile(spec: tile, workspaceId: workspaceId),
-      const TextLocale(LocaleKeys.related_lists_app_group),
-      for (final tile in _moreTiles.where(
-        (tile) => tile.kind == .cloudAccounts || tile.kind == .workspaces,
-      ))
+      _MoreTileSection(group: .workspace, workspaceId: workspaceId),
+      _MoreTileSection(group: .app, workspaceId: workspaceId),
+    ],
+  );
+}
+
+class const _MoreTileSection({
+  required final _MoreTileGroup group,
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .stretch,
+    children: [
+      TextLocale(_moreTileGroupLabel(group)),
+      for (final tile in _moreTileSpecs(group))
         _MoreTile(spec: tile, workspaceId: workspaceId),
     ],
   );
 }
+
+String _moreTileGroupLabel(_MoreTileGroup group) => switch (group) {
+  .workspace => LocaleKeys.related_lists_workspace_group,
+  .app => LocaleKeys.related_lists_app_group,
+};
+
+enum _MoreTileGroup { workspace, app }
+
+List<_MoreTileSpec> _moreTileSpecs(_MoreTileGroup group) =>
+    _moreTiles.where((tile) => _belongsToGroup(tile, group)).toList();
+
+bool _belongsToGroup(_MoreTileSpec tile, _MoreTileGroup group) =>
+    group == .workspace
+    ? tile.kind != .cloudAccounts && tile.kind != .workspaces
+    : tile.kind == .cloudAccounts || tile.kind == .workspaces;
 
 enum _MoreTileKind {
   workspaces,
