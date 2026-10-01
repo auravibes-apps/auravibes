@@ -254,45 +254,6 @@ void main() {
       expect((await fixture.workspace()).sequence, 3);
     });
 
-    test('serializes concurrent copies and allocates distinct names', () async {
-      final firstSession = sessionBuilder.build();
-      final secondSession = sessionBuilder.build();
-      final fixture = await _Fixture.create(firstSession);
-      final useCases = WorkspaceStateUseCases(WorkspaceStateRepository());
-
-      final responses = await Future.wait([
-        useCases.duplicateAgent(
-          firstSession,
-          userId: fixture.userId,
-          request: DuplicateWorkspaceAgentRequest(
-            workspaceId: fixture.workspaceId,
-            requestId: 'concurrent-1',
-            sourceAgentId: 'agent-1',
-          ),
-        ),
-        useCases.duplicateAgent(
-          secondSession,
-          userId: fixture.userId,
-          request: DuplicateWorkspaceAgentRequest(
-            workspaceId: fixture.workspaceId,
-            requestId: 'concurrent-2',
-            sourceAgentId: 'agent-1',
-          ),
-        ),
-      ]);
-
-      expect(
-        responses
-            .map((response) => response.resources.single.data)
-            .map(jsonDecode)
-            .map((data) => (data as Map<String, dynamic>)['name']),
-        containsAll({'Helper Copy', 'Helper Copy 2'}),
-      );
-      expect(await fixture.resources(.agent), hasLength(3));
-      expect(await fixture.events(), hasLength(2));
-      expect((await fixture.workspace()).sequence, 2);
-    });
-
     test('rejects duplication beyond the generic patch limit', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       for (var index = 0; index < 50; index++) {
@@ -463,6 +424,49 @@ void main() {
       expect((await fixture.workspace()).sequence, 0);
     });
   });
+
+  // This case needs independent transactions; its ephemeral group database
+  // is dropped by withServerpod after the test, including on failure.
+  withServerpod('Concurrent agent duplication', (sessionBuilder, _) {
+    test('serializes concurrent copies and allocates distinct names', () async {
+      final firstSession = sessionBuilder.build();
+      final secondSession = sessionBuilder.build();
+      final fixture = await _Fixture.create(firstSession);
+      final useCases = WorkspaceStateUseCases(WorkspaceStateRepository());
+
+      final responses = await Future.wait([
+        useCases.duplicateAgent(
+          firstSession,
+          userId: fixture.userId,
+          request: DuplicateWorkspaceAgentRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'concurrent-1',
+            sourceAgentId: 'agent-1',
+          ),
+        ),
+        useCases.duplicateAgent(
+          secondSession,
+          userId: fixture.userId,
+          request: DuplicateWorkspaceAgentRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'concurrent-2',
+            sourceAgentId: 'agent-1',
+          ),
+        ),
+      ]);
+
+      expect(
+        responses
+            .map((response) => response.resources.single.data)
+            .map(jsonDecode)
+            .map((data) => (data as Map<String, dynamic>)['name']),
+        containsAll({'Helper Copy', 'Helper Copy 2'}),
+      );
+      expect(await fixture.resources(.agent), hasLength(3));
+      expect(await fixture.events(), hasLength(2));
+      expect((await fixture.workspace()).sequence, 2);
+    });
+  }, rollbackDatabase: RollbackDatabase.disabled);
 }
 
 class _Fixture {

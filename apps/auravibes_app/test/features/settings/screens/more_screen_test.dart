@@ -60,7 +60,7 @@ void main() {
     );
     expect(find.text('Workspaces'), findsOneWidget);
     expect(find.text('Service Connections'), findsOneWidget);
-    expect(find.text('Credential Definitions'), findsOneWidget);
+    expect(find.text('Credential types'), findsOneWidget);
     expect(find.text('Tools'), findsOneWidget);
     expect(find.text('Skills'), findsOneWidget);
     expect(

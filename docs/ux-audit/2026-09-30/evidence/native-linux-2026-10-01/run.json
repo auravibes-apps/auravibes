@@ -1,0 +1,73 @@
+{
+  "source_fingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+  "source_records": 3208,
+  "instance_id": "ux-final-20261001-0810",
+  "app_flavor": "dev",
+  "runtime_platform": "Ubuntu 26.04 isolated container; virtual X display at 1280x720",
+  "container_data": "ephemeral container-owned HOME; local workspace \u201cUX Audit Local\u201d created only in the isolated test DB",
+  "runtime_seconds": 895.302,
+  "wrapper_exit": 143,
+  "stop": "intentional container stop after capture and inspection; wrapper exit 143",
+  "startup_diagnosis": "The first attempt had no xdg-user-dir executable, so path_provider returned no documents directory. A task-local xdg-user-dir shim and HOME/Documents were added only inside the isolated native test environment; no source or image change was needed.",
+  "steps": [
+    {
+      "result": "PASS",
+      "step": "Rendered the Intro screen and verified visible create-local, create-cloud, and connect-existing choices."
+    },
+    {
+      "result": "PASS",
+      "step": "Entered a local workspace name through the UI and created the workspace. The next screen named \u201cWorkspace created\u201d, confirmed it was saved, and offered Connect AI or Skip for now."
+    },
+    {
+      "result": "PASS",
+      "step": "Selected Skip for now and reached New Chat. Empty readiness explained that an AI provider is needed and a model must be selected before messaging."
+    },
+    {
+      "result": "PASS with external catalog limit",
+      "step": "Selected Add provider and reached Connect AI / Select Model. The provider catalog was empty because the external model-catalog sync failed with CORS; no account or model was submitted."
+    },
+    {
+      "result": "PASS",
+      "step": "Used Back, then opened Connections. The current navigation and empty state rendered; Connections explained that a model provider or skill credential is needed."
+    }
+  ],
+  "log_summary": {
+    "lines": 21,
+    "severe_count": 0,
+    "error_count": 0,
+    "missing_documents_count": 0
+  },
+  "marionette_identity_check": "Every saved MCP action verified the exact instance ID and dev flavor.",
+  "captures": [
+    {
+      "file": "01-intro.png",
+      "bytes": 84892,
+      "sha256": "ef2711892a33a52d20fa218e3f982ac183c7947c7c5ea4b291b44b3f858d964a"
+    },
+    {
+      "file": "02-workspace-created.png",
+      "bytes": 49305,
+      "sha256": "b67a539a6ac5b97dfeb7380d03c51422d5a481af11d4f912a69763048fc43908"
+    },
+    {
+      "file": "03-new-chat-empty.png",
+      "bytes": 58458,
+      "sha256": "96909f225f329dbf8be5cb57904bed067d7e691c712247355cd3fd83e0aad2f5"
+    },
+    {
+      "file": "04-provider-setup-empty-catalog.png",
+      "bytes": 49118,
+      "sha256": "64c5af07b904fc0aa9408f953f555eda18abb96e55603051fe37c4a058d32ac7"
+    },
+    {
+      "file": "05-connections-empty.png",
+      "bytes": 66109,
+      "sha256": "ea08b2d3edaa62b6848242d0bb962ab8897d9390d3679ee98c5b5f5f13267f7d"
+    }
+  ],
+  "limitations": [
+    "Xvfb and controller-generated pointer events are virtual Linux input, not physical-device or macOS/iOS keyboard testing.",
+    "No live model provider, remote sync, chat send, production email, assistive technology, or participant session was used.",
+    "Flutter widget captures use the Linux runtime font configuration; native typography and platform-specific rendering are not established."
+  ]
+}

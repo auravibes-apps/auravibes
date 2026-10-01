@@ -1,0 +1,1 @@
+{"action": "evaluate", "script": "Array.from(document.querySelectorAll(\"input,textarea,[role=button],[role=textbox]\")).map(x=>({tag:x.tagName,role:x.getAttribute(\"role\"),label:x.getAttribute(\"aria-label\"),text:x.textContent,value:x.value}))"}

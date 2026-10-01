@@ -1,29 +1,27 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: UI callbacks stay local to their widgets.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_control.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_reasoning_controls.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
-import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
-import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
-import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -65,38 +63,39 @@ class const _NewChatAvailable({required final String workspaceId, super.key})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
+    final guard = useMemoized(DraftExitGuard.new);
     final state = ref.watch(newChatProvider(workspaceId));
-    final hasNoProviders = _hasNoModelProviders(ref, workspaceId);
     final actions = _NewChatActions(
       context: context,
       ref: ref,
       workspaceId: workspaceId,
+      draftStatus: draftStatus,
+    );
+    guard.bind(
+      isDirty: () => draftStatus.value,
+      isSaving: () => ref.read(newChatProvider(workspaceId)).isLoading,
+      confirm: _confirmNewChatWorkspaceDiscard,
     );
 
-    return _NewChatBody(
-      data: .new(
-        workspaceId: workspaceId,
-        state: state,
-        hasNoProviders: hasNoProviders,
-        draftStatus: draftStatus,
-        actions: actions,
+    return DraftExitScope(
+      guard: guard,
+      child: _NewChatBody(
+        data: .new(
+          workspaceId: workspaceId,
+          state: state,
+          draftStatus: draftStatus,
+          actions: actions,
+        ),
       ),
     );
   }
 }
 
-bool _hasNoModelProviders(WidgetRef ref, String workspaceId) =>
-    ref
-        .watch(listModelsGroupedByProviderProvider(workspaceId: workspaceId))
-        .asData
-        ?.value
-        .isEmpty ??
-    false;
-
 class const _NewChatActions({
   required final BuildContext context,
   required final WidgetRef ref,
   required final String workspaceId,
+  required final ValueNotifier<bool> draftStatus,
 }) {
   void onToolsPress() {
     if (workspaceId.isEmpty || !context.mounted) return;
@@ -187,6 +186,7 @@ class const _NewChatActions({
     final conversation = await _startNewConversation(ref, workspaceId, draft);
     if (!context.mounted) return;
 
+    draftStatus.value = false;
     ConversationRoute(
       workspaceId: workspaceId,
       chatId: conversation.id,
@@ -233,38 +233,29 @@ void _showNewChatSendError(_NewChatSendError request) {
 class _NewChatBodyData({
   required final String workspaceId,
   required final NewChatState state,
-  required final bool hasNoProviders,
   required final ValueNotifier<bool> draftStatus,
   required final _NewChatActions actions,
 });
 
 class const _NewChatBody({required final _NewChatBodyData data})
-    extends HookWidget {
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final switchPending = useState(false);
-
     return AuraScreen(
       child: AuraLoadingOverlay(
         isLoading: data.state.isLoading,
-        child: _NewChatInputArea(data: data, switchPending: switchPending),
+        child: _NewChatInputArea(data: data),
         message: LocaleKeys.chats_screens_new_chat_starting.tr(),
       ),
-      appBar: AuraAppBarWithDrawer(
-        title: _WorkspaceSelector(
-          workspaceId: data.workspaceId,
-          draftStatus: data.draftStatus,
-          switchPending: switchPending,
-        ),
+      appBar: const AuraAppBarWithDrawer(
+        title: TextLocale(LocaleKeys.menu_new_chat),
       ),
     );
   }
 }
 
-class const _NewChatInputArea({
-  required final _NewChatBodyData data,
-  required final ValueNotifier<bool> switchPending,
-}) extends ConsumerWidget {
+class const _NewChatInputArea({required final _NewChatBodyData data})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final modalitiesInput = _watchNewChatModalities(
@@ -282,7 +273,11 @@ class const _NewChatInputArea({
       data: data,
       modalitiesInput: modalitiesInput,
       reasoningOptions: reasoningOptions,
-      switchPending: switchPending,
+      modelAvailable: _selectedModelAvailable(
+        ref,
+        data.workspaceId,
+        data.state.modelId,
+      ),
     );
   }
 }
@@ -291,21 +286,21 @@ class const _NewChatInputAreaContent({
   required final _NewChatBodyData data,
   required final List<String> modalitiesInput,
   required final List<ReasoningOption> reasoningOptions,
-  required final ValueNotifier<bool> switchPending,
+  required final bool modelAvailable,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       Expanded(
-        child: data.hasNoProviders
-            ? _NoModelProviderPrompt(workspaceId: data.workspaceId)
-            : const SizedBox.shrink(),
+        child: SingleChildScrollView(
+          child: ChatReadinessSummary(workspaceId: data.workspaceId),
+        ),
       ),
       _NewChatInput.fromData(
         data,
         modalitiesInput,
         reasoningOptions,
-        switchPending,
+        modelAvailable: modelAvailable,
       ),
     ],
   );
@@ -341,56 +336,47 @@ List<String> _watchNewChatModalities(
       const <String>[];
 }
 
-class const _NewChatInput({
-  required final Widget child,
-  required final ValueNotifier<bool> switchPending,
-}) extends HookWidget {
+class const _NewChatInput({required final Widget child})
+    extends StatelessWidget {
   new fromData(
     _NewChatBodyData data,
     List<String> modalitiesInput,
-    List<ReasoningOption> reasoningOptions,
-    ValueNotifier<bool> switchPending,
-  ) : this(
-        child: ChatInputWidget(
-          workspaceId: data.workspaceId,
-          onSendMessage: data.actions.handleSendMessage,
-          onToolsPress: data.actions.onToolsPress,
-          modelSheetControl: _NewChatModelSheetControl(data: data),
-          agentSheetControl: _NewChatAgentSheetControl(data: data),
-          modelCompactControl: _NewChatModelCompactControl(data: data),
-          agentCompactControl: _NewChatAgentCompactControl(data: data),
-          onDraftStatusChanged: (hasDraft) => data.draftStatus.value = hasDraft,
-          autofocus: true,
-          reasoningControl:
-              ChatReasoningControls.hasSupportedReasoningOptions(
-                reasoningOptions,
-              )
-              ? ChatReasoningControl(
-                  options: reasoningOptions,
-                  value: data.state.reasoningConfiguration,
-                  onChanged: data.actions.setReasoningConfiguration,
-                )
-              : null,
-          modalitiesInput: modalitiesInput,
-          disabledHint: data.state.modelId == null
-              ? const TextLocale(
-                  LocaleKeys.chats_screens_new_chat_no_model_selected,
-                )
-              : null,
-          disabled: data.state.isLoading || data.state.modelId == null,
-        ),
-        switchPending: switchPending,
-      );
+    List<ReasoningOption> reasoningOptions, {
+    required bool modelAvailable,
+  }) : this(
+         child: ChatInputWidget(
+           workspaceId: data.workspaceId,
+           onSendMessage: data.actions.handleSendMessage,
+           onToolsPress: data.actions.onToolsPress,
+           modelSheetControl: _NewChatModelSheetControl(data: data),
+           agentSheetControl: _NewChatAgentSheetControl(data: data),
+           modelCompactControl: _NewChatModelCompactControl(data: data),
+           agentCompactControl: _NewChatAgentCompactControl(data: data),
+           onDraftStatusChanged: (hasDraft) =>
+               data.draftStatus.value = hasDraft,
+           autofocus: true,
+           reasoningControl:
+               ChatReasoningControls.hasSupportedReasoningOptions(
+                 reasoningOptions,
+               )
+               ? ChatReasoningControl(
+                   options: reasoningOptions,
+                   value: data.state.reasoningConfiguration,
+                   onChanged: data.actions.setReasoningConfiguration,
+                 )
+               : null,
+           modalitiesInput: modalitiesInput,
+           disabledHint: data.state.modelId == null
+               ? const TextLocale(
+                   LocaleKeys.chats_screens_new_chat_no_model_selected,
+                 )
+               : null,
+           disabled: data.state.isLoading || !modelAvailable,
+         ),
+       );
 
   @override
-  Widget build(BuildContext context) {
-    final isSwitchPending = useListenableSelector(
-      switchPending,
-      () => switchPending.value,
-    );
-
-    return IgnorePointer(ignoring: isSwitchPending, child: child);
-  }
+  Widget build(BuildContext context) => child;
 }
 
 class const _NewChatModelSheetControl({required final _NewChatBodyData data})
@@ -442,11 +428,8 @@ class const _NewChatUnavailable({required final String workspaceId})
   @override
   Widget build(BuildContext context) => AuraScreen(
     child: _NewChatUnavailableBody(workspaceId: workspaceId),
-    appBar: AuraAppBarWithDrawer(
-      title: _WorkspaceSelector(
-        workspaceId: workspaceId,
-        draftStatus: .new(false),
-      ),
+    appBar: const AuraAppBarWithDrawer(
+      title: TextLocale(LocaleKeys.menu_new_chat),
     ),
   );
 }
@@ -495,247 +478,6 @@ class const _UnavailableChatInput({required final String workspaceId})
   );
 }
 
-class const _WorkspaceSelector({
-  required final String workspaceId,
-  required final ValueNotifier<bool> draftStatus,
-  final ValueNotifier<bool>? switchPending,
-}) extends HookConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final localSwitchPending = useState(false);
-
-    return _WorkspaceSelectorActions(
-      selector: this,
-      switchPending: switchPending ?? localSwitchPending,
-      focusNode: useFocusNode(),
-    );
-  }
-}
-
-class const _WorkspaceSelectorActions({
-  required final _WorkspaceSelector selector,
-  required final ValueNotifier<bool> switchPending,
-  required final FocusNode focusNode,
-}) extends HookConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final request = _WorkspaceSwitchRequest(
-      context,
-      ref,
-      selector,
-      switchPending,
-      focusNode,
-    );
-    final switchWorkspace = _workspaceSwitchAction(request);
-
-    return _WorkspaceSelectorState(
-      switchPending: switchPending,
-      focusNode: focusNode,
-      workspaceId: selector.workspaceId,
-      onChanged: (value) => unawaited(switchWorkspace(value)),
-    );
-  }
-}
-
-Future<void> Function(String?) _workspaceSwitchAction(
-  _WorkspaceSwitchRequest request,
-) {
-  Future<void> switchWorkspace(String? targetWorkspaceId) =>
-      _switchNewChatWorkspace(request, targetWorkspaceId);
-  _listenForWorkspaceSwitchErrors(request);
-
-  return switchWorkspace;
-}
-
-class const _WorkspaceSelectorState({
-  required final ValueNotifier<bool> switchPending,
-  required final FocusNode focusNode,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends HookConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workspaces = ref.watch(allWorkspacesProvider);
-    final switchState = ref.watch(workspaceSwitcherProvider);
-    final isSwitchPending = useListenableSelector(
-      switchPending,
-      () => switchPending.value,
-    );
-
-    return _WorkspaceSelectorView(
-      switchState: switchState,
-      switchPending: isSwitchPending,
-      focusNode: focusNode,
-      workspaces: workspaces,
-      workspaceId: workspaceId,
-      onChanged: onChanged,
-    );
-  }
-}
-
-class const _WorkspaceSelectorView({
-  required final WorkspaceSwitchState switchState,
-  required final bool switchPending,
-  required final FocusNode focusNode,
-  required final AsyncValue<List<WorkspaceEntity>> workspaces,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  bool get _isSwitching => switchState.status == .loading || switchPending;
-
-  String? get _retryTargetWorkspaceId =>
-      switchState.status == .error ? switchState.targetWorkspaceId : null;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('workspace_selector'),
-    child: SizedBox(
-      width: 240,
-      child: _WorkspaceSelectorControl(
-        isSwitching: _isSwitching,
-        retryTargetWorkspaceId: _retryTargetWorkspaceId,
-        focusNode: focusNode,
-        workspaces: workspaces,
-        workspaceId: workspaceId,
-        onChanged: onChanged,
-      ),
-    ),
-    identifier: 'workspace_selector',
-  );
-}
-
-class const _WorkspaceSelectorControl({
-  required final bool isSwitching,
-  required final String? retryTargetWorkspaceId,
-  required final FocusNode focusNode,
-  required final AsyncValue<List<WorkspaceEntity>> workspaces,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => isSwitching
-      ? const _WorkspaceSwitchingIndicator()
-      : _WorkspaceSelectorRow(
-          retryTargetWorkspaceId: retryTargetWorkspaceId,
-          focusNode: focusNode,
-          workspaces: workspaces,
-          workspaceId: workspaceId,
-          onChanged: onChanged,
-        );
-}
-
-class const _WorkspaceSelectorRow({
-  required final String? retryTargetWorkspaceId,
-  required final FocusNode focusNode,
-  required final AsyncValue<List<WorkspaceEntity>> workspaces,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: _WorkspaceSelectorValue(
-          workspaces: workspaces,
-          focusNode: focusNode,
-          workspaceId: workspaceId,
-          onChanged: onChanged,
-        ),
-      ),
-      _WorkspaceRetryButton(
-        targetWorkspaceId: retryTargetWorkspaceId,
-        onChanged: onChanged,
-      ),
-    ],
-  );
-}
-
-class const _WorkspaceRetryButton({
-  required final String? targetWorkspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => switch (targetWorkspaceId) {
-    final targetWorkspaceId? => AuraIconButton(
-      icon: Icons.refresh,
-      onPressed: () => onChanged(targetWorkspaceId),
-      key: const ValueKey<String>('workspace_switch_retry'),
-      semanticLabel: LocaleKeys.workspace_management_switch_retry.tr(),
-      tooltip: LocaleKeys.workspace_management_switch_retry.tr(),
-    ),
-    null => const SizedBox.shrink(),
-  };
-}
-
-class const _WorkspaceSwitchingIndicator() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Semantics(
-    child: const Row(
-      children: [
-        AuraSpinner(size: .small),
-        SizedBox(width: 8),
-        Flexible(
-          child: TextLocale(LocaleKeys.workspace_management_switch_loading),
-        ),
-      ],
-    ),
-    container: true,
-    excludeSemantics: true,
-    label: LocaleKeys.workspace_management_switch_loading.tr(),
-    role: .status,
-  );
-}
-
-class const _WorkspaceSwitchRequest(
-  final BuildContext context,
-  final WidgetRef ref,
-  final _WorkspaceSelector selector,
-  final ValueNotifier<bool> switchPending,
-  final FocusNode selectorFocusNode,
-);
-
-Future<void> _switchNewChatWorkspace(
-  _WorkspaceSwitchRequest request,
-  String? targetWorkspaceId,
-) async {
-  final switchTargetId = _workspaceSwitchTarget(request, targetWorkspaceId);
-  if (switchTargetId == null) return;
-  if (!await _confirmWorkspaceSwitch(request)) {
-    _restoreWorkspaceSelectorFocus(request);
-
-    return;
-  }
-  _startWorkspaceSwitch(request, switchTargetId);
-}
-
-String? _workspaceSwitchTarget(
-  _WorkspaceSwitchRequest request,
-  String? targetWorkspaceId,
-) => targetWorkspaceId == request.selector.workspaceId
-    ? null
-    : targetWorkspaceId;
-
-void _startWorkspaceSwitch(
-  _WorkspaceSwitchRequest request,
-  String targetWorkspaceId,
-) {
-  FocusManager.instance.primaryFocus?.unfocus();
-  request.switchPending.value = true;
-  request.ref.read(workspaceSwitcherProvider.notifier)
-    ..clearError()
-    ..switchToWorkspace(targetWorkspaceId);
-}
-
-Future<bool> _confirmWorkspaceSwitch(_WorkspaceSwitchRequest request) async {
-  if (!request.selector.draftStatus.value) return true;
-  if (!await _confirmNewChatWorkspaceDiscard(request.context) ||
-      !request.context.mounted) {
-    return false;
-  }
-
-  return true;
-}
-
 Future<bool> _confirmNewChatWorkspaceDiscard(BuildContext context) async {
   final shouldDiscard = await AuraDialogs.confirm(
     context: context,
@@ -754,196 +496,18 @@ Future<bool> _confirmNewChatWorkspaceDiscard(BuildContext context) async {
   return shouldDiscard == true;
 }
 
-void _listenForWorkspaceSwitchErrors(_WorkspaceSwitchRequest request) {
-  request.ref.listen(workspaceSwitcherProvider, (previous, next) {
-    _clearSwitchPendingAfterCompletion(previous, next, request.switchPending);
-    _showWorkspaceSwitchErrorForState(request, next);
-  });
-}
-
-void _clearSwitchPendingAfterCompletion(
-  WorkspaceSwitchState? previous,
-  WorkspaceSwitchState next,
-  ValueNotifier<bool> switchPending,
+bool _selectedModelAvailable(
+  WidgetRef ref,
+  String workspaceId,
+  String? modelId,
 ) {
-  if (previous?.status != .loading || next.status != .idle) return;
-  switchPending.value = false;
-}
+  if (modelId == null) return false;
 
-void _showWorkspaceSwitchErrorForState(
-  _WorkspaceSwitchRequest request,
-  WorkspaceSwitchState next,
-) {
-  if (next case WorkspaceSwitchState(
-    status: .error,
-    errorLocalizationKey: final String errorKey,
-  )) {
-    request.switchPending.value = false;
-    _restoreWorkspaceSelectorFocus(request);
-    _showWorkspaceSwitchError(request.context, errorKey);
-  }
-}
-
-void _restoreWorkspaceSelectorFocus(_WorkspaceSwitchRequest request) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!request.context.mounted) return;
-    request.selectorFocusNode.requestFocus();
-  });
-}
-
-void _showWorkspaceSwitchError(BuildContext context, String errorKey) {
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: TextLocale(errorKey),
-    variant: .error,
-  );
-}
-
-class const _WorkspaceSelectorValue({
-  required final AsyncValue<List<WorkspaceEntity>> workspaces,
-  required final FocusNode focusNode,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => switch (workspaces) {
-    AsyncData(:final value) => _WorkspaceOptions(
-      workspaces: value,
-      focusNode: focusNode,
-      workspaceId: workspaceId,
-      onChanged: onChanged,
-    ),
-    AsyncLoading() => const _WorkspaceSelectorLoading(),
-    AsyncError() => _WorkspaceSelectorError(workspaceId: workspaceId),
-  };
-}
-
-class const _WorkspaceSelectorLoading() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => const AuraDropdownSelector<String>(
-    options: [],
-    placeholder: AuraSpinner(size: .small),
-    isEnabled: false,
-  );
-}
-
-class const _WorkspaceSelectorError({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [AuraDropdownOption(value: workspaceId, child: Text(workspaceId))],
-    value: workspaceId,
-    isEnabled: false,
-  );
-}
-
-class const _WorkspaceOptions({
-  required final List<WorkspaceEntity> workspaces,
-  required final FocusNode focusNode,
-  required final String workspaceId,
-  required final ValueChanged<String?> onChanged,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraDropdownSelector<String>(
-    options: [
-      for (final workspace in workspaces)
-        AuraDropdownOption(value: workspace.id, child: Text(workspace.name)),
-    ],
-    key: const Key('new_chat_workspace_selector'),
-    value: workspaceId,
-    onChanged: onChanged,
-    focusNode: focusNode,
-    semanticLabel: LocaleKeys.workspace_management_title.tr(),
-  );
-}
-
-class const _NoModelProviderPrompt({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      _NoModelProviderPromptLayout(workspaceId: workspaceId);
-}
-
-class const _NoModelProviderPromptLayout({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => _NoModelProviderPromptScroll(
-      workspaceId: workspaceId,
-      minHeight: constraints.maxHeight,
-    ),
-  );
-}
-
-class const _NoModelProviderPromptScroll({
-  required final String workspaceId,
-  required final double minHeight,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    padding: EdgeInsets.only(bottom: BottomPadding.of(context)),
-    child: ConstrainedBox(
-      constraints: .new(minHeight: minHeight),
-      child: _NoModelProviderPromptCenter(workspaceId: workspaceId),
-    ),
-  );
-}
-
-class const _NoModelProviderPromptCenter({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: _NoModelProviderPromptContent(workspaceId: workspaceId),
-    ),
-  );
-}
-
-class const _NoModelProviderPromptContent({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) =>
-      _NoModelProviderColumn(workspaceId: workspaceId);
-}
-
-class const _NoModelProviderColumn({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      const AuraIcon(Icons.hub_outlined, size: .extraLarge),
-      const AuraText(
-        child: TextLocale(LocaleKeys.models_screens_list_empty_title),
-        style: .heading3,
-        textAlign: .center,
-      ),
-      const AuraText(
-        child: TextLocale(LocaleKeys.models_screens_list_empty_subtitle),
-        textAlign: .center,
-      ),
-      _AddModelProviderButton(workspaceId: workspaceId),
-    ],
-    mainAxisAlignment: .center,
-  );
-}
-
-class const _AddModelProviderButton({required final String workspaceId})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Semantics(
-    key: const ValueKey<String>('workspace_add_model_provider'),
-    child: AuraButton(
-      onPressed: () => unawaited(
-        ServiceConnectionCreateRoute(
-          workspaceId: workspaceId,
-          type: 'modelProvider',
-        ).push<void>(context),
-      ),
-      child: const TextLocale(
-        LocaleKeys.models_screens_add_provider_open_button,
-      ),
-    ),
-    identifier: 'workspace_add_model_provider',
-  );
+  return ref
+          .watch(workspaceModelSelectionByIdProvider(workspaceId, modelId))
+          .asData
+          ?.value
+          ?.modelConnection
+          .hasKey ==
+      true;
 }

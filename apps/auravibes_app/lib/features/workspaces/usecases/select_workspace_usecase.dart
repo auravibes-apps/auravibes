@@ -7,7 +7,10 @@ part 'select_workspace_usecase.g.dart';
 class const SelectWorkspaceUsecase({
   required final WorkspaceSelectionRepository _selectionRepository,
 }) {
-  Future<String> call({required String workspaceId}) async {
+  Future<String> call({
+    required String workspaceId,
+    bool Function()? isCurrent,
+  }) async {
     if (workspaceId.isEmpty ||
         workspaceId == '.' ||
         workspaceId == '..' ||
@@ -19,10 +22,22 @@ class const SelectWorkspaceUsecase({
       );
     }
 
+    final previous = isCurrent == null
+        ? null
+        : await _selectionRepository.read();
+    if (isCurrent?.call() == false) return workspaceId;
     await _selectionRepository.save(workspaceId);
+    if (isCurrent?.call() == false) {
+      await _restoreSelection(previous, workspaceId);
+    }
 
     return workspaceId;
   }
+
+  Future<void> _restoreSelection(String? previous, String attempted) =>
+      previous == null
+      ? _selectionRepository.clearIfMatches(attempted)
+      : _selectionRepository.save(previous);
 }
 
 @Riverpod(keepAlive: true)

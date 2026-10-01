@@ -5,6 +5,9 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_resource_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/domain/models/credential_definition_schema.dart';
+import 'package:auravibes_app/domain/models/credential_definition_usage.dart';
+import 'package:auravibes_app/domain/models/credential_dependency.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -477,7 +480,7 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
   ) async {
     final resource = await _required(.skillDefinition, id);
     final current = _definition(resource);
-    _validateDefinitionUpdate(current, value);
+    await _ensureDefinitionCompatible(current, value);
     final updated = _updatedDefinition(current, value);
     await _store.update(
       kind: .skillDefinition,
@@ -489,16 +492,120 @@ extension CloudSkillStoreDefinitionOperations on CloudSkillStore {
     return updated;
   }
 
-  void _validateDefinitionUpdate(
+  Future<void> _apiDeleteDefinition(String id) async {
+    final usage = await definitionUsage(id);
+    usage.ensureCanDelete();
+    await _delete(.skillDefinition, id);
+  }
+
+  Future<void> _ensureDefinitionCompatible(
     SkillCredentialDefinitionEntity current,
     SkillCredentialDefinitionToUpdate value,
-  ) {
-    final _ = SkillCredentialAttributeDefinition.validateDefinitionMap(
+  ) async {
+    final next = SkillCredentialAttributeDefinition.validateDefinitionMap(
       value.attributesJson ?? current.attributesJson,
+    );
+    final count = await linkedCredentialCount(current.id);
+    CredentialDefinitionSchema.ensureCompatible(
+      current.attributesJson,
+      next,
+      count,
+    );
+  }
+}
+
+extension CloudSkillStoreUsageOperations on CloudSkillStore {
+  Future<CredentialDefinitionUsage> definitionUsage(String id) async {
+    final credentials = await linkedCredentialSummaries(id);
+    final skills = await _active(.skill);
+
+    return CredentialDefinitionUsage(
+      credentials: credentials,
+      skills: _skillUsageDependencies(skills, id),
+      tools: await _toolUsageDependencies(skills, id),
     );
   }
 
-  Future<void> _apiDeleteDefinition(String id) => _delete(.skillDefinition, id);
+  Future<List<CredentialDependency>> _toolUsageDependencies(
+    List<WorkspaceResource> skills,
+    String id,
+  ) async {
+    final tools = await _active(.skillTemplateTool);
+    final parents = {
+      for (final skill in skills) skill.resourceId: _usageDefinitionId(skill),
+    };
+
+    return tools
+        .where((tool) => _toolUses(tool, parents, id))
+        .map(_toolUsageDependency)
+        .toList();
+  }
+
+  List<CredentialDependency> _skillUsageDependencies(
+    List<WorkspaceResource> skills,
+    String id,
+  ) => skills
+      .where((skill) => _usageDefinitionId(skill) == id)
+      .map(_usageDependency)
+      .toList();
+
+  String? _usageDefinitionId(WorkspaceResource skill) {
+    final data = _data(skill);
+
+    return (data['credentialDefinitionId'] ?? data['skillDefinitionId'])
+        as String?;
+  }
+
+  bool _toolUses(
+    WorkspaceResource tool,
+    Map<String, Object?> parents,
+    String id,
+  ) {
+    final data = _data(tool);
+
+    final parentId = data['skillId'];
+    final inherited = parentId is String ? parents[parentId] : null;
+
+    return (data['credentialDefinitionId'] ?? inherited) == id;
+  }
+
+  CredentialDependency _toolUsageDependency(WorkspaceResource tool) =>
+      _usageDependency(tool, parentSkillId: _data(tool)['skillId'] as String?);
+
+  CredentialDependency _usageDependency(
+    WorkspaceResource resource, {
+    String? parentSkillId,
+  }) => CredentialDependency(
+    id: resource.resourceId,
+    title: _data(resource)['title'] as String? ?? '',
+    isEnabled: _data(resource)['isEnabled'] != false,
+    parentSkillId: parentSkillId,
+  );
+
+  Future<List<CredentialDependency>> linkedCredentialSummaries(
+    String id,
+  ) async =>
+      (await _active(.serviceConnection))
+          .where((item) => _credentialUses(item, id))
+          .map(_credentialUsageDependency)
+          .toList();
+
+  bool _credentialUses(WorkspaceResource item, String id) {
+    final data = _data(item);
+
+    return data['kind'] == 'skillCredential' &&
+        data['credentialDefinitionId'] == id;
+  }
+
+  CredentialDependency _credentialUsageDependency(WorkspaceResource item) {
+    final data = _data(item);
+
+    return CredentialDependency(
+      id: item.resourceId,
+      title: data['name'] as String? ?? '',
+      isEnabled: data['isEnabled'] != false,
+    );
+  }
 }
 
 extension CloudSkillStoreCredentialOperations on CloudSkillStore {

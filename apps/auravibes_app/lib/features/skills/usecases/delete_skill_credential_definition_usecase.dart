@@ -44,9 +44,9 @@ class const DeleteSkillCredentialDefinitionUsecase({
       definition.workspaceId,
       definitionId,
     );
-    if (credentialCount == 0) return;
 
     final links = await _referenceCounts(definition.workspaceId, definitionId);
+    if (credentialCount == 0 && links.skills == 0 && links.tools == 0) return;
     throw CredentialDefinitionConflictException(
       reason: .deletion,
       credentialCount: credentialCount,

@@ -226,6 +226,33 @@ void main() {
     await enterLabeledField('Description', 'Company id');
     await tester.tap(find.text('Requires credential'));
     final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Preview request'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Preview using sample inputs. No request is sent.'),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(AuraAlertDialog),
+        matching: find.textContaining('https://example.com/company'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('[REDACTED]'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is EditableText &&
+            widget.readOnly &&
+            widget.controller.text.contains('sample'),
+      ),
+      findsOneWidget,
+    );
+    expect(await skillTemplateToolsRepository.getSkillTools(skill.id), isEmpty);
+    await tester.tap(find.text('Close'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Find Company'), findsOneWidget);
     final finalInput = find.byType(AuraInput).last;
     expect(
       tester.widget<AuraInput>(finalInput).textInputAction,

@@ -236,7 +236,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
-    expect(find.text('Credential not found'), findsNothing);
+    expect(find.text('Credential type not found'), findsNothing);
 
     fixture.value = _SkillDetailScreenFixture(
       container: selectedCredentialContainer,
@@ -264,7 +264,7 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Credential not found'), findsOneWidget);
+    expect(find.text('Credential type not found'), findsOneWidget);
     expect(
       find.text('This skill needs a credential before it can be loaded.'),
       findsNothing,

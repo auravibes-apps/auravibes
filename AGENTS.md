@@ -125,7 +125,8 @@
 ## PR Gates
 
 - PR titles use Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
-- Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes, and import sorting when imports change. GitHub's required checks own repository-wide gates.
+- Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes. GitHub's required checks own repository-wide gates.
+- For import edits in Pub workspace members, use the focused fatal analyzer and pinned formatter. `analysis_options.yaml` owns import ordering. The pinned import_sorter requires a package-local lockfile and its root invocation does not traverse workspace members.
 
 ## Agent skills
 

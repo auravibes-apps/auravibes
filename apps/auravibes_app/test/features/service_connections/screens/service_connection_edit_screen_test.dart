@@ -13,6 +13,7 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -27,6 +28,46 @@ const _credentialId = 'credential-1';
 const _definitionId = 'definition-1';
 
 void main() {
+  testWidgets('missing connection offers return without endless retry', (
+    tester,
+  ) async {
+    await _pumpEditor(tester, connectionId: 'deleted-connection');
+    await _openEditor(tester);
+    expect(find.text('Retry'), findsNothing);
+    expect(find.text('Return to connections'), findsOneWidget);
+    await tester.tap(find.text('Return to connections'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Open editor'), findsOneWidget);
+  });
+
+  testWidgets('failed connection load retries and names its exact target', (
+    tester,
+  ) async {
+    var fail = true;
+    await _pumpEditor(
+      tester,
+      connectionId: _genericConnectionId,
+      genericConnection: _genericConnection(),
+      shouldFail: () => fail,
+    );
+    await _openEditor(tester);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.textContaining('private endpoint'), findsNothing);
+    fail = false;
+    await tester.tap(find.text('Retry'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Edit Automation'), findsOneWidget);
+    expect(find.textContaining(_workspaceId), findsOneWidget);
+    expect(
+      tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .last
+          .controller
+          .text,
+      isEmpty,
+    );
+  });
+
   testWidgets('generic connection secret submits once from keyboard action', (
     tester,
   ) async {
@@ -55,6 +96,8 @@ void main() {
     expect(saveCount, 1);
   });
 
+  testWidgets('MCP edit visual snapshot', _verifyMcpGolden, tags: ['golden']);
+
   testWidgets('MCP edit preserves saved secret without exposing it', (
     tester,
   ) async {
@@ -68,16 +111,10 @@ void main() {
     );
     await _openEditor(tester);
 
-    final golden = Platform.isLinux
-        ? 'goldens/mcp_connection_edit_linux.png'
-        : 'goldens/mcp_connection_edit.png';
-    await expectLater(
-      find.byType(ServiceConnectionEditScreen),
-      matchesGoldenFile(golden),
-    );
     expect(find.text(secret), findsNothing);
     expect(find.text('Saved securely'), findsOneWidget);
     await tester.enterText(find.byType(EditableText).first, 'Renamed MCP');
+    final _ = await tester.pumpAndSettle();
     final saveButton = find.text('Save');
     await tester.ensureVisible(saveButton);
     final _ = await tester.pumpAndSettle();
@@ -257,6 +294,7 @@ Future<void> _pumpEditor(
   void Function(GenericServiceConnectionUpdate)? onGenericUpdate,
   void Function(SkillCredentialToUpdate)? onSkillUpdate,
   void Function(McpServerSettingsUpdate)? onMcpUpdate,
+  bool Function()? shouldFail,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -279,17 +317,23 @@ Future<void> _pumpEditor(
           ),
         ),
         overrides: [
+          allWorkspacesProvider.overrideWith((_) => Stream.value([])),
           modelConnectionStoreProvider(_workspaceId).overrideWith(
             (_) async => _FakeModelConnectionStore(modelConnection),
           ),
-          serviceConnectionOperationsProvider(_workspaceId).overrideWith(
-            (_) async => _serviceOperations(
-              genericConnection: genericConnection,
-              mcpServer: mcpServer,
-              onUpdate: onGenericUpdate,
-              onMcpUpdate: onMcpUpdate,
-            ),
-          ),
+          serviceConnectionOperationsProvider(_workspaceId)
+              .overrideWith((_) async {
+                if (shouldFail?.call() ?? false) {
+                  throw StateError('private endpoint');
+                }
+
+                return _serviceOperations(
+                  genericConnection: genericConnection,
+                  mcpServer: mcpServer,
+                  onUpdate: onGenericUpdate,
+                  onMcpUpdate: onMcpUpdate,
+                );
+              }),
           skillCredentialOperationsProvider(_workspaceId).overrideWithValue(
             _skillOperations(
               credential: skillCredential,
@@ -442,4 +486,20 @@ class const _FakeModelConnectionStore(final ModelConnectionForEdit? connection)
   Stream<List<ModelConnectionEntity>> watchModelConnections(
     ModelConnectionFilter filter,
   ) => const Stream.empty();
+}
+
+Future<void> _verifyMcpGolden(WidgetTester tester) async {
+  await _pumpEditor(
+    tester,
+    connectionId: _mcpConnectionId,
+    mcpServer: _mcpServer(),
+  );
+  await _openEditor(tester);
+  final golden = Platform.isLinux
+      ? 'goldens/mcp_connection_edit_linux.png'
+      : 'goldens/mcp_connection_edit.png';
+  await expectLater(
+    find.byType(ServiceConnectionEditScreen),
+    matchesGoldenFile(golden),
+  );
 }

@@ -1,0 +1,929 @@
+{
+  "source_fingerprint": "61226e29828b0d6a6f4c6acbb5f96b4ea0687e1bd9eca7e95e859e02f9f84f22",
+  "files": [
+    {
+      "file": "001-markdown_editor.agent_instructions-en.json",
+      "saved_relative_path": "captures-before-review-fix/001-markdown_editor.agent_instructions-en.json",
+      "bytes": 1822,
+      "sha256": "3fcb48d1779715c3aa5d22d353cfa29cfb2324adb8303b081996d6f41630953b"
+    },
+    {
+      "file": "001-markdown_editor.agent_instructions-en.png",
+      "saved_relative_path": "captures-before-review-fix/001-markdown_editor.agent_instructions-en.png",
+      "bytes": 52584,
+      "sha256": "5be93c16231d33fa5f50a9f1c51e2482d8f6920fd8eb922185461d6f28e2e7c3"
+    },
+    {
+      "file": "002-markdown_editor.agent_instructions-es.json",
+      "saved_relative_path": "captures-before-review-fix/002-markdown_editor.agent_instructions-es.json",
+      "bytes": 1822,
+      "sha256": "66f2c08358e36625e2adf66a6c0d087e0e1bbb362ce078814a1d9eb3f3371496"
+    },
+    {
+      "file": "002-markdown_editor.agent_instructions-es.png",
+      "saved_relative_path": "captures-before-review-fix/002-markdown_editor.agent_instructions-es.png",
+      "bytes": 75944,
+      "sha256": "e14aadb35806336a5bdb4618d6b99249bd47a4cea518b32daee67513fef77cdc"
+    },
+    {
+      "file": "003-markdown_editor.skill_description-en.json",
+      "saved_relative_path": "captures-before-review-fix/003-markdown_editor.skill_description-en.json",
+      "bytes": 1821,
+      "sha256": "5d3fcebccc445e9d6eb3d3f039f234e37df7b1cb0d8d33c7e57700d74bd4d9a4"
+    },
+    {
+      "file": "003-markdown_editor.skill_description-en.png",
+      "saved_relative_path": "captures-before-review-fix/003-markdown_editor.skill_description-en.png",
+      "bytes": 53497,
+      "sha256": "45608ad2bd07715069d0461100fc0fbeb8ddea6c4608ac7d0d59588ffaaaf011"
+    },
+    {
+      "file": "004-markdown_editor.skill_description-es.json",
+      "saved_relative_path": "captures-before-review-fix/004-markdown_editor.skill_description-es.json",
+      "bytes": 1821,
+      "sha256": "44d6863f020a4450ac2ef167f0fc6b3184e0b7f9bda3dd0e5f33d16e6c44c184"
+    },
+    {
+      "file": "004-markdown_editor.skill_description-es.png",
+      "saved_relative_path": "captures-before-review-fix/004-markdown_editor.skill_description-es.png",
+      "bytes": 81123,
+      "sha256": "0172169b39a95cf2a3f65c8c39fafe34868a2be0b34bc5dbff8e9cf9fef95d78"
+    },
+    {
+      "file": "005-markdown_editor.skill_instructions-en.json",
+      "saved_relative_path": "captures-before-review-fix/005-markdown_editor.skill_instructions-en.json",
+      "bytes": 1822,
+      "sha256": "0895363d12611e693d28d35d2448220c446dfcac1fed3c62cbe9a125f51fd046"
+    },
+    {
+      "file": "005-markdown_editor.skill_instructions-en.png",
+      "saved_relative_path": "captures-before-review-fix/005-markdown_editor.skill_instructions-en.png",
+      "bytes": 57363,
+      "sha256": "86e11dc8d8b480048f8d97d42a734f2460c7a9c3d631aad46a22cfc79c66e99b"
+    },
+    {
+      "file": "006-markdown_editor.skill_instructions-es.json",
+      "saved_relative_path": "captures-before-review-fix/006-markdown_editor.skill_instructions-es.json",
+      "bytes": 1822,
+      "sha256": "1322596c919ab004f432817766dae83ad10ae8e05c805978fc3756c0413ca5b9"
+    },
+    {
+      "file": "006-markdown_editor.skill_instructions-es.png",
+      "saved_relative_path": "captures-before-review-fix/006-markdown_editor.skill_instructions-es.png",
+      "bytes": 86382,
+      "sha256": "9ccf0b1204429a29047309933ced947ac4291d4d1025ae861c9f166a9b95dce3"
+    },
+    {
+      "file": "007-markdown_editor.resource_description-en.json",
+      "saved_relative_path": "captures-before-review-fix/007-markdown_editor.resource_description-en.json",
+      "bytes": 1871,
+      "sha256": "ebf79b77a3851c28e68c7fcac386578225ece3f4df09dd379c5600ddd303c579"
+    },
+    {
+      "file": "007-markdown_editor.resource_description-en.png",
+      "saved_relative_path": "captures-before-review-fix/007-markdown_editor.resource_description-en.png",
+      "bytes": 55002,
+      "sha256": "d254bf0d420c7211b72a0205b75351822004690c68ab4c2fc553d8625b07eef8"
+    },
+    {
+      "file": "008-markdown_editor.resource_description-es.json",
+      "saved_relative_path": "captures-before-review-fix/008-markdown_editor.resource_description-es.json",
+      "bytes": 1871,
+      "sha256": "508a99dfe5a89e976c7e719a02bb27401f48f840e81cbcc4de746381ebb0b476"
+    },
+    {
+      "file": "008-markdown_editor.resource_description-es.png",
+      "saved_relative_path": "captures-before-review-fix/008-markdown_editor.resource_description-es.png",
+      "bytes": 81795,
+      "sha256": "24b5a779ce0c081d3202dcf01ae1374706967f04fd0d032b8e184c8c8ec0ef9b"
+    },
+    {
+      "file": "009-markdown_editor.resource_content-en.json",
+      "saved_relative_path": "captures-before-review-fix/009-markdown_editor.resource_content-en.json",
+      "bytes": 1867,
+      "sha256": "bf82d9561a0402bdba7e6f6671d6fa66d037e1973cbd7787b35b0b6c42dd20c5"
+    },
+    {
+      "file": "009-markdown_editor.resource_content-en.png",
+      "saved_relative_path": "captures-before-review-fix/009-markdown_editor.resource_content-en.png",
+      "bytes": 58903,
+      "sha256": "b2d25cc87705c687621cf8c128892ec348f4c9b8ad37ccbbf230776c01bfb3e9"
+    },
+    {
+      "file": "010-markdown_editor.resource_content-es.json",
+      "saved_relative_path": "captures-before-review-fix/010-markdown_editor.resource_content-es.json",
+      "bytes": 1867,
+      "sha256": "207bf4e228186eda869875cf890729db9524681cd4e11810d8160e87fea3c6f1"
+    },
+    {
+      "file": "010-markdown_editor.resource_content-es.png",
+      "saved_relative_path": "captures-before-review-fix/010-markdown_editor.resource_content-es.png",
+      "bytes": 87767,
+      "sha256": "d6dd63484a5727a29771a14c9f67a471a0daab7c2faba27dbee12199c993816f"
+    },
+    {
+      "file": "011-markdown_editor.tool_description-en.json",
+      "saved_relative_path": "captures-before-review-fix/011-markdown_editor.tool_description-en.json",
+      "bytes": 1863,
+      "sha256": "81ebd7a97fc736e57cb4a6510e7422f5dd60f8acdab0f2161acfb9523f59ba7d"
+    },
+    {
+      "file": "011-markdown_editor.tool_description-en.png",
+      "saved_relative_path": "captures-before-review-fix/011-markdown_editor.tool_description-en.png",
+      "bytes": 53100,
+      "sha256": "041ea0ebf83e93544b4ca1da6ddf5ad07e22a316389b040232437a57e530b374"
+    },
+    {
+      "file": "012-markdown_editor.tool_description-es.json",
+      "saved_relative_path": "captures-before-review-fix/012-markdown_editor.tool_description-es.json",
+      "bytes": 1863,
+      "sha256": "694c7a5b701897143fa6bdfa9d29be34859e6ecea37483075ed0469fedd75cdf"
+    },
+    {
+      "file": "012-markdown_editor.tool_description-es.png",
+      "saved_relative_path": "captures-before-review-fix/012-markdown_editor.tool_description-es.png",
+      "bytes": 82249,
+      "sha256": "2e455501e7a2ef8ee03ce1c769c2de05fb69f46a0b06cb91d0d55914e49242d2"
+    },
+    {
+      "file": "013-MixedConnections.json",
+      "saved_relative_path": "captures-before-review-fix/013-MixedConnections.json",
+      "bytes": 1689,
+      "sha256": "5486807039fbd0cece6df1529574ef8d42b5d2a19f7af0ed09157bd20785b278"
+    },
+    {
+      "file": "013-MixedConnections.png",
+      "saved_relative_path": "captures-before-review-fix/013-MixedConnections.png",
+      "bytes": 109040,
+      "sha256": "4692f1e2e900096904acf7d4686cf95e2271ebef45352b4bfd61221c33aab17f"
+    },
+    {
+      "file": "014-MixedAccounts.json",
+      "saved_relative_path": "captures-before-review-fix/014-MixedAccounts.json",
+      "bytes": 1645,
+      "sha256": "f618afd6d9134e91eb6deec7f49932df87d7772de66b3fc7bd898c8135e7f250"
+    },
+    {
+      "file": "014-MixedAccounts.png",
+      "saved_relative_path": "captures-before-review-fix/014-MixedAccounts.png",
+      "bytes": 92261,
+      "sha256": "c7c1d6998deb27ae4af77144464e20bc31cb1f644faf46eb4de3e86de3a5bf7c"
+    },
+    {
+      "file": "015-CloudTools.json",
+      "saved_relative_path": "captures-before-review-fix/015-CloudTools.json",
+      "bytes": 1669,
+      "sha256": "e7031c526aa4e072df8f344998ea0a056c88828f9825e3b24be3d923bc979537"
+    },
+    {
+      "file": "015-CloudTools.png",
+      "saved_relative_path": "captures-before-review-fix/015-CloudTools.png",
+      "bytes": 102089,
+      "sha256": "47e44dad9a89f836cee400433abbb09ee23aed4745db117063602362fab73998"
+    },
+    {
+      "file": "016-LocalEmptyTools.json",
+      "saved_relative_path": "captures-before-review-fix/016-LocalEmptyTools.json",
+      "bytes": 1682,
+      "sha256": "e5f0620f4e63d57589285d5593fa9be6a647d8ba84533ae4d08d8d5d8ec2cbf3"
+    },
+    {
+      "file": "016-LocalEmptyTools.png",
+      "saved_relative_path": "captures-before-review-fix/016-LocalEmptyTools.png",
+      "bytes": 93394,
+      "sha256": "2b35f6b63fb31346d3a63bece94dcf46cc68144570055b4e8d30dd7d59218803"
+    },
+    {
+      "file": "017-DarkAgents.json",
+      "saved_relative_path": "captures-before-review-fix/017-DarkAgents.json",
+      "bytes": 2031,
+      "sha256": "08a6177cbffb280d8d94623885b9f6e0268159382f34f54a7301b9254588cc0d"
+    },
+    {
+      "file": "017-DarkAgents.png",
+      "saved_relative_path": "captures-before-review-fix/017-DarkAgents.png",
+      "bytes": 83874,
+      "sha256": "1abc4a0352b3e853d8fef9dbe49e9dd9410511d929778f21a3368190851f36fc"
+    },
+    {
+      "file": "018-FailedWorkspace.json",
+      "saved_relative_path": "captures-before-review-fix/018-FailedWorkspace.json",
+      "bytes": 1640,
+      "sha256": "05b5699c8605dacf8a5ed02b74243a980a3ae4be08a50501b0d4429ac1be39e6"
+    },
+    {
+      "file": "018-FailedWorkspace.png",
+      "saved_relative_path": "captures-before-review-fix/018-FailedWorkspace.png",
+      "bytes": 19239,
+      "sha256": "3124e593b62fdc039e47f097a7b3d5664ab8be5399291b9c6a912f95080f5002"
+    },
+    {
+      "file": "019-BuiltInSkillDetail.json",
+      "saved_relative_path": "captures-before-review-fix/019-BuiltInSkillDetail.json",
+      "bytes": 1772,
+      "sha256": "b9ec95ad0aca3a7215b54dbbb2321243a64628da0adb2a1252c11a0addc16ad2"
+    },
+    {
+      "file": "019-BuiltInSkillDetail.png",
+      "saved_relative_path": "captures-before-review-fix/019-BuiltInSkillDetail.png",
+      "bytes": 141914,
+      "sha256": "2ec7251adc4a8b8c8f90020552268b792003a9c8ebd26b6fcb5096433b594519"
+    },
+    {
+      "file": "020-BuiltInResource.json",
+      "saved_relative_path": "captures-before-review-fix/020-BuiltInResource.json",
+      "bytes": 1809,
+      "sha256": "3cced52869da70d76fee06ed1ec7270045c0dc14bb027f01196d75e3b54a4963"
+    },
+    {
+      "file": "020-BuiltInResource.png",
+      "saved_relative_path": "captures-before-review-fix/020-BuiltInResource.png",
+      "bytes": 112075,
+      "sha256": "4af5aed34410f91be3dd8c00f70942dc08cad70535447066b3b24e32a1baac12"
+    },
+    {
+      "file": "021-CloudWorkspaceDetailRoute.json",
+      "saved_relative_path": "captures-before-review-fix/021-CloudWorkspaceDetailRoute.json",
+      "bytes": 1750,
+      "sha256": "5e8c88f29487a11627a02e51aaf3c41d31e18ab7c8368a8cd80e054d9ed4f982"
+    },
+    {
+      "file": "021-CloudWorkspaceDetailRoute.png",
+      "saved_relative_path": "captures-before-review-fix/021-CloudWorkspaceDetailRoute.png",
+      "bytes": 91695,
+      "sha256": "e55d00648782193c52cedb586fd9204990bfd569a3dc5f5cd8450e064d011206"
+    },
+    {
+      "file": "022-ServiceConnectionEditRoute.json",
+      "saved_relative_path": "captures-before-review-fix/022-ServiceConnectionEditRoute.json",
+      "bytes": 1653,
+      "sha256": "63642b28be7e3ddcbafed1cb1f4e39d004dcc61d7c545a16e87ae68a6963e850"
+    },
+    {
+      "file": "022-ServiceConnectionEditRoute.png",
+      "saved_relative_path": "captures-before-review-fix/022-ServiceConnectionEditRoute.png",
+      "bytes": 60112,
+      "sha256": "7096683b26bb7b8da01978f84d985fc6fb2418a832b67b2a9f6bcc5c748f6078"
+    },
+    {
+      "file": "023-IntroRoute.json",
+      "saved_relative_path": "captures-before-review-fix/023-IntroRoute.json",
+      "bytes": 1558,
+      "sha256": "2da1a32a9deecd834f61b4c28c6f91cc83e1c4427f2fd8bb11a9d4db8919a50d"
+    },
+    {
+      "file": "023-IntroRoute.png",
+      "saved_relative_path": "captures-before-review-fix/023-IntroRoute.png",
+      "bytes": 134646,
+      "sha256": "b676a199df0bc3a78bad34f4c12a1af5d6cd2e15af943a6809dc45cd72adcc38"
+    },
+    {
+      "file": "024-WorkspaceRoute.json",
+      "saved_relative_path": "captures-before-review-fix/024-WorkspaceRoute.json",
+      "bytes": 1760,
+      "sha256": "f7f9e07bcb600f1fce0f2756cbdbcb6e1b94eec967878106ac6e57d6628f0194"
+    },
+    {
+      "file": "024-WorkspaceRoute.png",
+      "saved_relative_path": "captures-before-review-fix/024-WorkspaceRoute.png",
+      "bytes": 59971,
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5"
+    },
+    {
+      "file": "025-NewChatRoute.json",
+      "saved_relative_path": "captures-before-review-fix/025-NewChatRoute.json",
+      "bytes": 1758,
+      "sha256": "8d60c5afbb34b50b95e122cc852c920525118e130cd6ee27ac90352bb5e410f0"
+    },
+    {
+      "file": "025-NewChatRoute.png",
+      "saved_relative_path": "captures-before-review-fix/025-NewChatRoute.png",
+      "bytes": 59971,
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5"
+    },
+    {
+      "file": "026-ChatsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/026-ChatsRoute.json",
+      "bytes": 1753,
+      "sha256": "61ea7cda3ca1da024c55e604a522bfbfc8de5984520814f7f9d68fc93f31cb05"
+    },
+    {
+      "file": "026-ChatsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/026-ChatsRoute.png",
+      "bytes": 50321,
+      "sha256": "50f5fbd9c8e3b9cb4b1f09b0836a8238f30b7e26446e3d779b6ae2924358daa2"
+    },
+    {
+      "file": "027-ConversationRoute.json",
+      "saved_relative_path": "captures-before-review-fix/027-ConversationRoute.json",
+      "bytes": 1797,
+      "sha256": "53894c0615483de406b16c07ce61e92fa3010caa5efe2d6d2c378757aec2cded"
+    },
+    {
+      "file": "027-ConversationRoute.png",
+      "saved_relative_path": "captures-before-review-fix/027-ConversationRoute.png",
+      "bytes": 61712,
+      "sha256": "350ef1f230c2c1d00f51be645cc331be239ece35196da7a059f671c80d3d67e8"
+    },
+    {
+      "file": "028-SubAgentConversationRoute.json",
+      "saved_relative_path": "captures-before-review-fix/028-SubAgentConversationRoute.json",
+      "bytes": 1853,
+      "sha256": "f3c0026d1cbcaf36a2eaadaa12f24210517e938f3160590b9307a40497e4a941"
+    },
+    {
+      "file": "028-SubAgentConversationRoute.png",
+      "saved_relative_path": "captures-before-review-fix/028-SubAgentConversationRoute.png",
+      "bytes": 59872,
+      "sha256": "0bee1ae10fa88e6d1a3aacbee6ab4946c4578711c5b9fae103e5c0d98abff665"
+    },
+    {
+      "file": "029-MoreRoute.json",
+      "saved_relative_path": "captures-before-review-fix/029-MoreRoute.json",
+      "bytes": 1751,
+      "sha256": "dbce03e0898671baea902a3ea254f29542a3fb5f61ce64a4df73423b94e49330"
+    },
+    {
+      "file": "029-MoreRoute.png",
+      "saved_relative_path": "captures-before-review-fix/029-MoreRoute.png",
+      "bytes": 90369,
+      "sha256": "b98ab82dcb57b60244ba62b389e95a1dc583489f52a4a2015762ac8ab287f8c4"
+    },
+    {
+      "file": "030-SettingsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/030-SettingsRoute.json",
+      "bytes": 1759,
+      "sha256": "2fba732f12d6b6cc44e09a54092c0a8abd42ba129d57069d53987ea31b8ba6c9"
+    },
+    {
+      "file": "030-SettingsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/030-SettingsRoute.png",
+      "bytes": 69717,
+      "sha256": "a9a0d0d97b7af8e2d5351bfeb0237ed264fe1a03e81e3cda089749e1ed6899e6"
+    },
+    {
+      "file": "031-WorkspaceSettingsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/031-WorkspaceSettingsRoute.json",
+      "bytes": 1778,
+      "sha256": "b527eb4bfc0a432cc2777bb0b8541a3930908dd9f8f94a1f3ff8806ed67d839f"
+    },
+    {
+      "file": "031-WorkspaceSettingsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/031-WorkspaceSettingsRoute.png",
+      "bytes": 86603,
+      "sha256": "5ffbbb283830ee9ba9848bd03ca8139472d86e72cfd1e0eea6d021b9acad97fc"
+    },
+    {
+      "file": "032-WorkspaceManagementRoute.json",
+      "saved_relative_path": "captures-before-review-fix/032-WorkspaceManagementRoute.json",
+      "bytes": 1784,
+      "sha256": "436b851502e677dd0efc69bcc2cee4d3c4a95ae76f45614b6e6499a3095f781f"
+    },
+    {
+      "file": "032-WorkspaceManagementRoute.png",
+      "saved_relative_path": "captures-before-review-fix/032-WorkspaceManagementRoute.png",
+      "bytes": 78835,
+      "sha256": "f6adbbd5d6d219207af50ce5f36721aeffdd78fb20a1a9ca692c12bc2641fa9d"
+    },
+    {
+      "file": "033-WorkspaceCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/033-WorkspaceCreateRoute.json",
+      "bytes": 1787,
+      "sha256": "4b58913d79c1fca43ab66c1a18047ee6093d870743a0007f00b462e815cc97f7"
+    },
+    {
+      "file": "033-WorkspaceCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/033-WorkspaceCreateRoute.png",
+      "bytes": 74766,
+      "sha256": "9e16beb5647a756851f253f10e84b4119f9d64627a069c22f61f5490411fe740"
+    },
+    {
+      "file": "034-CloudAccountsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/034-CloudAccountsRoute.json",
+      "bytes": 1775,
+      "sha256": "e1102163191cf98cb0667485367c2a90b5030cf097d4a6d2be34f61fb2dd884b"
+    },
+    {
+      "file": "034-CloudAccountsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/034-CloudAccountsRoute.png",
+      "bytes": 63383,
+      "sha256": "b485a21c97fc57e2b0494ab23c845550061236e944cc0738e2a36cccbb9b7962"
+    },
+    {
+      "file": "035-CloudAccountAddRoute.json",
+      "saved_relative_path": "captures-before-review-fix/035-CloudAccountAddRoute.json",
+      "bytes": 1781,
+      "sha256": "4a8d19156c187af143beb1c272d08c46de7dfd069fb790b4349723db048389ad"
+    },
+    {
+      "file": "035-CloudAccountAddRoute.png",
+      "saved_relative_path": "captures-before-review-fix/035-CloudAccountAddRoute.png",
+      "bytes": 73451,
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc"
+    },
+    {
+      "file": "036-CloudAccountLoginRoute.json",
+      "saved_relative_path": "captures-before-review-fix/036-CloudAccountLoginRoute.json",
+      "bytes": 1785,
+      "sha256": "dd9505466f13cab2ec68ba1521d4275da5ccfecd7473662236087122d3361512"
+    },
+    {
+      "file": "036-CloudAccountLoginRoute.png",
+      "saved_relative_path": "captures-before-review-fix/036-CloudAccountLoginRoute.png",
+      "bytes": 73451,
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc"
+    },
+    {
+      "file": "037-CloudAccountRegisterRoute.json",
+      "saved_relative_path": "captures-before-review-fix/037-CloudAccountRegisterRoute.json",
+      "bytes": 1791,
+      "sha256": "7c08a93359d3ae5a5af3a8cc9d116b74d24c72a3f7db88163868958b60919070"
+    },
+    {
+      "file": "037-CloudAccountRegisterRoute.png",
+      "saved_relative_path": "captures-before-review-fix/037-CloudAccountRegisterRoute.png",
+      "bytes": 77106,
+      "sha256": "d56fa1537adf62b835c60cadd3a1524b3e3fc8ef5418302f4d069e56c476d6c5"
+    },
+    {
+      "file": "038-CloudAccountForgotPasswordRoute.json",
+      "saved_relative_path": "captures-before-review-fix/038-CloudAccountForgotPasswordRoute.json",
+      "bytes": 1804,
+      "sha256": "b95a3606c35c85a5dab9628231736e37ab9831b83477c9d65237ab92f8ce1375"
+    },
+    {
+      "file": "038-CloudAccountForgotPasswordRoute.png",
+      "saved_relative_path": "captures-before-review-fix/038-CloudAccountForgotPasswordRoute.png",
+      "bytes": 73871,
+      "sha256": "dd889b631cc7c2d80ef57edb95a9bcd629ca6a72b591b7c2a29a78edfe532161"
+    },
+    {
+      "file": "039-ModelsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/039-ModelsRoute.json",
+      "bytes": 1788,
+      "sha256": "cbd682a739e53d16334812d981642496f972127e7f197d8422bbb12ca9b39600"
+    },
+    {
+      "file": "039-ModelsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/039-ModelsRoute.png",
+      "bytes": 63835,
+      "sha256": "95032cd29bb0ad6707041ae0ffa5bc666cd31e4b893772b8410394cefc94f3b3"
+    },
+    {
+      "file": "040-ServiceConnectionsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/040-ServiceConnectionsRoute.json",
+      "bytes": 1785,
+      "sha256": "beb807932d60d43acce1657c55bf1ed535a12e355edc2e3b8f631751fb76541d"
+    },
+    {
+      "file": "040-ServiceConnectionsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/040-ServiceConnectionsRoute.png",
+      "bytes": 63513,
+      "sha256": "306ebfd43e379c7929bf6c463d8b6728c53a24b3b8c3bc2516091a90216b3e7b"
+    },
+    {
+      "file": "041-ServiceConnectionCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/041-ServiceConnectionCreateRoute.json",
+      "bytes": 1875,
+      "sha256": "9a1073dedefeb29bcb709d627531b2b53a959577469d7d2c3707e73884b46367"
+    },
+    {
+      "file": "041-ServiceConnectionCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/041-ServiceConnectionCreateRoute.png",
+      "bytes": 50561,
+      "sha256": "7390b2a956d8a1e055a1ae1d89805cc40835892b1bf68df24388a7f17c918d8b"
+    },
+    {
+      "file": "042-ToolsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/042-ToolsRoute.json",
+      "bytes": 1758,
+      "sha256": "1258405f505850c13e5c517ae983a94f93ff8b78df6978e37588e2979b56e1f8"
+    },
+    {
+      "file": "042-ToolsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/042-ToolsRoute.png",
+      "bytes": 89747,
+      "sha256": "dac1fc41c8f3ac06464a55413c9efb0fa7af92025a60cad9ab817222c2c24e53"
+    },
+    {
+      "file": "043-AgentsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/043-AgentsRoute.json",
+      "bytes": 2033,
+      "sha256": "25628095cc1cae7603d7e5b6de1158af13210bc3298a00f3dfc3854dfa63c7b6"
+    },
+    {
+      "file": "043-AgentsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/043-AgentsRoute.png",
+      "bytes": 86551,
+      "sha256": "7f7a66b385f6ada771b13cf2f87640a8193ec147c0947949ddc6441a10715d00"
+    },
+    {
+      "file": "044-AgentCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/044-AgentCreateRoute.json",
+      "bytes": 1769,
+      "sha256": "b6a1f5eee2df660fa14c4bddbe7c890129d240561ae95b33567df908e0d291fc"
+    },
+    {
+      "file": "044-AgentCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/044-AgentCreateRoute.png",
+      "bytes": 110143,
+      "sha256": "bcff2984587bb0f9b2cbeb07aec44d3852ade55784bcc8442c90b6f740976f43"
+    },
+    {
+      "file": "045-AgentDetailRoute.json",
+      "saved_relative_path": "captures-before-review-fix/045-AgentDetailRoute.json",
+      "bytes": 1802,
+      "sha256": "9ff133e11928871e5d3e09985b44f7da823f57a967b038527a1c238c4af607ad"
+    },
+    {
+      "file": "045-AgentDetailRoute.png",
+      "saved_relative_path": "captures-before-review-fix/045-AgentDetailRoute.png",
+      "bytes": 113051,
+      "sha256": "ace7bd73937257b8d40df7d41b541f09c71e7cf1c4b001face4870267aae1590"
+    },
+    {
+      "file": "046-SkillsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/046-SkillsRoute.json",
+      "bytes": 1760,
+      "sha256": "386f9fac62cd1b257988c4463cafbf94cec184d81d2649bf004e92aeffd87d06"
+    },
+    {
+      "file": "046-SkillsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/046-SkillsRoute.png",
+      "bytes": 145164,
+      "sha256": "9fe5dcb403bb4b84d200e614f851c1bd5378fb06f67f3183338dedc526d4d462"
+    },
+    {
+      "file": "047-SkillCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/047-SkillCreateRoute.json",
+      "bytes": 1769,
+      "sha256": "c3439e73c20c00a1a3fba3c68166954e0de75d00fdd3ff3802a91df7d5ad2431"
+    },
+    {
+      "file": "047-SkillCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/047-SkillCreateRoute.png",
+      "bytes": 97698,
+      "sha256": "208fc92d6540c34589c3157bba6feb00cb626fa3031de057fa521d0664324f6d"
+    },
+    {
+      "file": "048-SkillDetailRoute.json",
+      "saved_relative_path": "captures-before-review-fix/048-SkillDetailRoute.json",
+      "bytes": 1802,
+      "sha256": "55f999e95fa638a2aafb458de80d11b1d6f61ed213681cfedcd91701324ddd8e"
+    },
+    {
+      "file": "048-SkillDetailRoute.png",
+      "saved_relative_path": "captures-before-review-fix/048-SkillDetailRoute.png",
+      "bytes": 127566,
+      "sha256": "cf1b05f04a0b50e4d74c9703c116ae41003fc14fbc01355d914d9477167a582b"
+    },
+    {
+      "file": "049-SkillResourceCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/049-SkillResourceCreateRoute.json",
+      "bytes": 1824,
+      "sha256": "22954dcb5e20bd8844d567307ff1671187f0e7bfd8f7bcff7637c47eda740e18"
+    },
+    {
+      "file": "049-SkillResourceCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/049-SkillResourceCreateRoute.png",
+      "bytes": 65574,
+      "sha256": "b2790f9dd907202bc23c34f9c094101e1fa15903e923caedf847cb3154720b9a"
+    },
+    {
+      "file": "050-SkillResourceEditRoute.json",
+      "saved_relative_path": "captures-before-review-fix/050-SkillResourceEditRoute.json",
+      "bytes": 1855,
+      "sha256": "9f2678287a021985940654b7b83bc9464eac844bdb6a55cd1e9e78d6229532e8"
+    },
+    {
+      "file": "050-SkillResourceEditRoute.png",
+      "saved_relative_path": "captures-before-review-fix/050-SkillResourceEditRoute.png",
+      "bytes": 80177,
+      "sha256": "1778916bad790484fcb590f74eb63e874582ff83e80ae674ddaa53a0d94d195d"
+    },
+    {
+      "file": "051-SkillToolCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/051-SkillToolCreateRoute.json",
+      "bytes": 1816,
+      "sha256": "16f705e9b02f6d86c4cf254d6c8606d86c85ee563fdbb2015129ce798f33300b"
+    },
+    {
+      "file": "051-SkillToolCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/051-SkillToolCreateRoute.png",
+      "bytes": 110553,
+      "sha256": "a6402e0616458fcc096d4076524f92b33454dbfd462874d02d109fa3a1373bac"
+    },
+    {
+      "file": "052-SkillToolEditRoute.json",
+      "saved_relative_path": "captures-before-review-fix/052-SkillToolEditRoute.json",
+      "bytes": 1847,
+      "sha256": "9af32cc51f6055371ea3d979d37345b7a5647beeaf032585baefbb28ab476794"
+    },
+    {
+      "file": "052-SkillToolEditRoute.png",
+      "saved_relative_path": "captures-before-review-fix/052-SkillToolEditRoute.png",
+      "bytes": 114489,
+      "sha256": "56dbbe25624989c1cee876a07e7bff6d68b9fc6837e26d8d9636a07c2214b20c"
+    },
+    {
+      "file": "053-SkillCredentialDefinitionsRoute.json",
+      "saved_relative_path": "captures-before-review-fix/053-SkillCredentialDefinitionsRoute.json",
+      "bytes": 1802,
+      "sha256": "1f6216f380daeb10d03e33aa7e316998adfcb084ffe13b6688ae99daa3a99258"
+    },
+    {
+      "file": "053-SkillCredentialDefinitionsRoute.png",
+      "saved_relative_path": "captures-before-review-fix/053-SkillCredentialDefinitionsRoute.png",
+      "bytes": 50425,
+      "sha256": "4483b12820b08112c2e4fceea7f106de6d1084269fa8ec04dbea22e3b1c4791a"
+    },
+    {
+      "file": "054-SkillCredentialDefinitionCreateRoute.json",
+      "saved_relative_path": "captures-before-review-fix/054-SkillCredentialDefinitionCreateRoute.json",
+      "bytes": 1811,
+      "sha256": "1ce351cf465bc6c36ab1a9fec644f035ab2ade31f558faec689559b881e3d3e1"
+    },
+    {
+      "file": "054-SkillCredentialDefinitionCreateRoute.png",
+      "saved_relative_path": "captures-before-review-fix/054-SkillCredentialDefinitionCreateRoute.png",
+      "bytes": 75441,
+      "sha256": "58ec4c36857d81b844d32aa86db6abdd1457d722b80db8d2e567850b3e4bb49c"
+    },
+    {
+      "file": "055-SkillCredentialDefinitionEditRoute.json",
+      "saved_relative_path": "captures-before-review-fix/055-SkillCredentialDefinitionEditRoute.json",
+      "bytes": 1842,
+      "sha256": "512961adbfb3cb524682e820c92a1e66be0c42ba285b555ffaa62882680ae0ec"
+    },
+    {
+      "file": "055-SkillCredentialDefinitionEditRoute.png",
+      "saved_relative_path": "captures-before-review-fix/055-SkillCredentialDefinitionEditRoute.png",
+      "bytes": 100737,
+      "sha256": "9d99187dea50289b2c288681ed681d9e64c8eb52818a913cb73d74e72e8e5c06"
+    },
+    {
+      "file": "056-NewChatRoute-959.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/056-NewChatRoute-959.0-en-1.0.json",
+      "bytes": 1770,
+      "sha256": "48cc561bd3b889553fe32015ae28daf58e5e8afb7d9e4f30bb566292ae275665"
+    },
+    {
+      "file": "056-NewChatRoute-959.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/056-NewChatRoute-959.0-en-1.0.png",
+      "bytes": 33151,
+      "sha256": "f7d005c99c38180474568438de9a338958deefcaf6210064c4a89036eb99b9bc"
+    },
+    {
+      "file": "057-NewChatRoute-960.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/057-NewChatRoute-960.0-en-1.0.json",
+      "bytes": 1770,
+      "sha256": "cb1a9650e1f81eab0f542e44111f2abd49c75a4ab5f2c34ea69d170edc31ebd8"
+    },
+    {
+      "file": "057-NewChatRoute-960.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/057-NewChatRoute-960.0-en-1.0.png",
+      "bytes": 57714,
+      "sha256": "4f03f35188d2405feb7a5521696160881babcf3c66dc6a46b25fdce869990d53"
+    },
+    {
+      "file": "058-NewChatRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/058-NewChatRoute-360.0-es-1.4.json",
+      "bytes": 1770,
+      "sha256": "6bb2769b70b727cf9dae4c1e7e91bff206a8d05907c6e38c583987d6d866ff1a"
+    },
+    {
+      "file": "058-NewChatRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/058-NewChatRoute-360.0-es-1.4.png",
+      "bytes": 42549,
+      "sha256": "88cef031a02bdf5fab508dc4640d3feeef4a4651ce4ad3bbf393759dd7f161df"
+    },
+    {
+      "file": "059-NewChatRoute-1280.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/059-NewChatRoute-1280.0-es-1.4.json",
+      "bytes": 1771,
+      "sha256": "11297924b980ac9a683fc7c16dec854621488a947ce0d8510ddc87f9cc64d642"
+    },
+    {
+      "file": "059-NewChatRoute-1280.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/059-NewChatRoute-1280.0-es-1.4.png",
+      "bytes": 84761,
+      "sha256": "87d8f7c4e5fda78ffb083039926197d06eea11fb67abbf422574870d2e28c3ea"
+    },
+    {
+      "file": "060-SkillsRoute-959.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/060-SkillsRoute-959.0-en-1.0.json",
+      "bytes": 1772,
+      "sha256": "05358749c4888fe48866d12033f8751be631dca6063dedc7221bdcd68b0f5269"
+    },
+    {
+      "file": "060-SkillsRoute-959.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/060-SkillsRoute-959.0-en-1.0.png",
+      "bytes": 118122,
+      "sha256": "109971723887f756c88171acf941b4811735dfe647da3a0a24be6accfea99fd7"
+    },
+    {
+      "file": "061-SkillsRoute-960.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/061-SkillsRoute-960.0-en-1.0.json",
+      "bytes": 1772,
+      "sha256": "7b09b72ec18880a7b95e7595234fcf407781301016f6a03dc3e6c1dd2dc7f33c"
+    },
+    {
+      "file": "061-SkillsRoute-960.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/061-SkillsRoute-960.0-en-1.0.png",
+      "bytes": 141536,
+      "sha256": "b701e768ed171ea959435ed8af1fa52ac155ee3498141e977c9d96f9d3472c31"
+    },
+    {
+      "file": "062-SkillsRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/062-SkillsRoute-360.0-es-1.4.json",
+      "bytes": 1772,
+      "sha256": "efb73cfbe0eb40b1d21d2c48eaff4a214a3935d0fe7586ec80d197005dbddcb7"
+    },
+    {
+      "file": "062-SkillsRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/062-SkillsRoute-360.0-es-1.4.png",
+      "bytes": 107891,
+      "sha256": "a32c597b2699ecab4e515df864ce7556ee805085ad68837d84ca764142ba544d"
+    },
+    {
+      "file": "063-SkillsRoute-1280.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/063-SkillsRoute-1280.0-es-1.4.json",
+      "bytes": 1773,
+      "sha256": "47016492482e72c4be8ed95a10a85fbfc4d7cd396c5c258de966023331750a09"
+    },
+    {
+      "file": "063-SkillsRoute-1280.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/063-SkillsRoute-1280.0-es-1.4.png",
+      "bytes": 186100,
+      "sha256": "b801dcb7abd8731f705cb81671723df1f4bb89845d893e813eab854803872b35"
+    },
+    {
+      "file": "064-ToolsRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/064-ToolsRoute-360.0-es-1.4.json",
+      "bytes": 1770,
+      "sha256": "6037e4dc1901107512d60c3a212b678aebe2e91de8fc3ca8d3f5dc1d9f2bfd3a"
+    },
+    {
+      "file": "064-ToolsRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/064-ToolsRoute-360.0-es-1.4.png",
+      "bytes": 92532,
+      "sha256": "27d4a996a43d075766fe55aed3d6c22b36bc089d282fb412ec1cda6b39f59b71"
+    },
+    {
+      "file": "065-ServiceConnectionsRoute-959.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/065-ServiceConnectionsRoute-959.0-en-1.0.json",
+      "bytes": 1797,
+      "sha256": "ebeb45bf44422f59f6bcee10551a561432aad432c77e05ecd200d951540b6b62"
+    },
+    {
+      "file": "065-ServiceConnectionsRoute-959.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/065-ServiceConnectionsRoute-959.0-en-1.0.png",
+      "bytes": 35533,
+      "sha256": "1d9cbfe6f41711c82fb73789843badba847ea3ecd337faac9854698c1a58ab0e"
+    },
+    {
+      "file": "066-ServiceConnectionsRoute-960.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/066-ServiceConnectionsRoute-960.0-en-1.0.json",
+      "bytes": 1797,
+      "sha256": "9c739c832e64d8fd7f07ac39fcb83bb58874977ff75506c705ccb0d48b156a63"
+    },
+    {
+      "file": "066-ServiceConnectionsRoute-960.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/066-ServiceConnectionsRoute-960.0-en-1.0.png",
+      "bytes": 60866,
+      "sha256": "973f801cf89f582ad8581af27fc884f7e858bfdeec4a6b775efd1d8111fd9ffe"
+    },
+    {
+      "file": "067-ServiceConnectionsRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/067-ServiceConnectionsRoute-360.0-es-1.4.json",
+      "bytes": 1797,
+      "sha256": "0d2d80b49078c962e2b64d37e4bd04eb54d82cd659bae3ceb9353dab21dd5821"
+    },
+    {
+      "file": "067-ServiceConnectionsRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/067-ServiceConnectionsRoute-360.0-es-1.4.png",
+      "bytes": 48686,
+      "sha256": "324e8d9dfd8e504c3de447d4bf33cdfe12feb9bf788f21892e02e4002365c6eb"
+    },
+    {
+      "file": "068-ServiceConnectionsRoute-1280.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/068-ServiceConnectionsRoute-1280.0-es-1.4.json",
+      "bytes": 1798,
+      "sha256": "c232cb373f46081a9dde6c53a77df0856042c3b1d427595d287037b0e323ac66"
+    },
+    {
+      "file": "068-ServiceConnectionsRoute-1280.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/068-ServiceConnectionsRoute-1280.0-es-1.4.png",
+      "bytes": 96369,
+      "sha256": "0e989b0715ab7cac1972fcf02b2a2836e018971325d441228ce866a40eb7a118"
+    },
+    {
+      "file": "069-WorkspaceSettingsRoute-959.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/069-WorkspaceSettingsRoute-959.0-en-1.0.json",
+      "bytes": 1790,
+      "sha256": "42f2c3056f8a26667e537d2c21ba2eaf923855eecea2403a92f3c5d506768de7"
+    },
+    {
+      "file": "069-WorkspaceSettingsRoute-959.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/069-WorkspaceSettingsRoute-959.0-en-1.0.png",
+      "bytes": 59259,
+      "sha256": "5234ca584e93e306f0fbd009b17bdfe230c61687a5856d0879ef82cd7e921740"
+    },
+    {
+      "file": "070-WorkspaceSettingsRoute-960.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/070-WorkspaceSettingsRoute-960.0-en-1.0.json",
+      "bytes": 1790,
+      "sha256": "743e284015ef95c1b4cb949e21f5d035364942fae9ec5aca7774ed4f0ec8d729"
+    },
+    {
+      "file": "070-WorkspaceSettingsRoute-960.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/070-WorkspaceSettingsRoute-960.0-en-1.0.png",
+      "bytes": 83599,
+      "sha256": "6891da4c35a61bd8eabb015c9305e9c7ad2e2a9deb0d4fc9f62b3bd61a70cb64"
+    },
+    {
+      "file": "071-WorkspaceSettingsRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/071-WorkspaceSettingsRoute-360.0-es-1.4.json",
+      "bytes": 1790,
+      "sha256": "5a77cfe37dee8db29f56cd3f0f70f021a497ae2d150e913b71dd4f514c5dda90"
+    },
+    {
+      "file": "071-WorkspaceSettingsRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/071-WorkspaceSettingsRoute-360.0-es-1.4.png",
+      "bytes": 95541,
+      "sha256": "9a93abb1c93708117f26bc89f9d39a96434a0d96456dbaf1b01f1407ec8d9de8"
+    },
+    {
+      "file": "072-WorkspaceSettingsRoute-1280.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/072-WorkspaceSettingsRoute-1280.0-es-1.4.json",
+      "bytes": 1791,
+      "sha256": "f79132114733162ab196de09fa1146af0ec2f9dbf1ba85e8b3130f7e10aca233"
+    },
+    {
+      "file": "072-WorkspaceSettingsRoute-1280.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/072-WorkspaceSettingsRoute-1280.0-es-1.4.png",
+      "bytes": 127326,
+      "sha256": "ac89c173abbc1242c5a21e50fc8294bd3c29c3cf2ba5650f95a5428128bf9b0c"
+    },
+    {
+      "file": "073-CloudAccountLoginRoute-959.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/073-CloudAccountLoginRoute-959.0-en-1.0.json",
+      "bytes": 1797,
+      "sha256": "66af8f27d19f393881f44d9aa803c5f187829c734aeef17cda09c9d11a5c3558"
+    },
+    {
+      "file": "073-CloudAccountLoginRoute-959.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/073-CloudAccountLoginRoute-959.0-en-1.0.png",
+      "bytes": 45190,
+      "sha256": "0b0e626e11a133f2597a7ae4c84dd917b12dc6c7fe8c0ff2b1896d1570c4d60b"
+    },
+    {
+      "file": "074-CloudAccountLoginRoute-960.0-en-1.0.json",
+      "saved_relative_path": "captures-before-review-fix/074-CloudAccountLoginRoute-960.0-en-1.0.json",
+      "bytes": 1797,
+      "sha256": "a95694b77555b4c171224c97654cc97ae80b06156a4ab06be42c6895c3d80ad1"
+    },
+    {
+      "file": "074-CloudAccountLoginRoute-960.0-en-1.0.png",
+      "saved_relative_path": "captures-before-review-fix/074-CloudAccountLoginRoute-960.0-en-1.0.png",
+      "bytes": 70953,
+      "sha256": "e7ec5ff9c5920071419f35933aa2eff256825f875b612fc29a7cb4b64e8bf603"
+    },
+    {
+      "file": "075-CloudAccountLoginRoute-360.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/075-CloudAccountLoginRoute-360.0-es-1.4.json",
+      "bytes": 1797,
+      "sha256": "586920b914e423db0e3dd2660117141c95fa31aa135192987c496d4a002d6e45"
+    },
+    {
+      "file": "075-CloudAccountLoginRoute-360.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/075-CloudAccountLoginRoute-360.0-es-1.4.png",
+      "bytes": 79507,
+      "sha256": "612146752c6f3b6377f5720c4c409d0cc2f984d9f7a03787512409c59dc4b34c"
+    },
+    {
+      "file": "076-CloudAccountLoginRoute-1280.0-es-1.4.json",
+      "saved_relative_path": "captures-before-review-fix/076-CloudAccountLoginRoute-1280.0-es-1.4.json",
+      "bytes": 1798,
+      "sha256": "88a2f5e541606efe34fbf4883d2a436d0c46770282c214f62dd44034ee2f4d19"
+    },
+    {
+      "file": "076-CloudAccountLoginRoute-1280.0-es-1.4.png",
+      "saved_relative_path": "captures-before-review-fix/076-CloudAccountLoginRoute-1280.0-es-1.4.png",
+      "bytes": 117247,
+      "sha256": "5427dc7c790bf455d6cb18689e60d6b54270c3f621cf471ce9e99f83ec6b8650"
+    },
+    {
+      "file": "accessibility-dark.json",
+      "saved_relative_path": "captures-before-review-fix/accessibility-dark.json",
+      "bytes": 1453,
+      "sha256": "6ea2e940e67a061d7fe4b708bd5031422d6304ed9559a2c1834d0faf6500a537"
+    },
+    {
+      "file": "accessibility-light.json",
+      "saved_relative_path": "captures-before-review-fix/accessibility-light.json",
+      "bytes": 1454,
+      "sha256": "d5646346c9f13fb59e7cc097be52f1d7f4d5911ee68a4953a73712efb146a224"
+    }
+  ]
+}

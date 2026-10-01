@@ -7,10 +7,12 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/mcp_error_details.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_header.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -70,7 +72,12 @@ class _ToolsGroupCardCallbacks {
     required String workspaceId,
     required WidgetRef ref,
     required BuildContext context,
-  }) : onToggleEnabled = groupWithTools.isDefaultGroup
+  }) : onOpenConnection = groupWithTools.mcpServerId == null
+           ? null
+           : (() => unawaited(
+               _openConnection(groupWithTools, workspaceId, ref, context),
+             )),
+       onToggleEnabled = groupWithTools.isDefaultGroup
            ? null
            : ((enabled) =>
                  _toggleMcpGroup(groupWithTools, workspaceId, ref, enabled)),
@@ -95,10 +102,31 @@ class _ToolsGroupCardCallbacks {
              ))
            : null;
 
+  final VoidCallback? onOpenConnection;
   final ValueChanged<bool>? onToggleEnabled;
   final VoidCallback? onReconnect;
   final VoidCallback? onDelete;
   final VoidCallback? onViewError;
+}
+
+Future<void> _openConnection(
+  ToolsGroupWithTools groupWithTools,
+  String workspaceId,
+  WidgetRef ref,
+  BuildContext context,
+) async {
+  final serverId = groupWithTools.mcpServerId;
+  if (serverId == null) return;
+
+  final saved = await ServiceConnectionEditRoute(
+    workspaceId: workspaceId,
+    connectionId: serverId,
+  ).push<bool>(context);
+  if (saved != true || !context.mounted) return;
+
+  ref
+    ..invalidate(workspaceToolsProvider(workspaceId))
+    ..invalidate(groupedToolsProvider(workspaceId));
 }
 
 bool _shouldShowReconnect(ToolsGroupWithTools groupWithTools) =>
@@ -197,6 +225,17 @@ class const _ToolsGroupCardContent({
         onToggleExpand: onToggleExpand,
         callbacks: callbacks,
       ),
+      if (callbacks.onOpenConnection case final onOpenConnection?)
+        AuraButton(
+          onPressed: onOpenConnection,
+          child: const TextLocale(LocaleKeys.related_lists_open_connection),
+          key: ValueKey(
+            'tools-open-connection-${card.groupWithTools.mcpServerId}',
+          ),
+          variant: .text,
+          size: .small,
+          disabled: card.isDeleting,
+        ),
       _ExpandedToolsGroup(card: card, isExpanded: isExpanded),
     ],
     crossAxisAlignment: .start,

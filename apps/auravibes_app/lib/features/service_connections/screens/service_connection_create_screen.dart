@@ -1,9 +1,11 @@
 // Required: Feature widgets keep closely related private widgets together.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -11,8 +13,12 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/task_return.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -22,6 +28,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('service_connection_create_screen');
 
@@ -57,6 +64,7 @@ class const ServiceConnectionCreateScreen({
   final ServiceConnectionCreateType? initialType,
   final String? initialCredentialDefinitionId,
   final String? initialAppSkillId,
+  final String? returnPath,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -71,7 +79,34 @@ class _ServiceConnectionCreateScreenState
   ServiceConnectionCreateType _type = .modelProvider;
   String? _definitionId;
   String? _appSkillId;
+  final _exitGuard = DraftExitGuard();
+  String _initialSnapshot = '';
+  bool _saved = false;
+  bool _handoff = false;
   bool _isSaving = false;
+
+  String get _snapshot => jsonEncode({
+    'name': _nameController.text,
+    'type': _type.name,
+    'definition': _definitionId,
+    'appSkill': _appSkillId,
+    'attributes': {
+      for (final entry in _attributeControllers.entries)
+        if (entry.value.text.isNotEmpty) entry.key: entry.value.text,
+    },
+  });
+
+  bool get _isDirty =>
+      !_saved &&
+      (_snapshot != _initialSnapshot ||
+          _type == .modelProvider &&
+              ref
+                  .read(addModelProviderStateProvider(widget.workspaceId))
+                  .hasUnsavedChanges);
+  bool get _isBusy =>
+      _isSaving ||
+      _type == .modelProvider &&
+          ref.read(addCredentialsModelMutationProvider) is MutationPending;
 
   TextEditingController get _apiKeyController {
     return _attributeControllers.putIfAbsent(
@@ -84,6 +119,7 @@ class _ServiceConnectionCreateScreenState
   void initState() {
     super.initState();
     _initializeCreateState(this);
+    _initialSnapshot = _snapshot;
   }
 
   @override
@@ -96,28 +132,78 @@ class _ServiceConnectionCreateScreenState
 
   @override
   Widget build(BuildContext context) {
-    return _ServiceConnectionCreateView(form: .fromState(this));
+    _exitGuard.bind(
+      isDirty: () => _isDirty,
+      isSaving: () => _isBusy,
+      preferReturn:
+          TaskReturn.validate(
+            widget.returnPath,
+            workspaceId: widget.workspaceId,
+          ) !=
+          null,
+      onReturn: (context) => context.go(
+        TaskReturn.validate(
+              widget.returnPath,
+              workspaceId: widget.workspaceId,
+            ) ??
+            ServiceConnectionsRoute(workspaceId: widget.workspaceId).location,
+      ),
+    );
+
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _handoff
+          ? AuraScreen(
+              child: AuraColumn(
+                children: [
+                  const TextLocale('chat_readiness.saved'),
+                  ChatReadinessSummary(
+                    workspaceId: widget.workspaceId,
+                    isSetupHandoff: true,
+                  ),
+                  AuraButton(
+                    onPressed: () => unawaited(_closeAfterSave(this)),
+                    child: const TextLocale('chat_readiness.continue_chat'),
+                  ),
+                ],
+              ),
+              appBar: const AuraAppBarWithDrawer(
+                title: TextLocale('chat_readiness.saved'),
+              ),
+            )
+          : _ServiceConnectionCreateView(form: .fromState(this)),
+    );
   }
 }
 
 void _initializeCreateState(_ServiceConnectionCreateScreenState state) {
-  final initialAppSkill = _appSkillCredentialOption(
-    state.widget.initialAppSkillId,
-  );
-  state._type = _initialCreateType(state, initialAppSkill);
+  if (state.widget.initialAppSkillId != null) {
+    state._type = .appSkillCredential;
+  } else if (state.widget.initialCredentialDefinitionId != null) {
+    state._type = .skillCredential;
+  } else {
+    state._type = state.widget.initialType ?? .modelProvider;
+  }
   state._definitionId = state.widget.initialCredentialDefinitionId;
-  state._appSkillId = initialAppSkill?.identifier;
+  state._appSkillId = state.widget.initialAppSkillId;
 }
 
-ServiceConnectionCreateType _initialCreateType(
+Future<void> _createCredentialType(
   _ServiceConnectionCreateScreenState state,
-  AppSkillDefinition? initialAppSkill,
-) {
-  if (initialAppSkill != null || state.widget.initialAppSkillId == null) {
-    return state.widget.initialType ?? state._type;
+) async {
+  final created = await SkillCredentialDefinitionCreateRoute(
+    workspaceId: state.widget.workspaceId,
+    returnCreated: true,
+  ).push<SkillCredentialDefinitionEntity>(state.context);
+  if (!state.mounted ||
+      created == null ||
+      created.workspaceId != state.widget.workspaceId) {
+    return;
   }
-
-  return .modelProvider;
+  state.ref.invalidate(
+    skillCredentialDefinitionsProvider(state.widget.workspaceId),
+  );
+  _onDefinitionChanged(state, created.id);
 }
 
 void _disposeCreateState(_ServiceConnectionCreateScreenState state) {
@@ -137,11 +223,28 @@ void _handleAppSkillChanged(
   _ServiceConnectionCreateScreenState state,
   String? value,
 ) {
-  state.updateState(() => state._appSkillId = value);
+  state.updateState(() {
+    state._appSkillId = value;
+    _resetAttributeControllers(state);
+  });
 }
 
 void _handleModelProviderCreated(_ServiceConnectionCreateScreenState state) {
-  unawaited(_closeAfterSave(state));
+  if (TaskReturn.validate(
+        state.widget.returnPath,
+        workspaceId: state.widget.workspaceId,
+      ) ==
+      null) {
+    unawaited(_closeAfterSave(state));
+
+    return;
+  }
+  _resetAfterSave(state, true, true);
+  state.updateState(() {
+    state
+      .._saved = true
+      .._handoff = true;
+  });
 }
 
 void _handleSkillCredentialSave(_ServiceConnectionCreateScreenState state) {
@@ -407,7 +510,19 @@ Future<void> _closeAfterSave(
   bool resetModelMutation = true,
 }) async {
   if (!state.mounted) return;
+  state
+    .._saved = true
+    .._isSaving = false;
   _resetAfterSave(state, refreshServiceConnections, resetModelMutation);
+  final destination = TaskReturn.validate(
+    state.widget.returnPath,
+    workspaceId: state.widget.workspaceId,
+  );
+  if (state._handoff && destination != null) {
+    state.context.go(destination);
+
+    return;
+  }
   if (await Navigator.of(state.context).maybePop(true)) return;
   if (!state.mounted) return;
   _goToServiceConnections(state);
@@ -436,7 +551,18 @@ void _onTypeChanged(
   _ServiceConnectionCreateScreenState state,
   ServiceConnectionCreateType? value,
 ) {
-  if (value == null) return;
+  if (value == null || value == state._type) return;
+  unawaited(_replaceCreateType(state, value));
+}
+
+Future<void> _replaceCreateType(
+  _ServiceConnectionCreateScreenState state,
+  ServiceConnectionCreateType value,
+) async {
+  if (!await state._exitGuard.canExit(state.context) || !state.mounted) return;
+  state.ref
+      .read(addModelProviderStateProvider(state.widget.workspaceId).notifier)
+      .reset();
   state.updateState(() {
     state
       .._type = value
@@ -444,6 +570,7 @@ void _onTypeChanged(
       .._appSkillId = null;
     _resetAttributeControllers(state);
   });
+  state._exitGuard.releaseApproval();
 }
 
 void _onDefinitionChanged(
@@ -473,6 +600,11 @@ String _describeAttributes(Map<String, String> attributes) => attributes.entries
 
 class const _ServiceConnectionCreateForm({
   required final String workspaceId,
+  required final DraftExitGuard routeExitGuard,
+  required final bool contextual,
+  required final bool fixedDefinition,
+  required final bool fixedAppSkill,
+  required final VoidCallback onCreateDefinition,
   required final ServiceConnectionCreateType type,
   required final String? selectedDefinitionId,
   required final String? selectedAppSkillId,
@@ -492,6 +624,14 @@ class const _ServiceConnectionCreateForm({
   new fromState(_ServiceConnectionCreateScreenState state)
     : this(
         workspaceId: state.widget.workspaceId,
+        contextual:
+            state.widget.initialType != null ||
+            state.widget.initialCredentialDefinitionId != null ||
+            state.widget.initialAppSkillId != null,
+        fixedDefinition: state.widget.initialCredentialDefinitionId != null,
+        fixedAppSkill: state.widget.initialAppSkillId != null,
+        onCreateDefinition: () => unawaited(_createCredentialType(state)),
+        routeExitGuard: state._exitGuard,
         type: state._type,
         selectedDefinitionId: state._definitionId,
         selectedAppSkillId: state._appSkillId,
@@ -510,7 +650,7 @@ class const _ServiceConnectionCreateForm({
       );
 
   bool canSaveAppSkillCredential() =>
-      selectedAppSkillId != null &&
+      _appSkillCredentialOption(selectedAppSkillId) != null &&
       nameController.text.trim().isNotEmpty &&
       apiKeyController.text.trim().isNotEmpty;
 }
@@ -522,21 +662,29 @@ class const _ServiceConnectionCreateView({
   Widget build(BuildContext context) {
     return AuraScreen(
       child: _ServiceConnectionCreateBody(form: form),
-      appBar: const _ServiceConnectionCreateAppBar(),
+      appBar: _ServiceConnectionCreateAppBar(form: form),
     );
   }
 }
 
-class const _ServiceConnectionCreateAppBar()
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _ServiceConnectionCreateAppBar({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
     return AuraAppBarWithDrawer(
-      title: const TextLocale(LocaleKeys.service_connections_create_title),
+      title: TextLocale(
+        form.contextual
+            ? switch (form.type) {
+                .modelProvider => 'connection_setup.connect_ai',
+                .skillCredential ||
+                .appSkillCredential => 'connection_setup.add_access',
+              }
+            : LocaleKeys.service_connections_create_title,
+      ),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => Navigator.of(context).maybePop(),
@@ -552,7 +700,7 @@ class const _ServiceConnectionCreateBody({
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        _CreateTypeSelectorPadding(form: form),
+        if (!form.contextual) _CreateTypeSelectorPadding(form: form),
         Expanded(child: _CreateConnectionTypeContent(form: form)),
       ],
     );
@@ -593,6 +741,7 @@ class const _ModelProviderCreateContent({
       padding: const EdgeInsets.all(12),
       child: AddModelProviderWidget(
         workspaceId: form.workspaceId,
+        routeExitGuard: form.routeExitGuard,
         onCreated: form.onModelProviderCreated,
         showHeader: false,
       ),
@@ -602,18 +751,67 @@ class const _ModelProviderCreateContent({
 
 class const _SkillCredentialCreateContent({
   required final _ServiceConnectionCreateForm form,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return _CredentialForm(
-      workspaceId: form.workspaceId,
-      selectedDefinitionId: form.selectedDefinitionId,
-      nameController: form.nameController,
-      attributeControllers: form.attributeControllers,
-      isSaving: form.isSaving,
-      onNameChanged: form.onNameChanged,
-      onDefinitionChanged: form.onDefinitionChanged,
-      onSave: form.onSkillCredentialSave,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = skillCredentialDefinitionsProvider(form.workspaceId);
+    final result = ref.watch(provider);
+    if (result case AsyncError()) {
+      return AuraColumn(
+        children: [
+          const TextLocale('connection_setup.types_load_error'),
+          AuraButton(
+            onPressed: () => ref.invalidate(provider),
+            child: const TextLocale(LocaleKeys.route_state_retry),
+          ),
+          AuraButton(
+            onPressed: () => unawaited(form.routeExitGuard.pop(context)),
+            child: const TextLocale('connection_setup.return_connections'),
+          ),
+        ],
+      );
+    }
+    final definitions = _credentialDefinitions(result);
+    if (definitions == null) return const Center(child: AuraSpinner());
+
+    return ListView(
+      padding: const EdgeInsets.all(12)
+          .copyWith(bottom: BottomPadding.of(context, minimum: 12)),
+      children: [
+        _CredentialFormCard(
+          definitions: definitions,
+          selectedDefinitionId: form.selectedDefinitionId,
+          nameController: form.nameController,
+          attributeControllers: form.attributeControllers,
+          isSaving: form.isSaving,
+          onNameChanged: form.onNameChanged,
+          onDefinitionChanged: form.onDefinitionChanged,
+          onSave: form.onSkillCredentialSave,
+          fixedDefinition: form.fixedDefinition,
+        ),
+        if (!form.fixedDefinition)
+          AuraButton(
+            onPressed: form.onCreateDefinition,
+            child: const TextLocale('connection_setup.create_type'),
+            disabled: form.isSaving,
+          ),
+        if (form.fixedDefinition &&
+            !definitions.any((item) => item.id == form.selectedDefinitionId))
+          AuraColumn(
+            children: [
+              const TextLocale('connection_setup.required_type_missing'),
+              AuraButton(
+                onPressed: () => ref.invalidate(provider),
+                child: const TextLocale(LocaleKeys.route_state_retry),
+              ),
+              AuraButton(
+                onPressed: () => unawaited(form.routeExitGuard.pop(context)),
+                child: const TextLocale('connection_setup.return_task'),
+              ),
+            ],
+          ),
+      ],
+      keyboardDismissBehavior: .onDrag,
     );
   }
 }
@@ -623,8 +821,22 @@ class const _AppSkillCredentialCreateContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    if (form.fixedAppSkill &&
+        _appSkillCredentialOption(form.selectedAppSkillId) == null) {
+      return AuraColumn(
+        children: [
+          const TextLocale('connection_setup.required_service_missing'),
+          AuraButton(
+            onPressed: () => unawaited(form.routeExitGuard.pop(context)),
+            child: const TextLocale('connection_setup.return_task'),
+          ),
+        ],
+      );
+    }
+
     return _AppSkillCredentialForm(
       selectedAppSkillId: form.selectedAppSkillId,
+      fixedAppSkill: form.fixedAppSkill,
       nameController: form.nameController,
       apiKeyController: form.apiKeyController,
       isSaving: form.isSaving,
@@ -711,32 +923,9 @@ List<SkillCredentialDefinitionEntity>? _credentialDefinitions(
   AsyncError() => null,
 };
 
-class const _CredentialForm({
-  required final String workspaceId,
-  required final String? selectedDefinitionId,
-  required final TextEditingController nameController,
-  required final Map<String, TextEditingController> attributeControllers,
-  required final bool isSaving,
-  required final ValueChanged<String> onNameChanged,
-  required final ValueChanged<String?> onDefinitionChanged,
-  required final VoidCallback onSave,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final definitions = _credentialDefinitions(
-      ref.watch(skillCredentialDefinitionsProvider(workspaceId)),
-    );
-
-    if (definitions == null) {
-      return const Center(child: AuraSpinner());
-    }
-
-    return _CredentialFormContent.fromCredentialForm(this, definitions);
-  }
-}
-
 class const _AppSkillCredentialForm({
   required final String? selectedAppSkillId,
+  required final bool fixedAppSkill,
   required final TextEditingController nameController,
   required final TextEditingController apiKeyController,
   required final bool isSaving,
@@ -762,6 +951,7 @@ class const _AppSkillCredentialForm({
 
 class const _AppSkillCredentialCard({
   required final String? selectedAppSkillId,
+  required final bool fixedAppSkill,
   required final TextEditingController nameController,
   required final TextEditingController apiKeyController,
   required final bool isSaving,
@@ -774,6 +964,7 @@ class const _AppSkillCredentialCard({
   new _fromForm(_AppSkillCredentialForm form)
     : this(
         selectedAppSkillId: form.selectedAppSkillId,
+        fixedAppSkill: form.fixedAppSkill,
         nameController: form.nameController,
         apiKeyController: form.apiKeyController,
         isSaving: form.isSaving,
@@ -789,7 +980,10 @@ class const _AppSkillCredentialCard({
     return AuraCard(
       child: AuraColumn(
         children: [
-          _AppSkillCredentialSelector.fromCard(this),
+          if (fixedAppSkill)
+            Text(_appSkillCredentialOption(selectedAppSkillId)?.title ?? '')
+          else
+            _AppSkillCredentialSelector.fromCard(this),
           _CredentialNameField._fromAppSkillCard(this),
           _AppSkillCredentialValueField.fromCard(this),
           _CredentialSaveAction._fromAppSkillCard(this),
@@ -961,44 +1155,6 @@ String _credentialValueLabel(BuildContext context, String? appSkillId) {
   );
 }
 
-class const _CredentialFormContent({
-  required final List<SkillCredentialDefinitionEntity> definitions,
-  required final String? selectedDefinitionId,
-  required final TextEditingController nameController,
-  required final Map<String, TextEditingController> attributeControllers,
-  required final bool isSaving,
-  required final ValueChanged<String> onNameChanged,
-  required final ValueChanged<String?> onDefinitionChanged,
-  required final VoidCallback onSave,
-}) extends StatelessWidget {
-  static const _contentPadding = 12.0;
-
-  new fromCredentialForm(
-    _CredentialForm form,
-    List<SkillCredentialDefinitionEntity> definitions,
-  ) : this(
-        definitions: definitions,
-        selectedDefinitionId: form.selectedDefinitionId,
-        nameController: form.nameController,
-        attributeControllers: form.attributeControllers,
-        isSaving: form.isSaving,
-        onNameChanged: form.onNameChanged,
-        onDefinitionChanged: form.onDefinitionChanged,
-        onSave: form.onSave,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(
-        _contentPadding,
-      ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
-      children: [_CredentialFormCard.fromContent(this)],
-      keyboardDismissBehavior: .onDrag,
-    );
-  }
-}
-
 class const _CredentialFormCard({
   required final List<SkillCredentialDefinitionEntity> definitions,
   required final String? selectedDefinitionId,
@@ -1008,19 +1164,8 @@ class const _CredentialFormCard({
   required final ValueChanged<String> onNameChanged,
   required final ValueChanged<String?> onDefinitionChanged,
   required final VoidCallback onSave,
+  required final bool fixedDefinition,
 }) extends StatelessWidget {
-  new fromContent(_CredentialFormContent content)
-    : this(
-        definitions: content.definitions,
-        selectedDefinitionId: content.selectedDefinitionId,
-        nameController: content.nameController,
-        attributeControllers: content.attributeControllers,
-        isSaving: content.isSaving,
-        onNameChanged: content.onNameChanged,
-        onDefinitionChanged: content.onDefinitionChanged,
-        onSave: content.onSave,
-      );
-
   @override
   Widget build(BuildContext context) {
     final selectedDefinition = definitions
@@ -1043,7 +1188,11 @@ class const _CredentialFormCardLayout({
     return AuraCard(
       child: AuraColumn(
         children: [
-          _DefinitionSelector._fromCard(card),
+          _CredentialNameField._fromCredentialCard(card, hasAttributes: true),
+          if (!card.fixedDefinition) _DefinitionSelector._fromCard(card),
+          if (selectedDefinition case final definition?
+              when card.fixedDefinition)
+            Text(definition.title),
           _CredentialFormDetails(
             card: card,
             selectedDefinition: selectedDefinition,
@@ -1064,7 +1213,9 @@ class const _CredentialFormDetails({
   Widget build(BuildContext context) {
     final definition = selectedDefinition;
     if (definition == null) {
-      return const _NoCredentialDefinitionMessage();
+      return card.fixedDefinition
+          ? const SizedBox.shrink()
+          : const _NoCredentialDefinitionMessage();
     }
 
     return _CredentialFormFieldsColumn(card: card, definition: definition);
@@ -1088,15 +1239,10 @@ class const _CredentialFormFieldsColumn({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final attributes = SkillCredentialAttributeDefinition.parseMap(
-      definition.attributesJson,
-    );
-
     return AuraColumn(
       children: _CredentialFormFieldChildren(
         card: card,
         definition: definition,
-        attributes: attributes,
       ).values,
       spacing: .md,
       crossAxisAlignment: .start,
@@ -1109,12 +1255,7 @@ class _CredentialFormFieldChildren {
   new({
     required _CredentialFormCard card,
     required SkillCredentialDefinitionEntity definition,
-    required Map<String, SkillCredentialAttributeDefinition> attributes,
   }) : values = [
-         _CredentialNameField._fromCredentialCard(
-           card,
-           hasAttributes: attributes.isNotEmpty,
-         ),
          _CredentialAttributesFields._fromCredentialCard(
            card,
            definition,

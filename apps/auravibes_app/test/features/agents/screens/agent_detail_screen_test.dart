@@ -21,10 +21,15 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../../helpers/test_app.dart';
@@ -69,6 +74,163 @@ void main() {
 
     return (database: database, workspace: workspace);
   }
+
+  testWidgets('saved agent exposes disabled and missing dependencies', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await createFixture();
+    final skill = (await SkillsRepository(
+      fixture.database,
+    ).getWorkspaceSkills(fixture.workspace.id)).single;
+    final _ = await SkillsRepository(fixture.database)
+        .updateSkill(skill.id, const SkillToUpdate(isEnabled: false));
+    final agent = await AgentsRepository(fixture.database).createAgent(
+      fixture.workspace.id,
+      .new(
+        name: 'Delegated researcher',
+        description: 'Research',
+        content: 'Research carefully',
+        visibility: .subAgentList,
+        skills: [
+          AgentSkillRef.user(skill.id),
+          const AgentSkillRef.app('removed'),
+        ],
+      ),
+    );
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/agent',
+          builder: (_, _) => AgentDetailScreen(
+            workspaceId: fixture.workspace.id,
+            agentId: agent.id,
+          ),
+        ),
+        GoRoute(
+          path: '/workspaces/:workspaceId/more/agents',
+          builder: (_, _) => const Text('Agents return'),
+        ),
+      ],
+      initialLocation: '/agent',
+    );
+    addTearDown(router.dispose);
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      router: router,
+      skills: [
+        WorkspaceSkill(
+          source: .user,
+          id: skill.id,
+          slug: skill.slug,
+          title: skill.title,
+          description: skill.description,
+          kind: .template,
+          isEnabled: false,
+        ),
+      ],
+    );
+    expect(find.textContaining('1 disabled selected'), findsOneWidget);
+    expect(find.text('Manage skills'), findsNothing);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Enabled in this workspace'), findsOneWidget);
+    expect(find.text('Available for delegation'), findsOneWidget);
+    expect(find.text('Available in chats'), findsNothing);
+    await tester.tap(find.textContaining('1 disabled selected'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Skills for Delegated researcher'), findsOneWidget);
+    expect(
+      find.textContaining('Assignments apply when you save the agent.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.bySemanticsLabel('Close dialog'));
+    final _ = await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
+    final _ = await tester.pumpAndSettle();
+    expect(
+      (await SkillsRepository(fixture.database).getSkillById(skill.id))
+          ?.isEnabled,
+      isFalse,
+    );
+    expect(
+      (await AgentsRepository(fixture.database).getAgentById(agent.id))?.skills,
+      agent.skills,
+    );
+  });
+
+  testWidgets('opens a selected skill without losing the agent draft', (
+    tester,
+  ) async {
+    final fixture = await createFixture();
+    final route = AgentCreateRoute(workspaceId: fixture.workspace.id);
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/agent', builder: route.build, onExit: route.onExit),
+        GoRoute(
+          path: '/workspaces/:workspaceId/more/skills/:skillId',
+          builder: (_, state) =>
+              Text('Selected skill ${state.pathParameters['skillId']}'),
+        ),
+      ],
+      initialLocation: '/agent',
+    );
+    addTearDown(router.dispose);
+    var title = 'Summarizer';
+    await _pumpAgentScreen(
+      tester,
+      fixture,
+      router: router,
+      skillTitle: () => title,
+    );
+    await tester.enterText(
+      find.byType(AuraInput).first,
+      'Retained agent draft',
+    );
+    await tester.scrollUntilVisible(
+      find.text('Advanced settings'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Advanced settings'));
+    final _ = await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Manage skills'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Manage skills'));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Summarizer').last);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('View skill'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Selected skill summarizer'), findsOneWidget);
+    expect(find.text('Keep editing'), findsNothing);
+    title = 'Edited skill';
+    router.pop(true);
+    final _ = await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byType(AuraInput).first,
+      -300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Retained agent draft'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Manage skills'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Manage skills'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Edited skill'), findsOneWidget);
+  });
 
   testWidgets('validates agent details and preserves advanced managers', (
     tester,
@@ -163,7 +325,7 @@ void main() {
     expect(find.text('Selected'), findsOneWidget);
     expect(find.text('Available'), findsOneWidget);
     expect(find.text('Summarizer'), findsWidgets);
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.bySemanticsLabel('Close dialog'));
     final _ = await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
@@ -177,7 +339,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Overrides'), findsOneWidget);
     expect(find.text('Deny'), findsWidgets);
-    await tester.tap(find.byIcon(Icons.close));
+    await tester.tap(find.bySemanticsLabel('Close dialog'));
     final _ = await tester.pumpAndSettle();
 
     await _pumpAgentScreen(tester, fixture, agentId: editAgent.id);
@@ -208,6 +370,9 @@ Future<void> _pumpAgentScreen(
   ({AppDatabase database, WorkspaceEntity workspace}) fixture, {
   String? agentId,
   AgentRepository? agentRepository,
+  GoRouter? router,
+  String Function()? skillTitle,
+  List<WorkspaceSkill>? skills,
 }) async {
   final session = WorkspaceSession(
     LocalWorkspaceRef(localWorkspaceId: fixture.workspace.id),
@@ -218,10 +383,23 @@ Future<void> _pumpAgentScreen(
   final _ = await tester.runAsync(
     () => tester.pumpWidget(
       TestableApp(
-        child: AgentDetailScreen(
-          workspaceId: fixture.workspace.id,
-          agentId: agentId,
-        ),
+        child: router == null
+            ? AgentDetailScreen(
+                workspaceId: fixture.workspace.id,
+                agentId: agentId,
+              )
+            : Builder(
+                builder: (context) => MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              ),
         overrides: [
           appDatabaseProvider.overrideWithValue(fixture.database),
           agentRepositoryProvider(fixture.workspace.id).overrideWithValue(
@@ -231,17 +409,19 @@ Future<void> _pumpAgentScreen(
               .overrideWithValue(AgentToolsRepository(fixture.database)),
           cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
-            (_) async => const [
-              WorkspaceSkill(
-                source: SkillSource.user,
-                id: 'summarizer',
-                slug: 'summarizer',
-                title: 'Summarizer',
-                description: 'Summarize things.',
-                kind: .template,
-                isEnabled: true,
-              ),
-            ],
+            (_) async =>
+                skills ??
+                [
+                  WorkspaceSkill(
+                    source: SkillSource.user,
+                    id: 'summarizer',
+                    slug: 'summarizer',
+                    title: skillTitle?.call() ?? 'Summarizer',
+                    description: 'Summarize things.',
+                    kind: .template,
+                    isEnabled: true,
+                  ),
+                ],
           ),
           workspaceToolsProvider(fixture.workspace.id)
               .overrideWith(() => _FixedWorkspaceToolsNotifier(tools)),

@@ -11,15 +11,19 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/connection_unavailable_exception.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -52,6 +56,7 @@ class _ServiceConnectionEditScreenState
   bool _isDirty = false;
   String _savedSnapshot = '';
   _ConnectionEditState? _editState;
+  final _exitGuard = DraftExitGuard();
   bool _isSaving = false;
   bool _isTestingModelProvider = false;
   ModelProviderVerification? _modelProviderVerification;
@@ -111,13 +116,31 @@ class _ServiceConnectionEditScreenState
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      child: _ConnectionEditScreenView(owner: this),
-      canPop: !_isDirty,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_handleBack(context));
-      },
+    _exitGuard.bind(
+      isDirty: () => _isDirty,
+      isSaving: () => _isSaving || _isTestingModelProvider,
+      onReturn: (context) =>
+          ServiceConnectionsRoute(workspaceId: widget.workspaceId).go(context),
     );
+
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _ConnectionEditScreenView(owner: this),
+    );
+  }
+
+  void _retryLoad() {
+    ref
+      ..invalidate(serviceConnectionOperationsProvider(widget.workspaceId))
+      ..invalidate(modelConnectionStoreProvider(widget.workspaceId));
+    final future = _loadConnectionEditState(
+      ref,
+      widget.workspaceId,
+      widget.connectionId,
+    );
+    setState(() {
+      _futureValue = future;
+    });
   }
 
   void _initialize(_ConnectionEditState state) {
@@ -149,6 +172,7 @@ class _ServiceConnectionEditScreenState
       ),
       LocaleKeys.skill_credentials_save_error,
       onSaved: _markSaved,
+      onClose: () => _exitGuard.pop(context, true),
     );
     if (mounted) setState(() => _isSaving = false);
   }
@@ -167,6 +191,7 @@ class _ServiceConnectionEditScreenState
       ),
       LocaleKeys.service_connections_save_error,
       onSaved: _markSaved,
+      onClose: () => _exitGuard.pop(context, true),
     );
     if (mounted) setState(() => _isSaving = false);
   }
@@ -222,6 +247,7 @@ Future<void> _runMcpServerEditSave(
   ),
   LocaleKeys.service_connections_save_error,
   onSaved: owner._markSaved,
+  onClose: () => owner._exitGuard.pop(context, true),
 );
 
 Future<void> _saveMcpServerSettings(
@@ -331,22 +357,12 @@ extension ServiceConnectionEditUnsavedChanges
         ).name,
       });
 
-  void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
+  void _markSaved() => _refreshForm(() {
+    _savedSnapshot = _currentSnapshot();
+    _isSaving = false;
+  });
 
-  Future<void> _handleBack(BuildContext context) async {
-    if (_isSaving || !context.mounted) return;
-    if (!_isDirty) {
-      Navigator.of(context).pop();
-
-      return;
-    }
-
-    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
-    if (shouldDiscard != true || !context.mounted) return;
-
-    _refreshForm(() => _savedSnapshot = _currentSnapshot());
-    Navigator.of(context).pop();
-  }
+  Future<void> _handleBack(BuildContext context) => _exitGuard.pop(context);
 }
 
 extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
@@ -426,6 +442,7 @@ extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
       ),
       LocaleKeys.service_connections_save_error,
       onSaved: _markSaved,
+      onClose: () => _exitGuard.pop(context, true),
     );
     if (mounted) {
       _refreshForm(() {
@@ -593,7 +610,7 @@ Future<_ConnectionEditState> _loadModelOrThrow(
 ) async {
   final model = await _loadModelProviderForEdit(ref, workspaceId, connectionId);
   if (model != null) return model;
-  throw StateError('Service connection not found: $connectionId');
+  throw const ConnectionUnavailableException();
 }
 
 Future<_SkillCredentialEditState?> _loadSkillCredentialForEdit(
@@ -623,11 +640,11 @@ Future<SkillCredentialDefinitionEntity> _loadSkillCredentialDefinition(
   String workspaceId,
   String definitionId,
 ) async {
-  final definition = await ref.read(
+  final definition = await ref.refresh(
     skillCredentialDefinitionProvider(workspaceId, definitionId).future,
   );
   if (definition == null) {
-    throw StateError('Skill credential definition not found.');
+    throw const ConnectionUnavailableException();
   }
 
   return definition;
@@ -888,12 +905,13 @@ Future<void> _runEditSave(
   Future<void> Function() operation,
   String errorKey, {
   required VoidCallback onSaved,
+  required Future<void> Function() onClose,
 }) async {
   try {
     await operation();
     if (!context.mounted) return;
     onSaved();
-    Navigator.of(context).pop(true);
+    await onClose();
   } on Object {
     if (!context.mounted) return;
     _showEditSaveError(context, errorKey);
@@ -913,15 +931,19 @@ class const _ConnectionEditScreenView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraScreen(
-      child: _ConnectionEditBody(owner: owner),
-      appBar: _ConnectionEditAppBar(owner: owner),
+    return FutureBuilder<_ConnectionEditState>(
+      future: owner._future,
+      builder: (context, snapshot) => AuraScreen(
+        child: _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
+        appBar: _ConnectionEditAppBar(owner: owner, state: snapshot.data),
+      ),
     );
   }
 }
 
 class const _ConnectionEditAppBar({
   required final _ServiceConnectionEditScreenState owner,
+  required final _ConnectionEditState? state,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -929,7 +951,18 @@ class const _ConnectionEditAppBar({
   @override
   Widget build(BuildContext context) {
     return AuraAppBarWithDrawer(
-      title: const TextLocale(LocaleKeys.service_connections_edit_title),
+      title: Text(
+        state == null
+            ? LocaleKeys.service_connections_edit_title.tr()
+            : 'connection_setup.edit_named'.tr(
+                namedArgs: {
+                  'name': switch (state) {
+                    final value? => _connectionEditName(value),
+                    null => '',
+                  },
+                },
+              ),
+      ),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => owner._handleBack(context),
@@ -938,18 +971,12 @@ class const _ConnectionEditAppBar({
   }
 }
 
-class const _ConnectionEditBody({
-  required final _ServiceConnectionEditScreenState owner,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<_ConnectionEditState>(
-      future: owner._future,
-      builder: (context, snapshot) =>
-          _ConnectionEditSnapshotView(snapshot: snapshot, owner: owner),
-    );
-  }
-}
+String _connectionEditName(_ConnectionEditState state) => switch (state) {
+  _SkillCredentialEditState(:final credential) => credential.name,
+  _ModelProviderEditState(:final connection) => connection.name,
+  _GenericServiceConnectionEditState(:final connection) => connection.name,
+  _McpServerEditState(:final server) => server.name,
+};
 
 class const _ConnectionEditSnapshotView({
   required final AsyncSnapshot<_ConnectionEditState> snapshot,
@@ -958,15 +985,71 @@ class const _ConnectionEditSnapshotView({
   @override
   Widget build(BuildContext context) {
     if (snapshot.hasError) {
-      return const Center(
-        child: TextLocale(LocaleKeys.service_connections_load_error),
+      return Center(
+        child: AuraColumn(
+          children: [
+            TextLocale(switch (snapshot.error) {
+              ConnectionUnavailableException(:final localizationKey) =>
+                localizationKey,
+              _ => LocaleKeys.service_connections_load_error,
+            }),
+            if (snapshot.error is! ConnectionUnavailableException)
+              AuraButton(
+                onPressed: owner._retryLoad,
+                child: const TextLocale(LocaleKeys.route_state_retry),
+              ),
+            AuraButton(
+              onPressed: () => unawaited(owner._handleBack(context)),
+              child: const TextLocale('connection_setup.return_connections'),
+            ),
+          ],
+        ),
       );
     }
     final state = snapshot.data;
     if (state == null) return const Center(child: AuraSpinner());
     owner._initialize(state);
 
-    return _ConnectionEditFormSelector(state: state, owner: owner);
+    return Column(
+      children: [
+        _ConnectionEditIdentity(
+          state: state,
+          workspaceId: owner.widget.workspaceId,
+        ),
+        Expanded(
+          child: _ConnectionEditFormSelector(state: state, owner: owner),
+        ),
+      ],
+    );
+  }
+}
+
+class const _ConnectionEditIdentity({
+  required final _ConnectionEditState state,
+  required final String workspaceId,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workspace = ref
+        .watch(allWorkspacesProvider)
+        .value
+        ?.where((item) => item.id == workspaceId)
+        .firstOrNull;
+    final typeKey = switch (state) {
+      _ModelProviderEditState() =>
+        LocaleKeys.service_connections_type_model_provider,
+      _SkillCredentialEditState() =>
+        LocaleKeys.service_connections_type_skill_credential,
+      _GenericServiceConnectionEditState() =>
+        LocaleKeys.service_connections_type_app_skill_credential,
+      _McpServerEditState() =>
+        LocaleKeys.service_connections_filter_mcp_servers,
+    };
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Text('${typeKey.tr()} / ${workspace?.name ?? workspaceId}'),
+    );
   }
 }
 

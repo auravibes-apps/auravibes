@@ -122,8 +122,8 @@ void main() {
         appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
           appSkillSettings,
         ),
-        workspaceSkillsProvider(workspace.id).overrideWith(
-          (_) async => [
+        workspaceSkillsProvider.overrideWith(
+          (_, _) async => [
             for (final userSkill in userSkills)
               WorkspaceSkill(
                 source: SkillSource.user,
@@ -181,6 +181,58 @@ void main() {
       initialLocation: '/',
     );
   }
+
+  testWidgets('restores visible search after leaving the skills list', (
+    tester,
+  ) async {
+    final fixture = await createFixture(
+      additionalUserSkillNames: ['Translate'],
+    );
+    final router = createRouter();
+    addTearDown(router.dispose);
+    final _ = await tester.runAsync(
+      () => tester.pumpWidget(buildRouterScreen(fixture.container, router)),
+    );
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(EditableText), 'Summary');
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Translate'), findsNothing);
+    await tester.tap(find.text('Write Summary'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
+    router.pop(true);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Summary',
+    );
+    expect(find.text('Translate'), findsNothing);
+    router.go('/');
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Summary',
+    );
+    expect(find.text('Translate'), findsNothing);
+    router.go('/workspaces/B/more/skills');
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      '',
+    );
+    await tester.enterText(find.byType(EditableText), 'Translate');
+    final _ = await tester.pumpAndSettle();
+    router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'Summary',
+    );
+    expect(find.text('Translate'), findsNothing);
+  });
 
   testWidgets('renders and manages user skills from the list', (tester) async {
     final fixture = await createFixture(includeAppSkill: true);

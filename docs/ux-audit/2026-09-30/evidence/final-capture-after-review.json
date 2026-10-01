@@ -1,0 +1,26 @@
+{
+  "cwd": "/workspace/auravibes/apps/auravibes_app",
+  "command": [
+    "/tmp/aura-ux-ubuntu-run",
+    "/workspace/auravibes/apps/auravibes_app",
+    "fvm",
+    "flutter",
+    "test",
+    "test/widgets/ux_validation_layout_test.dart",
+    "--dart-define=UX_CAPTURE_DIR=/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7",
+    "--dart-define=UX_SOURCE_FINGERPRINT=4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+    "--no-pub",
+    "--reporter",
+    "expanded"
+  ],
+  "source_fingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+  "started_utc": "2026-10-01T07:35:46.303895+00:00",
+  "log": "/tmp/aura-ux-final-captures-after-review.log",
+  "exit": 0,
+  "duration_seconds": 94.677,
+  "completed_utc": "2026-10-01T07:37:20.980986+00:00",
+  "final_test_counter": {
+    "passing": 78,
+    "failing": 0
+  }
+}

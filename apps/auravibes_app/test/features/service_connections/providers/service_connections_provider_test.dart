@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/domain/models/credential_definition_usage.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
@@ -311,6 +312,14 @@ class _FakeDefinitionsRepository(List<SkillCredentialDefinitionEntity> initial)
   @override
   Future<List<SkillCredentialDefinitionEntity>> getDefinitions(
     String workspaceId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CredentialDefinitionUsage> getUsage(
+    String workspaceId,
+    String definitionId,
   ) {
     throw UnimplementedError();
   }

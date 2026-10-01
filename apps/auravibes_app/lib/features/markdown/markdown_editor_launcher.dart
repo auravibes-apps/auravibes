@@ -7,12 +7,16 @@ abstract final class MarkdownEditorLauncher {
     BuildContext context, {
     required String initialMarkdown,
     int? maxCharacters,
+    String? titleKey,
+    String? draftHintKey,
   }) {
     FocusManager.instance.primaryFocus?.unfocus();
 
     final editor = MarkdownEditorScreen(
       initialMarkdown: initialMarkdown,
       maxCharacters: maxCharacters,
+      titleKey: titleKey,
+      draftHintKey: draftHintKey,
     );
 
     return Navigator.of(context)

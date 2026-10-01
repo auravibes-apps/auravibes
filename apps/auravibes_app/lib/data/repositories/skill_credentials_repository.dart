@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
+import 'package:auravibes_app/domain/models/credential_dependency.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -119,28 +120,22 @@ class SkillCredentialsRepository({
   Future<SkillCredentialEntity> createCredential(
     String workspaceId,
     SkillCredentialToCreate credential,
-  ) async {
+  ) => _database.transaction(() async {
     final data = await _prepareCreateCredential(workspaceId, credential);
     final row = await _dao.createCredential(_createCredentialCompanion(data));
 
     return await _tableToEntity(row);
-  }
+  });
 
   Future<SkillCredentialEntity> updateCredential(
     String credentialId,
     SkillCredentialToUpdate credential,
-  ) async {
+  ) => _database.transaction(() async {
     final data = await _prepareUpdateCredential(credentialId, credential);
-    final updated = await _dao.updateCredential(
-      credentialId,
-      _updateCredentialCompanion(data),
-    );
-    if (updated == null) {
-      throw SkillCredentialsException.notFound(credentialId);
-    }
+    final updated = await _requiredUpdatedRow(credentialId, data);
 
     return await _tableToEntity(updated);
-  }
+  });
 
   Future<void> deleteCredential(String credentialId) async {
     _logDeleteStart(credentialId);
@@ -149,7 +144,24 @@ class SkillCredentialsRepository({
   }
 }
 
+extension SkillCredentialsRepositoryMetadata on SkillCredentialsRepository {
+  Future<List<CredentialDependency>> getLinkedCredentialSummaries({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) => _dao.getLinkedCredentialSummaries(
+    workspaceId: workspaceId,
+    credentialDefinitionId: credentialDefinitionId,
+  );
+}
+
 extension on SkillCredentialsRepository {
+  Future<ServiceConnectionTable> _requiredUpdatedRow(
+    String id,
+    _UpdateCredentialData data,
+  ) async =>
+      await _dao.updateCredential(id, _updateCredentialCompanion(data)) ??
+      (throw SkillCredentialsException.notFound(id));
+
   Future<_CreateCredentialData> _prepareCreateCredential(
     String workspaceId,
     SkillCredentialToCreate credential,

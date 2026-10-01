@@ -1,6 +1,7 @@
 @Tags(['golden'])
 library;
 
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
@@ -176,7 +177,10 @@ void main() {
       expect(tester.takeException(), isNull);
       await expectLater(
         find.byKey(const ValueKey('responsive-shell-golden')),
-        matchesGoldenFile('goldens/responsive_shell/${scenario.name}.png'),
+        matchesGoldenFile(
+          'goldens/responsive_shell/${scenario.name}'
+          '${Platform.isLinux ? '_linux' : ''}.png',
+        ),
       );
     }
 
@@ -313,6 +317,8 @@ void main() {
         ],
         child: MaterialApp.router(
           routerConfig: router,
+          builder: (_, child) =>
+              Portal(child: child ?? const SizedBox.shrink()),
           theme: _responsiveShellTestTheme(.light),
           darkTheme: _responsiveShellTestTheme(.dark),
           themeMode: .light,

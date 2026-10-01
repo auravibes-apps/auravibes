@@ -220,7 +220,7 @@ AuraBorderRadius _badgeBorderRadius(AuraBadgeSize size) => switch (size) {
 Color _badgeBackgroundColor(AuraBadgeVariant variant, AuraColorScheme colors) {
   if (variant == .outlined) return DesignColors.transparent;
   if (variant == .soft) return colors.primary.withValues(alpha: 0.1);
-  if (variant == .neutral) return colors.onSurfaceVariant;
+  if (variant == .neutral) return colors.surfaceVariant;
 
   return colors.colorFor(_badgeTint(variant));
 }

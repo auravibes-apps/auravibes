@@ -1,0 +1,1 @@
+{"action": "evaluate", "script": "({navigationType:performance.getEntriesByType(\"navigation\")[0].type,historyLength:history.length,url:location.href})"}

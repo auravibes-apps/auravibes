@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_workspaces/data/cloud_workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_workspaces/models/cloud_workspace_state.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -39,8 +40,19 @@ extension CloudWorkspaceUseCasesCore on CloudWorkspaceUseCases {
     return _viewState(results);
   }
 
-  Future<WorkspaceEntity> attach(CloudWorkspaceSummary workspace) {
-    return _workspaceRepository.upsertCloudWorkspaceMirror(
+  Future<WorkspaceEntity> attach(CloudWorkspaceSummary workspace) async {
+    final account = cloudAccountKey(_serverUrl, _cloudAccountId);
+    final mirrors = (await _workspaceRepository.getAllWorkspaces()).where(
+      (item) =>
+          item.cloudWorkspaceId == workspace.id.toString() &&
+          item.cloudAccount?.serverUrl == account.serverUrl,
+    );
+    final existing =
+        mirrors.where((item) => item.cloudAccount == account).firstOrNull ??
+        mirrors.firstOrNull;
+    if (existing != null) return existing;
+
+    return await _workspaceRepository.upsertCloudWorkspaceMirror(
       cloudWorkspaceId: workspace.id.toString(),
       cloudAccountId: _cloudAccountId,
       name: workspace.name,
@@ -318,11 +330,18 @@ extension on CloudWorkspaceUseCases {
     WorkspaceEntity workspace, {
     required String cloudWorkspaceId,
     required String cloudAccountId,
-  }) => _workspaceRepository.deleteCloudWorkspaceMirror(
-    cloudWorkspaceId: cloudWorkspaceId,
-    cloudAccountId: cloudAccountId,
-    serverUrl: workspace.url ?? _serverUrl,
-  );
+  }) async {
+    final removed = await _workspaceRepository.deleteCloudWorkspaceMirror(
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: workspace.url ?? _serverUrl,
+    );
+    if (!removed) {
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    }
+  }
 }
 
 class const AppCloudWorkspaceException(final String localizationKey)

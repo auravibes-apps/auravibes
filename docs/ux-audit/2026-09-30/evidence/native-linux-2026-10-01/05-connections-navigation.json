@@ -1,0 +1,26 @@
+{
+  "instanceId": "ux-final-20261001-0810",
+  "manifest": "/workspace/auravibes/.dart_tool/marionette/instances/ux-final-20261001-0810.json",
+  "appFlavor": "dev",
+  "request": {
+    "name": "tap",
+    "arguments": {
+      "coordinates": {
+        "x": 83,
+        "y": 268
+      }
+    }
+  },
+  "identity_verified": true,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Tapped element matching: {x: 83.0, y: 268.0}"
+      }
+    ]
+  },
+  "status": "PASS",
+  "bridge_stop_exit": -15,
+  "duration_seconds": 2.827
+}

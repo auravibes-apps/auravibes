@@ -1,4 +1,5 @@
 // Required: Feature widgets keep closely related private widgets together.
+
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -22,7 +23,7 @@ const _moreTiles = [
     kind: .cloudAccounts,
     icon: Icons.manage_accounts_outlined,
     titleKey: LocaleKeys.cloud_accounts_title,
-    subtitleKey: LocaleKeys.cloud_accounts_empty,
+    subtitleKey: LocaleKeys.navigation_accounts_scope,
   ),
   _MoreTileSpec(
     kind: .serviceConnections,
@@ -78,7 +79,15 @@ class const _MoreTileList({required final String workspaceId})
   @override
   Widget build(BuildContext context) => AuraList(
     children: [
-      for (final tile in _moreTiles)
+      const TextLocale(LocaleKeys.related_lists_workspace_group),
+      for (final tile in _moreTiles.where(
+        (tile) => tile.kind != .cloudAccounts && tile.kind != .workspaces,
+      ))
+        _MoreTile(spec: tile, workspaceId: workspaceId),
+      const TextLocale(LocaleKeys.related_lists_app_group),
+      for (final tile in _moreTiles.where(
+        (tile) => tile.kind == .cloudAccounts || tile.kind == .workspaces,
+      ))
         _MoreTile(spec: tile, workspaceId: workspaceId),
     ],
   );

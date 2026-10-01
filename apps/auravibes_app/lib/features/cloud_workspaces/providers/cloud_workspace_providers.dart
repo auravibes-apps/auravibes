@@ -1,65 +1,105 @@
-// ignore_for_file: implementation_imports, newline-before-return
-
-// Hooks Riverpod publicly exports providers implemented under riverpod/lib/src.
-
-import 'package:auravibes_app/app_env_config.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/resolve_cloud_account_usecase.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final FutureProviderFamily<CloudWorkspaceUseCases?, String>
-cloudWorkspaceUseCasesProvider =
-    FutureProvider.family<CloudWorkspaceUseCases?, String>((ref, userId) async {
-      final client = await ref.watch(
-        serverpodClientForAccountProvider((
-          serverUrl: AppEnvConfig.auravibesServerUrl,
-          accountId: userId,
-        )).future,
-      );
-      if (client == null) return null;
+part 'cloud_workspace_providers.g.dart';
 
-      return CloudWorkspaceUseCases(
-        cloudRepository: .new(client),
-        workspaceRepository: ref.watch(workspaceRepositoryProvider),
-        cloudAccountId: userId,
-        serverUrl: AppEnvConfig.auravibesServerUrl,
-      );
-    });
+typedef CloudWorkspaceDetailKey = ({
+  String serverUrl,
+  String accountId,
+  int workspaceId,
+});
+typedef CloudWorkspaceRouteKey = ({
+  String accountId,
+  int workspaceId,
+  String? serverUrl,
+});
 
-final FutureProviderFamily<CloudWorkspaceViewState?, String>
-cloudWorkspaceStateProvider =
-    FutureProvider.family<CloudWorkspaceViewState?, String>((
-      ref,
-      userId,
-    ) async {
-      final useCases = await ref.watch(
-        cloudWorkspaceUseCasesProvider(userId).future,
-      );
+@riverpod
+Future<CloudWorkspaceUseCases?> cloudWorkspaceUseCases(
+  Ref ref,
+  CloudAccountKey key,
+) async {
+  final client = await ref.watch(serverpodClientForAccountProvider(key).future);
+  if (client == null) return null;
 
-      try {
-        return await useCases?.load();
-      } on CloudWorkspaceException catch (error) {
-        if (error.code != CloudWorkspaceErrorCode.authenticationRequired) {
-          rethrow;
-        }
+  return CloudWorkspaceUseCases(
+    cloudRepository: .new(client),
+    workspaceRepository: ref.watch(workspaceRepositoryProvider),
+    cloudAccountId: key.accountId,
+    serverUrl: key.serverUrl,
+  );
+}
 
-        return const CloudWorkspaceViewState.authenticationRequired();
-      }
-    });
+@riverpod
+Future<CloudWorkspaceViewState?> cloudWorkspaceState(
+  Ref ref,
+  CloudAccountKey key,
+) async {
+  final health = await ref.watch(cloudAccountHealthProvider(key).future);
+  if (health.status == .needsSignIn) {
+    return const CloudWorkspaceViewState.authenticationRequired();
+  }
+  if (health.status == .unknown) {
+    throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
+  }
+  final useCases = await ref.watch(cloudWorkspaceUseCasesProvider(key).future);
+  if (useCases == null) {
+    throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
+  }
+  try {
+    return await useCases.load();
+  } on CloudWorkspaceException catch (error) {
+    if (!CheckCloudAccountUsecase.requiresSignIn(error)) rethrow;
+    ref.invalidate(cloudAccountHealthProvider(key));
 
-typedef CloudWorkspaceDetailKey = ({String accountId, int workspaceId});
+    return const CloudWorkspaceViewState.authenticationRequired();
+  }
+}
 
-final FutureProviderFamily<CloudWorkspaceDetailState?, CloudWorkspaceDetailKey>
-cloudWorkspaceDetailProvider =
-    FutureProvider.family<CloudWorkspaceDetailState?, CloudWorkspaceDetailKey>((
-      ref,
-      key,
-    ) async {
-      final useCases = await ref.watch(
-        cloudWorkspaceUseCasesProvider(key.accountId).future,
-      );
+@riverpod
+Future<CloudWorkspaceDetailState?> cloudWorkspaceDetail(
+  Ref ref,
+  CloudWorkspaceDetailKey key,
+) async {
+  final account = cloudAccountKey(key.serverUrl, key.accountId);
+  final useCases = await ref.watch(
+    cloudWorkspaceUseCasesProvider(account).future,
+  );
+  if (useCases == null) {
+    throw const AppCloudWorkspaceException(LocaleKeys.cloud_errors_unavailable);
+  }
+  try {
+    return await useCases.loadDetail(key.workspaceId);
+  } on CloudWorkspaceException catch (error) {
+    if (CheckCloudAccountUsecase.requiresSignIn(error)) {
+      ref.invalidate(cloudAccountHealthProvider(account));
+    }
+    rethrow;
+  }
+}
 
-      return await useCases?.loadDetail(key.workspaceId);
-    });
+/// Old links may omit origin; resolving an ambiguous identity fails closed.
+@riverpod
+Future<CloudAccountKey> cloudWorkspaceRouteAccount(
+  Ref ref,
+  CloudWorkspaceRouteKey key,
+) async {
+  final accounts = await ref.watch(cloudAccountsProvider.future);
+  final mirrors = await ref.watch(allWorkspacesProvider.future);
+
+  return ResolveCloudAccountUsecase.call(
+    accountId: key.accountId,
+    accounts: accounts,
+    mirrors: mirrors,
+    workspaceId: key.workspaceId,
+    serverUrl: key.serverUrl,
+  );
+}

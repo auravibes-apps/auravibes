@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
@@ -64,9 +65,13 @@ const _discardModelProviderChangesActions = AuraConfirmDialogActions(
   cancelLabel: TextLocale(LocaleKeys.models_screens_add_provider_keep_editing),
 );
 
+/// Standalone forms own confirmation and reset. Embedded forms share their
+/// enclosing route's [routeExitGuard] for Back and Cancel. [onCreated]
+/// completes through that owner after a successful provider mutation.
 class const AddModelProviderWidget({
   required final String workspaceId,
   super.key,
+  final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
   final bool showHeader = true,
@@ -77,13 +82,17 @@ class const AddModelProviderWidget({
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final content = _AddModelProviderContent(
+      workspaceId: workspaceId,
+      showHeader: showHeader,
+      routeExitGuard: routeExitGuard,
+      onCreated: onCreated,
+      onCancel: onCancel,
+    );
+    if (routeExitGuard != null) return content;
+
     return PopScope(
-      child: _AddModelProviderContent(
-        workspaceId: workspaceId,
-        showHeader: showHeader,
-        onCreated: onCreated,
-        onCancel: onCancel,
-      ),
+      child: content,
       canPop: !_watchHasUnsavedModelProviderChanges(ref, workspaceId),
       onPopInvokedWithResult: _modelProviderPopCallback((
         context: context,
@@ -134,6 +143,7 @@ bool _readHasUnsavedModelProviderChanges(WidgetRef ref, String workspaceId) =>
 class const _AddModelProviderContent({
   required final String workspaceId,
   required final bool showHeader,
+  final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
 }) extends HookConsumerWidget {
@@ -149,6 +159,7 @@ class const _AddModelProviderContent({
       ref: ref,
       workspaceId: workspaceId,
       showHeader: showHeader,
+      routeExitGuard: routeExitGuard,
       onCreated: onCreated,
       onCancel: onCancel,
     );
@@ -162,6 +173,7 @@ class const _AddModelProviderContentView({
   required final WidgetRef ref,
   required final String workspaceId,
   required final bool showHeader,
+  final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
 }) extends StatelessWidget {
@@ -174,6 +186,7 @@ class const _AddModelProviderContentView({
           runtime: runtime,
           workspaceId: workspaceId,
           showHeader: showHeader,
+          routeExitGuard: routeExitGuard,
           onCreated: onCreated,
           onCancel: onCancel,
         )
@@ -187,12 +200,28 @@ class const _AddModelProviderSessionContent({
   required final _AddModelProviderRuntime runtime,
   required final String workspaceId,
   required final bool showHeader,
+  final DraftExitGuard? routeExitGuard,
   final VoidCallback? onCreated,
   final VoidCallback? onCancel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => switch (session) {
-    AsyncLoading() || AsyncError() => const Center(child: AuraSpinner()),
+    AsyncLoading() => const Center(child: AuraSpinner()),
+    AsyncError() => AuraColumn(
+      children: [
+        const TextLocale('connection_setup.provider_load_error'),
+        AuraButton(
+          onPressed: () =>
+              ref.invalidate(workspaceSessionForRouteProvider(workspaceId)),
+          child: const TextLocale(LocaleKeys.route_state_retry),
+        ),
+        if (onCancel case final cancel?)
+          AuraButton(
+            onPressed: cancel,
+            child: const TextLocale(LocaleKeys.common_cancel),
+          ),
+      ],
+    ),
     AsyncData(:final value) => _AddModelProviderForm(
       data: _addModelProviderFormData(_request(value)),
     ),
@@ -205,6 +234,7 @@ class const _AddModelProviderSessionContent({
     capabilities: value.capabilities,
     workspaceId: workspaceId,
     showHeader: showHeader,
+    routeExitGuard: routeExitGuard,
     onCreated: onCreated,
     onCancel: onCancel,
   );
@@ -217,6 +247,7 @@ typedef _AddModelProviderFormRequest = ({
   WorkspaceCapabilities capabilities,
   String workspaceId,
   bool showHeader,
+  DraftExitGuard? routeExitGuard,
   VoidCallback? onCreated,
   VoidCallback? onCancel,
 });
@@ -302,6 +333,7 @@ VoidCallback _closeModelProviderFormCallback(
         ref: request.ref,
         workspaceId: request.workspaceId,
         onCancel: request.onCancel,
+        routeExitGuard: request.routeExitGuard,
       ),
     );
 
@@ -325,22 +357,30 @@ Future<void> _closeModelProviderForm({
   required WidgetRef ref,
   required String workspaceId,
   VoidCallback? onCancel,
-}) => _runAfterModelProviderDiscard(
-  context: context,
-  ref: ref,
-  workspaceId: workspaceId,
-  onDiscard: () {
-    _resetModelProviderState(ref, workspaceId)();
+  DraftExitGuard? routeExitGuard,
+}) async {
+  if (routeExitGuard != null) {
+    await routeExitGuard.pop(context);
 
-    if (onCancel case final callback?) {
-      callback();
+    return;
+  }
+  await _runAfterModelProviderDiscard(
+    context: context,
+    ref: ref,
+    workspaceId: workspaceId,
+    onDiscard: () {
+      _resetModelProviderState(ref, workspaceId)();
 
-      return;
-    }
+      if (onCancel case final callback?) {
+        callback();
 
-    Navigator.of(context).pop();
-  },
-);
+        return;
+      }
+
+      Navigator.of(context).pop();
+    },
+  );
+}
 
 Future<void> _runAfterModelProviderDiscard({
   required BuildContext context,
@@ -774,6 +814,12 @@ class const _AddModelProviderForm({
         onBack: _callbacks.onModelBack,
       ),
       Flexible(child: _AddModelProviderFormScroll(data: data)),
+      if (!_request.showHeader && _request.routeExitGuard != null)
+        AuraButton(
+          onPressed: _callbacks.onClose,
+          child: const TextLocale(LocaleKeys.common_cancel),
+          variant: .outlined,
+        ),
     ],
   );
 }
@@ -1455,7 +1501,11 @@ class const _CodexBrowserAction({
   @override
   Widget build(BuildContext _) {
     if (!_supportsCodexBrowser(values)) {
-      return const SizedBox.shrink();
+      if (!values.request.runtime.selection.isCodex) {
+        return const SizedBox.shrink();
+      }
+
+      return const TextLocale('connection_setup.browser_restriction');
     }
 
     return _CodexBrowserCreateButton(
@@ -1489,7 +1539,7 @@ class const _CodexDeviceAction({
           state: state,
           callbacks: callbacks,
         )
-      : const SizedBox.shrink();
+      : const TextLocale('connection_setup.device_restriction');
 }
 
 bool _supportsCodexDevice(_AddModelProviderFormValues values) {

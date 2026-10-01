@@ -9,7 +9,7 @@ Use for Serverpod/server/backend/cloud workspace tasks in this repo.
 
 ## Current Setup
 
-- Serverpod version: `4.0.0-rc.2`.
+- Serverpod version: `4.0.3`; use the exact pins in the server and generated-client pubspecs.
 - Server app: `apps/auravibes_server`.
 - Generated client package: `packages/auravibes_server_client`.
 - Flutter app consumes the generated client from `apps/auravibes_app`.

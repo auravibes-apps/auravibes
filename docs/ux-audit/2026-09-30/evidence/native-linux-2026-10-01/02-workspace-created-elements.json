@@ -1,0 +1,21 @@
+{
+  "instanceId": "ux-final-20261001-0810",
+  "manifest": "/workspace/auravibes/.dart_tool/marionette/instances/ux-final-20261001-0810.json",
+  "appFlavor": "dev",
+  "request": {
+    "name": "get_interactive_elements",
+    "arguments": {}
+  },
+  "identity_verified": true,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Found 9 interactive element(s):\n\nType: Text, Text: \"Workspace created\", data: \"Workspace created\", bounds: {\"x\":404.0,\"y\":24.0,\"width\":472.0,\"height\":36.0}, visible: true\nType: Text, Text: \"Your workspace is saved. Connect AI and choose a model to chat, or set up AI later.\", data: \"Your workspace is saved. Connect AI and choose a model to chat, or set up AI later.\", bounds: {\"x\":404.0,\"y\":72.0,\"width\":472.0,\"height\":40.0}, visible: true\nType: Text, Text: \"UX Audit Local\", data: \"UX Audit Local\", bounds: {\"x\":404.0,\"y\":136.0,\"width\":472.0,\"height\":20.0}, visible: true\nType: AuraButton, Key: \"intro_connect_ai_button\", bounds: {\"x\":404.0,\"y\":156.0,\"width\":472.0,\"height\":48.0}, visible: true\nType: GestureDetector, startBehavior: \"DragStartBehavior.start\", bounds: {\"x\":404.0,\"y\":156.0,\"width\":472.0,\"height\":48.0}, visible: true\nType: Text, Text: \"Connect AI\", data: \"Connect AI\", bounds: {\"x\":597.65234375,\"y\":168.0,\"width\":84.6953125,\"height\":24.0}, visible: true\nType: AuraButton, Key: \"intro_skip_ai_button\", bounds: {\"x\":404.0,\"y\":204.0,\"width\":472.0,\"height\":48.0}, visible: true\nType: GestureDetector, startBehavior: \"DragStartBehavior.start\", bounds: {\"x\":404.0,\"y\":204.0,\"width\":472.0,\"height\":48.0}, visible: true\nType: Text, Text: \"Skip for now\", data: \"Skip for now\", bounds: {\"x\":592.2403869628906,\"y\":216.0,\"width\":95.51922607421875,\"height\":24.0}, visible: true\n"
+      }
+    ]
+  },
+  "status": "PASS",
+  "bridge_stop_exit": -15,
+  "duration_seconds": 2.61
+}

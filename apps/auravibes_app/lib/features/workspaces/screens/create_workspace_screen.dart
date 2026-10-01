@@ -1,4 +1,4 @@
-import 'package:auravibes_app/features/workspaces/screens/create_workspace_form.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_setup_content.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -34,9 +34,11 @@ class const _CreateWorkspaceContent({required final String workspaceId})
     padding: const EdgeInsets.all(16)
         .copyWith(bottom: BottomPadding.of(context)),
     children: [
-      CreateWorkspaceForm(
+      WorkspaceSetupContent(
+        taskId: WorkspaceCreateRoute(workspaceId: workspaceId).location,
         onCreated: (workspace) => _openWorkspace(context, workspace.id),
-        onAddCloudAccount: () => _addCloudAccount(context),
+        onReturn: () =>
+            WorkspaceManagementRoute(workspaceId: workspaceId).go(context),
       ),
     ],
     keyboardDismissBehavior: .onDrag,
@@ -44,15 +46,6 @@ class const _CreateWorkspaceContent({required final String workspaceId})
 
   void _openWorkspace(BuildContext context, String workspaceId) =>
       context.go(NewChatRoute(workspaceId: workspaceId).location);
-
-  void _addCloudAccount(BuildContext context) {
-    context.go(
-      CloudAccountAddRoute(
-        workspaceId: workspaceId,
-        returnPath: WorkspaceCreateRoute(workspaceId: workspaceId).location,
-      ).location,
-    );
-  }
 }
 
 class const _CreateWorkspaceAppBar()

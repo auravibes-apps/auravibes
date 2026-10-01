@@ -1,4 +1,5 @@
 // Required: Feature widgets keep closely related private widgets together.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/agent_list_query.dart';
@@ -8,6 +9,8 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/duplicate_agent_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/widgets/agent_availability_summary.dart';
+import 'package:auravibes_app/features/agents/widgets/agents_skills_tabs.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
@@ -39,7 +42,10 @@ class const AgentsScreen({required final String workspaceId, super.key})
 
     return AuraScreen(
       child: _AgentsContent(agentsAsync: agentsAsync, workspaceId: workspaceId),
-      appBar: _AgentsAppBar(onCreate: () => _openCreate(context, ref)),
+      appBar: _AgentsAppBar(
+        workspaceId: workspaceId,
+        onCreate: () => _openCreate(context, ref),
+      ),
     );
   }
 
@@ -87,11 +93,12 @@ class _AgentsContent extends StatelessWidget {
   Widget build(BuildContext _) => _child;
 }
 
-class const _AgentsAppBar({required final VoidCallback onCreate})
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _AgentsAppBar({
+  required final String workspaceId,
+  required final VoidCallback onCreate,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
 
   @override
   Widget build(BuildContext context) {
@@ -104,17 +111,7 @@ class const _AgentsAppBar({required final VoidCallback onCreate})
           tooltip: LocaleKeys.agents_create.tr(context: context),
         ),
       ],
-      leading: const _AgentsBackButton(),
-    );
-  }
-}
-
-class const _AgentsBackButton() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
-      icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
+      bottom: AgentsSkillsTabs(workspaceId: workspaceId, value: .agents),
     );
   }
 }
@@ -767,6 +764,10 @@ class const _AgentListItemDetails({required final AgentListItem agent})
       children: [
         _AgentNameRow(agent: agent),
         _AgentSkillCount(agent: agent),
+        AgentAvailabilitySummary(
+          isEnabled: agent.isEnabled,
+          visibility: agent.visibility,
+        ),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,

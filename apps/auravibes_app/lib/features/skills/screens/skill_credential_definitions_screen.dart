@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_credential_definition_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -36,20 +37,38 @@ class const _SkillCredentialDefinitionsBody({
   required final String workspaceId,
   required final AsyncValue<List<SkillCredentialDefinitionEntity>>
   definitionsAsync,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => switch (definitionsAsync) {
-    AsyncData(:final value) => _CredentialDefinitionsData(
-      definitions: value,
-      workspaceId: workspaceId,
-    ),
-    AsyncLoading(value: final value?, hasValue: true) =>
-      _CredentialDefinitionsLoading(definitions: value),
-    AsyncLoading() => const Center(child: AuraSpinner()),
-    AsyncError() => const Center(
-      child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
-    ),
-  };
+  Widget build(BuildContext context, WidgetRef ref) =>
+      switch (definitionsAsync) {
+        AsyncData(:final value) => _CredentialDefinitionsData(
+          definitions: value,
+          workspaceId: workspaceId,
+        ),
+        AsyncLoading(value: final value?, hasValue: true) =>
+          _CredentialDefinitionsLoading(definitions: value),
+        AsyncLoading() => const Center(child: AuraSpinner()),
+        AsyncError() => Center(
+          child: AuraColumn(
+            children: [
+              const TextLocale(LocaleKeys.skill_credentials_definitions_error),
+              AuraButton(
+                onPressed: () => ref.invalidate(
+                  skillCredentialDefinitionsProvider(workspaceId),
+                ),
+                child: const TextLocale(LocaleKeys.route_state_retry),
+              ),
+              AuraButton(
+                onPressed: () => ServiceConnectionsRoute(
+                  workspaceId: workspaceId,
+                  view: 'credentials',
+                ).go(context),
+                child: const TextLocale('connection_setup.return_connections'),
+              ),
+            ],
+          ),
+        ),
+      };
 }
 
 class const _CredentialDefinitionsData({
@@ -355,7 +374,6 @@ class const _SkillCredentialDefinitionsAppBar({
   Widget build(BuildContext context) => AuraAppBarWithDrawer(
     title: const TextLocale(LocaleKeys.skill_credentials_definitions_title),
     actions: [_SkillCredentialDefinitionAddButton(workspaceId: workspaceId)],
-    leading: const _SkillCredentialDefinitionsBackButton(),
   );
 }
 
@@ -368,13 +386,5 @@ class const _SkillCredentialDefinitionAddButton({
     onPressed: () => context.push(
       '/workspaces/$workspaceId/more/skill-credential-definitions/new',
     ),
-  );
-}
-
-class const _SkillCredentialDefinitionsBackButton() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraIconButton(
-    icon: Icons.arrow_back,
-    onPressed: () => Navigator.of(context).pop(),
   );
 }

@@ -3,12 +3,18 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
+import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_health_status.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/cloud_workspaces/widgets/cloud_workspace_connect_list.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/usecases/delete_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/duplicate_workspace_use_case.dart';
 import 'package:auravibes_app/features/workspaces/usecases/edit_workspace_use_case.dart';
@@ -53,15 +59,20 @@ enum _WorkspaceSort { nameAscending, nameDescending }
 
 class const WorkspaceManagementScreen({
   required final String workspaceId,
+  final bool connectView = false,
   super.key,
 }) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) =>
-      _WorkspaceManagementView(workspaceId: workspaceId);
+  Widget build(BuildContext context, WidgetRef ref) => _WorkspaceManagementView(
+    workspaceId: workspaceId,
+    connectView: connectView,
+  );
 }
 
-class const _WorkspaceManagementView({required final String workspaceId})
-    extends ConsumerWidget {
+class const _WorkspaceManagementView({
+  required final String workspaceId,
+  required final bool connectView,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
@@ -71,6 +82,7 @@ class const _WorkspaceManagementView({required final String workspaceId})
     );
 
     return _WorkspaceManagementLayout(
+      connectView: connectView,
       activeWorkspaceId: workspaceId,
       accounts: accounts,
       editingWorkspace: editingWorkspace,
@@ -80,6 +92,7 @@ class const _WorkspaceManagementView({required final String workspaceId})
 }
 
 class const _WorkspaceManagementLayout({
+  required final bool connectView,
   required final String activeWorkspaceId,
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
@@ -89,6 +102,7 @@ class const _WorkspaceManagementLayout({
   Widget build(BuildContext context) {
     return AuraScreen(
       child: _WorkspaceManagementContent(
+        connectView: connectView,
         activeWorkspaceId: activeWorkspaceId,
         accounts: accounts,
         editingWorkspace: editingWorkspace,
@@ -109,19 +123,22 @@ class const _WorkspaceManagementAppBar()
   Widget build(BuildContext context) {
     return AuraAppBarWithDrawer(
       title: const TextLocale(LocaleKeys.workspace_management_title),
-      leading: Semantics(
-        key: const ValueKey<String>('workspace_management_back'),
-        child: AuraIconButton(
-          icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        identifier: 'workspace_management_back',
-      ),
+      leading: Navigator.of(context).canPop()
+          ? Semantics(
+              key: const ValueKey<String>('workspace_management_back'),
+              child: AuraIconButton(
+                icon: Icons.arrow_back,
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              identifier: 'workspace_management_back',
+            )
+          : null,
     );
   }
 }
 
 class const _WorkspaceManagementContent({
+  required final bool connectView,
   required final String activeWorkspaceId,
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
@@ -131,6 +148,7 @@ class const _WorkspaceManagementContent({
   Widget build(BuildContext context) {
     return switch (workspaces) {
       AsyncData(:final value) => _WorkspaceList(
+        connectView: connectView,
         activeWorkspaceId: activeWorkspaceId,
         accounts: accounts,
         editingWorkspace: editingWorkspace,
@@ -145,6 +163,7 @@ class const _WorkspaceManagementContent({
 }
 
 class const _WorkspaceList({
+  required final bool connectView,
   required final String activeWorkspaceId,
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
@@ -152,6 +171,7 @@ class const _WorkspaceList({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => _WorkspaceListView(
+    connectView: connectView,
     activeWorkspaceId: activeWorkspaceId,
     accounts: accounts,
     editingWorkspace: editingWorkspace,
@@ -160,6 +180,7 @@ class const _WorkspaceList({
 }
 
 class const _WorkspaceListView({
+  required final bool connectView,
   required final String activeWorkspaceId,
   required final AsyncValue<List<CloudAccountSession>> accounts,
   required final WorkspaceEntity? editingWorkspace,
@@ -248,7 +269,7 @@ class _WorkspaceListViewState extends ConsumerState<_WorkspaceListView> {
     if (selected.isEmpty || _isBulkDeleting) return;
     final confirmed = await _confirmWorkspaceBulkDelete(
       context,
-      selected.length,
+      selected,
       _data().hiddenSelectedCount,
     );
     if (confirmed != true || !context.mounted) return;
@@ -279,20 +300,64 @@ List<WorkspaceEntity> _selectedWorkspaces(
 
 Future<bool?> _confirmWorkspaceBulkDelete(
   BuildContext context,
-  int selectedCount,
+  List<WorkspaceEntity> selected,
   int hiddenCount,
-) => AuraDialogs.confirm(
-  context: context,
-  title: const TextLocale(LocaleKeys.workspace_management_bulk_delete_title),
-  message: ManagementListFeedback.confirmationMessage(
-    context,
-    LocaleKeys.workspace_management_bulk_delete_confirm,
-    selectedCount: selectedCount,
-    hiddenCount: hiddenCount,
-  ),
-  actions: _deleteConfirmationActions,
-  isDestructive: true,
-);
+) {
+  final local = _localWorkspaces(selected);
+  final cloud = _connectedWorkspaces(selected);
+  final title = switch ((local: local.isEmpty, cloud: cloud.isEmpty)) {
+    (local: true, cloud: _) =>
+      LocaleKeys.workspace_management_bulk_remove_cloud,
+    (local: _, cloud: true) =>
+      LocaleKeys.workspace_management_bulk_delete_local,
+    _ => LocaleKeys.workspace_management_bulk_delete_mixed,
+  };
+  final action = switch ((local: local.isEmpty, cloud: cloud.isEmpty)) {
+    (local: true, cloud: _) => LocaleKeys.common_remove,
+    (local: _, cloud: true) => LocaleKeys.common_delete,
+    _ => LocaleKeys.workspace_management_bulk_delete_and_remove,
+  };
+
+  return AuraDialogs.confirm(
+    context: context,
+    title: TextLocale(title),
+    message: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
+        children: [
+          if (local.isNotEmpty) ...[
+            Text(
+              LocaleKeys.workspace_management_bulk_local_consequence.tr(
+                namedArgs: {'count': local.length.toString()},
+              ),
+            ),
+            for (final workspace in local) Text(workspace.name),
+          ],
+          if (cloud.isNotEmpty) ...[
+            Text(
+              LocaleKeys.workspace_management_bulk_cloud_consequence.tr(
+                namedArgs: {'count': cloud.length.toString()},
+              ),
+            ),
+            for (final workspace in cloud) Text(workspace.name),
+          ],
+          if (hiddenCount > 0)
+            Text(
+              LocaleKeys.workspace_management_bulk_hidden_included.tr(
+                namedArgs: {'count': hiddenCount.toString()},
+              ),
+            ),
+        ],
+      ),
+    ),
+    actions: .new(
+      confirmLabel: TextLocale(action),
+      cancelLabel: const TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
+}
 
 void _showWorkspaceBulkDeleteFailures(
   BuildContext context,
@@ -321,6 +386,7 @@ _WorkspaceListSource _workspaceListSource(
   bool isBulkDeleting,
 ) => (
   activeWorkspaceId: widget.activeWorkspaceId,
+  connectView: widget.connectView,
   accounts: widget.accounts,
   editingWorkspace: widget.editingWorkspace,
   searchQuery: _foldWorkspaceSearch(searchQuery.trim()),
@@ -568,12 +634,13 @@ List<CloudWorkspaceSummary> _matchingCloudWorkspaces(
 
 bool _isAvailableCloudWorkspace(
   CloudWorkspaceSummary workspace,
-  String accountId,
+  CloudAccountKey account,
   List<WorkspaceEntity> localWorkspaces,
 ) => !localWorkspaces.any(
   (local) =>
       local.cloudWorkspaceId == workspace.id.toString() &&
-      local.cloudAccountId == accountId,
+      local.cloudAccountId == account.accountId &&
+      local.cloudAccount?.serverUrl == account.serverUrl,
 );
 
 List<CloudWorkspaceSummary> _availableCloudWorkspaces(
@@ -582,11 +649,8 @@ List<CloudWorkspaceSummary> _availableCloudWorkspaces(
   List<WorkspaceEntity> localWorkspaces,
 ) => workspaces
     .where(
-      (workspace) => _isAvailableCloudWorkspace(
-        workspace,
-        account.userId,
-        localWorkspaces,
-      ),
+      (workspace) =>
+          _isAvailableCloudWorkspace(workspace, account.key, localWorkspaces),
     )
     .toList();
 
@@ -609,7 +673,7 @@ List<_CloudAccountWorkspaceState> _watchCloudAccountStates(
   for (final account in accounts)
     (
       account: account,
-      state: ref.watch(cloudWorkspaceStateProvider(account.userId)),
+      state: ref.watch(cloudWorkspaceStateProvider(account.key)),
     ),
 ];
 
@@ -620,7 +684,7 @@ bool _isMatchingAvailableCloudWorkspace(
   List<WorkspaceEntity> localWorkspaces,
 ) =>
     _matchesWorkspaceName(workspace.name, query) &&
-    _isAvailableCloudWorkspace(workspace, account.userId, localWorkspaces);
+    _isAvailableCloudWorkspace(workspace, account.key, localWorkspaces);
 
 bool _hasMatchingAvailableCloudWorkspace({
   required AsyncValue<CloudWorkspaceViewState?> state,
@@ -629,23 +693,21 @@ bool _hasMatchingAvailableCloudWorkspace({
 }) => switch (state) {
   AsyncData(value: final value?) when !value.authenticationRequired =>
     value.workspaces.any(
-      (workspace) => _isMatchingAvailableCloudWorkspace(
-        workspace,
-        data.searchQuery,
-        account,
-        data.workspaces,
-      ),
-    ),
+          (workspace) => _isMatchingAvailableCloudWorkspace(
+            workspace,
+            data.searchQuery,
+            account,
+            data.workspaces,
+          ),
+        ) ||
+        value.pendingInvites.any(
+          (invite) =>
+              _matchesWorkspaceName(invite.workspaceName, data.searchQuery),
+        ),
   AsyncData() || AsyncLoading() || AsyncError() => false,
 };
 
-bool _hasNoCloudAccounts(AsyncValue<List<CloudAccountSession>> accounts) =>
-    switch (accounts) {
-      AsyncData(:final value) => value.isEmpty,
-      AsyncLoading() || AsyncError() => false,
-    };
-
-Set<String> _matchingCloudAccountIds(
+Set<CloudAccountKey> _matchingCloudAccountIds(
   List<_CloudAccountWorkspaceState> accountStates,
   _WorkspaceListData data,
 ) => {
@@ -655,7 +717,7 @@ Set<String> _matchingCloudAccountIds(
       account: accountState.account,
       data: data,
     ))
-      accountState.account.userId,
+      accountState.account.key,
 };
 
 bool _areCloudAccountStatesLoaded(
@@ -666,25 +728,21 @@ bool _areCloudAccountStatesLoaded(
 
 bool _shouldShowNoSearchResults(
   _WorkspaceListData data,
-  Set<String> matchingAccountIds,
+  Set<CloudAccountKey> matchingAccountIds,
   bool allCloudStatesLoaded,
-) =>
-    data.isSearchActive &&
-    allCloudStatesLoaded &&
-    data.local.isEmpty &&
-    data.connected.isEmpty &&
-    matchingAccountIds.isEmpty;
+) => data.isSearchActive && allCloudStatesLoaded && matchingAccountIds.isEmpty;
 
 bool _shouldShowCloudAccount(
   _CloudAccountWorkspaceState accountState,
   _WorkspaceListData data,
-  Set<String> matchingAccountIds,
+  Set<CloudAccountKey> matchingAccountIds,
 ) =>
     !data.isSearchActive ||
-    matchingAccountIds.contains(accountState.account.userId) ||
+    matchingAccountIds.contains(accountState.account.key) ||
     !_hasLoadedCloudWorkspaceData(accountState.state);
 
 typedef _WorkspaceListSource = ({
+  bool connectView,
   String activeWorkspaceId,
   AsyncValue<List<CloudAccountSession>> accounts,
   WorkspaceEntity? editingWorkspace,
@@ -714,6 +772,7 @@ class _WorkspaceListData {
     required _WorkspaceListResults results,
     required _WorkspaceSelectionData selection,
   }) : activeWorkspaceId = source.activeWorkspaceId,
+       connectView = source.connectView,
        accounts = source.accounts,
        editingWorkspace = source.editingWorkspace,
        isSearchActive = results.isSearchActive,
@@ -730,6 +789,7 @@ class _WorkspaceListData {
        workspaces = source.workspaces;
 
   final String activeWorkspaceId;
+  final bool connectView;
   final AsyncValue<List<CloudAccountSession>> accounts;
   final WorkspaceEntity? editingWorkspace;
   final bool isSearchActive;
@@ -757,11 +817,43 @@ class const _WorkspaceListSections({
       padding: const EdgeInsets.all(16)
           .copyWith(bottom: BottomPadding.of(context)),
       children: [
+        Wrap(
+          spacing: 8,
+          children: [
+            AuraButton(
+              onPressed: () => context.go(
+                WorkspaceManagementRoute(workspaceId: data.activeWorkspaceId)
+                    .location,
+              ),
+              child: const TextLocale(
+                LocaleKeys.workspace_management_open_workspaces,
+              ),
+              variant: data.connectView ? .outlined : .primary,
+            ),
+            AuraButton(
+              onPressed: () => context.go(
+                WorkspaceManagementRoute(
+                  workspaceId: data.activeWorkspaceId,
+                  view: 'connect',
+                ).location,
+              ),
+              child: const TextLocale(
+                LocaleKeys.workspace_management_connect_cloud,
+              ),
+              variant: data.connectView ? .primary : .outlined,
+            ),
+          ],
+        ),
         _WorkspaceSearchInput(onChanged: onSearchChanged),
-        _WorkspaceManagementRow(data: data, actions: actions),
-        if (data.selectedCount > 0)
+        if (!data.connectView)
+          _WorkspaceManagementRow(data: data, actions: actions),
+        if (!data.connectView && data.selectedCount > 0)
           _WorkspaceSelectionActions(data: data, actions: actions),
-        _WorkspaceSourceSections(data: data, actions: actions),
+        _WorkspaceSourceSections(
+          data: data,
+          actions: actions,
+          key: const ValueKey('workspace-source-sections'),
+        ),
       ],
       keyboardDismissBehavior: .onDrag,
     );
@@ -771,14 +863,25 @@ class const _WorkspaceListSections({
 class const _WorkspaceSourceSections({
   required final _WorkspaceListData data,
   required final _WorkspaceListActions actions,
+  super.key,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .stretch,
     children: [
-      _LocalWorkspaceSection(data: data, actions: actions),
-      _ConnectedWorkspaceSection(data: data, actions: actions),
-      _AvailableCloudWorkspaceSection(data: data, actions: actions),
+      Visibility(
+        child: Column(
+          crossAxisAlignment: .stretch,
+          children: [
+            _LocalWorkspaceSection(data: data, actions: actions),
+            _ConnectedWorkspaceSection(data: data, actions: actions),
+          ],
+        ),
+        visible: !data.connectView,
+        maintainState: true,
+      ),
+      if (data.connectView)
+        _AvailableCloudWorkspaceSection(data: data, actions: actions),
     ],
   );
 }
@@ -1151,16 +1254,31 @@ extension on _WorkspaceListActions {
     context.go(WorkspaceCreateRoute(workspaceId: activeWorkspaceId).location);
   }
 
-  void openDetails({required String? accountId, required String? workspaceId}) {
-    _openDetails(context, accountId: accountId, cloudWorkspaceId: workspaceId);
+  void openDetails({
+    required String? accountId,
+    required String? workspaceId,
+    required String? serverUrl,
+  }) {
+    _openDetails(
+      context,
+      accountId: accountId,
+      cloudWorkspaceId: workspaceId,
+      serverUrl: serverUrl,
+    );
   }
 
   String? accountEmail(
     AsyncValue<List<CloudAccountSession>> accounts,
-    String? accountId,
+    WorkspaceEntity workspace,
   ) => switch (accounts) {
     AsyncData(:final value) =>
-      value.firstWhereOrNull((account) => account.userId == accountId)?.email,
+      value
+          .firstWhereOrNull(
+            (account) =>
+                account.userId == workspace.cloudAccountId &&
+                account.key == workspace.cloudAccount,
+          )
+          ?.email,
     AsyncLoading() || AsyncError() => null,
   };
 }
@@ -1380,6 +1498,12 @@ Future<void> _finishWorkspaceBulkDeletion(
 }
 
 extension on _WorkspaceListActions {
+  void retryCloudAccount(CloudAccountKey key) {
+    ref
+      ..invalidate(cloudAccountHealthProvider(key))
+      ..invalidate(cloudWorkspaceStateProvider(key));
+  }
+
   Future<void> confirmRemove(WorkspaceEntity workspace) async {
     final accountId = await _confirmedRemovalAccountId(workspace);
     if (accountId == null || !context.mounted) return;
@@ -1393,23 +1517,67 @@ extension on _WorkspaceListActions {
 
   Future<void> connect(
     CloudWorkspaceSummary workspace,
-    String accountId,
+    CloudAccountKey account,
   ) async {
     try {
-      await _attach(workspace, accountId);
+      await _attach(workspace, account);
     } on Object catch (error, stackTrace) {
       if (context.mounted) _showError(context, error, stackTrace);
     }
   }
 
+  Future<void> respondToInvite(
+    CloudAccountKey key,
+    PendingWorkspaceInviteSummary invite, {
+    required bool accept,
+  }) async {
+    try {
+      final useCases = await ref.read(
+        cloudWorkspaceUseCasesProvider(key).future,
+      );
+      if (useCases == null) {
+        throw const AppCloudWorkspaceException(
+          LocaleKeys.cloud_errors_unavailable,
+        );
+      }
+      if (accept) {
+        final _ = await useCases.acceptInvite(invite);
+      } else {
+        await useCases.declineInvite(invite);
+      }
+      ref
+        ..invalidate(cloudWorkspaceStateProvider(key))
+        ..invalidate(allWorkspacesProvider);
+    } on Object catch (error, stackTrace) {
+      if (error is CloudWorkspaceException &&
+          CheckCloudAccountUsecase.requiresSignIn(error)) {
+        ref.invalidate(cloudAccountHealthProvider(key));
+      }
+      if (context.mounted) _showError(context, error, stackTrace);
+    }
+  }
+
   Future<void> _detach(WorkspaceEntity workspace, String accountId) async {
-    final useCases = await ref.read(
-      cloudWorkspaceUseCasesProvider(accountId).future,
-    );
-    await useCases?.detachMirror(workspace);
+    final key =
+        workspace.cloudAccount ??
+        (throw const AppCloudWorkspaceException(
+          LocaleKeys.cloud_errors_unavailable,
+        ));
+    final useCases = await ref.read(cloudWorkspaceUseCasesProvider(key).future);
+    if (useCases == null) {
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    }
+    if (key.accountId != accountId) {
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    }
+    await useCases.detachMirror(workspace);
     ref
       ..invalidate(allWorkspacesProvider)
-      ..invalidate(cloudWorkspaceStateProvider(accountId));
+      ..invalidate(cloudWorkspaceStateProvider(key));
   }
 
   Future<bool?> _confirmDestructive({
@@ -1439,15 +1607,18 @@ extension on _WorkspaceListActions {
 
   Future<void> _attach(
     CloudWorkspaceSummary workspace,
-    String accountId,
+    CloudAccountKey key,
   ) async {
-    final useCases = await ref.read(
-      cloudWorkspaceUseCasesProvider(accountId).future,
-    );
-    final _ = await useCases?.attach(workspace);
+    final useCases = await ref.read(cloudWorkspaceUseCasesProvider(key).future);
+    if (useCases == null) {
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    }
+    final _ = await useCases.attach(workspace);
     ref
       ..invalidate(allWorkspacesProvider)
-      ..invalidate(cloudWorkspaceStateProvider(accountId));
+      ..invalidate(cloudWorkspaceStateProvider(key));
   }
 }
 
@@ -1480,8 +1651,7 @@ class _LocalWorkspaceItems extends StatelessWidget {
   }) : _children = [
          if (data.local.isEmpty &&
              data.isSearchActive &&
-             data.connected.isEmpty &&
-             _hasNoCloudAccounts(data.accounts))
+             data.connected.isEmpty)
            const TextLocale(LocaleKeys.workspace_management_no_search_results),
          if (data.local.isEmpty && !data.isSearchActive)
            const TextLocale(LocaleKeys.workspace_management_no_workspaces),
@@ -1588,10 +1758,7 @@ class _ConnectedWorkspaceItems extends StatelessWidget {
            _ConnectedWorkspaceItem(
              workspace: workspace,
              activeWorkspaceId: data.activeWorkspaceId,
-             accountEmail: actions.accountEmail(
-               data.accounts,
-               workspace.cloudAccountId,
-             ),
+             accountEmail: actions.accountEmail(data.accounts, workspace),
              isSelected: data.selectedIds.contains(workspace.id),
              isDeleting: data.isBulkDeleting,
              actions: actions,
@@ -1695,7 +1862,7 @@ class const _AvailableCloudAccountItems({
 class const _AvailableCloudAccountGroups({
   required final List<CloudAccountSession> accounts,
   required final List<_CloudAccountWorkspaceState> accountStates,
-  required final Set<String> matchingAccountIds,
+  required final Set<CloudAccountKey> matchingAccountIds,
   required final _WorkspaceListData data,
   required final _WorkspaceListActions actions,
 }) extends StatelessWidget {
@@ -1750,6 +1917,15 @@ class _AvailableCloudAccountGroupLayout extends StatelessWidget {
            crossAxisAlignment: .stretch,
            children: [
              AuraText(child: Text(account.email), style: .heading6),
+             CloudAccountHealthStatus(
+               account: account.key,
+               workspaceId: workspaceId,
+               returnPath: WorkspaceManagementRoute(
+                 workspaceId: workspaceId,
+                 view: 'connect',
+               ).location,
+               email: account.email,
+             ),
              const SizedBox(height: 8),
              _AvailableCloudAccountState(
                account,
@@ -1804,13 +1980,14 @@ class _AvailableCloudAccountState extends StatelessWidget {
                ),
              ),
              AuraButton(
-               onPressed: () => actions.ref.invalidate(
-                 cloudWorkspaceStateProvider(account.userId),
-               ),
+               onPressed: () => actions.retryCloudAccount(account.key),
                child: const TextLocale(
                  LocaleKeys.workspace_management_cloud_retry,
                ),
-               key: ValueKey('workspace_cloud_retry_${account.userId}'),
+               key: ValueKey(
+                 'workspace_cloud_retry_${account.key.serverUrl}_'
+                 '${account.userId}',
+               ),
                size: .small,
              ),
            ],
@@ -1836,87 +2013,54 @@ class const _AvailableCloudDataState({
   @override
   Widget build(BuildContext context) {
     if (value.authenticationRequired) {
-      return _CloudAccountDisconnected(
-        workspaceId: workspaceId,
-        accountId: account.userId,
-      );
+      return const TextLocale(LocaleKeys.cloud_accounts_session_expired);
     }
 
-    return _AvailableCloudWorkspaceList(
-      account: account,
-      accounts: accounts,
-      localWorkspaces: localWorkspaces,
-      hasPersistedMatches: hasPersistedMatches,
-      searchQuery: searchQuery,
-      workspaces: value.workspaces,
-      actions: actions,
-    );
-  }
-}
-
-class const _CloudAccountDisconnected({
-  required final String workspaceId,
-  required final String accountId,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => _CloudAccountDisconnectedTile(
-    workspaceId: workspaceId,
-    accountId: accountId,
-  );
-}
-
-class const _CloudAccountDisconnectedTile({
-  required final String workspaceId,
-  required final String accountId,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraTile(
-      child: const _CloudAccountDisconnectedText(),
-      variant: .ghost,
-      trailing: _CloudAccountSignInButton(
-        workspaceId: workspaceId,
-        accountId: accountId,
-      ),
-    );
-  }
-}
-
-class const _CloudAccountDisconnectedText() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const AuraColumn(
+    return Column(
+      crossAxisAlignment: .stretch,
       children: [
-        AuraText(
-          child: TextLocale(LocaleKeys.cloud_accounts_status_needs_sign_in),
-          style: .bodySmall,
+        if (value.pendingInvites.isNotEmpty)
+          const TextLocale(LocaleKeys.cloud_workspaces_pending_invites),
+        for (final invite in value.pendingInvites)
+          if (_matchesWorkspaceName(invite.workspaceName, searchQuery))
+            AuraTile(
+              child: Text(invite.workspaceName),
+              trailing: Wrap(
+                children: [
+                  AuraButton(
+                    onPressed: () => actions.respondToInvite(
+                      account.key,
+                      invite,
+                      accept: true,
+                    ),
+                    child: const TextLocale(
+                      LocaleKeys.workspace_management_cloud_accept,
+                    ),
+                  ),
+                  AuraButton(
+                    onPressed: () => actions.respondToInvite(
+                      account.key,
+                      invite,
+                      accept: false,
+                    ),
+                    child: const TextLocale(
+                      LocaleKeys.workspace_management_cloud_decline,
+                    ),
+                    variant: .outlined,
+                  ),
+                ],
+              ),
+            ),
+        _AvailableCloudWorkspaceList(
+          account: account,
+          accounts: accounts,
+          localWorkspaces: localWorkspaces,
+          hasPersistedMatches: hasPersistedMatches,
+          searchQuery: searchQuery,
+          workspaces: value.workspaces,
+          actions: actions,
         ),
-        TextLocale(LocaleKeys.cloud_accounts_session_expired),
       ],
-      spacing: .xs,
-      crossAxisAlignment: .start,
-    );
-  }
-}
-
-class const _CloudAccountSignInButton({
-  required final String workspaceId,
-  required final String accountId,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final selectorId = 'workspace_cloud_account_sign_in_$accountId';
-
-    return Semantics(
-      key: ValueKey<String>(selectorId),
-      child: AuraButton(
-        onPressed: () => context.go(
-          CloudAccountLoginRoute(workspaceId: workspaceId).location,
-        ),
-        child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
-        variant: .outlined,
-      ),
-      identifier: selectorId,
     );
   }
 }
@@ -1945,12 +2089,19 @@ class const _AvailableCloudWorkspaceList({
       );
     }
 
-    return _AvailableCloudWorkspaceItems(
+    return CloudWorkspaceConnectList(
       account: account,
       accounts: accounts,
       localWorkspaces: localWorkspaces,
       workspaces: available,
-      actions: actions,
+      onConnect: (workspace) => actions.connect(workspace, account.key),
+      onOpen: (workspace) => unawaited(actions.switchWorkspace(workspace)),
+      onDetails: (workspace) => actions.openDetails(
+        accountId: account.userId,
+        serverUrl: account.key.serverUrl,
+        workspaceId: workspace.id.toString(),
+      ),
+      onCopyId: (id) => unawaited(actions.copyId(id)),
     );
   }
 }
@@ -1972,82 +2123,6 @@ class const _AvailableCloudWorkspaceEmptyState({
 
     return const TextLocale(LocaleKeys.cloud_accounts_no_workspaces);
   }
-}
-
-class const _AvailableCloudWorkspaceItems({
-  required final CloudAccountSession account,
-  required final List<CloudAccountSession> accounts,
-  required final List<WorkspaceEntity> localWorkspaces,
-  required final List<CloudWorkspaceSummary> workspaces,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (final workspace in workspaces)
-          _AvailableCloudWorkspaceItem(
-            account: account,
-            accounts: accounts,
-            localWorkspaces: localWorkspaces,
-            workspace: workspace,
-            actions: actions,
-          ),
-      ],
-    );
-  }
-}
-
-class const _AvailableCloudWorkspaceItem({
-  required final CloudAccountSession account,
-  required final List<CloudAccountSession> accounts,
-  required final List<WorkspaceEntity> localWorkspaces,
-  required final CloudWorkspaceSummary workspace,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return _AvailableWorkspaceTile(
-      workspace: workspace,
-      connectedAccountEmail: _connectedElsewhereEmail((
-        workspace: workspace,
-        accountId: account.userId,
-        accounts: accounts,
-        localWorkspaces: localWorkspaces,
-      )),
-      accountId: account.userId,
-      actions: actions,
-    );
-  }
-}
-
-String? _connectedElsewhereEmail(
-  ({
-    CloudWorkspaceSummary workspace,
-    String accountId,
-    List<CloudAccountSession> accounts,
-    List<WorkspaceEntity> localWorkspaces,
-  })
-  input,
-) {
-  final mirror = input.localWorkspaces.firstWhereOrNull(
-    (local) => _isConnectedElsewhere(local, input.workspace, input.accountId),
-  );
-
-  if (mirror == null) return null;
-
-  return input.accounts
-      .firstWhereOrNull((account) => account.userId == mirror.cloudAccountId)
-      ?.email;
-}
-
-bool _isConnectedElsewhere(
-  WorkspaceEntity local,
-  CloudWorkspaceSummary workspace,
-  String accountId,
-) {
-  return local.cloudWorkspaceId == workspace.id.toString() &&
-      local.cloudAccountId != accountId;
 }
 
 class const _LocalWorkspaceTile({
@@ -2243,6 +2318,7 @@ class const _ConnectedWorkspaceTileContent({
   Widget build(BuildContext context) => _SelectableWorkspaceTile(
     workspace: tile.workspace,
     content: _ConnectedWorkspaceDetails(
+      activeWorkspaceId: tile.actions.activeWorkspaceId,
       workspace: tile.workspace,
       accountEmail: tile.accountEmail,
       isActive: tile.isActive,
@@ -2260,6 +2336,7 @@ class const _ConnectedWorkspaceTileContent({
 }
 
 class const _ConnectedWorkspaceDetails({
+  required final String activeWorkspaceId,
   required final WorkspaceEntity workspace,
   required final String? accountEmail,
   required final bool isActive,
@@ -2269,6 +2346,14 @@ class const _ConnectedWorkspaceDetails({
     return AuraColumn(
       children: [
         _WorkspaceName(name: workspace.name, isActive: isActive),
+        if (workspace.cloudAccount case final account?)
+          CloudAccountHealthStatus(
+            account: account,
+            workspaceId: activeWorkspaceId,
+            returnPath: WorkspaceManagementRoute(workspaceId: activeWorkspaceId)
+                .location,
+            email: accountEmail,
+          ),
         TextLocale(
           'workspace_management.cloud_connected_account',
           args: [
@@ -2313,6 +2398,7 @@ class const _ConnectedWorkspaceMenu({
       title: const TextLocale('common.details'),
       onTap: () => actions.openDetails(
         accountId: workspace.cloudAccountId,
+        serverUrl: workspace.url,
         workspaceId: workspace.cloudWorkspaceId,
       ),
     );
@@ -2340,99 +2426,6 @@ class const _ConnectedWorkspaceMenu({
     return AuraPopupMenuItem(
       title: const TextLocale(LocaleKeys.workspace_management_copy_id),
       onTap: () => actions.copyId(workspace.id),
-    );
-  }
-}
-
-class const _AvailableWorkspaceTile({
-  required final CloudWorkspaceSummary workspace,
-  required final String? connectedAccountEmail,
-  required final String accountId,
-  required final _WorkspaceListActions actions,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraTile(
-      child: _AvailableWorkspaceDetails(
-        workspace: workspace,
-        connectedAccountEmail: connectedAccountEmail,
-      ),
-      variant: .ghost,
-      trailing: _AvailableWorkspaceMenu(
-        workspace: workspace,
-        accountId: accountId,
-        actions: actions,
-        canConnect: connectedAccountEmail == null,
-      ),
-    );
-  }
-}
-
-class _AvailableWorkspaceDetails extends StatelessWidget {
-  new({
-    required CloudWorkspaceSummary workspace,
-    required String? connectedAccountEmail,
-  }) : _child = AuraColumn(
-         children: [
-           Text(workspace.name),
-           if (connectedAccountEmail case final email?)
-             Text(
-               LocaleKeys.workspace_management_cloud_connected_elsewhere.tr(
-                 namedArgs: {'email': email},
-               ),
-             ),
-         ],
-         spacing: .xs,
-         crossAxisAlignment: .start,
-       );
-
-  final Widget _child;
-
-  @override
-  Widget build(BuildContext context) => _child;
-}
-
-class const _AvailableWorkspaceMenu({
-  required final CloudWorkspaceSummary workspace,
-  required final String accountId,
-  required final _WorkspaceListActions actions,
-  required final bool canConnect,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final selectorId = 'workspace_available_menu_${accountId}_${workspace.id}';
-
-    return Semantics(
-      key: ValueKey<String>(selectorId),
-      child: AuraPopupMenuButton(
-        items: [_detailsItem(), _copyIdItem(), _connectItem()],
-        tooltip: LocaleKeys.common_show_more.tr(),
-      ),
-      identifier: selectorId,
-    );
-  }
-
-  AuraPopupMenuItem _detailsItem() {
-    return AuraPopupMenuItem(
-      title: const TextLocale('common.details'),
-      onTap: () => actions.openDetails(
-        accountId: accountId,
-        workspaceId: workspace.id.toString(),
-      ),
-    );
-  }
-
-  AuraPopupMenuItem _connectItem() {
-    return AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.workspace_management_cloud_attach),
-      onTap: canConnect ? () => actions.connect(workspace, accountId) : null,
-    );
-  }
-
-  AuraPopupMenuItem _copyIdItem() {
-    return AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.workspace_management_copy_id),
-      onTap: () => actions.copyId(workspace.id.toString()),
     );
   }
 }
@@ -2646,6 +2639,7 @@ void _openDetails(
   BuildContext context, {
   required String? accountId,
   required String? cloudWorkspaceId,
+  required String? serverUrl,
 }) {
   final parsedId = _parseCloudWorkspaceId(cloudWorkspaceId);
   final workspaceId = _routeWorkspaceId(context);
@@ -2656,6 +2650,7 @@ void _openDetails(
       workspaceId: workspaceId,
       cloudAccountId: accountId,
       cloudWorkspaceId: parsedId,
+      serverUrl: serverUrl,
     ).location,
   );
 }
@@ -2690,6 +2685,7 @@ String _errorMessage(Object error, [String? fallbackKey]) {
     WorkspaceException(:final localizationKey, :final message) =>
       localizationKey?.tr() ?? message,
     AppCloudWorkspaceException(:final localizationKey) => localizationKey.tr(),
+    CloudWorkspaceException() => _cloudWorkspaceErrorMessage(error),
     _ => (fallbackKey ?? LocaleKeys.workspace_management_unexpected_error).tr(),
   };
 }
@@ -2697,5 +2693,13 @@ String _errorMessage(Object error, [String? fallbackKey]) {
 void _logUnexpectedError(Object error, StackTrace? stackTrace) {
   if (error is! WorkspaceException && error is! AppCloudWorkspaceException) {
     _logger.warning('Workspace management failed', error, stackTrace);
+  }
+}
+
+String _cloudWorkspaceErrorMessage(CloudWorkspaceException error) {
+  try {
+    CloudAppErrors.translateException(error, .workspace);
+  } on CloudAppException catch (translated) {
+    return translated.localizationKey.tr();
   }
 }

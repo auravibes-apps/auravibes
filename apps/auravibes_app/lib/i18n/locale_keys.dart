@@ -431,6 +431,10 @@ abstract class LocaleKeys {
   static const agents_selector_placeholder = 'agents.selector_placeholder';
   static const agents_selector_none = 'agents.selector_none';
   static const agents_skill_count = 'agents.skill_count';
+  static const agents_available_chat = 'agents.available_chat';
+  static const agents_available_delegation = 'agents.available_delegation';
+  static const agents_manage_skills_for = 'agents.manage_skills_for';
+  static const agents_skill_assignment_hint = 'agents.skill_assignment_hint';
   static const chats_screens_chats_list_title =
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
@@ -886,6 +890,12 @@ abstract class LocaleKeys {
   static const skills_screen_source_app = 'skills_screen.source.app';
   static const skills_screen_kind_template = 'skills_screen.kind.template';
   static const skills_screen_kind_native = 'skills_screen.kind.native';
+  static const skills_screen_create_configure =
+      'skills_screen.create_configure';
+  static const skills_screen_create_stage = 'skills_screen.create_stage';
+  static const skills_screen_create_resources =
+      'skills_screen.create_resources';
+  static const skills_screen_create_tools = 'skills_screen.create_tools';
   static const markdown_editor_title = 'markdown_editor.title';
   static const markdown_editor_editor_label = 'markdown_editor.editor_label';
   static const markdown_editor_preview_label = 'markdown_editor.preview_label';
@@ -918,6 +928,24 @@ abstract class LocaleKeys {
       'markdown_editor.link_destination_label';
   static const markdown_editor_link_destination_required =
       'markdown_editor.link_destination_required';
+  static const markdown_editor_apply = 'markdown_editor.apply';
+  static const markdown_editor_draft_hint = 'markdown_editor.draft_hint';
+  static const markdown_editor_agent_instructions =
+      'markdown_editor.agent_instructions';
+  static const markdown_editor_skill_description =
+      'markdown_editor.skill_description';
+  static const markdown_editor_skill_instructions =
+      'markdown_editor.skill_instructions';
+  static const markdown_editor_resource_description =
+      'markdown_editor.resource_description';
+  static const markdown_editor_resource_content =
+      'markdown_editor.resource_content';
+  static const markdown_editor_tool_description =
+      'markdown_editor.tool_description';
+  static const markdown_editor_agent_hint = 'markdown_editor.agent_hint';
+  static const markdown_editor_skill_hint = 'markdown_editor.skill_hint';
+  static const markdown_editor_resource_hint = 'markdown_editor.resource_hint';
+  static const markdown_editor_tool_hint = 'markdown_editor.tool_hint';
   static const skills_resource_section_title = 'skills_resource.section_title';
   static const skills_resource_empty = 'skills_resource.empty';
   static const skills_resource_create_title = 'skills_resource.create_title';
@@ -940,6 +968,9 @@ abstract class LocaleKeys {
   static const skills_resource_content_label = 'skills_resource.content_label';
   static const skills_resource_edit_content = 'skills_resource.edit_content';
   static const skills_resource_content_empty = 'skills_resource.content_empty';
+  static const skills_resource_save = 'skills_resource.save';
+  static const skills_resource_saved = 'skills_resource.saved';
+  static const skills_resource_parent = 'skills_resource.parent';
   static const skills_selector_title = 'skills_selector.title';
   static const skills_selector_error = 'skills_selector.error';
   static const skills_selector_search_placeholder =
@@ -992,6 +1023,7 @@ abstract class LocaleKeys {
       'skills_selector.suggestion_unavailable';
   static const skills_selector_suggestion_open_picker =
       'skills_selector.suggestion_open_picker';
+  static const skills_selector_actions_hint = 'skills_selector.actions_hint';
   static const chat_input_skills_control_count =
       'chat_input.skills_control_count';
   static const skills_tool_section_title = 'skills_tool.section_title';
@@ -1085,6 +1117,7 @@ abstract class LocaleKeys {
   static const skills_tool_advanced_definition_toggle =
       'skills_tool.advanced_definition_toggle';
   static const skills_tool_add_input = 'skills_tool.add_input';
+  static const skills_tool_preview_hint = 'skills_tool.preview_hint';
   static const skill_credentials_definitions_title =
       'skill_credentials_definitions.title';
   static const skill_credentials_definitions_create_title =
@@ -1739,6 +1772,24 @@ abstract class LocaleKeys {
       'workspace_management.cloud_available_section';
   static const workspace_management_cloud_add_hint =
       'workspace_management.cloud_add_hint';
+  static const workspace_management_open_workspaces =
+      'workspace_management.open_workspaces';
+  static const workspace_management_connect_cloud =
+      'workspace_management.connect_cloud';
+  static const workspace_management_bulk_remove_cloud =
+      'workspace_management.bulk_remove_cloud';
+  static const workspace_management_bulk_delete_local =
+      'workspace_management.bulk_delete_local';
+  static const workspace_management_bulk_delete_mixed =
+      'workspace_management.bulk_delete_mixed';
+  static const workspace_management_bulk_delete_and_remove =
+      'workspace_management.bulk_delete_and_remove';
+  static const workspace_management_bulk_local_consequence =
+      'workspace_management.bulk_local_consequence';
+  static const workspace_management_bulk_cloud_consequence =
+      'workspace_management.bulk_cloud_consequence';
+  static const workspace_management_bulk_hidden_included =
+      'workspace_management.bulk_hidden_included';
   static const cloud_errors_authentication_required =
       'cloud_errors.authentication_required';
   static const cloud_errors_permission_denied =
@@ -1777,6 +1828,14 @@ abstract class LocaleKeys {
       'cloud_workspaces.local_section';
   static const cloud_workspaces_remove_confirm =
       'cloud_workspaces.remove_confirm';
+  static const cloud_workspaces_not_connected =
+      'cloud_workspaces.not_connected';
+  static const cloud_workspaces_connected = 'cloud_workspaces.connected';
+  static const cloud_workspaces_cloud_context =
+      'cloud_workspaces.cloud_context';
+  static const cloud_workspaces_device_connection =
+      'cloud_workspaces.device_connection';
+  static const cloud_workspaces_consequences = 'cloud_workspaces.consequences';
   static const cloud_accounts_title = 'cloud_accounts.title';
   static const cloud_accounts_register = 'cloud_accounts.register';
   static const cloud_accounts_add = 'cloud_accounts.add';
@@ -1844,4 +1903,162 @@ abstract class LocaleKeys {
   static const cloud_accounts_delete_local_cleanup_failed =
       'cloud_accounts.delete_local_cleanup_failed';
   static const cloud_accounts_delete_failed = 'cloud_accounts.delete_failed';
+  static const cloud_accounts_origin_unresolved =
+      'cloud_accounts.origin_unresolved';
+  static const cloud_accounts_status_checking =
+      'cloud_accounts.status_checking';
+  static const cloud_accounts_status_verified =
+      'cloud_accounts.status_verified';
+  static const cloud_accounts_status_unknown = 'cloud_accounts.status_unknown';
+  static const cloud_accounts_verify = 'cloud_accounts.verify';
+  static const cloud_accounts_wrong_identity = 'cloud_accounts.wrong_identity';
+  static const cloud_accounts_invalid_target = 'cloud_accounts.invalid_target';
+  static const cloud_accounts_delivery_unavailable =
+      'cloud_accounts.delivery_unavailable';
+  static const cloud_accounts_create_title = 'cloud_accounts.create_title';
+  static const cloud_accounts_verify_email = 'cloud_accounts.verify_email';
+  static const cloud_accounts_password_changed =
+      'cloud_accounts.password_changed';
+  static const cloud_accounts_cancel_auth = 'cloud_accounts.cancel_auth';
+  static const cloud_accounts_return_to_task = 'cloud_accounts.return_to_task';
+  static const route_state_workspace_loading = 'route_state.workspace_loading';
+  static const route_state_workspace_error = 'route_state.workspace_error';
+  static const route_state_child_loading = 'route_state.child_loading';
+  static const route_state_child_error = 'route_state.child_error';
+  static const route_state_retry = 'route_state.retry';
+  static const route_state_return_workspaces = 'route_state.return_workspaces';
+  static const route_state_return_parent = 'route_state.return_parent';
+  static const route_state_workspace_missing = 'route_state.workspace_missing';
+  static const route_state_invalid_workspace = 'route_state.invalid_workspace';
+  static const route_state_sign_in = 'route_state.sign_in';
+  static const navigation_chats = 'navigation.chats';
+  static const navigation_agents_skills = 'navigation.agents_skills';
+  static const navigation_connections = 'navigation.connections';
+  static const navigation_workspace_actions = 'navigation.workspace_actions';
+  static const navigation_create_workspace = 'navigation.create_workspace';
+  static const navigation_connect_cloud = 'navigation.connect_cloud';
+  static const navigation_workspace_settings = 'navigation.workspace_settings';
+  static const navigation_local_workspace = 'navigation.local_workspace';
+  static const navigation_cloud_workspace = 'navigation.cloud_workspace';
+  static const navigation_workspace_settings_scope =
+      'navigation.workspace_settings_scope';
+  static const navigation_accounts_scope = 'navigation.accounts_scope';
+  static const navigation_workspace_settings_error =
+      'navigation.workspace_settings_error';
+  static const related_lists_agents = 'related_lists.agents';
+  static const related_lists_skills = 'related_lists.skills';
+  static const related_lists_overview = 'related_lists.overview';
+  static const related_lists_providers = 'related_lists.providers';
+  static const related_lists_services = 'related_lists.services';
+  static const related_lists_tools = 'related_lists.tools';
+  static const related_lists_credentials = 'related_lists.credentials';
+  static const related_lists_credential_types =
+      'related_lists.credential_types';
+  static const related_lists_view_skill = 'related_lists.view_skill';
+  static const related_lists_workspace_agents =
+      'related_lists.workspace_agents';
+  static const related_lists_open_connection = 'related_lists.open_connection';
+  static const related_lists_workspace_group = 'related_lists.workspace_group';
+  static const related_lists_app_group = 'related_lists.app_group';
+  static const workspace_setup_local = 'workspace_setup.local';
+  static const workspace_setup_cloud = 'workspace_setup.cloud';
+  static const workspace_setup_connect = 'workspace_setup.connect';
+  static const workspace_setup_add_account = 'workspace_setup.add_account';
+  static const workspace_setup_local_body = 'workspace_setup.local_body';
+  static const workspace_setup_sign_in_connect =
+      'workspace_setup.sign_in_connect';
+  static const chat_readiness_saved = 'chat_readiness.saved';
+  static const chat_readiness_continue_chat = 'chat_readiness.continue_chat';
+  static const chat_readiness_loading = 'chat_readiness.loading';
+  static const chat_readiness_no_provider = 'chat_readiness.no_provider';
+  static const chat_readiness_authorization = 'chat_readiness.authorization';
+  static const chat_readiness_attention = 'chat_readiness.attention';
+  static const chat_readiness_no_models = 'chat_readiness.no_models';
+  static const chat_readiness_unavailable = 'chat_readiness.unavailable';
+  static const chat_readiness_choose_model = 'chat_readiness.choose_model';
+  static const chat_readiness_selected = 'chat_readiness.selected';
+  static const chat_readiness_review_connections =
+      'chat_readiness.review_connections';
+  static const chat_readiness_select_below = 'chat_readiness.select_below';
+  static const chat_readiness_select_in_chat = 'chat_readiness.select_in_chat';
+  static const conversation_orientation_delegated =
+      'conversation_orientation.delegated';
+  static const conversation_orientation_read_only =
+      'conversation_orientation.read_only';
+  static const conversation_activity_approval =
+      'conversation_activity.approval';
+  static const conversation_activity_stopped = 'conversation_activity.stopped';
+  static const conversation_activity_retry = 'conversation_activity.retry';
+  static const conversation_activity_compacting =
+      'conversation_activity.compacting';
+  static const conversation_activity_delegated =
+      'conversation_activity.delegated';
+  static const conversation_activity_working = 'conversation_activity.working';
+  static const conversation_activity_queued = 'conversation_activity.queued';
+  static const conversation_activity_idle = 'conversation_activity.idle';
+  static const connection_setup_connect_ai = 'connection_setup.connect_ai';
+  static const connection_setup_add_access = 'connection_setup.add_access';
+  static const connection_setup_create_type = 'connection_setup.create_type';
+  static const connection_setup_required_type_missing =
+      'connection_setup.required_type_missing';
+  static const connection_setup_required_service_missing =
+      'connection_setup.required_service_missing';
+  static const connection_setup_types_load_error =
+      'connection_setup.types_load_error';
+  static const connection_setup_return_connections =
+      'connection_setup.return_connections';
+  static const connection_setup_return_task = 'connection_setup.return_task';
+  static const connection_setup_return_workspace =
+      'connection_setup.return_workspace';
+  static const connection_setup_kind = 'connection_setup.kind';
+  static const connection_setup_health = 'connection_setup.health';
+  static const connection_setup_edit_named = 'connection_setup.edit_named';
+  static const connection_setup_provider_load_error =
+      'connection_setup.provider_load_error';
+  static const connection_setup_browser_restriction =
+      'connection_setup.browser_restriction';
+  static const connection_setup_device_restriction =
+      'connection_setup.device_restriction';
+  static const connection_setup_native_tools_restriction =
+      'connection_setup.native_tools_restriction';
+  static const connection_setup_tool_permissions =
+      'connection_setup.tool_permissions';
+  static const connection_setup_tools_load_error =
+      'connection_setup.tools_load_error';
+  static const connection_setup_return_types = 'connection_setup.return_types';
+  static const connection_setup_connection_missing =
+      'connection_setup.connection_missing';
+  static const authoring_saved = 'authoring.saved';
+  static const authoring_draft = 'authoring.draft';
+  static const authoring_enabled = 'authoring.enabled';
+  static const authoring_disabled = 'authoring.disabled';
+  static const skill_access_not_required = 'skill_access.not_required';
+  static const skill_access_saved = 'skill_access.saved';
+  static const skill_access_missing = 'skill_access.missing';
+  static const skill_access_partial = 'skill_access.partial';
+  static const skill_access_unknown = 'skill_access.unknown';
+  static const skill_access_checking = 'skill_access.checking';
+  static const skill_access_verification_hint =
+      'skill_access.verification_hint';
+  static const skill_access_tool_disabled = 'skill_access.tool_disabled';
+  static const skill_access_tool_missing = 'skill_access.tool_missing';
+  static const skill_access_saved_configuration =
+      'skill_access.saved_configuration';
+  static const credential_usage_title = 'credential_usage.title';
+  static const credential_usage_error = 'credential_usage.error';
+  static const credential_usage_counts = 'credential_usage.counts';
+  static const credential_usage_empty = 'credential_usage.empty';
+  static const credential_usage_delete_blocked =
+      'credential_usage.delete_blocked';
+  static const credential_usage_changes = 'credential_usage.changes';
+  static const credential_usage_required = 'credential_usage.required';
+  static const credential_usage_removed = 'credential_usage.removed';
+  static const credential_usage_secretChanged =
+      'credential_usage.secretChanged';
+  static const credential_usage_impact = 'credential_usage.impact';
+  static const credential_usage_advisory = 'credential_usage.advisory';
+  static const credential_usage_credential = 'credential_usage.credential';
+  static const credential_usage_skill = 'credential_usage.skill';
+  static const credential_usage_tool = 'credential_usage.tool';
+  static const credential_usage_disabled = 'credential_usage.disabled';
 }

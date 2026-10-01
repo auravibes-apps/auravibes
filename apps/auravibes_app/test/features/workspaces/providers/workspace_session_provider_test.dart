@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,9 +27,39 @@ void main() {
 
     await expectLater(
       container.read(workspaceSessionForRouteProvider('local').future),
-      throwsStateError,
+      throwsA(isA<WorkspaceRouteFailure>()),
     );
   });
+
+  test(
+    'malformed origin stays manageable and has a typed route failure',
+    () async {
+      final mirror = _workspace(cloudWorkspaceId: '1', serverUrl: 'broken-url');
+      expect(mirror.cloudAccount, isNull);
+      final container = ProviderContainer(
+        overrides: [
+          allWorkspacesProvider.overrideWith((_) => Stream.value([mirror])),
+        ],
+        retry: (_, _) => null,
+      );
+      addTearDown(container.dispose);
+      final subscription = container.listen(
+        workspaceSessionForRouteProvider('local'),
+        (_, next) => expect(next, isNotNull),
+      );
+      addTearDown(subscription.close);
+      await expectLater(
+        container.read(workspaceSessionForRouteProvider('local').future),
+        throwsA(
+          isA<WorkspaceRouteFailure>().having(
+            (failure) => failure.invalidMirror,
+            'invalidMirror',
+            isTrue,
+          ),
+        ),
+      );
+    },
+  );
 
   test('session reacts to mirror identity changes and deletion', () async {
     final workspaces = StreamController<List<WorkspaceEntity>>();
@@ -63,7 +95,7 @@ void main() {
     await Future<void>.delayed(.zero);
     await expectLater(
       container.read(workspaceSessionForRouteProvider('local').future),
-      throwsStateError,
+      throwsA(isA<WorkspaceRouteFailure>()),
     );
   });
 

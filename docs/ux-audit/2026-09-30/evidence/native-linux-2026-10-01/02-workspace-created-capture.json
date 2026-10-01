@@ -1,0 +1,31 @@
+{
+  "instanceId": "ux-final-20261001-0810",
+  "manifest": "/workspace/auravibes/.dart_tool/marionette/instances/ux-final-20261001-0810.json",
+  "appFlavor": "dev",
+  "request": {
+    "name": "take_screenshots",
+    "arguments": {}
+  },
+  "identity_verified": true,
+  "result": {
+    "content": [
+      {
+        "type": "image",
+        "mimeType": "image/png",
+        "saved_image": "/tmp/aura-ux-native-0810-workspace-created-view-0.png"
+      }
+    ],
+    "captures": [
+      {
+        "path": "/tmp/aura-ux-native-0810-workspace-created-view-0.png",
+        "width": 1280,
+        "height": 720,
+        "bytes": 49305,
+        "sha256": "b67a539a6ac5b97dfeb7380d03c51422d5a481af11d4f912a69763048fc43908"
+      }
+    ]
+  },
+  "status": "PASS",
+  "bridge_stop_exit": -15,
+  "duration_seconds": 3.187
+}

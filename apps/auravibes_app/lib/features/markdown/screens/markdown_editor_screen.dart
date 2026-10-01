@@ -4,6 +4,8 @@ import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.d
 import 'package:auravibes_app/features/markdown/widgets/markdown_editor_toolbar.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_list_input_formatter.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -18,6 +20,8 @@ const _limitCounterHeight = 20.0;
 class const MarkdownEditorScreen({
   required final String initialMarkdown,
   final int? maxCharacters,
+  final String? titleKey,
+  final String? draftHintKey,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -27,6 +31,7 @@ class const MarkdownEditorScreen({
 class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   final _controller = TextfEditingController();
   final _focusNode = FocusNode();
+  final _exitGuard = DraftExitGuard();
   TextEditingValue? _sourceValue;
   bool _isFocused = false;
   bool _isPreview = false;
@@ -53,15 +58,25 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope<Object?>(
-    child: _markdownEditorView(context),
-    canPop: _allowPop || !_isDirty,
-    onPopInvokedWithResult: _onPopInvoked,
-  );
+  Widget build(BuildContext context) {
+    _exitGuard.bind(
+      isDirty: () => !_allowPop && _isDirty,
+      isSaving: () => false,
+      confirm: _confirmDiscard,
+    );
 
-  void _cancel(BuildContext context) => _pop(context);
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _markdownEditorView(context),
+    );
+  }
 
-  void _save(BuildContext context) => _pop(context, _controller.text);
+  void _cancel(BuildContext context) => unawaited(_exitGuard.pop(context));
+
+  void _apply(BuildContext context) {
+    setState(() => _allowPop = true);
+    unawaited(_exitGuard.pop(context, _controller.text));
+  }
 
   void _onMarkdownChanged() {
     setState(() => _allowPop = false);
@@ -82,14 +97,6 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     }
     setState(() => _isPreview = isPreview);
     if (!isPreview) _restoreEditorFocus();
-  }
-
-  void _pop(BuildContext context, [String? result]) {
-    setState(() => _allowPop = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop<String>(result);
-    });
   }
 }
 
@@ -138,29 +145,22 @@ extension on _MarkdownEditorScreenState {
     focusNode: _focusNode,
     isFocused: _isFocused,
     isPreview: _isPreview,
+    titleKey: widget.titleKey ?? LocaleKeys.markdown_editor_title,
+    draftHintKey: widget.draftHintKey ?? LocaleKeys.markdown_editor_draft_hint,
     maxCharacters: widget.maxCharacters,
     onTogglePreview: _togglePreview,
     onUnfocus: _unfocusInput,
     onCancel: () => _cancel(context),
-    onSave: () => _save(context),
+    onSave: () => _apply(context),
   );
 
-  void _onPopInvoked(bool didPop, Object? _) {
-    if (!didPop) unawaited(_handleBack(context));
-  }
-
-  Future<void> _handleBack(BuildContext context) async {
-    if (!context.mounted) return;
-    if (!_isDirty) {
-      _pop(context);
-
-      return;
+  Future<bool?> _confirmDiscard(BuildContext context) async {
+    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
+    if (context.mounted && shouldDiscard != true && !_isPreview) {
+      _restoreEditorFocus();
     }
 
-    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
-    if (shouldDiscard != true || !context.mounted) return;
-
-    _pop(context);
+    return shouldDiscard;
   }
 }
 
@@ -169,6 +169,8 @@ class const _MarkdownEditorView({
   required final FocusNode focusNode,
   required final bool isFocused,
   required final bool isPreview,
+  required final String titleKey,
+  required final String draftHintKey,
   required final int? maxCharacters,
   required final VoidCallback onTogglePreview,
   required final VoidCallback onUnfocus,
@@ -177,7 +179,16 @@ class const _MarkdownEditorView({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => AuraScreen(
-    child: _MarkdownEditorBody(view: this),
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          child: TextLocale(draftHintKey),
+        ),
+        Expanded(child: _MarkdownEditorBody(view: this)),
+      ],
+    ),
     appBar: _MarkdownEditorAppBar(view: this),
   );
 }
@@ -412,7 +423,10 @@ class _MarkdownEditorAppBar extends StatelessWidget
   new({required _MarkdownEditorView view})
     : _maxCharacters = view.maxCharacters,
       _appBar = AuraAppBar(
-        title: _MarkdownEditorTitle(onUnfocus: view.onUnfocus),
+        title: _MarkdownEditorTitle(
+          onUnfocus: view.onUnfocus,
+          titleKey: view.titleKey,
+        ),
         actions: [
           _MarkdownPreviewToggle(
             isPreview: view.isPreview,
@@ -509,12 +523,14 @@ bool _markdownIsOverLimit(TextEditingValue value, int? maxCharacters) {
   return value.text.characters.length > maxCharacters;
 }
 
-class const _MarkdownEditorTitle({required final VoidCallback onUnfocus})
-    extends StatelessWidget {
+class const _MarkdownEditorTitle({
+  required final VoidCallback onUnfocus,
+  required final String titleKey,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext _) {
     return GestureDetector(
-      child: const TextLocale(LocaleKeys.markdown_editor_title),
+      child: TextLocale(titleKey),
       onTap: onUnfocus,
       behavior: .opaque,
     );
@@ -542,7 +558,7 @@ class const _MarkdownSaveIcon({
     return AuraIconButton(
       icon: Icons.save_outlined,
       onPressed: disabled ? null : onSave,
-      tooltip: LocaleKeys.common_save.tr(context: context),
+      tooltip: LocaleKeys.markdown_editor_apply.tr(context: context),
     );
   }
 }

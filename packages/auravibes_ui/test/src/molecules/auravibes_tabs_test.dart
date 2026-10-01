@@ -11,6 +11,25 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraTabs', () {
+    testWidgets('does not reveal tabs before a covered route is laid out', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          Navigator(
+            pages: const [
+              MaterialPage<void>(child: AuraTabs<void>(items: _items)),
+              MaterialPage<void>(child: Text('Setup')),
+            ],
+            onDidRemovePage: (_) => fail('No page should be removed'),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Setup'), findsOneWidget);
+    });
+
     testWidgets('renders tab labels and selected content', (tester) async {
       await tester.pumpWidget(_host(const AuraTabs<void>(items: _items)));
 

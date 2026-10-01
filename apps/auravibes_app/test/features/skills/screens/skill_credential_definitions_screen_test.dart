@@ -117,7 +117,7 @@ void main() {
       );
       await _pumpScreen(tester, harness);
 
-      expect(find.bySemanticsLabel('Search credentials'), findsWidgets);
+      expect(find.bySemanticsLabel('Search credential types'), findsWidgets);
       expect(find.text('GitHub'), findsOneWidget);
       expect(find.text('Data Warehouse'), findsOneWidget);
 
@@ -133,7 +133,10 @@ void main() {
 
       await tester.enterText(find.byType(EditableText), 'missing');
       final _ = await tester.pump();
-      expect(find.text('No matching credentials'), findsOneWidget);
+      expect(
+        find.text('No credential types match your search'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -165,6 +168,6 @@ void main() {
     );
     expect(duplicate?.title, 'GitHub Copy');
     expect(duplicate?.attributesJson, source.attributesJson);
-    expect(find.text('Credential duplicated'), findsOneWidget);
+    expect(find.text('Credential type duplicated'), findsOneWidget);
   });
 }

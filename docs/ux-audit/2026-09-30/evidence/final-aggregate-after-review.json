@@ -1,0 +1,18 @@
+{
+  "cwd": "/workspace/auravibes",
+  "command": [
+    "/tmp/aura-ux-melos-run",
+    "fvm",
+    "dart",
+    "run",
+    "melos",
+    "run",
+    "validate:quick"
+  ],
+  "source_fingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+  "started_utc": "2026-10-01T07:35:47.614161+00:00",
+  "log": "/tmp/aura-ux-final-validate-quick-after-review.log",
+  "exit": 0,
+  "duration_seconds": 393.91,
+  "completed_utc": "2026-10-01T07:42:21.523946+00:00"
+}

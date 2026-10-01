@@ -1,0 +1,1401 @@
+{
+  "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+  "finalPngCount": 76,
+  "pairedMetadataCount": 76,
+  "accessibilityMetadataCount": 2,
+  "directInspectionRemaining": [],
+  "files": [
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/001-markdown_editor.agent_instructions-en.png",
+      "name": "markdown_editor.agent_instructions-en",
+      "sha256": "5be93c16231d33fa5f50a9f1c51e2482d8f6920fd8eb922185461d6f28e2e7c3",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/001-markdown_editor.agent_instructions-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/002-markdown_editor.agent_instructions-es.png",
+      "name": "markdown_editor.agent_instructions-es",
+      "sha256": "e14aadb35806336a5bdb4618d6b99249bd47a4cea518b32daee67513fef77cdc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/002-markdown_editor.agent_instructions-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/003-markdown_editor.skill_description-en.png",
+      "name": "markdown_editor.skill_description-en",
+      "sha256": "45608ad2bd07715069d0461100fc0fbeb8ddea6c4608ac7d0d59588ffaaaf011",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/003-markdown_editor.skill_description-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/004-markdown_editor.skill_description-es.png",
+      "name": "markdown_editor.skill_description-es",
+      "sha256": "0172169b39a95cf2a3f65c8c39fafe34868a2be0b34bc5dbff8e9cf9fef95d78",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/004-markdown_editor.skill_description-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/005-markdown_editor.skill_instructions-en.png",
+      "name": "markdown_editor.skill_instructions-en",
+      "sha256": "86e11dc8d8b480048f8d97d42a734f2460c7a9c3d631aad46a22cfc79c66e99b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/005-markdown_editor.skill_instructions-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/006-markdown_editor.skill_instructions-es.png",
+      "name": "markdown_editor.skill_instructions-es",
+      "sha256": "9ccf0b1204429a29047309933ced947ac4291d4d1025ae861c9f166a9b95dce3",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/006-markdown_editor.skill_instructions-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/007-markdown_editor.resource_description-en.png",
+      "name": "markdown_editor.resource_description-en",
+      "sha256": "d254bf0d420c7211b72a0205b75351822004690c68ab4c2fc553d8625b07eef8",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/007-markdown_editor.resource_description-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/008-markdown_editor.resource_description-es.png",
+      "name": "markdown_editor.resource_description-es",
+      "sha256": "24b5a779ce0c081d3202dcf01ae1374706967f04fd0d032b8e184c8c8ec0ef9b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/008-markdown_editor.resource_description-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/009-markdown_editor.resource_content-en.png",
+      "name": "markdown_editor.resource_content-en",
+      "sha256": "b2d25cc87705c687621cf8c128892ec348f4c9b8ad37ccbbf230776c01bfb3e9",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/009-markdown_editor.resource_content-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/010-markdown_editor.resource_content-es.png",
+      "name": "markdown_editor.resource_content-es",
+      "sha256": "d6dd63484a5727a29771a14c9f67a471a0daab7c2faba27dbee12199c993816f",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/010-markdown_editor.resource_content-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/011-markdown_editor.tool_description-en.png",
+      "name": "markdown_editor.tool_description-en",
+      "sha256": "041ea0ebf83e93544b4ca1da6ddf5ad07e22a316389b040232437a57e530b374",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/011-markdown_editor.tool_description-en.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/012-markdown_editor.tool_description-es.png",
+      "name": "markdown_editor.tool_description-es",
+      "sha256": "2e455501e7a2ef8ee03ce1c769c2de05fb69f46a0b06cb91d0d55914e49242d2",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/012-markdown_editor.tool_description-es.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/013-MixedConnections.png",
+      "name": "MixedConnections",
+      "sha256": "4692f1e2e900096904acf7d4686cf95e2271ebef45352b4bfd61221c33aab17f",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/013-MixedConnections.png",
+      "fixture": "Four controlled connection rows: model provider, expired MCP, two saved credentials; no remote access claim",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/014-MixedAccounts.png",
+      "name": "MixedAccounts",
+      "sha256": "c7c1d6998deb27ae4af77144464e20bc31cb1f644faf46eb4de3e86de3a5bf7c",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/014-MixedAccounts.png",
+      "fixture": "Two origins with stored accounts; controlled expired and unknown health",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/015-CloudTools.png",
+      "name": "CloudTools",
+      "sha256": "47e44dad9a89f836cee400433abbb09ee23aed4745db117063602362fab73998",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-clarity-preflight/001-CloudTools.png",
+      "fixture": "Matching cloud mirror and session; controlled available gate and empty tools; actual capability restriction",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/016-LocalEmptyTools.png",
+      "name": "LocalEmptyTools",
+      "sha256": "2b35f6b63fb31346d3a63bece94dcf46cc68144570055b4e8d30dd7d59218803",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-clarity-preflight/002-LocalEmptyTools.png",
+      "fixture": "Persisted local workspace with controlled empty tool providers; actual local capability, add control and empty hint",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/017-DarkAgents.png",
+      "name": "DarkAgents",
+      "sha256": "1abc4a0352b3e853d8fef9dbe49e9dd9410511d929778f21a3368190851f36fc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-clarity-preflight/003-DarkAgents.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/018-FailedWorkspace.png",
+      "name": "FailedWorkspace",
+      "sha256": "3124e593b62fdc039e47f097a7b3d5664ab8be5399291b9c6a912f95080f5002",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/016-FailedWorkspace.png",
+      "fixture": "Controlled missing local workspace failure and actual route recovery screen",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/019-BuiltInSkillDetail.png",
+      "name": "BuiltInSkillDetail",
+      "sha256": "b8a1a02f4f222bce2a1d20ce336935b6433613a88733c5b6f9313cf29167ddf9",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-whole-review-preflight/013-BuiltInSkillDetail.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified.",
+      "finalImageDirectlyReopened": true
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/020-BuiltInResource.png",
+      "name": "BuiltInResource",
+      "sha256": "4af5aed34410f91be3dd8c00f70942dc08cad70535447066b3b24e32a1baac12",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-dual-mono-preflight/002-BuiltInResource.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/021-CloudWorkspaceDetailRoute.png",
+      "name": "CloudWorkspaceDetailRoute",
+      "sha256": "e55d00648782193c52cedb586fd9204990bfd569a3dc5f5cd8450e064d011206",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/019-CloudWorkspaceDetailRoute.png",
+      "fixture": "Controlled cloud workspace admin detail with authoritative capability values; no remote mutation",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/022-ServiceConnectionEditRoute.png",
+      "name": "ServiceConnectionEditRoute",
+      "sha256": "7096683b26bb7b8da01978f84d985fc6fb2418a832b67b2a9f6bcc5c748f6078",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/020-ServiceConnectionEditRoute.png",
+      "fixture": "Controlled saved generic service editor state",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/023-IntroRoute.png",
+      "name": "IntroRoute",
+      "sha256": "b676a199df0bc3a78bad34f4c12a1af5d6cd2e15af943a6809dc45cd72adcc38",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/021-IntroRoute.png",
+      "fixture": "Empty in-memory database; no workspace or account",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/024-WorkspaceRoute.png",
+      "name": "WorkspaceRoute",
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/022-WorkspaceRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/025-NewChatRoute.png",
+      "name": "NewChatRoute",
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/022-WorkspaceRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/026-ChatsRoute.png",
+      "name": "ChatsRoute",
+      "sha256": "50f5fbd9c8e3b9cb4b1f09b0836a8238f30b7e26446e3d779b6ae2924358daa2",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/024-ChatsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/027-ConversationRoute.png",
+      "name": "ConversationRoute",
+      "sha256": "350ef1f230c2c1d00f51be645cc331be239ece35196da7a059f671c80d3d67e8",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/025-ConversationRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/028-SubAgentConversationRoute.png",
+      "name": "SubAgentConversationRoute",
+      "sha256": "0bee1ae10fa88e6d1a3aacbee6ab4946c4578711c5b9fae103e5c0d98abff665",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/026-SubAgentConversationRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/029-MoreRoute.png",
+      "name": "MoreRoute",
+      "sha256": "b98ab82dcb57b60244ba62b389e95a1dc583489f52a4a2015762ac8ab287f8c4",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/027-MoreRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/030-SettingsRoute.png",
+      "name": "SettingsRoute",
+      "sha256": "a9a0d0d97b7af8e2d5351bfeb0237ed264fe1a03e81e3cda089749e1ed6899e6",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/028-SettingsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/031-WorkspaceSettingsRoute.png",
+      "name": "WorkspaceSettingsRoute",
+      "sha256": "5ffbbb283830ee9ba9848bd03ca8139472d86e72cfd1e0eea6d021b9acad97fc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/029-WorkspaceSettingsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/032-WorkspaceManagementRoute.png",
+      "name": "WorkspaceManagementRoute",
+      "sha256": "f6adbbd5d6d219207af50ce5f36721aeffdd78fb20a1a9ca692c12bc2641fa9d",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/030-WorkspaceManagementRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/033-WorkspaceCreateRoute.png",
+      "name": "WorkspaceCreateRoute",
+      "sha256": "9e16beb5647a756851f253f10e84b4119f9d64627a069c22f61f5490411fe740",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/031-WorkspaceCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/034-CloudAccountsRoute.png",
+      "name": "CloudAccountsRoute",
+      "sha256": "b485a21c97fc57e2b0494ab23c845550061236e944cc0738e2a36cccbb9b7962",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/032-CloudAccountsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/035-CloudAccountAddRoute.png",
+      "name": "CloudAccountAddRoute",
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/033-CloudAccountAddRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/036-CloudAccountLoginRoute.png",
+      "name": "CloudAccountLoginRoute",
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/033-CloudAccountAddRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/037-CloudAccountRegisterRoute.png",
+      "name": "CloudAccountRegisterRoute",
+      "sha256": "d56fa1537adf62b835c60cadd3a1524b3e3fc8ef5418302f4d069e56c476d6c5",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/035-CloudAccountRegisterRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/038-CloudAccountForgotPasswordRoute.png",
+      "name": "CloudAccountForgotPasswordRoute",
+      "sha256": "dd889b631cc7c2d80ef57edb95a9bcd629ca6a72b591b7c2a29a78edfe532161",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/036-CloudAccountForgotPasswordRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/039-ModelsRoute.png",
+      "name": "ModelsRoute",
+      "sha256": "95032cd29bb0ad6707041ae0ffa5bc666cd31e4b893772b8410394cefc94f3b3",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/037-ModelsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/040-ServiceConnectionsRoute.png",
+      "name": "ServiceConnectionsRoute",
+      "sha256": "306ebfd43e379c7929bf6c463d8b6728c53a24b3b8c3bc2516091a90216b3e7b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/038-ServiceConnectionsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/041-ServiceConnectionCreateRoute.png",
+      "name": "ServiceConnectionCreateRoute",
+      "sha256": "7390b2a956d8a1e055a1ae1d89805cc40835892b1bf68df24388a7f17c918d8b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/039-ServiceConnectionCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/042-ToolsRoute.png",
+      "name": "ToolsRoute",
+      "sha256": "dac1fc41c8f3ac06464a55413c9efb0fa7af92025a60cad9ab817222c2c24e53",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/040-ToolsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/043-AgentsRoute.png",
+      "name": "AgentsRoute",
+      "sha256": "7f7a66b385f6ada771b13cf2f87640a8193ec147c0947949ddc6441a10715d00",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-clarity-preflight/004-AgentsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/044-AgentCreateRoute.png",
+      "name": "AgentCreateRoute",
+      "sha256": "bcff2984587bb0f9b2cbeb07aec44d3852ade55784bcc8442c90b6f740976f43",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/042-AgentCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/045-AgentDetailRoute.png",
+      "name": "AgentDetailRoute",
+      "sha256": "ace7bd73937257b8d40df7d41b541f09c71e7cf1c4b001face4870267aae1590",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/043-AgentDetailRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/046-SkillsRoute.png",
+      "name": "SkillsRoute",
+      "sha256": "9fe5dcb403bb4b84d200e614f851c1bd5378fb06f67f3183338dedc526d4d462",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/044-SkillsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/047-SkillCreateRoute.png",
+      "name": "SkillCreateRoute",
+      "sha256": "208fc92d6540c34589c3157bba6feb00cb626fa3031de057fa521d0664324f6d",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/045-SkillCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/048-SkillDetailRoute.png",
+      "name": "SkillDetailRoute",
+      "sha256": "cf1b05f04a0b50e4d74c9703c116ae41003fc14fbc01355d914d9477167a582b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/046-SkillDetailRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/049-SkillResourceCreateRoute.png",
+      "name": "SkillResourceCreateRoute",
+      "sha256": "b2790f9dd907202bc23c34f9c094101e1fa15903e923caedf847cb3154720b9a",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/047-SkillResourceCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/050-SkillResourceEditRoute.png",
+      "name": "SkillResourceEditRoute",
+      "sha256": "1778916bad790484fcb590f74eb63e874582ff83e80ae674ddaa53a0d94d195d",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/048-SkillResourceEditRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/051-SkillToolCreateRoute.png",
+      "name": "SkillToolCreateRoute",
+      "sha256": "a6402e0616458fcc096d4076524f92b33454dbfd462874d02d109fa3a1373bac",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/049-SkillToolCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/052-SkillToolEditRoute.png",
+      "name": "SkillToolEditRoute",
+      "sha256": "56dbbe25624989c1cee876a07e7bff6d68b9fc6837e26d8d9636a07c2214b20c",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/050-SkillToolEditRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/053-SkillCredentialDefinitionsRoute.png",
+      "name": "SkillCredentialDefinitionsRoute",
+      "sha256": "4483b12820b08112c2e4fceea7f106de6d1084269fa8ec04dbea22e3b1c4791a",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/051-SkillCredentialDefinitionsRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/054-SkillCredentialDefinitionCreateRoute.png",
+      "name": "SkillCredentialDefinitionCreateRoute",
+      "sha256": "58ec4c36857d81b844d32aa86db6abdd1457d722b80db8d2e567850b3e4bb49c",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/052-SkillCredentialDefinitionCreateRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/055-SkillCredentialDefinitionEditRoute.png",
+      "name": "SkillCredentialDefinitionEditRoute",
+      "sha256": "9d99187dea50289b2c288681ed681d9e64c8eb52818a913cb73d74e72e8e5c06",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/053-SkillCredentialDefinitionEditRoute.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/056-NewChatRoute-959.0-en-1.0.png",
+      "name": "NewChatRoute-959.0-en-1.0",
+      "sha256": "f7d005c99c38180474568438de9a338958deefcaf6210064c4a89036eb99b9bc",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/054-NewChatRoute-959.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/057-NewChatRoute-960.0-en-1.0.png",
+      "name": "NewChatRoute-960.0-en-1.0",
+      "sha256": "4f03f35188d2405feb7a5521696160881babcf3c66dc6a46b25fdce869990d53",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/055-NewChatRoute-960.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/058-NewChatRoute-360.0-es-1.4.png",
+      "name": "NewChatRoute-360.0-es-1.4",
+      "sha256": "88cef031a02bdf5fab508dc4640d3feeef4a4651ce4ad3bbf393759dd7f161df",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/056-NewChatRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/059-NewChatRoute-1280.0-es-1.4.png",
+      "name": "NewChatRoute-1280.0-es-1.4",
+      "sha256": "87d8f7c4e5fda78ffb083039926197d06eea11fb67abbf422574870d2e28c3ea",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/057-NewChatRoute-1280.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/060-SkillsRoute-959.0-en-1.0.png",
+      "name": "SkillsRoute-959.0-en-1.0",
+      "sha256": "109971723887f756c88171acf941b4811735dfe647da3a0a24be6accfea99fd7",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-narrow-fix-preflight/003-SkillsRoute-959.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/061-SkillsRoute-960.0-en-1.0.png",
+      "name": "SkillsRoute-960.0-en-1.0",
+      "sha256": "b701e768ed171ea959435ed8af1fa52ac155ee3498141e977c9d96f9d3472c31",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-narrow-fix-preflight/004-SkillsRoute-960.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/062-SkillsRoute-360.0-es-1.4.png",
+      "name": "SkillsRoute-360.0-es-1.4",
+      "sha256": "a32c597b2699ecab4e515df864ce7556ee805085ad68837d84ca764142ba544d",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-narrow-fix-preflight/005-SkillsRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/063-SkillsRoute-1280.0-es-1.4.png",
+      "name": "SkillsRoute-1280.0-es-1.4",
+      "sha256": "b801dcb7abd8731f705cb81671723df1f4bb89845d893e813eab854803872b35",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-narrow-fix-preflight/006-SkillsRoute-1280.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/064-ToolsRoute-360.0-es-1.4.png",
+      "name": "ToolsRoute-360.0-es-1.4",
+      "sha256": "27d4a996a43d075766fe55aed3d6c22b36bc089d282fb412ec1cda6b39f59b71",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-clarity-preflight/005-ToolsRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/065-ServiceConnectionsRoute-959.0-en-1.0.png",
+      "name": "ServiceConnectionsRoute-959.0-en-1.0",
+      "sha256": "1d9cbfe6f41711c82fb73789843badba847ea3ecd337faac9854698c1a58ab0e",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/062-ServiceConnectionsRoute-959.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/066-ServiceConnectionsRoute-960.0-en-1.0.png",
+      "name": "ServiceConnectionsRoute-960.0-en-1.0",
+      "sha256": "973f801cf89f582ad8581af27fc884f7e858bfdeec4a6b775efd1d8111fd9ffe",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/063-ServiceConnectionsRoute-960.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/067-ServiceConnectionsRoute-360.0-es-1.4.png",
+      "name": "ServiceConnectionsRoute-360.0-es-1.4",
+      "sha256": "324e8d9dfd8e504c3de447d4bf33cdfe12feb9bf788f21892e02e4002365c6eb",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/064-ServiceConnectionsRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/068-ServiceConnectionsRoute-1280.0-es-1.4.png",
+      "name": "ServiceConnectionsRoute-1280.0-es-1.4",
+      "sha256": "0e989b0715ab7cac1972fcf02b2a2836e018971325d441228ce866a40eb7a118",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/065-ServiceConnectionsRoute-1280.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/069-WorkspaceSettingsRoute-959.0-en-1.0.png",
+      "name": "WorkspaceSettingsRoute-959.0-en-1.0",
+      "sha256": "5234ca584e93e306f0fbd009b17bdfe230c61687a5856d0879ef82cd7e921740",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/066-WorkspaceSettingsRoute-959.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/070-WorkspaceSettingsRoute-960.0-en-1.0.png",
+      "name": "WorkspaceSettingsRoute-960.0-en-1.0",
+      "sha256": "6891da4c35a61bd8eabb015c9305e9c7ad2e2a9deb0d4fc9f62b3bd61a70cb64",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/067-WorkspaceSettingsRoute-960.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/071-WorkspaceSettingsRoute-360.0-es-1.4.png",
+      "name": "WorkspaceSettingsRoute-360.0-es-1.4",
+      "sha256": "9a93abb1c93708117f26bc89f9d39a96434a0d96456dbaf1b01f1407ec8d9de8",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/068-WorkspaceSettingsRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/072-WorkspaceSettingsRoute-1280.0-es-1.4.png",
+      "name": "WorkspaceSettingsRoute-1280.0-es-1.4",
+      "sha256": "ac89c173abbc1242c5a21e50fc8294bd3c29c3cf2ba5650f95a5428128bf9b0c",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/069-WorkspaceSettingsRoute-1280.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/073-CloudAccountLoginRoute-959.0-en-1.0.png",
+      "name": "CloudAccountLoginRoute-959.0-en-1.0",
+      "sha256": "0b0e626e11a133f2597a7ae4c84dd917b12dc6c7fe8c0ff2b1896d1570c4d60b",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/070-CloudAccountLoginRoute-959.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/074-CloudAccountLoginRoute-960.0-en-1.0.png",
+      "name": "CloudAccountLoginRoute-960.0-en-1.0",
+      "sha256": "e7ec5ff9c5920071419f35933aa2eff256825f875b612fc29a7cb4b64e8bf603",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/071-CloudAccountLoginRoute-960.0-en-1.0.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/075-CloudAccountLoginRoute-360.0-es-1.4.png",
+      "name": "CloudAccountLoginRoute-360.0-es-1.4",
+      "sha256": "612146752c6f3b6377f5720c4c409d0cc2f984d9f7a03787512409c59dc4b34c",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/072-CloudAccountLoginRoute-360.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/076-CloudAccountLoginRoute-1280.0-es-1.4.png",
+      "name": "CloudAccountLoginRoute-1280.0-es-1.4",
+      "sha256": "5427dc7c790bf455d6cb18689e60d6b54270c3f621cf471ce9e99f83ec6b8650",
+      "sourceFingerprint": "4aac0aa43f3aa9f53f735f14698b4f091ce3382000e8ff0bed8e7ff1ebd66866",
+      "inspection": "byte-identical to individually viewed PNG",
+      "previouslyViewed": "/tmp/aura-task7-capture-attempt1/073-CloudAccountLoginRoute-1280.0-es-1.4.png",
+      "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+      "fontLimitations": "Family-free Copy code uses test Ahem; native control typography is unverified."
+    }
+  ],
+  "disposition": "Accepted final artifact set: all 76 PNGs byte-identical to individually opened actual UI images; repaired Jina final image also directly reopened; all metadata checked against frozen source and five registered family hashes",
+  "limitations": [
+    "Copy code null-family label uses widget-renderer Ahem; native typography remains unverified",
+    "Controlled production-view fixture excludes bootstrap/main and live remote services",
+    "Rendered endpoints are distinct from joined task, native accessibility and participant evidence"
+  ],
+  "captureResult": "/tmp/aura-ux-final-captures-after-review.json",
+  "captureExitCode": 0,
+  "captureCaseCount": 78,
+  "captureDurationSeconds": 94.677,
+  "artifactHashes": [
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/001-markdown_editor.agent_instructions-en.json",
+      "sha256": "5dbe9ab2f5ea840d43d1b6c17df6ccf5b06a8e3a2805dd9c35c36a6abb8874cd"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/001-markdown_editor.agent_instructions-en.png",
+      "sha256": "5be93c16231d33fa5f50a9f1c51e2482d8f6920fd8eb922185461d6f28e2e7c3"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/002-markdown_editor.agent_instructions-es.json",
+      "sha256": "9d7c3b2fce6fbdd2edfebda7914c705208ce6e9f4bb77359756e7f6ab23671c3"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/002-markdown_editor.agent_instructions-es.png",
+      "sha256": "e14aadb35806336a5bdb4618d6b99249bd47a4cea518b32daee67513fef77cdc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/003-markdown_editor.skill_description-en.json",
+      "sha256": "0e759fb66a2479f9f9c32f10bb7834c7bf3812796e260e64078320d6ef6ebb0f"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/003-markdown_editor.skill_description-en.png",
+      "sha256": "45608ad2bd07715069d0461100fc0fbeb8ddea6c4608ac7d0d59588ffaaaf011"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/004-markdown_editor.skill_description-es.json",
+      "sha256": "1f7da9dd143e1ff75d012d0b696a578d35527e7b57420648ddf556d4c722a5df"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/004-markdown_editor.skill_description-es.png",
+      "sha256": "0172169b39a95cf2a3f65c8c39fafe34868a2be0b34bc5dbff8e9cf9fef95d78"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/005-markdown_editor.skill_instructions-en.json",
+      "sha256": "c9325bdc56cf10ccca6428a414212f62a2344097be8adf96df8331a8ea1f65a9"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/005-markdown_editor.skill_instructions-en.png",
+      "sha256": "86e11dc8d8b480048f8d97d42a734f2460c7a9c3d631aad46a22cfc79c66e99b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/006-markdown_editor.skill_instructions-es.json",
+      "sha256": "d75f694af7d26ddc17b0d504ec19fa6192ca6c93b0e5bc33f0295bd552f31fdb"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/006-markdown_editor.skill_instructions-es.png",
+      "sha256": "9ccf0b1204429a29047309933ced947ac4291d4d1025ae861c9f166a9b95dce3"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/007-markdown_editor.resource_description-en.json",
+      "sha256": "eed155b6eb545a7eb665ec98e3e5937b1974ddc407efdabd05b9574a195a3a5d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/007-markdown_editor.resource_description-en.png",
+      "sha256": "d254bf0d420c7211b72a0205b75351822004690c68ab4c2fc553d8625b07eef8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/008-markdown_editor.resource_description-es.json",
+      "sha256": "ec4c72d59bce79717f8596f4adae5f3479d9e2c7f6e81a566d3b6a8d831f8416"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/008-markdown_editor.resource_description-es.png",
+      "sha256": "24b5a779ce0c081d3202dcf01ae1374706967f04fd0d032b8e184c8c8ec0ef9b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/009-markdown_editor.resource_content-en.json",
+      "sha256": "3f2c08938cb12fb2d8d894006882e44a7c32d8e4d7fa83e7ff6fa2968372ec79"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/009-markdown_editor.resource_content-en.png",
+      "sha256": "b2d25cc87705c687621cf8c128892ec348f4c9b8ad37ccbbf230776c01bfb3e9"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/010-markdown_editor.resource_content-es.json",
+      "sha256": "8bd56b5c2b852cc4999792c5feec2e5a99cbb9b3476853ab413680105a89056f"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/010-markdown_editor.resource_content-es.png",
+      "sha256": "d6dd63484a5727a29771a14c9f67a471a0daab7c2faba27dbee12199c993816f"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/011-markdown_editor.tool_description-en.json",
+      "sha256": "b02cc8f29a0f0981d831cc7c17e52ede6be8390c78912c566f097308bba656da"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/011-markdown_editor.tool_description-en.png",
+      "sha256": "041ea0ebf83e93544b4ca1da6ddf5ad07e22a316389b040232437a57e530b374"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/012-markdown_editor.tool_description-es.json",
+      "sha256": "fd90a9e5c56ebb2fd8e5e24a0aab02cff4d029383dbd54d1c67740f500074189"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/012-markdown_editor.tool_description-es.png",
+      "sha256": "2e455501e7a2ef8ee03ce1c769c2de05fb69f46a0b06cb91d0d55914e49242d2"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/013-MixedConnections.json",
+      "sha256": "e0f38a09ec5161f2dd03b95e86cf464903d9d4b9430a69477580029a3dfcf2fc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/013-MixedConnections.png",
+      "sha256": "4692f1e2e900096904acf7d4686cf95e2271ebef45352b4bfd61221c33aab17f"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/014-MixedAccounts.json",
+      "sha256": "9a9747e1545732630eff83972c68d3db19e69ab70992d708f022f0e9f31cbf8b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/014-MixedAccounts.png",
+      "sha256": "c7c1d6998deb27ae4af77144464e20bc31cb1f644faf46eb4de3e86de3a5bf7c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/015-CloudTools.json",
+      "sha256": "463fef9ce8c0580a6278d9a14e267862faec79b71f5d3ce680ace438c7178c91"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/015-CloudTools.png",
+      "sha256": "47e44dad9a89f836cee400433abbb09ee23aed4745db117063602362fab73998"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/016-LocalEmptyTools.json",
+      "sha256": "afcfe933627f90c5f7155dfb48605ac4112a3d32a839b44e1478be9c5d5fe7cb"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/016-LocalEmptyTools.png",
+      "sha256": "2b35f6b63fb31346d3a63bece94dcf46cc68144570055b4e8d30dd7d59218803"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/017-DarkAgents.json",
+      "sha256": "1740e4be1837c7e4a67f7f49e950d74866186bad581ee21db7eb5333215059f5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/017-DarkAgents.png",
+      "sha256": "1abc4a0352b3e853d8fef9dbe49e9dd9410511d929778f21a3368190851f36fc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/018-FailedWorkspace.json",
+      "sha256": "40a1670f0effe0856bba9b63eae6f4a5dbd9ff8dd008b16280e470a9fea3e719"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/018-FailedWorkspace.png",
+      "sha256": "3124e593b62fdc039e47f097a7b3d5664ab8be5399291b9c6a912f95080f5002"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/019-BuiltInSkillDetail.json",
+      "sha256": "fea65e3b9c1820eb2b730759fa974a48561414888536e7add8a7eb824631fab8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/019-BuiltInSkillDetail.png",
+      "sha256": "b8a1a02f4f222bce2a1d20ce336935b6433613a88733c5b6f9313cf29167ddf9"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/020-BuiltInResource.json",
+      "sha256": "a331686a940cf9fd8f2e5c6089b1199b9f971d136bf347f545a572b4254d0361"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/020-BuiltInResource.png",
+      "sha256": "4af5aed34410f91be3dd8c00f70942dc08cad70535447066b3b24e32a1baac12"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/021-CloudWorkspaceDetailRoute.json",
+      "sha256": "4beb4ce1da1ec41b687b88aa146446a33a21ae83669284fb93747289755dec01"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/021-CloudWorkspaceDetailRoute.png",
+      "sha256": "e55d00648782193c52cedb586fd9204990bfd569a3dc5f5cd8450e064d011206"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/022-ServiceConnectionEditRoute.json",
+      "sha256": "b6805904155c8871ed6ea24046c7e0d9193ce0bbab13d696f494b838154a9593"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/022-ServiceConnectionEditRoute.png",
+      "sha256": "7096683b26bb7b8da01978f84d985fc6fb2418a832b67b2a9f6bcc5c748f6078"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/023-IntroRoute.json",
+      "sha256": "231462ce62292c6fd6e7ec920604eaa9a5c15df2596998491543acda2b160a57"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/023-IntroRoute.png",
+      "sha256": "b676a199df0bc3a78bad34f4c12a1af5d6cd2e15af943a6809dc45cd72adcc38"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/024-WorkspaceRoute.json",
+      "sha256": "e64ea6498ff61c3b1591f1ced4f0640a8e97679effd3c718cf3e3241698ad1ba"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/024-WorkspaceRoute.png",
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/025-NewChatRoute.json",
+      "sha256": "3daac14b0647d9ac43e76c9bb0c2b21ee0a389b327b9ab30463b668f6129c71c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/025-NewChatRoute.png",
+      "sha256": "999cc5326aaff213ce3d781cc5dd0ecc78e5f9407328bc85603c597f1626feb5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/026-ChatsRoute.json",
+      "sha256": "4b4032153fe448b37ff201ae98447ff03f40b5ddab07f904aaac1132b91d156c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/026-ChatsRoute.png",
+      "sha256": "50f5fbd9c8e3b9cb4b1f09b0836a8238f30b7e26446e3d779b6ae2924358daa2"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/027-ConversationRoute.json",
+      "sha256": "7d55ee812c0d0133a8fc69c02b78dde9ac021b62913404fa69678e275ae5ce51"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/027-ConversationRoute.png",
+      "sha256": "350ef1f230c2c1d00f51be645cc331be239ece35196da7a059f671c80d3d67e8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/028-SubAgentConversationRoute.json",
+      "sha256": "4f445202e4c908b70c6e4d452607508178a4b585876572d10b37b4ade9c50afa"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/028-SubAgentConversationRoute.png",
+      "sha256": "0bee1ae10fa88e6d1a3aacbee6ab4946c4578711c5b9fae103e5c0d98abff665"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/029-MoreRoute.json",
+      "sha256": "53307c274a0829b0978c6ccf2058550a2c190e0622ebd24d217e9e652dc2b644"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/029-MoreRoute.png",
+      "sha256": "b98ab82dcb57b60244ba62b389e95a1dc583489f52a4a2015762ac8ab287f8c4"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/030-SettingsRoute.json",
+      "sha256": "cc8d7e3d2ded7461630809d6cb4ce7a0fe9da9c4e3f087c521684758651f76bd"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/030-SettingsRoute.png",
+      "sha256": "a9a0d0d97b7af8e2d5351bfeb0237ed264fe1a03e81e3cda089749e1ed6899e6"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/031-WorkspaceSettingsRoute.json",
+      "sha256": "3b9b4dfe3e50382162cee861e3a547cc9ab5a23962005e54ff8090430890dea6"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/031-WorkspaceSettingsRoute.png",
+      "sha256": "5ffbbb283830ee9ba9848bd03ca8139472d86e72cfd1e0eea6d021b9acad97fc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/032-WorkspaceManagementRoute.json",
+      "sha256": "0c76963947f84d4db6ab03600c1f8384070e76985dbeb22af67c2166206eff52"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/032-WorkspaceManagementRoute.png",
+      "sha256": "f6adbbd5d6d219207af50ce5f36721aeffdd78fb20a1a9ca692c12bc2641fa9d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/033-WorkspaceCreateRoute.json",
+      "sha256": "dac299188524498e53e3c57835c7451185179185dbf49420a63165ed11192302"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/033-WorkspaceCreateRoute.png",
+      "sha256": "9e16beb5647a756851f253f10e84b4119f9d64627a069c22f61f5490411fe740"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/034-CloudAccountsRoute.json",
+      "sha256": "01ce361d1a1763b16533985df73495f1ddc15335ead20150944b0610d2cb9ff8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/034-CloudAccountsRoute.png",
+      "sha256": "b485a21c97fc57e2b0494ab23c845550061236e944cc0738e2a36cccbb9b7962"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/035-CloudAccountAddRoute.json",
+      "sha256": "b6c085c51a1ff033186f01d044f1c8c74ed4290ab32327d07511379cb1f59e2e"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/035-CloudAccountAddRoute.png",
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/036-CloudAccountLoginRoute.json",
+      "sha256": "cdae7a6b2bc5354fa7e58f539682f812e48dd5913fdef5f0b03c74866a30dca7"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/036-CloudAccountLoginRoute.png",
+      "sha256": "d1b1b7c2519fd4af6aa34f442df8b9eeccb71dddbafa3171ed213c7bf9b909cc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/037-CloudAccountRegisterRoute.json",
+      "sha256": "1a25028843b053392c25b3383f49f332c524ae58bf1d843d935e4391c074a200"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/037-CloudAccountRegisterRoute.png",
+      "sha256": "d56fa1537adf62b835c60cadd3a1524b3e3fc8ef5418302f4d069e56c476d6c5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/038-CloudAccountForgotPasswordRoute.json",
+      "sha256": "9cce08597e3b9975890873ea5ed498585bff5ffa0c0510cc8835faedc495cf21"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/038-CloudAccountForgotPasswordRoute.png",
+      "sha256": "dd889b631cc7c2d80ef57edb95a9bcd629ca6a72b591b7c2a29a78edfe532161"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/039-ModelsRoute.json",
+      "sha256": "445e32488032d07f09f14d3c2b4a97902f58a338333deb60c5eb51b598455c58"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/039-ModelsRoute.png",
+      "sha256": "95032cd29bb0ad6707041ae0ffa5bc666cd31e4b893772b8410394cefc94f3b3"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/040-ServiceConnectionsRoute.json",
+      "sha256": "b2ea8db232934491dddebd33b257085fde18e351f655394f8db8127b525283d9"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/040-ServiceConnectionsRoute.png",
+      "sha256": "306ebfd43e379c7929bf6c463d8b6728c53a24b3b8c3bc2516091a90216b3e7b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/041-ServiceConnectionCreateRoute.json",
+      "sha256": "dea098084ba9952d1783ba9a52e3ce3341cde12a6d014eb789fb9d6c81e455d0"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/041-ServiceConnectionCreateRoute.png",
+      "sha256": "7390b2a956d8a1e055a1ae1d89805cc40835892b1bf68df24388a7f17c918d8b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/042-ToolsRoute.json",
+      "sha256": "6ae1214b832033fcaa0e516c1754d1cd956adcbb89a792e3d425220a3f0a4634"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/042-ToolsRoute.png",
+      "sha256": "dac1fc41c8f3ac06464a55413c9efb0fa7af92025a60cad9ab817222c2c24e53"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/043-AgentsRoute.json",
+      "sha256": "0865207738bdba2b367d7a9c32da324d072fe2c17151b594f68d408cf4a875b5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/043-AgentsRoute.png",
+      "sha256": "7f7a66b385f6ada771b13cf2f87640a8193ec147c0947949ddc6441a10715d00"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/044-AgentCreateRoute.json",
+      "sha256": "17404b486bb417c523ad19495f5f3941278dac606038b8ec9665a62a820a3b15"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/044-AgentCreateRoute.png",
+      "sha256": "bcff2984587bb0f9b2cbeb07aec44d3852ade55784bcc8442c90b6f740976f43"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/045-AgentDetailRoute.json",
+      "sha256": "288b848596661303afaadb85595ae4d1c171efc3f23adec8baf6980ddf1b7bfa"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/045-AgentDetailRoute.png",
+      "sha256": "ace7bd73937257b8d40df7d41b541f09c71e7cf1c4b001face4870267aae1590"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/046-SkillsRoute.json",
+      "sha256": "47979fa556ba8c6269e17e8b4130c124ff3ba2ba161d4196055c2efeb51694c5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/046-SkillsRoute.png",
+      "sha256": "9fe5dcb403bb4b84d200e614f851c1bd5378fb06f67f3183338dedc526d4d462"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/047-SkillCreateRoute.json",
+      "sha256": "b269ccb1d2214c3313c66a8a12a2c908714fdd2f06da965e1cf53f7f32fecf52"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/047-SkillCreateRoute.png",
+      "sha256": "208fc92d6540c34589c3157bba6feb00cb626fa3031de057fa521d0664324f6d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/048-SkillDetailRoute.json",
+      "sha256": "5e10087f65f8bac4f2206a20646fb4f6ac7305cef18ba9f127af08698e240e07"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/048-SkillDetailRoute.png",
+      "sha256": "cf1b05f04a0b50e4d74c9703c116ae41003fc14fbc01355d914d9477167a582b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/049-SkillResourceCreateRoute.json",
+      "sha256": "7396ff2cd19a304cfc661bd9d3eb543c3adeb940b87435af2994f04f50a990dc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/049-SkillResourceCreateRoute.png",
+      "sha256": "b2790f9dd907202bc23c34f9c094101e1fa15903e923caedf847cb3154720b9a"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/050-SkillResourceEditRoute.json",
+      "sha256": "5be3f167ac76108825b7eecbc2e453bd0173a363401e4e7666831fc140527733"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/050-SkillResourceEditRoute.png",
+      "sha256": "1778916bad790484fcb590f74eb63e874582ff83e80ae674ddaa53a0d94d195d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/051-SkillToolCreateRoute.json",
+      "sha256": "0a7ec75dca7bd801a429b1e9f5aeac526db57992b6227455342be890bc3662dc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/051-SkillToolCreateRoute.png",
+      "sha256": "a6402e0616458fcc096d4076524f92b33454dbfd462874d02d109fa3a1373bac"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/052-SkillToolEditRoute.json",
+      "sha256": "bc1b0b1ecc2cad6ae348feeace0dce734815be599eb411cc7dc3457ad18016c5"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/052-SkillToolEditRoute.png",
+      "sha256": "56dbbe25624989c1cee876a07e7bff6d68b9fc6837e26d8d9636a07c2214b20c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/053-SkillCredentialDefinitionsRoute.json",
+      "sha256": "b123a9cf6abfb4d0df79ac9e8dc1c130b37dcf1350cebd086e5282ce26e31635"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/053-SkillCredentialDefinitionsRoute.png",
+      "sha256": "4483b12820b08112c2e4fceea7f106de6d1084269fa8ec04dbea22e3b1c4791a"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/054-SkillCredentialDefinitionCreateRoute.json",
+      "sha256": "1eec58b3c55a09fe68ca1ac79a4a02697dd8acd583c1ef0bf0a156673270eb0c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/054-SkillCredentialDefinitionCreateRoute.png",
+      "sha256": "58ec4c36857d81b844d32aa86db6abdd1457d722b80db8d2e567850b3e4bb49c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/055-SkillCredentialDefinitionEditRoute.json",
+      "sha256": "61177dc7e913a3f37ce50c137e90b240ac9881fae96653402eec14f6fc2ec4d4"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/055-SkillCredentialDefinitionEditRoute.png",
+      "sha256": "9d99187dea50289b2c288681ed681d9e64c8eb52818a913cb73d74e72e8e5c06"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/056-NewChatRoute-959.0-en-1.0.json",
+      "sha256": "0f5ac40defbad5a7bd3ac4ae0f79ef1bf56a25be91744ca156d187c446dc16fa"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/056-NewChatRoute-959.0-en-1.0.png",
+      "sha256": "f7d005c99c38180474568438de9a338958deefcaf6210064c4a89036eb99b9bc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/057-NewChatRoute-960.0-en-1.0.json",
+      "sha256": "77808748be83b9f375955c17ade2faa18812e3cacf75afc6110e7bcf6b24d586"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/057-NewChatRoute-960.0-en-1.0.png",
+      "sha256": "4f03f35188d2405feb7a5521696160881babcf3c66dc6a46b25fdce869990d53"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/058-NewChatRoute-360.0-es-1.4.json",
+      "sha256": "7a38020422bd47d36e8fcb696e48b943d5cfb011b8ad8dae157b10ecd00d3c86"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/058-NewChatRoute-360.0-es-1.4.png",
+      "sha256": "88cef031a02bdf5fab508dc4640d3feeef4a4651ce4ad3bbf393759dd7f161df"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/059-NewChatRoute-1280.0-es-1.4.json",
+      "sha256": "f6c5f0b1f81c48d30609914e4d33aaafd8e989129c57fbd91aa256dcb1066c61"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/059-NewChatRoute-1280.0-es-1.4.png",
+      "sha256": "87d8f7c4e5fda78ffb083039926197d06eea11fb67abbf422574870d2e28c3ea"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/060-SkillsRoute-959.0-en-1.0.json",
+      "sha256": "8fef81fa4a3bd9a9e6f898b63f8805b77f0717b2d4ce1c4313f56298349ae47b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/060-SkillsRoute-959.0-en-1.0.png",
+      "sha256": "109971723887f756c88171acf941b4811735dfe647da3a0a24be6accfea99fd7"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/061-SkillsRoute-960.0-en-1.0.json",
+      "sha256": "437df3d7dc4bbdc4e024d63ca8c470b00b665dc101b70b802fcfc4852508d384"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/061-SkillsRoute-960.0-en-1.0.png",
+      "sha256": "b701e768ed171ea959435ed8af1fa52ac155ee3498141e977c9d96f9d3472c31"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/062-SkillsRoute-360.0-es-1.4.json",
+      "sha256": "49b29762e8c439d6e81c0281dbac2dadfc29cd742d1bc2d1d0e382dda3df03cf"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/062-SkillsRoute-360.0-es-1.4.png",
+      "sha256": "a32c597b2699ecab4e515df864ce7556ee805085ad68837d84ca764142ba544d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/063-SkillsRoute-1280.0-es-1.4.json",
+      "sha256": "2beb5acf89a1285cc70af239606370fade5c3a738036b56b37014c8505c43268"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/063-SkillsRoute-1280.0-es-1.4.png",
+      "sha256": "b801dcb7abd8731f705cb81671723df1f4bb89845d893e813eab854803872b35"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/064-ToolsRoute-360.0-es-1.4.json",
+      "sha256": "bc4b8199edb33fd398a87f8ef044b06ce5bfebcea555fa9f233cf0e6e3ccbb31"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/064-ToolsRoute-360.0-es-1.4.png",
+      "sha256": "27d4a996a43d075766fe55aed3d6c22b36bc089d282fb412ec1cda6b39f59b71"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/065-ServiceConnectionsRoute-959.0-en-1.0.json",
+      "sha256": "2a547448fc6e20deca8f048f1bdc35bdcac1e476581c6f0733587f9cac506971"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/065-ServiceConnectionsRoute-959.0-en-1.0.png",
+      "sha256": "1d9cbfe6f41711c82fb73789843badba847ea3ecd337faac9854698c1a58ab0e"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/066-ServiceConnectionsRoute-960.0-en-1.0.json",
+      "sha256": "1cd54e7e2d4e8932d6c2656de5d7d87d6b0ed825a092b4ac1f2d77283bc8dba1"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/066-ServiceConnectionsRoute-960.0-en-1.0.png",
+      "sha256": "973f801cf89f582ad8581af27fc884f7e858bfdeec4a6b775efd1d8111fd9ffe"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/067-ServiceConnectionsRoute-360.0-es-1.4.json",
+      "sha256": "216ca89b4c95b1ef19a4689c881356197b87d990ae64cd4ad117b6fa36c353fc"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/067-ServiceConnectionsRoute-360.0-es-1.4.png",
+      "sha256": "324e8d9dfd8e504c3de447d4bf33cdfe12feb9bf788f21892e02e4002365c6eb"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/068-ServiceConnectionsRoute-1280.0-es-1.4.json",
+      "sha256": "6576bd04a5236dcd81807ddff44919612579d2c858886c8f30a8b59f4ceea12f"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/068-ServiceConnectionsRoute-1280.0-es-1.4.png",
+      "sha256": "0e989b0715ab7cac1972fcf02b2a2836e018971325d441228ce866a40eb7a118"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/069-WorkspaceSettingsRoute-959.0-en-1.0.json",
+      "sha256": "9a28215e67ac489039beb7d3df68b25defc9e25b0d20c8594496aedad2521fa4"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/069-WorkspaceSettingsRoute-959.0-en-1.0.png",
+      "sha256": "5234ca584e93e306f0fbd009b17bdfe230c61687a5856d0879ef82cd7e921740"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/070-WorkspaceSettingsRoute-960.0-en-1.0.json",
+      "sha256": "3a1b306a60ee863303706abee647646c94a8566e278421e138d0f62b57c9197d"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/070-WorkspaceSettingsRoute-960.0-en-1.0.png",
+      "sha256": "6891da4c35a61bd8eabb015c9305e9c7ad2e2a9deb0d4fc9f62b3bd61a70cb64"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/071-WorkspaceSettingsRoute-360.0-es-1.4.json",
+      "sha256": "89d07d7391be4bc96a501878d96af74c9e41fe1fc036feab3fb51f2c8aa1fd60"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/071-WorkspaceSettingsRoute-360.0-es-1.4.png",
+      "sha256": "9a93abb1c93708117f26bc89f9d39a96434a0d96456dbaf1b01f1407ec8d9de8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/072-WorkspaceSettingsRoute-1280.0-es-1.4.json",
+      "sha256": "7970b90c3bcac5f512d599c0459919172d483cc5943d34a4418989c35f660740"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/072-WorkspaceSettingsRoute-1280.0-es-1.4.png",
+      "sha256": "ac89c173abbc1242c5a21e50fc8294bd3c29c3cf2ba5650f95a5428128bf9b0c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/073-CloudAccountLoginRoute-959.0-en-1.0.json",
+      "sha256": "ecd89d8e16628bb1277c34ca515d1fdb135565cbe0a4b6759acec1a2d9019941"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/073-CloudAccountLoginRoute-959.0-en-1.0.png",
+      "sha256": "0b0e626e11a133f2597a7ae4c84dd917b12dc6c7fe8c0ff2b1896d1570c4d60b"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/074-CloudAccountLoginRoute-960.0-en-1.0.json",
+      "sha256": "92ada5ab8dfba7e7a891e820c0f0d480e1792c7d193e29db34d33b323da1a400"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/074-CloudAccountLoginRoute-960.0-en-1.0.png",
+      "sha256": "e7ec5ff9c5920071419f35933aa2eff256825f875b612fc29a7cb4b64e8bf603"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/075-CloudAccountLoginRoute-360.0-es-1.4.json",
+      "sha256": "1d75df1fc9987c1a3315def08179d395ff805498bccacb47ebccbbbb9fb7e859"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/075-CloudAccountLoginRoute-360.0-es-1.4.png",
+      "sha256": "612146752c6f3b6377f5720c4c409d0cc2f984d9f7a03787512409c59dc4b34c"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/076-CloudAccountLoginRoute-1280.0-es-1.4.json",
+      "sha256": "5828b302efe9023950813f9b8a022b413c59ead939f5a13b9d504348220a0e32"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/076-CloudAccountLoginRoute-1280.0-es-1.4.png",
+      "sha256": "5427dc7c790bf455d6cb18689e60d6b54270c3f621cf471ce9e99f83ec6b8650"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/accessibility-dark.json",
+      "sha256": "e0aafd9ff8edf23e8881493c4cb086fe638a890c42cd881fcf0a5b4fd60f95d8"
+    },
+    {
+      "file": "/workspace/auravibes/docs/ux-audit/2026-09-30/evidence/task7/accessibility-light.json",
+      "sha256": "01a1d209d65885ec959d99919bf4a1e6a428156c145cf60daa19f93baf2e9308"
+    }
+  ],
+  "changedSincePriorFinal": [
+    "019-BuiltInSkillDetail.png"
+  ]
+}

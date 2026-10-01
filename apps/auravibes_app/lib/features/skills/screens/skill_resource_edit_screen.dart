@@ -6,14 +6,16 @@ import 'package:auravibes_app/features/skills/providers/skill_detail_provider.da
 import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -42,7 +44,21 @@ class _SkillResourceEditScreenState
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
   bool _initialized = false;
+  final _exitGuard = DraftExitGuard();
   bool _isSaving = false;
+  bool _isReadOnly = false;
+  ({String title, String description, String content}) _savedSnapshot = (
+    title: '',
+    description: '',
+    content: '',
+  );
+  ({String title, String description, String content}) get _snapshot => (
+    title: _titleController.text,
+    description: _descriptionController.text,
+    content: _contentController.text,
+  );
+  bool get _isDirty =>
+      _initialized && !_isReadOnly && _snapshot != _savedSnapshot;
 
   bool get _isCreate => widget.resourceId == null;
 
@@ -62,10 +78,23 @@ class _SkillResourceEditScreenState
     final viewData = _viewData(detailAsync.value);
     _initialize(viewData.resource, viewData.staticResource);
 
-    return _SkillResourceScreenView(
-      state: this,
-      viewData: viewData,
-      titleKey: _titleKey(viewData.staticResource),
+    _exitGuard.bind(
+      isDirty: () => _isDirty,
+      isSaving: () => _isSaving,
+      onReturn: (context) => SkillDetailRoute(
+        workspaceId: widget.workspaceId,
+        skillId: widget.skillId,
+      ).go(context),
+    );
+
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _SkillResourceScreenView(
+        state: this,
+        viewData: viewData,
+        titleKey: _titleKey(viewData.staticResource),
+        parentTitle: detailAsync.value?.title,
+      ),
     );
   }
 
@@ -110,6 +139,8 @@ class _SkillResourceEditScreenState
     } else if (staticResource case final value?) {
       _setFieldValues(value.title, value.description, value.content);
     }
+    _isReadOnly = staticResource != null;
+    _savedSnapshot = _snapshot;
     _initialized = true;
   }
 
@@ -126,16 +157,45 @@ class const _SkillResourceScreenView({
   required final _SkillResourceEditScreenState state,
   required final _SkillResourceViewData viewData,
   required final String titleKey,
+  required final String? parentTitle,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraScreen(
-    child: _SkillResourceBody(
-      state: state,
-      resourceAsync: viewData.resourceAsync,
-      resource: viewData.resource,
-      staticResource: viewData.staticResource,
+    child: Column(
+      crossAxisAlignment: .stretch,
+      children: [
+        if (parentTitle case final title?)
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(
+              LocaleKeys.skills_resource_parent.tr(
+                args: [title],
+                context: context,
+              ),
+            ),
+          ),
+        if (viewData.staticResource != null)
+          const Padding(
+            padding: EdgeInsets.all(12),
+            child: TextLocale(LocaleKeys.skills_screen_app_read_only),
+          ),
+        Expanded(
+          child: _SkillResourceBody(
+            state: state,
+            resourceAsync: viewData.resourceAsync,
+            resource: viewData.resource,
+            staticResource: viewData.staticResource,
+          ),
+        ),
+      ],
     ),
-    appBar: AuraAppBarWithDrawer(title: TextLocale(titleKey)),
+    appBar: AuraAppBarWithDrawer(
+      title: TextLocale(titleKey),
+      leading: AuraIconButton(
+        icon: Icons.arrow_back,
+        onPressed: () => state._exitGuard.pop(context),
+      ),
+    ),
   );
 }
 
@@ -144,6 +204,8 @@ extension on _SkillResourceEditScreenState {
     final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
+      titleKey: LocaleKeys.markdown_editor_resource_description,
+      draftHintKey: LocaleKeys.markdown_editor_resource_hint,
       maxCharacters: 240,
     );
     if (result == null || !mounted) return;
@@ -155,6 +217,8 @@ extension on _SkillResourceEditScreenState {
     final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _contentController.text,
+      titleKey: LocaleKeys.markdown_editor_resource_content,
+      draftHintKey: LocaleKeys.markdown_editor_resource_hint,
       maxCharacters: _skillResourceContentMaxCharacters,
     );
     if (result == null || !mounted) return;
@@ -170,7 +234,9 @@ extension on _SkillResourceEditScreenState {
       ref.invalidate(
         skillResourcesProvider(widget.workspaceId, widget.skillId),
       );
-      if (context.mounted) context.pop(true);
+      _savedSnapshot = _snapshot;
+      _isSaving = false;
+      if (context.mounted) await _exitGuard.pop(context, true);
     } on Object {
       if (context.mounted) _showSaveError(context);
     } finally {
@@ -222,7 +288,9 @@ extension on _SkillResourceEditScreenState {
       ref.invalidate(
         skillResourcesProvider(widget.workspaceId, widget.skillId),
       );
-      if (context.mounted) context.pop(true);
+      _savedSnapshot = _snapshot;
+      _isSaving = false;
+      if (context.mounted) await _exitGuard.pop(context, true);
     } on Object {
       if (context.mounted) _showSaveError(context);
     } finally {
@@ -451,7 +519,7 @@ class const _SkillResourceActions({
         const Spacer(),
         AuraButton(
           onPressed: onSave,
-          child: Text(LocaleKeys.skills_screen_save.tr(context: context)),
+          child: Text(LocaleKeys.skills_resource_save.tr(context: context)),
           disabled: state._isSaving,
         ),
       ],

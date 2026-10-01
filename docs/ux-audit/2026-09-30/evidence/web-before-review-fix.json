@@ -1,0 +1,183 @@
+{
+  "fingerprint": "61226e29828b0d6a6f4c6acbb5f96b4ea0687e1bd9eca7e95e859e02f9f84f22",
+  "realBrowser": "Chromium151 isolated context",
+  "actualStartup": true,
+  "localWorkspaceCreated": true,
+  "workspaceId": "01a0f644-72c0-7fd7-bdd0-bbeb6b6fb2f1",
+  "backAndForwardExactRoutes": true,
+  "sameContextDirectUrlEntry": true,
+  "newContextDirectEntry": false,
+  "browserClosed": true,
+  "ownedContainerAbsent": true,
+  "port8794Closed": true,
+  "pageErrors": [],
+  "limits": [
+    "models.dev auto-sync CORS/preflight failure; local navigation remains usable",
+    "Explicit dev flavor via flutter run warning; default Web build does not initialize flavor",
+    "First DDC context remained loader during144.717s; fresh same-server context fully starts",
+    "Same-context direct URL navigation; no claim of fresh-context persisted workspace entry",
+    "No native keyboard/VoiceOver, live provider, auth/email or dirty-exit browser permutations"
+  ],
+  "visuallyOpened": [
+    "startup.png",
+    "step-4.png",
+    "step-8.png"
+  ],
+  "artifacts": [
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-1.json",
+      "sha256": "7bb4c2266cf69d8fdede8ab940ad2bbec8a3faebd09efe90aa2526b634f1dbe4",
+      "saved_relative_path": "web-before-review-fix/command-1.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-10.json",
+      "sha256": "a4ddf188128a137b9c07638fdcffec9e72e96e3d1369095d7b529bf7c808036b",
+      "saved_relative_path": "web-before-review-fix/command-10.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-2.json",
+      "sha256": "df0d0418a533f19ed13d7f7aa95b14505497002ec0b80b68a6c0576966716363",
+      "saved_relative_path": "web-before-review-fix/command-2.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-3.json",
+      "sha256": "b9dbd580287e2d5ead38b1bafe244c8d21c8b5dc2098543056a1d117b8c447fc",
+      "saved_relative_path": "web-before-review-fix/command-3.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-4.json",
+      "sha256": "c501833d58c7d31c01a8e4f816289189be51e28c696d8586afa871df9a155ae4",
+      "saved_relative_path": "web-before-review-fix/command-4.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-5.json",
+      "sha256": "80162195b8189b045bbac976d600833876a1d8b839b90b3105174433c8eb787f",
+      "saved_relative_path": "web-before-review-fix/command-5.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-6.json",
+      "sha256": "f8d11d78fa3929381f24d484e0ae512039bbe7a77d129b0545109aa0f7d92bfc",
+      "saved_relative_path": "web-before-review-fix/command-6.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-7.json",
+      "sha256": "476782f142fde4f3461141cda77d7e836b03b86c53694bb91462024d85c0e653",
+      "saved_relative_path": "web-before-review-fix/command-7.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-8.json",
+      "sha256": "657e0934382243f50c3e9a74dc5cf748687d63151ae6406447f7ed817859ea5c",
+      "saved_relative_path": "web-before-review-fix/command-8.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/command-9.json",
+      "sha256": "78e05418c4910fd0a6ca7e0346e3e491a4b20ea3efd7d1ce6ca399b6233d31d1",
+      "saved_relative_path": "web-before-review-fix/command-9.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/result.json",
+      "sha256": "bbe7360b18aace847f4753fa42b93b5fba2d9afa2c1f6ac6dcdd32803c969d7c",
+      "saved_relative_path": "web-before-review-fix/result.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/startup.json",
+      "sha256": "b0651b14512c37568c60a99baf5466f4399ea7333d3acf65c1d0f57ff6ce83d2",
+      "saved_relative_path": "web-before-review-fix/startup.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/startup.png",
+      "sha256": "6f990d7215b5d51c156bbe710fe33de2ef868e623f77db88ae8a6c3c880d5ecf",
+      "saved_relative_path": "web-before-review-fix/startup.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-1.json",
+      "sha256": "b0651b14512c37568c60a99baf5466f4399ea7333d3acf65c1d0f57ff6ce83d2",
+      "saved_relative_path": "web-before-review-fix/step-1.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-1.png",
+      "sha256": "6f990d7215b5d51c156bbe710fe33de2ef868e623f77db88ae8a6c3c880d5ecf",
+      "saved_relative_path": "web-before-review-fix/step-1.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-2.json",
+      "sha256": "b0651b14512c37568c60a99baf5466f4399ea7333d3acf65c1d0f57ff6ce83d2",
+      "saved_relative_path": "web-before-review-fix/step-2.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-2.png",
+      "sha256": "1b136744272fe7a01c041558a86331f7cdbfb8dc0d7994a548b178504678cc54",
+      "saved_relative_path": "web-before-review-fix/step-2.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-3.json",
+      "sha256": "b15073fe114e94256e5159bcbf019c8db1e1d1016d63fa11effc420b86dea4e4",
+      "saved_relative_path": "web-before-review-fix/step-3.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-3.png",
+      "sha256": "a131a6941f7e3755f983904bb7cc9b27a51debf336b5963169e40180cd6fb4c2",
+      "saved_relative_path": "web-before-review-fix/step-3.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-4.json",
+      "sha256": "9e6a0ef8f3edab87afc184a0742ca3a7872826f4bc380016322cc33a003e76b5",
+      "saved_relative_path": "web-before-review-fix/step-4.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-4.png",
+      "sha256": "6ce3e09ebaffd41c2b13386e7f32b14d746c713cb5c244a3112130ff870cc212",
+      "saved_relative_path": "web-before-review-fix/step-4.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-5.json",
+      "sha256": "67a31f66649ca504aaef2283d2ca64cbbdd6d764ae53af2a17c056281cb2ed7d",
+      "saved_relative_path": "web-before-review-fix/step-5.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-5.png",
+      "sha256": "ed81c34df88d2e6edfcb8459c0b7440801d97589de34bec00fa24ac0d2e5aac3",
+      "saved_relative_path": "web-before-review-fix/step-5.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-6.json",
+      "sha256": "a8f2ddad1368e47b648a31478bfb384dd47113253be6cede387c4b165fc0945f",
+      "saved_relative_path": "web-before-review-fix/step-6.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-6.png",
+      "sha256": "f3cfb80560aecbb6a85ac9785b303a3b0bd65662c860f5f07b345c857cb42ca9",
+      "saved_relative_path": "web-before-review-fix/step-6.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-7.json",
+      "sha256": "ace6e14aed12238edee22ec5ca9aebce983ebcc32c203bd54564f6ac5ce81b63",
+      "saved_relative_path": "web-before-review-fix/step-7.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-7.png",
+      "sha256": "ed81c34df88d2e6edfcb8459c0b7440801d97589de34bec00fa24ac0d2e5aac3",
+      "saved_relative_path": "web-before-review-fix/step-7.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-8.json",
+      "sha256": "ace6e14aed12238edee22ec5ca9aebce983ebcc32c203bd54564f6ac5ce81b63",
+      "saved_relative_path": "web-before-review-fix/step-8.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-8.png",
+      "sha256": "ed81c34df88d2e6edfcb8459c0b7440801d97589de34bec00fa24ac0d2e5aac3",
+      "saved_relative_path": "web-before-review-fix/step-8.png"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-9.json",
+      "sha256": "ace6e14aed12238edee22ec5ca9aebce983ebcc32c203bd54564f6ac5ce81b63",
+      "saved_relative_path": "web-before-review-fix/step-9.json"
+    },
+    {
+      "file": "/tmp/aura-task7-web-dev-network/step-9.png",
+      "sha256": "ed81c34df88d2e6edfcb8459c0b7440801d97589de34bec00fa24ac0d2e5aac3",
+      "saved_relative_path": "web-before-review-fix/step-9.png"
+    }
+  ]
+}

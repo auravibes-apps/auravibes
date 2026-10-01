@@ -1,0 +1,23 @@
+{
+  "instanceId": "ux-final-20261001-0810",
+  "manifest": "/workspace/auravibes/.dart_tool/marionette/instances/ux-final-20261001-0810.json",
+  "appFlavor": "dev",
+  "request": {
+    "name": "tap",
+    "arguments": {
+      "key": "intro_skip_ai_button"
+    }
+  },
+  "identity_verified": true,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Tapped element matching: {key: intro_skip_ai_button}"
+      }
+    ]
+  },
+  "status": "PASS",
+  "bridge_stop_exit": -15,
+  "duration_seconds": 2.875
+}
