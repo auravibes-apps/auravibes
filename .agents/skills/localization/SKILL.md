@@ -1,6 +1,6 @@
 ---
 name: localization
-description: Comprehensive guide for Flutter localization using easy_localization. Covers adding translations, structuring JSON files, reusing templates and keys, saving space, using LocaleKeys, TextLocale widget, gender, plurals, linked translations, audit, and advanced features. Use when adding, editing, or troubleshooting app translations.
+description: Use when adding translation keys or changing localization behavior. Skip unrelated UI edits and existing-key usage.
 license: MIT
 metadata:
   author: AuraVibes

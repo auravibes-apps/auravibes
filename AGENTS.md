@@ -1,5 +1,5 @@
 # AuraVibes Agent Instructions
-<!-- Managed by agent: AuraVibes | Last updated: 2026-09-30 -->
+<!-- Managed by agent: AuraVibes | Last updated: 2026-10-01 -->
 
 ## Entrypoint
 
@@ -39,36 +39,21 @@
 
 ## DCL and lint compliance
 
-- `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Read it before changing Dart; do not infer permitted patterns from nearby code.
+- `analysis_options.yaml` is source of truth for Dart analyzer, DCL diagnostics and metrics, Riverpod lints, and scoped exceptions. Consult the applicable rules before introducing a Dart pattern or resolving a lint; routine edits can reuse an established pattern and verify with the targeted analyzer.
 - During iteration, run the smallest focused analyzer or test. Use `fvm dart run melos run analyze` for root Dart analysis, `fvm dart run melos run analyze:workspace` for built-in Melos workspace analysis, `fvm dart run melos run dcl:analyze` for DCL metrics, and `fvm dart run melos run validate:quick` for root analysis + format. Formatter runs are allowed; bare host `dart format` does not verify pinned-toolchain output.
 - Run `dcl:analyze` when changing DCL or architecture boundaries, or when CI reports a relevant failure. Run full `validate` only when explicitly requested or when a multi-package behavior change needs full-workspace coverage beyond focused checks. Never run it solely because a PR is being opened or updated.
 - CI also runs DCL unused-code, unused-file, and unnecessary-nullable checks. Remove orphaned declarations after refactors; do not hide findings with broad excludes or ignores.
 
-## CI failure triage
+## Operations
 
-- `ci success` only summarizes fan-out; inspect first failed job. A cancelled PR run may be superseded by newer push.
-- `integrity` generated drift: run `generate` and `generate:serverpod`; review and commit generated diff. Never hand-edit output.
-- `integrity` FVM drift: run `fvm use` after `.fvmrc` changes; it selects the SDK and runs `flutter pub get` by default when switching SDKs (`--skip-pub-get` skips it). CI's setup action runs Melos bootstrap before checking dependency artifact drift; do not infer bootstrap is redundant from the Pub workspace declaration. Commit `.vscode/settings.json` sync.
-- Workspace setup failures are dependency/version issues; inspect pub solver output before changing Dart code.
-- DCL unused-code scans production `lib`, not tests. Remove true dead code; test-only contracts or generated/route reachability need narrow, reasoned excludes only after reference review.
-
-### Scoped database queries
-
-- From repo root, run `fvm dart run tool/db_query.dart "SELECT ..."` to query the dev database scoped by VS Code's `DB_HASH_SOURCE`, which defaults to the current repo path. Use `--hash-source PATH` for another workspace.
-- Use `--database-directory PATH` when the platform documents directory needs an override. Results print as JSON lines; a missing scoped database fails without creating a file.
-
-## Flutter MCP Control
-
-- Use `dev Debug` for manual testing with the native keyboard. Use the `dev Driver` VS Code launch profile, or run from `apps/auravibes_app`: `fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ --dart-define=ENABLE_FLUTTER_DRIVER=true`.
-- Driver mode emulates text entry; the native keyboard is unavailable. Through `mcp__dart_mcp_server__flutter_driver_command`, call `get_health`, focus and `tap` a finder, `enter_text`, then verify with `get_text` or `screenshot`. Set `appUri` when multiple apps are connected.
-- Do not use driver mode to verify real iOS keyboard behavior.
+- For CI failure triage, scoped database queries, or native Flutter driver control, read the relevant section of [operations.md](docs/agents/operations.md).
 
 ## Verification
 
 - Run the smallest focused check; invoke root scripts via `fvm dart run melos run <script>`. Quiet wrappers buffer child output until exit, print `Command succeeded.` on success, and replay both streams plus exit code on failure; keep tests/watch/start/fix/upgrade/result scripts visible.
 - Assign one owner per validation command.
 - Do not rerun completed checks or suites already covered by an aggregate gate unless relevant files or configuration changed.
-- Before a long-running command, announce the exact command and expected duration.
+- Announce commands expected to exceed two minutes with their purpose and expected duration.
 - In handoffs, include each command, result, duration, and relevant failures.
 - Report decision blockers immediately. Before retrying or replacing delegated work, inspect its current state and preserved output.
 
@@ -92,12 +77,6 @@
 
 - For provider scope/dependency cleanup, fix every machine diagnostic including infos; run only the app fatal analyzer, not tests or broader gates.
 
-## Riverpod practices
-
-- Use families for route, workspace, conversation, and service state.
-- Scope only measured list, row, or item rebuilds; never screens, routes, services, repositories, usecases, or test helpers.
-- Treat analyzer dependency diagnostics as authoritative: remove unused declarations; add only observable dependencies after restructuring; never suppress them.
-
 ## Project Rules
 
 - Add dependencies with `fvm flutter pub add ...` from the target package; never use `any` constraints.
@@ -110,24 +89,30 @@
 
 ## Architecture
 
-- Load `.agents/skills/app-architecture/SKILL.md` before adding, moving, or reviewing code in `apps/auravibes_app`.
-- Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine`, `packages/auravibes_ui`, or `widgetbook`.
+- Load `.agents/skills/app-architecture/SKILL.md` when changing app layer placement, ownership, dependency direction, or architecture; routine edits within an established feature do not need the full skill.
+- Load `.agents/skills/package-architecture/SKILL.md` when changing package boundaries, public APIs, package placement, or architecture; routine edits within an established package do not need the full skill.
 - Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
 
 ## Skill routing
-- Agent instruction maintenance: at task completion, check whether work exposed a missing, stale, conflicting, ignored, or burdensome reusable rule. If so, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing `AGENTS.md`, a skill, or related harness/CI checks; skip broad audits when no concrete gap surfaced.
-- UX clarity: for every user-visible UI edit in the app, shared UI package, or Widgetbook, load `.agents/skills/ux-view-clarity/SKILL.md`; for a standalone audit or simplification of an existing journey, load `.agents/skills/ux-task-audit/SKILL.md`. Load both when the requested work includes both an existing-flow audit and a UI edit. Small edits get the clarity skill's brief check.
+- When verified feedback exposes a reusable guidance gap, use `.agents/skills/agent-instructions-maintenance/SKILL.md` before changing instructions, skills, or harness checks. Routine tasks need no guidance audit.
+- UX clarity: for new views, changed task flows, or visual regression work, load `.agents/skills/ux-view-clarity/SKILL.md`; for an existing-flow audit, load `.agents/skills/ux-task-audit/SKILL.md`. For local spacing or copy edits, check purpose, next action, recovery, and localization directly without loading a flow skill.
 - Marionette app control: load `.agents/skills/marionette-mcp/SKILL.md` before Marionette launches, connections, interaction, logs, or multi-agent routing; MCP runs from the repository-root FVM command, CLI only when MCP is unavailable. Follow its [repeatable smoke runbook](./.agents/skills/marionette-mcp/SKILL.md#repeatable-agent-smoke-runbook) for isolated validation.
 - Riverpod work: prefer `.agents/skills/flutter-riverpod-expert/` over generic Flutter guidance.
-- Melos work: read `.agents/skills/melos-7/SKILL.md`; its AuraVibes override covers Melos 8.7.0.
+- Melos configuration, bootstrap, or version troubleshooting: read `.agents/skills/melos-7/SKILL.md`; ordinary documented script runs need no skill load.
 - Version conflicts: trust `.fvmrc` and package `pubspec.yaml` over skill examples.
 
 ## PR Gates
 
-- PR titles use Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
+- PR titles use Conventional Commits. Keep each PR to one coherent change with its related tests; describe purpose, behavior, validation, and requested reviewer focus.
+- An authorized PR creation request completes after push, PR creation, and one current-head status snapshot. Wait for all checks or fix CI when requested; pending CI is reported as pending. Use `.agents/skills/pr-delivery/SKILL.md` for delivery.
 - Before opening or updating a code PR, run only scope-appropriate local checks above. Full `validate`, `dependency_validator`, and `import_sorter` are not default local PR gates. Run dependency validation when dependency or package metadata changes, and import sorting when imports change. GitHub's required checks own repository-wide gates.
 
 ## Agent skills
 
 - Issues/specs: GitHub issues in `auravibes-apps/auravibes` via `gh`; see `docs/agents/issue-tracker.md`.
 - Triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`; see `docs/agents/triage-labels.md`. Domain docs: root `CONTEXT-MAP.md`, per-context `CONTEXT.md`, system-wide `docs/adr/`, and context-specific ADRs; see `docs/agents/domain.md`.
+
+## Harness feedback
+
+- For instruction, skill, or harness changes, run `python3 tool/verify_agent_harness.py`. Repair findings in the affected guidance and rerun that check.
+- On a verified recurring failure, use the maintenance skill to fix its cause, add a regression scenario to the affected skill's `evals/evals.json`, and compare outcome, time, and rework. Do not turn every task into a harness audit.

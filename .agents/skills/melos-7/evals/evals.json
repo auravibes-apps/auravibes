@@ -18,6 +18,12 @@
       "prompt": "The root `pubspec.yaml` declares a Dart Pub workspace. Can I skip Melos bootstrap on a fresh checkout, or does CI still use it? Explain which setup commands reproduce the repository's CI path.",
       "expected_output": "The agent distinguishes Pub workspace membership and SDK/Pub setup from the repository's Melos bootstrap. It checks the root Melos dependency and CI setup/integrity workflow, recommends `fvm use` followed by `fvm dart run melos bootstrap`, and explains bootstrap's dependency-resolution and ignored IntelliJ metadata outputs without claiming it is unnecessary or inventing committed artifacts.",
       "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Run the documented focused test command for this package.",
+      "expected_output": "Runs the command using root/scoped instructions without loading the complete Melos configuration skill, bootstrapping an already prepared workspace, or widening validation.",
+      "files": []
     }
   ]
 }

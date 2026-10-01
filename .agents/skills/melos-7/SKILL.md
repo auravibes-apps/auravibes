@@ -1,12 +1,12 @@
 ---
 name: melos-7
-description: Use when working with Melos 7+ in Dart/Flutter monorepos. Covers pub workspace configuration, scripts, commands, filtering, and common patterns. Essential for any task involving melos commands, monorepo scripts, workspace config, or package management in a Melos workspace.
+description: Use for Melos configuration, package membership, bootstrap, or version troubleshooting. Skip ordinary runs of documented scripts.
 license: MIT
 metadata:
   author: AuraVibes
   version: "1.0.0"
   domain: tooling
-  triggers: melos, monorepo, workspace, bootstrap, melos run, melos exec, melos bs, pub workspace
+  triggers: melos configuration, package membership, bootstrap, melos version, pub workspace setup
   role: specialist
   scope: implementation
 ---

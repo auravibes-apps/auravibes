@@ -4,13 +4,13 @@
     {
       "id": 1,
       "prompt": "Make the chat composer 8 px taller. Keep the change local.",
-      "expected_output": "Loads ux-view-clarity, performs a brief task-clarity check, and does not expand the request into a flow audit or redesign.",
+      "expected_output": "Does not load ux-view-clarity for a local spacing change; checks purpose, next action, and recovery directly and keeps the change local.",
       "files": []
     },
     {
       "id": 2,
       "prompt": "Change the save button label in service connection creation to say Connect.",
-      "expected_output": "Loads ux-view-clarity and checks that the label matches the action and result; preserves localization requirements and does not start a full UX audit.",
+      "expected_output": "Does not load ux-view-clarity for local copy; checks action/result clarity directly and preserves localization.",
       "files": []
     },
     {
@@ -22,7 +22,7 @@
     {
       "id": 4,
       "prompt": "Add a Widgetbook example for the connection status card.",
-      "expected_output": "Loads ux-view-clarity for the user-visible example and checks that the example communicates purpose, status, and next action without expanding into an application-wide audit.",
+      "expected_output": "Uses existing story conventions for a routine component example; checks purpose/status directly without loading a flow skill unless task flow changes.",
       "files": []
     },
     {

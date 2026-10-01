@@ -1,6 +1,6 @@
 ---
 name: dart-shorthand
-description: Use when writing or reviewing Dart 3.11+ code and you want to apply dot shorthand syntax safely for enum values, constructors, and static members.
+description: Use when explicitly adopting or troubleshooting Dart dot shorthand. Skip routine Dart edits and reviews.
 license: MIT
 metadata:
   author: OpenCode

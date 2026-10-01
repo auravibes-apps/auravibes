@@ -1,9 +1,13 @@
 ---
 name: flutter-controller-pattern
-description: Use when moving business logic out of Flutter widgets/providers into Riverpod controllers and needing clear boundaries for controller state, use-case orchestration, presentation intents, and controller-focused tests.
+description: Use only when maintaining existing Flutter controllers. For new or migrated Riverpod mutable state, use flutter-notifier-pattern.
 ---
 
-# Flutter Controller Pattern
+# Legacy Flutter Controller Pattern
+
+This skill documents existing controllers only. New Riverpod state follows
+[flutter-notifier-pattern](../flutter-notifier-pattern/SKILL.md); do not introduce
+new controller naming or migrate providers into controllers.
 
 ## Overview
 Use controllers as application orchestrators: widgets dispatch intent, controllers coordinate use cases, and domain logic stays in use cases.

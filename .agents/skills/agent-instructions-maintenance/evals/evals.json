@@ -1,0 +1,23 @@
+{
+  "skill_name": "agent-instructions-maintenance",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our agent reruns validate:quick after every small edit. Fix the harness policy.",
+      "expected_output": "Verifies command ownership and existing gate rules, narrows duplicate policy, adds a regression scenario, runs harness verification, and records unrun model trials; does not weaken required CI.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The harness check reports a broken skill reference.",
+      "expected_output": "Fixes the referenced path in scope, reruns the same read-only verifier, and avoids unrelated Flutter tests or broad audits.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Fix a typo in the chat label.",
+      "expected_output": "Fixes localized copy with scoped checks; does not load maintenance policy or perform a harness audit.",
+      "files": []
+    }
+  ]
+}
