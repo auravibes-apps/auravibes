@@ -37,4 +37,3 @@ remain visible and usable. Widgetbook coverage and focused widget tests should
 include that mixed state, tab target size, indicator width, content selection,
 and `SemanticsRole.tab`/selected values. Render the story before completion so
 the visual result is checked, not inferred from widget names.
-
