@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:auravibes_app/data/repositories/mcp_servers_repository_contract.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
@@ -13,6 +15,9 @@ import 'package:mocktail/mocktail.dart';
 
 class _MockServiceConnectionRepository extends Mock
     implements ServiceConnectionRepository;
+
+class _MockMcpServersRepository extends Mock
+    implements McpServersRepositoryContract;
 
 void main() {
   test(
@@ -32,6 +37,9 @@ void main() {
           ),
           serviceConnectionRepositoryProvider.overrideWithValue(
             _MockServiceConnectionRepository(),
+          ),
+          mcpServersRepositoryProvider.overrideWithValue(
+            _MockMcpServersRepository(),
           ),
         ],
       );
