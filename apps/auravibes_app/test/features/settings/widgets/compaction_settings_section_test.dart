@@ -1,4 +1,5 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+
 import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
@@ -14,6 +15,7 @@ import 'package:auravibes_app/features/settings/widgets/compaction_settings_sect
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,16 +64,20 @@ void main() {
 
   Widget buildSubject({
     List<WorkspaceModelSelectionWithConnectionEntity> models = const [],
+    DraftExitGuard? guard,
   }) {
     return TestableApp(
       child: AuraThemeScope(
         theme: .light,
         child: Theme(
           data: .new(),
-          child: const Scaffold(
+          child: Scaffold(
             body: SingleChildScrollView(
               child: Material(
-                child: CompactionSettingsSection(workspaceId: testWorkspaceId),
+                child: CompactionSettingsSection(
+                  workspaceId: testWorkspaceId,
+                  guard: guard,
+                ),
               ),
             ),
           ),
@@ -101,13 +107,176 @@ void main() {
   Future<void> pumpSubject(
     WidgetTester tester, {
     List<WorkspaceModelSelectionWithConnectionEntity> models = const [],
+    DraftExitGuard? guard,
   }) async {
     await tester.runAsync(() async {
-      await tester.pumpWidget(buildSubject(models: models));
+      await tester.pumpWidget(buildSubject(models: models, guard: guard));
     });
     await tester.pump();
     await tester.pump();
   }
+
+  group('draft ownership', () {
+    testWidgets('invalid raw text survives refresh, cancel, and clean revert', (
+      tester,
+    ) async {
+      final guard = DraftExitGuard();
+      await pumpSubject(tester, guard: guard);
+      final field = find.byType(EditableText).first;
+      await tester.enterText(field, 'invalid');
+      readSettingsController().add(
+        const CompactionSettings(remainingTokenThreshold: 300),
+      );
+      await tester.pump();
+      expect(tester.widget<EditableText>(field).controller.text, 'invalid');
+      final exit = guard.canExit(
+        tester.element(find.byType(CompactionSettingsSection)),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Unsaved changes'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+      expect(await exit, isFalse);
+      expect(tester.widget<EditableText>(field).controller.text, 'invalid');
+      await tester.enterText(
+        field,
+        '${CompactionSettings.defaults.remainingTokenThreshold}',
+      );
+      expect(
+        await guard.canExit(
+          tester.element(find.byType(CompactionSettingsSection)),
+        ),
+        isTrue,
+      );
+    });
+
+    testWidgets(
+      'pending save blocks duplicate writes and exit; failure retains draft',
+      (tester) async {
+        final guard = DraftExitGuard();
+        final pending = Completer<CompactionSettings>();
+        when(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: any(named: 'settings'),
+          ),
+        ).thenAnswer((_) => pending.future);
+        await pumpSubject(tester, guard: guard);
+        await tester.enterText(find.byType(EditableText).first, '321');
+        final save = tester.widget<AuraButton>(
+          find.descendant(
+            of: find.byKey(const ValueKey<String>('settings_compaction_save')),
+            matching: find.byType(AuraButton),
+          ),
+        );
+        save.onPressed.call();
+        await tester.pump();
+        save.onPressed.call();
+        expect(
+          await guard.canExit(
+            tester.element(find.byType(CompactionSettingsSection)),
+          ),
+          isFalse,
+        );
+        verify(
+          () => readMockSave()(
+            workspaceId: testWorkspaceId,
+            settings: any(named: 'settings'),
+          ),
+        ).called(1);
+        readSettingsController().add(
+          const CompactionSettings(remainingTokenThreshold: 500),
+        );
+        pending.completeError(Exception('save failed'));
+        final _ = await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText).first)
+              .controller
+              .text,
+          '321',
+        );
+        final exit = guard.canExit(
+          tester.element(find.byType(CompactionSettingsSection)),
+        );
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(find.text('Keep editing'));
+        final _ = await tester.pumpAndSettle();
+        expect(await exit, isFalse);
+      },
+    );
+
+    testWidgets('reset blocks exits and retains text on failure', (
+      tester,
+    ) async {
+      final guard = DraftExitGuard();
+      final pending = Completer<void>();
+      when(() => readMockSave().reset(workspaceId: testWorkspaceId))
+          .thenAnswer((_) => pending.future);
+      await pumpSubject(tester, guard: guard);
+      await tester.enterText(find.byType(EditableText).first, 'reset draft');
+      final reset = tester.widget<AuraButton>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('settings_compaction_reset')),
+          matching: find.byType(AuraButton),
+        ),
+      );
+      reset.onPressed();
+      await tester.pump();
+      reset.onPressed();
+      expect(
+        await guard.canExit(
+          tester.element(find.byType(CompactionSettingsSection)),
+        ),
+        isFalse,
+      );
+      verify(() => readMockSave().reset(workspaceId: testWorkspaceId))
+          .called(1);
+      pending.completeError(Exception('reset failed'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<EditableText>(find.byType(EditableText).first)
+            .controller
+            .text,
+        'reset draft',
+      );
+      final exit = guard.canExit(
+        tester.element(find.byType(CompactionSettingsSection)),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+      expect(await exit, isFalse);
+    });
+
+    testWidgets('successful save becomes clean without a stream echo', (
+      tester,
+    ) async {
+      final guard = DraftExitGuard();
+      when(
+        () => readMockSave()(
+          workspaceId: testWorkspaceId,
+          settings: any(named: 'settings'),
+        ),
+      ).thenAnswer(
+        (invocation) async =>
+            invocation.namedArguments[#settings] as CompactionSettings,
+      );
+      await pumpSubject(tester, guard: guard);
+      await tester.enterText(find.byType(EditableText).first, '321');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('settings_compaction_save')),
+      );
+      final _ = await tester.pumpAndSettle();
+      expect(
+        await guard.canExit(
+          tester.element(find.byType(CompactionSettingsSection)),
+        ),
+        isTrue,
+      );
+    });
+  });
 
   group('render', () {
     testWidgets('renders title, subtitle and switch', (tester) async {
@@ -187,14 +356,41 @@ void main() {
         ),
       ).thenAnswer((_) async => CompactionSettings.defaults);
       readSettingsController().add(CompactionSettings.defaults);
-      await pumpSubject(tester, models: [model]);
+      final guard = DraftExitGuard();
+      await pumpSubject(tester, models: [model], guard: guard);
 
       await tester.pump();
       await tester.pump();
       expect(find.text('Provider / Model A'), findsOneWidget);
+      expect(
+        await guard.canExit(
+          tester.element(find.byType(CompactionSettingsSection)),
+        ),
+        isTrue,
+      );
 
       final fields = find.byType(EditableText);
       await tester.ensureVisible(fields.at(1));
+      await tester.enterText(fields.at(1), 'invalid budget');
+      readSettingsController().add(
+        const CompactionSettings(
+          modelOverrides: {
+            'provider/model-a': CompactionModelOverride(reserveTokens: 999),
+          },
+        ),
+      );
+      await tester.pump();
+      expect(
+        tester.widget<EditableText>(fields.at(1)).controller.text,
+        'invalid budget',
+      );
+      final exit = guard.canExit(
+        tester.element(find.byType(CompactionSettingsSection)),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+      expect(await exit, isFalse);
       await tester.enterText(fields.at(1), '256');
       await tester.enterText(fields.at(2), '1024');
       await tester.ensureVisible(find.text('Save'));
@@ -334,7 +530,7 @@ void main() {
 
   group('_resetDefaults', () {
     testWidgets('calls reset usecase even when it fails', (tester) async {
-      when(() => readMockRepository().resetOverrides(testWorkspaceId))
+      when(() => readMockSave().reset(workspaceId: testWorkspaceId))
           .thenThrow(Exception('DB error'));
 
       readSettingsController().add(CompactionSettings.defaults);
@@ -352,15 +548,15 @@ void main() {
 
       expect(
         () =>
-            verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+            verify(() => readMockSave().reset(workspaceId: testWorkspaceId))
                 .called(1),
         returnsNormally,
       );
     });
 
     testWidgets('resets form fields on success', (tester) async {
-      when(() => readMockRepository().resetOverrides(testWorkspaceId))
-          .thenAnswer((_) async => CompactionSettings.defaults);
+      when(() => readMockSave().reset(workspaceId: testWorkspaceId))
+          .thenAnswer((_) => Future<void>.value());
 
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
@@ -375,7 +571,7 @@ void main() {
       );
       await tester.pump();
 
-      verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+      verify(() => readMockSave().reset(workspaceId: testWorkspaceId))
           .called(1);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));

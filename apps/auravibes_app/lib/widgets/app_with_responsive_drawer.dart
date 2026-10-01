@@ -1,19 +1,11 @@
-import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_selector.dart';
 import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
-import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
-
-final _logger = Logger('app_with_responsive_drawer');
 
 /// App shell with a responsive navigation drawer.
 class AppWithResponsiveDrawer extends StatefulWidget {
@@ -126,77 +118,8 @@ class const _WorkspaceHeader({required final String workspaceId})
   Widget build(BuildContext context, WidgetRef ref) => SafeArea(
     bottom: false,
     child: AuraPadding(
-      child: _WorkspaceHeaderContent(workspaceId: workspaceId),
+      child: WorkspaceSelector(workspaceId: workspaceId),
       padding: .small,
     ),
   );
-}
-
-class const _WorkspaceHeaderContent({required final String workspaceId})
-    extends ConsumerWidget {
-  @override
-  Widget build(BuildContext _, WidgetRef ref) => _WorkspaceHeaderResult(
-    workspaceId: workspaceId,
-    workspaces: ref.watch(allWorkspacesProvider),
-  );
-}
-
-class _WorkspaceHeaderResult extends StatelessWidget {
-  new({
-    required String workspaceId,
-    required AsyncValue<List<WorkspaceEntity>> workspaces,
-  }) : _child = switch (workspaces) {
-         AsyncData(:final value) => _WorkspaceHeaderValue(
-           workspaceId: workspaceId,
-           workspaces: value,
-         ),
-         AsyncLoading() => const AuraContainer(
-           child: Center(
-             child: TextLocale(LocaleKeys.workspace_management_loading),
-           ),
-           height: 48,
-         ),
-         AsyncError(:final error, :final stackTrace) => _WorkspaceHeaderError(
-           error: error,
-           stackTrace: stackTrace,
-         ),
-       };
-
-  final Widget _child;
-
-  @override
-  Widget build(BuildContext _) => _child;
-}
-
-class const _WorkspaceHeaderValue({
-  required final String workspaceId,
-  required final List<WorkspaceEntity> workspaces,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final workspace = workspaces
-        .where((item) => item.id == workspaceId)
-        .firstOrNull;
-
-    return AuraText(
-      child: Text(
-        workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
-      ),
-      style: .heading6,
-    );
-  }
-}
-
-class const _WorkspaceHeaderError({
-  required final Object error,
-  required final StackTrace stackTrace,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    _logger.warning('Workspace dropdown stream error', error, stackTrace);
-
-    return const AuraText(
-      child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
-    );
-  }
 }

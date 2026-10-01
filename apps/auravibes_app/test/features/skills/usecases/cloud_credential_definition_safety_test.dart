@@ -16,6 +16,42 @@ const _mixed =
 const _metadataOnly = '{"region":{"description":"Region","secret":false}}';
 
 void main() {
+  test(
+    'legacy usage respects disabled inheritance and explicit overrides',
+    () async {
+      final fake = _FakeCloud();
+      fake.resources.addAll([
+        _resource(.skill, 'legacy', {
+          'title': 'Legacy',
+          'skillDefinitionId': 'definition-1',
+          'isEnabled': false,
+        }),
+        _resource(.skill, 'current', {
+          'title': 'Current wins',
+          'credentialDefinitionId': 'other',
+          'skillDefinitionId': 'definition-1',
+        }),
+        _resource(.skillTemplateTool, 'inherited', {
+          'skillId': 'legacy',
+          'title': 'Inherited',
+          'isEnabled': false,
+        }),
+        _resource(.skillTemplateTool, 'override', {
+          'skillId': 'legacy',
+          'credentialDefinitionId': 'other',
+        }),
+        _resource(.skillTemplateTool, 'current-child', {'skillId': 'current'}),
+      ]);
+      final usage = await fake.store.definitionUsage('definition-1');
+      expect(usage.skills.single.id, 'legacy');
+      expect(usage.skills.single.isEnabled, isFalse);
+      expect(usage.tools.single.id, 'inherited');
+      expect(usage.tools.single.isEnabled, isFalse);
+      expect(usage.credentials, isEmpty);
+      expect(fake.patches, 0);
+    },
+  );
+
   test('cloud create enforces secret-bearing definitions', () async {
     final fake = _FakeCloud();
     final create = CreateSkillCredentialDefinitionUsecase(
@@ -99,6 +135,43 @@ void main() {
     },
   );
 
+  test(
+    'cloud usage includes disabled records and resolves tool overrides',
+    () async {
+      final fake = _FakeCloud();
+      fake.resources.addAll([
+        _definition(_mixed),
+        _credential('disabled', hasSecret: false, enabled: false),
+        _resource(.skill, 'skill-1', {
+          'title': 'Disabled skill',
+          'kind': 'template',
+          'isEnabled': false,
+          'credentialDefinitionId': 'definition-1',
+        }),
+        _resource(.skillTemplateTool, 'inherited', {
+          'title': 'Inherited',
+          'skillId': 'skill-1',
+          'isEnabled': false,
+        }),
+        _resource(.skillTemplateTool, 'override', {
+          'title': 'Other',
+          'skillId': 'skill-1',
+          'credentialDefinitionId': 'other',
+        }),
+      ]);
+      final usage = await fake.store.definitionUsage('definition-1');
+      expect(usage.credentials.single.id, 'disabled');
+      expect(usage.credentials.single.isEnabled, isFalse);
+      expect(usage.skills.single.title, 'Disabled skill');
+      expect(usage.skills.single.isEnabled, isFalse);
+      expect(usage.tools.single.id, 'inherited');
+      expect(usage.tools.single.parentSkillId, 'skill-1');
+      expect(usage.tools.single.isEnabled, isFalse);
+      expect((await fake.store.definitionUsage('unused')).isEmpty, isTrue);
+      expect(fake.patches, 0);
+    },
+  );
+
   test('cloud update and delete block linked records without writes', () async {
     final fake = _FakeCloud();
     fake.resources.addAll([
@@ -125,6 +198,15 @@ void main() {
     );
     expect(safe.attributesJson, contains('"optional":true'));
     expect(fake.patches, 1);
+    await expectLater(
+      fake.store.updateDefinition(
+        'definition-1',
+        const .new(
+          attributesJson: '{"token":{},"region":{"secret":false},"newKey":{}}',
+        ),
+      ),
+      throwsA(isA<CredentialDefinitionConflictException>()),
+    );
     await expectLater(
       update.call('definition-1', const .new(attributesJson: _secret)),
       throwsA(
@@ -166,8 +248,15 @@ void main() {
     fake.resources.removeWhere(
       (resource) => resource.resourceKind == .serviceConnection,
     );
-    expect(await delete.call('definition-1'), isTrue);
-    expect(fake.patches, 2);
+    await expectLater(
+      delete.call('definition-1'),
+      throwsA(isA<CredentialDefinitionConflictException>()),
+    );
+    await expectLater(
+      fake.store.deleteDefinition('definition-1'),
+      throwsA(isA<CredentialDefinitionConflictException>()),
+    );
+    expect(fake.patches, 1);
   });
 }
 

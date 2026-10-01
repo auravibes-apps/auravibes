@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/domain/models/credential_dependency.dart';
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 
@@ -23,6 +24,19 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
       credentialDefinitionId,
       requireSecret: requireSecret,
     ).get();
+  }
+
+  Future<List<CredentialDependency>> getLinkedCredentialSummaries({
+    required String workspaceId,
+    required String credentialDefinitionId,
+  }) async {
+    final table = serviceConnections;
+    final query = selectOnly(table)
+      ..addColumns([table.id, table.name, table.isEnabled])
+      ..where(_linkedCredentialFilter(workspaceId, credentialDefinitionId));
+    final rows = await query.get();
+
+    return rows.map(_credentialSummary).toList();
   }
 
   Future<int> countLinkedCredentials({
@@ -56,11 +70,61 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
 
   Future<ServiceConnectionTable> createCredential(
     ServiceConnectionsCompanion credential,
-  ) {
-    return into(serviceConnections).insertReturning(credential);
-  }
+  ) => transaction(() async {
+    await _requireDefinition(
+      credential.workspaceId.value,
+      credential.serviceId.value,
+    );
+
+    return await into(serviceConnections).insertReturning(credential);
+  });
 
   Future<ServiceConnectionTable?> updateCredential(
+    String credentialId,
+    ServiceConnectionsCompanion credential,
+  ) => transaction(() async {
+    final current = await getCredentialById(credentialId);
+    if (current == null) return null;
+    await _requireUpdatedDefinition(current, credential);
+
+    return await _writeCredential(credentialId, credential);
+  });
+
+  Future<int> deleteCredential(String credentialId) async {
+    final count = await _deleteCredentialRows(credentialId);
+
+    _logger.info(
+      'debug:skill credential dao delete complete '
+      'credentialId=$credentialId deletedRows=$count',
+    );
+
+    return count;
+  }
+}
+
+extension SkillCredentialMetadataWrites on SkillCredentialsDao {
+  CredentialDependency _credentialSummary(TypedResult row) =>
+      CredentialDependency(
+        id: row.read(serviceConnections.id) ?? '',
+        title: row.read(serviceConnections.name) ?? '',
+        isEnabled: row.read(serviceConnections.isEnabled) ?? false,
+      );
+
+  Future<void> _requireUpdatedDefinition(
+    ServiceConnectionTable current,
+    ServiceConnectionsCompanion credential,
+  ) async {
+    await _requireDefinition(
+      credential.workspaceId.present
+          ? credential.workspaceId.value
+          : current.workspaceId,
+      credential.serviceId.present
+          ? credential.serviceId.value
+          : current.serviceId,
+    );
+  }
+
+  Future<ServiceConnectionTable?> _writeCredential(
     String credentialId,
     ServiceConnectionsCompanion credential,
   ) async {
@@ -72,15 +136,15 @@ extension SkillCredentialsDaoMethods on SkillCredentialsDao {
     return rows.firstOrNull;
   }
 
-  Future<int> deleteCredential(String credentialId) async {
-    final count = await _deleteCredentialRows(credentialId);
-
-    _logger.info(
-      'debug:skill credential dao delete complete '
-      'credentialId=$credentialId deletedRows=$count',
-    );
-
-    return count;
+  Future<void> _requireDefinition(
+    String workspaceId,
+    String definitionId,
+  ) async {
+    final definition = await attachedDatabase.skillCredentialDefinitionsDao
+        .getDefinitionById(definitionId);
+    if (definition == null || definition.workspaceId != workspaceId) {
+      throw StateError('Credential definition unavailable in this workspace');
+    }
   }
 }
 

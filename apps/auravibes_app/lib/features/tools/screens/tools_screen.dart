@@ -2,8 +2,10 @@
 // Required: Existing argument values intentionally repeat.
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
+
 import 'dart:async';
 
+import 'package:auravibes_app/features/service_connections/widgets/connections_tabs.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_mixin.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
@@ -130,12 +132,20 @@ class const _ToolsOverviewCard({required final String workspaceId})
 }
 
 class const _ToolsOverviewContent({required final String workspaceId})
-    extends StatelessWidget {
+    extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(
       children: [
         const _ToolsOverviewText(),
+        if (!(ref
+                .watch(workspaceSessionForRouteProvider(workspaceId))
+                .value
+                ?.capabilities
+                .nativeTools ??
+            false))
+          const TextLocale('connection_setup.native_tools_restriction'),
+        const TextLocale('connection_setup.tool_permissions'),
         _EnabledToolsBadge(workspaceId: workspaceId),
         _ReconnectFailedMcpsButton(workspaceId: workspaceId),
       ],
@@ -338,7 +348,7 @@ class const _ToolsScreenAppBar({
   required final VoidCallback onReset,
 }) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +359,7 @@ class const _ToolsScreenAppBar({
         _ResetToolsButton(onPressed: onReset),
         _RefreshToolsButton(onPressed: onRefresh),
       ],
-      leading: const _BackButton(),
+      bottom: ConnectionsTabs(workspaceId: workspaceId, value: .tools),
     );
   }
 }
@@ -426,14 +436,4 @@ Future<bool> _confirmResetWorkspaceToolPermissions(BuildContext context) async {
   );
 
   return confirmed ?? false;
-}
-
-class const _BackButton() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AuraIconButton(
-      icon: Icons.arrow_back,
-      onPressed: () => Navigator.of(context).pop(),
-    );
-  }
 }

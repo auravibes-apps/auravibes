@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
@@ -19,7 +20,9 @@ import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.d
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_selector.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'package:flutter/foundation.dart';
@@ -35,7 +38,10 @@ Future<void> _pumpNewChatWithinPausedBranch(
   required List<Object> overrides,
   String workspaceId = 'test-ws',
   bool tickerEnabled = false,
+  GoRouter? router,
 }) async {
+  final activeRouter = router ?? _newChatRouter(workspaceId);
+  if (router == null) addTearDown(activeRouter.dispose);
   await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
@@ -45,11 +51,14 @@ Future<void> _pumpNewChatWithinPausedBranch(
             theme: .light,
             child: Theme(
               data: .new(),
-              child: Portal(child: NewChatScreen(workspaceId: workspaceId)),
+              child: Portal(child: Router.withConfig(config: activeRouter)),
             ),
           ),
         ),
-        overrides: overrides,
+        overrides: [
+          ...overrides,
+          routerProvider.overrideWithValue(activeRouter),
+        ],
         workspaceId: workspaceId,
       ),
     );
@@ -109,15 +118,28 @@ class _FailOnceWorkspaceSelectionRepository
   }
 }
 
-class _FakeGoRouter implements GoRouter {
-  String? lastLocation;
+GoRouter _newChatRouter([String workspaceId = 'test-ws']) => GoRouter(
+  routes: [
+    GoRoute(
+      path: '/workspaces/:workspaceId/chat/new',
+      builder: (context, state) {
+        final id = state.pathParameters['workspaceId']!;
 
-  @override
-  void go(String location, {Object? extra}) => lastLocation = location;
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
+        return Column(
+          children: [
+            WorkspaceSelector(workspaceId: id),
+            Expanded(child: NewChatScreen(workspaceId: id)),
+          ],
+        );
+      },
+      onExit: (context, state) => ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(draftExitRegistryProvider).canExitRoute(state.uri),
+    ),
+  ],
+  initialLocation: '/workspaces/$workspaceId/chat/new',
+);
 
 class _MediaDraftAttachmentService(
   final File draftFile,
@@ -234,10 +256,13 @@ List<Object> _newChatOverrides({
   WorkspaceModelSelectionWithConnectionEntity? modelSelection,
 }) => [
   newChatProvider('test-ws').overrideWithValue(state),
+  chatModelConnectionsProvider.overrideWith(
+    (ref, workspaceId) => Stream.value([]),
+  ),
   workspaceModelSelectionByIdProvider(
     'test-ws',
     'model',
-  ).overrideWithValue(AsyncData(modelSelection)),
+  ).overrideWithValue(AsyncData(modelSelection ?? _mediaModelSelection())),
   listModelsGroupedByProviderProvider.overrideWith(
     (ref, workspaceId) => Stream.value({}),
   ),
@@ -325,16 +350,17 @@ void main() {
       await tester.pump();
       await tester.pump();
       final selector = tester.widget<AuraDropdownSelector<String>>(
-        find.byKey(const Key('new_chat_workspace_selector')),
+        find.byKey(const Key('workspace_choice')),
       );
       selector.onChanged?.call('target-ws');
+      await tester.pump(const Duration(milliseconds: 350));
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsOneWidget);
       await tester.tap(find.text('Keep editing'));
       final _ = await tester.pumpAndSettle();
 
-      expect(selector.focusNode?.hasFocus, isTrue);
+      expect(tester.widget<EditableText>(textField).focusNode.hasFocus, isTrue);
       expect(
         tester.widget<EditableText>(textField).controller.text,
         'unsent draft',
@@ -346,7 +372,8 @@ void main() {
       tester,
     ) async {
       final selectionRepository = _FailOnceWorkspaceSelectionRepository();
-      final router = _FakeGoRouter();
+      final router = _newChatRouter();
+      addTearDown(router.dispose);
       final overrides = [
         ..._newChatOverrides(
           state: const NewChatState(modelId: 'model'),
@@ -363,12 +390,12 @@ void main() {
         lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
           selectionRepository,
         ),
-        routerProvider.overrideWithValue(router),
       ];
       await _pumpNewChatWithinPausedBranch(
         tester,
         overrides: overrides,
         tickerEnabled: true,
+        router: router,
       );
 
       final textField = find.byType(EditableText).first;
@@ -376,14 +403,16 @@ void main() {
       await tester.pump();
       await tester.pump();
       final selector = tester.widget<AuraDropdownSelector<String>>(
-        find.byKey(const Key('new_chat_workspace_selector')),
+        find.byKey(const Key('workspace_choice')),
       );
       selector.onChanged?.call('target-ws');
+      await tester.pump(const Duration(milliseconds: 350));
       final _ = await tester.pumpAndSettle();
       await tester.tap(find.text('Discard'));
       await tester.pump();
       expect(find.text('Switching workspace...'), findsOneWidget);
       final semantics = tester.ensureSemantics();
+      await tester.pump();
       final progress = find.byWidgetPredicate(
         (widget) => widget is Semantics && widget.properties.role == .status,
       );
@@ -396,7 +425,7 @@ void main() {
         find.ancestor(
           of: find.byType(ChatInputWidget),
           matching: find.byWidgetPredicate(
-            (widget) => widget is IgnorePointer && widget.ignoring,
+            (widget) => widget is AbsorbPointer && widget.absorbing,
           ),
         ),
         findsOneWidget,
@@ -423,7 +452,7 @@ void main() {
         find.text('Failed to switch workspace. Please try again.'),
         findsOneWidget,
       );
-      expect(selector.focusNode?.hasFocus, isTrue);
+      expect(tester.widget<EditableText>(textField).focusNode.hasFocus, isTrue);
       final retry = find.byKey(
         const ValueKey<String>('workspace_switch_retry'),
       );
@@ -444,7 +473,7 @@ void main() {
         find.ancestor(
           of: find.byType(ChatInputWidget),
           matching: find.byWidgetPredicate(
-            (widget) => widget is IgnorePointer && widget.ignoring,
+            (widget) => widget is AbsorbPointer && widget.absorbing,
           ),
         ),
         findsNothing,
@@ -460,6 +489,7 @@ void main() {
       }
       expect(retryFocused(), isTrue);
       final _ = await tester.sendKeyEvent(.enter);
+      await tester.pump(const Duration(milliseconds: 350));
       final _ = await tester.pumpAndSettle();
       expect(find.text('Discard unsaved changes?'), findsOneWidget);
       expect(
@@ -472,7 +502,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Discard unsaved changes?'), findsNothing);
-      expect(router.lastLocation, '/workspaces/target-ws/chat/new');
+      expect(
+        router.routeInformationProvider.value.uri.toString(),
+        '/workspaces/target-ws/chat/new',
+      );
       expect(selectionRepository.savedWorkspaceIds, ['target-ws', 'target-ws']);
       final container = ProviderScope.containerOf(
         tester.element(find.byType(NewChatScreen)),
@@ -487,6 +520,7 @@ void main() {
         overrides: overrides,
         workspaceId: 'target-ws',
         tickerEnabled: true,
+        router: router,
       );
       final switchedTextField = tester.widget<EditableText>(
         find.byType(EditableText).first,
@@ -517,7 +551,8 @@ void main() {
         addTearDown(() => fp.FilePickerPlatform.instance = previousPicker);
         fp.FilePickerPlatform.instance = _MediaFilePicker(sourceFile.path);
         final selectionRepository = _FailOnceWorkspaceSelectionRepository();
-        final router = _FakeGoRouter();
+        final router = _newChatRouter();
+        addTearDown(router.dispose);
 
         await _pumpNewChatWithinPausedBranch(
           tester,
@@ -527,15 +562,23 @@ void main() {
               workspaces: [_workspace('test-ws'), _workspace('target-ws')],
               modelSelection: _mediaModelSelection(),
             ),
+            newChatProvider('target-ws')
+                .overrideWithValue(const NewChatState(modelId: 'model')),
+            workspaceModelSelectionByIdProvider(
+              'target-ws',
+              'model',
+            ).overrideWithValue(const AsyncData(null)),
+            agentsProvider('target-ws')
+                .overrideWith((_) => Stream.value(const [])),
             localChatAttachmentServiceProvider.overrideWithValue(
               attachmentService,
             ),
             lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
               selectionRepository,
             ),
-            routerProvider.overrideWithValue(router),
           ],
           tickerEnabled: true,
+          router: router,
         );
 
         await tester.tap(find.byIcon(Icons.tune_rounded));
@@ -553,19 +596,24 @@ void main() {
         expect(recordingFile.existsSync(), isTrue);
 
         final selector = tester.widget<AuraDropdownSelector<String>>(
-          find.byKey(const Key('new_chat_workspace_selector')),
+          find.byKey(const Key('workspace_choice')),
         );
         selector.onChanged?.call('target-ws');
+        await tester.pump(const Duration(milliseconds: 350));
         final _ = await tester.pumpAndSettle();
         await tester.tap(find.text('Keep editing'));
         final _ = await tester.pumpAndSettle();
-        expect(router.lastLocation, isNull);
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/workspaces/test-ws/chat/new',
+        );
         expect(draftFile.existsSync(), isTrue);
         expect(recordingFile.existsSync(), isTrue);
         expect(attachmentService.recordingActive, isTrue);
         expect(attachmentService.recordingCancels, 0);
 
         selector.onChanged?.call('target-ws');
+        await tester.pump(const Duration(milliseconds: 350));
         final _ = await tester.pumpAndSettle();
         await tester.tap(find.text('Discard'));
         await tester.pump();
@@ -575,7 +623,10 @@ void main() {
         expect(recordingFile.existsSync(), isTrue);
         selectionRepository.firstSave.completeError(StateError('save failed'));
         final _ = await tester.pumpAndSettle();
-        expect(router.lastLocation, isNull);
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/workspaces/test-ws/chat/new',
+        );
         expect(draftFile.existsSync(), isTrue);
         expect(recordingFile.existsSync(), isTrue);
         expect(attachmentService.recordingActive, isTrue);
@@ -584,14 +635,19 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('workspace_switch_retry')),
         );
+        await tester.pump(const Duration(milliseconds: 350));
         final _ = await tester.pumpAndSettle();
         await tester.tap(find.text('Discard'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
         final _ = await tester.pumpAndSettle();
-        expect(router.lastLocation, '/workspaces/target-ws/chat/new');
-        expect(draftFile.existsSync(), isTrue);
-        expect(recordingFile.existsSync(), isTrue);
+        expect(
+          router.routeInformationProvider.value.uri.toString(),
+          '/workspaces/target-ws/chat/new',
+        );
+        expect(draftFile.existsSync(), isFalse);
+        expect(recordingFile.existsSync(), isFalse);
+        expect(attachmentService.recordingCancels, 1);
 
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
@@ -683,15 +739,8 @@ void main() {
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
       expect(find.text('Select a model to enable messaging.'), findsOneWidget);
-      expect(
-        find.byKey(const Key('new_chat_workspace_selector')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('workspace_selector')),
-        findsOneWidget,
-      );
-      expect(find.text('Personal'), findsOneWidget);
+      expect(find.byType(WorkspaceSelector), findsNothing);
+      expect(find.text('New Chat'), findsOneWidget);
     });
 
     testWidgets('shows loading overlay while conversation starts', (

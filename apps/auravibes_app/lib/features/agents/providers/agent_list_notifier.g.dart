@@ -8,19 +8,22 @@ part of 'agent_list_notifier.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Retains the existing query, loaded pages and cursor across list visits.
 
 @ProviderFor(AgentListNotifier)
 final agentListProvider = AgentListNotifierFamily._();
 
+/// Retains the existing query, loaded pages and cursor across list visits.
 final class AgentListNotifierProvider
     extends $AsyncNotifierProvider<AgentListNotifier, AgentListState> {
+  /// Retains the existing query, loaded pages and cursor across list visits.
   AgentListNotifierProvider._({
     required AgentListNotifierFamily super.from,
     required String super.argument,
   }) : super(
          retry: null,
          name: r'agentListProvider',
-         isAutoDispose: true,
+         isAutoDispose: false,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -50,7 +53,9 @@ final class AgentListNotifierProvider
   }
 }
 
-String _$agentListNotifierHash() => r'603bfa3f754758c69e5f4b6876ce322c555391e3';
+String _$agentListNotifierHash() => r'e67750d207ede7877c22cbedaa4e4a184e144bca';
+
+/// Retains the existing query, loaded pages and cursor across list visits.
 
 final class AgentListNotifierFamily extends $Family
     with
@@ -67,8 +72,10 @@ final class AgentListNotifierFamily extends $Family
         name: r'agentListProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: true,
+        isAutoDispose: false,
       );
+
+  /// Retains the existing query, loaded pages and cursor across list visits.
 
   AgentListNotifierProvider call(String workspaceId) =>
       AgentListNotifierProvider._(argument: workspaceId, from: this);
@@ -76,6 +83,8 @@ final class AgentListNotifierFamily extends $Family
   @override
   String toString() => r'agentListProvider';
 }
+
+/// Retains the existing query, loaded pages and cursor across list visits.
 
 abstract class _$AgentListNotifier extends $AsyncNotifier<AgentListState> {
   late final _$args = ref.$arg as String;

@@ -14,6 +14,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/services/model_sync_service.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
+import 'package:auravibes_app/features/service_connections/models/connection_filter.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_result.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -23,11 +24,12 @@ import 'package:auravibes_app/features/service_connections/usecases/test_mcp_con
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/router/workspace_navigation.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
@@ -441,6 +443,159 @@ void main() {
     expect(find.textContaining('Unknown error'), findsOneWidget);
   });
 
+  for (final view in [
+    ConnectionDestination.overview,
+    ConnectionDestination.providers,
+    ConnectionDestination.services,
+    ConnectionDestination.credentials,
+  ]) {
+    testWidgets('shows only actual kinds in ${view.name}', (tester) async {
+      _addWidgetTearDown(tester);
+      final container = _syncTestContainer(
+        .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+        connections: [
+          _mcpConnection(name: 'Actual service', displayStatus: .connected),
+          _kindConnection(.modelProvider, 'Actual provider'),
+          _kindConnection(.skillCredential, 'Saved value'),
+        ],
+      );
+      addTearDown(container.dispose);
+      await _pumpScreen(tester, container, _syncWorkspaceId, view: view);
+      expect(
+        find.text('Actual service'),
+        view == .overview || view == .services ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.text('Actual provider'),
+        view == .overview || view == .providers ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.text('Saved value'),
+        view == .overview || view == .credentials
+            ? findsOneWidget
+            : findsNothing,
+      );
+      expect(
+        find.text('Advanced: Credential types'),
+        view == .credentials ? findsOneWidget : findsNothing,
+      );
+    });
+  }
+
+  testWidgets('restores connection search after replacing the list', (
+    tester,
+  ) async {
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      connections: [
+        _mcpConnection(name: 'Notion', displayStatus: .connected),
+        _mcpConnection(name: 'GitHub', displayStatus: .connected),
+      ],
+    );
+    addTearDown(container.dispose);
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    await tester.enterText(find.byType(EditableText), 'notion');
+    final _ = await tester.pumpAndSettle();
+    await _pumpScreen(tester, container, _syncWorkspaceId, view: .services);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      '',
+    );
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'notion',
+    );
+    expect(find.text('GitHub'), findsNothing);
+  });
+
+  for (final locale in [const Locale('en'), const Locale('es')]) {
+    for (final width in [360.0, 960.0]) {
+      testWidgets(
+        'kind and health compose at $width in ${locale.languageCode}',
+        (tester) async {
+          _addWidgetTearDown(tester);
+          final container = _syncTestContainer(
+            .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+            connections: [
+              _mcpConnection(
+                name: 'Repair this service',
+                displayStatus: .needsReauth,
+              ),
+              _mcpConnection(
+                name: 'Healthy service',
+                displayStatus: .connected,
+              ),
+              _kindConnection(.modelProvider, 'Healthy provider'),
+            ],
+          );
+          addTearDown(container.dispose);
+          await _pumpScreen(
+            tester,
+            container,
+            _syncWorkspaceId,
+            locale: locale,
+          );
+          await tester.binding.setSurfaceSize(.new(width, 1200));
+          final _ = await tester.pumpAndSettle();
+          tester
+              .widget<AuraDropdownSelector<ConnectionFilter>>(
+                find.byType(AuraDropdownSelector<ConnectionFilter>).first,
+              )
+              .onChanged
+              ?.call(.mcpServers);
+          final _ = await tester.pumpAndSettle();
+          tester
+              .widget<AuraDropdownSelector<ConnectionFilter>>(
+                find.byType(AuraDropdownSelector<ConnectionFilter>).last,
+              )
+              .onChanged
+              ?.call(.needsAuth);
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('Repair this service'), findsOneWidget);
+          expect(find.text('Healthy service'), findsNothing);
+          expect(find.text('Healthy provider'), findsNothing);
+          expect(
+            tester
+                .widget<AuraDropdownSelector<ConnectionFilter>>(
+                  find.byType(AuraDropdownSelector<ConnectionFilter>).first,
+                )
+                .value,
+            ConnectionFilter.mcpServers,
+          );
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  testWidgets('list load failure retries without exposing the error', (
+    tester,
+  ) async {
+    var fail = true;
+    _addWidgetTearDown(tester);
+    final container = _syncTestContainer(
+      .new(syncApiModelsUseCase: _MockSyncApiModelsUseCase()),
+      loadConnections: () => fail
+          ? Stream.error(StateError('secret diagnostic'))
+          : Stream.value([
+              _mcpConnection(
+                name: 'Recovered service',
+                displayStatus: .unknown,
+              ),
+            ]),
+    );
+    addTearDown(container.dispose);
+    await _pumpScreen(tester, container, _syncWorkspaceId);
+    expect(find.textContaining('secret diagnostic'), findsNothing);
+    expect(find.text('Retry'), findsOneWidget);
+    fail = false;
+    await tester.tap(find.text('Retry'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Recovered service'), findsOneWidget);
+  });
+
   testWidgets('searches connection metadata and applies status filters', (
     tester,
   ) async {
@@ -483,7 +638,12 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('GitHub'),
       200,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     expect(find.text('GitHub'), findsOneWidget);
 
@@ -506,6 +666,8 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
 
     final _ = await tester.enterText(searchField, '');
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
+    final _ = await tester.pumpAndSettle();
     final needsAuthFilter = find.text('Needs auth');
     final _ = await tester.ensureVisible(needsAuthFilter);
     final _ = await tester.tap(needsAuthFilter);
@@ -513,7 +675,9 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
     expect(find.text('GitHub'), findsNothing);
 
-    final allFilter = find.text('All');
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).last);
+    final _ = await tester.pumpAndSettle();
+    final allFilter = find.text('All').hitTestable().last;
     final _ = await tester.ensureVisible(allFilter);
     final _ = await tester.tap(allFilter);
     final _ = await tester.enterText(searchField, 'missing-connection');
@@ -692,21 +856,23 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
-    expect(find.text('All'), findsOneWidget);
-    expect(find.text('Model providers'), findsOneWidget);
-    expect(find.text('Skill credentials'), findsOneWidget);
-    expect(find.text('MCP servers'), findsOneWidget);
+    expect(find.text('Connection kind'), findsOneWidget);
+    expect(find.text('Connection health'), findsOneWidget);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.text('Model providers'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsNothing);
-    expect(find.text('No connections for Model providers'), findsOneWidget);
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.text('Skill credentials'));
     final _ = await tester.pumpAndSettle();
     expect(find.text('Main Token'), findsOneWidget);
-    await tester.ensureVisible(find.text('All'));
-    await tester.tap(find.text('All'));
+    await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('All').hitTestable().last);
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert).first);
@@ -747,17 +913,19 @@ void main() {
 
     expect(find.text('Second Token'), findsOneWidget);
 
-    final _ = await database.skillCredentialsDao.createCredential(
-      .insert(
-        name: 'Stale Token',
-        serviceId: 'missing-definition',
-        kind: ServiceConnectionKindTable.skillCredential,
-        authenticationType: ServiceAuthenticationTypeTable.apiKey,
-        encryptedAuthValue: const Value('encrypted-secret'),
-        keySuffix: const Value('value'),
-        workspaceId: workspace.id,
-      ),
-    );
+    final _ = await database
+        .into(database.serviceConnections)
+        .insertReturning(
+          ServiceConnectionsCompanion.insert(
+            name: 'Stale Token',
+            serviceId: 'missing-definition',
+            kind: .skillCredential,
+            authenticationType: .apiKey,
+            encryptedAuthValue: const Value('encrypted-secret'),
+            keySuffix: const Value('value'),
+            workspaceId: workspace.id,
+          ),
+        );
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Stale Token'), findsOneWidget);
@@ -778,6 +946,16 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('OpenAI Main'),
+      150,
+      scrollable: find
+          .descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text('OpenAI Main'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
@@ -854,6 +1032,7 @@ ProviderContainer _syncTestContainer(
   WorkspaceSession? session,
   List<ServiceConnectionListItem> connections = const [],
   TestMcpConnectionUsecase? testUsecase,
+  Stream<List<ServiceConnectionListItem>> Function()? loadConnections,
 }) {
   final workspaceSession =
       session ??
@@ -865,8 +1044,9 @@ ProviderContainer _syncTestContainer(
     overrides: [
       workspaceSessionForRouteProvider(_syncWorkspaceId)
           .overrideWithValue(AsyncData(workspaceSession)),
-      serviceConnectionsProvider(_syncWorkspaceId)
-          .overrideWith((_) => Stream.value(connections)),
+      serviceConnectionsProvider(_syncWorkspaceId).overrideWith(
+        (_) => loadConnections?.call() ?? Stream.value(connections),
+      ),
       modelSyncServiceProvider.overrideWithValue(service),
       if (testUsecase != null)
         testMcpConnectionUsecaseProvider(_syncWorkspaceId)
@@ -912,7 +1092,10 @@ Future<void> _pumpScreen(
   ProviderContainer container,
   String workspaceId, {
   Locale locale = const Locale('en'),
+  ConnectionDestination view = .overview,
 }) async {
+  await tester.binding.setSurfaceSize(const Size(1000, 1200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   final _ = await tester.runAsync(() async {
     await tester.pumpWidget(
       EasyLocalization(
@@ -922,7 +1105,10 @@ Future<void> _pumpScreen(
             return UncontrolledProviderScope(
               container: container,
               child: MaterialApp(
-                home: ServiceConnectionsScreen(workspaceId: workspaceId),
+                home: ServiceConnectionsScreen(
+                  workspaceId: workspaceId,
+                  view: view,
+                ),
                 builder: (context, child) =>
                     AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
@@ -991,3 +1177,25 @@ class _MockSyncApiModelsUseCase extends Mock implements SyncApiModelsUseCase;
 
 class _MockTestMcpConnectionUsecase extends Mock
     implements TestMcpConnectionUsecase;
+
+ServiceConnectionListItem _kindConnection(
+  ServiceConnectionListItemKind kind,
+  String name,
+) => ServiceConnectionListItem(
+  id: name,
+  workspaceId: _syncWorkspaceId,
+  name: name,
+  serviceName: null,
+  kind: kind,
+  keySuffix: null,
+  credentialDefinitionId: null,
+  mcpServerId: null,
+  authenticationType: null,
+  displayStatus: .unknown,
+  expiresAt: null,
+  lastRefreshedAt: null,
+  lastAuthError: null,
+  metadataValues: const [],
+  canRefresh: false,
+  canReconnect: false,
+);

@@ -7,7 +7,12 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
@@ -23,6 +28,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _UnusedCloudClient extends Mock implements Client;
+class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;
 
 class _FakeGoRouter implements GoRouter {
   String? lastLocation;
@@ -60,6 +69,8 @@ class _FakeWorkspaceSelectionRepository
 
 class _FakeWorkspaceRepository implements WorkspaceRepository {
   Exception? deleteError;
+  bool failCloudRemoval = false;
+  final removedMirrors = <CloudAccountKey>[];
   final List<WorkspaceEntity> _workspaces = [];
   final _controller = StreamController<List<WorkspaceEntity>>.broadcast();
   var _nextId = 1;
@@ -109,7 +120,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     final existing = _workspaces[index];
     final updated = existing.copyWith(
       name: workspace.name ?? existing.name,
-      updatedAt: DateTime(2026),
+      updatedAt: .new(2026),
     );
     _workspaces[index] = updated;
     _emit();
@@ -206,7 +217,20 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
     required String cloudWorkspaceId,
     required String cloudAccountId,
     required String serverUrl,
-  }) async => true;
+  }) async {
+    if (failCloudRemoval) throw StateError('fixture cleanup failure');
+    final mirror = await getCloudWorkspaceMirrorByCloudId(
+      cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
+    if (mirror == null) return false;
+    removedMirrors.add(cloudAccountKey(serverUrl, cloudAccountId));
+    final _ = _workspaces.remove(mirror);
+    _emit();
+
+    return true;
+  }
 
   @override
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
@@ -234,6 +258,23 @@ void main() {
     var repository = _FakeWorkspaceRepository();
     var router = _FakeGoRouter();
 
+    setUpAll(() {
+      registerFallbackValue(
+        AcceptWorkspaceInviteRequest(
+          inviteId: 1,
+          requestId: 'fixture',
+          expectedInviteRevision: 1,
+        ),
+      );
+      registerFallbackValue(
+        DeclineWorkspaceInviteRequest(
+          inviteId: 1,
+          requestId: 'fixture',
+          expectedInviteRevision: 1,
+        ),
+      );
+    });
+
     setUp(() {
       repository = _FakeWorkspaceRepository();
       router = _FakeGoRouter();
@@ -246,11 +287,19 @@ void main() {
       WorkspaceRepository? repo,
       List<CloudAccountSession> accounts = const [],
       CloudWorkspaceViewState? cloudWorkspaceState,
-      Map<String, CloudWorkspaceViewState> cloudWorkspaceStatesByAccount =
+      Map<CloudAccountKey, CloudWorkspaceViewState>
+          cloudWorkspaceStatesByAccount =
           const {},
-      Map<String, Future<CloudWorkspaceViewState?> Function()> cloudLoaders =
+      Map<CloudAccountKey, Future<CloudWorkspaceViewState?> Function()>
+          cloudLoaders =
           const {},
+      GoRouter? navigationRouter,
+      CheckCloudAccountUsecase? accountCheck,
+      Map<CloudAccountKey, Client> clients = const {},
       bool cloudAuthenticationRequired = false,
+      bool connectView = false,
+      bool nullCloudUsecase = false,
+      ValueNotifier<bool>? viewNotifier,
       WorkspaceSelectionRepository? selectionRepository,
     }) {
       final useRepo = repo ?? repository;
@@ -259,8 +308,31 @@ void main() {
         child: Builder(
           builder: (context) {
             final overrides = [
+              if (accountCheck != null)
+                checkCloudAccountUsecaseProvider.overrideWithValue(accountCheck)
+              else
+                cloudAccountHealthProvider.overrideWith(
+                  (ref, key) async => CloudAccountHealth(
+                    status: cloudAuthenticationRequired
+                        ? .needsSignIn
+                        : .verified,
+                    checkedAt: .new(2026),
+                  ),
+                ),
+              cloudWorkspaceUseCasesProvider.overrideWith(
+                (ref, key) async => nullCloudUsecase
+                    ? null
+                    : CloudWorkspaceUseCases(
+                        cloudRepository: .new(
+                          clients[key] ?? _UnusedCloudClient(),
+                        ),
+                        workspaceRepository: useRepo,
+                        cloudAccountId: key.accountId,
+                        serverUrl: key.serverUrl,
+                      ),
+              ),
               cloudAccountsProvider.overrideWith((ref) async => accounts),
-              routerProvider.overrideWithValue(router),
+              routerProvider.overrideWithValue(navigationRouter ?? router),
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
             ];
@@ -288,7 +360,7 @@ void main() {
             if (cloudAuthenticationRequired) {
               for (final account in accounts) {
                 overrides.add(
-                  cloudWorkspaceStateProvider(account.userId).overrideWith(
+                  cloudWorkspaceStateProvider(account.key).overrideWith(
                     (ref) async =>
                         const CloudWorkspaceViewState.authenticationRequired(),
                   ),
@@ -299,35 +371,59 @@ void main() {
                 cloudWorkspaceStatesByAccount.isNotEmpty ||
                 cloudLoaders.isNotEmpty) {
               for (final account in accounts) {
-                final loader = cloudLoaders[account.userId];
+                final loader = cloudLoaders[account.key];
                 if (loader != null) {
                   overrides.add(
-                    cloudWorkspaceStateProvider(account.userId)
+                    cloudWorkspaceStateProvider(account.key)
                         .overrideWith((ref) => loader()),
                   );
                   continue;
                 }
                 final state =
-                    cloudWorkspaceStatesByAccount[account.userId] ??
+                    cloudWorkspaceStatesByAccount[account.key] ??
                     cloudWorkspaceState;
                 overrides.add(
-                  cloudWorkspaceStateProvider(account.userId)
+                  cloudWorkspaceStateProvider(account.key)
                       .overrideWith((ref) async => state),
                 );
               }
             }
 
+            final manager = viewNotifier == null
+                ? WorkspaceManagementScreen(
+                    workspaceId: workspaceId,
+                    connectView: connectView,
+                  )
+                : ValueListenableBuilder<bool>(
+                    valueListenable: viewNotifier,
+                    builder: (context, value, _) => WorkspaceManagementScreen(
+                      workspaceId: workspaceId,
+                      connectView: value,
+                    ),
+                  );
+
             return ProviderScope(
               overrides: overrides.cast(),
               retry: (retryCount, error) => null,
-              child: MaterialApp(
-                home: AuraSnackBarHost(
-                  child: WorkspaceManagementScreen(workspaceId: workspaceId),
-                ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
+              child: navigationRouter != null
+                  ? MaterialApp.router(
+                      routerConfig: navigationRouter,
+                      builder: (context, child) =>
+                          AuraSnackBarHost(child: child ?? const SizedBox()),
+                      locale: context.locale,
+                      localizationsDelegates: context.localizationDelegates,
+                      supportedLocales: context.supportedLocales,
+                    )
+                  : MaterialApp(
+                      routes: {
+                        '/': (_) => const SizedBox(),
+                        '/manager': (_) => AuraSnackBarHost(child: manager),
+                      },
+                      initialRoute: '/manager',
+                      locale: context.locale,
+                      localizationsDelegates: context.localizationDelegates,
+                      supportedLocales: context.supportedLocales,
+                    ),
             );
           },
         ),
@@ -347,8 +443,485 @@ void main() {
       await tester.pump();
     }
 
+    for (final accept in [true, false]) {
+      for (final code in [
+        CloudWorkspaceErrorCode.authenticationRequired,
+        CloudWorkspaceErrorCode.emailAccountRequired,
+      ]) {
+        final testName =
+            'invite auth rejection updates only its health: '
+            'accept=$accept code=$code';
+        testWidgets(testName, (tester) async {
+          await tester.binding.setSurfaceSize(const Size(900, 1800));
+          addTearDown(() => tester.binding.setSurfaceSize(null));
+          final local = await repository.createWorkspace(
+            const WorkspaceToCreate(name: 'Local', type: .local),
+          );
+          final mirror = await repository.upsertCloudWorkspaceMirror(
+            cloudWorkspaceId: '11',
+            cloudAccountId: 'same',
+            name: 'Connected',
+            serverUrl: 'https://one.example',
+          );
+          const accounts = [
+            CloudAccountSession(
+              serverUrl: 'https://one.example',
+              userId: 'same',
+              email: 'one@example.test',
+            ),
+            CloudAccountSession(
+              serverUrl: 'https://two.example',
+              userId: 'same',
+              email: 'two@example.test',
+            ),
+          ];
+          final first = cloudAccountKey('https://one.example', 'same');
+          final second = accounts.last.key;
+          final checks = <CloudAccountKey>[];
+          var expired = false;
+          final client = _UnusedCloudClient();
+          final endpoint = _CloudEndpoint();
+          final otherClient = _UnusedCloudClient();
+          final otherEndpoint = _CloudEndpoint();
+          when(() => otherClient.cloudWorkspace).thenReturn(otherEndpoint);
+          when(otherEndpoint.listAuthorizedWorkspaces)
+              .thenAnswer((_) async => []);
+          when(otherEndpoint.listPendingInvites).thenAnswer((_) async => []);
+          when(endpoint.listAuthorizedWorkspaces).thenAnswer((_) async => []);
+          when(() => client.cloudWorkspace).thenReturn(endpoint);
+          final failure = CloudWorkspaceException(code: code);
+          when(() => endpoint.acceptInvite(any())).thenAnswer((_) async {
+            expired = true;
+            throw failure;
+          });
+          when(() => endpoint.declineInvite(any())).thenAnswer((_) async {
+            expired = true;
+            throw failure;
+          });
+          final navigationRouter = GoRouter(
+            routes: [
+              GoRoute(
+                path: '/manager',
+                builder: (context, state) => WorkspaceManagementScreen(
+                  workspaceId: local.id,
+                  connectView: true,
+                ),
+              ),
+              GoRoute(
+                path: '/open',
+                builder: (context, state) =>
+                    WorkspaceManagementScreen(workspaceId: local.id),
+              ),
+              GoRoute(
+                path: '/accounts',
+                builder: (context, state) =>
+                    CloudAccountsScreen(workspaceId: local.id),
+              ),
+            ],
+            initialLocation: '/manager',
+          );
+          addTearDown(navigationRouter.dispose);
+          final invite = PendingWorkspaceInviteSummary(
+            id: 7,
+            workspaceId: 33,
+            workspaceName: 'Invited Team',
+            email: 'one@example.test',
+            role: 'member',
+            revision: 4,
+            createdAt: .new(2026),
+          );
+          when(endpoint.listPendingInvites).thenAnswer((_) async => [invite]);
+          await _pumpAndInit(
+            tester,
+            _buildScreen(
+              workspaceId: local.id,
+              accounts: accounts,
+              navigationRouter: navigationRouter,
+              clients: {first: client, second: otherClient},
+              accountCheck: .new(
+                check: (key) async {
+                  checks.add(key);
+                  if (expired && key == first) throw failure;
+
+                  return key.accountId;
+                },
+              ),
+            ),
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(checks.where((key) => key == first), hasLength(1));
+          expect(checks.where((key) => key == second), hasLength(1));
+          await tester.tap(find.text(accept ? 'Accept' : 'Decline'));
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('Sign in again to continue.'), findsOneWidget);
+          expect(find.text('Session expired. Sign in again.'), findsOneWidget);
+          expect(find.text('Needs sign in'), findsOneWidget);
+          expect(checks.where((key) => key == first), hasLength(2));
+          expect(checks.where((key) => key == second), hasLength(1));
+          if (accept) {
+            final request =
+                verify(() => endpoint.acceptInvite(captureAny()))
+                        .captured
+                        .single
+                    as AcceptWorkspaceInviteRequest;
+            expect(request.inviteId, invite.id);
+            expect(request.expectedInviteRevision, invite.revision);
+            final _ = verifyNever(() => endpoint.declineInvite(any()));
+          } else {
+            final request =
+                verify(() => endpoint.declineInvite(captureAny()))
+                        .captured
+                        .single
+                    as DeclineWorkspaceInviteRequest;
+            expect(request.inviteId, invite.id);
+            expect(request.expectedInviteRevision, invite.revision);
+            final _ = verifyNever(() => endpoint.acceptInvite(any()));
+          }
+          navigationRouter.go('/open');
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('Needs sign in'), findsOneWidget);
+          expect(find.text('Connected'), findsOneWidget);
+          navigationRouter.go('/accounts');
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('Needs sign in'), findsOneWidget);
+          expect(find.text('Sign in again'), findsOneWidget);
+          expect(checks.where((key) => key == second), hasLength(1));
+          expect(
+            (await repository.getAllWorkspaces()).any(
+              (item) => item.id == mirror.id,
+            ),
+            isTrue,
+          );
+          expired = false;
+          final _ = ProviderScope.containerOf(
+            tester.element(find.byType(CloudAccountsScreen)),
+          )..invalidate(cloudAccountHealthProvider(first));
+          final _ = await tester.pumpAndSettle();
+          navigationRouter.go('/manager');
+          final _ = await tester.pumpAndSettle();
+          expect(find.text('Invited Team'), findsOneWidget);
+          expect(checks.where((key) => key == first), hasLength(3));
+          expect(checks.where((key) => key == second), hasLength(1));
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
+    testWidgets('row reauthentication preserves manager and exact origin', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final active = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Active Local', type: .local),
+      );
+      final mirror = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: '11',
+        cloudAccountId: 'same',
+        name: 'Expired Row',
+        serverUrl: 'https://two.example/api',
+      );
+      const accounts = [
+        CloudAccountSession(
+          serverUrl: 'https://one.example',
+          userId: 'same',
+          email: 'wrong@example.test',
+        ),
+        CloudAccountSession(
+          serverUrl: 'https://two.example',
+          userId: 'same',
+          email: 'right@example.test',
+        ),
+      ];
+      final navigationRouter = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/manager',
+            builder: (context, state) =>
+                WorkspaceManagementScreen(workspaceId: active.id),
+          ),
+          GoRoute(
+            path: '/workspaces/:workspaceId/more/cloud-accounts/login',
+            builder: (context, state) => const Text('Auth destination'),
+          ),
+        ],
+        initialLocation: '/manager',
+      );
+      addTearDown(navigationRouter.dispose);
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: active.id,
+          accounts: accounts,
+          cloudAuthenticationRequired: true,
+          navigationRouter: navigationRouter,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('account_health_https://two.example_same')),
+      );
+      final _ = await tester.pumpAndSettle();
+      final uri = navigationRouter.routeInformationProvider.value.uri;
+      expect(uri.path, '/workspaces/${active.id}/more/cloud-accounts/login');
+      expect(
+        uri.queryParameters['return-path'],
+        '/workspaces/${active.id}/more/manage-workspaces',
+      );
+      expect(uri.queryParameters['serverUrl'], 'https://two.example');
+      expect(uri.queryParameters['accountId'], 'same');
+      expect(uri.queryParameters['email'], 'right@example.test');
+      expect(uri.path, isNot(contains('/${mirror.id}/')));
+      expect(tester.takeException(), isNull);
+    });
+
     Finder _workspaceNameEditor() =>
         find.byKey(const ValueKey<String>('workspace_name_editor'));
+    for (final nullUsecase in [false, true]) {
+      final testName = 'mixed removal retains failure, null=$nullUsecase';
+      testWidgets(testName, (tester) async {
+        await tester.binding.setSurfaceSize(const Size(800, 1400));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final local = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Delete Local', type: .local),
+        );
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Keep Active', type: .local),
+        );
+        final cloud = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: '11',
+          cloudAccountId: 'same',
+          name: 'Remove Cloud',
+          serverUrl: 'https://one.example',
+        );
+        await _pumpAndInit(
+          tester,
+          _buildScreen(workspaceId: active.id, nullCloudUsecase: nullUsecase),
+        );
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(ValueKey('workspace-selection-${local.id}')),
+        );
+        await tester.ensureVisible(
+          find.byKey(ValueKey('workspace-selection-${cloud.id}')),
+        );
+        await tester.tap(
+          find.byKey(ValueKey('workspace-selection-${cloud.id}')),
+        );
+        await tester.ensureVisible(find.byType(AuraInput));
+        await tester.enterText(find.byType(AuraInput), 'Delete Local');
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('workspace-delete-selected')),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.text('Delete local and remove cloud workspaces'),
+          findsOneWidget,
+        );
+        expect(find.text('Remove Cloud'), findsOneWidget);
+        expect(
+          find.textContaining('Cloud content and membership remain'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Includes 1 selected'), findsOneWidget);
+        await tester.tap(find.text('Cancel'));
+        final _ = await tester.pumpAndSettle();
+        expect(await repository.getWorkspaceById(local.id), isNotNull);
+        expect(await repository.getWorkspaceById(cloud.id), isNotNull);
+        expect(repository.removedMirrors, isEmpty);
+        repository.failCloudRemoval = true;
+        await tester.tap(
+          find.byKey(const ValueKey('workspace-delete-selected')),
+        );
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(find.text('Delete and remove'));
+        final _ = await tester.pumpAndSettle();
+        expect(await repository.getWorkspaceById(local.id), isNull);
+        expect(await repository.getWorkspaceById(cloud.id), isNotNull);
+        expect(find.textContaining('Remove Cloud'), findsWidgets);
+        expect(repository.removedMirrors, isEmpty);
+        if (nullUsecase) return;
+        repository.failCloudRemoval = false;
+        await tester.tap(
+          find.byKey(const ValueKey('workspace-delete-selected')),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Remove selected cloud workspaces'), findsOneWidget);
+        await tester.tap(find.text('Remove'));
+        final _ = await tester.pumpAndSettle();
+        expect(await repository.getWorkspaceById(cloud.id), isNull);
+        expect(repository.removedMirrors, [
+          cloudAccountKey('https://one.example', 'same'),
+        ]);
+      });
+    }
+
+    testWidgets(
+      'Open defaults to connected workspaces without querying discovery',
+      (tester) async {
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Local Visible', type: .local),
+        );
+        final _ = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: '11',
+          cloudAccountId: 'same',
+          name: 'Connected Visible',
+          serverUrl: 'https://one.example',
+        );
+        var discoveryCalls = 0;
+        await _pumpAndInit(
+          tester,
+          _buildScreen(
+            workspaceId: active.id,
+            accounts: const [
+              CloudAccountSession(
+                serverUrl: 'https://one.example',
+                userId: 'same',
+                email: 'one@example.test',
+              ),
+            ],
+            cloudLoaders: {
+              cloudAccountKey('https://one.example', 'same'): () async {
+                discoveryCalls++;
+
+                return const CloudWorkspaceViewState(
+                  workspaces: [],
+                  pendingInvites: [],
+                );
+              },
+            },
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('Local Visible'), findsOneWidget);
+        expect(find.text('Connected Visible'), findsOneWidget);
+        expect(find.text('Connect cloud'), findsOneWidget);
+        expect(discoveryCalls, 0);
+      },
+    );
+
+    testWidgets(
+      'two servers sharing account and workspace IDs keep separate discovery',
+      (tester) async {
+        final active = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Local', type: .local),
+        );
+        final _ = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: '11',
+          cloudAccountId: 'same',
+          name: 'Server One Mirror',
+          serverUrl: 'https://one.example',
+        );
+        CloudWorkspaceViewState state(String name) => CloudWorkspaceViewState(
+          workspaces: [
+            CloudWorkspaceSummary(
+              id: 11,
+              name: name,
+              role: 'member',
+              revision: 1,
+              sequence: 1,
+              createdAt: .new(2026),
+              updatedAt: .new(2026),
+            ),
+          ],
+          pendingInvites: [],
+        );
+        await _pumpAndInit(
+          tester,
+          _buildScreen(
+            workspaceId: active.id,
+            connectView: true,
+            accounts: const [
+              CloudAccountSession(
+                serverUrl: 'https://one.example/api',
+                userId: 'same',
+                email: 'one@example.test',
+              ),
+              CloudAccountSession(
+                serverUrl: 'https://two.example',
+                userId: 'same',
+                email: 'two@example.test',
+              ),
+            ],
+            cloudWorkspaceStatesByAccount: {
+              cloudAccountKey('https://one.example', 'same'): state(
+                'One Attached',
+              ),
+              cloudAccountKey('https://two.example', 'same'): state(
+                'Two Available',
+              ),
+            },
+          ),
+        );
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('One Attached'), findsNothing);
+        expect(find.text('Two Available'), findsOneWidget);
+        expect(
+          find.byKey(
+            const ValueKey(
+              'workspace_available_menu_https://two.example_same_11',
+            ),
+          ),
+          findsOneWidget,
+        );
+        await tester.enterText(find.byType(AuraInput), 'Two');
+        final _ = await tester.pumpAndSettle();
+        expect(find.text('two@example.test'), findsOneWidget);
+        expect(find.text('one@example.test'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'view changes retain selection, search and inline rename text',
+      (tester) async {
+        final view = ValueNotifier(false);
+        addTearDown(view.dispose);
+        final local = await repository.createWorkspace(
+          const WorkspaceToCreate(name: 'Alpha', type: .local),
+        );
+        await _pumpAndInit(
+          tester,
+          _buildScreen(workspaceId: local.id, viewNotifier: view),
+        );
+        final _ = await tester.pumpAndSettle();
+        await tester.enterText(find.byType(AuraInput), 'Alpha');
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(ValueKey('workspace-selection-${local.id}')),
+        );
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ValueKey('workspace_menu_${local.id}')));
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(find.text('Edit'));
+        final _ = await tester.pumpAndSettle();
+        await tester.enterText(_workspaceNameEditor(), 'Unsaved name');
+        view.value = true;
+        final _ = await tester.pumpAndSettle();
+        expect(_workspaceNameEditor(), findsNothing);
+        view.value = false;
+        final _ = await tester.pumpAndSettle();
+        expect(
+          tester.widget<AuraInput>(_workspaceNameEditor()).controller?.text,
+          'Unsaved name',
+        );
+        expect(find.textContaining('1 selected'), findsOneWidget);
+        expect(
+          tester
+              .widget<AuraInput>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('workspace_search')),
+                  matching: find.byType(AuraInput),
+                ),
+              )
+              .controller
+              ?.text,
+          'Alpha',
+        );
+        expect((await repository.getWorkspaceById(local.id))?.name, 'Alpha');
+      },
+    );
+
     testWidgets('renders loading initially', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
 
@@ -491,7 +1064,10 @@ void main() {
         ),
       ];
       final cloudWorkspaceStates = {
-        'account-1': CloudWorkspaceViewState(
+        cloudAccountKey(
+          'http://localhost:8080',
+          'account-1',
+        ): CloudWorkspaceViewState(
           workspaces: [
             CloudWorkspaceSummary(
               id: 1,
@@ -505,7 +1081,10 @@ void main() {
           ],
           pendingInvites: const [],
         ),
-        'account-2': CloudWorkspaceViewState(
+        cloudAccountKey(
+          'http://localhost:8080',
+          'account-2',
+        ): CloudWorkspaceViewState(
           workspaces: [
             CloudWorkspaceSummary(
               id: 2,
@@ -526,6 +1105,7 @@ void main() {
         _buildScreen(
           workspaceId: 'ws-1',
           accounts: accounts,
+          connectView: true,
           cloudWorkspaceStatesByAccount: cloudWorkspaceStates,
         ),
       );
@@ -550,7 +1130,7 @@ void main() {
       expect(find.text('second@example.com'), findsNothing);
     });
 
-    testWidgets('clear search restores every workspace source and semantics', (
+    testWidgets('clear search restores cloud discovery and semantics', (
       tester,
     ) async {
       final local = await repository.createWorkspace(
@@ -587,6 +1167,7 @@ void main() {
         _buildScreen(
           workspaceId: local.id,
           accounts: [account],
+          connectView: true,
           cloudWorkspaceState: cloudState,
         ),
       );
@@ -613,8 +1194,8 @@ void main() {
         tester.widget<EditableText>(find.byType(EditableText)).controller.text,
         '',
       );
-      expect(find.text('Local Studio'), findsOneWidget);
-      expect(find.text('Connected Studio'), findsOneWidget);
+      expect(find.text('Local Studio'), findsNothing);
+      expect(find.text('Connected Studio'), findsNothing);
       expect(find.text('Cloud Studio'), findsOneWidget);
       expect(find.text('No workspaces match your search.'), findsNothing);
       expect(
@@ -668,6 +1249,7 @@ void main() {
         _buildScreen(
           workspaceId: local.id,
           accounts: [account],
+          connectView: true,
           cloudWorkspaceState: cloudState,
         ),
       );
@@ -675,14 +1257,14 @@ void main() {
 
       await tester.enterText(find.byType(AuraInput), '  CAFE  ');
       final _ = await tester.pumpAndSettle();
-      expect(find.text('$precomposedCafe Local'), findsOneWidget);
-      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('$precomposedCafe Local'), findsNothing);
+      expect(find.text('$decomposedCafe Connected'), findsNothing);
       expect(find.text('Caf$graveE Cloud'), findsOneWidget);
       expect(find.text('Other Local'), findsNothing);
 
       await tester.enterText(find.byType(AuraInput), precomposedCafe);
       final _ = await tester.pumpAndSettle();
-      expect(find.text('$decomposedCafe Connected'), findsOneWidget);
+      expect(find.text('$decomposedCafe Connected'), findsNothing);
       expect(find.text('Caf$graveE Cloud'), findsOneWidget);
     });
 
@@ -722,14 +1304,15 @@ void main() {
         _buildScreen(
           workspaceId: 'ws-1',
           accounts: accounts,
+          connectView: true,
           cloudLoaders: {
-            'account-1': () async {
+            cloudAccountKey('http://localhost:8080', 'account-1'): () async {
               firstLoads++;
               if (firstLoads == 1) throw StateError('temporary failure');
 
               return state('Cloud One', 1);
             },
-            'account-2': () async {
+            cloudAccountKey('http://localhost:8080', 'account-2'): () async {
               secondLoads++;
 
               return state('Cloud Two', 2);
@@ -747,7 +1330,11 @@ void main() {
       expect(secondLoads, 1);
 
       await tester.tap(
-        find.byKey(const ValueKey('workspace_cloud_retry_account-1')),
+        find.byKey(
+          const ValueKey(
+            'workspace_cloud_retry_http://localhost:8080_account-1',
+          ),
+        ),
       );
       final _ = await tester.pumpAndSettle();
 
@@ -992,6 +1579,7 @@ void main() {
               email: 'dev@example.com',
             ),
           ],
+          connectView: true,
           cloudAuthenticationRequired: true,
         ),
       );
@@ -1002,7 +1590,9 @@ void main() {
       expect(find.text('Sign in again'), findsOneWidget);
       expect(
         find.byKey(
-          const ValueKey<String>('workspace_cloud_account_sign_in_account-1'),
+          const ValueKey<String>(
+            'account_health_http://localhost:8080_account-1',
+          ),
         ),
         findsOneWidget,
       );
@@ -1025,6 +1615,7 @@ void main() {
               email: 'second@example.com',
             ),
           ],
+          connectView: true,
           cloudAuthenticationRequired: true,
         ),
       );
@@ -1032,13 +1623,17 @@ void main() {
 
       expect(
         find.byKey(
-          const ValueKey<String>('workspace_cloud_account_sign_in_account-1'),
+          const ValueKey<String>(
+            'account_health_http://localhost:8080_account-1',
+          ),
         ),
         findsOneWidget,
       );
       expect(
         find.byKey(
-          const ValueKey<String>('workspace_cloud_account_sign_in_account-2'),
+          const ValueKey<String>(
+            'account_health_http://localhost:8080_account-2',
+          ),
         ),
         findsOneWidget,
       );
@@ -1210,7 +1805,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('workspace-delete-selected')));
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Delete selected workspaces?'), findsOneWidget);
+      expect(find.text('Delete selected local workspaces'), findsOneWidget);
       await tester.tap(find.text('Cancel'));
       final _ = await tester.pumpAndSettle();
       expect(await repository.getWorkspaceById(alpha.id), isNotNull);

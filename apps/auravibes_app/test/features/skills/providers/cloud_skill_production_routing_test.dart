@@ -414,6 +414,12 @@ void main() {
       await container.read(deleteSkillTemplateToolProvider(workspaceId))(
         duplicatedTool.id,
       );
+      await container.read(deleteSkillTemplateToolProvider(workspaceId))(
+        tool.id,
+      );
+      await container.read(deleteSkillProvider(workspaceId))(
+        credentialSkill.id,
+      );
       expect(
         await container.read(
           deleteSkillCredentialDefinitionUsecaseProvider(workspaceId),

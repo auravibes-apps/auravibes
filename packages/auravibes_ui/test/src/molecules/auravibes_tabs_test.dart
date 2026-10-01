@@ -11,6 +11,69 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraTabs', () {
+    testWidgets('reveals an initially selected edge tab after route uncover', (
+      tester,
+    ) async {
+      var covered = true;
+      await tester.pumpWidget(
+        _host(
+          StatefulBuilder(
+            builder: (context, setState) => Navigator(
+              pages: [
+                const MaterialPage<void>(
+                  child: Align(
+                    alignment: .centerLeft,
+                    child: SizedBox(
+                      width: 160,
+                      height: 200,
+                      child: AuraTabs<void>(items: _wideItems, initialIndex: 4),
+                    ),
+                  ),
+                  key: ValueKey('tabs'),
+                ),
+                if (covered)
+                  MaterialPage<void>(
+                    child: Center(
+                      child: TextButton(
+                        onPressed: () => setState(() => covered = false),
+                        child: const Text('Setup'),
+                      ),
+                    ),
+                    key: const ValueKey('setup'),
+                  ),
+              ],
+              onDidRemovePage: (page) {
+                if (page.key == const ValueKey('setup')) covered = false;
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Setup'), findsOneWidget);
+
+      await tester.tap(find.text('Setup'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Setup'), findsNothing);
+      await tester.pump();
+      final _ = await tester.pumpAndSettle();
+
+      final tabs = find.byType(AuraTabs<void>);
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(of: tabs, matching: find.byType(Scrollable)),
+      );
+      final viewport = tester.getRect(
+        find.descendant(of: tabs, matching: find.byType(SingleChildScrollView)),
+      );
+      final selectedTab = tester.getRect(
+        find.descendant(of: tabs, matching: find.byType(AuraPressable)).last,
+      );
+      expect(horizontal.position.pixels, greaterThan(0));
+      expect(selectedTab.left, greaterThanOrEqualTo(viewport.left));
+      expect(selectedTab.right, lessThanOrEqualTo(viewport.right));
+    });
+
     testWidgets('renders tab labels and selected content', (tester) async {
       await tester.pumpWidget(_host(const AuraTabs<void>(items: _items)));
 

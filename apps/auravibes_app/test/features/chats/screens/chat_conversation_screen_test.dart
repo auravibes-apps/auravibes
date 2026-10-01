@@ -1083,6 +1083,7 @@ void main() {
     await tester.pump();
 
     expect(find.textContaining('Rate limit reached'), findsOneWidget);
+    expect(find.text('Waiting to retry'), findsOneWidget);
     final retryText = tester.widget<Text>(
       find.textContaining('Rate limit reached'),
     );
@@ -1158,6 +1159,28 @@ void main() {
       );
     },
   );
+
+  testWidgets('delegated chat names its parent and remains read-only', (
+    tester,
+  ) async {
+    await _pumpCloudConversationScreen(
+      tester,
+      initialState: _cloudState(projectionRevision: 42),
+      updates: const Stream.empty(),
+      parentId: 'parent',
+    );
+    expect(find.text('Delegated task from Original task'), findsOneWidget);
+    expect(
+      find.text(
+        'This delegated conversation is read-only. '
+        'Continue the task in the parent chat.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Return to parent conversation'), findsOneWidget);
+    expect(find.byType(ChatInputWidget), findsNothing);
+    expect(find.text('No active response'), findsOneWidget);
+  });
 
   testWidgets('hides active sub-agent action when no children are live', (
     tester,
@@ -1401,6 +1424,7 @@ Future<void> _pumpCloudConversationScreen(
   required Stream<CloudConversationState> updates,
   CloudTurnUsecase? usecase,
   Future<CloudTurnUsecase?>? usecaseFuture,
+  String? parentId,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1200));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -1412,6 +1436,7 @@ Future<void> _pumpCloudConversationScreen(
     createdAt: .new(2026),
     updatedAt: .new(2026),
     modelId: 'model-1',
+    parentConversationId: parentId,
   );
   final cloudUsecase = usecaseFuture ?? Future.value(usecase);
 
@@ -1422,6 +1447,18 @@ Future<void> _pumpCloudConversationScreen(
           builder: (context) {
             return TestProviderScope(
               overrides: [
+                if (parentId != null)
+                  conversationByIdStreamProvider(
+                    _workspaceId,
+                    conversationId: parentId,
+                  ).overrideWith(
+                    (ref) => Stream.value(
+                      conversation.copyWith(
+                        id: parentId,
+                        title: 'Original task',
+                      ),
+                    ),
+                  ),
                 conversationSkillSelectorProvider(
                   _workspaceId,
                   _chatId,
@@ -1485,9 +1522,10 @@ Future<void> _pumpCloudConversationScreen(
                     .overrideWith((ref) => Stream.value(const [])),
               ],
               child: MaterialApp(
-                home: const ChatConversationScreen(
+                home: ChatConversationScreen(
                   workspaceId: _workspaceId,
                   chatId: _chatId,
+                  showInputComposer: parentId == null,
                 ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,

@@ -1,0 +1,1 @@
+enum SkillSort { name, enabled }

@@ -41,8 +41,8 @@
       "create": "Create workspace"
     },
     "ready": {
-      "title": "Ready to start",
-      "body": "Connect an AI provider now, or skip and configure service connections, tools, skills, and credentials from More later."
+      "title": "Workspace created",
+      "body": "Your workspace is saved. Connect AI and choose a model to chat, or set up AI later."
     },
     "continue": "Continue",
     "back": "Back",
@@ -77,7 +77,8 @@
       "discard_changes": "Discard",
       "keep_editing": "Keep editing",
       "back_to_selection": "Back to model selection",
-      "create_button": "Create Provider", "save_changes": "Save changes",
+      "create_button": "Create Provider",
+      "save_changes": "Save changes",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
       "oauth_waiting": "Waiting for authorization...",
@@ -321,7 +322,11 @@
       "zero": "No skills",
       "one": "1 skill",
       "other": "{} skills"
-    }
+    },
+    "available_chat": "Available in chats",
+    "available_delegation": "Available for delegation",
+    "manage_skills_for": "Skills for {}",
+    "skill_assignment_hint": "Assignments apply when you save the agent. Enabling a skill applies immediately to this workspace."
   },
   "chats_screens": {
     "chats_list": {
@@ -465,7 +470,6 @@
         "one": "1 sub-agent running",
         "other": "{} sub-agents running"
       },
-
       "active_sub_agents_accessible_label": "{count}. View active sub-agents",
       "active_sub_agents_chat_accessible_label": "{count} in {conversation}. View active sub-agents",
       "active_sub_agents_title": "Active sub-agents",
@@ -630,7 +634,11 @@
     "kind": {
       "template": "Template",
       "native": "Native"
-    }
+    },
+    "create_configure": "Create and configure",
+    "create_stage": "Create the skill, then add resources and tools. Instructions alone are enough to start.",
+    "create_resources": "Resources become available after creation.",
+    "create_tools": "Tools become available after creation."
   },
   "markdown_editor": {
     "title": "Markdown editor",
@@ -655,7 +663,19 @@
     "link_dialog_title": "Insert link",
     "link_text_label": "Link text",
     "link_destination_label": "Destination URL",
-    "link_destination_required": "Enter a destination URL"
+    "link_destination_required": "Enter a destination URL",
+    "apply": "Apply changes",
+    "draft_hint": "Applies to the parent draft. Save the parent to finish.",
+    "agent_instructions": "Edit agent instructions",
+    "skill_description": "Edit skill description",
+    "skill_instructions": "Edit skill instructions",
+    "resource_description": "Edit resource description",
+    "resource_content": "Edit resource content",
+    "tool_description": "Edit tool description",
+    "agent_hint": "Applies to this draft. Save the agent to finish.",
+    "skill_hint": "Applies to this draft. Save the skill to finish.",
+    "resource_hint": "Applies to this draft. Save the resource to finish.",
+    "tool_hint": "Applies to this draft. Save the tool to finish."
   },
   "skills_resource": {
     "section_title": "Resources",
@@ -675,7 +695,10 @@
     "description_empty": "No description yet",
     "content_label": "Content",
     "edit_content": "Edit content",
-    "content_empty": "No content yet"
+    "content_empty": "No content yet",
+    "save": "Save resource",
+    "saved": "Resource changes saved",
+    "parent": "Resource for {}"
   },
   "skills_selector": {
     "title": "Conversation skills",
@@ -686,11 +709,11 @@
     "loaded_empty": "No skills loaded",
     "available_title": "Available",
     "available_empty": "No skills available",
-    "credentials_ready": "Ready",
-    "credentials_missing": "Missing credentials",
-    "credentials_unknown": "Credential status unknown",
-    "context_added": "Added",
-    "context_preparing": "Preparing context…",
+    "credentials_ready": "Instruction requirements met",
+    "credentials_missing": "Instruction requirements need attention",
+    "credentials_unknown": "Instruction availability unknown",
+    "context_added": "Added to this chat",
+    "context_preparing": "Preparing instructions",
     "context_ready": "Ready in context",
     "context_needs_context": "Needs context",
     "context_error": "Context error",
@@ -711,7 +734,8 @@
     "error_credentials_unknown": "Could not verify skill credentials. Check the connection and retry.",
     "suggestion": "Suggested skill",
     "suggestion_unavailable": "This skill suggestion is unavailable.",
-    "suggestion_open_picker": "Open skills"
+    "suggestion_open_picker": "Open skills",
+    "actions_hint": "For this chat: Add prepares instructions without sending a request. Use now asks the assistant to use the skill for your latest task."
   },
   "chat_input": {
     "skills_control_count": "Skills, {count} added"
@@ -781,30 +805,31 @@
     "advanced_definition_label": "Advanced definition JSON",
     "advanced_definition_hint": "Use raw versioned JSON when structured fields are insufficient. Liquid is supported.",
     "advanced_definition_toggle": "Edit raw definition JSON",
-    "add_input": "Add input"
+    "add_input": "Add input",
+    "preview_hint": "Preview using sample inputs. No request is sent. This shows the request structure; it does not verify remote access, the endpoint response, or real inputs."
   },
   "skill_credentials_definitions": {
-    "title": "Credentials",
-    "create_title": "New Credential",
-    "edit_title": "Edit Credential",
-    "empty": "No credentials",
-    "search": "Search credentials",
-    "search_empty": "No matching credentials",
-    "error": "Error loading credentials",
-    "not_found": "Credential not found",
+    "title": "Credential types",
+    "create_title": "Create credential type",
+    "edit_title": "Edit credential type",
+    "empty": "No credential types yet",
+    "search": "Search credential types",
+    "search_empty": "No credential types match your search",
+    "error": "Error loading credential types",
+    "not_found": "Credential type not found",
     "save": "Save",
-    "save_error": "Unable to save credential",
+    "save_error": "Unable to save credential type",
     "secret_required": "Add at least one secret field. Metadata-only definitions cannot be used as credentials.",
     "schema_conflict": "Cannot change {fields}: {credentials} saved credentials use this definition. Edit or remove those credentials first.",
     "delete_conflict": "Cannot delete: {credentials} linked credentials, {skills} skills, and {tools} template tools are affected. Remove the credentials first.",
-    "manage_credentials": "Manage credentials",
+    "manage_credentials": "Manage saved credentials",
     "duplicate": "Duplicate",
-    "duplicate_success": "Credential duplicated",
-    "duplicate_error": "Unable to duplicate credential",
+    "duplicate_success": "Credential type duplicated",
+    "duplicate_error": "Unable to duplicate credential type",
     "copy_slug": "Copy slug",
     "slug_copied": "Slug copied",
-    "delete_title": "Delete credential",
-    "delete_confirm": "Delete this credential? Skills using it will no longer require these credentials.",
+    "delete_title": "Delete credential type",
+    "delete_confirm": "Delete this credential type? Skills using it will no longer require credentials of this type.",
     "attributes_label": "Attributes",
     "attribute_variable_label": "Variable",
     "attribute_variable_required": "Variable is required",
@@ -820,15 +845,15 @@
   },
   "skill_credentials": {
     "add_title": "Add Credential",
-    "definition_label": "Credential Definition",
+    "definition_label": "Credential type",
     "name_label": "Name",
     "attributes_label": "Credential Attributes JSON",
     "save_error": "Unable to save credential",
     "load_error": "Error loading credentials",
     "secret_saved": "Saved secret",
     "clear_secret": "Clear secret",
-    "no_definitions": "Create a credential definition first",
-    "none": "No credential definition",
+    "no_definitions": "Create a credential type first",
+    "none": "No credential type",
     "missing_hint": "This skill needs a credential before it can be loaded.",
     "optional_missing_hint": "No credential is configured. This skill can still be loaded, but tools that require credentials will stay unavailable.",
     "configured_count": {
@@ -993,7 +1018,7 @@
     "api_connected": "API Connected"
   },
   "settings_screen": {
-    "title": "Settings",
+    "title": "App settings",
     "app_settings": {
       "title": "App Settings",
       "subtitle": "Configure your app preferences and behavior"
@@ -1027,8 +1052,8 @@
       "subtitle": "Manage model providers and skill credentials"
     },
     "credential_definitions": {
-      "title": "Credential Definitions",
-      "subtitle": "Define credential fields used by skills"
+      "title": "Credential types",
+      "subtitle": "Define fields required by saved credentials"
     },
     "tools": {
       "title": "Tools",
@@ -1326,7 +1351,16 @@
     "local_target": "Local workspace",
     "target_label": "Workspace location",
     "cloud_available_section": "Available cloud workspaces",
-    "cloud_add_hint": "Add a cloud account to create cloud workspaces."
+    "cloud_add_hint": "Add a cloud account to create cloud workspaces.",
+    "open_workspaces": "Open workspaces",
+    "connect_cloud": "Connect cloud",
+    "bulk_remove_cloud": "Remove selected cloud workspaces",
+    "bulk_delete_local": "Delete selected local workspaces",
+    "bulk_delete_mixed": "Delete local and remove cloud workspaces",
+    "bulk_delete_and_remove": "Delete and remove",
+    "bulk_local_consequence": "Delete {count} local workspaces and their data from this device:",
+    "bulk_cloud_consequence": "Remove {count} cloud shortcuts and local chats/files. Cloud content and membership remain:",
+    "bulk_hidden_included": "Includes {count} selected workspaces hidden by the current filter."
   },
   "cloud_errors": {
     "authentication_required": "Sign in again to continue.",
@@ -1355,7 +1389,12 @@
     "revoke_invite": "Revoke invitation",
     "connected_section": "Connected cloud workspaces",
     "local_section": "Local workspaces",
-    "remove_confirm": "Remove {name} from this app? Its local chats and files will be deleted. Cloud data stays in the cloud."
+    "remove_confirm": "Remove {name} from this app? Its local chats and files will be deleted. Cloud data stays in the cloud.",
+    "not_connected": "Not connected to this app",
+    "connected": "Connected to this app",
+    "cloud_context": "Workspace content and execution are on this cloud server.",
+    "device_connection": "Connection to this app",
+    "consequences": "Membership and permanent deletion"
   },
   "cloud_accounts": {
     "title": "Cloud accounts",
@@ -1372,7 +1411,7 @@
     "not_configured": "Cloud server is not configured for this app build.",
     "load_error": "Failed to load cloud accounts.",
     "no_workspaces": "No cloud workspaces available for this account.",
-    "check_email_title": "Check your email",
+    "check_email_title": "Enter verification code",
     "check_email_body": "Enter the verification code to finish creating your account.",
     "dev_code_hint": "In local development, copy the code from the server logs.",
     "edit_email": "Edit email",
@@ -1382,12 +1421,12 @@
     "code_expired_error": "This verification code expired. Send a new code and try again.",
     "code_invalid_error": "Invalid verification code. Check the code and try again.",
     "too_many_attempts_error": "Too many attempts. Send a new code and try again later.",
-    "request_failed": "Cloud account request failed. Check the server and try again.",
-    "server_unreachable_error": "Cloud server is not reachable. Start the server and try again.",
+    "request_failed": "The request could not be completed. Try again.",
+    "server_unreachable_error": "Could not reach the cloud service. Check your connection and try again.",
     "login_failed_error": "Login failed. Check your email and password.",
     "resend_code": "Resend code",
-    "code_resent": "A new code was sent. In local development, check the server logs.",
-    "password_reset_intro": "Enter your account email and we will send a password reset code.",
+    "code_resent": "A new verification code is available. Use the latest code.",
+    "password_reset_intro": "Enter the email for the account you want to recover.",
     "password_reset_body": "Enter the reset code and your new password.",
     "send_password_reset_code": "Send reset code",
     "finish_password_reset": "Reset password",
@@ -1405,6 +1444,154 @@
     "delete_message": "Permanently delete {email} and its sign-in credentials? Your access to shared cloud workspaces will end, but their content will remain. Delete or transfer any cloud workspaces you own first. This cannot be undone.",
     "delete_owned_workspaces_error": "Delete or transfer the cloud workspaces you own before deleting this account.",
     "delete_local_cleanup_failed": "Account was deleted, but cleanup on this device did not finish. Some cloud workspace shortcuts may remain.",
-    "delete_failed": "Could not finish deleting this account. Check your connection and try again."
+    "delete_failed": "Could not finish deleting this account. Check your connection and try again.",
+    "origin_unresolved": "Choose the server for this account. This link does not identify a unique server.",
+    "status_checking": "Account stored · Checking access…",
+    "status_verified": "Access verified at {time}",
+    "status_unknown": "Access unknown · Could not verify access",
+    "verify": "Check access",
+    "wrong_identity": "This account does not match the account needed for this task. Sign in with the requested email.",
+    "invalid_target": "This sign-in link has conflicting or invalid account details. Return to your task and try again.",
+    "delivery_unavailable": "Account creation and password recovery are unavailable because this service has no email delivery. Return to login or cancel.",
+    "create_title": "Create cloud account",
+    "verify_email": "Verify your email",
+    "password_changed": "Password changed. Log in with your new password.",
+    "cancel_auth": "Cancel and return",
+    "return_to_task": "After signing in, return to {}."
+  },
+  "route_state": {
+    "workspace_loading": "Opening workspace...",
+    "workspace_error": "Could not open this workspace. Retry or choose another workspace.",
+    "child_loading": "Opening child conversation...",
+    "child_error": "Could not load this child conversation.",
+    "retry": "Retry",
+    "return_workspaces": "Choose workspace",
+    "return_parent": "Return to parent conversation",
+    "workspace_missing": "This workspace no longer exists. Choose another workspace.",
+    "invalid_workspace": "This cloud connection has incomplete account details. Choose a workspace to manage its connection.",
+    "sign_in": "Sign in again to open this cloud workspace."
+  },
+  "navigation": {
+    "chats": "Chats",
+    "agents_skills": "Agents & skills",
+    "connections": "Connections",
+    "workspace_actions": "Workspace actions",
+    "create_workspace": "Create workspace",
+    "connect_cloud": "Connect cloud workspace",
+    "workspace_settings": "Workspace settings",
+    "local_workspace": "Local",
+    "cloud_workspace": "Cloud",
+    "workspace_settings_scope": "These settings apply only to this workspace.",
+    "accounts_scope": "Cloud accounts are available across the app. Connecting an account does not change the current workspace.",
+    "workspace_settings_error": "Could not refresh workspace settings. Your edits are kept. Try again."
+  },
+  "related_lists": {
+    "agents": "Agents",
+    "skills": "Skills",
+    "overview": "Overview",
+    "providers": "AI providers",
+    "services": "Services",
+    "tools": "Tools",
+    "credentials": "Saved credentials",
+    "credential_types": "Advanced: Credential types",
+    "view_skill": "View skill",
+    "workspace_agents": "Open workspace agents",
+    "open_connection": "Open connection",
+    "workspace_group": "In this workspace",
+    "app_group": "App and accounts"
+  },
+  "workspace_setup": {
+    "local": "Create local",
+    "cloud": "Create cloud",
+    "connect": "Connect existing cloud",
+    "add_account": "Add another account",
+    "local_body": "Store and run this workspace on this device.",
+    "sign_in_connect": "Sign in to find cloud workspaces you can access."
+  },
+  "chat_readiness": {
+    "saved": "Connection saved",
+    "continue_chat": "Continue to chat",
+    "loading": "Checking model configuration…",
+    "no_provider": "Connect an AI provider to start chatting.",
+    "authorization": "Connection saved. Authorization needs attention. Complete sign-in in Connections, then retry.",
+    "attention": "Could not load AI configuration. Check the connection or retry.",
+    "no_models": "Connection saved, but no models are available. Review the connection and refresh its models.",
+    "unavailable": "The selected model is unavailable. Choose another model.",
+    "choose_model": "Models are available. Choose a model to start chatting.",
+    "selected": "Model selected. Remote access is checked when you send a message.",
+    "review_connections": "Review connections",
+    "select_below": "Use the model selector below.",
+    "select_in_chat": "Continue to chat to choose a model."
+  },
+  "conversation_orientation": {
+    "delegated": "Delegated task from {parent}",
+    "read_only": "This delegated conversation is read-only. Continue the task in the parent chat."
+  },
+  "conversation_activity": {
+    "approval": "Waiting for your approval",
+    "stopped": "Stopped",
+    "retry": "Waiting to retry",
+    "compacting": "Preparing conversation context",
+    "delegated": "Working with {count} delegated agents",
+    "working": "Working on your request",
+    "queued": "Messages queued",
+    "idle": "No active response"
+  },
+  "connection_setup": {
+    "connect_ai": "Connect AI",
+    "add_access": "Add saved access",
+    "create_type": "Create credential type",
+    "required_type_missing": "The credential type requested by this task is unavailable. Return to the task to repair its requirement.",
+    "required_service_missing": "The service requested by this task is unavailable. Return to the task to check its required connection.",
+    "types_load_error": "Could not load credential types. Your draft is retained.",
+    "return_connections": "Return to connections",
+    "return_task": "Return to task",
+    "return_workspace": "Return to workspace",
+    "kind": "Connection kind",
+    "health": "Connection health",
+    "edit_named": "Edit {name}",
+    "provider_load_error": "Could not load provider setup. Retry to continue with your draft.",
+    "browser_restriction": "Browser sign-in requires the macOS, Windows, or Linux desktop app. Use device sign-in when available.",
+    "device_restriction": "Device sign-in is unavailable in cloud workspaces. On desktop, use browser sign-in.",
+    "native_tools_restriction": "Built-in tools can only be added in local workspaces. In this cloud workspace, connect a service to add its tools.",
+    "tool_permissions": "Saving a connection does not grant tool permission. Workspace defaults and agent or conversation permissions still apply.",
+    "tools_load_error": "Could not load tools. Retry to reload this workspace.",
+    "return_types": "Return to credential types",
+    "connection_missing": "This connection or its credential type is no longer available. Return to connections to choose another."
+  },
+  "authoring": {
+    "saved": "Saved",
+    "draft": "Unsaved changes",
+    "enabled": "Enabled in this workspace",
+    "disabled": "Disabled in this workspace"
+  },
+  "skill_access": {
+    "not_required": "No access required",
+    "saved": "Saved access available",
+    "missing": "Needs access",
+    "partial": "Instructions available; access setup incomplete",
+    "unknown": "Access status unknown",
+    "checking": "Checking saved access…",
+    "verification_hint": "Saved access does not verify remote access. Chat instructions are prepared separately.",
+    "tool_disabled": "Tool disabled",
+    "tool_missing": "Tool needs access",
+    "saved_configuration": "Access summary for the saved skill. Save changed requirements to update it."
+  },
+  "credential_usage": {
+    "title": "Used by",
+    "error": "Could not load usage. Retry before changing this credential type.",
+    "counts": "{credentials} saved credentials · {skills} skills · {tools} tools",
+    "empty": "No saved credentials, skills or tools use this type.",
+    "delete_blocked": "Remove these dependencies before deleting this type. Disabled items also count.",
+    "changes": "Schema changes",
+    "required": "{field}: now required, including any newly added field.",
+    "removed": "{field}: removed.",
+    "secretChanged": "{field}: secret storage setting changed.",
+    "impact": "These changes cannot be saved while credentials use this type. Update or remove the linked credentials first.",
+    "advisory": "Usage is checked again when you save or delete.",
+    "credential": "Saved credential",
+    "skill": "Skill",
+    "tool": "Tool",
+    "disabled": "Disabled"
   }
 }

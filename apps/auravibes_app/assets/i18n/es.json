@@ -41,8 +41,8 @@
       "create": "Crear espacio"
     },
     "ready": {
-      "title": "Listo para empezar",
-      "body": "Conecta un proveedor de IA ahora, o salta este paso y configura conexiones, herramientas, habilidades y credenciales desde Más después."
+      "title": "Espacio creado",
+      "body": "Tu espacio está guardado. Conecta IA y elige un modelo para chatear, o configura la IA más tarde."
     },
     "continue": "Continuar",
     "back": "Atrás",
@@ -77,7 +77,8 @@
       "discard_changes": "Descartar",
       "keep_editing": "Seguir editando",
       "back_to_selection": "Volver a la selección de modelo",
-      "create_button": "Crear Proveedor", "save_changes": "Guardar cambios",
+      "create_button": "Crear Proveedor",
+      "save_changes": "Guardar cambios",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
       "oauth_waiting": "Esperando autorización...",
@@ -321,7 +322,11 @@
       "zero": "Sin habilidades",
       "one": "1 habilidad",
       "other": "{} habilidades"
-    }
+    },
+    "available_chat": "Disponible en chats",
+    "available_delegation": "Disponible para delegación",
+    "manage_skills_for": "Habilidades para {}",
+    "skill_assignment_hint": "Las asignaciones se aplican al guardar el agente. Habilitar una habilidad se aplica de inmediato a este espacio."
   },
   "chats_screens": {
     "chats_list": {
@@ -465,7 +470,6 @@
         "one": "1 subagente en ejecución",
         "other": "{} subagentes en ejecución"
       },
-
       "active_sub_agents_accessible_label": "{count}. Ver subagentes activos",
       "active_sub_agents_chat_accessible_label": "{count} en {conversation}. Ver subagentes activos",
       "active_sub_agents_title": "Subagentes activos",
@@ -630,7 +634,11 @@
     "kind": {
       "template": "Plantilla",
       "native": "Nativa"
-    }
+    },
+    "create_configure": "Crear y configurar",
+    "create_stage": "Crea la habilidad y después añade recursos y herramientas. Puedes empezar solo con instrucciones.",
+    "create_resources": "Los recursos estarán disponibles después de crearla.",
+    "create_tools": "Las herramientas estarán disponibles después de crearla."
   },
   "markdown_editor": {
     "title": "Editor Markdown",
@@ -655,7 +663,19 @@
     "link_dialog_title": "Insertar enlace",
     "link_text_label": "Texto del enlace",
     "link_destination_label": "URL de destino",
-    "link_destination_required": "Introduce una URL de destino"
+    "link_destination_required": "Introduce una URL de destino",
+    "apply": "Aplicar cambios",
+    "draft_hint": "Se aplica al borrador principal. Guarda el elemento principal para terminar.",
+    "agent_instructions": "Editar instrucciones del agente",
+    "skill_description": "Editar descripción de la habilidad",
+    "skill_instructions": "Editar instrucciones de la habilidad",
+    "resource_description": "Editar descripción del recurso",
+    "resource_content": "Editar contenido del recurso",
+    "tool_description": "Editar descripción de la herramienta",
+    "agent_hint": "Se aplica a este borrador. Guarda el agente para terminar.",
+    "skill_hint": "Se aplica a este borrador. Guarda la habilidad para terminar.",
+    "resource_hint": "Se aplica a este borrador. Guarda el recurso para terminar.",
+    "tool_hint": "Se aplica a este borrador. Guarda la herramienta para terminar."
   },
   "skills_resource": {
     "section_title": "Recursos",
@@ -675,7 +695,10 @@
     "description_empty": "Sin descripción todavía",
     "content_label": "Contenido",
     "edit_content": "Editar contenido",
-    "content_empty": "Sin contenido todavía"
+    "content_empty": "Sin contenido todavía",
+    "save": "Guardar recurso",
+    "saved": "Cambios del recurso guardados",
+    "parent": "Recurso de {}"
   },
   "skills_selector": {
     "title": "Habilidades de la conversación",
@@ -686,11 +709,11 @@
     "loaded_empty": "No hay habilidades cargadas",
     "available_title": "Disponibles",
     "available_empty": "No hay habilidades disponibles",
-    "credentials_ready": "Lista",
-    "credentials_missing": "Faltan credenciales",
-    "credentials_unknown": "Estado de credenciales desconocido",
-    "context_added": "Agregada",
-    "context_preparing": "Preparando contexto…",
+    "credentials_ready": "Requisitos de instrucciones cumplidos",
+    "credentials_missing": "Los requisitos de instrucciones necesitan atención",
+    "credentials_unknown": "Disponibilidad de instrucciones desconocida",
+    "context_added": "Añadida a este chat",
+    "context_preparing": "Preparando instrucciones",
     "context_ready": "Lista en el contexto",
     "context_needs_context": "Necesita contexto",
     "context_error": "Error de contexto",
@@ -711,7 +734,8 @@
     "error_credentials_unknown": "No se pudieron verificar las credenciales. Revisa la conexión e inténtalo de nuevo.",
     "suggestion": "Habilidad sugerida",
     "suggestion_unavailable": "Esta sugerencia de habilidad no está disponible.",
-    "suggestion_open_picker": "Abrir habilidades"
+    "suggestion_open_picker": "Abrir habilidades",
+    "actions_hint": "Para este chat: Añadir prepara las instrucciones sin enviar una solicitud. Usar ahora pide al asistente que use la habilidad para tu última tarea."
   },
   "chat_input": {
     "skills_control_count": "Habilidades, {count} agregadas"
@@ -781,30 +805,31 @@
     "advanced_definition_label": "JSON avanzado de definición",
     "advanced_definition_hint": "Usa JSON versionado sin procesar cuando los campos estructurados no sean suficientes. Liquid es compatible.",
     "advanced_definition_toggle": "Editar JSON sin procesar",
-    "add_input": "Agregar entrada"
+    "add_input": "Agregar entrada",
+    "preview_hint": "Vista previa con datos de ejemplo. No se envía ninguna solicitud. Muestra la estructura de la solicitud; no verifica el acceso remoto, la respuesta del servicio ni los datos reales."
   },
   "skill_credentials_definitions": {
-    "title": "Credenciales",
-    "create_title": "Nueva Credencial",
-    "edit_title": "Editar Credencial",
-    "empty": "No hay credenciales",
-    "search": "Buscar credenciales",
-    "search_empty": "No hay credenciales que coincidan",
-    "error": "Error al cargar credenciales",
-    "not_found": "Credencial no encontrada",
+    "title": "Tipos de credenciales",
+    "create_title": "Crear tipo de credencial",
+    "edit_title": "Editar tipo de credencial",
+    "empty": "Aún no hay tipos de credenciales",
+    "search": "Buscar tipos de credenciales",
+    "search_empty": "Ningún tipo de credencial coincide con la búsqueda",
+    "error": "Error al cargar tipos de credenciales",
+    "not_found": "Tipo de credencial no encontrado",
     "save": "Guardar",
-    "save_error": "No se pudo guardar la credencial",
+    "save_error": "No se pudo guardar el tipo de credencial",
     "secret_required": "Agrega al menos un campo secreto. Las definiciones que solo contienen metadatos no pueden usarse como credenciales.",
     "schema_conflict": "No se puede cambiar {fields}: {credentials} credenciales guardadas usan esta definición. Edita o elimina esas credenciales primero.",
     "delete_conflict": "No se puede eliminar: hay {credentials} credenciales vinculadas, {skills} habilidades y {tools} herramientas de plantilla afectadas. Elimina las credenciales primero.",
-    "manage_credentials": "Administrar credenciales",
+    "manage_credentials": "Administrar credenciales guardadas",
     "duplicate": "Duplicar",
-    "duplicate_success": "Credencial duplicada",
-    "duplicate_error": "No se pudo duplicar la credencial",
+    "duplicate_success": "Tipo de credencial duplicado",
+    "duplicate_error": "No se pudo duplicar el tipo de credencial",
     "copy_slug": "Copiar slug",
     "slug_copied": "Slug copiado",
-    "delete_title": "Eliminar credencial",
-    "delete_confirm": "¿Eliminar esta credencial? Las habilidades que la usan ya no requerirán estas credenciales.",
+    "delete_title": "Eliminar tipo de credencial",
+    "delete_confirm": "¿Eliminar este tipo de credencial? Las habilidades que lo usan dejarán de requerir credenciales de este tipo.",
     "attributes_label": "Atributos",
     "attribute_variable_label": "Variable",
     "attribute_variable_required": "La variable es obligatoria",
@@ -820,15 +845,15 @@
   },
   "skill_credentials": {
     "add_title": "Agregar Credencial",
-    "definition_label": "Definición de Credencial",
+    "definition_label": "Tipo de credencial",
     "name_label": "Nombre",
     "attributes_label": "JSON de Atributos de Credencial",
     "save_error": "No se pudo guardar la credencial",
     "load_error": "Error al cargar credenciales",
     "secret_saved": "Secreto guardado",
     "clear_secret": "Borrar secreto",
-    "no_definitions": "Crea primero una definición de credencial",
-    "none": "Sin definición de credencial",
+    "no_definitions": "Crea primero un tipo de credencial",
+    "none": "Sin tipo de credencial",
     "missing_hint": "Esta habilidad necesita una credencial antes de poder cargarse.",
     "optional_missing_hint": "No hay credencial configurada. Esta habilidad todavía se puede cargar, pero las herramientas que requieren credenciales no estarán disponibles.",
     "configured_count": {
@@ -993,7 +1018,7 @@
     "api_connected": "API Conectada"
   },
   "settings_screen": {
-    "title": "Configuración",
+    "title": "Ajustes de la aplicación",
     "app_settings": {
       "title": "Configuración de la App",
       "subtitle": "Configura tus preferencias y comportamiento de la app"
@@ -1027,8 +1052,8 @@
       "subtitle": "Administra proveedores de modelo y credenciales de habilidades"
     },
     "credential_definitions": {
-      "title": "Definiciones de Credenciales",
-      "subtitle": "Define campos de credenciales usados por habilidades"
+      "title": "Tipos de credenciales",
+      "subtitle": "Define los campos necesarios para las credenciales guardadas"
     },
     "tools": {
       "title": "Herramientas",
@@ -1326,7 +1351,16 @@
     "local_target": "Espacio de trabajo local",
     "target_label": "Ubicación del espacio de trabajo",
     "cloud_available_section": "Espacios en la nube disponibles",
-    "cloud_add_hint": "Agrega una cuenta en la nube para crear espacios en la nube."
+    "cloud_add_hint": "Agrega una cuenta en la nube para crear espacios en la nube.",
+    "open_workspaces": "Abrir espacios de trabajo",
+    "connect_cloud": "Conectar nube",
+    "bulk_remove_cloud": "Quitar los espacios de nube seleccionados",
+    "bulk_delete_local": "Eliminar los espacios locales seleccionados",
+    "bulk_delete_mixed": "Eliminar espacios locales y quitar espacios de nube",
+    "bulk_delete_and_remove": "Eliminar y quitar",
+    "bulk_local_consequence": "Eliminar {count} espacios locales y sus datos de este dispositivo:",
+    "bulk_cloud_consequence": "Quitar {count} accesos de nube y los chats y archivos locales. El contenido y la membresía en la nube se conservan:",
+    "bulk_hidden_included": "Incluye {count} espacios seleccionados ocultos por el filtro actual."
   },
   "cloud_errors": {
     "authentication_required": "Inicia sesión de nuevo para continuar.",
@@ -1355,7 +1389,12 @@
     "revoke_invite": "Revocar invitación",
     "connected_section": "Espacios en la nube conectados",
     "local_section": "Espacios locales",
-    "remove_confirm": "¿Quitar {name} de esta app? Sus chats y archivos locales se eliminarán. Los datos en la nube permanecen en la nube."
+    "remove_confirm": "¿Quitar {name} de esta app? Sus chats y archivos locales se eliminarán. Los datos en la nube permanecen en la nube.",
+    "not_connected": "Sin conectar a esta aplicación",
+    "connected": "Conectado a esta aplicación",
+    "cloud_context": "El contenido y la ejecución del espacio están en este servidor de nube.",
+    "device_connection": "Conexión con esta aplicación",
+    "consequences": "Membresía y eliminación permanente"
   },
   "cloud_accounts": {
     "title": "Cuentas en la nube",
@@ -1372,7 +1411,7 @@
     "not_configured": "El servidor en la nube no está configurado para esta versión de la app.",
     "load_error": "Error al cargar las cuentas en la nube.",
     "no_workspaces": "No hay espacios en la nube disponibles para esta cuenta.",
-    "check_email_title": "Revisa tu correo",
+    "check_email_title": "Introduce el código de verificación",
     "check_email_body": "Ingresa el código de verificación para terminar de crear tu cuenta.",
     "dev_code_hint": "En desarrollo local, copia el código desde los logs del servidor.",
     "edit_email": "Editar correo",
@@ -1382,12 +1421,12 @@
     "code_expired_error": "Este código de verificación expiró. Envía un código nuevo e inténtalo otra vez.",
     "code_invalid_error": "Código de verificación inválido. Revisa el código e inténtalo otra vez.",
     "too_many_attempts_error": "Demasiados intentos. Envía un código nuevo e inténtalo más tarde.",
-    "request_failed": "La solicitud de cuenta en la nube falló. Revisa el servidor e inténtalo otra vez.",
-    "server_unreachable_error": "No se puede conectar con el servidor en la nube. Inicia el servidor e inténtalo otra vez.",
+    "request_failed": "No se pudo completar la solicitud. Inténtalo de nuevo.",
+    "server_unreachable_error": "No se pudo conectar con el servicio en la nube. Comprueba tu conexión e inténtalo de nuevo.",
     "login_failed_error": "No se pudo iniciar sesión. Revisa tu correo y contraseña.",
     "resend_code": "Reenviar código",
-    "code_resent": "Se envió un código nuevo. En desarrollo local, revisa los logs del servidor.",
-    "password_reset_intro": "Ingresa el correo de tu cuenta y enviaremos un código para restablecer tu contraseña.",
+    "code_resent": "Hay un nuevo código de verificación disponible. Usa el más reciente.",
+    "password_reset_intro": "Introduce el correo de la cuenta que quieres recuperar.",
     "password_reset_body": "Ingresa el código de restablecimiento y tu contraseña nueva.",
     "send_password_reset_code": "Enviar código de restablecimiento",
     "finish_password_reset": "Restablecer contraseña",
@@ -1405,6 +1444,154 @@
     "delete_message": "¿Eliminar definitivamente {email} y sus credenciales de acceso? Perderás acceso a los espacios en la nube compartidos, pero su contenido permanecerá. Primero elimina o transfiere los espacios en la nube que posees. Esta acción no se puede deshacer.",
     "delete_owned_workspaces_error": "Elimina o transfiere los espacios en la nube que posees antes de eliminar esta cuenta.",
     "delete_local_cleanup_failed": "La cuenta se eliminó, pero la limpieza en este dispositivo no terminó. Es posible que queden accesos directos a espacios en la nube.",
-    "delete_failed": "No se pudo completar la eliminación de esta cuenta. Revisa tu conexión e inténtalo otra vez."
+    "delete_failed": "No se pudo completar la eliminación de esta cuenta. Revisa tu conexión e inténtalo otra vez.",
+    "origin_unresolved": "Elige el servidor de esta cuenta. Este enlace no identifica un servidor único.",
+    "status_checking": "Cuenta guardada · Comprobando el acceso…",
+    "status_verified": "Acceso verificado a las {time}",
+    "status_unknown": "Acceso desconocido · No se pudo verificar el acceso",
+    "verify": "Comprobar acceso",
+    "wrong_identity": "Esta cuenta no coincide con la necesaria para esta tarea. Inicia sesión con el correo solicitado.",
+    "invalid_target": "Este enlace contiene datos de cuenta contradictorios o no válidos. Vuelve a tu tarea e inténtalo de nuevo.",
+    "delivery_unavailable": "La creación de cuentas y la recuperación de contraseñas no están disponibles porque este servicio no tiene envío de correo. Vuelve a iniciar sesión o cancela.",
+    "create_title": "Crear cuenta en la nube",
+    "verify_email": "Verifica tu correo",
+    "password_changed": "Contraseña cambiada. Inicia sesión con tu nueva contraseña.",
+    "cancel_auth": "Cancelar y volver",
+    "return_to_task": "Después de iniciar sesión, vuelve a {}."
+  },
+  "route_state": {
+    "workspace_loading": "Abriendo espacio de trabajo...",
+    "workspace_error": "No se pudo abrir este espacio de trabajo. Vuelve a intentarlo o elige otro.",
+    "child_loading": "Abriendo conversación secundaria...",
+    "child_error": "No se pudo cargar esta conversación secundaria.",
+    "retry": "Reintentar",
+    "return_workspaces": "Elegir espacio de trabajo",
+    "return_parent": "Volver a la conversación principal",
+    "workspace_missing": "Este espacio de trabajo ya no existe. Elige otro.",
+    "invalid_workspace": "Esta conexión tiene datos de cuenta incompletos. Elige un espacio de trabajo para gestionarla.",
+    "sign_in": "Vuelve a iniciar sesión para abrir este espacio de trabajo en la nube."
+  },
+  "navigation": {
+    "chats": "Chats",
+    "agents_skills": "Agentes y habilidades",
+    "connections": "Conexiones",
+    "workspace_actions": "Acciones del espacio",
+    "create_workspace": "Crear espacio de trabajo",
+    "connect_cloud": "Conectar espacio en la nube",
+    "workspace_settings": "Ajustes del espacio de trabajo",
+    "local_workspace": "Local",
+    "cloud_workspace": "Nube",
+    "workspace_settings_scope": "Estos ajustes se aplican solo a este espacio de trabajo.",
+    "accounts_scope": "Las cuentas en la nube están disponibles en toda la aplicación. Conectar una cuenta no cambia el espacio de trabajo actual.",
+    "workspace_settings_error": "No se pudieron actualizar los ajustes del espacio. Tus cambios se conservan. Inténtalo de nuevo."
+  },
+  "related_lists": {
+    "agents": "Agentes",
+    "skills": "Habilidades",
+    "overview": "Resumen",
+    "providers": "Proveedores de IA",
+    "services": "Servicios",
+    "tools": "Herramientas",
+    "credentials": "Credenciales guardadas",
+    "credential_types": "Avanzado: Tipos de credenciales",
+    "view_skill": "Ver habilidad",
+    "workspace_agents": "Abrir agentes del espacio de trabajo",
+    "open_connection": "Abrir conexión",
+    "workspace_group": "En este espacio de trabajo",
+    "app_group": "Aplicación y cuentas"
+  },
+  "workspace_setup": {
+    "local": "Crear local",
+    "cloud": "Crear en la nube",
+    "connect": "Conectar nube existente",
+    "add_account": "Añadir otra cuenta",
+    "local_body": "Guarda y ejecuta este espacio en este dispositivo.",
+    "sign_in_connect": "Inicia sesión para buscar espacios en la nube a los que tienes acceso."
+  },
+  "chat_readiness": {
+    "saved": "Conexión guardada",
+    "continue_chat": "Continuar al chat",
+    "loading": "Comprobando configuración de modelos…",
+    "no_provider": "Conecta un proveedor de IA para empezar a chatear.",
+    "authorization": "Conexión guardada. La autorización necesita atención. Completa el inicio de sesión en Conexiones y reintenta.",
+    "attention": "No se pudo cargar la configuración de IA. Revisa la conexión o reintenta.",
+    "no_models": "Conexión guardada, pero no hay modelos disponibles. Revisa la conexión y actualiza sus modelos.",
+    "unavailable": "El modelo seleccionado no está disponible. Elige otro modelo.",
+    "choose_model": "Hay modelos disponibles. Elige uno para empezar a chatear.",
+    "selected": "Modelo seleccionado. El acceso remoto se comprueba al enviar un mensaje.",
+    "review_connections": "Revisar conexiones",
+    "select_below": "Usa el selector de modelos de abajo.",
+    "select_in_chat": "Continúa al chat para elegir un modelo."
+  },
+  "conversation_orientation": {
+    "delegated": "Tarea delegada de {parent}",
+    "read_only": "Esta conversación delegada es de solo lectura. Continúa la tarea en el chat principal."
+  },
+  "conversation_activity": {
+    "approval": "Esperando tu aprobación",
+    "stopped": "Detenido",
+    "retry": "Esperando para reintentar",
+    "compacting": "Preparando el contexto de la conversación",
+    "delegated": "Trabajando con {count} agentes delegados",
+    "working": "Trabajando en tu solicitud",
+    "queued": "Mensajes en cola",
+    "idle": "Sin respuesta activa"
+  },
+  "connection_setup": {
+    "connect_ai": "Conectar IA",
+    "add_access": "Añadir acceso guardado",
+    "create_type": "Crear tipo de credencial",
+    "required_type_missing": "El tipo de credencial solicitado por esta tarea no está disponible. Vuelve a la tarea para corregir el requisito.",
+    "required_service_missing": "El servicio solicitado por esta tarea no está disponible. Vuelve a la tarea para revisar la conexión requerida.",
+    "types_load_error": "No se pudieron cargar los tipos de credencial. Tu borrador se conserva.",
+    "return_connections": "Volver a conexiones",
+    "return_task": "Volver a la tarea",
+    "return_workspace": "Volver al espacio de trabajo",
+    "kind": "Tipo de conexión",
+    "health": "Estado de la conexión",
+    "edit_named": "Editar {name}",
+    "provider_load_error": "No se pudo cargar la configuración del proveedor. Reintenta para continuar con tu borrador.",
+    "browser_restriction": "El inicio de sesión en el navegador requiere la aplicación de escritorio para macOS, Windows o Linux. Usa el código de dispositivo cuando esté disponible.",
+    "device_restriction": "El inicio de sesión con código de dispositivo no está disponible en espacios en la nube. En el escritorio, usa el navegador.",
+    "native_tools_restriction": "Las herramientas integradas solo se pueden añadir en espacios locales. En este espacio en la nube, conecta un servicio para añadir sus herramientas.",
+    "tool_permissions": "Guardar una conexión no concede permiso para usar herramientas. Se siguen aplicando los permisos del espacio, del agente o de la conversación.",
+    "tools_load_error": "No se pudieron cargar las herramientas. Reintenta para recargar este espacio.",
+    "return_types": "Volver a tipos de credencial",
+    "connection_missing": "Esta conexión o su tipo de credencial ya no está disponible. Vuelve a conexiones para elegir otra."
+  },
+  "authoring": {
+    "saved": "Guardado",
+    "draft": "Cambios sin guardar",
+    "enabled": "Habilitado en este espacio",
+    "disabled": "Deshabilitado en este espacio"
+  },
+  "skill_access": {
+    "not_required": "No requiere acceso",
+    "saved": "Acceso guardado disponible",
+    "missing": "Necesita acceso",
+    "partial": "Instrucciones disponibles; falta configurar el acceso",
+    "unknown": "Estado del acceso desconocido",
+    "checking": "Comprobando el acceso guardado…",
+    "verification_hint": "El acceso guardado no verifica el acceso remoto. Las instrucciones del chat se preparan por separado.",
+    "tool_disabled": "Herramienta deshabilitada",
+    "tool_missing": "La herramienta necesita acceso",
+    "saved_configuration": "Resumen de acceso de la habilidad guardada. Guarda los requisitos modificados para actualizarlo."
+  },
+  "credential_usage": {
+    "title": "Usado por",
+    "error": "No se pudo cargar el uso. Reintenta antes de cambiar este tipo de credencial.",
+    "counts": "{credentials} credenciales guardadas · {skills} habilidades · {tools} herramientas",
+    "empty": "Ninguna credencial, habilidad o herramienta usa este tipo.",
+    "delete_blocked": "Elimina estas dependencias antes de borrar este tipo. Los elementos desactivados también cuentan.",
+    "changes": "Cambios del esquema",
+    "required": "{field}: ahora obligatorio, incluidos los campos nuevos.",
+    "removed": "{field}: eliminado.",
+    "secretChanged": "{field}: cambió la opción de almacenamiento secreto.",
+    "impact": "No puedes guardar estos cambios mientras haya credenciales de este tipo. Actualiza o elimina primero las credenciales vinculadas.",
+    "advisory": "El uso se comprueba de nuevo al guardar o eliminar.",
+    "credential": "Credencial guardada",
+    "skill": "Habilidad",
+    "tool": "Herramienta",
+    "disabled": "Desactivado"
   }
 }

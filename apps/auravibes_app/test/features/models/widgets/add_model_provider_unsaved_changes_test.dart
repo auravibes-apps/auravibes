@@ -22,109 +22,138 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  testWidgets('prompts before closing and discards a dirty form', (
-    tester,
-  ) async {
-    final container = ProviderContainer(
-      overrides: [
-        apiModelProvidersProvider.overrideWith((_, _) async => const []),
-        workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
-          const AsyncData(
-            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _workspaceId)),
+  for (final action in ['close', 'back', 'clean-back']) {
+    testWidgets('standalone $action preserves one confirmation owner', (
+      tester,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiModelProvidersProvider.overrideWith((_, _) async => const []),
+          workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+              ),
+            ),
           ),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
+        ],
+      );
+      addTearDown(container.dispose);
 
-    final _ = await container.read(
-      apiModelProvidersProvider(workspaceId: _workspaceId).future,
-    );
-    final stateSubscription = container.listen(
-      addModelProviderStateProvider(_workspaceId),
-      (_, next) => next,
-    );
-    addTearDown(stateSubscription.close);
-    container
-        .read(addModelProviderStateProvider(_workspaceId).notifier)
-        .setModel('openai');
+      final _ = await container.read(
+        apiModelProvidersProvider(workspaceId: _workspaceId).future,
+      );
+      final stateSubscription = container.listen(
+        addModelProviderStateProvider(_workspaceId),
+        (_, next) => next,
+      );
+      addTearDown(stateSubscription.close);
+      container
+          .read(addModelProviderStateProvider(_workspaceId).notifier)
+          .setModel('openai');
 
-    final didPump = await tester.runAsync(() async {
-      expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
-      await tester.pumpWidget(
-        EasyLocalization(
-          child: UncontrolledProviderScope(
-            container: container,
-            child: Builder(
-              builder: (context) {
-                return MaterialApp(
-                  routes: {
-                    '/': (_) => const SizedBox.shrink(),
-                    '/provider': (_) => AuraThemeScope(
-                      theme: .light,
-                      child: Theme(
-                        data: .new(),
-                        child: const Scaffold(
-                          body: AddModelProviderWidget(
-                            workspaceId: _workspaceId,
+      final didPump = await tester.runAsync(() async {
+        expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
+        await tester.pumpWidget(
+          EasyLocalization(
+            child: UncontrolledProviderScope(
+              container: container,
+              child: Builder(
+                builder: (context) {
+                  return MaterialApp(
+                    routes: {
+                      '/': (_) => const SizedBox.shrink(),
+                      '/provider': (_) => AuraThemeScope(
+                        theme: .light,
+                        child: Theme(
+                          data: .new(),
+                          child: const Scaffold(
+                            body: AddModelProviderWidget(
+                              workspaceId: _workspaceId,
+                            ),
                           ),
                         ),
                       ),
+                    },
+                    initialRoute: '/provider',
+                    builder: (_, child) => AuraLegacyMaterialBridge(
+                      child: AuraSnackBarHost(
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
-                  },
-                  initialRoute: '/provider',
-                  builder: (_, child) => AuraLegacyMaterialBridge(
-                    child: AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
-                    ),
-                  ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                );
-              },
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
+                  );
+                },
+              ),
             ),
+            supportedLocales: const [Locale('en')],
+            path: 'assets/i18n',
+            fallbackLocale: const Locale('en'),
+            startLocale: const Locale('en'),
+            useOnlyLangCode: true,
+            useFallbackTranslations: true,
           ),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
-          useFallbackTranslations: true,
-        ),
+        );
+
+        return true;
+      });
+      expect(didPump, isTrue);
+      final _ = await tester.pumpAndSettle();
+
+      if (action == 'clean-back') {
+        container
+            .read(addModelProviderStateProvider(_workspaceId).notifier)
+            .reset();
+        final _ = await tester.pumpAndSettle();
+        final _ = await Navigator.of(
+          tester.element(find.byType(AddModelProviderWidget)),
+        ).maybePop();
+        final _ = await tester.pumpAndSettle();
+        expect(find.byType(AddModelProviderWidget), findsNothing);
+        expect(find.text('Keep editing', skipOffstage: false), findsNothing);
+
+        return;
+      }
+      await _requestExit(tester, action);
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Keep editing', skipOffstage: false), findsOneWidget);
+      expect(find.text('Discard unsaved changes?'), findsOneWidget);
+      expect(
+        find.text('You have unsaved changes. Do you want to discard them?'),
+        findsOneWidget,
       );
 
-      return true;
+      final _ = await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Discard unsaved changes?'), findsNothing);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      await _requestExit(tester, action);
+      final _ = await tester.pumpAndSettle();
+      final _ = await tester.tap(find.text('Discard'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.close), findsNothing);
+      expect(
+        container
+            .read(addModelProviderStateProvider(_workspaceId))
+            .hasUnsavedChanges,
+        isFalse,
+      );
     });
-    expect(didPump, isTrue);
-    final _ = await tester.pumpAndSettle();
+  }
+}
 
+Future<void> _requestExit(WidgetTester tester, String action) async {
+  if (action == 'back') {
+    final _ = await Navigator.of(
+      tester.element(find.byType(AddModelProviderWidget)),
+    ).maybePop();
+  } else {
     final _ = await tester.tap(find.byIcon(Icons.close));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Discard unsaved changes?'), findsOneWidget);
-    expect(
-      find.text('You have unsaved changes. Do you want to discard them?'),
-      findsOneWidget,
-    );
-
-    final _ = await tester.tap(find.text('Keep editing'));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Discard unsaved changes?'), findsNothing);
-    expect(find.byIcon(Icons.close), findsOneWidget);
-
-    final _ = await tester.tap(find.byIcon(Icons.close));
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.tap(find.text('Discard'));
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.close), findsNothing);
-    expect(
-      container
-          .read(addModelProviderStateProvider(_workspaceId))
-          .hasUnsavedChanges,
-      isFalse,
-    );
-  });
+  }
 }

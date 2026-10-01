@@ -63,6 +63,42 @@ void main() {
       expect(contentStyle?.color, AuraTheme.dark.colors.onPrimary);
     });
 
+    for (final dark in [false, true]) {
+      testWidgets('neutral text badge contrast dark=$dark', (tester) async {
+        final theme = dark ? AuraTheme.dark : AuraTheme.light;
+        await tester.pumpWidget(
+          AuraThemeScope(
+            theme: theme,
+            child: MaterialApp(
+              home: Scaffold(
+                body: AuraBadge.text(
+                  child: const Text('Neutral'),
+                  variant: .neutral,
+                ),
+              ),
+            ),
+          ),
+        );
+        final text = tester.widget<RichText>(find.byType(RichText).first);
+        final foreground =
+            text.text.style?.color ?? fail('Missing badge foreground');
+        final container = tester.widget<Container>(find.byType(Container));
+        final decoration = container.decoration as BoxDecoration?;
+        final background =
+            decoration?.color ?? fail('Missing badge background');
+        final composite = Color.alphaBlend(background, theme.colors.background);
+        final foregroundLuminance = Color.alphaBlend(
+          foreground,
+          composite,
+        ).computeLuminance();
+        final backgroundLuminance = composite.computeLuminance();
+        final ratio = foregroundLuminance > backgroundLuminance
+            ? (foregroundLuminance + 0.05) / (backgroundLuminance + 0.05)
+            : (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05);
+        expect(ratio, greaterThanOrEqualTo(4.5));
+      });
+    }
+
     testWidgets('applies secondary variant styling correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

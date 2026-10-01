@@ -1,4 +1,5 @@
 // Required: Feature widgets keep closely related private widgets together.
+
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
@@ -8,6 +9,7 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/agents/usecases/list_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_tool_overrides_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/save_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/widgets/agent_availability_summary.dart';
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
@@ -16,11 +18,14 @@ import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dar
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show activateSkillToolName;
@@ -64,6 +69,7 @@ const _agentToolPermissionItems =
     ];
 
 typedef _AgentSkillTileData = ({
+  VoidCallback? onOpen,
   WorkspaceSkill skill,
   bool selected,
   VoidCallback onTap,
@@ -125,6 +131,7 @@ abstract class _AgentDetailScreenStateBase
   AgentVisibility _visibility = .both;
   bool _loaded = false;
   bool _toolOverridesLoaded = false;
+  final _exitGuard = DraftExitGuard();
   bool _saving = false;
   _AgentEditorSnapshot? _initialSnapshot;
 
@@ -198,7 +205,19 @@ class _AgentDetailScreenState extends _AgentDetailScreenStateBase
   static const _compactLayoutWidth = 640.0;
 
   @override
-  Widget build(BuildContext context) => _AgentDetailScreenView(state: this);
+  Widget build(BuildContext context) {
+    _exitGuard.bind(
+      readers: (isDirty: () => _isDirty, isSaving: () => _saving),
+      confirm: (_) => _confirmDiscardChanges(),
+      onReturn: (context) =>
+          AgentsRoute(workspaceId: widget.workspaceId).go(context),
+    );
+
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _AgentDetailScreenView(state: this),
+    );
+  }
 }
 
 mixin _AgentDetailDialogs on _AgentDetailScreenStateBase {
@@ -341,7 +360,12 @@ mixin _AgentDetailEditing on _AgentDetailScreenStateBase {
   Future<void> _editPrompt() async {
     final markdown = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _contentController.text,
+      options: (
+        initialMarkdown: _contentController.text,
+        maxCharacters: null,
+        titleKey: LocaleKeys.markdown_editor_agent_instructions,
+        draftHintKey: LocaleKeys.markdown_editor_agent_hint,
+      ),
     );
     if (markdown == null) return;
 
@@ -416,7 +440,8 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
     await (this as _AgentDetailScreenState)._saveToolOverrides(agent.id);
     final _ = ref.invalidate(agentsProvider(widget.workspaceId));
     _markEditorSaved();
-    if (mounted) Navigator.of(context).pop(true);
+    _saving = false;
+    if (mounted) await _exitGuard.pop(context, true);
   }
 
   void _finishSaving() {
@@ -498,25 +523,7 @@ mixin _AgentDetailSummaryActions on _AgentDetailScreenStateBase {
 }
 
 mixin _AgentDetailNavigation on _AgentDetailScreenStateBase {
-  bool _closing = false;
-
-  Future<void> _requestClose() async {
-    if (_closing || _saving) return;
-    if (!_isDirty) {
-      Navigator.of(context).pop();
-
-      return;
-    }
-
-    _closing = true;
-    try {
-      if (await _confirmDiscardChanges() == true && mounted) {
-        Navigator.of(context).pop();
-      }
-    } finally {
-      _closing = false;
-    }
-  }
+  Future<void> _requestClose() => _exitGuard.pop(context);
 
   Future<bool?> _confirmDiscardChanges() => AuraDialogs.confirm(
     context: context,
@@ -528,10 +535,6 @@ mixin _AgentDetailNavigation on _AgentDetailScreenStateBase {
     ),
     isDestructive: true,
   );
-
-  void _onPopInvokedWithResult(bool didPop, Object? _) {
-    if (!didPop) unawaited(_requestClose());
-  }
 }
 
 bool _sameEditorSnapshot(
@@ -647,13 +650,9 @@ class const _AgentDetailScreenLayout({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return PopScope<Object?>(
-      child: AuraScreen(
-        child: _AgentDetailBody(state: state, skills: skills, tools: tools),
-        appBar: _AgentDetailAppBar(state: state),
-      ),
-      canPop: false,
-      onPopInvokedWithResult: state._onPopInvokedWithResult,
+    return AuraScreen(
+      child: _AgentDetailBody(state: state, skills: skills, tools: tools),
+      appBar: _AgentDetailAppBar(state: state),
     );
   }
 }
@@ -840,22 +839,84 @@ class const _AgentFormLayout({
   required final List<WorkspaceToolEntity> tools,
   required final _AgentFormSummary summary,
 }) extends StatelessWidget {
+  static List<Widget> childrenFor(_AgentFormLayoutData data) => [
+    _AgentFormWarnings(data: data),
+    _PromptCard(state: data.state),
+    const SizedBox(height: 16),
+    _AgentAdvancedSettings(
+      state: data.state,
+      skills: data.skills,
+      tools: data.tools,
+      summary: data.summary,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(16)
         .copyWith(bottom: BottomPadding.of(context)),
-    children: [
-      _PromptCard(state: state),
-      const SizedBox(height: 16),
-      _AgentAdvancedSettings(
-        state: state,
-        skills: skills,
-        tools: tools,
-        summary: summary,
-      ),
-    ],
+    children: _AgentFormLayout.childrenFor((
+      state: state,
+      skills: skills,
+      tools: tools,
+      summary: summary,
+    )),
     keyboardDismissBehavior: .onDrag,
   );
+}
+
+typedef _AgentFormLayoutData = ({
+  _AgentDetailScreenState state,
+  List<WorkspaceSkill> skills,
+  List<WorkspaceToolEntity> tools,
+  _AgentFormSummary summary,
+});
+
+class const _AgentFormWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      _AgentSkillWarnings(data: data),
+      _AgentToolWarnings(data: data),
+    ],
+  );
+}
+
+class const _AgentSkillWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final summary = data.summary;
+    if (!_hasAgentSkillWarnings(summary)) return const SizedBox.shrink();
+
+    return _SkillsWarning(
+      disabledSelectedCount: summary.selectedDisabledCount,
+      unavailableCount: summary.unavailableRefs.length,
+      onManage: () => data.state._manageSkillsFromSummary(summary),
+    );
+  }
+}
+
+bool _hasAgentSkillWarnings(_AgentFormSummary summary) =>
+    summary.selectedDisabledCount > 0 || summary.unavailableRefs.isNotEmpty;
+
+class const _AgentToolWarnings({required final _AgentFormLayoutData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final summary = data.summary;
+    if (summary.missingToolOverrideCount <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return _AgentToolsSummarySection(
+      state: data.state,
+      skills: data.skills,
+      tools: data.tools,
+    );
+  }
 }
 
 class const _AgentAdvancedSettings({
@@ -1072,6 +1133,29 @@ class const _PromptCardSettings({
   required final _AgentDetailScreenState state,
   required final ValueChanged<List<AgentVisibility>> onVisibilityChanged,
 }) extends StatelessWidget {
+  static List<Widget> childrenFor(
+    _AgentDetailScreenState state,
+    ValueChanged<List<AgentVisibility>> onVisibilityChanged,
+  ) => [
+    _AgentPromptAvailability(state: state),
+    _AgentEnabledRow(value: state._isEnabled, onChanged: state._setEnabled),
+    _AgentVisibilityField(
+      value: state._visibility,
+      onChanged: onVisibilityChanged,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: _PromptCardSettings.childrenFor(state, onVisibilityChanged),
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _AgentPromptAvailability({
+  required final _AgentDetailScreenState state,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
@@ -1079,10 +1163,10 @@ class const _PromptCardSettings({
         child: TextLocale(LocaleKeys.agents_availability_title),
         style: .heading6,
       ),
-      _AgentEnabledRow(value: state._isEnabled, onChanged: state._setEnabled),
-      _AgentVisibilityField(
-        value: state._visibility,
-        onChanged: onVisibilityChanged,
+      AgentAvailabilitySummary(
+        isEnabled: state._isEnabled,
+        visibility: state._visibility,
+        isSaved: state.widget.agentId != null && !state._isDirty,
       ),
     ],
     spacing: .md,
@@ -1715,6 +1799,22 @@ extension on _AgentSkillsDialogState {
   List<WorkspaceSkill> _disabledSkillsFor(String query) =>
       widget.disabledSkills.where((skill) => skill.matches(query)).toList();
 
+  void _openSkill(WorkspaceSkill skill) {
+    final owner = widget.owner;
+    Navigator.of(context).pop();
+    unawaited(_viewSkill(owner, skill.id));
+  }
+
+  Future<void> _viewSkill(_AgentDetailScreenState owner, String skillId) async {
+    final changed = await SkillDetailRoute(
+      workspaceId: owner.widget.workspaceId,
+      skillId: skillId,
+    ).push<bool>(owner.context);
+    if (changed == true && owner.mounted) {
+      owner.ref.invalidate(workspaceSkillsProvider(owner.widget.workspaceId));
+    }
+  }
+
   void _setQuery(String value) => _setState(() => _query = value);
 
   void _enableFromDialog(WorkspaceSkill skill) => unawaited(_enable(skill));
@@ -1746,7 +1846,12 @@ class const _AgentSkillsDialogView({
   @override
   Widget build(BuildContext context) {
     return _AgentManageDialog(
-      title: const TextLocale(LocaleKeys.agents_manage_skills_title),
+      title: Text(
+        LocaleKeys.agents_manage_skills_for.tr(
+          args: [state.widget.owner._nameController.text],
+          context: context,
+        ),
+      ),
       child: _AgentSkillsDialogList(state: state, data: data),
     );
   }
@@ -1761,6 +1866,8 @@ class const _AgentSkillsDialogList({
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        const TextLocale(LocaleKeys.agents_skill_assignment_hint),
+        const SizedBox(height: 12),
         _SkillDialogSearch(
           controller: state._searchController,
           onChanged: state._setQuery,
@@ -1842,6 +1949,7 @@ class const _SelectedSkillDialogSection({
     skills: skills,
     selectedSkills: state.widget.selectedSkills,
     onTap: state._toggle,
+    onOpen: state._openSkill,
   );
 }
 
@@ -1871,6 +1979,7 @@ class const _DisabledSkillDialogSection({
     selectedSkills: state.widget.selectedSkills,
     onTap: state._enableFromDialog,
     disabled: true,
+    onOpen: state._openSkill,
   );
 }
 
@@ -1881,6 +1990,7 @@ class const _SkillDialogSection({
   required final Set<AgentSkillRef> selectedSkills,
   required final ValueChanged<WorkspaceSkill> onTap,
   final bool disabled = false,
+  final ValueChanged<WorkspaceSkill>? onOpen,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SkillSection(
@@ -1890,6 +2000,7 @@ class const _SkillDialogSection({
     selectedSkills: selectedSkills,
     onTap: onTap,
     disabled: disabled,
+    onOpen: onOpen,
   );
 }
 
@@ -2450,6 +2561,7 @@ class _SkillSection({
   required final Set<AgentSkillRef> selectedSkills,
   required final ValueChanged<WorkspaceSkill> onTap,
   final bool disabled = false,
+  final ValueChanged<WorkspaceSkill>? onOpen,
 }) extends StatelessWidget {
   final Widget _child = _DialogSection(
     title: title,
@@ -2461,6 +2573,7 @@ class _SkillSection({
           selected: selectedSkills.contains(skill.ref),
           onTap: () => onTap(skill),
           disabled: disabled,
+          onOpen: onOpen == null ? null : () => onOpen(skill),
         ),
     ],
     isEmpty: skills.isEmpty,
@@ -2683,10 +2796,17 @@ class const _AgentSkillTile({
   required final bool selected,
   required final VoidCallback onTap,
   final bool disabled = false,
+  final VoidCallback? onOpen,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AgentSkillTileCard(
-    data: (skill: skill, selected: selected, onTap: onTap, disabled: disabled),
+    data: (
+      onOpen: onOpen,
+      skill: skill,
+      selected: selected,
+      onTap: onTap,
+      disabled: disabled,
+    ),
   );
 }
 
@@ -2713,7 +2833,24 @@ class const _AgentSkillTileSurface({required final _AgentSkillTileData data})
     onTap: data.onTap,
     variant: data.selected ? AuraTileVariant.selected : AuraTileVariant.surface,
     leading: _AgentSkillTileLeading(disabled: data.disabled),
-    trailing: _AgentSkillTileTrailing(selected: data.selected),
+    trailing: _AgentSkillTileActions(data: data),
+  );
+}
+
+class const _AgentSkillTileActions({required final _AgentSkillTileData data})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      if (data.onOpen case final onOpen?)
+        AuraIconButton(
+          icon: Icons.open_in_new,
+          onPressed: onOpen,
+          tooltip: LocaleKeys.related_lists_view_skill.tr(),
+        ),
+      _AgentSkillTileTrailing(selected: data.selected),
+    ],
   );
 }
 

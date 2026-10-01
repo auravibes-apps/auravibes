@@ -36,19 +36,37 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Unsaved changes'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AuraConfirmDialog),
+        matching: find.text('Unsaved changes'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Discard'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
 
     await tester.tap(find.text('Continue'));
     final _ = await tester.pumpAndSettle();
-    expect(find.text('Unsaved changes'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AuraConfirmDialog),
+        matching: find.text('Unsaved changes'),
+      ),
+      findsNothing,
+    );
 
     await tester.enterText(title, 'Example Skill');
     await tester.tap(find.byIcon(Icons.arrow_back));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Unsaved changes'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AuraConfirmDialog),
+        matching: find.text('Unsaved changes'),
+      ),
+      findsNothing,
+    );
   });
 }
 

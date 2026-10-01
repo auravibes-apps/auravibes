@@ -2,23 +2,24 @@
 // Required: Local builders keep this small screen readable.
 // Required: Feature widgets keep closely related private widgets together.
 
-// Dart imports:
 import 'dart:async';
 import 'dart:math' as math;
 
-// Project imports:
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/agents/widgets/agents_skills_tabs.dart';
+import 'package:auravibes_app/features/skills/models/skill_sort.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/notifiers/skills_list_view_notifier.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-// Package imports:
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -43,8 +44,6 @@ const _searchMultipleEditDistance = 2;
 
 final _logger = Logger('skills_screen');
 
-enum _SkillSort { name, enabled }
-
 typedef _DeleteSkills = Future<List<WorkspaceSkill>> Function(
   List<WorkspaceSkill> skills,
 );
@@ -62,19 +61,18 @@ typedef _SkillEnabledChanged = void Function(
 );
 
 typedef _SkillsLoadedHooks = ({
-  ValueNotifier<String> searchQuery,
-  ValueNotifier<SkillSource?> sourceFilter,
-  ValueNotifier<bool?> enabledFilter,
-  ValueNotifier<_SkillSort> sort,
+  SkillsListViewState view,
+  SkillsListViewNotifier notifier,
   ValueNotifier<Set<String>> selectedIds,
   ValueNotifier<bool> isDeleting,
 });
 
 typedef _SkillsFilterData = ({
+  String searchQuery,
   List<WorkspaceSkill> skills,
   SkillSource? skillSource,
   bool? enabled,
-  _SkillSort sort,
+  SkillSort sort,
 });
 
 typedef _SkillsSelectionData = ({
@@ -87,6 +85,7 @@ typedef _SkillsSelectionData = ({
 });
 
 typedef _SkillsViewData = ({
+  String workspaceId,
   _SkillsFilterData filter,
   _SkillsSelectionData selection,
 });
@@ -95,7 +94,7 @@ typedef _SkillsFilterActions = ({
   ValueChanged<String> onSearchChanged,
   ValueChanged<SkillSource?> onSourceChanged,
   ValueChanged<bool?> onEnabledChanged,
-  ValueChanged<_SkillSort> onSortChanged,
+  ValueChanged<SkillSort> onSortChanged,
 });
 
 typedef _SkillsBulkActions = ({
@@ -133,6 +132,7 @@ class const _SkillsScreenScaffold({required final String workspaceId})
     final skillsAsync = ref.watch(workspaceSkillsProvider(workspaceId));
 
     return _SkillsScreenScaffoldView(
+      workspaceId: workspaceId,
       skillsAsync: skillsAsync,
       onCreateSkill: _openCreateSkill,
       onOpenSkill: _openSkill,
@@ -271,6 +271,7 @@ DisableSkillRequest _disableSkillRequest(
 );
 
 class const _SkillsScreenScaffoldView({
+  required final String workspaceId,
   required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
   required final Future<void> Function(BuildContext context) onCreateSkill,
   required final Future<void> Function(BuildContext context, String skillId)
@@ -293,6 +294,7 @@ class const _SkillsScreenScaffoldView({
   Widget build(BuildContext context) {
     return AuraScreen(
       child: _SkillsScreenBody(
+        workspaceId: workspaceId,
         skillsAsync: skillsAsync,
         onCreateSkill: onCreateSkill,
         onOpenSkill: onOpenSkill,
@@ -300,28 +302,34 @@ class const _SkillsScreenScaffoldView({
         onDeleteSkills: onDeleteSkills,
         onSkillEnabledChanged: onSkillEnabledChanged,
       ),
-      appBar: _SkillsScreenAppBar(onCreateSkill: () => onCreateSkill(context)),
+      appBar: _SkillsScreenAppBar(
+        workspaceId: workspaceId,
+        onCreateSkill: () => onCreateSkill(context),
+      ),
     );
   }
 }
 
-class const _SkillsScreenAppBar({required final VoidCallback onCreateSkill})
-    extends StatelessWidget
-    implements PreferredSizeWidget {
+class const _SkillsScreenAppBar({
+  required final String workspaceId,
+  required final VoidCallback onCreateSkill,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight * 2);
 
   @override
-  Widget build(BuildContext context) =>
-      _SkillsScreenAppBarData(onCreateSkill: onCreateSkill).child;
+  Widget build(BuildContext context) => _SkillsScreenAppBarData(
+    workspaceId: workspaceId,
+    onCreateSkill: onCreateSkill,
+  ).child;
 }
 
 class _SkillsScreenAppBarData {
-  new({required VoidCallback onCreateSkill})
+  new({required String workspaceId, required VoidCallback onCreateSkill})
     : child = AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.skills_screen_title),
         actions: [_SkillsScreenCreateButton(onPressed: onCreateSkill)],
-        leading: const _SkillsScreenBackButton(),
+        bottom: AgentsSkillsTabs(workspaceId: workspaceId, value: .skills),
       );
 
   final Widget child;
@@ -337,15 +345,8 @@ class const _SkillsScreenCreateButton({required final VoidCallback onPressed})
   );
 }
 
-class const _SkillsScreenBackButton() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraIconButton(
-    icon: Icons.arrow_back,
-    onPressed: () => Navigator.of(context).pop(),
-  );
-}
-
 class const _SkillsScreenBody({
+  required final String workspaceId,
   required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
   required final Future<void> Function(BuildContext context) onCreateSkill,
   required final Future<void> Function(BuildContext context, String skillId)
@@ -366,6 +367,7 @@ class const _SkillsScreenBody({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _SkillsScreenAsyncContent(
+    workspaceId: workspaceId,
     skillsAsync: skillsAsync,
     onCreateSkill: () => unawaited(onCreateSkill(context)),
     onOpenSkill: (skill) => onOpenSkill(context, skill.id),
@@ -376,6 +378,7 @@ class const _SkillsScreenBody({
 }
 
 class const _SkillsScreenAsyncContent({
+  required final String workspaceId,
   required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
   required final VoidCallback onCreateSkill,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
@@ -396,6 +399,7 @@ class const _SkillsScreenAsyncContent({
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
       _SkillsScreenAsyncContentData(
+        workspaceId: workspaceId,
         skillsAsync: skillsAsync,
         onCreateSkill: onCreateSkill,
         onOpenSkill: onOpenSkill,
@@ -408,6 +412,7 @@ class const _SkillsScreenAsyncContent({
 
 class _SkillsScreenAsyncContentData {
   new({
+    required String workspaceId,
     required AsyncValue<List<WorkspaceSkill>> skillsAsync,
     required VoidCallback onCreateSkill,
     required ValueChanged<WorkspaceSkill> onOpenSkill,
@@ -418,6 +423,7 @@ class _SkillsScreenAsyncContentData {
   }) : child = switch (_loadedSkills(skillsAsync)) {
          null => _SkillsScreenPendingState(skillsAsync: skillsAsync),
          final skills => _SkillsScreenLoadedContent(
+           workspaceId: workspaceId,
            skills: skills,
            onCreateSkill: onCreateSkill,
            onOpenSkill: onOpenSkill,
@@ -459,6 +465,7 @@ class const _SkillsScreenError({required final Object error})
 }
 
 class const _SkillsScreenLoadedContent({
+  required final String workspaceId,
   required final List<WorkspaceSkill> skills,
   required final VoidCallback onCreateSkill,
   required final ValueChanged<WorkspaceSkill> onOpenSkill,
@@ -466,10 +473,10 @@ class const _SkillsScreenLoadedContent({
   required final _DeleteSkills onDeleteSkills,
   required final void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
   onSkillEnabledChanged,
-}) extends HookWidget {
+}) extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    final state = _useSkillsViewState(context, this);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = _useSkillsViewState(context, this, ref);
 
     if (skills.isEmpty) {
       return _SkillsScreenEmpty(onCreateSkill: onCreateSkill);
@@ -482,8 +489,9 @@ class const _SkillsScreenLoadedContent({
 _SkillsViewState _useSkillsViewState(
   BuildContext context,
   _SkillsScreenLoadedContent content,
+  WidgetRef ref,
 ) {
-  final hooks = _useSkillsLoadedHooks();
+  final hooks = _useSkillsLoadedHooks(ref, content.workspaceId);
   final runtime = _skillsViewRuntime(context, content.skills, hooks);
   final request = (
     context: context,
@@ -493,16 +501,14 @@ _SkillsViewState _useSkillsViewState(
   );
 
   return (
-    data: _skillsViewData(hooks, runtime),
+    data: _skillsViewData(hooks, runtime, content.workspaceId),
     actions: _skillsViewActions(request),
   );
 }
 
-_SkillsLoadedHooks _useSkillsLoadedHooks() => (
-  searchQuery: useState(''),
-  sourceFilter: useState<SkillSource?>(null),
-  enabledFilter: useState<bool?>(null),
-  sort: useState(_SkillSort.name),
+_SkillsLoadedHooks _useSkillsLoadedHooks(WidgetRef ref, String workspaceId) => (
+  view: ref.watch(skillsListViewProvider(workspaceId)),
+  notifier: ref.read(skillsListViewProvider(workspaceId).notifier),
   selectedIds: useState(<String>{}),
   isDeleting: useState(false),
 );
@@ -555,7 +561,7 @@ List<WorkspaceSkill> _visibleSkills(
 ) => _sortSkills(
   context,
   _filterSkills(context, skills, _loadedSkillFiltersFromHooks(hooks)),
-  hooks.sort.value,
+  hooks.view.sort,
 );
 
 List<WorkspaceSkill> _userSkills(List<WorkspaceSkill> skills) =>
@@ -581,7 +587,9 @@ bool _allVisibleSkillsSelected(
 _SkillsViewData _skillsViewData(
   _SkillsLoadedHooks hooks,
   _SkillsViewRuntime runtime,
+  String workspaceId,
 ) => (
+  workspaceId: workspaceId,
   filter: _skillsFilterData(hooks, runtime),
   selection: _skillsSelectionData(hooks, runtime),
 );
@@ -589,12 +597,17 @@ _SkillsViewData _skillsViewData(
 _SkillsFilterData _skillsFilterData(
   _SkillsLoadedHooks hooks,
   _SkillsViewRuntime runtime,
-) => (
-  skills: runtime.visibleSkills,
-  skillSource: hooks.sourceFilter.value,
-  enabled: hooks.enabledFilter.value,
-  sort: hooks.sort.value,
-);
+) {
+  final view = hooks.view;
+
+  return (
+    skills: runtime.visibleSkills,
+    searchQuery: view.searchQuery,
+    skillSource: view.sourceFilter,
+    enabled: view.enabledFilter,
+    sort: view.sort,
+  );
+}
 
 _SkillsSelectionData _skillsSelectionData(
   _SkillsLoadedHooks hooks,
@@ -629,15 +642,16 @@ _SkillsViewActions _skillsViewActions(_SkillsViewRequest request) {
   );
 }
 
-_SkillsFilterActions _skillsFilterActions(_SkillsLoadedHooks hooks) => (
-  onSearchChanged: _stateSetter(hooks.searchQuery),
-  onSourceChanged: _stateSetter(hooks.sourceFilter),
-  onEnabledChanged: _stateSetter(hooks.enabledFilter),
-  onSortChanged: _stateSetter(hooks.sort),
-);
+_SkillsFilterActions _skillsFilterActions(_SkillsLoadedHooks hooks) {
+  final notifier = hooks.notifier;
 
-ValueChanged<T> _stateSetter<T>(ValueNotifier<T> state) =>
-    (value) => state.value = value;
+  return (
+    onSearchChanged: notifier.setSearchQuery,
+    onSourceChanged: notifier.setSourceFilter,
+    onEnabledChanged: (value) => notifier.setEnabledFilter(value: value),
+    onSortChanged: notifier.setSort,
+  );
+}
 
 _SkillsBulkActions _skillsBulkActions(_SkillsViewRequest request) => (
   onSelectAll: _skillsSelectAllCallback(request),
@@ -677,27 +691,20 @@ VoidCallback _skillsDeleteSelectedCallback(_SkillsViewRequest request) {
   return () => unawaited(_confirmDeleteSelectedSkills(bulkDelete));
 }
 
-_SkillsFilterState _loadedSkillFiltersFromHooks(_SkillsLoadedHooks hooks) =>
-    _loadedSkillFilters(
-      hooks.searchQuery,
-      hooks.sourceFilter,
-      hooks.enabledFilter,
-    );
+_SkillsFilterState _loadedSkillFiltersFromHooks(_SkillsLoadedHooks hooks) {
+  final view = hooks.view;
 
-_SkillsFilterState _loadedSkillFilters(
-  ValueNotifier<String> searchQuery,
-  ValueNotifier<SkillSource?> sourceFilter,
-  ValueNotifier<bool?> enabledFilter,
-) => (
-  queryTokens: _searchTokens(searchQuery.value),
-  source: sourceFilter.value,
-  enabled: enabledFilter.value,
-);
+  return (
+    queryTokens: _searchTokens(view.searchQuery),
+    source: view.sourceFilter,
+    enabled: view.enabledFilter,
+  );
+}
 
 List<WorkspaceSkill> _sortSkills(
   BuildContext context,
   List<WorkspaceSkill> skills,
-  _SkillSort sort,
+  SkillSort sort,
 ) =>
     List<WorkspaceSkill>.of(skills)
       ..sort((left, right) => _compareSkills(context, left, right, sort));
@@ -706,9 +713,9 @@ int _compareSkills(
   BuildContext context,
   WorkspaceSkill left,
   WorkspaceSkill right,
-  _SkillSort sort,
+  SkillSort sort,
 ) {
-  if (sort == _SkillSort.enabled && left.isEnabled != right.isEnabled) {
+  if (sort == SkillSort.enabled && left.isEnabled != right.isEnabled) {
     return left.isEnabled ? -1 : 1;
   }
 
@@ -893,31 +900,44 @@ class const _SkillsScreenFilters({required final _SkillsViewState state})
 class const _SkillsScreenFilterFields({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext _) => AuraColumn(
+    children: _SkillsScreenFilterFieldChildren(state).values,
+    spacing: .sm,
+  );
+}
+
+class _SkillsScreenFilterFieldChildren {
+  factory(_SkillsViewState state) {
     final data = state.data.filter;
     final actions = state.actions.filter;
 
-    return AuraColumn(
-      children: [
-        _SkillsScreenSearchInput(onChanged: actions.onSearchChanged),
-        _SkillsScreenFilterRow(
-          source: data.skillSource,
-          enabled: data.enabled,
-          onSourceChanged: actions.onSourceChanged,
-          onEnabledChanged: actions.onEnabledChanged,
-        ),
-        _SkillsManagementRow(state: state),
-      ],
-      spacing: .sm,
-    );
+    return _SkillsScreenFilterFieldChildren._([
+      _SkillsScreenSearchInput(
+        searchQuery: data.searchQuery,
+        onChanged: actions.onSearchChanged,
+      ),
+      _SkillsScreenFilterRow(
+        source: data.skillSource,
+        enabled: data.enabled,
+        onSourceChanged: actions.onSourceChanged,
+        onEnabledChanged: actions.onEnabledChanged,
+      ),
+      _SkillsManagementRow(state: state),
+    ]);
   }
+
+  new _(this.values);
+
+  final List<Widget> values;
 }
 
 class const _SkillsScreenSearchInput({
+  required final String searchQuery,
   required final ValueChanged<String> onChanged,
-}) extends StatelessWidget {
+}) extends HookWidget {
   @override
   Widget build(BuildContext _) => AuraInput(
+    controller: useTextEditingController(text: searchQuery),
     placeholder: const TextLocale(LocaleKeys.skills_screen_search_placeholder),
     prefixIcon: const AuraIcon(Icons.search),
     size: .small,
@@ -979,6 +999,32 @@ class _SkillsScreenFilterRowData {
 class const _SkillsManagementRow({required final _SkillsViewState state})
     extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => constraints.maxWidth < 600
+        ? _CompactSkillsManagementRow(state: state)
+        : _WideSkillsManagementRow(state: state),
+  );
+}
+
+class const _CompactSkillsManagementRow({required final _SkillsViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      _SkillsSortSelector(state: state),
+      const SizedBox(height: _skillScreenSpacing),
+      Align(
+        alignment: .centerRight,
+        child: _SkillsSelectAllButton(state: state),
+      ),
+    ],
+  );
+}
+
+class const _WideSkillsManagementRow({required final _SkillsViewState state})
+    extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: .end,
     children: [
@@ -998,7 +1044,7 @@ class const _SkillsSortSelector({required final _SkillsViewState state})
 
 class _SkillsSortSelectorData {
   new({required BuildContext context, required _SkillsViewState state})
-    : child = AuraDropdownSelector<_SkillSort>(
+    : child = AuraDropdownSelector<SkillSort>(
         options: _skillSortOptions,
         key: const ValueKey('skills-sort'),
         value: state.data.filter.sort,
@@ -1011,7 +1057,7 @@ class _SkillsSortSelectorData {
   final Widget child;
 }
 
-ValueChanged<_SkillSort?> _skillsSortChanged(_SkillsFilterActions actions) =>
+ValueChanged<SkillSort?> _skillsSortChanged(_SkillsFilterActions actions) =>
     (value) {
       if (value != null) actions.onSortChanged(value);
     };
@@ -1036,13 +1082,13 @@ class const _SkillsSelectAllButton({required final _SkillsViewState state})
   }
 }
 
-const _skillSortOptions = <AuraDropdownOption<_SkillSort>>[
+const _skillSortOptions = <AuraDropdownOption<SkillSort>>[
   AuraDropdownOption(
-    value: _SkillSort.name,
+    value: SkillSort.name,
     child: TextLocale(LocaleKeys.common_sort_name_ascending),
   ),
   AuraDropdownOption(
-    value: _SkillSort.enabled,
+    value: SkillSort.enabled,
     child: TextLocale(LocaleKeys.common_sort_enabled_first),
   ),
 ];
@@ -1418,6 +1464,7 @@ class const _SkillsList({required final _SkillsViewState state})
 class _SkillsListItemBuilder {
   new({required WorkspaceSkill skill, required _SkillsViewState state})
     : child = _SkillListItem(
+        workspaceId: state.data.workspaceId,
         skill: skill,
         isSelected: state.data.selection.selectedIds.contains(skill.id),
         isDeleting: state.data.selection.isDeleting,
@@ -1447,6 +1494,7 @@ class const _SkillsListView({
 }
 
 class const _SkillListItem({
+  required final String workspaceId,
   required final WorkspaceSkill skill,
   required final bool isSelected,
   required final bool isDeleting,
@@ -1460,6 +1508,7 @@ class const _SkillListItem({
   @override
   Widget build(BuildContext context) {
     return _SkillTile(
+      workspaceId: workspaceId,
       skill: skill,
       isSelected: isSelected,
       isDeleting: isDeleting,
@@ -1473,6 +1522,7 @@ class const _SkillListItem({
 }
 
 class const _SkillTile({
+  required final String workspaceId,
   required final WorkspaceSkill skill,
   required final bool isSelected,
   required final bool isDeleting,
@@ -1485,6 +1535,7 @@ class const _SkillTile({
   Widget build(BuildContext context) {
     return AuraCard(
       child: _SkillTileRow(
+        workspaceId: workspaceId,
         skill: skill,
         isSelected: isSelected,
         isDeleting: isDeleting,
@@ -1500,6 +1551,7 @@ class const _SkillTile({
 }
 
 class const _SkillTileRow({
+  required final String workspaceId,
   required final WorkspaceSkill skill,
   required final bool isSelected,
   required final bool isDeleting,
@@ -1518,7 +1570,9 @@ class const _SkillTileRow({
         onChanged: onSelectionChanged,
       ),
       AuraIcon(_skillIcon(skill)),
-      Expanded(child: _SkillTileInfo(skill: skill)),
+      Expanded(
+        child: _SkillTileInfo(workspaceId: workspaceId, skill: skill),
+      ),
       _SkillTileActions(
         skill: skill,
         isDeleting: isDeleting,
@@ -1566,8 +1620,10 @@ IconData _skillIcon(WorkspaceSkill skill) => switch (skill.source) {
   .app => Icons.auto_awesome_outlined,
 };
 
-class const _SkillTileInfo({required final WorkspaceSkill skill})
-    extends StatelessWidget {
+class const _SkillTileInfo({
+  required final String workspaceId,
+  required final WorkspaceSkill skill,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -1576,6 +1632,12 @@ class const _SkillTileInfo({required final WorkspaceSkill skill})
         if (_description(context) case final description?)
           _SkillTileDescription(description: description),
         _SkillTileTags(skill: skill),
+        TextLocale(
+          skill.isEnabled
+              ? LocaleKeys.authoring_enabled
+              : LocaleKeys.authoring_disabled,
+        ),
+        SkillAccessStatusView(workspaceId: workspaceId, skillId: skill.id),
       ],
       spacing: .xs,
       crossAxisAlignment: .start,

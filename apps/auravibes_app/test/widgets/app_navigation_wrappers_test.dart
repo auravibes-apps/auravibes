@@ -7,7 +7,11 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -590,6 +594,159 @@ void main() {
       return (app: app, router: router);
     }
 
+    testWidgets(
+      'primary selection, remembered destinations and one guarded exit use '
+      'actual routes',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final guard = DraftExitGuard();
+        var confirmations = 0;
+        var answer = Completer<bool>();
+        final branches = [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: 'chat/new',
+                builder: (_, _) => const Text('New draft'),
+              ),
+              GoRoute(
+                path: 'chats/:chatId',
+                builder: (_, _) => const Text('Saved conversation'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: 'more/agents',
+                builder: (_, _) => const Text('Agents list'),
+              ),
+              GoRoute(
+                path: 'more/skills',
+                builder: (_, _) => const Text('Skills list'),
+                routes: [
+                  GoRoute(
+                    path: ':skillId',
+                    builder: (_, _) {
+                      guard.bind(
+                        readers: (isDirty: () => true, isSaving: () => false),
+                        confirm: (_) {
+                          confirmations++;
+
+                          return answer.future;
+                        },
+                      );
+
+                      return DraftExitScope(
+                        guard: guard,
+                        child: const Text('Dirty skill'),
+                      );
+                    },
+                    onExit: (context, state) => ProviderScope.containerOf(
+                      context,
+                      listen: false,
+                    ).read(draftExitRegistryProvider).canExitRoute(state.uri),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'more/service-connections',
+                builder: (_, _) => const Text('Connections list'),
+              ),
+              GoRoute(
+                path: 'more/cloud-accounts',
+                builder: (_, _) => const Text('Accounts list'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: 'settings',
+                builder: (_, _) => const Text('Appearance'),
+              ),
+            ],
+          ),
+        ];
+        final (:app, :router) = _buildTestApp(
+          initialLocation: '/workspaces/ws-test/chats/chat-A',
+          branches: branches,
+        );
+        await tester.runAsync(() => tester.pumpWidget(app));
+        final _ = await tester.pumpAndSettle();
+        AuraSidebar sidebar() =>
+            tester.widget<AuraSidebar>(find.byType(AuraSidebar));
+        expect(sidebar().selectedIndex, -1);
+        router.go('/workspaces/ws-test/more/skills');
+        final _ = await tester.pumpAndSettle();
+        expect(sidebar().selectedIndex, 1);
+        router.go('/workspaces/ws-test/more/skills/skill-A');
+        final _ = await tester.pumpAndSettle();
+        sidebar().onNavigationTap.call(2);
+        sidebar().onNavigationTap.call(3);
+        await tester.pump();
+        expect(confirmations, 1);
+        expect(
+          router.state.uri.path,
+          '/workspaces/ws-test/more/skills/skill-A',
+        );
+        answer.complete(false);
+        final _ = await tester.pumpAndSettle();
+        expect(sidebar().selectedIndex, 1);
+        answer = Completer<bool>();
+        sidebar().onNavigationTap.call(2);
+        await tester.pump();
+        answer.complete(true);
+        final _ = await tester.pumpAndSettle();
+        expect(confirmations, 2);
+        expect(
+          router.state.uri.path,
+          '/workspaces/ws-test/more/service-connections',
+        );
+        expect(sidebar().selectedIndex, 2);
+        sidebar().onNavigationTap.call(1);
+        final _ = await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
+        sidebar().onNavigationTap.call(3);
+        final _ = await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workspaces/ws-test/settings');
+        expect(sidebar().selectedIndex, 3);
+        sidebar().onNavigationTap.call(4);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          router.state.uri.path,
+          '/workspaces/ws-test/more/cloud-accounts',
+        );
+        expect(sidebar().selectedIndex, 4);
+        sidebar().onNavigationTap.call(0);
+        final _ = await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workspaces/ws-test/chats/chat-A');
+        expect(confirmations, 2);
+        router.go('/workspaces/B/chat/new');
+        final _ = await tester.pumpAndSettle();
+        sidebar().onNavigationTap.call(1);
+        final _ = await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workspaces/B/more/agents');
+        router.go('/workspaces/ws-test/chat/new');
+        final _ = await tester.pumpAndSettle();
+        sidebar().onNavigationTap.call(1);
+        final _ = await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
+        for (final width in [959.0, 960.0]) {
+          tester.view.physicalSize = .new(width, 900);
+          final _ = await tester.pumpAndSettle();
+          final controller = ResponsiveSlidingDrawerProvider.of(
+            tester.element(find.text('Skills list')),
+          );
+          expect(controller.isDesktop, width >= 960);
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
+
     testWidgets('renders sidebar for multiple routes', (tester) async {
       final branches = [
         StatefulShellBranch(
@@ -697,7 +854,7 @@ class _FakeConversationRepository implements ConversationRepository {
     final controller = StreamController<List<ConversationEntity>>.broadcast();
     controller.onCancel = () => _pendingRemoval.add(controller);
     _controllers.add(controller);
-    controller.add(const []);
+    controller.onListen = () => controller.add(const []);
 
     return controller.stream;
   }

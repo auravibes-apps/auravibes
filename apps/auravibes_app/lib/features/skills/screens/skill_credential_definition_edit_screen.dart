@@ -3,17 +3,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
+import 'package:auravibes_app/features/skills/providers/credential_definition_usage_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/credential_definition_schema.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/credential_definition_usage_view.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show SkillCredentialAttributeDefinition;
 import 'package:auravibes_ui/ui.dart';
@@ -25,6 +28,7 @@ import 'package:material_ui/material_ui.dart';
 class const SkillCredentialDefinitionEditScreen({
   required final String workspaceId,
   final String? definitionId,
+  final bool returnCreated = false,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -36,7 +40,9 @@ class _SkillCredentialDefinitionEditScreenState
     extends ConsumerState<SkillCredentialDefinitionEditScreen> {
   final _titleController = TextEditingController();
   final _attributeRows = <_AttributeFormRow>[];
+  SkillCredentialDefinitionEntity? _createdDefinition;
   bool _initialized = false;
+  final _exitGuard = DraftExitGuard();
   bool _isSaving = false;
 
   bool _isDirty = false;
@@ -68,13 +74,14 @@ class _SkillCredentialDefinitionEditScreenState
   Widget build(BuildContext context) {
     final definitionAsync = _watchDefinition();
 
-    return PopScope(
-      child: _screen(definitionAsync),
-      canPop: !_isDirty,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_handleBack(context));
-      },
+    _exitGuard.bind(
+      readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
+      onReturn: (context) =>
+          SkillCredentialDefinitionsRoute(workspaceId: widget.workspaceId)
+              .go(context),
     );
+
+    return DraftExitScope(guard: _exitGuard, child: _screen(definitionAsync));
   }
 
   void _updateState(VoidCallback callback) {
@@ -160,15 +167,35 @@ extension on _SkillCredentialDefinitionEditScreenState {
     if (!_validateAttributeRows()) return;
     _updateState(() => _isSaving = true);
     try {
-      await _saveDefinition();
-      if (!context.mounted) return;
-
-      _updateState(() => _savedSnapshot = _currentSnapshot());
-      Navigator.of(context).pop();
+      await _saveAndClose(context);
     } on Object catch (error) {
-      _handleSaveError(context, error);
+      if (context.mounted) _handleSaveError(context, error);
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
+    }
+  }
+
+  Future<void> _saveAndClose(BuildContext context) async {
+    await _saveDefinition();
+    if (!context.mounted) return;
+
+    _updateState(() {
+      _savedSnapshot = _currentSnapshot();
+      _isSaving = false;
+    });
+    await _exitGuard.pop(
+      context,
+      widget.returnCreated ? _createdDefinition : null,
+    );
+  }
+
+  Future<void> _manageCredentials() async {
+    await ServiceConnectionsRoute(workspaceId: widget.workspaceId)
+        .push<void>(context);
+    if (!mounted) return;
+    final id = widget.definitionId;
+    if (id != null) {
+      ref.invalidate(credentialDefinitionUsageProvider(widget.workspaceId, id));
     }
   }
 
@@ -177,7 +204,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
     if (error case final CredentialDefinitionConflictException conflict) {
       _CredentialDefinitionConflictPresenter.show(
         context,
-        widget.workspaceId,
+        _manageCredentials,
         conflict,
       );
     } else if (error
@@ -202,7 +229,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
     final usecase = ref.read(
       createSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
     );
-    final _ = await usecase.call(
+    _createdDefinition = await usecase.call(
       widget.workspaceId,
       .new(title: _titleController.text, attributesJson: attributesJson),
     );
@@ -228,21 +255,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
 }
 
 extension on _SkillCredentialDefinitionEditScreenState {
-  Future<void> _handleBack(BuildContext context) async {
-    if (_isSaving || !context.mounted) return;
-
-    if (!_isDirty) {
-      Navigator.of(context).pop();
-
-      return;
-    }
-
-    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
-    if (shouldDiscard != true || !context.mounted) return;
-
-    _updateState(() => _savedSnapshot = _currentSnapshot());
-    Navigator.of(context).pop();
-  }
+  Future<void> _handleBack(BuildContext context) => _exitGuard.pop(context);
 }
 
 extension on _SkillCredentialDefinitionEditScreenState {
@@ -333,6 +346,26 @@ extension on _SkillCredentialDefinitionEditScreenState {
     _ => null,
   };
 
+  List<CredentialSchemaChange> _schemaChanges(
+    SkillCredentialDefinitionEntity definition,
+  ) {
+    final next = <String, SkillCredentialAttributeDefinition>{};
+    for (final row in _attributeRows) {
+      final variable = row.variableController.text.trim();
+      if (variable.isEmpty || next.containsKey(variable)) return const [];
+      next[variable] = _draftAttribute(row);
+    }
+
+    return CredentialDefinitionSchema.diffJson(definition.attributesJson, next);
+  }
+
+  SkillCredentialAttributeDefinition _draftAttribute(_AttributeFormRow row) =>
+      SkillCredentialAttributeDefinition(
+        description: row.descriptionController.text,
+        optional: row.optional,
+        secret: row.secret,
+      );
+
   String _buildAttributesJson() {
     final attributes = <String, Map<String, Object>>{};
     for (final row in _attributeRows) {
@@ -399,7 +432,7 @@ extension on _SkillCredentialDefinitionEditScreenState {
       if (!context.mounted) return;
       _CredentialDefinitionConflictPresenter.show(
         context,
-        widget.workspaceId,
+        _manageCredentials,
         conflict,
       );
     } on Object {
@@ -437,8 +470,11 @@ extension on _SkillCredentialDefinitionEditScreenState {
     await _deleteDefinition(definitionId);
     if (!context.mounted) return;
 
-    _updateState(() => _savedSnapshot = _currentSnapshot());
-    Navigator.of(context).pop();
+    _updateState(() {
+      _savedSnapshot = _currentSnapshot();
+      _isSaving = false;
+    });
+    await _exitGuard.pop(context);
   }
 
   void _showSaveError(BuildContext context) {
@@ -461,9 +497,9 @@ extension on _SkillCredentialDefinitionEditScreenState {
 class _CredentialDefinitionConflictPresenter {
   static void show(
     BuildContext context,
-    String workspaceId,
+    Future<void> Function() manage,
     CredentialDefinitionConflictException conflict,
-  ) => _showMessage(context, workspaceId, _localizedMessage(context, conflict));
+  ) => _showMessage(context, manage, _localizedMessage(context, conflict));
 
   static String _localizedMessage(
     BuildContext context,
@@ -475,7 +511,7 @@ class _CredentialDefinitionConflictPresenter {
 
   static void _showMessage(
     BuildContext context,
-    String workspaceId,
+    Future<void> Function() manage,
     String message,
   ) {
     final _ = AuraSnackBars.show(
@@ -485,8 +521,7 @@ class _CredentialDefinitionConflictPresenter {
       duration: const Duration(seconds: 8),
       actionLabel: LocaleKeys.skill_credentials_definitions_manage_credentials
           .tr(context: context),
-      onAction: () =>
-          ServiceConnectionsRoute(workspaceId: workspaceId).go(context),
+      onAction: () => unawaited(manage()),
     );
   }
 }
@@ -541,7 +576,7 @@ class const _CredentialDefinitionAsyncBody({
         state: state,
         definition: currentDefinition,
       ),
-      AsyncError() => _CredentialDefinitionError(),
+      AsyncError() => _CredentialDefinitionError(state: state),
     };
   }
 }
@@ -553,7 +588,7 @@ class const _CredentialDefinitionDataState({
   @override
   Widget build(BuildContext context) {
     final definition = this.definition;
-    if (definition == null) return _CredentialDefinitionNotFound();
+    if (definition == null) return _CredentialDefinitionNotFound(state: state);
 
     return _CredentialDefinitionReadyForm(state: state, definition: definition);
   }
@@ -588,13 +623,21 @@ class const _CredentialDefinitionReadyForm({
   }
 }
 
-class _CredentialDefinitionNotFound extends StatelessWidget {
+class const _CredentialDefinitionNotFound({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: TextLocale(LocaleKeys.skill_credentials_definitions_not_found),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+    child: AuraColumn(
+      children: [
+        const TextLocale(LocaleKeys.skill_credentials_definitions_not_found),
+        AuraButton(
+          onPressed: () => unawaited(state._exitGuard.pop(context)),
+          child: const TextLocale('connection_setup.return_types'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _CredentialDefinitionLoading extends StatelessWidget {
@@ -604,13 +647,44 @@ class _CredentialDefinitionLoading extends StatelessWidget {
   }
 }
 
-class _CredentialDefinitionError extends StatelessWidget {
+class const _CredentialDefinitionError({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
-    );
-  }
+  Widget build(BuildContext context) => Center(
+    child: AuraColumn(
+      children: [
+        const TextLocale(LocaleKeys.skill_credentials_definitions_error),
+        _CredentialDefinitionRetryButton(state: state),
+        _CredentialDefinitionReturnButton(state: state),
+      ],
+    ),
+  );
+}
+
+class const _CredentialDefinitionRetryButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => state.ref.invalidate(
+      skillCredentialDefinitionProvider(
+        state.widget.workspaceId,
+        state.widget.definitionId ?? '',
+      ),
+    ),
+    child: const TextLocale(LocaleKeys.route_state_retry),
+  );
+}
+
+class const _CredentialDefinitionReturnButton({
+  required final _SkillCredentialDefinitionEditScreenState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => unawaited(state._exitGuard.pop(context)),
+    child: const TextLocale('connection_setup.return_types'),
+  );
 }
 
 class const _SkillCredentialDefinitionAppBar({
@@ -714,9 +788,27 @@ class const _SkillCredentialDefinitionForm({
         _contentPadding,
       ).copyWith(bottom: BottomPadding.of(context, minimum: _contentPadding)),
       children: [
+        _CredentialDefinitionUsage(state: state, definition: definition),
         _CredentialDefinitionFormCard(state: state, definition: definition),
       ],
       keyboardDismissBehavior: .onDrag,
+    );
+  }
+}
+
+class const _CredentialDefinitionUsage({
+  required final _SkillCredentialDefinitionEditScreenState state,
+  required final SkillCredentialDefinitionEntity? definition,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final saved = definition;
+    if (saved == null) return const SizedBox.shrink();
+
+    return CredentialDefinitionUsageView(
+      workspaceId: state.widget.workspaceId,
+      definitionId: saved.id,
+      changes: state._schemaChanges(saved),
     );
   }
 }

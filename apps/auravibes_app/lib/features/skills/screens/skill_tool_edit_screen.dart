@@ -13,10 +13,12 @@ import 'package:auravibes_app/features/skills/providers/skill_template_tools_pro
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-import 'package:auravibes_app/widgets/unsaved_changes_dialog.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         SkillTemplateDefinition,
@@ -105,27 +107,7 @@ class const SkillToolEditScreen({
 }
 
 /// Guards route replacements that bypass the screen's PopScope.
-class SkillToolEditRouteGuard {
-  var _isDirty = false;
-  var _isSaving = false;
-
-  void update({required bool isDirty, required bool isSaving}) {
-    _isDirty = isDirty;
-    _isSaving = isSaving;
-  }
-
-  Future<bool> canExit(BuildContext context) async {
-    if (_isSaving || !context.mounted) return false;
-    if (!_isDirty) return true;
-
-    final shouldDiscard = await UnsavedChangesDialog.confirm(context);
-    if (shouldDiscard != true || !context.mounted) return false;
-
-    _isDirty = false;
-
-    return true;
-  }
-}
+class SkillToolEditRouteGuard extends DraftExitGuard;
 
 class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   SkillToolEditRouteGuard? _routeExitGuard;
@@ -147,7 +129,6 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   bool _initialized = false;
   bool _isSaving = false;
   bool _isDirty = false;
-  bool _allowPop = false;
   bool _isUpdating = false;
   String _savedSnapshot = '';
 
@@ -185,11 +166,11 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   Widget build(BuildContext context) {
     final data = _watchData();
     _initializeForView(data);
+    _bindExitGuard();
 
-    return PopScope<Object?>(
+    return _SkillToolDraftExitScope(
+      guard: _exitGuard,
       child: _SkillToolEditView(data: _viewData(context, data)),
-      canPop: _canPop,
-      onPopInvokedWithResult: _onPopInvoked,
     );
   }
 
@@ -208,6 +189,16 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
 
   void _syncRouteExitGuard() =>
       _exitGuard.update(isDirty: _isDirty, isSaving: _isSaving);
+}
+
+extension on _SkillToolEditScreenState {
+  void _bindExitGuard() => _exitGuard.bind(
+    readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
+    onReturn: (context) => SkillDetailRoute(
+      workspaceId: widget.workspaceId,
+      skillId: widget.skillId,
+    ).go(context),
+  );
 }
 
 extension SkillToolControllerCleanup on _SkillToolEditScreenState {
@@ -295,12 +286,6 @@ extension _SkillToolEditScreenStateDirtyTracking on _SkillToolEditScreenState {
 }
 
 extension _SkillToolEditScreenStateNavigation on _SkillToolEditScreenState {
-  bool get _canPop => _allowPop || (!_isDirty && !_isSaving);
-
-  void _onPopInvoked(bool didPop, Object? _) {
-    if (!didPop) unawaited(_handleBack(context));
-  }
-
   Future<void> _handleBack(BuildContext context) async {
     if (!await _exitGuard.canExit(context) || !context.mounted) return;
     _popEditor(context);
@@ -308,11 +293,8 @@ extension _SkillToolEditScreenStateNavigation on _SkillToolEditScreenState {
 
   void _popEditor(BuildContext context, {bool? saved}) {
     _savedSnapshot = _currentSnapshot();
-    _setState(() => _allowPop = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop<bool>(saved);
-    });
+    _setState(() => _isSaving = false);
+    unawaited(_exitGuard.pop(context, saved));
   }
 }
 
@@ -524,8 +506,12 @@ extension _SkillToolEditScreenStateInteractions on _SkillToolEditScreenState {
   Future<void> _editDescription(BuildContext context) async {
     final result = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _descriptionController.text,
-      maxCharacters: _skillToolDescriptionMaxCharacters,
+      options: (
+        initialMarkdown: _descriptionController.text,
+        maxCharacters: _skillToolDescriptionMaxCharacters,
+        titleKey: LocaleKeys.markdown_editor_tool_description,
+        draftHintKey: LocaleKeys.markdown_editor_tool_hint,
+      ),
     );
     if (result == null || !context.mounted) return;
 
@@ -1229,6 +1215,15 @@ class const _SkillToolEditView({required final _SkillToolEditViewData data})
   );
 }
 
+class const _SkillToolDraftExitScope({
+  required final SkillToolEditRouteGuard guard,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      DraftExitScope(guard: guard, child: child);
+}
+
 class const _SkillToolEditBody({
   required final AsyncValue<SkillTemplateToolEntity?>? toolAsync,
   required final SkillTemplateToolEntity? currentTool,
@@ -1303,16 +1298,38 @@ class const _SkillToolPreviewDialog({
   @override
   Widget build(BuildContext context) => AuraAlertDialog(
     title: const TextLocale(LocaleKeys.skills_tool_preview_label),
-    message: AuraSelectableText(
-      const JsonEncoder.withIndent('  ').convert({
-        'method': preview.method,
-        'url': preview.url,
-        'headers': preview.headers,
-        'query': preview.query,
-        'body': preview.body,
-      }),
-    ),
+    message: _SkillToolPreviewMessage(preview: preview),
     dismissLabel: Text(LocaleKeys.common_close.tr(context: context)),
+  );
+}
+
+class const _SkillToolPreviewMessage({
+  required final SkillTemplateRequestPreview preview,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    crossAxisAlignment: .start,
+    children: [
+      const TextLocale(LocaleKeys.skills_tool_preview_hint),
+      const SizedBox(height: 12),
+      _SkillToolPreviewJson(preview: preview),
+    ],
+  );
+}
+
+class const _SkillToolPreviewJson({
+  required final SkillTemplateRequestPreview preview,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraSelectableText(
+    const JsonEncoder.withIndent('  ').convert({
+      'method': preview.method,
+      'url': preview.url,
+      'headers': preview.headers,
+      'query': preview.query,
+      'body': preview.body,
+    }),
   );
 }
 

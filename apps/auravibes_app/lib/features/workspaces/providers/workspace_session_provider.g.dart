@@ -106,7 +106,7 @@ final class WorkspaceSessionForRouteProvider
     required WorkspaceSessionForRouteFamily super.from,
     required String super.argument,
   }) : super(
-         retry: null,
+         retry: _routeSessionRetry,
          name: r'workspaceSessionForRouteProvider',
          isAutoDispose: true,
          dependencies: null,
@@ -148,13 +148,13 @@ final class WorkspaceSessionForRouteProvider
 }
 
 String _$workspaceSessionForRouteHash() =>
-    r'3cf37497e2abbea7a31741dfa9b34b8096b8d685';
+    r'b9a671045fc970f10b4884fc8858cc3fbd3eefad';
 
 final class WorkspaceSessionForRouteFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<WorkspaceSession>, String> {
   WorkspaceSessionForRouteFamily._()
     : super(
-        retry: null,
+        retry: _routeSessionRetry,
         name: r'workspaceSessionForRouteProvider',
         dependencies: null,
         $allTransitiveDependencies: null,

@@ -53,6 +53,9 @@ void main() {
                     child: CreateWorkspaceForm(
                       onCreated: (workspace) =>
                           expect(workspace.id, isNotEmpty),
+                      onAddCloudAccount: () => fail('Unexpected cloud account'),
+                      onCreatingChanged: (creating) =>
+                          expect(creating, anyOf(isTrue, isFalse)),
                     ),
                   ),
                   locale: context.locale,

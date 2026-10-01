@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
+import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -56,6 +57,7 @@ void main() {
       });
       final _ = await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.byType(CompactionSettingsSection), findsNothing);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AppVersionIndicator), findsOneWidget);
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
@@ -81,11 +83,11 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('settings_compaction_reset')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const ValueKey<String>('settings_compaction_save')),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -214,6 +216,19 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.byType(AuraChoicePicker<AppTheme>), findsNothing);
+      final _ = Navigator.of(tester.element(find.byType(SettingsScreen)))
+          .push<void>(
+            MaterialPageRoute(
+              builder: (_) => const SettingsScreen(workspaceId: 'workspace-B'),
+            ),
+          );
+      final _ = await tester.pumpAndSettle();
+      expect(container.read(themeProvider).asData?.value, AppTheme.dark);
+      expect(
+        tester.widget<SettingsScreen>(find.byType(SettingsScreen)).workspaceId,
+        'workspace-B',
+      );
+      expect(find.byType(CompactionSettingsSection), findsNothing);
     });
   });
 }
