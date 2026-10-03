@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:test/test.dart';
 
 void main() {

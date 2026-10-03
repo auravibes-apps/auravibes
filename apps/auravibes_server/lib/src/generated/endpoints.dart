@@ -88,6 +88,8 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _ijxinstp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
     as _ij84b3fp;
 import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
@@ -1345,6 +1347,30 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['modelConnection']
                           as _irncar1s.ModelConnectionEndpoint)
                       .listSelections(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'updateToolSamplingPolicy': _is.MethodConnector(
+          name: 'updateToolSamplingPolicy',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is
+                  .getType<
+                    _ijxinstp.UpdateWorkspaceModelSelectionPolicyRequest
+                  >(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['modelConnection']
+                          as _irncar1s.ModelConnectionEndpoint)
+                      .updateToolSamplingPolicy(
                         session,
                         params['request'],
                       ),

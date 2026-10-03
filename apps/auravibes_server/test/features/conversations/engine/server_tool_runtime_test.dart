@@ -866,7 +866,122 @@ void main() {
       before.every((tool) => serverToolIsExecutable(tool.descriptor)),
       isTrue,
     );
+    final callSkill = before.singleWhere(
+      (tool) => tool.spec.name == callSkillToolName,
+    );
+    expect(
+      strictToolSchemaIssue(
+        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
+      ),
+      isNull,
+    );
   });
+
+  test('cloud and local command schemas share active skill contracts', () {
+    final manifest = SkillManifest(
+      slug: 'research',
+      title: 'Research',
+      description: 'Search sources.',
+      revision: 'r1',
+      tools: [
+        SkillManifestTool(
+          name: 'search',
+          description: 'Search sources.',
+          optionalNullMeansOmission: true,
+          inputJsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+              'limit': {'type': 'integer'},
+            },
+            'required': ['query'],
+            'additionalProperties': false,
+          },
+        ),
+      ],
+    );
+    final local = buildSkillCommandToolSpecs(manifests: [manifest]);
+    final cloud = fixedCloudSkillCommandTools(manifests: [manifest]);
+
+    expect(
+      cloud.map((tool) => tool.spec),
+      orderedEquals(local),
+    );
+    final callSkill = cloud.singleWhere(
+      (tool) => tool.spec.name == callSkillToolName,
+    );
+    expect(
+      strictToolSchemaIssue(
+        Map<String, dynamic>.from(callSkill.spec.inputJsonSchema),
+      ),
+      isNull,
+    );
+  });
+
+  test(
+    'cloud skill command omits null optional nested inputs before validation',
+    () async {
+      final descriptor = AgentResolvedToolName.skillTemplate(
+        tableId: 'tool-1',
+        skillSlug: 'research',
+        toolIdentifier: 'search',
+      );
+      final target = ServerResolvedTool(
+        descriptor: descriptor,
+        spec: ToolSpec(
+          name: descriptor.fullName,
+          description: 'Search sources.',
+          inputJsonSchema: const {
+            'type': 'object',
+            'properties': {
+              'filters': {
+                'type': 'object',
+                'properties': {
+                  'region': {'type': 'string'},
+                },
+                'required': <String>[],
+                'additionalProperties': false,
+              },
+            },
+            'required': <String>[],
+            'additionalProperties': false,
+          },
+        ),
+      );
+      const userSkills = [
+        {
+          'id': 'research-id',
+          'slug': 'research',
+          'title': 'Research',
+          'description': 'Search sources.',
+          'content': 'Find sources.',
+          'isEnabled': true,
+        },
+      ];
+      final manifest = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: userSkills,
+        tools: [target],
+      );
+      final command = SkillCommandTarget.fromArguments({
+        'skill': 'research',
+        'tool': 'search',
+        'args': {
+          'filters': {'region': null},
+        },
+        'revision': manifest!.revision,
+      });
+
+      await expectLater(
+        resolveCloudSkillCommandTarget(
+          command: command,
+          userSkills: userSkills,
+          tools: [target],
+        ),
+        completes,
+      );
+    },
+  );
 
   test(
     'builds deterministic cloud manifest from authoritative target specs',

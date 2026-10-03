@@ -82,6 +82,7 @@ export 'src/skills/skill_credentials.dart';
 export 'src/skills/skill_eligibility.dart';
 export 'src/skills/skill_tool_materialization.dart';
 export 'src/skills/skills_manager.dart';
+export 'src/strict_tool_sampling_profile.dart';
 export 'src/sub_agents/sub_agent_runner.dart';
 export 'src/sub_agents/sub_agent_tool_specs.dart';
 export 'src/tool_approval_target.dart';
@@ -95,7 +96,8 @@ export 'src/tool_execution_dispatcher.dart'
 export 'src/tool_name_resolver.dart';
 export 'src/tool_output_policy.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
-export 'src/tool_schema_strict.dart' show ToolSchemaIssueReason;
+export 'src/tool_schema_strict.dart'
+    show ToolSchemaIssue, ToolSchemaIssueReason, strictToolSchemaIssue;
 export 'src/tool_spec.dart';
 export 'src/transcript_context.dart';
 export 'src/transcript_selection.dart';

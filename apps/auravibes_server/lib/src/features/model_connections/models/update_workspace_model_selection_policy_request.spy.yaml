@@ -1,0 +1,6 @@
+class: UpdateWorkspaceModelSelectionPolicyRequest
+fields:
+  workspaceId: int
+  requestId: String
+  selectionId: String
+  toolSamplingPolicy: String?

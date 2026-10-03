@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/strict_tool_sampling_profile.dart';
 import 'package:auravibes_engine/src/tool_schema.dart';
 
 enum ToolSchemaIssueReason { invalidSchema, unsupportedKeyword, providerLimit }
@@ -8,8 +9,11 @@ class const ToolSchemaIssue({
   required final String detail,
 });
 
-/// Checks the OpenAI strict function schema subset without changing the input.
-ToolSchemaIssue? strictToolSchemaIssue(Map<String, dynamic>? value) {
+/// Checks strict function schemas and profile limits without changing input.
+ToolSchemaIssue? strictToolSchemaIssue(
+  Map<String, dynamic>? value, {
+  StrictToolSchemaLimits limits = const StrictToolSchemaLimits(),
+}) {
   if (value == null) {
     return const ToolSchemaIssue(
       reason: .invalidSchema,
@@ -17,7 +21,7 @@ ToolSchemaIssue? strictToolSchemaIssue(Map<String, dynamic>? value) {
       detail: 'must be "object"',
     );
   }
-  return _StrictSchemaCheck(ToolSchema(value)).check();
+  return _StrictSchemaCheck(ToolSchema(value), limits).check();
 }
 
 const _allowedKeywords = {
@@ -43,9 +47,10 @@ const _allowedKeywords = {
 const _supportedSchemaDialect = 'http://json-schema.org/draft-07/schema#';
 
 final class _StrictSchemaCheck {
-  new(this.schema);
+  new(this.schema, this.limits);
 
   final ToolSchema schema;
+  final StrictToolSchemaLimits limits;
   final Set<String> _active = {};
   final Set<String> _counted = {};
   int _propertyCount = 0;
@@ -80,7 +85,12 @@ final class _StrictSchemaCheck {
           node.path == r'$' &&
           key == r'$schema' &&
           node.schema[key] == _supportedSchemaDialect;
-      if (!_allowedKeywords.contains(key) && !isSupportedDialect) {
+      final isProfilePropertyLimit =
+          limits.maxPropertiesConstraint != null &&
+          (key == 'minProperties' || key == 'maxProperties');
+      if (!_allowedKeywords.contains(key) &&
+          !isSupportedDialect &&
+          !isProfilePropertyLimit) {
         return ToolSchemaIssue(
           reason: .unsupportedKeyword,
           path: '${node.path}.$key',
@@ -172,7 +182,12 @@ final class _StrictSchemaCheck {
   }
 
   ToolSchemaIssue? _object(ToolSchemaNode node, int depth, bool countValues) {
-    if (depth > 10) return _limit(node.path, 'object nesting exceeds 10');
+    if (depth > limits.maxObjectDepth) {
+      return _limit(
+        node.path,
+        'object nesting exceeds ${limits.maxObjectDepth}',
+      );
+    }
     final properties = node.schema['properties'];
     if (properties is! Map || !properties.keys.every((key) => key is String)) {
       return _invalid('${node.path}.properties', 'must be an object');
@@ -194,8 +209,11 @@ final class _StrictSchemaCheck {
         _propertyCount++;
         _stringLength += (entry.key as String).length;
       }
-      if (_propertyCount > 5000) {
-        return _limit(path, 'property count exceeds 5000');
+      if (_propertyCount > limits.maxPropertyCount) {
+        return _limit(
+          path,
+          'property count exceeds ${limits.maxPropertyCount}',
+        );
       }
       final child = schema.node(entry.value, path);
       if (child == null) return _invalid(path, 'must be a schema');
@@ -220,8 +238,11 @@ final class _StrictSchemaCheck {
         return _invalid('${node.path}.enum', 'must be a non-empty array');
       }
       _enumCount += values.length;
-      if (_enumCount > 1000) {
-        return _limit('${node.path}.enum', 'enum count exceeds 1000');
+      if (_enumCount > limits.maxEnumCount) {
+        return _limit(
+          '${node.path}.enum',
+          'enum count exceeds ${limits.maxEnumCount}',
+        );
       }
       final length = values.whereType<String>().fold<int>(
         0,
@@ -244,10 +265,21 @@ final class _StrictSchemaCheck {
       'maxLength',
       'minItems',
       'maxItems',
+      'minProperties',
+      'maxProperties',
     ]) {
       final value = node.schema[key];
       if (value != null && (value is! int || value < 0)) {
         return _invalid('${node.path}.$key', 'must be a non-negative integer');
+      }
+      final limit = switch (key) {
+        'minLength' || 'maxLength' => limits.maxStringLength,
+        'minItems' || 'maxItems' => limits.maxArrayItems,
+        'minProperties' || 'maxProperties' => limits.maxPropertiesConstraint,
+        _ => null,
+      };
+      if (value is int && limit != null && value > limit) {
+        return _limit('${node.path}.$key', '$key exceeds $limit');
       }
     }
     for (final key in const ['minimum', 'maximum']) {
@@ -265,8 +297,9 @@ final class _StrictSchemaCheck {
     return null;
   }
 
-  ToolSchemaIssue? _stringLimit(String path) => _stringLength > 120000
-      ? _limit(path, 'schema strings exceed 120000')
+  ToolSchemaIssue? _stringLimit(String path) =>
+      _stringLength > limits.maxAggregateStringLength
+      ? _limit(path, 'schema strings exceed ${limits.maxAggregateStringLength}')
       : null;
 
   ToolSchemaIssue _invalid(String path, String detail) =>

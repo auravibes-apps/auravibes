@@ -5,6 +5,43 @@ import 'package:test/test.dart';
 
 void main() {
   group('skill template validation', () {
+    test('omits explicit null values for optional inputs', () {
+      const definitions = {
+        'region': SkillTemplateInputDefinition(
+          description: 'Region',
+          optional: true,
+        ),
+      };
+
+      expect(
+        normalizeSkillTemplateInputs({'region': null}, definitions),
+        isEmpty,
+      );
+    });
+
+    test('omits explicit null values for optional nested inputs', () {
+      const definitions = {
+        'filters': SkillTemplateInputDefinition(
+          description: 'Filters',
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            'region': SkillTemplateInputDefinition(
+              description: 'Region',
+              optional: true,
+            ),
+          },
+        ),
+      };
+
+      expect(
+        normalizeSkillTemplateInputs({
+          'filters': {'region': null},
+        }, definitions),
+        {'filters': <String, Object?>{}},
+      );
+    });
+
     test('preserves validation classification and canonical JSON', () {
       void validateBody(String body, {String? bodyFormat}) {
         validateSkillTemplateDefinition(

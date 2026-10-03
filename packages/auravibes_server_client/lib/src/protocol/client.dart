@@ -132,6 +132,8 @@ import 'package:auravibes_server_client/src/protocol/features/model_connections/
     as _i5neyvt3;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
     as _ip0z8mdx;
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _iojwkt1u;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_request.dart'
     as _il6rxhco;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/verify_model_connection_result.dart'
@@ -855,6 +857,14 @@ class EndpointModelConnection extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<List<_i9qkc4pk.WorkspaceModelSelectionView>>(
     'modelConnection',
     'listSelections',
+    {'request': request},
+  );
+
+  _ida.Future<void> updateToolSamplingPolicy(
+    _iojwkt1u.UpdateWorkspaceModelSelectionPolicyRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'modelConnection',
+    'updateToolSamplingPolicy',
     {'request': request},
   );
 

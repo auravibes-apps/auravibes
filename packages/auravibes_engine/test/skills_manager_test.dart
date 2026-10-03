@@ -39,6 +39,9 @@ void main() {
       'title',
       'description',
       'content',
+      'credentialDefinitionId',
+      'isCredentialOptional',
+      'isEnabled',
     ]);
     expect(skillsManagerToolSpecs[7].inputJsonSchema['required'], [
       'skillSlug',

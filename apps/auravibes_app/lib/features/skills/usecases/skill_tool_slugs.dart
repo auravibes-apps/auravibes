@@ -173,6 +173,7 @@ ToolSpec? _appSkillToolSpec(
       schema: tool.inputJsonSchema,
       requiresCredential: tool.requiresCredential,
       credentialIds: candidates.map((candidate) => candidate.id),
+      strictProviderSchema: tool.urlTemplate != null,
     ),
   );
 }

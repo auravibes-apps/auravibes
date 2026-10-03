@@ -55,12 +55,13 @@ void main() {
           'updated_at',
           'model_id',
           'model_connection_id',
+          'tool_sampling_policy',
         ]),
       );
     });
 
-    test('has 5 columns', () {
-      expect(columns.length, 5);
+    test('has 6 columns', () {
+      expect(columns.length, 6);
     });
 
     test('model_id is not null', () {
@@ -75,6 +76,13 @@ void main() {
         (r) => r.read<String>('name') == 'model_connection_id',
       );
       expect(col.read<int>('notnull'), 1);
+    });
+
+    test('tool_sampling_policy is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'tool_sampling_policy',
+      );
+      expect(col.read<int>('notnull'), 0);
     });
 
     test('primary key on id', () {

@@ -19,6 +19,19 @@ void main() {
     );
   });
 
+  test('call skill args schema is strict-valid with no loaded contracts', () {
+    final callSkill = buildSkillCommandToolSpecs().singleWhere(
+      (spec) => spec.name == callSkillToolName,
+    );
+
+    expect(
+      strictToolSchemaIssue(
+        Map<String, dynamic>.from(callSkill.inputJsonSchema),
+      ),
+      isNull,
+    );
+  });
+
   test('activation target requires a catalog revision', () {
     final target = SkillActivationTarget.fromArguments({
       'slug': 'research',

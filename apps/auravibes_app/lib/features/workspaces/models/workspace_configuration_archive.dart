@@ -13,11 +13,30 @@ enum WorkspaceConfigurationKind {
   agentToolPermission,
   compactionSetting,
   modelConnection,
+  modelSelection,
   skill,
   skillResource,
   skillSetting,
-  tool,
+  tool;
+
+  static const all = <WorkspaceConfigurationKind>{
+    agent,
+    agentSkill,
+    agentToolPermission,
+    compactionSetting,
+    modelConnection,
+    modelSelection,
+    skill,
+    skillResource,
+    skillSetting,
+    tool,
+  };
 }
+
+typedef WorkspaceConfigurationArchiveEntryId = ({
+  WorkspaceConfigurationKind kind,
+  String id,
+});
 
 class const WorkspaceConfigurationEntry({
   required final WorkspaceConfigurationKind kind,
@@ -25,7 +44,20 @@ class const WorkspaceConfigurationEntry({
   required final Map<String, Object?> data,
 });
 
-typedef _ArchiveId = ({WorkspaceConfigurationKind kind, String id});
+class WorkspaceConfigurationArchivePreview(
+  final WorkspaceConfigurationArchive _archive,
+) {
+  final Map<WorkspaceConfigurationKind, int> _countsByKind =
+      _countEntriesByKind(_archive.entries);
+
+  String get workspaceName => _archive.workspaceName;
+
+  int countFor(WorkspaceConfigurationKind kind) => _countsByKind[kind] ?? 0;
+
+  WorkspaceConfigurationArchive toArchive() => _archive;
+}
+
+typedef _ArchiveId = WorkspaceConfigurationArchiveEntryId;
 typedef _ArchiveReference = ({String field, WorkspaceConfigurationKind kind});
 
 const _maxWorkspaceNameLength = 200;
@@ -42,7 +74,7 @@ class const WorkspaceConfigurationArchiveException(final String localizationKey)
 
 abstract final class WorkspaceConfigurationArchiveCodec {
   static const String format = 'auravibes.workspace-configuration';
-  static const int version = 1;
+  static const int version = 2;
   static const int maxArchiveBytes = 8 * 1024 * 1024;
   static const int maxEntries = 2000;
 
@@ -72,6 +104,25 @@ abstract final class WorkspaceConfigurationArchiveCodec {
     return json;
   }
 
+  static WorkspaceConfigurationArchivePreview preview(String json) =>
+      .new(decode(json));
+
+  static WorkspaceConfigurationArchive selectKinds(
+    WorkspaceConfigurationArchive archive,
+    Set<WorkspaceConfigurationKind> selectedKinds,
+  ) {
+    _validate(archive);
+    final included = _selectedArchiveIdentities(archive, selectedKinds);
+
+    return WorkspaceConfigurationArchive(
+      workspaceName: archive.workspaceName,
+      entries: [
+        for (final entry in archive.entries)
+          if (included.contains((kind: entry.kind, id: entry.id))) entry,
+      ],
+    );
+  }
+
   static WorkspaceConfigurationArchive decode(String json) {
     _validateArchiveSize(json);
     try {
@@ -89,15 +140,74 @@ abstract final class WorkspaceConfigurationArchiveCodec {
   }
 
   static WorkspaceConfigurationArchive remapIds(
-    WorkspaceConfigurationArchive archive,
-  ) {
+    WorkspaceConfigurationArchive archive, {
+    Map<WorkspaceConfigurationArchiveEntryId, String> idMapping = const {},
+  }) {
     _validate(archive);
-    final ids = _newIds(archive.entries);
+    final ids = _newIds(archive.entries, idMapping);
 
-    return WorkspaceConfigurationArchive(
+    final remapped = WorkspaceConfigurationArchive(
       workspaceName: archive.workspaceName,
       entries: [for (final entry in archive.entries) _remapEntry(entry, ids)],
     );
+    _validate(remapped);
+
+    return remapped;
+  }
+
+  static void validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
+    _validate(archive);
+    _validateNaturalIdentities(archive);
+  }
+}
+
+Set<_ArchiveId> _selectedArchiveIdentities(
+  WorkspaceConfigurationArchive archive,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) {
+  final entriesById = {
+    for (final entry in archive.entries)
+      (kind: entry.kind, id: entry.id): entry,
+  };
+  final included = _initialArchiveIdentities(archive.entries, selectedKinds);
+  final pending = included.toList();
+  _includeReferencedIdentities(entriesById, included, pending);
+
+  return included;
+}
+
+Set<_ArchiveId> _initialArchiveIdentities(
+  List<WorkspaceConfigurationEntry> entries,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) => {
+  for (final entry in entries.where(
+    (entry) => selectedKinds.contains(entry.kind),
+  ))
+    (kind: entry.kind, id: entry.id),
+};
+
+void _includeReferencedIdentities(
+  Map<_ArchiveId, WorkspaceConfigurationEntry> entriesById,
+  Set<_ArchiveId> included,
+  List<_ArchiveId> pending,
+) {
+  while (pending.isNotEmpty) {
+    final entry = entriesById[pending.removeLast()]!;
+    _queueEntryReferences(entry, included, pending);
+  }
+}
+
+void _queueEntryReferences(
+  WorkspaceConfigurationEntry entry,
+  Set<_ArchiveId> included,
+  List<_ArchiveId> pending,
+) {
+  for (final reference in _referencesFor(entry)) {
+    final identity = (
+      kind: reference.kind,
+      id: _requiredString(entry.data, reference.field),
+    );
+    if (included.add(identity)) pending.add(identity);
   }
 }
 
@@ -127,7 +237,7 @@ WorkspaceConfigurationArchive _decodeArchive(String json) {
   final value = _archiveMap(json);
   final archive = WorkspaceConfigurationArchive(
     workspaceName: value['workspaceName'] as String,
-    entries: _decodeEntries(value['entries']),
+    entries: _decodeEntries(value['entries'], value['version'] as int),
   );
   _validate(archive);
 
@@ -146,7 +256,8 @@ Map<String, dynamic> _archiveMap(String json) {
       value['format'] != WorkspaceConfigurationArchiveCodec.format) {
     throw const FormatException();
   }
-  if (value['version'] != WorkspaceConfigurationArchiveCodec.version) {
+  if (value['version'] != 1 &&
+      value['version'] != WorkspaceConfigurationArchiveCodec.version) {
     throw const WorkspaceConfigurationArchiveException(
       'workspace_archive.unsupported_version',
     );
@@ -155,23 +266,33 @@ Map<String, dynamic> _archiveMap(String json) {
   return value;
 }
 
-List<WorkspaceConfigurationEntry> _decodeEntries(Object? rawEntries) {
+List<WorkspaceConfigurationEntry> _decodeEntries(
+  Object? rawEntries,
+  int version,
+) {
   if (rawEntries is! List<Object?> ||
       rawEntries.length > WorkspaceConfigurationArchiveCodec.maxEntries) {
     throw const FormatException();
   }
 
-  return [for (final raw in rawEntries) _decodeEntry(raw)];
+  return [for (final raw in rawEntries) _decodeEntry(raw, version)];
 }
 
-WorkspaceConfigurationEntry _decodeEntry(Object? raw) {
+WorkspaceConfigurationEntry _decodeEntry(Object? raw, int version) {
   final fields = _entryMap(raw);
 
   return .new(
-    kind: WorkspaceConfigurationKind.values.byName(fields['kind'] as String),
+    kind: _decodeKind(fields['kind'] as String, version),
     id: fields['id'] as String,
     data: fields['data'] as Map<String, dynamic>,
   );
+}
+
+WorkspaceConfigurationKind _decodeKind(String name, int version) {
+  final kind = WorkspaceConfigurationKind.values.byName(name);
+  if (version == 1 && kind == .modelSelection) _invalid();
+
+  return kind;
 }
 
 Map<String, dynamic> _entryMap(Object? raw) {
@@ -186,11 +307,15 @@ Map<String, dynamic> _entryMap(Object? raw) {
   return raw;
 }
 
-Map<_ArchiveId, String> _newIds(List<WorkspaceConfigurationEntry> entries) => {
+Map<_ArchiveId, String> _newIds(
+  List<WorkspaceConfigurationEntry> entries,
+  Map<WorkspaceConfigurationArchiveEntryId, String> idMapping,
+) => {
   for (final entry in entries)
     (kind: entry.kind, id: entry.id): entry.kind == .compactionSetting
         ? 'workspace'
-        : const UuidV7().generate(),
+        : idMapping[(kind: entry.kind, id: entry.id)] ??
+              const UuidV7().generate(),
 };
 
 WorkspaceConfigurationEntry _remapEntry(
@@ -228,6 +353,7 @@ List<_ArchiveReference> _referencesFor(WorkspaceConfigurationEntry entry) =>
       .skillResource || .skillSetting when entry.data['source'] != 'app' => [
         (field: 'skillId', kind: .skill),
       ],
+      .modelSelection => [(field: 'modelConnectionId', kind: .modelConnection)],
       _ => const [],
     };
 
@@ -302,6 +428,7 @@ const _entryFields = <WorkspaceConfigurationKind, Set<String>>{
     'remainingTokenThreshold',
   },
   .modelConnection: {'name', 'providerId', 'url'},
+  .modelSelection: {'modelConnectionId', 'modelId', 'toolSamplingPolicy'},
   .skill: {
     'source',
     'kind',
@@ -326,27 +453,38 @@ void _validateEntryFields(WorkspaceConfigurationEntry entry) {
 }
 
 void _validateEntryValues(WorkspaceConfigurationEntry entry) {
-  final data = entry.data;
   switch (entry.kind) {
-    case .agent:
-      _validateAgent(data);
-    case .agentSkill:
-      _validateAgentSkill(data);
-    case .agentToolPermission:
-      _validatePermissionEntry(data, 'agentId', 'toolId');
-    case .compactionSetting:
-      _validateCompaction(entry);
-    case .modelConnection:
-      _validateModelConnection(data);
-    case .skill:
-      _validateSkill(data);
-    case .skillResource:
-      _validateSkillResource(data);
-    case .skillSetting:
-      _validateSkillSetting(data);
+    case .agent || .agentSkill || .agentToolPermission:
+      _validateAgentEntry(entry);
+    case .compactionSetting || .modelConnection || .modelSelection:
+      _validateWorkspaceEntry(entry);
+    case .skill || .skillResource || .skillSetting:
+      _validateSkillEntry(entry);
     case .tool:
-      _validateTool(data);
+      _validateTool(entry.data);
   }
+}
+
+void _validateAgentEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .agent) return _validateAgent(entry.data);
+  if (entry.kind == .agentSkill) return _validateAgentSkill(entry.data);
+  _validatePermissionEntry(entry.data, 'agentId', 'toolId');
+}
+
+void _validateWorkspaceEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .compactionSetting) return _validateCompaction(entry);
+  if (entry.kind == .modelConnection) {
+    return _validateModelConnection(entry.data);
+  }
+  _validateModelSelection(entry.data);
+}
+
+void _validateSkillEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .skill) return _validateSkill(entry.data);
+  if (entry.kind == .skillResource) {
+    return _validateSkillResource(entry.data);
+  }
+  _validateSkillSetting(entry.data);
 }
 
 void _validateAgent(Map<String, Object?> data) {
@@ -399,6 +537,14 @@ void _validateModelConnection(Map<String, Object?> data) {
       (url is! String ||
           url.length > _maxUrlLength ||
           WorkspaceConfigurationArchiveCodec.publicUrl(url) != url)) {
+    _invalid();
+  }
+}
+
+void _validateModelSelection(Map<String, Object?> data) {
+  _strings(data, const ['modelConnectionId', 'modelId', 'toolSamplingPolicy']);
+  if (data['modelId'] == '' ||
+      !_oneOf(data['toolSamplingPolicy'], const ['off', 'prefer', 'require'])) {
     _invalid();
   }
 }
@@ -473,3 +619,55 @@ void _permission(Object? mode) {
 Never _invalid() => throw const WorkspaceConfigurationArchiveException(
   'workspace_archive.invalid',
 );
+
+typedef _ArchiveIdentity = ({WorkspaceConfigurationKind kind, String value});
+
+const _naturalIdentityFields = <WorkspaceConfigurationKind, List<String>>{
+  .agent: ['name'],
+  .agentSkill: ['agentId', 'source', 'skillId'],
+  .agentToolPermission: ['agentId', 'toolId'],
+  .compactionSetting: ['workspace'],
+  .modelConnection: ['providerId', 'name', 'url'],
+  .modelSelection: ['modelConnectionId', 'modelId'],
+  .skill: ['source', 'slug'],
+  .skillResource: ['skillId', 'slug'],
+  .skillSetting: ['source', 'skillId'],
+  .tool: ['toolId'],
+};
+
+void _validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
+  final identities = <_ArchiveIdentity>{};
+  for (final entry in archive.entries) {
+    final identity = _naturalIdentity(entry);
+    if (!identities.add((kind: entry.kind, value: identity))) _invalid();
+  }
+}
+
+String _naturalIdentity(WorkspaceConfigurationEntry entry) => jsonEncode([
+  for (final field in _naturalIdentityFields[entry.kind]!)
+    _naturalIdentityPart(entry, field),
+]);
+
+Object? _naturalIdentityPart(WorkspaceConfigurationEntry entry, String field) {
+  if (entry.kind == .compactionSetting) return 'workspace';
+  if (entry.kind == .modelConnection && field == 'url') {
+    return entry.data['url'];
+  }
+
+  final value = _requiredString(entry.data, field);
+
+  return entry.kind == .agent && field == 'name' ? value.trim() : value;
+}
+
+Map<WorkspaceConfigurationKind, int> _countEntriesByKind(
+  List<WorkspaceConfigurationEntry> entries,
+) {
+  final counts = {
+    for (final kind in WorkspaceConfigurationKind.values) kind: 0,
+  };
+  for (final entry in entries) {
+    final _ = counts.update(entry.kind, (count) => count + 1);
+  }
+
+  return Map.unmodifiable(counts);
+}

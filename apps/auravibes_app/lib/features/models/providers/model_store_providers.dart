@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'local_model_selection_store.dart';

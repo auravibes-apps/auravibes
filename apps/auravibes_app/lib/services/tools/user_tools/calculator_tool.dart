@@ -28,6 +28,7 @@ final class const CalculatorTool()
           },
         },
         'required': ['input'],
+        'additionalProperties': false,
       },
     );
   }

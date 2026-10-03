@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_definition.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/src/skills/skill_tool_materialization.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const skillsManagerSkillSlug = 'skills_manager';
@@ -132,7 +133,7 @@ Only create user skills from explicit user intent.
   ],
 );
 
-final List<ToolSpec> skillsManagerToolSpecs = [
+final List<ToolSpec> skillsManagerToolSpecs = _strictSkillsManagerToolSpecs([
   _spec(
     'list_user_skills',
     'List all user-created skills in the current workspace.',
@@ -285,7 +286,32 @@ final List<ToolSpec> skillsManagerToolSpecs = [
     'Delete a reusable user credential definition by slug.',
     _schema(['definitionSlug']),
   ),
+]);
+
+List<ToolSpec> _strictSkillsManagerToolSpecs(List<ToolSpec> specs) => [
+  for (final spec in specs)
+    if (_strictSchemaExceptions.contains(spec.name))
+      spec
+    else
+      ToolSpec(
+        name: spec.name,
+        description: spec.description,
+        requiresCredential: spec.requiresCredential,
+        inputJsonSchema: materializeSkillToolSchema(
+          spec.inputJsonSchema,
+          requiresCredential: false,
+          strictProviderSchema: true,
+        ),
+      ),
 ];
+
+const _strictSchemaExceptions = {
+  'skill__app_native__skills_manager__update_user_skill',
+  'skill__app_native__skills_manager__create_skill_template_tool',
+  'skill__app_native__skills_manager__update_skill_template_tool',
+  'skill__app_native__skills_manager__create_skill_credential_definition',
+  'skill__app_native__skills_manager__update_skill_credential_definition',
+};
 
 ToolSpec _spec(
   String slug,

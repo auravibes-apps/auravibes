@@ -510,6 +510,7 @@ final class const ServerConversationEngineHost({
     final codec = ChatCompletionsCodec(
       errorLabel: config.providerId,
       supportsStrictToolSampling: config.providerSupportsStrictToolSampling,
+      strictToolSamplingProfile: config.strictToolSamplingProfile,
       customize: (modelName, _) => (
         model: modelName,
         extraBody: reasoningRequestBody(
@@ -1433,6 +1434,14 @@ final class const ServerConversationEngineHost({
     if (selection == null) {
       throw const ConversationEngineConfigurationException('model');
     }
+    final selectionPolicy = await WorkspaceModelSelectionToolSamplingPolicy.db
+        .findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(job.workspaceId) &
+              table.connectionId.equals(selection.connection.connectionId) &
+              table.modelId.equals(selection.model.modelId),
+        );
     final reasoningOptions = _reasoningOptions(
       selection.model.reasoningOptionsJson,
       selection.model.supportsReasoning,
@@ -1506,25 +1515,28 @@ final class const ServerConversationEngineHost({
       'Conversation provider request: job=${job.id}, '
       'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
-    final providerSupportsStrict =
-        connection.providerId == 'openai' && connection.url == null;
+    final profile = strictToolSamplingProfile(
+      connection.providerId,
+      selection.model.modelId,
+      validated.uri.toString(),
+    );
+    final providerSupportsStrict = profile != null;
     final modelSupportsStrict =
-        providerSupportsStrict &&
-        selection.model.supportsToolCalls &&
-        verifiedStrictToolSampling(
-          connection.providerId,
-          selection.model.modelId,
-        );
+        providerSupportsStrict && selection.model.supportsToolCalls;
+    final toolSamplingPolicy = selectionPolicy != null
+        ? ToolSamplingPolicy.fromJson(selectionPolicy.toolSamplingPolicy)
+        : payloadObject.containsKey('toolSamplingPolicy')
+        ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
+        : modelSupportsStrict
+        ? ToolSamplingPolicy.prefer
+        : ToolSamplingPolicy.off;
     return _ProviderConfig(
       providerId: connection.providerId,
       modelId: selection.model.modelId,
       providerSupportsStrictToolSampling: providerSupportsStrict,
       modelSupportsStrictToolSampling: modelSupportsStrict,
-      toolSamplingPolicy: payloadObject.containsKey('toolSamplingPolicy')
-          ? ToolSamplingPolicy.fromJson(payloadObject['toolSamplingPolicy'])
-          : modelSupportsStrict
-          ? ToolSamplingPolicy.prefer
-          : ToolSamplingPolicy.off,
+      strictToolSamplingProfile: profile,
+      toolSamplingPolicy: toolSamplingPolicy,
       uri: uri,
       address: validated.address,
       headers: providerHeaders(
@@ -1826,6 +1838,7 @@ class const _ProviderConfig({
   required final String modelId,
   required final bool providerSupportsStrictToolSampling,
   required final bool modelSupportsStrictToolSampling,
+  required final StrictToolSamplingProfile? strictToolSamplingProfile,
   required final ToolSamplingPolicy toolSamplingPolicy,
   required final Uri uri,
   required final InternetAddress address,

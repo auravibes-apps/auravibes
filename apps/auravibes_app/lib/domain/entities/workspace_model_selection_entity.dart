@@ -23,6 +23,7 @@ abstract class WorkspaceModelSelectionEntity
     @Default(false) bool supportsReasoning,
     @Default([]) List<ReasoningOption> reasoningOptions,
     @Default(true) bool supportsToolCalls,
+    ToolSamplingPolicy? toolSamplingPolicy,
     @Default(false) bool supportsPromptCacheMarkers,
     @Default(false) bool supportsMidConversationSystemMessages,
     @Default(false) bool supportsToolDeltas,

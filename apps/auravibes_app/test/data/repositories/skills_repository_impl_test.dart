@@ -24,6 +24,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_servic
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
@@ -517,10 +518,20 @@ void main() {
         appSkillSettingsRepository,
         const AppSkillRegistry(),
       );
-      final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
+      final loadedManifests = BuildLoadedSkillManifestsUsecase(
         (_) => listAvailableSkillsUsecase,
-        const AppSkillRegistry(),
-        .new(() => serviceConnectionRepository),
+        .new(
+          (_) => listAvailableSkillsUsecase,
+          toolsRepository,
+          skillCredentialsRepository,
+        ),
+        .new(
+          (_) => listAvailableSkillsUsecase,
+          .new(() => serviceConnectionRepository),
+        ),
+      );
+      final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
+        loadedManifests,
       );
 
       var specs = await buildSpecsUsecase.call(

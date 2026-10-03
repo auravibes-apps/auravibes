@@ -1,0 +1,122 @@
+/* AUTOMATICALLY GENERATED CODE DO NOT MODIFY */
+/*   To generate run: "serverpod generate"    */
+
+// ignore_for_file: implementation_imports
+// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: public_member_api_docs
+// ignore_for_file: type_literal_in_constant_pattern
+// ignore_for_file: use_super_parameters
+// ignore_for_file: invalid_use_of_internal_member
+
+// ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:serverpod/serverpod.dart' as _is;
+
+abstract class UpdateWorkspaceModelSelectionPolicyRequest
+    implements _is.SerializableModel, _is.ProtocolSerialization {
+  UpdateWorkspaceModelSelectionPolicyRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.selectionId,
+    this.toolSamplingPolicy,
+  });
+
+  factory UpdateWorkspaceModelSelectionPolicyRequest({
+    required int workspaceId,
+    required String requestId,
+    required String selectionId,
+    String? toolSamplingPolicy,
+  }) = _UpdateWorkspaceModelSelectionPolicyRequestImpl;
+
+  factory UpdateWorkspaceModelSelectionPolicyRequest.fromJson(
+    Map<String, dynamic> jsonSerialization,
+  ) {
+    return UpdateWorkspaceModelSelectionPolicyRequest(
+      workspaceId: jsonSerialization['workspaceId'] as int,
+      requestId: jsonSerialization['requestId'] as String,
+      selectionId: jsonSerialization['selectionId'] as String,
+      toolSamplingPolicy: jsonSerialization['toolSamplingPolicy'] as String?,
+    );
+  }
+
+  int workspaceId;
+
+  String requestId;
+
+  String selectionId;
+
+  String? toolSamplingPolicy;
+
+  /// Returns a shallow copy of this [UpdateWorkspaceModelSelectionPolicyRequest]
+  /// with some or all fields replaced by the given arguments.
+  @_is.useResult
+  UpdateWorkspaceModelSelectionPolicyRequest copyWith({
+    int? workspaceId,
+    String? requestId,
+    String? selectionId,
+    String? toolSamplingPolicy,
+  });
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      '__className__': 'UpdateWorkspaceModelSelectionPolicyRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'selectionId': selectionId,
+      if (toolSamplingPolicy != null) 'toolSamplingPolicy': toolSamplingPolicy,
+    };
+  }
+
+  @override
+  Map<String, dynamic> toJsonForProtocol() {
+    return {
+      '__className__': 'UpdateWorkspaceModelSelectionPolicyRequest',
+      'workspaceId': workspaceId,
+      'requestId': requestId,
+      'selectionId': selectionId,
+      if (toolSamplingPolicy != null) 'toolSamplingPolicy': toolSamplingPolicy,
+    };
+  }
+
+  @override
+  String toString() {
+    return _is.SerializationManager.encode(this);
+  }
+}
+
+class _Undefined {}
+
+class _UpdateWorkspaceModelSelectionPolicyRequestImpl
+    extends UpdateWorkspaceModelSelectionPolicyRequest {
+  _UpdateWorkspaceModelSelectionPolicyRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String selectionId,
+    String? toolSamplingPolicy,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         selectionId: selectionId,
+         toolSamplingPolicy: toolSamplingPolicy,
+       );
+
+  /// Returns a shallow copy of this [UpdateWorkspaceModelSelectionPolicyRequest]
+  /// with some or all fields replaced by the given arguments.
+  @_is.useResult
+  @override
+  UpdateWorkspaceModelSelectionPolicyRequest copyWith({
+    int? workspaceId,
+    String? requestId,
+    String? selectionId,
+    Object? toolSamplingPolicy = _Undefined,
+  }) {
+    return UpdateWorkspaceModelSelectionPolicyRequest(
+      workspaceId: workspaceId ?? this.workspaceId,
+      requestId: requestId ?? this.requestId,
+      selectionId: selectionId ?? this.selectionId,
+      toolSamplingPolicy: toolSamplingPolicy is String?
+          ? toolSamplingPolicy
+          : this.toolSamplingPolicy,
+    );
+  }
+}

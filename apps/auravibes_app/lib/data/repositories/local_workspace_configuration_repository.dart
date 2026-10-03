@@ -3,27 +3,56 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_configuration_archive.dart';
 
 class LocalWorkspaceConfigurationRepository(final AppDatabase _database) {
-  Future<WorkspaceConfigurationArchive> export(String workspaceId) async {
+  Future<WorkspaceConfigurationArchive> export(
+    String workspaceId, {
+    Set<WorkspaceConfigurationKind> selectedKinds =
+        WorkspaceConfigurationKind.all,
+  }) async {
     final workspaceName = await _localWorkspaceName(_database, workspaceId);
-    final rows = await _configurationRows(_database, workspaceId);
-    final relations = await _relationshipRows(
-      _database,
-      rows.content.agents,
-      rows.content.skills,
-    );
+    if (selectedKinds.isEmpty) {
+      return _emptyArchive(workspaceName);
+    }
+    final entries = await _localConfigurationEntries(_database, workspaceId);
 
-    return WorkspaceConfigurationArchive(
-      workspaceName: workspaceName,
-      entries: _configurationEntries(rows, relations),
-    );
+    return _selectedLocalArchive(workspaceName, entries, selectedKinds);
   }
 }
+
+WorkspaceConfigurationArchive _emptyArchive(String workspaceName) =>
+    WorkspaceConfigurationArchive(
+      workspaceName: workspaceName,
+      entries: const [],
+    );
+
+Future<List<WorkspaceConfigurationEntry>> _localConfigurationEntries(
+  AppDatabase database,
+  String workspaceId,
+) async {
+  final rows = await _configurationRows(database, workspaceId);
+  final relations = await _relationshipRows(
+    database,
+    rows.content.agents,
+    rows.content.skills,
+  );
+
+  return _configurationEntries(rows, relations);
+}
+
+WorkspaceConfigurationArchive _selectedLocalArchive(
+  String workspaceName,
+  List<WorkspaceConfigurationEntry> entries,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) => WorkspaceConfigurationArchiveCodec.selectKinds(
+  .new(workspaceName: workspaceName, entries: entries),
+  selectedKinds,
+);
 
 typedef _ContentRows = ({
   List<AgentsTable> agents,
   List<SkillsTable> skills,
   List<ToolsTable> tools,
   List<ServiceConnectionTable> modelConnections,
+  List<WorkspaceModelSelectionTable> modelSelections,
 });
 
 typedef _SettingsRows = ({
@@ -64,12 +93,20 @@ Future<_ConfigurationRows> _configurationRows(
 Future<_ContentRows> _contentRows(
   AppDatabase database,
   String workspaceId,
-) async => (
-  agents: await _workspaceAgents(database, workspaceId),
-  skills: await _workspaceSkills(database, workspaceId),
-  tools: await _workspaceTools(database, workspaceId),
-  modelConnections: await _modelConnections(database, workspaceId),
-);
+) async {
+  final modelConnections = await _modelConnections(database, workspaceId);
+
+  return (
+    agents: await _workspaceAgents(database, workspaceId),
+    skills: await _workspaceSkills(database, workspaceId),
+    tools: await _workspaceTools(database, workspaceId),
+    modelConnections: modelConnections,
+    modelSelections: await _workspaceModelSelections(
+      database,
+      modelConnections.map((row) => row.id).toList(),
+    ),
+  );
+}
 
 Future<List<AgentsTable>> _workspaceAgents(
   AppDatabase database,
@@ -98,6 +135,17 @@ Future<List<ServiceConnectionTable>> _modelConnections(
 ) => database.modelConnectionsDao.getAllModelConnectionsByWorkspace(
   workspaceIds: [workspaceId],
 );
+
+Future<List<WorkspaceModelSelectionTable>> _workspaceModelSelections(
+  AppDatabase database,
+  List<String> connectionIds,
+) {
+  if (connectionIds.isEmpty) return Future.value([]);
+
+  return (database.select(
+    database.workspaceModelSelections,
+  )..where((row) => row.modelConnectionId.isIn(connectionIds))).get();
+}
 
 Future<_SettingsRows> _settingsRows(
   AppDatabase database,
@@ -161,6 +209,7 @@ List<WorkspaceConfigurationEntry> _definitionEntries(_ConfigurationRows rows) {
     ..._skillEntries(content.skills),
     ..._toolEntries(content.tools),
     ..._modelConnectionEntries(content.modelConnections),
+    ..._modelSelectionEntries(content.modelSelections),
     ..._appSkillSettingEntries(settings.appSkillSettings),
     _compactionEntry(settings.compaction),
   ];
@@ -198,6 +247,22 @@ List<WorkspaceConfigurationEntry> _toolEntries(List<ToolsTable> rows) => [
 List<WorkspaceConfigurationEntry> _modelConnectionEntries(
   List<ServiceConnectionTable> rows,
 ) => [for (final row in rows) _modelConnectionEntry(row)];
+
+List<WorkspaceConfigurationEntry> _modelSelectionEntries(
+  List<WorkspaceModelSelectionTable> rows,
+) => [
+  for (final row in rows)
+    if (row.toolSamplingPolicy case final String policy)
+      WorkspaceConfigurationEntry(
+        kind: .modelSelection,
+        id: row.id,
+        data: {
+          'modelConnectionId': row.modelConnectionId,
+          'modelId': row.modelId,
+          'toolSamplingPolicy': policy,
+        },
+      ),
+];
 
 List<WorkspaceConfigurationEntry> _appSkillSettingEntries(
   List<AppSkillWorkspaceSettingsTable> rows,
