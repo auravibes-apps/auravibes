@@ -24,6 +24,26 @@ typedef _ProviderToolSampling = ({
   bool strictToolSampling,
   StrictToolSamplingProfile? profile,
 });
+typedef _ProviderSamplingContext = ({
+  String? connectionUrl,
+  _ProviderToolSampling toolSampling,
+  ToolSamplingPolicy policy,
+});
+typedef _ProviderRequestContext = ({
+  String apiKey,
+  String? connectionUrl,
+  String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
+  _ProviderToolSampling toolSampling,
+  ToolSamplingPolicy toolSamplingPolicy,
+  List<AgentTranscriptContextEntry> transcriptContextEntries,
+});
+typedef _ProviderRequestInput = ({
+  WorkspaceModelSelectionWithConnectionEntity config,
+  String? sessionId,
+  ReasoningConfiguration? reasoningConfiguration,
+  List<AgentTranscriptContextEntry> transcriptContextEntries,
+});
 typedef _OpenAICompatPluginOptions = ({
   String name,
   ChatCompletionsCodec codec,
@@ -63,12 +83,12 @@ class const ProviderFactory({
     ReasoningConfiguration? reasoningConfiguration,
     List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   }) async {
-    final request = await _providerRequest(
-      config,
-      sessionId,
-      reasoningConfiguration,
-      transcriptContextEntries,
-    );
+    final request = await _providerRequest((
+      config: config,
+      sessionId: sessionId,
+      reasoningConfiguration: reasoningConfiguration,
+      transcriptContextEntries: transcriptContextEntries,
+    ));
 
     return _createGenkit(request);
   }
@@ -175,69 +195,128 @@ extension _ProviderFactoryGenerationConfig on ProviderFactory {
   }
 }
 
-extension _ProviderFactoryCreation on ProviderFactory {
-  Future<_ProviderRequest> _providerRequest(
-    WorkspaceModelSelectionWithConnectionEntity config,
-    String? sessionId,
-    ReasoningConfiguration? reasoningConfiguration,
-    List<AgentTranscriptContextEntry> transcriptContextEntries,
+extension _ProviderFactoryRequest on ProviderFactory {
+  Future<_ProviderRequest> _providerRequest(_ProviderRequestInput input) async {
+    final context = await _providerRequestContext(input);
+
+    return _createProviderRequest(input.config, context);
+  }
+
+  Future<_ProviderRequestContext> _providerRequestContext(
+    _ProviderRequestInput input,
   ) async {
-    final connectionUrl = _blankToNull(config.modelConnection.url);
-    final toolSampling = _providerToolSampling(config, connectionUrl);
-    final selection = config.workspaceModelSelection;
-    final toolSamplingPolicy =
-        selection.toolSamplingPolicy ??
-        _strictToolSamplingPolicy(toolSampling.strictToolSampling);
-    if (toolSamplingPolicy == ToolSamplingPolicy.require &&
-        !toolSampling.strictToolSampling) {
-      throw ToolSamplingValidationException(
-        reason: toolSampling.profile == null
-            ? ToolSamplingValidationReason.unsupportedProvider
-            : ToolSamplingValidationReason.unsupportedModel,
-        detail: 'Selected provider or model does not support strict sampling.',
-      );
-    }
+    final config = input.config;
+    final sampling = _providerSamplingContext(config);
+    final apiKey = await _resolveCredential(config);
 
     return (
-      config: config,
-      transcriptContextEntries: transcriptContextEntries,
-      apiKey: await _resolveCredential(config),
-      baseUrl: resolvedBaseUrl(config),
-      runtime: _runtimeSelection(config, connectionUrl),
-      modelId: config.workspaceModelSelection.modelId,
-      sessionId: sessionId,
-      reasoningConfiguration: reasoningConfiguration,
-      toolSampling: toolSampling,
-      toolSamplingPolicy: toolSamplingPolicy,
+      apiKey: apiKey,
+      connectionUrl: sampling.connectionUrl,
+      sessionId: input.sessionId,
+      reasoningConfiguration: input.reasoningConfiguration,
+      toolSampling: sampling.toolSampling,
+      toolSamplingPolicy: sampling.policy,
+      transcriptContextEntries: input.transcriptContextEntries,
     );
   }
+
+  _ProviderSamplingContext _providerSamplingContext(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    final connectionUrl = _blankToNull(config.modelConnection.url);
+    final toolSampling = _providerToolSampling(config, connectionUrl);
+
+    return (
+      connectionUrl: connectionUrl,
+      toolSampling: toolSampling,
+      policy: _validatedToolSamplingPolicy(config, toolSampling),
+    );
+  }
+
+  _ProviderRequest _createProviderRequest(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    _ProviderRequestContext context,
+  ) => (
+    config: config,
+    apiKey: context.apiKey,
+    baseUrl: resolvedBaseUrl(config),
+    runtime: _runtimeSelection(config, context.connectionUrl),
+    modelId: config.workspaceModelSelection.modelId,
+    sessionId: context.sessionId,
+    reasoningConfiguration: context.reasoningConfiguration,
+    toolSampling: context.toolSampling,
+    toolSamplingPolicy: context.toolSamplingPolicy,
+    transcriptContextEntries: context.transcriptContextEntries,
+  );
 
   _ProviderToolSampling _providerToolSampling(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
   ) {
-    final officialOpenAI =
-        config.modelsProvider.type == ModelProvidersType.openai &&
-        !_hasCustomUrl(config, connectionUrl);
-    final providerId = config.modelsProvider.type?.name ?? '';
-    final baseUrl =
-        resolvedBaseUrl(config) ??
-        (providerId == 'openai' ? providerProfile('openai').defaultUrl : null);
-    final profile = strictToolSamplingProfile(
-      providerId,
-      config.workspaceModelSelection.modelId,
-      baseUrl,
-    );
-    final supportsStrict =
-        config.workspaceModelSelection.supportsToolCalls && profile != null;
+    final selection = config.workspaceModelSelection;
+    final providerType = config.modelsProvider.type;
+    final profile = _strictToolSamplingProfileFor(config, providerType);
 
     return (
-      officialOpenAI: officialOpenAI,
-      strictToolSampling: supportsStrict,
+      officialOpenAI: _isOfficialOpenAI(config, connectionUrl),
+      strictToolSampling: selection.supportsToolCalls && profile != null,
       profile: profile,
     );
   }
 
+  bool _isOfficialOpenAI(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    String? connectionUrl,
+  ) =>
+      config.modelsProvider.type == ModelProvidersType.openai &&
+      !_hasCustomUrl(config, connectionUrl);
+
+  StrictToolSamplingProfile? _strictToolSamplingProfileFor(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    ModelProvidersType? providerType,
+  ) => strictToolSamplingProfile(
+    providerType?.name ?? '',
+    config.workspaceModelSelection.modelId,
+    _providerToolSamplingBaseUrl(config),
+  );
+
+  String? _providerToolSamplingBaseUrl(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) {
+    final baseUrl = resolvedBaseUrl(config);
+    if (baseUrl != null) return baseUrl;
+    if (config.modelsProvider.type != ModelProvidersType.openai) return null;
+
+    return providerProfile('openai').defaultUrl;
+  }
+
+  ToolSamplingPolicy _validatedToolSamplingPolicy(
+    WorkspaceModelSelectionWithConnectionEntity config,
+    _ProviderToolSampling capabilities,
+  ) {
+    final selection = config.workspaceModelSelection;
+    final policy =
+        selection.toolSamplingPolicy ??
+        _strictToolSamplingPolicy(capabilities.strictToolSampling);
+    if (policy == ToolSamplingPolicy.require &&
+        !capabilities.strictToolSampling) {
+      _throwUnsupportedToolSampling(capabilities);
+    }
+
+    return policy;
+  }
+
+  Never _throwUnsupportedToolSampling(_ProviderToolSampling capabilities) {
+    throw ToolSamplingValidationException(
+      reason: capabilities.profile == null
+          ? ToolSamplingValidationReason.unsupportedProvider
+          : ToolSamplingValidationReason.unsupportedModel,
+      detail: 'Selected provider or model does not support strict sampling.',
+    );
+  }
+}
+
+extension _ProviderFactoryPluginSelection on ProviderFactory {
   Genkit _createGenkit(_ProviderRequest request) {
     return Genkit(plugins: _plugins(request));
   }

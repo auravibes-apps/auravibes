@@ -816,6 +816,8 @@ abstract class LocaleKeys {
       'tools_screen.bulk_delete_title';
   static const tools_screen_bulk_delete_confirm =
       'tools_screen.bulk_delete_confirm';
+  static const tools_screen_bulk_delete_failures =
+      'tools_screen.bulk_delete_failures';
   static const tools_screen_permission_always_ask =
       'tools_screen.permission_always_ask';
   static const tools_screen_permission_always_allow =
@@ -870,6 +872,8 @@ abstract class LocaleKeys {
       'skills_screen.bulk_delete_title';
   static const skills_screen_bulk_delete_confirm =
       'skills_screen.bulk_delete_confirm';
+  static const skills_screen_bulk_delete_failures =
+      'skills_screen.bulk_delete_failures';
   static const skills_screen_save_error = 'skills_screen.save_error';
   static const skills_screen_unsaved_changes_title =
       'skills_screen.unsaved_changes_title';
@@ -1700,6 +1704,8 @@ abstract class LocaleKeys {
       'workspace_management.bulk_delete_title';
   static const workspace_management_bulk_delete_confirm =
       'workspace_management.bulk_delete_confirm';
+  static const workspace_management_bulk_delete_failures =
+      'workspace_management.bulk_delete_failures';
   static const workspace_management_cloud_retry =
       'workspace_management.cloud_retry';
   static const workspace_management_create_button =

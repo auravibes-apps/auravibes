@@ -285,12 +285,7 @@ extension CloudModelGatewaySelections on CloudModelGateway {
     String selectionId,
     ToolSamplingPolicy? policy,
   ) {
-    final request = UpdateWorkspaceModelSelectionPolicyRequest(
-      workspaceId: _workspaceId,
-      requestId: const Uuid().v4(),
-      selectionId: selectionId,
-      toolSamplingPolicy: policy?.name,
-    );
+    final request = _toolSamplingPolicyRequest(selectionId, policy);
 
     return CloudAppErrors.guardCall(
       .model,
@@ -299,6 +294,16 @@ extension CloudModelGatewaySelections on CloudModelGateway {
           _client.modelConnection.updateToolSamplingPolicy(request),
     );
   }
+
+  UpdateWorkspaceModelSelectionPolicyRequest _toolSamplingPolicyRequest(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => UpdateWorkspaceModelSelectionPolicyRequest(
+    workspaceId: _workspaceId,
+    requestId: const Uuid().v4(),
+    selectionId: selectionId,
+    toolSamplingPolicy: policy?.name,
+  );
 
   Future<List<String>> listRecentModelSelections() {
     final request = ListRecentModelSelectionsRequest(workspaceId: _workspaceId);

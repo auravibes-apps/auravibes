@@ -156,10 +156,9 @@ void main() {
     );
 
     expect(preview.workspaceName, 'Example');
-    expect(preview.countsByKind.keys, WorkspaceConfigurationKind.values);
-    expect(preview.countsByKind[WorkspaceConfigurationKind.agent], 1);
-    expect(preview.countsByKind[WorkspaceConfigurationKind.agentSkill], 1);
-    expect(preview.countsByKind[WorkspaceConfigurationKind.tool], 0);
+    expect(preview.countFor(.agent), 1);
+    expect(preview.countFor(.agentSkill), 1);
+    expect(preview.countFor(.tool), 0);
   });
 
   test('remaps resource IDs and references together', () {

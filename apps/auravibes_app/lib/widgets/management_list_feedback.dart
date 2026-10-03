@@ -54,65 +54,11 @@ abstract final class ManagementListFeedback {
 
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        var failures = failedItems;
-        var isRetrying = false;
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            Future<void> retry() async {
-              try {
-                final nextFailures = await onRetry(.unmodifiable(failures));
-                if (!dialogContext.mounted) return;
-                if (nextFailures.isEmpty) {
-                  Navigator.of(dialogContext).pop();
-
-                  return;
-                }
-                setState(() => failures = nextFailures);
-              } on Object {
-                // Keep the current items listed as failures for another retry.
-              } finally {
-                if (dialogContext.mounted) {
-                  setState(() => isRetrying = false);
-                }
-              }
-            }
-
-            return AlertDialog(
-              title: Text(
-                LocaleKeys.common_failed_items_title.tr(context: context),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .start,
-                  children: failures.map((item) => Text(nameOf(item))).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isRetrying
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
-                  child: Text(LocaleKeys.common_close.tr(context: context)),
-                ),
-                TextButton(
-                  onPressed: isRetrying
-                      ? null
-                      : () {
-                          setState(() => isRetrying = true);
-                          unawaited(retry());
-                        },
-                  child: Text(
-                    LocaleKeys.common_retry_failed.tr(context: context),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (_) => _ManagementListFailuresDialog<T>(
+        failedItems: failedItems,
+        nameOf: nameOf,
+        onRetry: onRetry,
+      ),
     );
   }
 
@@ -167,4 +113,97 @@ abstract final class ManagementListFeedback {
     int count,
     String preview,
   ) => context.plural(key, count, namedArgs: {'names': preview});
+}
+
+class const _ManagementListFailuresDialog<T>({
+  required final List<T> failedItems,
+  required final String Function(T) nameOf,
+  required final Future<List<T>> Function(List<T>) onRetry,
+}) extends StatefulWidget {
+  @override
+  State<_ManagementListFailuresDialog<T>> createState() =>
+      _ManagementListFailuresDialogState<T>();
+}
+
+class _ManagementListFailuresDialogState<T>
+    extends State<_ManagementListFailuresDialog<T>> {
+  List<T>? _nextFailures;
+  bool _isRetrying = false;
+
+  List<T> get _failures => _nextFailures ?? widget.failedItems;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const _FailureDialogTitle(),
+    content: _FailureDialogContent(failures: _failures, nameOf: widget.nameOf),
+    actions: [
+      _FailureDialogCloseButton(isRetrying: _isRetrying),
+      _FailureDialogRetryButton(
+        isRetrying: _isRetrying,
+        onPressed: _startRetry,
+      ),
+    ],
+  );
+
+  void _startRetry() {
+    setState(() => _isRetrying = true);
+    unawaited(_retry());
+  }
+
+  Future<void> _retry() async {
+    try {
+      final failures = await widget.onRetry(.unmodifiable(_failures));
+      if (!mounted) return;
+      if (failures.isEmpty) {
+        Navigator.of(context).pop();
+
+        return;
+      }
+      setState(() => _nextFailures = failures);
+    } on Object {
+      // Keep the current items listed as failures for another retry.
+    } finally {
+      if (mounted) setState(() => _isRetrying = false);
+    }
+  }
+}
+
+class const _FailureDialogTitle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      Text(LocaleKeys.common_failed_items_title.tr(context: context));
+}
+
+class const _FailureDialogContent<T>({
+  required final List<T> failures,
+  required final String Function(T) nameOf,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: failures.map((item) => Text(nameOf(item))).toList(),
+    ),
+  );
+}
+
+class const _FailureDialogCloseButton({required final bool isRetrying})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: isRetrying ? null : () => Navigator.of(context).pop(),
+    child: Text(LocaleKeys.common_close.tr(context: context)),
+  );
+}
+
+class const _FailureDialogRetryButton({
+  required final bool isRetrying,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => TextButton(
+    onPressed: isRetrying ? null : onPressed,
+    child: Text(LocaleKeys.common_retry_failed.tr(context: context)),
+  );
 }

@@ -10,27 +10,42 @@ class LocalWorkspaceConfigurationRepository(final AppDatabase _database) {
   }) async {
     final workspaceName = await _localWorkspaceName(_database, workspaceId);
     if (selectedKinds.isEmpty) {
-      return WorkspaceConfigurationArchive(
-        workspaceName: workspaceName,
-        entries: const [],
-      );
+      return _emptyArchive(workspaceName);
     }
-    final rows = await _configurationRows(_database, workspaceId);
-    final relations = await _relationshipRows(
-      _database,
-      rows.content.agents,
-      rows.content.skills,
-    );
+    final entries = await _localConfigurationEntries(_database, workspaceId);
 
-    return WorkspaceConfigurationArchiveCodec.selectKinds(
-      .new(
-        workspaceName: workspaceName,
-        entries: _configurationEntries(rows, relations),
-      ),
-      selectedKinds,
-    );
+    return _selectedLocalArchive(workspaceName, entries, selectedKinds);
   }
 }
+
+WorkspaceConfigurationArchive _emptyArchive(String workspaceName) =>
+    WorkspaceConfigurationArchive(
+      workspaceName: workspaceName,
+      entries: const [],
+    );
+
+Future<List<WorkspaceConfigurationEntry>> _localConfigurationEntries(
+  AppDatabase database,
+  String workspaceId,
+) async {
+  final rows = await _configurationRows(database, workspaceId);
+  final relations = await _relationshipRows(
+    database,
+    rows.content.agents,
+    rows.content.skills,
+  );
+
+  return _configurationEntries(rows, relations);
+}
+
+WorkspaceConfigurationArchive _selectedLocalArchive(
+  String workspaceName,
+  List<WorkspaceConfigurationEntry> entries,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) => WorkspaceConfigurationArchiveCodec.selectKinds(
+  .new(workspaceName: workspaceName, entries: entries),
+  selectedKinds,
+);
 
 typedef _ContentRows = ({
   List<AgentsTable> agents,

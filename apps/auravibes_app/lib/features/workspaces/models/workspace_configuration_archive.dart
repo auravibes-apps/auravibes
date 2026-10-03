@@ -45,13 +45,16 @@ class const WorkspaceConfigurationEntry({
 });
 
 class WorkspaceConfigurationArchivePreview(
-  final WorkspaceConfigurationArchive archive,
+  final WorkspaceConfigurationArchive _archive,
 ) {
-  final Map<WorkspaceConfigurationKind, int> countsByKind = _countEntriesByKind(
-    archive.entries,
-  );
+  final Map<WorkspaceConfigurationKind, int> _countsByKind =
+      _countEntriesByKind(_archive.entries);
 
-  String get workspaceName => archive.workspaceName;
+  String get workspaceName => _archive.workspaceName;
+
+  int countFor(WorkspaceConfigurationKind kind) => _countsByKind[kind] ?? 0;
+
+  WorkspaceConfigurationArchive toArchive() => _archive;
 }
 
 typedef _ArchiveId = WorkspaceConfigurationArchiveEntryId;
@@ -109,28 +112,7 @@ abstract final class WorkspaceConfigurationArchiveCodec {
     Set<WorkspaceConfigurationKind> selectedKinds,
   ) {
     _validate(archive);
-    final entriesById = {
-      for (final entry in archive.entries)
-        (kind: entry.kind, id: entry.id): entry,
-    };
-    final included = <_ArchiveId>{};
-    final pending = <_ArchiveId>[];
-    for (final entry in archive.entries.where(
-      (entry) => selectedKinds.contains(entry.kind),
-    )) {
-      final identity = (kind: entry.kind, id: entry.id);
-      if (included.add(identity)) pending.add(identity);
-    }
-    while (pending.isNotEmpty) {
-      final entry = entriesById[pending.removeLast()]!;
-      for (final reference in _referencesFor(entry)) {
-        final identity = (
-          kind: reference.kind,
-          id: _requiredString(entry.data, reference.field),
-        );
-        if (included.add(identity)) pending.add(identity);
-      }
-    }
+    final included = _selectedArchiveIdentities(archive, selectedKinds);
 
     return WorkspaceConfigurationArchive(
       workspaceName: archive.workspaceName,
@@ -176,6 +158,56 @@ abstract final class WorkspaceConfigurationArchiveCodec {
   static void validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
     _validate(archive);
     _validateNaturalIdentities(archive);
+  }
+}
+
+Set<_ArchiveId> _selectedArchiveIdentities(
+  WorkspaceConfigurationArchive archive,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) {
+  final entriesById = {
+    for (final entry in archive.entries)
+      (kind: entry.kind, id: entry.id): entry,
+  };
+  final included = _initialArchiveIdentities(archive.entries, selectedKinds);
+  final pending = included.toList();
+  _includeReferencedIdentities(entriesById, included, pending);
+
+  return included;
+}
+
+Set<_ArchiveId> _initialArchiveIdentities(
+  List<WorkspaceConfigurationEntry> entries,
+  Set<WorkspaceConfigurationKind> selectedKinds,
+) => {
+  for (final entry in entries.where(
+    (entry) => selectedKinds.contains(entry.kind),
+  ))
+    (kind: entry.kind, id: entry.id),
+};
+
+void _includeReferencedIdentities(
+  Map<_ArchiveId, WorkspaceConfigurationEntry> entriesById,
+  Set<_ArchiveId> included,
+  List<_ArchiveId> pending,
+) {
+  while (pending.isNotEmpty) {
+    final entry = entriesById[pending.removeLast()]!;
+    _queueEntryReferences(entry, included, pending);
+  }
+}
+
+void _queueEntryReferences(
+  WorkspaceConfigurationEntry entry,
+  Set<_ArchiveId> included,
+  List<_ArchiveId> pending,
+) {
+  for (final reference in _referencesFor(entry)) {
+    final identity = (
+      kind: reference.kind,
+      id: _requiredString(entry.data, reference.field),
+    );
+    if (included.add(identity)) pending.add(identity);
   }
 }
 
@@ -248,16 +280,19 @@ List<WorkspaceConfigurationEntry> _decodeEntries(
 
 WorkspaceConfigurationEntry _decodeEntry(Object? raw, int version) {
   final fields = _entryMap(raw);
-  final kind = WorkspaceConfigurationKind.values.byName(
-    fields['kind'] as String,
-  );
-  if (version == 1 && kind == .modelSelection) _invalid();
 
   return .new(
-    kind: kind,
+    kind: _decodeKind(fields['kind'] as String, version),
     id: fields['id'] as String,
     data: fields['data'] as Map<String, dynamic>,
   );
+}
+
+WorkspaceConfigurationKind _decodeKind(String name, int version) {
+  final kind = WorkspaceConfigurationKind.values.byName(name);
+  if (version == 1 && kind == .modelSelection) _invalid();
+
+  return kind;
 }
 
 Map<String, dynamic> _entryMap(Object? raw) {
@@ -418,29 +453,38 @@ void _validateEntryFields(WorkspaceConfigurationEntry entry) {
 }
 
 void _validateEntryValues(WorkspaceConfigurationEntry entry) {
-  final data = entry.data;
   switch (entry.kind) {
-    case .agent:
-      _validateAgent(data);
-    case .agentSkill:
-      _validateAgentSkill(data);
-    case .agentToolPermission:
-      _validatePermissionEntry(data, 'agentId', 'toolId');
-    case .compactionSetting:
-      _validateCompaction(entry);
-    case .modelConnection:
-      _validateModelConnection(data);
-    case .modelSelection:
-      _validateModelSelection(data);
-    case .skill:
-      _validateSkill(data);
-    case .skillResource:
-      _validateSkillResource(data);
-    case .skillSetting:
-      _validateSkillSetting(data);
+    case .agent || .agentSkill || .agentToolPermission:
+      _validateAgentEntry(entry);
+    case .compactionSetting || .modelConnection || .modelSelection:
+      _validateWorkspaceEntry(entry);
+    case .skill || .skillResource || .skillSetting:
+      _validateSkillEntry(entry);
     case .tool:
-      _validateTool(data);
+      _validateTool(entry.data);
   }
+}
+
+void _validateAgentEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .agent) return _validateAgent(entry.data);
+  if (entry.kind == .agentSkill) return _validateAgentSkill(entry.data);
+  _validatePermissionEntry(entry.data, 'agentId', 'toolId');
+}
+
+void _validateWorkspaceEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .compactionSetting) return _validateCompaction(entry);
+  if (entry.kind == .modelConnection) {
+    return _validateModelConnection(entry.data);
+  }
+  _validateModelSelection(entry.data);
+}
+
+void _validateSkillEntry(WorkspaceConfigurationEntry entry) {
+  if (entry.kind == .skill) return _validateSkill(entry.data);
+  if (entry.kind == .skillResource) {
+    return _validateSkillResource(entry.data);
+  }
+  _validateSkillSetting(entry.data);
 }
 
 void _validateAgent(Map<String, Object?> data) {
@@ -578,46 +622,41 @@ Never _invalid() => throw const WorkspaceConfigurationArchiveException(
 
 typedef _ArchiveIdentity = ({WorkspaceConfigurationKind kind, String value});
 
+const _naturalIdentityFields = <WorkspaceConfigurationKind, List<String>>{
+  .agent: ['name'],
+  .agentSkill: ['agentId', 'source', 'skillId'],
+  .agentToolPermission: ['agentId', 'toolId'],
+  .compactionSetting: ['workspace'],
+  .modelConnection: ['providerId', 'name', 'url'],
+  .modelSelection: ['modelConnectionId', 'modelId'],
+  .skill: ['source', 'slug'],
+  .skillResource: ['skillId', 'slug'],
+  .skillSetting: ['source', 'skillId'],
+  .tool: ['toolId'],
+};
+
 void _validateNaturalIdentities(WorkspaceConfigurationArchive archive) {
   final identities = <_ArchiveIdentity>{};
   for (final entry in archive.entries) {
-    final identity = jsonEncode(switch (entry.kind) {
-      .agent => [_requiredString(entry.data, 'name').trim()],
-      .agentSkill => [
-        _requiredString(entry.data, 'agentId'),
-        _requiredString(entry.data, 'source'),
-        _requiredString(entry.data, 'skillId'),
-      ],
-      .agentToolPermission => [
-        _requiredString(entry.data, 'agentId'),
-        _requiredString(entry.data, 'toolId'),
-      ],
-      .compactionSetting => const ['workspace'],
-      .modelConnection => [
-        _requiredString(entry.data, 'providerId'),
-        _requiredString(entry.data, 'name'),
-        entry.data['url'],
-      ],
-      .modelSelection => [
-        _requiredString(entry.data, 'modelConnectionId'),
-        _requiredString(entry.data, 'modelId'),
-      ],
-      .skill => [
-        _requiredString(entry.data, 'source'),
-        _requiredString(entry.data, 'slug'),
-      ],
-      .skillResource => [
-        _requiredString(entry.data, 'skillId'),
-        _requiredString(entry.data, 'slug'),
-      ],
-      .skillSetting => [
-        _requiredString(entry.data, 'source'),
-        _requiredString(entry.data, 'skillId'),
-      ],
-      .tool => [_requiredString(entry.data, 'toolId')],
-    });
+    final identity = _naturalIdentity(entry);
     if (!identities.add((kind: entry.kind, value: identity))) _invalid();
   }
+}
+
+String _naturalIdentity(WorkspaceConfigurationEntry entry) => jsonEncode([
+  for (final field in _naturalIdentityFields[entry.kind]!)
+    _naturalIdentityPart(entry, field),
+]);
+
+Object? _naturalIdentityPart(WorkspaceConfigurationEntry entry, String field) {
+  if (entry.kind == .compactionSetting) return 'workspace';
+  if (entry.kind == .modelConnection && field == 'url') {
+    return entry.data['url'];
+  }
+
+  final value = _requiredString(entry.data, field);
+
+  return entry.kind == .agent && field == 'name' ? value.trim() : value;
 }
 
 Map<WorkspaceConfigurationKind, int> _countEntriesByKind(

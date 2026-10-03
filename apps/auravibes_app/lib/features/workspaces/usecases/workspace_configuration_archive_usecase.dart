@@ -82,7 +82,7 @@ class const WorkspaceConfigurationArchiveUsecase({
 }
 
 String _encodePreview(WorkspaceConfigurationArchivePreview preview) =>
-    WorkspaceConfigurationArchiveCodec.encode(preview.archive);
+    WorkspaceConfigurationArchiveCodec.encode(preview.toArchive());
 
 @riverpod
 WorkspaceConfigurationArchiveUsecase workspaceConfigurationArchiveUsecase(

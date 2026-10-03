@@ -922,24 +922,34 @@ Future<void> _runToolsBulkDelete(_ToolsBulkDeleteRequest request) async {
   _applyToolsBulkDeleteResult(request, failed);
   if (failed.isEmpty) return;
 
+  await _showToolsBulkDeleteFailures(request, failed);
+}
+
+Future<void> _showToolsBulkDeleteFailures(
+  _ToolsBulkDeleteRequest request,
+  List<_ToolsDeleteTarget> failed,
+) async {
   await ManagementListFeedback.showFailuresDialog(
     context: request.context,
     failedItems: failed,
     nameOf: (target) => target.label,
-    onRetry: (targets) async {
-      request.isDeleting.value = true;
-      final retryFailures = await _deleteSelectedTools(
-        request.ref,
-        request.workspaceId,
-        targets,
-      );
-      if (request.context.mounted) {
-        _applyToolsBulkDeleteResult(request, retryFailures);
-      }
-
-      return retryFailures;
-    },
+    onRetry: (targets) => _retryToolsBulkDelete(request, targets),
   );
+}
+
+Future<List<_ToolsDeleteTarget>> _retryToolsBulkDelete(
+  _ToolsBulkDeleteRequest request,
+  List<_ToolsDeleteTarget> targets,
+) async {
+  request.isDeleting.value = true;
+  final failed = await _deleteSelectedTools(
+    request.ref,
+    request.workspaceId,
+    targets,
+  );
+  if (request.context.mounted) _applyToolsBulkDeleteResult(request, failed);
+
+  return failed;
 }
 
 void _applyToolsBulkDeleteResult(

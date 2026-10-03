@@ -555,6 +555,10 @@
     "deselect_tool": "Deseleccionar herramienta {}",
     "bulk_delete_title": "¿Eliminar las herramientas seleccionadas?",
     "bulk_delete_confirm": "Se quitarán las herramientas personalizadas seleccionadas. Los grupos MCP seleccionados eliminarán su servidor y todas sus herramientas.",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar 1 herramienta: {names}",
+      "other": "No se pudieron eliminar {} herramientas: {names}"
+    },
     "permission_always_ask": "Siempre Preguntar",
     "permission_always_allow": "Siempre Permitir",
     "permission_label": "Permiso",
@@ -600,6 +604,10 @@
     "deselect_skill": "Deseleccionar habilidad {}",
     "bulk_delete_title": "¿Eliminar las habilidades seleccionadas?",
     "bulk_delete_confirm": "¿Eliminar las habilidades de usuario seleccionadas? También se eliminarán su estado de carga en conversaciones y sus herramientas de plantilla.",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar 1 habilidad: {names}",
+      "other": "No se pudieron eliminar {} habilidades: {names}"
+    },
     "save_error": "No se pudo guardar la habilidad",
     "unsaved_changes_title": "Cambios sin guardar",
     "unsaved_changes_message": "Tienes cambios sin guardar. ¿Descartarlos y salir?",
@@ -1305,6 +1313,10 @@
     "deselect_workspace": "Deseleccionar espacio de trabajo {}",
     "bulk_delete_title": "¿Eliminar los espacios de trabajo seleccionados?",
     "bulk_delete_confirm": "Los espacios locales se eliminarán de este dispositivo. Los espacios conectados en la nube solo se quitarán de esta app.",
+    "bulk_delete_failures": {
+      "one": "No se pudo eliminar o quitar 1 espacio de trabajo: {names}",
+      "other": "No se pudieron eliminar o quitar {} espacios de trabajo: {names}"
+    },
     "cloud_retry": "Reintentar",
     "create_button": "Crear Espacio de Trabajo",
     "duplicate": "Duplicar Espacio de Trabajo",

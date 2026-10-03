@@ -815,6 +815,8 @@ void main() {
         expect(await repository.getWorkspaceById(cloud.id), isNotNull);
         expect(find.textContaining('Remove Cloud'), findsWidgets);
         expect(repository.removedMirrors, isEmpty);
+        await tester.tap(find.text('Close'));
+        final _ = await tester.pumpAndSettle();
         if (nullUsecase) return;
         repository.failCloudRemoval = false;
         await tester.tap(
@@ -1579,6 +1581,8 @@ void main() {
         ],
         pendingInvites: const [],
       );
+      final viewNotifier = ValueNotifier(true);
+      addTearDown(viewNotifier.dispose);
 
       await _pumpAndInit(
         tester,
@@ -1587,6 +1591,7 @@ void main() {
           accounts: [account],
           connectView: true,
           cloudWorkspaceState: cloudState,
+          viewNotifier: viewNotifier,
         ),
       );
       final _ = await tester.pumpAndSettle();
@@ -1603,6 +1608,8 @@ void main() {
       expect(find.text('$decomposedCafe Connected'), findsNothing);
       expect(find.text('Caf$graveE Cloud'), findsOneWidget);
 
+      viewNotifier.value = false;
+      final _ = await tester.pumpAndSettle();
       await tester.enterText(find.byType(AuraInput), 'flower');
       final _ = await tester.pumpAndSettle();
       expect(find.text(compatibilityForm), findsOneWidget);

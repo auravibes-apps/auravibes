@@ -33,9 +33,18 @@ void main() {
       expect(specs, hasLength(1));
       expect(specs.single.name, 'skill__app_template__openai__web_search');
       _expectStrictProviderSchema(specs.single);
-      final properties = specs.single.inputJsonSchema['properties']! as Map;
-      final credentialSchema = properties['credentialId'] as Map;
-      expect(properties['model']['type'], ['string', 'null']);
+      final properties = Map<String, Object?>.from(
+        specs.single.inputJsonSchema['properties']! as Map,
+      );
+      final modelSchemaValue = properties['model'];
+      if (modelSchemaValue is! Map) fail('Missing model schema.');
+      final modelSchema = Map<String, Object?>.from(modelSchemaValue);
+      final credentialSchemaValue = properties['credentialId'];
+      if (credentialSchemaValue is! Map) {
+        fail('Missing credentialId schema.');
+      }
+      final credentialSchema = Map<String, Object?>.from(credentialSchemaValue);
+      expect(modelSchema['type'], ['string', 'null']);
       expect(credentialSchema['type'], ['string', 'null']);
       expect(credentialSchema['enum'], ['model:openai-1', null]);
     });

@@ -55,12 +55,15 @@ void main() {
     );
 
     final preview = await usecase.pickArchivePreview();
+    if (preview == null) fail('No archive preview was returned.');
 
-    expect(preview?.workspaceName, 'Imported');
-    expect(preview?.countsByKind.values, everyElement(0));
+    expect(preview.workspaceName, 'Imported');
+    expect(
+      WorkspaceConfigurationKind.values.map(preview.countFor),
+      everyElement(0),
+    );
     expect(await database.workspaceDao.getWorkspaceCount(), 0);
 
-    if (preview == null) fail('No archive preview was returned.');
     await usecase.applyArchivePreview(preview);
     expect(await database.workspaceDao.getWorkspaceCount(), 1);
   });

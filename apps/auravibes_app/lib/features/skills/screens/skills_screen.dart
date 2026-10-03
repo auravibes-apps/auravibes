@@ -812,22 +812,32 @@ Future<void> _runSkillsBulkDelete(_SkillsBulkDeleteRequest request) async {
   request.selectedIds.value = failed.map((skill) => skill.id).toSet();
   if (failed.isEmpty) return;
 
+  await _showSkillsBulkDeleteFailures(request, failed);
+}
+
+Future<void> _showSkillsBulkDeleteFailures(
+  _SkillsBulkDeleteRequest request,
+  List<WorkspaceSkill> failed,
+) async {
   await ManagementListFeedback.showFailuresDialog(
     context: request.context,
     failedItems: failed,
     nameOf: (skill) => _localizedSkillTitle(request.context, skill),
-    onRetry: (skills) async {
-      request.isDeleting.value = true;
-      final retryFailures = await _deleteSkillsTargets(request, skills);
-      if (request.context.mounted) {
-        request.selectedIds.value = retryFailures
-            .map((skill) => skill.id)
-            .toSet();
-      }
-
-      return retryFailures;
-    },
+    onRetry: (skills) => _retrySkillsBulkDelete(request, skills),
   );
+}
+
+Future<List<WorkspaceSkill>> _retrySkillsBulkDelete(
+  _SkillsBulkDeleteRequest request,
+  List<WorkspaceSkill> skills,
+) async {
+  request.isDeleting.value = true;
+  final failed = await _deleteSkillsTargets(request, skills);
+  if (request.context.mounted) {
+    request.selectedIds.value = failed.map((skill) => skill.id).toSet();
+  }
+
+  return failed;
 }
 
 Future<List<WorkspaceSkill>> _deleteSelectedSkills(
