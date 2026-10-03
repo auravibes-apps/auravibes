@@ -14,6 +14,7 @@ final class ModelCapabilities {
     this.family,
     this.costInput,
     this.costCacheRead,
+    this.costCacheWrite,
     this.costOutput,
     this.openWeights,
     this.supportsReasoning = false,
@@ -23,6 +24,10 @@ final class ModelCapabilities {
     this.supportsToolCalls = false,
     this.supportsStructuredOutput = false,
     this.supportsStrictToolSampling = false,
+    this.supportsPromptCacheMarkers = false,
+    this.supportsMidConversationSystemMessages = false,
+    this.supportsToolDeltas = false,
+    this.supportsDeferredTools = false,
   }) : inputModalities = UnmodifiableListView(
          inputModalities.map((value) => value.toLowerCase()),
        ),
@@ -54,6 +59,7 @@ final class ModelCapabilities {
       family: _optionalString(json, 'family'),
       costInput: _optionalNum(cost, 'input')?.toDouble(),
       costCacheRead: _optionalNum(cost, 'cache_read')?.toDouble(),
+      costCacheWrite: _optionalNum(cost, 'cache_write')?.toDouble(),
       costOutput: _optionalNum(cost, 'output')?.toDouble(),
       openWeights: _optionalBool(json, 'open_weights'),
       supportsReasoning: legacyReasoning || reasoningOptions.isNotEmpty,
@@ -65,6 +71,17 @@ final class ModelCapabilities {
           canonicalModelIds.contains('$providerId/$id'),
       supportsPriorityMode: _supportsPriorityMode(json),
       supportsToolCalls: supportsToolCalls,
+      supportsPromptCacheMarkers:
+          providerId == 'anthropic' &&
+          _supportsPromptCacheMarkersModels.contains(id),
+      supportsMidConversationSystemMessages:
+          providerId == 'anthropic' &&
+          _supportsMidConversationSystemMessagesModels.contains(id),
+      supportsToolDeltas:
+          providerId == 'anthropic' && _supportsToolDeltasModels.contains(id),
+      supportsDeferredTools:
+          providerId == 'anthropic' &&
+          _supportsDeferredToolsModels.contains(id),
       supportsStructuredOutput:
           _optionalBool(json, 'structured_output') ?? false,
       supportsStrictToolSampling:
@@ -81,6 +98,7 @@ final class ModelCapabilities {
   final String? family;
   final double? costInput;
   final double? costCacheRead;
+  final double? costCacheWrite;
   final double? costOutput;
   final bool? openWeights;
   final bool supportsReasoning;
@@ -90,6 +108,10 @@ final class ModelCapabilities {
   final bool supportsToolCalls;
   final bool supportsStructuredOutput;
   final bool supportsStrictToolSampling;
+  final bool supportsPromptCacheMarkers;
+  final bool supportsMidConversationSystemMessages;
+  final bool supportsToolDeltas;
+  final bool supportsDeferredTools;
 
   bool get isTextGenerationModel =>
       isCanonical &&
@@ -103,6 +125,77 @@ final class ModelCapabilities {
       outputModalities.contains('text') &&
       limitOutput > 0;
 }
+
+// Verified 2026-09-29. Exact Claude API IDs only; unknown models stay disabled.
+// Cache markers are independent of mid-conversation system/tool features.
+// https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+// https://platform.claude.com/docs/en/about-claude/model-deprecations
+// https://platform.claude.com/docs/en/models/overview
+const _supportsPromptCacheMarkersModels = {
+  'claude-fable-5-1',
+  'claude-mythos-5-1',
+  'claude-fable-5',
+  'claude-opus-5-5',
+  'claude-opus-4-8',
+  'claude-opus-5',
+  'claude-sonnet-5-5',
+  'claude-mythos-5',
+  'claude-opus-4-7',
+  'claude-opus-4-6',
+  'claude-opus-4-5-20251101',
+  'claude-sonnet-5',
+  'claude-sonnet-4-6',
+  'claude-sonnet-4-5-20250929',
+  'claude-haiku-4-5-20251001',
+  'claude-haiku-4-5',
+};
+
+// System messages, tool changes and defer_loading each have explicit gates.
+// https://platform.claude.com/docs/en/build-with-claude/mid-conversation-system-messages
+const _supportsMidConversationSystemMessagesModels = {
+  'claude-fable-5-1',
+  'claude-mythos-5-1',
+  'claude-fable-5',
+  'claude-mythos-5',
+  'claude-opus-5-5',
+  'claude-opus-4-8',
+  'claude-opus-5',
+  'claude-sonnet-5-5',
+};
+
+const _supportsToolDeltasModels = {
+  'claude-fable-5-1',
+  'claude-mythos-5-1',
+  'claude-fable-5',
+  'claude-mythos-5',
+  'claude-opus-5-5',
+  'claude-opus-4-8',
+  'claude-opus-5',
+  'claude-sonnet-5-5',
+};
+
+const _supportsDeferredToolsModels = {
+  'claude-fable-5-1',
+  'claude-mythos-5-1',
+  'claude-fable-5',
+  'claude-mythos-5',
+  'claude-opus-5-5',
+  'claude-opus-4-8',
+  'claude-opus-5',
+  'claude-sonnet-5-5',
+};
+
+// OpenAI documents strict function calling for these model IDs. models.dev's
+// structured_output describes response formatting, not strict function tools.
+// https://developers.openai.com/api/docs/guides/function-calling
+bool verifiedStrictToolSampling(String providerId, String modelId) =>
+    providerId == 'openai' &&
+    const {
+      'gpt-4o',
+      'gpt-4o-2024-08-06',
+      'gpt-4o-mini',
+      'gpt-4o-mini-2024-07-18',
+    }.contains(modelId);
 
 List<ReasoningOption> _reasoningOptions(Object? value) {
   if (value is! List) return const [];

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 class const AppAgentTranscriptContextAdapter(
@@ -78,7 +79,7 @@ AgentTranscriptContextState _currentTranscriptContext(
 AgentTranscriptContextUpdate? _diffTranscriptContext(
   List<AgentTranscriptContextUpdate> updates,
   AgentTranscriptContextState current,
-) => diffAgentTranscriptContext(foldAgentTranscriptContext(updates), current);
+) => diffAgentTranscriptContext(_foldStoredContext(updates), current);
 
 AgentTranscriptContextUpdate? _pendingTranscriptUpdate(
   List<MessageEntity> transcript,
@@ -95,15 +96,26 @@ List<AgentTranscriptContextUpdate> _transcriptContextUpdates(
 
 PreparedAgentTranscriptContext<ChatMessage, ToolSpec>
 _preparedTranscriptContext(List<AgentTranscriptContextEntry> entries) {
-  final effective = foldAgentTranscriptContext(
-    entries.map((entry) => entry.update),
-  );
+  final effective = _foldStoredContext(entries.map((entry) => entry.update));
 
   return PreparedAgentTranscriptContext(
     contextMessages: effective.contextMessages.map(_chatMessage).toList(),
     tools: effective.tools,
     entries: entries,
   );
+}
+
+AgentTranscriptContextState _foldStoredContext(
+  Iterable<AgentTranscriptContextUpdate> updates,
+) {
+  try {
+    return foldAgentTranscriptContext(updates);
+  } on AgentTranscriptContextException catch (_, stackTrace) {
+    Error.throwWithStackTrace(
+      const MalformedTranscriptContextException(),
+      stackTrace,
+    );
+  }
 }
 
 AgentContextMessage _contextMessage(ChatMessage message) {
@@ -127,7 +139,7 @@ bool _hasTrustedContextRole(ChatMessage message) =>
 ChatMessage _chatMessage(AgentContextMessage message) => ChatMessage(
   role: message.role == AgentContextMessageRole.system ? .system : .user,
   content: message.content,
-  metadata: message.kind == null ? const {} : {'kind': message.kind},
+  metadata: {'transcriptContext': true, 'kind': ?message.kind},
 );
 
 MessageToCreate _contextUpdateMessage(
@@ -188,7 +200,7 @@ AgentTranscriptContextEntry? _snapshotBeforeSummary(
 
   return AgentTranscriptContextEntry(
     afterMessageId: null,
-    update: snapshotAgentTranscriptContext(foldAgentTranscriptContext(updates)),
+    update: snapshotAgentTranscriptContext(_foldStoredContext(updates)),
   );
 }
 

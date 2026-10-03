@@ -12,6 +12,47 @@ import 'package:riverpod/riverpod.dart';
 const _workspaceId = 'workspace-1';
 
 void main() {
+  test('retains query and pages across a listener gap', () async {
+    final repository = _FakeAgentRepository([
+      _page([_agent('initial')]),
+      _page([_agent('typed')]),
+      _page([_agent('disabled')]),
+      _page([_agent('match')], nextCursor: 'next'),
+      _page([_agent('second')], nextCursor: 'third'),
+      _page([_agent('reset')]),
+    ]);
+    final container = _container(repository);
+    addTearDown(container.dispose);
+    final provider = agentListProvider(_workspaceId);
+    final subscription = container.listen(
+      provider,
+      (_, next) => expect(next, isNotNull),
+    );
+    final _ = await container.read(provider.future);
+    final notifier = container.read(provider.notifier)
+      ..setSearch('match')
+      ..setType(.chatSelector);
+    await _flush();
+    notifier.setStatus(.disabled);
+    await _flush();
+    await notifier.refresh();
+    await notifier.loadMore();
+    subscription.close();
+    await container.pump();
+    final restored = await container.read(provider.future);
+    expect(restored.search, 'match');
+    expect(restored.agents.map((agent) => agent.id), ['match', 'second']);
+    expect(restored.nextCursor, 'third');
+    expect(restored.type, AgentListType.chatSelector);
+    expect(restored.status, AgentListStatus.disabled);
+    expect(repository.queries, hasLength(5));
+    final other = await container.read(agentListProvider('B').future);
+    expect(other.search, isEmpty);
+    expect(other.type, isNull);
+    expect(other.status, isNull);
+    expect(container.read(provider).requireValue.search, 'match');
+  });
+
   test('debounces search and ignores a stale result', () async {
     final stale = Completer<AgentListPage>();
     final current = Completer<AgentListPage>();

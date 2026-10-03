@@ -4,7 +4,7 @@
 ## Scope
 
 - Applies to `apps/auravibes_app`.
-- Root-run agents must load `.agents/skills/app-architecture/SKILL.md`; it is the app architecture source of truth.
+- Load `.agents/skills/app-architecture/SKILL.md` for app placement, ownership, dependency direction, or architecture changes. Routine edits within an established feature can follow nearby code and these scoped rules.
 
 ## Architecture Direction
 
@@ -33,3 +33,9 @@
 
 - Do not hand-edit generated app files.
 - After changing Freezed, Riverpod, Drift, JSON serialization, or localization sources, run the relevant generator and inspect the generated diff.
+
+## Riverpod scope
+
+- Use families for route, workspace, conversation, and service state.
+- Scope only measured list, row, or item rebuilds; never screens, routes, services, repositories, usecases, or test helpers.
+- Treat analyzer dependency diagnostics as authoritative: remove unused declarations; add only observable dependencies after restructuring; never suppress them.

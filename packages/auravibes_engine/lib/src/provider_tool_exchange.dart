@@ -22,18 +22,27 @@ CompletionResult normalizeCompletionResult({
   int? promptTokens,
   int? responseTokens,
   int? totalTokens,
+  int? cacheReadInputTokens,
+  int? cacheCreationInputTokens,
   Map<String, Object?> metadata = const {},
 }) => CompletionResult(
   finishReason: chatFinishReason(
     hasToolCalls: hasToolCalls,
     providerValue: providerFinishReason,
   ),
-  usage: promptTokens == null && responseTokens == null && totalTokens == null
+  usage:
+      promptTokens == null &&
+          responseTokens == null &&
+          totalTokens == null &&
+          cacheReadInputTokens == null &&
+          cacheCreationInputTokens == null
       ? null
       : LanguageModelUsage(
           promptTokens: promptTokens,
           responseTokens: responseTokens,
           totalTokens: totalTokens,
+          cacheReadInputTokens: cacheReadInputTokens,
+          cacheCreationInputTokens: cacheCreationInputTokens,
         ),
   metadata: .unmodifiable(metadata),
 );

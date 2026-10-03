@@ -96,9 +96,12 @@ void main() {
 
     final _ = await tester.tap(find.text('Open create'));
     final _ = await tester.pumpAndSettle();
+    expect(find.text('Workspace Draft'), findsNothing);
     final _ = await tester.tap(find.text('Local workspace'));
     final _ = await tester.pump();
-    final _ = await tester.tap(find.text('dev@example.com'));
+    final _ = await tester.tap(
+      find.text('dev@example.com (http://localhost:8080)'),
+    );
     final _ = await tester.pumpAndSettle();
     await tester.enterText(find.byType(AuraInput), 'Workspace Draft');
     await tester.enterText(find.byType(AuraInput), '');

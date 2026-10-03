@@ -2,8 +2,12 @@
 
 import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
 import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_usecases.dart';
+import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_health_status.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -30,21 +34,22 @@ class const CloudAccountsScreen({required final String workspaceId, super.key})
         padding: const EdgeInsets.all(16)
             .copyWith(bottom: BottomPadding.of(context)),
         children: [
-          if (AppEnvConfig.auravibesServerUrl.isEmpty)
+          const TextLocale(LocaleKeys.navigation_accounts_scope),
+          if (AppEnvConfig.auravibesServerUrl.isEmpty &&
+              accountsAsync.value?.isEmpty == true)
             const AuraText(
               child: TextLocale(LocaleKeys.cloud_accounts_not_configured),
-            )
-          else
-            switch (accountsAsync) {
-              AsyncData(:final value) => _AccountList(
-                accounts: value,
-                workspaceId: workspaceId,
-              ),
-              AsyncLoading() => const Center(child: AuraSpinner()),
-              AsyncError() => const AuraText(
-                child: TextLocale(LocaleKeys.cloud_accounts_load_error),
-              ),
-            },
+            ),
+          switch (accountsAsync) {
+            AsyncData(:final value) => _AccountList(
+              accounts: value,
+              workspaceId: workspaceId,
+            ),
+            AsyncLoading() => const Center(child: AuraSpinner()),
+            AsyncError() => const AuraText(
+              child: TextLocale(LocaleKeys.cloud_accounts_load_error),
+            ),
+          },
         ],
       ),
       appBar: const AuraAppBarWithDrawer(
@@ -77,13 +82,14 @@ class const _AccountList({
         for (final account in accounts)
           AuraTile(
             child: AuraColumn(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: .xs,
               children: [
                 Text(account.email),
-                const AuraText(
-                  child: TextLocale(LocaleKeys.cloud_accounts_status_signed_in),
-                  style: AuraTextStyle.bodySmall,
+                CloudAccountHealthStatus(
+                  account: account.key,
+                  workspaceId: workspaceId,
+                  returnPath: CloudAccountsRoute(workspaceId: workspaceId)
+                      .location,
+                  email: account.email,
                 ),
                 Wrap(
                   spacing: 8,
@@ -113,6 +119,8 @@ class const _AccountList({
                   ],
                 ),
               ],
+              spacing: .xs,
+              crossAxisAlignment: CrossAxisAlignment.start,
             ),
             variant: AuraTileVariant.ghost,
           ),
@@ -158,9 +166,9 @@ class const _AccountList({
     );
     if (confirmed != true) return;
 
-    final activeWorkspace = await ref
-        .read(workspaceRepositoryProvider)
-        .getWorkspaceById(workspaceId);
+    final activeWorkspace = (await ref.read(allWorkspacesProvider.future))
+        .where((workspace) => workspace.id == workspaceId)
+        .firstOrNull;
 
     try {
       await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
@@ -181,6 +189,10 @@ class const _AccountList({
           ..invalidate(allWorkspacesProvider);
       });
     } on Object catch (error) {
+      if (error is CloudWorkspaceException &&
+          CheckCloudAccountUsecase.requiresSignIn(error)) {
+        ref.invalidate(cloudAccountHealthProvider(account.key));
+      }
       if (!context.mounted) return;
       ref
         ..invalidate(cloudAccountsProvider)
@@ -207,7 +219,7 @@ class const _AccountList({
       return;
     }
     if (!context.mounted ||
-        activeWorkspace?.cloudAccountId != account.userId ||
+        activeWorkspace?.cloudAccount != account.key ||
         ref.read(WorkspaceManagementMutations.cloudAccount) is MutationError) {
       return;
     }

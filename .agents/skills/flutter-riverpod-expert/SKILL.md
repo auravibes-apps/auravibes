@@ -1,6 +1,6 @@
 ---
 name: flutter-riverpod-expert
-description: Expert Riverpod 3 guidance for Flutter apps, especially projects using hooks_riverpod, flutter_hooks, riverpod_annotation, and riverpod_generator. Use when working with Riverpod providers, HookConsumerWidget/ConsumerWidget, WidgetRef/Ref, generated @riverpod providers, Notifier/AsyncNotifier/StreamNotifier, mutations, scoped providers, provider overrides, testing, caching, automatic retry, performance with select, or migrations from StateNotifier/ChangeNotifier/legacy providers.
+description: Use when changing Riverpod state ownership, provider lifecycle, async actions, dependency scoping, or provider migrations. Skip routine consumer reads and UI-only edits.
 ---
 
 # Flutter Riverpod Expert
@@ -23,7 +23,7 @@ Apply Riverpod 3 patterns that fit the current codebase. In AuraVibes, prefer th
 ## Load References
 
 - Read `references/auravibes-riverpod.md` before editing AuraVibes Riverpod code.
-- Read `references/riverpod3-core.md` for provider selection, Riverpod 3 behavior changes, lifecycle, async state, and testing.
+- Read `references/riverpod3-core.md` only when the task needs provider selection, lifecycle, async state, or testing details absent from the local pattern.
 - Read `references/hooks-riverpod.md` when touching UI widgets, local widget state, hooks, `HookConsumerWidget`, or imports.
 
 ## Default Decisions

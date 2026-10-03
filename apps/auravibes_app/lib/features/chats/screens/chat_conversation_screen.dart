@@ -12,6 +12,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
@@ -21,6 +22,7 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_stream.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
@@ -29,7 +31,6 @@ import 'package:auravibes_app/features/chats/usecases/compact_conversation_useca
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/message_persisted_exception.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-
 import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
@@ -44,6 +45,7 @@ import 'package:auravibes_app/features/skills/widgets/conversation_skill_selecto
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -1164,6 +1166,8 @@ class const _ChatConversationBody({
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
+      _ConversationOrientation(data: data),
+      _ConversationActivitySummary(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
@@ -2115,14 +2119,18 @@ void _reportContinueAgentFlutterError(_ContinueErrorRequest request) {
 void _showContinueAgentError(BuildContext context, Exception error) {
   if (!context.mounted) return;
 
+  final messageKey = switch (error) {
+    UnsupportedTranscriptVersionException() =>
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_unsupported,
+    MalformedTranscriptContextException() =>
+      LocaleKeys.chats_screens_chat_conversation_transcript_context_malformed,
+    SelectedModelNotFoundException() =>
+      LocaleKeys.chats_screens_chat_conversation_model_missing,
+    _ => LocaleKeys.chats_screens_chat_conversation_continue_error,
+  };
   final _ = AuraSnackBars.show(
     context: context,
-    content: Text(
-      (error is SelectedModelNotFoundException
-              ? LocaleKeys.chats_screens_chat_conversation_model_missing
-              : LocaleKeys.chats_screens_chat_conversation_continue_error)
-          .tr(),
-    ),
+    content: Text(messageKey.tr()),
     variant: .error,
   );
 }
@@ -2570,3 +2578,141 @@ _ChatMessageData _chatMessageData(Iterable<MessageEntity> messages) {
 
   return _ChatMessageData(ids: ids, entitiesById: entitiesById);
 }
+
+class const _ConversationOrientation({
+  required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final parentId = data.conversation.parentConversationId;
+    if (data.showInputComposer || parentId == null) {
+      return const SizedBox.shrink();
+    }
+
+    return _ConversationOrientationContent(
+      parentTitle: _conversationParentTitle(
+        _conversationParent(ref, data.workspaceId, parentId),
+        parentId,
+        data.workspaceId,
+      ),
+      onReturn: _returnToParentConversation(
+        context,
+        data.workspaceId,
+        parentId,
+      ),
+    );
+  }
+}
+
+ConversationEntity? _conversationParent(
+  WidgetRef ref,
+  String workspaceId,
+  String parentId,
+) => ref
+    .watch(
+      conversationByIdStreamProvider(workspaceId, conversationId: parentId),
+    )
+    .asData
+    ?.value;
+
+VoidCallback _returnToParentConversation(
+  BuildContext context,
+  String workspaceId,
+  String parentId,
+) =>
+    () => ConversationRoute(
+      workspaceId: workspaceId,
+      chatId: parentId,
+    ).go(context);
+
+class const _ConversationOrientationContent({
+  required final String parentTitle,
+  required final VoidCallback onReturn,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Text(
+        'conversation_orientation.delegated'.tr(
+          namedArgs: {'parent': parentTitle},
+        ),
+      ),
+      const TextLocale('conversation_orientation.read_only'),
+      AuraButton(
+        onPressed: onReturn,
+        child: const TextLocale('route_state.return_parent'),
+      ),
+    ],
+    mainAxisSize: .min,
+  );
+}
+
+String _conversationParentTitle(
+  ConversationEntity? parent,
+  String parentId,
+  String workspaceId,
+) => parent != null && parent.workspaceId == workspaceId
+    ? parent.title
+    : parentId;
+
+class const _ConversationActivitySummary({
+  required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final childCount = _activeConversationChildCount(ref, data.conversation.id);
+    final activityKey = _conversationActivityKey((
+      data: data,
+      childCount: childCount,
+    ));
+
+    return _ConversationActivityLabel(
+      activityKey: activityKey,
+      childCount: childCount,
+    );
+  }
+}
+
+int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
+    ref.watch(
+      activeSubAgentRuntimeProvider.select(
+        (state) => state[conversationId]?.length ?? 0,
+      ),
+    );
+
+class const _ConversationActivityLabel({
+  required final String activityKey,
+  required final int childCount,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    child: Text(
+      'conversation_activity.$activityKey'.tr(
+        namedArgs: {'count': '$childCount'},
+      ),
+    ),
+    liveRegion: true,
+  );
+}
+
+String _conversationActivityKey(
+  ({_LoadedChatConversationData data, int childCount}) request,
+) {
+  final state = request.data.state;
+  if (state.hasPendingApprovals) return 'approval';
+  if (request.data.hidesStoppedRun) return 'stopped';
+
+  return _conversationActivityFallbackKey(state, request.childCount);
+}
+
+String _conversationActivityFallbackKey(
+  _LoadedChatConversationState state,
+  int childCount,
+) => switch (state) {
+  _ when state.rateLimitRetryAt != null => 'retry',
+  _ when state.isCompacting => 'compacting',
+  _ when childCount > 0 => 'delegated',
+  _ when state.isGenerating || state.isInputBusy => 'working',
+  _ when state.queuedDrafts.isNotEmpty => 'queued',
+  _ => 'idle',
+};

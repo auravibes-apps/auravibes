@@ -283,7 +283,14 @@ class _AuraTabBarState extends State<_AuraTabBar> {
       final position = selectedContext == null
           ? null
           : Scrollable.maybeOf(selectedContext)?.position;
-      if (renderObject == null || position == null) return;
+      if (renderObject is! RenderBox ||
+          !renderObject.attached ||
+          !renderObject.hasSize ||
+          position == null ||
+          !position.hasContentDimensions) {
+        _scheduleReveal();
+        return;
+      }
 
       unawaited(
         position.ensureVisible(

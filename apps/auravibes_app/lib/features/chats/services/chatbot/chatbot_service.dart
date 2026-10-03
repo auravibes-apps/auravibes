@@ -37,6 +37,7 @@ class ChatbotService({
     chatProvider: chatProvider,
     history: history,
     tools: options.tools,
+    transcriptContextEntries: options.transcriptContextEntries,
     sessionId: options.sessionId,
     reasoningConfiguration: options.reasoningConfiguration,
     a2uiRuntime: a2uiRuntime,
@@ -97,6 +98,7 @@ class ChatbotService({
 }
 
 class const ChatbotMessageOptions({
+  final List<AgentTranscriptContextEntry> transcriptContextEntries = const [],
   final List<ToolSpec>? tools,
   final String? sessionId,
   final ReasoningConfiguration? reasoningConfiguration,
@@ -105,6 +107,7 @@ class const ChatbotMessageOptions({
 typedef _SendMessageRequest = ({
   ChatbotService service,
   WorkspaceModelSelectionWithConnectionEntity chatProvider,
+  List<AgentTranscriptContextEntry> transcriptContextEntries,
   List<ChatMessage> history,
   List<ToolSpec>? tools,
   String? sessionId,
@@ -140,6 +143,7 @@ Future<
 _createResponseStream(_SendMessageRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
+    transcriptContextEntries: request.transcriptContextEntries,
     sessionId: request.sessionId,
     reasoningConfiguration: request.reasoningConfiguration,
   );
@@ -417,6 +421,8 @@ extension on ChatbotService {
     promptTokens: _promptTokens(response),
     responseTokens: _responseTokens(response),
     totalTokens: _totalTokens(response),
+    cacheReadInputTokens: _cacheReadInputTokens(response),
+    cacheCreationInputTokens: _cacheCreationInputTokens(response),
     metadata: _responseMetadata(response),
   );
 
@@ -439,7 +445,30 @@ extension on ChatbotService {
   int? _totalTokens(GenerateResponseHelper<Object?> response) =>
       response.usage?.totalTokens?.toInt();
 
+  int? _cacheReadInputTokens(GenerateResponseHelper<Object?> response) =>
+      _usageMetadataToken(response, 'cacheReadInputTokens');
+
+  int? _cacheCreationInputTokens(GenerateResponseHelper<Object?> response) =>
+      _usageMetadataToken(response, 'cacheCreationInputTokens');
+
+  int? _usageMetadataToken(
+    GenerateResponseHelper<Object?> response,
+    String key,
+  ) {
+    final value = _providerResponseMetadata(response)[key];
+
+    return value is num ? value.toInt() : null;
+  }
+
   Map<String, Object?> _responseMetadata(
+    GenerateResponseHelper<Object?> response,
+  ) {
+    return {..._providerResponseMetadata(response)}
+      ..remove('cacheReadInputTokens')
+      ..remove('cacheCreationInputTokens');
+  }
+
+  Map<String, Object?> _providerResponseMetadata(
     GenerateResponseHelper<Object?> response,
   ) =>
       response.candidates?.firstOrNull?.message.metadata
@@ -474,8 +503,11 @@ extension on ChatbotService {
         parse: (value) => value as Map<String, Object?>,
       );
 
-  Message _toGenkitMessage(ChatMessage message) =>
-      Message(role: _genkitRole(message), content: _genkitContent(message));
+  Message _toGenkitMessage(ChatMessage message) => Message(
+    role: _genkitRole(message),
+    content: _genkitContent(message),
+    metadata: message.metadata,
+  );
 
   Role _genkitRole(ChatMessage message) => switch (message.role) {
     .system => Role.system,

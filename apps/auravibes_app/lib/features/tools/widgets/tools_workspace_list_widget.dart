@@ -1,24 +1,23 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 
-// Dart imports:
 import 'dart:async';
 
-// Project imports:
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/models/tools_sort.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/notifiers/tools_list_view_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search_empty_state.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_search_input.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
-import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
-// Package imports:
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -27,8 +26,6 @@ import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
 
 final _logger = Logger('tools_workspace_list');
-
-enum _ToolsSort { name, enabled }
 
 enum _ToolsDeleteTargetKind { group, tool }
 
@@ -45,17 +42,17 @@ typedef _ToolSelectionChanged = void Function(
 );
 
 typedef _ToolsWorkspaceHooks = ({
-  ValueNotifier<String> searchQuery,
-  ValueNotifier<_ToolsSort> sort,
+  ToolsListViewState view,
+  ToolsListViewNotifier notifier,
   ValueNotifier<Set<String>> selectedKeys,
   ValueNotifier<bool> isDeleting,
 });
 
 typedef _ToolsFilterState = ({
   String searchQuery,
-  _ToolsSort sort,
+  ToolsSort sort,
   ValueChanged<String> onSearchChanged,
-  ValueChanged<_ToolsSort> onSortChanged,
+  ValueChanged<ToolsSort> onSortChanged,
 });
 
 typedef _ToolsSelectionData = ({
@@ -130,7 +127,7 @@ _ToolsWorkspaceRuntime _useToolsWorkspaceRuntime(
   String workspaceId,
 ) {
   final groupedToolsAsync = ref.watch(groupedToolsProvider(workspaceId));
-  final hooks = _useToolsWorkspaceHooks();
+  final hooks = _useToolsWorkspaceHooks(ref, workspaceId);
   final groups = groupedToolsAsync.value ?? const <ToolsGroupWithTools>[];
 
   return (
@@ -171,18 +168,21 @@ _ToolsSelectionActionsRequest _toolsSelectionActionsRequest(
   snapshot: request.runtime.snapshot,
 );
 
-_ToolsWorkspaceHooks _useToolsWorkspaceHooks() => (
-  searchQuery: useState(''),
-  sort: useState(_ToolsSort.name),
+_ToolsWorkspaceHooks _useToolsWorkspaceHooks(
+  WidgetRef ref,
+  String workspaceId,
+) => (
+  view: ref.watch(toolsListViewProvider(workspaceId)),
+  notifier: ref.read(toolsListViewProvider(workspaceId).notifier),
   selectedKeys: useState(<String>{}),
   isDeleting: useState(false),
 );
 
 _ToolsFilterState _toolsFilterState(_ToolsWorkspaceHooks hooks) => (
-  searchQuery: hooks.searchQuery.value,
-  sort: hooks.sort.value,
-  onSearchChanged: (value) => hooks.searchQuery.value = value,
-  onSortChanged: (value) => hooks.sort.value = value,
+  searchQuery: hooks.view.searchQuery,
+  sort: hooks.view.sort,
+  onSearchChanged: hooks.notifier.setSearchQuery,
+  onSortChanged: hooks.notifier.setSort,
 );
 
 _ToolsSelectionSnapshot _toolsSelectionSnapshot(
@@ -213,8 +213,8 @@ List<_ToolsDeleteTarget> _visibleToolsDeleteTargets(
   _ToolsWorkspaceHooks hooks,
 ) => _toolsDeleteTargets(
   _sortWorkspaceGroups(
-    _filterWorkspaceGroups(groups, hooks.searchQuery.value),
-    hooks.sort.value,
+    _filterWorkspaceGroups(groups, hooks.view.searchQuery),
+    hooks.view.sort,
   ),
 );
 
@@ -319,16 +319,23 @@ class const _ToolsWorkspaceListState({
 class const _ToolsListControls({required final _ToolsWorkspaceViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      ToolsSearchInput(onChanged: state.filter.onSearchChanged),
-      _ToolsManagementRow(
-        filter: state.filter,
-        selection: state.selection,
-        actions: state.actions,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final filter = state.filter;
+
+    return Column(
+      children: [
+        ToolsSearchInput(
+          onChanged: filter.onSearchChanged,
+          searchQuery: filter.searchQuery,
+        ),
+        _ToolsManagementRow(
+          filter: filter,
+          selection: state.selection,
+          actions: state.actions,
+        ),
+      ],
+    );
+  }
 }
 
 class const _OptionalToolsSelectionActions({
@@ -354,15 +361,16 @@ class const _ToolsListResult({required final _ToolsWorkspaceViewState state})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (state.groupedToolsAsync) {
+    AsyncValue(isLoading: true, value: final groups?) => _ToolsGroupListOrEmpty(
+      groups: groups,
+      state: state,
+    ),
     AsyncLoading() => const _ToolsLoading(),
     AsyncData(value: final groups) => _ToolsGroupListOrEmpty(
       groups: groups,
       state: state,
     ),
-    AsyncError(:final error, :final stackTrace) => _ToolsError(
-      error: error,
-      stackTrace: stackTrace,
-    ),
+    AsyncError() => _ToolsError(workspaceId: state.workspaceId),
   };
 }
 
@@ -394,17 +402,77 @@ class const _ToolsManagementControls({
   required final double spacing,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _ToolsManagementLayout(
+      compact: constraints.maxWidth < 600,
+      filter: filter,
+      selection: selection,
+      onSelectAll: onSelectAll,
+      spacing: spacing,
+    ),
+  );
+}
+
+class const _ToolsManagementLayout({
+  required final bool compact,
+  required final _ToolsFilterState filter,
+  required final _ToolsSelectionData selection,
+  required final VoidCallback onSelectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final sort = _ToolsSortSelector(
+      filter: filter,
+      isDeleting: selection.isDeleting,
+    );
+    final selectAll = _ToolsSelectAllButton(
+      selection: selection,
+      onPressed: onSelectAll,
+    );
+
+    return compact
+        ? _CompactToolsManagementControls(
+            sort: sort,
+            selectAll: selectAll,
+            spacing: spacing,
+          )
+        : _WideToolsManagementControls(
+            sort: sort,
+            selectAll: selectAll,
+            spacing: spacing,
+          );
+  }
+}
+
+class const _CompactToolsManagementControls({
+  required final Widget sort,
+  required final Widget selectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      sort,
+      SizedBox(height: spacing),
+      Align(alignment: .centerRight, child: selectAll),
+    ],
+  );
+}
+
+class const _WideToolsManagementControls({
+  required final Widget sort,
+  required final Widget selectAll,
+  required final double spacing,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: .end,
     children: [
-      Expanded(
-        child: _ToolsSortSelector(
-          filter: filter,
-          isDeleting: selection.isDeleting,
-        ),
-      ),
+      Expanded(child: sort),
       SizedBox(width: spacing),
-      _ToolsSelectAllButton(selection: selection, onPressed: onSelectAll),
+      selectAll,
     ],
   );
 }
@@ -414,7 +482,7 @@ class const _ToolsSortSelector({
   required final bool isDeleting,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraDropdownSelector<_ToolsSort>(
+  Widget build(BuildContext context) => AuraDropdownSelector<ToolsSort>(
     options: _toolsSortOptions,
     key: const ValueKey('tools-sort'),
     value: filter.sort,
@@ -425,7 +493,7 @@ class const _ToolsSortSelector({
   );
 }
 
-ValueChanged<_ToolsSort?> _toolsSortChanged(_ToolsFilterState filter) =>
+ValueChanged<ToolsSort?> _toolsSortChanged(_ToolsFilterState filter) =>
     (value) {
       if (value != null) filter.onSortChanged(value);
     };
@@ -448,13 +516,13 @@ class const _ToolsSelectAllButton({
   );
 }
 
-const _toolsSortOptions = <AuraDropdownOption<_ToolsSort>>[
+const _toolsSortOptions = <AuraDropdownOption<ToolsSort>>[
   AuraDropdownOption(
-    value: _ToolsSort.name,
+    value: ToolsSort.name,
     child: TextLocale(LocaleKeys.common_sort_name_ascending),
   ),
   AuraDropdownOption(
-    value: _ToolsSort.enabled,
+    value: ToolsSort.enabled,
     child: TextLocale(LocaleKeys.common_sort_enabled_first),
   ),
 ];
@@ -557,13 +625,11 @@ class const _ToolsLoading() extends StatelessWidget {
 class const _ToolsGroupListOrEmpty({
   required final List<ToolsGroupWithTools> groups,
   required final _ToolsWorkspaceViewState state,
-}) extends StatelessWidget {
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (groups.isEmpty && state.filter.searchQuery.trim().isEmpty) {
-      return ToolsEmptyState(
-        padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
-      );
+      return _ToolsWorkspaceEmptyState(workspaceId: state.workspaceId);
     }
 
     return _FilteredToolsGroupList(
@@ -571,6 +637,21 @@ class const _ToolsGroupListOrEmpty({
       state: state,
     );
   }
+}
+
+class const _ToolsWorkspaceEmptyState({required final String workspaceId})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => ToolsEmptyState(
+    canAddNativeTools:
+        ref
+            .watch(workspaceSessionForRouteProvider(workspaceId))
+            .value
+            ?.capabilities
+            .nativeTools ??
+        false,
+    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.xl)),
+  );
 }
 
 List<_WorkspaceToolsGroupResult> _visibleWorkspaceGroups(
@@ -599,13 +680,23 @@ class const _FilteredToolsGroupList({
   }
 }
 
-class const _ToolsError({
-  required final Object error,
-  required final StackTrace stackTrace,
-}) extends StatelessWidget {
+class const _ToolsError({required final String workspaceId})
+    extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) =>
-      AppErrorWidget(error: error, stackTrace: stackTrace);
+  Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
+    children: [
+      const TextLocale('connection_setup.tools_load_error'),
+      AuraButton(
+        onPressed: () => _retry(ref),
+        child: const TextLocale(LocaleKeys.route_state_retry),
+      ),
+    ],
+  );
+  void _retry(WidgetRef ref) {
+    ref
+      ..invalidate(workspaceToolsProvider(workspaceId))
+      ..invalidate(groupedToolsProvider(workspaceId));
+  }
 }
 
 class const _ToolsGroupList({
@@ -661,13 +752,13 @@ typedef _WorkspaceToolsGroupResult = ({
 
 List<_WorkspaceToolsGroupResult> _sortWorkspaceGroups(
   List<_WorkspaceToolsGroupResult> groups,
-  _ToolsSort sort,
+  ToolsSort sort,
 ) => groups.map((result) => _sortWorkspaceGroupTools(result, sort)).toList()
   ..sort((left, right) => _compareToolGroups(left.group, right.group, sort));
 
 _WorkspaceToolsGroupResult _sortWorkspaceGroupTools(
   _WorkspaceToolsGroupResult result,
-  _ToolsSort sort,
+  ToolsSort sort,
 ) => (
   group: result.group,
   tools: List<WorkspaceToolEntity>.of(result.tools)
@@ -677,9 +768,9 @@ _WorkspaceToolsGroupResult _sortWorkspaceGroupTools(
 int _compareToolGroups(
   ToolsGroupWithTools left,
   ToolsGroupWithTools right,
-  _ToolsSort sort,
+  ToolsSort sort,
 ) {
-  if (sort == _ToolsSort.enabled && left.isEnabled != right.isEnabled) {
+  if (sort == ToolsSort.enabled && left.isEnabled != right.isEnabled) {
     return left.isEnabled ? -1 : 1;
   }
   final nameComparison = _workspaceGroupDisplayName(left)
@@ -693,9 +784,9 @@ int _compareToolGroups(
 int _compareTools(
   WorkspaceToolEntity left,
   WorkspaceToolEntity right,
-  _ToolsSort sort,
+  ToolsSort sort,
 ) {
-  if (sort == _ToolsSort.enabled && left.isEnabled != right.isEnabled) {
+  if (sort == ToolsSort.enabled && left.isEnabled != right.isEnabled) {
     return left.isEnabled ? -1 : 1;
   }
   final nameComparison = _workspaceToolDisplayName(left)

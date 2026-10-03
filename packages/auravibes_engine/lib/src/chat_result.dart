@@ -91,14 +91,27 @@ enum ChatFinishReason {
 
 @freezed
 abstract class const LanguageModelUsage._() with _$LanguageModelUsage {
-  const factory({int? promptTokens, int? responseTokens, int? totalTokens}) =
-      _LanguageModelUsage;
+  const factory({
+    int? promptTokens,
+    int? responseTokens,
+    int? totalTokens,
+    int? cacheReadInputTokens,
+    int? cacheCreationInputTokens,
+  }) = _LanguageModelUsage;
 
   LanguageModelUsage concat(LanguageModelUsage other) {
     return LanguageModelUsage(
       promptTokens: _add(promptTokens, other.promptTokens),
       responseTokens: _add(responseTokens, other.responseTokens),
       totalTokens: _add(totalTokens, other.totalTokens),
+      cacheReadInputTokens: _add(
+        cacheReadInputTokens,
+        other.cacheReadInputTokens,
+      ),
+      cacheCreationInputTokens: _add(
+        cacheCreationInputTokens,
+        other.cacheCreationInputTokens,
+      ),
     );
   }
 

@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_app/features/markdown/markdown_editor_launcher.dart';
 import 'package:auravibes_app/features/markdown/screens/markdown_editor_screen.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,34 @@ const _initialMarkdown = 'Saved content';
 const _editedMarkdown = 'Unsaved content';
 
 void main() {
+  testWidgets('field context and limits govern Apply changes', (tester) async {
+    String? result;
+    await _openMarkdownEditor(
+      tester,
+      onResult: (value) => result = value,
+      initialMarkdown: 'ab',
+      maxCharacters: 2,
+    );
+    expect(find.text('Edit resource description'), findsOneWidget);
+    expect(
+      find.text('Applies to this draft. Save the resource to finish.'),
+      findsOneWidget,
+    );
+    await tester.enterText(_markdownEditorInput, 'abc');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Apply changes'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.byType(MarkdownEditorScreen), findsOneWidget);
+    expect(result, isNull);
+    expect(find.text('3/2'), findsOneWidget);
+    await tester.enterText(_markdownEditorInput, 'ab');
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Apply changes'));
+    final _ = await tester.pumpAndSettle();
+    expect(result, 'ab');
+    expect(find.byType(MarkdownEditorScreen), findsNothing);
+  });
+
   testWidgets('closing editor does not restore source field focus', (
     tester,
   ) async {
@@ -148,27 +177,43 @@ void main() {
     expect(didReturn, isTrue);
   });
 
-  testWidgets('explicit Cancel discards Markdown edits without confirmation', (
-    tester,
-  ) async {
-    String? result;
-    var didReturn = false;
-    await _openMarkdownEditor(
-      tester,
-      onResult: (value) {
-        result = value;
-        didReturn = true;
-      },
-    );
-    await tester.enterText(_markdownEditorInput, _editedMarkdown);
-    await tester.tap(find.byIcon(Icons.close));
-    final _ = await tester.pumpAndSettle();
+  testWidgets(
+    'explicit Cancel protects edits and returns null only after discard',
+    (tester) async {
+      String? result;
+      var didReturn = false;
+      await _openMarkdownEditor(
+        tester,
+        onResult: (value) {
+          result = value;
+          didReturn = true;
+        },
+      );
+      await tester.enterText(_markdownEditorInput, _editedMarkdown);
+      final input = tester.widget<EditableText>(_markdownEditorInput);
+      final valueBeforeCancel = input.controller.value;
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
 
-    expect(find.byType(AuraConfirmDialog), findsNothing);
-    expect(find.byType(MarkdownEditorScreen), findsNothing);
-    expect(didReturn, isTrue);
-    expect(result, isNull);
-  });
+      expect(find.byType(AuraConfirmDialog), findsOneWidget);
+      expect(didReturn, isFalse);
+      await tester.tap(find.text('Keep editing'));
+      final _ = await tester.pumpAndSettle();
+      expect(
+        tester.widget<EditableText>(_markdownEditorInput).controller.text,
+        _editedMarkdown,
+      );
+      expect(input.controller.value, valueBeforeCancel);
+      expect(input.focusNode.hasFocus, isTrue);
+      await tester.tap(find.byIcon(Icons.close));
+      final _ = await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard changes'));
+      final _ = await tester.pumpAndSettle();
+      expect(find.byType(MarkdownEditorScreen), findsNothing);
+      expect(didReturn, isTrue);
+      expect(result, isNull);
+    },
+  );
 
   testWidgets('Save returns Markdown edits without confirmation', (
     tester,
@@ -440,6 +485,7 @@ Future<void> _openMarkdownEditor(
   required void Function(String?) onResult,
   FocusNode? sourceFocusNode,
   String initialMarkdown = _initialMarkdown,
+  int? maxCharacters,
 }) async {
   await tester.runAsync(() async {
     await tester.pumpWidget(
@@ -456,6 +502,7 @@ Future<void> _openMarkdownEditor(
                       context,
                       initialMarkdown: initialMarkdown,
                       onResult: onResult,
+                      maxCharacters: maxCharacters,
                     );
                   },
                   child: const Text('Open editor'),
@@ -488,10 +535,20 @@ Future<void> _showMarkdownEditor(
   BuildContext context, {
   required String initialMarkdown,
   required void Function(String?) onResult,
+  int? maxCharacters,
 }) async {
   final result = await MarkdownEditorLauncher.show(
     context,
-    initialMarkdown: initialMarkdown,
+    options: (
+      initialMarkdown: initialMarkdown,
+      maxCharacters: maxCharacters,
+      titleKey: maxCharacters == null
+          ? LocaleKeys.markdown_editor_title
+          : LocaleKeys.markdown_editor_resource_description,
+      draftHintKey: maxCharacters == null
+          ? LocaleKeys.markdown_editor_draft_hint
+          : LocaleKeys.markdown_editor_resource_hint,
+    ),
   );
   onResult(result);
 }

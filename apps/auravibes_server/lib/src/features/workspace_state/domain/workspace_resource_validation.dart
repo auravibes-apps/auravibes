@@ -58,6 +58,7 @@ class WorkspaceResourceValidation {
       throw const FormatException();
     }
     _validateKind(kind, decoded);
+
     return decoded;
   }
 
@@ -139,12 +140,14 @@ class WorkspaceResourceValidation {
       },
       WorkspaceResourceKind.skill => const {
         'skillDefinitionId': WorkspaceResourceKind.skillDefinition,
+        'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
       },
       WorkspaceResourceKind.skillSetting => const {
         'skillId': WorkspaceResourceKind.skill,
       },
       WorkspaceResourceKind.skillTemplateTool => const {
         'skillId': WorkspaceResourceKind.skill,
+        'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
         'toolId': WorkspaceResourceKind.tool,
       },
       WorkspaceResourceKind.conversationToolSelection => const {
@@ -154,8 +157,13 @@ class WorkspaceResourceValidation {
         data['source'] == 'app'
             ? const {}
             : const {'skillId': WorkspaceResourceKind.skill},
+      WorkspaceResourceKind.serviceConnection =>
+        data['kind'] == 'skillCredential'
+            ? const {
+                'credentialDefinitionId': WorkspaceResourceKind.skillDefinition,
+              }
+            : const {},
       WorkspaceResourceKind.agent ||
-      WorkspaceResourceKind.serviceConnection ||
       WorkspaceResourceKind.toolGroup ||
       WorkspaceResourceKind.mcpServer ||
       WorkspaceResourceKind.skillDefinition ||
@@ -190,6 +198,7 @@ class WorkspaceResourceValidation {
       if (value is! String || value.isEmpty) throw const FormatException();
       references.add(WorkspaceResourceReference(targetKind, value));
     }
+
     return references;
   }
 

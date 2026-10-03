@@ -5,7 +5,9 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_transcript_context_adapter.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -54,6 +56,70 @@ void main() {
             .where((message) => message.isAgentTranscriptContextUpdate),
         hasLength(1),
       );
+    }),
+  );
+
+  test(
+    'applies v1 tool order deterministically',
+    () => _withFixture((messages, conversations, adapter) async {
+      final _ = await _message(messages, 'Visible request', isUser: true);
+      final _ = await _storedContextUpdate(
+        messages,
+        AgentTranscriptContextCodec.encodeUpdate(
+          .new(
+            toolsAdded: [_tool('beta'), _tool('alpha')],
+            toolOrder: ['alpha', 'beta'],
+          ),
+        ),
+      );
+
+      final result = await adapter.reconcile(
+        conversationId: 'source',
+        contextMessages: const [],
+        tools: [_tool('alpha'), _tool('beta')],
+      );
+
+      expect(result.tools.map((tool) => tool.name), ['alpha', 'beta']);
+    }),
+  );
+
+  test(
+    'decode failure blocks replay while history remains exportable',
+    () => _withFixture((messages, conversations, adapter) async {
+      final visible = await _message(messages, 'Visible request', isUser: true);
+      final _ = await _storedContextUpdate(
+        messages,
+        '''{"version":1,"toolsAdded":[{"description":"PRIVATE PROMPT"}],"toolsRemoved":[],"credential":"private-token"}''',
+      );
+
+      await expectLater(
+        adapter.reconcile(
+          conversationId: 'source',
+          contextMessages: const [],
+          tools: const [],
+        ),
+        throwsA(isA<MalformedTranscriptContextException>()),
+      );
+
+      final visibleMessages = await messages.getMessagesByConversation(
+        'source',
+      );
+      expect(visibleMessages, [visible]);
+      final conversation = await conversations.getConversationById('source');
+      if (conversation == null) {
+        throw StateError('Fixture conversation missing');
+      }
+      final archive = await ConversationArchiveCodec.exportConversation((
+        conversation: conversation,
+        messages: visibleMessages,
+        modelLabel: null,
+        agentContext: null,
+        readAttachmentBytes: (_) async => Uint8List(0),
+      ));
+
+      expect(archive, contains('Visible request'));
+      expect(archive, isNot(contains('PRIVATE PROMPT')));
+      expect(archive, isNot(contains('private-token')));
     }),
   );
 
@@ -316,6 +382,26 @@ Future<MessageEntity> _message(
     isUser: isUser,
     status: .sent,
     createdAt: createdAt,
+  ),
+);
+
+Future<MessageEntity> _storedContextUpdate(
+  MessageRepository repository,
+  String content,
+) => repository.createMessage(
+  .new(
+    conversationId: 'source',
+    content: content,
+    messageType: .system,
+    isUser: false,
+    status: .sent,
+    metadata: jsonEncode(
+      const MessageMetadataEntity(
+        modelMetadata: {
+          MessageMetadataEntity.agentTranscriptContextMetadataKey: true,
+        },
+      ).toJson(),
+    ),
   ),
 );
 

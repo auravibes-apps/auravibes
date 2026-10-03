@@ -9,7 +9,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'agent_list_notifier.freezed.dart';
 part 'agent_list_notifier.g.dart';
 
-@riverpod
+/// Retains the existing query, loaded pages and cursor across list visits.
+@Riverpod(keepAlive: true)
 class AgentListNotifier extends _$AgentListNotifier {
   static const _searchDelay = Duration(milliseconds: 300);
 

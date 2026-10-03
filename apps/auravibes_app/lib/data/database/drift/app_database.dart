@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.da
 import 'package:auravibes_app/data/database/drift/daos/mcp_servers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/model_connections_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/model_usage_records_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/recent_model_selections_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
@@ -34,6 +35,7 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
+import 'package:auravibes_app/data/database/drift/tables/model_usage_records.dart';
 import 'package:auravibes_app/data/database/drift/tables/recent_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/skill_credential_definitions.dart';
@@ -60,6 +62,7 @@ export 'daos/conversation_skills_dao.dart';
 export 'daos/conversation_tools_dao.dart';
 export 'daos/message_dao.dart';
 export 'daos/model_connections_dao.dart';
+export 'daos/model_usage_records_dao.dart';
 export 'daos/recent_model_selections_dao.dart';
 export 'daos/skill_credentials_dao.dart';
 export 'daos/workspace_compaction_settings_dao.dart';
@@ -97,6 +100,7 @@ part 'app_database.g.dart';
     ConversationSkills,
     AppSkillWorkspaceSettings,
     RecentModelSelections,
+    ModelUsageRecords,
   ],
   daos: [
     WorkspaceDao,
@@ -121,6 +125,7 @@ part 'app_database.g.dart';
     ConversationSkillsDao,
     AppSkillWorkspaceSettingsDao,
     RecentModelSelectionsDao,
+    ModelUsageRecordsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -151,8 +156,12 @@ class AppDatabase extends _$AppDatabase {
       _mcpOutputSchemaVersion + 1;
   static const int _compactionCheckpointSchemaVersion =
       _compactionBudgetsSchemaVersion + 1;
-  static const int _mcpCatalogSnapshotSchemaVersion =
+  static const int _modelCapabilitiesSchemaVersion =
       _compactionCheckpointSchemaVersion + 1;
+  static const int _modelUsageSchemaVersion =
+      _modelCapabilitiesSchemaVersion + 1;
+  static const int _mcpCatalogSnapshotSchemaVersion =
+      _modelUsageSchemaVersion + 1;
   static const int _mcpTestSummarySchemaVersion =
       _mcpCatalogSnapshotSchemaVersion + 1;
   static const int _toolSamplingPolicySchemaVersion =
@@ -200,6 +209,31 @@ extension on AppDatabase {
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
+    await _upgradeModelCapabilitiesSchema(m);
+    await _upgradeModelUsageSchema(m);
+  }
+
+  Future<void> _upgradeModelUsageSchema(Migrator m) async {
+    if (await _tableExists('api_models') &&
+        !await _columnExists('api_models', 'cost_cache_write')) {
+      await m.addColumn(apiModels, apiModels.costCacheWrite);
+    }
+    if (!await _tableExists('model_usage_records')) {
+      await m.createTable(modelUsageRecords);
+    }
+  }
+
+  Future<void> _upgradeModelCapabilitiesSchema(Migrator m) async {
+    if (!await _tableExists('api_models')) return;
+    for (final column in [
+      apiModels.supportsPromptCacheMarkers,
+      apiModels.supportsMidConversationSystemMessages,
+      apiModels.supportsToolDeltas,
+      apiModels.supportsDeferredTools,
+    ]) {
+      if (await _columnExists('api_models', column.name)) continue;
+      await m.addColumn(apiModels, column);
+    }
   }
 
   Future<void> _runCoreUpgrades(Migrator m, int from) async {

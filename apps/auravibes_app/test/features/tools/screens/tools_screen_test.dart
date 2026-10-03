@@ -133,6 +133,8 @@ void main() {
     testWidgets('confirms before resetting workspace tool permissions', (
       tester,
     ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       var resetCalls = 0;
       final notifier = _ResetWorkspaceToolsNotifier(() => resetCalls++);
       await tester.runAsync(() async {
@@ -189,6 +191,8 @@ void main() {
     });
 
     testWidgets('back button pops ToolsScreen route', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(

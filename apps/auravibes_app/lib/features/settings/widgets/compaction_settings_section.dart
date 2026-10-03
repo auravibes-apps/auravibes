@@ -8,18 +8,19 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
-import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 const _minUsagePercentage = 5;
 const _maxUsagePercentage = 100;
+const _compactionActionSpacing = 8.0;
 const _compactionSettingsTitle = AuraText(
   child: TextLocale(LocaleKeys.compaction_settings_title),
   style: .heading6,
@@ -49,6 +50,7 @@ const _compactionAutoCompactionDescription = AuraColumn(
 
 class const CompactionSettingsSection({
   required final String workspaceId,
+  final DraftExitGuard? guard,
   super.key,
 }) extends ConsumerStatefulWidget {
   @override
@@ -66,22 +68,28 @@ class _CompactionSettingsSectionState
   final _budgetControllers = <String, TextEditingController>{};
   final _invalidModelBudgets = <String>{};
   String? _validationError;
+  bool _saving = false;
+  bool _applying = false;
+  CompactionSettings _saved = .defaults;
+  String _savedRemaining =
+      '${CompactionSettings.defaults.remainingTokenThreshold}';
+  final _savedBudgets = <String, String>{};
+
+  bool get _dirty => _compactionSettingsDirty(this);
 
   @override
   void initState() {
     super.initState();
-    final settings =
-        ref
-            .read(compactionSettingsProvider(widget.workspaceId))
-            .asData
-            ?.value ??
-        CompactionSettings.defaults;
-    _applyCompactionSettings(this, settings);
-    _remainingController.text = '${settings.remainingTokenThreshold}';
+    _initializeCompactionSettings(this);
+    _remainingController.addListener(_edited);
+    widget.guard?.bind(
+      readers: (isDirty: () => _dirty, isSaving: () => _saving),
+    );
   }
 
   @override
   void dispose() {
+    _remainingController.removeListener(_edited);
     _remainingController.dispose();
     for (final controller in _budgetControllers.values) {
       controller.dispose();
@@ -97,67 +105,174 @@ class _CompactionSettingsSectionState
       listWorkspaceModelSelectionsProvider(workspaceId: widget.workspaceId),
     );
 
-    return AuraCard(
-      child: _CompactionSettingsColumn(state: this, models: models),
+    return ExcludeFocus(
+      excluding: _saving,
+      child: IgnorePointer(
+        ignoring: _saving,
+        child: AuraCard(
+          child: _CompactionSettingsColumn(state: this, models: models),
+        ),
+      ),
     );
   }
 
-  void _handleSettingsChange(CompactionSettings? settings) {
-    if (settings == null) return;
-    _remainingController.text = '${settings.remainingTokenThreshold}';
-    setState(() {
-      _applyCompactionSettings(this, settings);
-      _invalidModelBudgets.clear();
-    });
+  void _markClean(CompactionSettings settings) {
+    _saved = settings;
+    _savedRemaining = _remainingController.text;
+    _savedBudgets.clear();
+    for (final entry in _budgetControllers.entries) {
+      _savedBudgets[entry.key] = entry.value.text;
+    }
+    widget.guard?.update(isDirty: false, isSaving: _saving);
   }
 
-  Future<void> _save() => _saveCompactionSettingsForm(this);
+  void _setLoadedSettings(CompactionSettings settings) {
+    _applying = true;
+    setState(() => _applyLoadedCompactionSettings(this, settings));
+    _applying = false;
+  }
 
-  Future<void> _resetDefaults() => _resetCompactionSettingsForm(this);
+  void _edited() {
+    if (_applying) return;
+    widget.guard?.releaseApproval(restoreFocus: false);
+    widget.guard?.update(isDirty: _dirty, isSaving: _saving);
+  }
 
-  void _setUsagePercentage(double value) {
-    setState(() => _usagePercentageThreshold = value.round());
+  Future<void> _save() async {
+    if (_saving) return;
+    await _saveCompactionSettingsForm(this);
+  }
+
+  Future<void> _resetDefaults() async {
+    if (_saving) return;
+    _updateState(() => _saving = true);
+    try {
+      await _resetCompactionSettingsForm(this);
+    } finally {
+      if (mounted) _updateState(() => _saving = false);
+    }
   }
 
   void _updateState(VoidCallback update) {
     setState(update);
+    _edited();
   }
+}
 
-  TextEditingController _budgetController({
-    required String modelKey,
-    required bool reserveTokens,
-  }) {
-    final override = _modelOverrides[modelKey];
-    final value = reserveTokens
-        ? override?.reserveTokens
-        : override?.keepRecentTokens;
+bool _compactionSettingsDirty(_CompactionSettingsSectionState state) =>
+    _compactionScalarSettingsChanged(state) ||
+    _compactionModelSettingsChanged(state);
 
-    return _budgetControllers.putIfAbsent(
-      _compactionModelBudgetFieldKey(modelKey, reserveTokens),
-      () => TextEditingController(text: value?.toString() ?? ''),
+bool _compactionScalarSettingsChanged(_CompactionSettingsSectionState state) =>
+    state._autoEnabled != state._saved.autoCompactionEnabled ||
+    state._usagePercentageThreshold != state._saved.usagePercentageThreshold ||
+    state._remainingController.text != state._savedRemaining ||
+    !const DeepCollectionEquality().equals(
+      state._modelOverrides,
+      state._saved.modelOverrides,
+    ) ||
+    state._invalidModelBudgets.isNotEmpty;
+
+bool _compactionModelSettingsChanged(_CompactionSettingsSectionState state) =>
+    state._budgetControllers.entries.any(
+      (entry) => entry.value.text != (state._savedBudgets[entry.key] ?? ''),
     );
-  }
 
-  void _updateModelBudget({
-    required String modelKey,
-    required bool reserveTokens,
-    required String value,
-  }) {
-    final update = _parseCompactionModelBudgetUpdate(
-      modelKey,
-      reserveTokens,
-      value,
-    );
-    if (update == null) {
-      _markInvalidCompactionModelBudget(this, modelKey, reserveTokens);
+void _initializeCompactionSettings(_CompactionSettingsSectionState state) {
+  final settings =
+      state.ref
+          .read(compactionSettingsProvider(state.widget.workspaceId))
+          .asData
+          ?.value ??
+      CompactionSettings.defaults;
+  _applyCompactionSettings(state, settings);
+  state._remainingController.text = '${settings.remainingTokenThreshold}';
+  state._markClean(settings);
+}
 
-      return;
-    }
-    _updateState(() {
-      final _ = _invalidModelBudgets.remove(update.fieldKey);
-      _applyCompactionModelBudget(this, update);
-    });
+void _handleCompactionSettingsChange(
+  _CompactionSettingsSectionState state,
+  CompactionSettings? settings,
+) {
+  if (settings == null || state._dirty || state._saving) return;
+  _loadCompactionSettings(state, settings);
+}
+
+void _loadCompactionSettings(
+  _CompactionSettingsSectionState state,
+  CompactionSettings settings,
+) => state._setLoadedSettings(settings);
+
+void _applyLoadedCompactionSettings(
+  _CompactionSettingsSectionState state,
+  CompactionSettings settings,
+) {
+  _applyCompactionSettings(state, settings);
+  state._remainingController.text = '${settings.remainingTokenThreshold}';
+  for (final entry in state._budgetControllers.entries) {
+    entry.value.text = _savedBudgetValue(settings, entry.key);
   }
+  state
+    .._invalidModelBudgets.clear()
+    .._validationError = null
+    .._markClean(settings);
+}
+
+void _setCompactionUsagePercentage(
+  _CompactionSettingsSectionState state,
+  double value,
+) => state._updateState(() => state._usagePercentageThreshold = value.round());
+
+TextEditingController _compactionBudgetController(
+  _CompactionSettingsSectionState state, {
+  required String modelKey,
+  required bool reserveTokens,
+}) {
+  final key = _compactionModelBudgetFieldKey(modelKey, reserveTokens);
+  final override = state._modelOverrides[modelKey];
+  final value = _compactionBudgetValue(override, reserveTokens);
+
+  return state._budgetControllers.putIfAbsent(
+    key,
+    () => _newCompactionBudgetController(state, key, value),
+  );
+}
+
+int? _compactionBudgetValue(
+  CompactionModelOverride? override,
+  bool reserveTokens,
+) => reserveTokens ? override?.reserveTokens : override?.keepRecentTokens;
+
+TextEditingController _newCompactionBudgetController(
+  _CompactionSettingsSectionState state,
+  String fieldKey,
+  int? value,
+) {
+  state._savedBudgets[fieldKey] = _savedBudgetValue(state._saved, fieldKey);
+
+  return TextEditingController(text: value?.toString() ?? '');
+}
+
+void _updateCompactionModelBudget(
+  _CompactionSettingsSectionState state, {
+  required String modelKey,
+  required bool reserveTokens,
+  required String value,
+}) {
+  final update = _parseCompactionModelBudgetUpdate(
+    modelKey,
+    reserveTokens,
+    value,
+  );
+  if (update == null) {
+    _markInvalidCompactionModelBudget(state, modelKey, reserveTokens);
+
+    return;
+  }
+  state._updateState(() {
+    final _ = state._invalidModelBudgets.remove(update.fieldKey);
+    _applyCompactionModelBudget(state, update);
+  });
 }
 
 typedef _CompactionModelBudgetUpdate = ({
@@ -229,7 +344,7 @@ void _listenForCompactionSettings(
 ) {
   ref.listen(
     compactionSettingsProvider(workspaceId),
-    (_, next) => state._handleSettingsChange(next.asData?.value),
+    (_, next) => _handleCompactionSettingsChange(state, next.asData?.value),
   );
 }
 
@@ -251,19 +366,33 @@ Future<void> _submitCompactionSettings(
   _CompactionSettingsSectionState state,
   CompactionSettings settings,
 ) async {
-  try {
-    await _persistCompactionSettingsForState(state, settings);
-  } on Exception catch (error) {
-    _showCompactionSaveError(state, error);
-
-    return;
-  }
+  state._updateState(() => state._saving = true);
+  final saved = await _trySubmitCompactionSettings(state, settings);
+  if (!saved) return;
 
   _showCompactionMessage(
     state,
     LocaleKeys.compaction_settings_save_success,
     .success,
   );
+}
+
+Future<bool> _trySubmitCompactionSettings(
+  _CompactionSettingsSectionState state,
+  CompactionSettings settings,
+) async {
+  try {
+    await _persistCompactionSettingsForState(state, settings);
+    if (state.mounted) state._markClean(settings);
+  } on Exception catch (error) {
+    _showCompactionSaveError(state, error);
+
+    return false;
+  } finally {
+    if (state.mounted) state._updateState(() => state._saving = false);
+  }
+
+  return true;
 }
 
 void _showCompactionSaveError(
@@ -333,14 +462,18 @@ Future<bool> _tryResetStoredCompactionSettings(
   return true;
 }
 
-void _resetCompactionForm(_CompactionSettingsSectionState state) {
-  const defaults = CompactionSettings.defaults;
-  state._updateState(() {
-    _applyCompactionSettings(state, defaults);
-    state._remainingController.text = '${defaults.remainingTokenThreshold}';
-    state._validationError = null;
-    state._invalidModelBudgets.clear();
-  });
+void _resetCompactionForm(_CompactionSettingsSectionState state) =>
+    _loadCompactionSettings(state, .defaults);
+
+String _savedBudgetValue(CompactionSettings settings, String fieldKey) {
+  final parts = fieldKey.split('/');
+  final modelKey = parts.take(parts.length - 1).join('/');
+  final override = settings.modelOverrides[modelKey];
+  final value = fieldKey.endsWith('/reserve')
+      ? override?.reserveTokens
+      : override?.keepRecentTokens;
+
+  return value?.toString() ?? '';
 }
 
 void _showCompactionMessage(
@@ -403,35 +536,10 @@ Future<void> _resetStoredCompactionSettings(
   WidgetRef ref,
   String workspaceId,
 ) async {
-  final session = await ref.read(
-    workspaceSessionForRouteProvider(workspaceId).future,
-  );
-  if (session.cloud != null) {
-    await _resetCloudCompactionSettings(ref, workspaceId);
-
-    return;
-  }
-
-  await _resetLocalCompactionSettings(ref, workspaceId);
-}
-
-Future<void> _resetCloudCompactionSettings(
-  WidgetRef ref,
-  String workspaceId,
-) async {
   final usecase = await ref.read(
     saveWorkspaceCompactionSettingsUsecaseProvider(workspaceId).future,
   );
   await usecase.reset(workspaceId: workspaceId);
-}
-
-Future<void> _resetLocalCompactionSettings(
-  WidgetRef ref,
-  String workspaceId,
-) async {
-  final _ = await ref
-      .read(workspaceCompactionSettingsRepositoryProvider)
-      .resetOverrides(workspaceId);
 }
 
 void _showCompactionSnackBar({
@@ -552,14 +660,16 @@ class const _CompactionModelBudgetInput({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _CompactionBudgetTextInput(
-    controller: state._budgetController(
+    controller: _compactionBudgetController(
+      state,
       modelKey: modelKey,
       reserveTokens: reserveTokens,
     ),
     label: reserveTokens
         ? LocaleKeys.compaction_settings_reserve_tokens
         : LocaleKeys.compaction_settings_keep_recent_tokens,
-    onChanged: (value) => state._updateModelBudget(
+    onChanged: (value) => _updateCompactionModelBudget(
+      state,
       modelKey: modelKey,
       reserveTokens: reserveTokens,
       value: value,
@@ -646,7 +756,7 @@ class const _CompactionUsageThresholdSlider({
   @override
   Widget build(BuildContext _) => AuraSlider(
     value: state._usagePercentageThreshold.toDouble(),
-    onChanged: state._setUsagePercentage,
+    onChanged: (value) => _setCompactionUsagePercentage(state, value),
     min: _minUsagePercentage.toDouble(),
     max: _maxUsagePercentage.toDouble(),
     semanticLabel: LocaleKeys.compaction_settings_usage_threshold.tr(),
@@ -673,11 +783,12 @@ class const _CompactionSettingsActions({
   required final _CompactionSettingsSectionState state,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Row(
-    mainAxisAlignment: .end,
+  Widget build(BuildContext _) => Wrap(
+    alignment: .end,
+    spacing: _compactionActionSpacing,
+    runSpacing: _compactionActionSpacing,
     children: [
       _CompactionResetButton(state: state),
-      const SizedBox(width: 8),
       _CompactionSaveButton(state: state),
     ],
   );
@@ -694,6 +805,7 @@ class const _CompactionResetButton({
       child: const TextLocale(LocaleKeys.compaction_settings_reset_defaults),
       variant: .ghost,
       size: .small,
+      disabled: state._saving,
     ),
     identifier: 'settings_compaction_reset',
   );
@@ -709,6 +821,7 @@ class const _CompactionSaveButton({
       onPressed: () => unawaited(state._save()),
       child: const TextLocale(LocaleKeys.settings_screen_actions_save),
       size: .small,
+      disabled: state._saving,
     ),
     identifier: 'settings_compaction_save',
   );

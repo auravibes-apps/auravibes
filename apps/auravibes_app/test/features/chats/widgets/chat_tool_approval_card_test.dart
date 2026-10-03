@@ -374,6 +374,78 @@ void main() {
       ).called(1);
     });
 
+    for (final source in ['conv-1', 'child-1']) {
+      for (final action in [
+        'allow_once',
+        'allow_conversation',
+        'skip',
+        'stop_all',
+      ]) {
+        testWidgets('decision $action resolves exact source $source', (
+          tester,
+        ) async {
+          final effects = _DecisionEffects();
+          final runtime = _MockAuraAgentService();
+          final cancellation = _MockAgentCancellationEffects();
+          when(() => cancellation.start(source))
+              .thenReturn(agent.AgentCancellationScope());
+          when(() => runtime.tools).thenReturn(
+            agent.ToolsNamespace<ResolvedTool>(
+              approvals: effects,
+              skips: effects,
+              stopPending: effects,
+              resume: _MockAgentToolResumeProvider(),
+              cancellationEffects: cancellation,
+            ),
+          );
+          await pumpAndInit(
+            tester,
+            buildSubject(
+              overrides: [
+                pendingToolCallsProvider.overrideWith(
+                  (ref, _) => [
+                    _createPendingToolCall(sourceConversationId: source),
+                  ],
+                ),
+                auraAgentServiceProvider.overrideWithValue(runtime),
+              ],
+            ),
+          );
+          await tester.tap(
+            find.byKey(ValueKey<String>('tool_approval_$action')),
+          );
+          final _ = await tester.pumpAndSettle();
+          expect(effects.sources, everyElement(source));
+          expect(effects.sources, isNotEmpty);
+          expect(
+            effects.grants,
+            action == 'allow_conversation' ? [source] : isEmpty,
+          );
+          if (action.startsWith('allow')) {
+            expect(effects.executions, 1);
+            expect(
+              effects.result?.resultStatus,
+              agent.AgentToolResultStatus.success,
+            );
+            expect(effects.result?.messageId, 'msg-1');
+            expect(effects.result?.toolCallId, 'tc-1');
+            expect(effects.result?.conversationId, source);
+            expect(effects.resumeCount, 1);
+          } else {
+            expect(effects.executions, 0);
+            expect(effects.skipCount, action == 'skip' ? 1 : 0);
+            expect(effects.stopCount, action == 'stop_all' ? 1 : 0);
+            expect(effects.resumeCount, action == 'skip' ? 1 : 0);
+          }
+          expect(
+            find.byKey(const ValueKey<String>('tool_approval_allow_once')),
+            findsNothing,
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
     testWidgets('shows navigation chevrons for multiple pending calls', (
       tester,
     ) async {
@@ -926,3 +998,119 @@ class _MockAgentToolResumeProvider extends Mock
 
 class _MockAgentCancellationEffects extends Mock
     implements agent.AgentCancellationEffects;
+
+class _DecisionEffects
+    implements
+        agent.ApproveToolCallProvider<ResolvedTool>,
+        agent.SkipToolCallProvider,
+        agent.StopPendingToolCallsProvider {
+  final sources = <String>[];
+  final grants = <String>[];
+  int executions = 0;
+  int resumeCount = 0;
+  int skipCount = 0;
+  int stopCount = 0;
+  agent.AgentToolCallResultUpdateRequest? result;
+
+  @override
+  Future<agent.AgentApprovableToolCall?> loadToolCall({
+    required String messageId,
+    required String toolCallId,
+    required String conversationId,
+  }) async {
+    sources.add(conversationId);
+
+    return agent.AgentApprovableToolCall(
+      conversationId: conversationId,
+      name: 'built_in_1_read_file',
+      argumentsRaw: '{"input": "test.txt"}',
+    );
+  }
+
+  @override
+  Future<ResolvedTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+    required String argumentsRaw,
+  }) async {
+    sources.add(conversationId);
+
+    return ResolvedTool.skillControl(toolIdentifier: 'fixture');
+  }
+
+  @override
+  Future<void> grantToolForConversation({
+    required String conversationId,
+    required ResolvedTool tool,
+  }) async {
+    grants.add(conversationId);
+  }
+
+  @override
+  Future<Object?> runResolvedTool({
+    required String conversationId,
+    required ResolvedTool tool,
+    required Map<String, dynamic> arguments,
+  }) async {
+    sources.add(conversationId);
+    executions++;
+    expect(arguments, {'input': 'test.txt'});
+
+    return {'fixtureResult': 'Complete'};
+  }
+
+  @override
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+    required String conversationId,
+  }) async {
+    sources.add(conversationId);
+  }
+
+  @override
+  Future<void> updateToolCallResult(
+    agent.AgentToolCallResultUpdateRequest request,
+  ) async {
+    result = request;
+  }
+
+  @override
+  Future<void> resumeConversationIfReady({
+    required String messageId,
+    required String conversationId,
+  }) async {
+    sources.add(conversationId);
+    resumeCount++;
+  }
+
+  @override
+  bool isCancellationRequested(String conversationId) => false;
+  @override
+  void logToolExecutionError(
+    agent.AgentToolExecutionErrorRequest<ResolvedTool> request,
+  ) {
+    throw StateError('Unexpected fixture execution error');
+  }
+
+  @override
+  Future<bool> skipToolCall({
+    required String messageId,
+    required String toolCallId,
+    required String conversationId,
+  }) async {
+    sources.add(conversationId);
+    skipCount++;
+
+    return true;
+  }
+
+  @override
+  Future<void> stopPendingToolCalls({
+    required String messageId,
+    required String conversationId,
+  }) async {
+    sources.add(conversationId);
+    stopCount++;
+  }
+}

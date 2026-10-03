@@ -7,6 +7,7 @@ import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
+import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -23,7 +24,7 @@ final _logger = Logger('WorkspaceSwitcher');
 /// itself tracks idle/loading/error status.
 @Riverpod(keepAlive: true)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher
-    with _WorkspaceSwitcherActions {
+    with _WorkspaceSwitcherActions, _WorkspaceSwitcherTransitionActions {
   Timer? _debounceTimer;
   final _switchQueue = Queue<({String workspaceId, int generation})>();
   var _isProcessingQueue = false;
@@ -51,6 +52,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher
 
   /// Cancels any pending debounced switch.
   void cancelPendingSwitch() {
+    ref.read(draftExitRegistryProvider).releaseApprovals();
     _debounceTimer?.cancel();
     _switchGeneration++;
     state = const WorkspaceSwitchState();
@@ -90,37 +92,12 @@ mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
     try {
       await _performSwitchRequest(switcher, workspaceId, switchGeneration);
     } on Object catch (error, stackTrace) {
+      if (ref.mounted) {
+        ref.read(draftExitRegistryProvider).releaseApprovals();
+      }
       _logger.severe('Workspace switch failed', error, stackTrace);
       _setSwitchError(switcher, workspaceId, switchGeneration);
     }
-  }
-
-  bool _beginSwitch(String workspaceId, int switchGeneration) {
-    if (!_isCurrent(switchGeneration)) return false;
-    state = WorkspaceSwitchState(
-      status: .loading,
-      targetWorkspaceId: workspaceId,
-    );
-
-    return true;
-  }
-
-  Future<String> _selectWorkspace(String workspaceId) =>
-      ref.read(selectWorkspaceUsecaseProvider).call(workspaceId: workspaceId);
-
-  bool _isCurrent(int switchGeneration) =>
-      ref.mounted &&
-      switchGeneration == (this as WorkspaceSwitcher)._switchGeneration;
-
-  void _completeSwitch(
-    String workspaceId,
-    DateTime startTime,
-    int switchGeneration,
-  ) {
-    ref.read(routerProvider).go('/workspaces/$workspaceId/chat/new');
-    final duration = DateTime.now().difference(startTime);
-    _logger.info('Workspace switch completed in ${duration.inMilliseconds}ms');
-    if (_isCurrent(switchGeneration)) state = const WorkspaceSwitchState();
   }
 
   void _setSwitchError(
@@ -137,6 +114,95 @@ mixin _WorkspaceSwitcherActions on _$WorkspaceSwitcher {
   }
 }
 
+mixin _WorkspaceSwitcherTransitionActions on _$WorkspaceSwitcher {
+  bool _beginSwitch(String workspaceId, int switchGeneration) {
+    if (!_isCurrent(switchGeneration)) return false;
+    state = WorkspaceSwitchState(
+      status: .loading,
+      targetWorkspaceId: workspaceId,
+    );
+
+    return true;
+  }
+
+  Future<String> _selectWorkspace(String workspaceId, int generation) => ref
+      .read(selectWorkspaceUsecaseProvider)
+      .call(workspaceId: workspaceId, isCurrent: () => _isCurrent(generation));
+
+  bool _isCurrent(int switchGeneration) =>
+      ref.mounted &&
+      switchGeneration == (this as WorkspaceSwitcher)._switchGeneration;
+
+  void _completeSwitch(
+    String workspaceId,
+    DateTime startTime,
+    int switchGeneration,
+  ) {
+    final router = ref.read(routerProvider);
+    ref.read(draftExitRegistryProvider).completeActiveTransition(router);
+    router.go('/workspaces/$workspaceId/chat/new');
+    final duration = DateTime.now().difference(startTime);
+    _logger.info('Workspace switch completed in ${duration.inMilliseconds}ms');
+    if (_isCurrent(switchGeneration)) state = const WorkspaceSwitchState();
+  }
+
+  Future<void> _performSwitchAttempt(_SwitchAttempt attempt) async {
+    final switcher = attempt.switcher;
+    if (!_beginSwitchAttempt(switcher, attempt)) return;
+    if (!await _authorizeSwitch(switcher, attempt)) return;
+
+    final selectedWorkspaceId = await _selectAndReleaseIfStale(
+      switcher,
+      attempt,
+    );
+    _completeSwitchIfCurrent(switcher, selectedWorkspaceId, attempt);
+  }
+
+  bool _beginSwitchAttempt(WorkspaceSwitcher switcher, _SwitchAttempt attempt) {
+    _logger.info('Workspace switch started');
+
+    return switcher._beginSwitch(attempt.workspaceId, attempt.switchGeneration);
+  }
+
+  Future<String> _selectAndReleaseIfStale(
+    WorkspaceSwitcher switcher,
+    _SwitchAttempt attempt,
+  ) async {
+    final workspaceId = await switcher._selectWorkspace(
+      attempt.workspaceId,
+      attempt.switchGeneration,
+    );
+    if (!switcher._isCurrent(attempt.switchGeneration)) {
+      ref.read(draftExitRegistryProvider).releaseApprovals();
+    }
+
+    return workspaceId;
+  }
+
+  Future<bool> _authorizeSwitch(
+    WorkspaceSwitcher switcher,
+    _SwitchAttempt attempt,
+  ) async {
+    final registry = ref.read(draftExitRegistryProvider);
+    final router = ref.read(routerProvider);
+    final allowed = await registry.canExitActive(router);
+    if (!switcher._isCurrent(attempt.switchGeneration)) {
+      registry.releaseApprovals();
+
+      return false;
+    }
+    if (!allowed) {
+      switcher.state = const WorkspaceSwitchState();
+      registry.releaseApprovals();
+
+      return false;
+    }
+    registry.holdActiveApproval(router);
+
+    return true;
+  }
+}
+
 Future<void> _performSwitchRequest(
   WorkspaceSwitcher switcher,
   String workspaceId,
@@ -149,7 +215,7 @@ Future<void> _performSwitchRequest(
     startTime: DateTime.now(),
   );
 
-  return _performSwitchAttempt(attempt);
+  return switcher._performSwitchAttempt(attempt);
 }
 
 Future<void> _drainSwitchQueueRequests(WorkspaceSwitcher switcher) async {
@@ -165,20 +231,6 @@ typedef _SwitchAttempt = ({
   int switchGeneration,
   DateTime startTime,
 });
-
-Future<void> _performSwitchAttempt(_SwitchAttempt attempt) async {
-  final switcher = attempt.switcher;
-  _logger.info('Workspace switch started');
-
-  if (!switcher._beginSwitch(attempt.workspaceId, attempt.switchGeneration)) {
-    return;
-  }
-  final selectedWorkspaceId = await switcher._selectWorkspace(
-    attempt.workspaceId,
-  );
-
-  _completeSwitchIfCurrent(switcher, selectedWorkspaceId, attempt);
-}
 
 void _completeSwitchIfCurrent(
   WorkspaceSwitcher switcher,

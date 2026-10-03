@@ -23,14 +23,15 @@ mixin _$ApiModelEntity {
  int get limitOutput; List<String> get modalitiesInput; List<String> get modalitiesOutput;/// Models.dev model family identifier.
  String? get family;/// Cost per 1M input tokens.
  double? get costInput;/// Cost per 1M cache read tokens.
- double? get costCacheRead;/// Cost per 1M output tokens.
+ double? get costCacheRead;/// Cost per 1M cache creation tokens.
+ double? get costCacheWrite;/// Cost per 1M output tokens.
  double? get costOutput;/// Whether the model is open source.
  bool? get openWeights;/// Whether the provider reports reasoning/thinking support for this model.
  bool get supportsReasoning;/// Provider/model reasoning controls from the catalog.
  List<ReasoningOption> get reasoningOptions;/// Whether this row maps to a canonical models.dev model.
  bool get isCanonical;/// Whether models.dev reports a priority backend mode for this model.
  bool get supportsPriorityMode;/// Whether models.dev reports tool-call support for this model.
- bool get supportsToolCalls;
+ bool get supportsToolCalls; bool get supportsPromptCacheMarkers; bool get supportsMidConversationSystemMessages; bool get supportsToolDeltas; bool get supportsDeferredTools;
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -42,20 +43,20 @@ $ApiModelEntityCopyWith<ApiModelEntity> get copyWith => _$ApiModelEntityCopyWith
 @override
 bool operator ==(Object other) {
   final _this = this as ApiModelEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, _this.modelProvider) || other.modelProvider == _this.modelProvider)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.limitContext, _this.limitContext) || other.limitContext == _this.limitContext)&&(identical(other.limitOutput, _this.limitOutput) || other.limitOutput == _this.limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.family, _this.family) || other.family == _this.family)&&(identical(other.costInput, _this.costInput) || other.costInput == _this.costInput)&&(identical(other.costCacheRead, _this.costCacheRead) || other.costCacheRead == _this.costCacheRead)&&(identical(other.costOutput, _this.costOutput) || other.costOutput == _this.costOutput)&&(identical(other.openWeights, _this.openWeights) || other.openWeights == _this.openWeights)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _this.reasoningOptions)&&(identical(other.isCanonical, _this.isCanonical) || other.isCanonical == _this.isCanonical)&&(identical(other.supportsPriorityMode, _this.supportsPriorityMode) || other.supportsPriorityMode == _this.supportsPriorityMode)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, _this.modelProvider) || other.modelProvider == _this.modelProvider)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.limitContext, _this.limitContext) || other.limitContext == _this.limitContext)&&(identical(other.limitOutput, _this.limitOutput) || other.limitOutput == _this.limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.family, _this.family) || other.family == _this.family)&&(identical(other.costInput, _this.costInput) || other.costInput == _this.costInput)&&(identical(other.costCacheRead, _this.costCacheRead) || other.costCacheRead == _this.costCacheRead)&&(identical(other.costCacheWrite, _this.costCacheWrite) || other.costCacheWrite == _this.costCacheWrite)&&(identical(other.costOutput, _this.costOutput) || other.costOutput == _this.costOutput)&&(identical(other.openWeights, _this.openWeights) || other.openWeights == _this.openWeights)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _this.reasoningOptions)&&(identical(other.isCanonical, _this.isCanonical) || other.isCanonical == _this.isCanonical)&&(identical(other.supportsPriorityMode, _this.supportsPriorityMode) || other.supportsPriorityMode == _this.supportsPriorityMode)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls)&&(identical(other.supportsPromptCacheMarkers, _this.supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == _this.supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, _this.supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == _this.supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, _this.supportsToolDeltas) || other.supportsToolDeltas == _this.supportsToolDeltas)&&(identical(other.supportsDeferredTools, _this.supportsDeferredTools) || other.supportsDeferredTools == _this.supportsDeferredTools));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ApiModelEntity;
-  return Object.hash(runtimeType,_this.modelProvider,_this.id,_this.name,_this.limitContext,_this.limitOutput,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.family,_this.costInput,_this.costCacheRead,_this.costOutput,_this.openWeights,_this.supportsReasoning,const DeepCollectionEquality().hash(_this.reasoningOptions),_this.isCanonical,_this.supportsPriorityMode,_this.supportsToolCalls);
+  return Object.hashAll([runtimeType,_this.modelProvider,_this.id,_this.name,_this.limitContext,_this.limitOutput,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.family,_this.costInput,_this.costCacheRead,_this.costCacheWrite,_this.costOutput,_this.openWeights,_this.supportsReasoning,const DeepCollectionEquality().hash(_this.reasoningOptions),_this.isCanonical,_this.supportsPriorityMode,_this.supportsToolCalls,_this.supportsPromptCacheMarkers,_this.supportsMidConversationSystemMessages,_this.supportsToolDeltas,_this.supportsDeferredTools]);
 }
 
 @override
 String toString() {
   final _this = this as ApiModelEntity;
-  return 'ApiModelEntity(modelProvider: ${_this.modelProvider}, id: ${_this.id}, name: ${_this.name}, limitContext: ${_this.limitContext}, limitOutput: ${_this.limitOutput}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, family: ${_this.family}, costInput: ${_this.costInput}, costCacheRead: ${_this.costCacheRead}, costOutput: ${_this.costOutput}, openWeights: ${_this.openWeights}, supportsReasoning: ${_this.supportsReasoning}, reasoningOptions: ${_this.reasoningOptions}, isCanonical: ${_this.isCanonical}, supportsPriorityMode: ${_this.supportsPriorityMode}, supportsToolCalls: ${_this.supportsToolCalls})';
+  return 'ApiModelEntity(modelProvider: ${_this.modelProvider}, id: ${_this.id}, name: ${_this.name}, limitContext: ${_this.limitContext}, limitOutput: ${_this.limitOutput}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, family: ${_this.family}, costInput: ${_this.costInput}, costCacheRead: ${_this.costCacheRead}, costCacheWrite: ${_this.costCacheWrite}, costOutput: ${_this.costOutput}, openWeights: ${_this.openWeights}, supportsReasoning: ${_this.supportsReasoning}, reasoningOptions: ${_this.reasoningOptions}, isCanonical: ${_this.isCanonical}, supportsPriorityMode: ${_this.supportsPriorityMode}, supportsToolCalls: ${_this.supportsToolCalls}, supportsPromptCacheMarkers: ${_this.supportsPromptCacheMarkers}, supportsMidConversationSystemMessages: ${_this.supportsMidConversationSystemMessages}, supportsToolDeltas: ${_this.supportsToolDeltas}, supportsDeferredTools: ${_this.supportsDeferredTools})';
 }
 
 
@@ -66,7 +67,7 @@ abstract mixin class $ApiModelEntityCopyWith<$Res>  {
   factory $ApiModelEntityCopyWith(ApiModelEntity value, $Res Function(ApiModelEntity) _then) = _$ApiModelEntityCopyWithImpl;
 @useResult
 $Res call({
- String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
+ String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costCacheWrite, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
 });
 
 
@@ -83,7 +84,7 @@ class _$ApiModelEntityCopyWithImpl<$Res>
 
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costCacheWrite = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
   return _then(ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
@@ -95,6 +96,7 @@ as List<String>,modalitiesOutput: null == modalitiesOutput ? _self.modalitiesOut
 as List<String>,family: freezed == family ? _self.family : family // ignore: cast_nullable_to_non_nullable
 as String?,costInput: freezed == costInput ? _self.costInput : costInput // ignore: cast_nullable_to_non_nullable
 as double?,costCacheRead: freezed == costCacheRead ? _self.costCacheRead : costCacheRead // ignore: cast_nullable_to_non_nullable
+as double?,costCacheWrite: freezed == costCacheWrite ? _self.costCacheWrite : costCacheWrite // ignore: cast_nullable_to_non_nullable
 as double?,costOutput: freezed == costOutput ? _self.costOutput : costOutput // ignore: cast_nullable_to_non_nullable
 as double?,openWeights: freezed == openWeights ? _self.openWeights : openWeights // ignore: cast_nullable_to_non_nullable
 as bool?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
@@ -102,6 +104,10 @@ as bool,reasoningOptions: null == reasoningOptions ? _self.reasoningOptions : re
 as List<ReasoningOption>,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
 as bool,supportsPriorityMode: null == supportsPriorityMode ? _self.supportsPriorityMode : supportsPriorityMode // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
+as bool,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
+as bool,supportsMidConversationSystemMessages: null == supportsMidConversationSystemMessages ? _self.supportsMidConversationSystemMessages : supportsMidConversationSystemMessages // ignore: cast_nullable_to_non_nullable
+as bool,supportsToolDeltas: null == supportsToolDeltas ? _self.supportsToolDeltas : supportsToolDeltas // ignore: cast_nullable_to_non_nullable
+as bool,supportsDeferredTools: null == supportsDeferredTools ? _self.supportsDeferredTools : supportsDeferredTools // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -187,10 +193,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costCacheWrite,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ApiModelEntity() when $default != null:
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costCacheWrite,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   return orElse();
 
 }
@@ -208,10 +214,10 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costCacheWrite,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)  $default,) {final _that = this;
 switch (_that) {
 case _ApiModelEntity():
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costCacheWrite,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -228,10 +234,10 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String modelProvider,  String id,  String name,  int limitContext,  int limitOutput,  List<String> modalitiesInput,  List<String> modalitiesOutput,  String? family,  double? costInput,  double? costCacheRead,  double? costCacheWrite,  double? costOutput,  bool? openWeights,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool isCanonical,  bool supportsPriorityMode,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,) {final _that = this;
 switch (_that) {
 case _ApiModelEntity() when $default != null:
-return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls);case _:
+return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that.limitOutput,_that.modalitiesInput,_that.modalitiesOutput,_that.family,_that.costInput,_that.costCacheRead,_that.costCacheWrite,_that.costOutput,_that.openWeights,_that.supportsReasoning,_that.reasoningOptions,_that.isCanonical,_that.supportsPriorityMode,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   return null;
 
 }
@@ -243,7 +249,7 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 
 
 class _ApiModelEntity extends ApiModelEntity {
-  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false,  List<ReasoningOption> reasoningOptions = const [], this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,_reasoningOptions = reasoningOptions,super._();
+  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costCacheWrite, this.costOutput, this.openWeights, this.supportsReasoning = false,  List<ReasoningOption> reasoningOptions = const [], this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false, this.supportsPromptCacheMarkers = false, this.supportsMidConversationSystemMessages = false, this.supportsToolDeltas = false, this.supportsDeferredTools = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,_reasoningOptions = reasoningOptions,super._();
   
 
 /// ID of the provider that offers this model.
@@ -276,6 +282,8 @@ class _ApiModelEntity extends ApiModelEntity {
 @override final  double? costInput;
 /// Cost per 1M cache read tokens.
 @override final  double? costCacheRead;
+/// Cost per 1M cache creation tokens.
+@override final  double? costCacheWrite;
 /// Cost per 1M output tokens.
 @override final  double? costOutput;
 /// Whether the model is open source.
@@ -297,6 +305,10 @@ class _ApiModelEntity extends ApiModelEntity {
 @override@JsonKey() final  bool supportsPriorityMode;
 /// Whether models.dev reports tool-call support for this model.
 @override@JsonKey() final  bool supportsToolCalls;
+@override@JsonKey() final  bool supportsPromptCacheMarkers;
+@override@JsonKey() final  bool supportsMidConversationSystemMessages;
+@override@JsonKey() final  bool supportsToolDeltas;
+@override@JsonKey() final  bool supportsDeferredTools;
 
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -308,18 +320,18 @@ _$ApiModelEntityCopyWith<_ApiModelEntity> get copyWith => __$ApiModelEntityCopyW
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _reasoningOptions)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costCacheWrite, costCacheWrite) || other.costCacheWrite == costCacheWrite)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _reasoningOptions)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls)&&(identical(other.supportsPromptCacheMarkers, supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, supportsToolDeltas) || other.supportsToolDeltas == supportsToolDeltas)&&(identical(other.supportsDeferredTools, supportsDeferredTools) || other.supportsDeferredTools == supportsDeferredTools));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,const DeepCollectionEquality().hash(_reasoningOptions),isCanonical,supportsPriorityMode,supportsToolCalls);
+    return Object.hashAll([runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costCacheWrite,costOutput,openWeights,supportsReasoning,const DeepCollectionEquality().hash(_reasoningOptions),isCanonical,supportsPriorityMode,supportsToolCalls,supportsPromptCacheMarkers,supportsMidConversationSystemMessages,supportsToolDeltas,supportsDeferredTools]);
 }
 
 @override
 String toString() {
-    return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, reasoningOptions: $reasoningOptions, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
+    return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costCacheWrite: $costCacheWrite, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, reasoningOptions: $reasoningOptions, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls, supportsPromptCacheMarkers: $supportsPromptCacheMarkers, supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, supportsToolDeltas: $supportsToolDeltas, supportsDeferredTools: $supportsDeferredTools)';
 }
 
 
@@ -330,7 +342,7 @@ abstract mixin class _$ApiModelEntityCopyWith<$Res> implements $ApiModelEntityCo
   factory _$ApiModelEntityCopyWith(_ApiModelEntity value, $Res Function(_ApiModelEntity) _then) = __$ApiModelEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls
+ String modelProvider, String id, String name, int limitContext, int limitOutput, List<String> modalitiesInput, List<String> modalitiesOutput, String? family, double? costInput, double? costCacheRead, double? costCacheWrite, double? costOutput, bool? openWeights, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool isCanonical, bool supportsPriorityMode, bool supportsToolCalls, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
 });
 
 
@@ -347,7 +359,7 @@ class __$ApiModelEntityCopyWithImpl<$Res>
 
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costCacheWrite = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
   return _then(_ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
@@ -359,6 +371,7 @@ as List<String>,modalitiesOutput: null == modalitiesOutput ? _self._modalitiesOu
 as List<String>,family: freezed == family ? _self.family : family // ignore: cast_nullable_to_non_nullable
 as String?,costInput: freezed == costInput ? _self.costInput : costInput // ignore: cast_nullable_to_non_nullable
 as double?,costCacheRead: freezed == costCacheRead ? _self.costCacheRead : costCacheRead // ignore: cast_nullable_to_non_nullable
+as double?,costCacheWrite: freezed == costCacheWrite ? _self.costCacheWrite : costCacheWrite // ignore: cast_nullable_to_non_nullable
 as double?,costOutput: freezed == costOutput ? _self.costOutput : costOutput // ignore: cast_nullable_to_non_nullable
 as double?,openWeights: freezed == openWeights ? _self.openWeights : openWeights // ignore: cast_nullable_to_non_nullable
 as bool?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
@@ -366,6 +379,10 @@ as bool,reasoningOptions: null == reasoningOptions ? _self._reasoningOptions : r
 as List<ReasoningOption>,isCanonical: null == isCanonical ? _self.isCanonical : isCanonical // ignore: cast_nullable_to_non_nullable
 as bool,supportsPriorityMode: null == supportsPriorityMode ? _self.supportsPriorityMode : supportsPriorityMode // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
+as bool,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
+as bool,supportsMidConversationSystemMessages: null == supportsMidConversationSystemMessages ? _self.supportsMidConversationSystemMessages : supportsMidConversationSystemMessages // ignore: cast_nullable_to_non_nullable
+as bool,supportsToolDeltas: null == supportsToolDeltas ? _self.supportsToolDeltas : supportsToolDeltas // ignore: cast_nullable_to_non_nullable
+as bool,supportsDeferredTools: null == supportsDeferredTools ? _self.supportsDeferredTools : supportsDeferredTools // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

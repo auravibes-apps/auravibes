@@ -175,6 +175,11 @@ class ConversationRepository(
       );
 }
 
+extension ConversationRepositoryTransactions on ConversationRepository {
+  Future<T> inTransaction<T>(Future<T> Function() action) =>
+      _database.transaction(action);
+}
+
 extension ConversationRepositoryForkOperations on ConversationRepository {
   Future<Map<String, String?>> captureForkBoundaries(String id) =>
       _captureForkBoundaries(id);

@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -202,15 +203,22 @@ void main() {
     addTearDown(staleCredentialContainer.dispose);
     // Reproduce a legacy dangling reference from before FK enforcement.
     await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = OFF');
-    final skillWithStaleDefinition =
-        await SkillsRepository(staleCredentialDatabase).createSkill(
-          staleCredentialWorkspace.id,
-          const SkillToCreate(
-            kind: .template,
-            title: 'Broken Skill',
-            description: 'Has a stale credential definition id.',
-            content: 'Use credentials.',
-            credentialDefinitionId: 'missing-definition-id',
+    final skillWithStaleDefinition = await staleCredentialDatabase
+        .into(staleCredentialDatabase.skills)
+        .insertReturning(
+          SkillsCompanion.custom(
+            workspaceId: Variable<String>(staleCredentialWorkspace.id),
+            source: Variable<String>(SkillSourceTable.user.value),
+            kind: Variable<String>(SkillKindTable.template.value),
+            title: const Variable<String>('Broken Skill'),
+            slug: const Variable<String>('broken-skill'),
+            description: const Variable<String>(
+              'Has a stale credential definition id.',
+            ),
+            content: const Variable<String>('Use credentials.'),
+            credentialDefinitionId: const Variable<String>(
+              'missing-definition-id',
+            ),
           ),
         );
     await staleCredentialDatabase.customStatement('PRAGMA foreign_keys = ON');
@@ -236,7 +244,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
-    expect(find.text('Credential not found'), findsNothing);
+    expect(find.text('Credential type not found'), findsNothing);
 
     fixture.value = _SkillDetailScreenFixture(
       container: selectedCredentialContainer,
@@ -264,7 +272,7 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Credential not found'), findsOneWidget);
+    expect(find.text('Credential type not found'), findsOneWidget);
     expect(
       find.text('This skill needs a credential before it can be loaded.'),
       findsNothing,

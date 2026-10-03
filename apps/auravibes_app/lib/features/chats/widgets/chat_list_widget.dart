@@ -67,8 +67,10 @@ class _ChatListViewState {
        searchQuery = actions.input.searchText.value,
        showSearchInput = data.hasSearchInput,
        selectedChats = actions.results.selectedChats,
+       isBulkActionRunning = actions.results.isBulkActionRunning,
        onSelectionChanged = _conversationSelectionChanged(
          actions.results.selectedChats,
+         actions.results.isBulkActionRunning,
        ),
        workspaceId = actions.workspaceId;
 
@@ -84,6 +86,7 @@ class _ChatListViewState {
   final String searchQuery;
   final bool showSearchInput;
   final ValueNotifier<Map<String, ConversationEntity>> selectedChats;
+  final ValueNotifier<bool> isBulkActionRunning;
   final _ChatListSelectionChanged onSelectionChanged;
   final String workspaceId;
 }
@@ -107,6 +110,7 @@ typedef _ChatListResultsState = ({
   ValueNotifier<bool> hasMore,
   ValueNotifier<bool> isLoadingMore,
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  ValueNotifier<bool> isBulkActionRunning,
 });
 
 typedef _ChatListDataState = ({
@@ -149,19 +153,24 @@ typedef _ChatListSelectionChanged = void Function(
   required bool selected,
 });
 
+typedef _ChatTileSelectionCallbacks = ({
+  VoidCallback? onTap,
+  ValueChanged<bool>? onSelectionChanged,
+});
+
 typedef _ChatTileCallbacks = ({
   VoidCallback onFork,
   VoidCallback onDelete,
   VoidCallback onTogglePin,
   VoidCallback onRename,
   VoidCallback onMenuToggle,
-  VoidCallback onTap,
-  ValueChanged<bool> onSelectionChanged,
+  _ChatTileSelectionCallbacks selection,
 });
 
 typedef _ChatTileSelectionState = ({
   bool isSelected,
   bool isSelectionMode,
+  bool isSelectionEnabled,
   ValueChanged<bool> onSelectionChanged,
 });
 
@@ -293,10 +302,16 @@ _ChatListInputState _useChatListInputState() => (
 
 _ChatListResultsState _useChatListResultsState() => (
   loadedChats: useState<List<ConversationEntity>>([]),
-  hasMore: useState(false),
-  isLoadingMore: useState(false),
-  selectedChats: useState<Map<String, ConversationEntity>>({}),
+  hasMore: useState(_initialHasMore),
+  isLoadingMore: useState(_initialIsLoadingMore),
+  selectedChats: useState(_initialSelectedChats),
+  isBulkActionRunning: useState(_initialIsBulkActionRunning),
 );
+
+const _initialHasMore = false;
+const _initialIsLoadingMore = false;
+const _initialIsBulkActionRunning = false;
+const _initialSelectedChats = <String, ConversationEntity>{};
 
 void Function()? _clearSelectedChats(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
@@ -456,9 +471,12 @@ _ChatListActions _chatListActions(
 
 _ChatListSelectionChanged _conversationSelectionChanged(
   ValueNotifier<Map<String, ConversationEntity>> selectedChats,
-) =>
-    (chat, {required selected}) =>
-        _setConversationSelection(selectedChats, chat, selected: selected);
+  ValueNotifier<bool> isBulkActionRunning,
+) => (chat, {required selected}) {
+  if (isBulkActionRunning.value) return;
+
+  _setConversationSelection(selectedChats, chat, selected: selected);
+};
 
 _ChatListActionCallbacks _chatListActionCallbacks(
   ValueNotifier<String> searchText,
@@ -610,12 +628,19 @@ extension on _ChatTileState {
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
     onMenuToggle: _menuController.toggle,
-    onTap: _selectionAwareTap(context),
-    onSelectionChanged: widget.selection.onSelectionChanged,
+    selection: _tileSelectionCallbacks(context),
   );
 
-  VoidCallback _selectionAwareTap(BuildContext context) {
+  _ChatTileSelectionCallbacks _tileSelectionCallbacks(BuildContext context) => (
+    onTap: _selectionAwareTap(context),
+    onSelectionChanged: widget.selection.isSelectionEnabled
+        ? widget.selection.onSelectionChanged
+        : null,
+  );
+
+  VoidCallback? _selectionAwareTap(BuildContext context) {
     final selection = widget.selection;
+    if (!selection.isSelectionEnabled) return null;
 
     return selection.isSelectionMode
         ? () => selection.onSelectionChanged(!selection.isSelected)
@@ -863,6 +888,7 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
       _ChatListBulkActions(
         workspaceId: state.workspaceId,
         selectedChats: state.selectedChats,
+        isBulkActionRunning: state.isBulkActionRunning,
       ),
       _ChatListSearchInput(state: state),
       Expanded(child: _ChatListResults(state: state)),
@@ -875,6 +901,7 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
 class const _ChatListBulkActions({
   required final String workspaceId,
   required final ValueNotifier<Map<String, ConversationEntity>> selectedChats,
+  required final ValueNotifier<bool> isBulkActionRunning,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ChatListBulkActions> createState() =>
@@ -897,13 +924,68 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
       _ChatListBulkActionBar(
         selected: selected,
         isWorking: _isWorking,
-        callbacks: (
-          onPin: (isPinned) =>
-              unawaited(_setPins(selected.values.toList(), isPinned)),
-          onDelete: () => unawaited(_deleteSelected()),
-          onClear: () => widget.selectedChats.value = {},
-        ),
+        canExportArchive: _shouldShowArchiveAction(ref, widget.workspaceId),
+        callbacks: _bulkActionCallbacks(selected),
       );
+
+  _ChatListBulkActionCallbacks _bulkActionCallbacks(
+    Map<String, ConversationEntity> selected,
+  ) => (
+    onPin: (isPinned) =>
+        unawaited(_setPins(selected.values.toList(), isPinned)),
+    onDelete: () => unawaited(_deleteSelected()),
+    onArchiveExport: () => unawaited(_exportSelected(selected.values)),
+    onClear: _clearSelected,
+  );
+
+  void _setWorking(bool isWorking) => setState(() => _isWorking = isWorking);
+}
+
+extension on _ChatListBulkActionsState {
+  void _clearSelected() {
+    if (_isWorking) return;
+    widget.selectedChats.value = {};
+  }
+
+  Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
+    if (_isWorking) return;
+    await _withWorking(() => _exportSelectedArchive(selected));
+  }
+
+  Future<void> _exportSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) async {
+    try {
+      final saved = await _createAndSaveSelectedArchive(selected);
+      if (!saved || !mounted) return;
+      ConversationArchiveFeedback.showExported(context);
+    } on Object catch (error, stackTrace) {
+      _reportSelectedArchiveError(error, stackTrace);
+    }
+  }
+
+  Future<bool> _createAndSaveSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) async => await _saveSelectedArchive(await _createSelectedArchive(selected));
+
+  Future<String> _createSelectedArchive(
+    Iterable<ConversationEntity> selected,
+  ) => ref
+      .read(conversationArchiveUsecaseProvider)
+      .exportConversations(
+        workspaceId: widget.workspaceId,
+        conversationIds: [for (final chat in selected) chat.id],
+      );
+
+  Future<bool> _saveSelectedArchive(String archiveJson) => ref
+      .read(conversationArchiveFileServiceProvider)
+      .saveArchiveJson(archiveJson, fileName: 'conversations.auravibes.json');
+
+  void _reportSelectedArchiveError(Object error, StackTrace stackTrace) {
+    _logger.warning('Failed to export conversation archive', error, stackTrace);
+    if (!mounted) return;
+    ConversationArchiveFeedback.showError(context, error);
+  }
 
   Future<void> _setPins(List<ConversationEntity> chats, bool isPinned) async {
     if (_isWorking) return;
@@ -953,11 +1035,15 @@ class _ChatListBulkActionsState extends ConsumerState<_ChatListBulkActions> {
   }
 
   Future<void> _withWorking(Future<void> Function() action) async {
-    setState(() => _isWorking = true);
+    _setWorking(true);
+    widget.isBulkActionRunning.value = true;
     try {
       await action();
     } finally {
-      if (mounted) setState(() => _isWorking = false);
+      if (mounted) {
+        _setWorking(false);
+        widget.isBulkActionRunning.value = false;
+      }
     }
   }
 
@@ -988,7 +1074,7 @@ void _recordPinnedChats(
 ) {
   final updated = {...selectedChats.value};
   for (final chat in chats) {
-    updated[chat.id] = chat;
+    if (updated.containsKey(chat.id)) updated[chat.id] = chat;
   }
   selectedChats.value = updated;
 }
@@ -1003,6 +1089,9 @@ void _recordDeletedChats(
   }
   selectedChats.value = updated;
 }
+
+bool _shouldPinSelected(Map<String, ConversationEntity> selected) =>
+    !selected.values.every((chat) => chat.isPinned);
 
 void _showConversationFailures(
   BuildContext context,
@@ -1021,12 +1110,14 @@ void _showConversationFailures(
 typedef _ChatListBulkActionCallbacks = ({
   ValueChanged<bool> onPin,
   VoidCallback onDelete,
+  VoidCallback onArchiveExport,
   VoidCallback onClear,
 });
 
 class const _ChatListBulkActionBar({
   required final Map<String, ConversationEntity> selected,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1038,8 +1129,9 @@ class const _ChatListBulkActionBar({
     ).toEdgeInsets(context),
     child: _ChatListBulkActionLayout(
       count: selected.length,
-      shouldPin: !selected.values.every((chat) => chat.isPinned),
+      shouldPin: _shouldPinSelected(selected),
       isWorking: isWorking,
+      canExportArchive: canExportArchive,
       callbacks: callbacks,
     ),
   );
@@ -1049,6 +1141,7 @@ class const _ChatListBulkActionLayout({
   required final int count,
   required final bool shouldPin,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1064,6 +1157,7 @@ class const _ChatListBulkActionLayout({
           count: count,
           shouldPin: shouldPin,
           isWorking: isWorking,
+          canExportArchive: canExportArchive,
           callbacks: callbacks,
         ),
         _ChatListManagementActions(isWorking: isWorking, callbacks: callbacks),
@@ -1076,6 +1170,7 @@ class const _ChatListSelectionActions({
   required final int count,
   required final bool shouldPin,
   required final bool isWorking,
+  required final bool canExportArchive,
   required final _ChatListBulkActionCallbacks callbacks,
 }) extends StatelessWidget {
   @override
@@ -1093,9 +1188,29 @@ class const _ChatListSelectionActions({
           isWorking: isWorking,
           onPin: callbacks.onPin,
         ),
+        if (canExportArchive)
+          _ChatListBulkArchiveExportButton(
+            isWorking: isWorking,
+            onExport: callbacks.onArchiveExport,
+          ),
       ],
     );
   }
+}
+
+class const _ChatListBulkArchiveExportButton({
+  required final bool isWorking,
+  required final VoidCallback onExport,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => AuraButton(
+    onPressed: onExport,
+    child: const TextLocale(
+      LocaleKeys.chats_screens_chats_list_bulk_archive_export,
+    ),
+    size: .small,
+    isLoading: isWorking,
+  );
 }
 
 class const _ChatListManagementActions({
@@ -1270,23 +1385,32 @@ class const _ChatListConversationListTile({
   required final int index,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) =>
-      ValueListenableBuilder<Map<String, ConversationEntity>>(
-        valueListenable: state.selectedChats,
-        builder: _buildChatTile,
-      );
+  Widget build(BuildContext _) => ValueListenableBuilder<bool>(
+    valueListenable: state.isBulkActionRunning,
+    builder: _buildWithBulkActionState,
+  );
+
+  Widget _buildWithBulkActionState(
+    BuildContext _,
+    bool isBulkActionRunning,
+    Widget? _,
+  ) => ValueListenableBuilder<Map<String, ConversationEntity>>(
+    valueListenable: state.selectedChats,
+    builder: (context, selected, _) =>
+        _buildChatTile(context, selected, isBulkActionRunning),
+  );
 
   Widget _buildChatTile(
     BuildContext _,
     Map<String, ConversationEntity> selected,
-    Widget? _,
+    bool isBulkActionRunning,
   ) {
     final chat = state.chats[index];
 
     return _ChatTile(
       chat: chat,
       workspaceId: state.workspaceId,
-      selection: _tileSelection(chat, selected),
+      selection: _tileSelection(chat, selected, isBulkActionRunning),
       key: ValueKey(chat.id),
     );
   }
@@ -1294,9 +1418,11 @@ class const _ChatListConversationListTile({
   _ChatTileSelectionState _tileSelection(
     ConversationEntity chat,
     Map<String, ConversationEntity> selected,
+    bool isBulkActionRunning,
   ) => (
     isSelected: selected.containsKey(chat.id),
     isSelectionMode: selected.isNotEmpty,
+    isSelectionEnabled: !isBulkActionRunning,
     onSelectionChanged: (isSelected) =>
         state.onSelectionChanged(chat, selected: isSelected),
   );
@@ -1358,7 +1484,7 @@ class const _ChatTileView({
       callbacks: callbacks,
       onArchiveExport: onArchiveExport,
     ),
-    onTap: callbacks.onTap,
+    onTap: callbacks.selection.onTap,
     style: .border,
   );
 }
@@ -1380,7 +1506,7 @@ class const _ChatTileRow({
         chat: chat,
         isSelected: isSelected,
         title: title,
-        onSelectionChanged: callbacks.onSelectionChanged,
+        onSelectionChanged: callbacks.selection.onSelectionChanged,
       ),
       _ChatTileModelBadge(displayName: modelDisplayName),
       _ChatTileMenu(
@@ -1397,7 +1523,7 @@ class const _ChatTileMainSection({
   required final ConversationEntity chat,
   required final bool isSelected,
   required final String title,
-  required final ValueChanged<bool> onSelectionChanged,
+  required final ValueChanged<bool>? onSelectionChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Expanded(
@@ -1423,7 +1549,7 @@ class const _ChatTileSelectionControl({
   required final String conversationId,
   required final bool isSelected,
   required final String title,
-  required final ValueChanged<bool> onChanged,
+  required final ValueChanged<bool>? onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraCheckbox(

@@ -12,9 +12,9 @@ Make responsive-shell golden updates reproducible in the same environment as CI 
 
 ## Evidence and constraints
 
-- `.fvmrc` pins Flutter 3.47.5; `.github/actions/setup-workspace` installs that version for CI.
+- `.fvmrc` pins Flutter; `.github/actions/setup-workspace` installs that version for CI.
 - The `responsive-shell-goldens` job runs on `ubuntu-26.04` and executes the tagged test from `apps/auravibes_app`.
-- Flutter 3.47.5 writes master, test, isolated-diff, and masked-diff PNGs under the test file's `failures/` directory. For this test that path is `apps/auravibes_app/test/widgets/failures/`.
+- Flutter writes master, test, isolated-diff, and masked-diff PNGs under the test file's `failures/` directory. For this test that path is `apps/auravibes_app/test/widgets/failures/`.
 - macOS x64/arm64 rendering has differed from the committed Linux x64 images; regenerating on macOS is not a supported update path.
 
 ## Design

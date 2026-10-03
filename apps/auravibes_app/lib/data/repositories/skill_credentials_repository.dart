@@ -119,28 +119,22 @@ class SkillCredentialsRepository({
   Future<SkillCredentialEntity> createCredential(
     String workspaceId,
     SkillCredentialToCreate credential,
-  ) async {
+  ) => _database.transaction(() async {
     final data = await _prepareCreateCredential(workspaceId, credential);
     final row = await _dao.createCredential(_createCredentialCompanion(data));
 
     return await _tableToEntity(row);
-  }
+  });
 
   Future<SkillCredentialEntity> updateCredential(
     String credentialId,
     SkillCredentialToUpdate credential,
-  ) async {
+  ) => _database.transaction(() async {
     final data = await _prepareUpdateCredential(credentialId, credential);
-    final updated = await _dao.updateCredential(
-      credentialId,
-      _updateCredentialCompanion(data),
-    );
-    if (updated == null) {
-      throw SkillCredentialsException.notFound(credentialId);
-    }
+    final updated = await _requiredUpdatedRow(credentialId, data);
 
     return await _tableToEntity(updated);
-  }
+  });
 
   Future<void> deleteCredential(String credentialId) async {
     _logDeleteStart(credentialId);
@@ -150,6 +144,13 @@ class SkillCredentialsRepository({
 }
 
 extension on SkillCredentialsRepository {
+  Future<ServiceConnectionTable> _requiredUpdatedRow(
+    String id,
+    _UpdateCredentialData data,
+  ) async =>
+      await _dao.updateCredential(id, _updateCredentialCompanion(data)) ??
+      (throw SkillCredentialsException.notFound(id));
+
   Future<_CreateCredentialData> _prepareCreateCredential(
     String workspaceId,
     SkillCredentialToCreate credential,

@@ -48,7 +48,7 @@ void main() {
         );
       }
 
-      expect(
+      await expectLater(
         endpoints.cloudWorkspace.createWorkspace(
           authenticatedSession,
           CreateCloudWorkspaceRequest(

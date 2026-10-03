@@ -1,10 +1,18 @@
 // ignore_for_file: type=lint
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/usecases/check_cloud_account_usecase.dart';
+import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_health_status.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/workspaces/notifiers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
@@ -12,6 +20,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,44 +31,118 @@ class const CloudWorkspaceDetailScreen({
   required final String workspaceId,
   required final String cloudAccountId,
   required final int cloudWorkspaceId,
+  final String? serverUrl,
   super.key,
 }) extends ConsumerWidget {
-  CloudWorkspaceDetailKey get _key =>
-      (accountId: cloudAccountId, workspaceId: cloudWorkspaceId);
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final account = ref.watch(
+      cloudWorkspaceRouteAccountProvider((
+        accountId: cloudAccountId,
+        workspaceId: cloudWorkspaceId,
+        serverUrl: serverUrl,
+      )),
+    );
+    return switch (account) {
+      AsyncData(:final value) => _ResolvedDetail(
+        workspaceId: workspaceId,
+        account: value,
+        cloudWorkspaceId: cloudWorkspaceId,
+      ),
+      AsyncLoading() => const AuraScreen(child: Center(child: AuraSpinner())),
+      AsyncError() => AuraScreen(
+        child: Column(
+          children: [
+            const TextLocale(LocaleKeys.cloud_accounts_origin_unresolved),
+            AuraButton(
+              onPressed: () => WorkspaceManagementRoute(
+                workspaceId: workspaceId,
+                view: 'connect',
+              ).go(context),
+              child: const TextLocale(
+                LocaleKeys.workspace_management_connect_cloud,
+              ),
+            ),
+          ],
+        ),
+      ),
+    };
+  }
+}
+
+class const _ResolvedDetail({
+  required final String workspaceId,
+  required final CloudAccountKey account,
+  required final int cloudWorkspaceId,
+}) extends ConsumerWidget {
+  CloudWorkspaceDetailKey get _key => (
+    serverUrl: account.serverUrl,
+    accountId: account.accountId,
+    workspaceId: cloudWorkspaceId,
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cloudWorkspaceDetailProvider(_key));
+    final mirrors =
+        (ref.watch(allWorkspacesProvider).value ?? const <WorkspaceEntity>[])
+            .where(
+              (item) =>
+                  item.cloudWorkspaceId == cloudWorkspaceId.toString() &&
+                  item.cloudAccount?.serverUrl == account.serverUrl,
+            );
+    final mirror = mirrors
+        .where((item) => item.cloudAccount == account)
+        .firstOrNull;
+
     return AuraScreen(
       appBar: AuraAppBarWithDrawer(
-        title: const TextLocale(LocaleKeys.cloud_workspaces_detail_title),
+        title: state.value == null
+            ? const TextLocale(LocaleKeys.cloud_workspaces_detail_title)
+            : Text(state.value!.detail.workspace.name),
         leading: AuraIconButton(
           icon: Icons.arrow_back,
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
       child: switch (state) {
         AsyncData(:final value?) => _DetailBody(
           state: value,
-          accountId: cloudAccountId,
-          mirror:
-              (ref.watch(allWorkspacesProvider).value ??
-                      const <WorkspaceEntity>[])
-                  .where(
-                    (item) =>
-                        item.cloudWorkspaceId == cloudWorkspaceId.toString() &&
-                        item.cloudAccountId == cloudAccountId,
-                  )
-                  .firstOrNull,
+          account: account,
+          workspaceId: workspaceId,
+          mirror: mirror,
+          connectedElsewhere: mirror == null ? mirrors.firstOrNull : null,
           onChanged: () {
             ref.invalidate(cloudWorkspaceDetailProvider(_key));
-            ref.invalidate(cloudWorkspaceStateProvider(cloudAccountId));
+            ref.invalidate(cloudWorkspaceStateProvider(account));
             ref.invalidate(allWorkspacesProvider);
           },
         ),
         AsyncLoading() => const Center(child: AuraSpinner()),
-        AsyncError() || AsyncData() => const Center(
-          child: TextLocale(LocaleKeys.workspace_management_cloud_error),
+        AsyncError() || AsyncData() => Column(
+          children: [
+            CloudAccountHealthStatus(
+              account: account,
+              workspaceId: workspaceId,
+              returnPath: CloudWorkspaceDetailRoute(
+                workspaceId: workspaceId,
+                cloudAccountId: account.accountId,
+                cloudWorkspaceId: cloudWorkspaceId,
+                serverUrl: account.serverUrl,
+              ).location,
+            ),
+            TextLocale(switch (state) {
+              AsyncError(:final error) => _cloudErrorKey(error),
+              _ => LocaleKeys.cloud_errors_unavailable,
+            }),
+            AuraButton(
+              onPressed: () =>
+                  ref.invalidate(cloudWorkspaceDetailProvider(_key)),
+              child: const TextLocale(
+                LocaleKeys.workspace_management_cloud_retry,
+              ),
+            ),
+          ],
         ),
       },
     );
@@ -67,9 +150,11 @@ class const CloudWorkspaceDetailScreen({
 }
 
 class const _DetailBody({
+  required final String workspaceId,
   required final CloudWorkspaceDetailState state,
-  required final String accountId,
+  required final CloudAccountKey account,
   required final WorkspaceEntity? mirror,
+  required final WorkspaceEntity? connectedElsewhere,
   required final VoidCallback onChanged,
 }) extends ConsumerWidget {
   @override
@@ -77,28 +162,94 @@ class const _DetailBody({
     final detail = state.detail;
     final workspace = detail.workspace;
     final capabilities = detail.capabilities;
+    final switchState = ref.watch(workspaceSwitcherProvider);
+    ref.listen(workspaceSwitcherProvider, (_, next) {
+      final errorKey = next.errorLocalizationKey;
+      if (next.status != .error || errorKey == null) return;
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: TextLocale(errorKey),
+        variant: .error,
+      );
+    });
     return ListView(
       padding: const EdgeInsets.all(16)
           .copyWith(bottom: BottomPadding.of(context)),
       children: [
         AuraText(child: Text(workspace.name), style: AuraTextStyle.heading4),
         Text(_roleLabel(workspace.role).tr()),
+        Text(
+          ref
+                  .watch(cloudAccountsProvider)
+                  .value
+                  ?.where((item) => item.key == account)
+                  .firstOrNull
+                  ?.email ??
+              account.accountId,
+        ),
+        CloudAccountHealthStatus(
+          account: account,
+          workspaceId: workspaceId,
+          returnPath: CloudWorkspaceDetailRoute(
+            workspaceId: workspaceId,
+            cloudAccountId: account.accountId,
+            cloudWorkspaceId: workspace.id,
+            serverUrl: account.serverUrl,
+          ).location,
+        ),
+        TextLocale(
+          mirror == null && connectedElsewhere == null
+              ? LocaleKeys.cloud_workspaces_not_connected
+              : LocaleKeys.cloud_workspaces_connected,
+        ),
+        if (connectedElsewhere case final existing?)
+          Text(
+            LocaleKeys.workspace_management_cloud_connected_elsewhere.tr(
+              namedArgs: {
+                'email':
+                    ref
+                        .watch(cloudAccountsProvider)
+                        .value
+                        ?.where((item) => item.key == existing.cloudAccount)
+                        .firstOrNull
+                        ?.email ??
+                    existing.cloudAccountId ??
+                    '',
+              },
+            ),
+          ),
+        const TextLocale(LocaleKeys.cloud_workspaces_cloud_context),
+        const AuraText(
+          style: .heading6,
+          child: TextLocale(LocaleKeys.cloud_workspaces_device_connection),
+        ),
         if (detail.ownerEmail != null) Text(detail.ownerEmail!),
         const SizedBox(height: 16),
-        AuraButton(
-          onPressed: () => _toggleConnection(context, ref, workspace),
-          child: TextLocale(
-            mirror == null
-                ? LocaleKeys.workspace_management_cloud_attach
-                : LocaleKeys.workspace_management_cloud_detach,
+        if (connectedElsewhere case final existing?)
+          AuraButton(
+            onPressed: () => ref
+                .read(workspaceSwitcherProvider.notifier)
+                .switchToWorkspace(existing.id),
+            child: const TextLocale(
+              LocaleKeys.workspace_management_open_workspaces,
+            ),
+            disabled: switchState.status == .loading,
+          )
+        else
+          AuraButton(
+            onPressed: () => _toggleConnection(context, ref, workspace),
+            child: TextLocale(
+              mirror == null
+                  ? LocaleKeys.workspace_management_cloud_attach
+                  : LocaleKeys.workspace_management_cloud_detach,
+            ),
           ),
-        ),
         if (capabilities.canRename) ...[
           const SizedBox(height: 24),
           AuraButton(
-            variant: AuraButtonVariant.outlined,
             onPressed: () => _rename(context, ref, workspace),
             child: const TextLocale(LocaleKeys.cloud_workspaces_rename),
+            variant: AuraButtonVariant.outlined,
           ),
         ],
         if (capabilities.canViewMembers) ...[
@@ -109,7 +260,7 @@ class const _DetailBody({
           ),
           for (final member in state.members)
             _MemberTile(
-              accountId: accountId,
+              account: account,
               workspace: workspace,
               member: member,
               capabilities: capabilities,
@@ -126,31 +277,44 @@ class const _DetailBody({
           ),
           for (final invite in state.invites)
             _OutgoingInviteTile(
-              accountId: accountId,
+              account: account,
               workspaceId: workspace.id,
               invite: invite,
               onChanged: onChanged,
             ),
         ],
         const SizedBox(height: 32),
+        if (capabilities.canLeave || capabilities.canDelete)
+          const AuraText(
+            style: .heading6,
+            child: TextLocale(LocaleKeys.cloud_workspaces_consequences),
+          ),
         if (capabilities.canLeave)
           AuraButton(
-            variant: AuraButtonVariant.outlined,
             onPressed: () => _leave(context, ref, workspace),
             child: const TextLocale(LocaleKeys.cloud_workspaces_leave),
+            variant: AuraButtonVariant.outlined,
           ),
         if (capabilities.canDelete)
           AuraButton(
-            variant: AuraButtonVariant.outlined,
             onPressed: () => _delete(context, ref, workspace),
             child: const TextLocale(LocaleKeys.cloud_workspaces_delete),
+            variant: AuraButtonVariant.outlined,
           ),
       ],
     );
   }
 
-  Future<CloudWorkspaceUseCases?> _useCases(WidgetRef ref) =>
-      ref.read(cloudWorkspaceUseCasesProvider(accountId).future);
+  Future<CloudWorkspaceUseCases> _useCases(WidgetRef ref) async {
+    final useCases = await ref.read(
+      cloudWorkspaceUseCasesProvider(account).future,
+    );
+    if (useCases == null)
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    return useCases;
+  }
 
   Future<void> _toggleConnection(
     BuildContext context,
@@ -165,12 +329,12 @@ class const _DetailBody({
         )) {
       return;
     }
-    await _runCloudAction(context, () async {
+    await _runCloudAction(context, ref, account, () async {
       final useCases = await _useCases(ref);
       if (mirror == null) {
-        await useCases?.attach(workspace);
+        await useCases.attach(workspace);
       } else {
-        await useCases?.detach(workspace);
+        await useCases.detach(workspace);
       }
       onChanged();
     });
@@ -187,8 +351,8 @@ class const _DetailBody({
       initialValue: workspace.name,
     );
     if (name == null) return;
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.rename(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).rename(
         workspaceId: workspace.id,
         name: name,
         expectedWorkspaceRevision: workspace.revision,
@@ -209,8 +373,8 @@ class const _DetailBody({
       allowAdmin: capabilities.canInviteAdmins,
     );
     if (request == null || request.email.trim().isEmpty) return;
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.invite(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).invite(
         workspaceId: workspace.id,
         email: request.email,
         role: request.role,
@@ -228,8 +392,8 @@ class const _DetailBody({
     if (!await _confirm(context, LocaleKeys.cloud_workspaces_leave_confirm)) {
       return;
     }
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.leave(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).leave(
         workspaceId: workspace.id,
         expectedWorkspaceRevision: workspace.revision,
       );
@@ -249,8 +413,8 @@ class const _DetailBody({
       ),
     );
     if (confirmation != workspace.name) return;
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.delete(workspace);
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).delete(workspace);
       if (context.mounted) Navigator.of(context).pop();
     });
   }
@@ -258,23 +422,29 @@ class const _DetailBody({
 
 Future<void> _runCloudAction(
   BuildContext context,
+  WidgetRef ref,
+  CloudAccountKey account,
   Future<void> Function() action,
 ) async {
   try {
     await action();
   } on Object catch (error, stackTrace) {
     _logger.warning('Cloud workspace action failed', error, stackTrace);
+    if (error is CloudWorkspaceException &&
+        CheckCloudAccountUsecase.requiresSignIn(error)) {
+      ref.invalidate(cloudAccountHealthProvider(account));
+    }
     if (!context.mounted) return;
     final _ = AuraSnackBars.show(
       context: context,
-      content: const TextLocale(LocaleKeys.workspace_management_cloud_error),
+      content: TextLocale(_cloudErrorKey(error)),
       variant: AuraSnackBarVariant.error,
     );
   }
 }
 
 class const _MemberTile({
-  required final String accountId,
+  required final CloudAccountKey account,
   required final CloudWorkspaceSummary workspace,
   required final CloudWorkspaceMemberSummary member,
   required final CloudWorkspaceCapabilities capabilities,
@@ -283,12 +453,12 @@ class const _MemberTile({
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
     child: AuraColumn(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: .xs,
       children: [
         Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
-        Text(member.role),
+        TextLocale(_roleLabel(member.role)),
       ],
+      spacing: .xs,
+      crossAxisAlignment: CrossAxisAlignment.start,
     ),
     trailing: Row(
       mainAxisSize: MainAxisSize.min,
@@ -321,15 +491,23 @@ class const _MemberTile({
       ? capabilities.canManageAdmins
       : member.role == 'member' && capabilities.canManageMembers;
 
-  Future<CloudWorkspaceUseCases?> _useCases(WidgetRef ref) =>
-      ref.read(cloudWorkspaceUseCasesProvider(accountId).future);
+  Future<CloudWorkspaceUseCases> _useCases(WidgetRef ref) async {
+    final useCases = await ref.read(
+      cloudWorkspaceUseCasesProvider(account).future,
+    );
+    if (useCases == null)
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    return useCases;
+  }
 
   Future<void> _changeRole(BuildContext context, WidgetRef ref) async {
     if (!await _confirm(context, LocaleKeys.cloud_workspaces_change_role)) {
       return;
     }
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.updateMemberRole(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).updateMemberRole(
         workspaceId: workspace.id,
         userId: member.userId,
         role: member.role == 'admin' ? 'member' : 'admin',
@@ -343,8 +521,8 @@ class const _MemberTile({
     if (!await _confirm(context, LocaleKeys.cloud_workspaces_remove_member)) {
       return;
     }
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.removeMember(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).removeMember(
         workspaceId: workspace.id,
         userId: member.userId,
         expectedMemberRevision: member.revision,
@@ -360,8 +538,8 @@ class const _MemberTile({
     )) {
       return;
     }
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.transferOwnership(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).transferOwnership(
         workspaceId: workspace.id,
         newOwnerUserId: member.userId,
         expectedWorkspaceRevision: workspace.revision,
@@ -372,7 +550,7 @@ class const _MemberTile({
 }
 
 class const _OutgoingInviteTile({
-  required final String accountId,
+  required final CloudAccountKey account,
   required final int workspaceId,
   required final CloudWorkspaceInviteSummary invite,
   required final VoidCallback onChanged,
@@ -397,12 +575,20 @@ class const _OutgoingInviteTile({
     ),
   );
 
-  Future<CloudWorkspaceUseCases?> _useCases(WidgetRef ref) =>
-      ref.read(cloudWorkspaceUseCasesProvider(accountId).future);
+  Future<CloudWorkspaceUseCases> _useCases(WidgetRef ref) async {
+    final useCases = await ref.read(
+      cloudWorkspaceUseCasesProvider(account).future,
+    );
+    if (useCases == null)
+      throw const AppCloudWorkspaceException(
+        LocaleKeys.cloud_errors_unavailable,
+      );
+    return useCases;
+  }
 
   Future<void> _renew(BuildContext context, WidgetRef ref) async {
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.renewInvite(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).renewInvite(
         workspaceId: workspaceId,
         inviteId: invite.id,
         expectedInviteRevision: invite.revision,
@@ -412,8 +598,8 @@ class const _OutgoingInviteTile({
   }
 
   Future<void> _revoke(BuildContext context, WidgetRef ref) async {
-    await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.revokeInvite(
+    await _runCloudAction(context, ref, account, () async {
+      await (await _useCases(ref)).revokeInvite(
         workspaceId: workspaceId,
         inviteId: invite.id,
         expectedInviteRevision: invite.revision,
@@ -434,34 +620,42 @@ Future<String?> _prompt(
   required String title,
   String? initialValue,
 }) {
-  final controller = TextEditingController(text: initialValue);
   FocusManager.instance.primaryFocus?.unfocus();
   return showDialog<String>(
     context: context,
-    builder: (context) {
-      void submit() => Navigator.of(context).pop(controller.text);
+    builder: (context) =>
+        _WorkspaceNamePrompt(title: title, initialValue: initialValue),
+  );
+}
 
-      return AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: .done,
-          onSubmitted: (_) => submit(),
+class const _WorkspaceNamePrompt({
+  required final String title,
+  required final String? initialValue,
+}) extends HookWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = useTextEditingController(text: initialValue);
+    void submit() => Navigator.of(context).pop(controller.text);
+    return AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        textInputAction: .done,
+        onSubmitted: (_) => submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const TextLocale(LocaleKeys.common_cancel),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const TextLocale(LocaleKeys.common_cancel),
-          ),
-          TextButton(
-            onPressed: submit,
-            child: const TextLocale(LocaleKeys.common_confirm),
-          ),
-        ],
-      );
-    },
-  ).whenComplete(controller.dispose);
+        TextButton(
+          onPressed: submit,
+          child: const TextLocale(LocaleKeys.common_confirm),
+        ),
+      ],
+    );
+  }
 }
 
 Future<bool> _confirm(
@@ -557,4 +751,14 @@ Future<_InviteRequest?> _invitePrompt(
   );
   controller.dispose();
   return result;
+}
+
+String _cloudErrorKey(Object error) {
+  if (error case AppCloudWorkspaceException(:final localizationKey))
+    return localizationKey;
+  try {
+    CloudAppErrors.translateException(error, CloudOperationContext.workspace);
+  } on CloudAppException catch (translated) {
+    return translated.localizationKey;
+  }
 }

@@ -14,8 +14,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../helpers/test_provider_scope.dart';
+import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'ws-1';
 
@@ -80,42 +81,37 @@ class _MockMcpConnectionNotifier extends McpConnectionNotifier {
 
 class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return EasyLocalization(
-      child: TestProviderScope(
-        overrides: [
-          mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
-          groupedToolsProvider(_workspaceId)
-              .overrideWith(() => _MockGroupedNotifier([])),
-        ],
-        child: MaterialApp(
-          home: AuraThemeScope(
-            theme: .light,
-            child: Theme(
-              data: .new(),
-              child: Material(child: child),
-            ),
-          ),
-        ),
-      ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
-    );
-  }
+  Widget build(BuildContext context) => TestableApp(
+    child: child,
+    overrides: [
+      mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
+      groupedToolsProvider(_workspaceId)
+          .overrideWith(() => _MockGroupedNotifier([])),
+    ],
+  );
+}
+
+Future<void> _pumpWidget(WidgetTester tester, Widget child) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(child);
+  });
+  final _ = await tester.pumpAndSettle();
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
   testWidgets('renders ToolsGroupHeader', (tester) async {
     final groupWithTools = ToolsGroupWithTools(
       group: _group(),
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -137,7 +133,8 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -159,7 +156,8 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -181,7 +179,8 @@ void main() {
       tools: [],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -197,7 +196,8 @@ void main() {
   testWidgets('renders inside AuraCard', (tester) async {
     final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -216,7 +216,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -240,7 +241,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -264,7 +266,8 @@ void main() {
   ) async {
     final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -277,7 +280,7 @@ void main() {
     await tester.tap(find.byType(AuraIconButton).last);
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('tools_screen.no_tools_in_group'), findsOneWidget);
+    expect(find.text('No tools available'), findsOneWidget);
     expect(find.byType(ToolItemRow), findsNothing);
   });
 
@@ -288,7 +291,8 @@ void main() {
       defaultGroupType: .builtIn,
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -326,7 +330,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -350,7 +355,8 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -386,7 +392,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -421,7 +428,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -441,7 +449,8 @@ void main() {
       defaultGroupType: .builtIn,
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -475,7 +484,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -510,7 +520,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -534,7 +545,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -556,7 +568,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -575,7 +588,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -619,7 +633,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -662,7 +677,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -699,7 +715,8 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,
@@ -726,7 +743,8 @@ void main() {
       tools: [_tool()],
     );
 
-    await tester.pumpWidget(
+    await _pumpWidget(
+      tester,
       _Subject(
         child: ToolsGroupCard(
           groupWithTools: groupWithTools,

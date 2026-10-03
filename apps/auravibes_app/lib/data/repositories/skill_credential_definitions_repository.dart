@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
+import 'package:auravibes_app/domain/models/credential_definition_usage.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
@@ -80,6 +81,11 @@ class SkillCredentialDefinitionsRepository(AppDatabase database) {
 
     return _tableToEntity(table);
   }
+
+  Future<CredentialDefinitionUsage> getUsage(
+    String workspaceId,
+    String definitionId,
+  ) => _dao.getUsage(workspaceId, definitionId);
 
   Future<bool> deleteDefinition(String definitionId) =>
       _dao.deleteDefinition(definitionId);

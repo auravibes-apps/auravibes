@@ -216,7 +216,10 @@ extension on WorkspaceModelSelectionRepository {
       ),
     );
 
-    return _withModelCapabilities(selection, apiModel);
+    return _withAdvancedCapabilities(
+      _withModelCapabilities(selection, apiModel),
+      withProvider,
+    );
   }
 
   WorkspaceModelSelectionEntity _withModelCapabilities(
@@ -234,6 +237,57 @@ extension on WorkspaceModelSelectionRepository {
       supportsToolCalls: capabilities.supportsToolCalls,
     );
   }
+
+  WorkspaceModelSelectionEntity _withAdvancedCapabilities(
+    WorkspaceModelSelectionEntity selection,
+    WorkspaceModelSelectionWithConnection source,
+  ) {
+    final officialTransport = _isOfficialAnthropicTransport(source);
+    final model = source.apiModel;
+
+    return selection.copyWith(
+      supportsPromptCacheMarkers: _officialCapability(
+        officialTransport,
+        model?.supportsPromptCacheMarkers,
+      ),
+      supportsMidConversationSystemMessages: _officialCapability(
+        officialTransport,
+        model?.supportsMidConversationSystemMessages,
+      ),
+      supportsToolDeltas: _officialCapability(
+        officialTransport,
+        model?.supportsToolDeltas,
+      ),
+      supportsDeferredTools: _officialCapability(
+        officialTransport,
+        model?.supportsDeferredTools,
+      ),
+    );
+  }
+
+  bool _officialCapability(bool isOfficial, bool? supported) =>
+      isOfficial && (supported ?? false);
+
+  bool _isOfficialAnthropicTransport(
+    WorkspaceModelSelectionWithConnection source,
+  ) {
+    final connectionUrl = source.modelConnection.url?.trim();
+    final providerUrl = source.modelProvider?.url?.trim();
+
+    if (source.modelConnection.serviceId != 'anthropic') return false;
+    if (source.modelProvider?.type != ModelProvidersTableType.anthropic) {
+      return false;
+    }
+    if (connectionUrl != null && connectionUrl.isNotEmpty) return false;
+
+    return _isDefaultAnthropicProviderUrl(providerUrl);
+  }
+
+  bool _isDefaultAnthropicProviderUrl(String? url) =>
+      url == null ||
+      url.isEmpty ||
+      url.replaceFirst(RegExp(r'/$'), '') ==
+          providerProfile('anthropic').defaultUrl;
 
   ModelConnectionEntity _modelConnectionEntity(
     WorkspaceModelSelectionWithConnection withProvider,

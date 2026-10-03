@@ -6,14 +6,16 @@ import 'package:auravibes_app/features/skills/providers/skill_detail_provider.da
 import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/resolved_skill_resource.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/draft_exit_guard.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
+import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -23,6 +25,11 @@ typedef _SkillResourceViewData = ({
   AsyncValue<SkillResourceEntity?>? resourceAsync,
   SkillResourceEntity? resource,
   AppSkillResourceDefinition? staticResource,
+});
+typedef _SkillResourceRenderData = ({
+  _SkillResourceViewData viewData,
+  String titleKey,
+  String? parentTitle,
 });
 
 class const SkillResourceEditScreen({
@@ -42,7 +49,21 @@ class _SkillResourceEditScreenState
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
   bool _initialized = false;
+  final _exitGuard = DraftExitGuard();
   bool _isSaving = false;
+  bool _isReadOnly = false;
+  ({String title, String description, String content}) _savedSnapshot = (
+    title: '',
+    description: '',
+    content: '',
+  );
+  ({String title, String description, String content}) get _snapshot => (
+    title: _titleController.text,
+    description: _descriptionController.text,
+    content: _contentController.text,
+  );
+  bool get _isDirty =>
+      _initialized && !_isReadOnly && _snapshot != _savedSnapshot;
 
   bool get _isCreate => widget.resourceId == null;
 
@@ -59,16 +80,36 @@ class _SkillResourceEditScreenState
     final detailAsync = ref.watch(
       skillDetailProvider(widget.workspaceId, widget.skillId),
     );
-    final viewData = _viewData(detailAsync.value);
-    _initialize(viewData.resource, viewData.staticResource);
+    final renderData = _resourceScreenData(this, detailAsync);
 
-    return _SkillResourceScreenView(
-      state: this,
-      viewData: viewData,
-      titleKey: _titleKey(viewData.staticResource),
+    return DraftExitScope(
+      guard: _exitGuard,
+      child: _SkillResourceScreenView(state: this, renderData: renderData),
     );
   }
 
+  void _initialize(
+    SkillResourceEntity? resource,
+    AppSkillResourceDefinition? staticResource,
+  ) {
+    if (_initialized || !_hasInitialResource(resource, staticResource)) return;
+
+    _initializeFieldValues(resource, staticResource);
+    _isReadOnly = staticResource != null;
+    _savedSnapshot = _snapshot;
+    _initialized = true;
+  }
+
+  void _setFieldValues(String title, String description, String content) {
+    _titleController.text = title;
+    _descriptionController.text = description;
+    _contentController.text = content;
+  }
+
+  void _updateState(VoidCallback callback) => setState(callback);
+}
+
+extension on _SkillResourceEditScreenState {
   _SkillResourceViewData _viewData(SkillDetail? detail) {
     final resourceId = widget.resourceId;
     final resourceAsync = resourceId == null
@@ -98,44 +139,121 @@ class _SkillResourceEditScreenState
         .firstOrNull;
   }
 
-  void _initialize(
+  bool _hasInitialResource(
+    SkillResourceEntity? resource,
+    AppSkillResourceDefinition? staticResource,
+  ) => _isCreate || resource != null || staticResource != null;
+
+  void _initializeFieldValues(
     SkillResourceEntity? resource,
     AppSkillResourceDefinition? staticResource,
   ) {
-    if (_initialized) return;
-    if (!_isCreate && resource == null && staticResource == null) return;
-
     if (resource case final value?) {
       _setFieldValues(value.title, value.description, value.content);
     } else if (staticResource case final value?) {
       _setFieldValues(value.title, value.description, value.content);
     }
-    _initialized = true;
   }
 
-  void _setFieldValues(String title, String description, String content) {
-    _titleController.text = title;
-    _descriptionController.text = description;
-    _contentController.text = content;
-  }
+  void _bindExitGuard() => _exitGuard.bind(
+    readers: (isDirty: () => _isDirty, isSaving: () => _isSaving),
+    onReturn: (context) => SkillDetailRoute(
+      workspaceId: widget.workspaceId,
+      skillId: widget.skillId,
+    ).go(context),
+  );
+}
 
-  void _updateState(VoidCallback callback) => setState(callback);
+_SkillResourceRenderData _resourceScreenData(
+  _SkillResourceEditScreenState state,
+  AsyncValue<SkillDetail?> detailAsync,
+) {
+  final detail = detailAsync.value;
+  final viewData = state._viewData(detail);
+  state
+    .._initialize(viewData.resource, viewData.staticResource)
+    .._bindExitGuard();
+
+  return (
+    viewData: viewData,
+    titleKey: state._titleKey(viewData.staticResource),
+    parentTitle: detail?.title,
+  );
 }
 
 class const _SkillResourceScreenView({
   required final _SkillResourceEditScreenState state,
-  required final _SkillResourceViewData viewData,
-  required final String titleKey,
+  required final _SkillResourceRenderData renderData,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraScreen(
-    child: _SkillResourceBody(
+    child: _SkillResourceScreenContent(
       state: state,
-      resourceAsync: viewData.resourceAsync,
-      resource: viewData.resource,
-      staticResource: viewData.staticResource,
+      viewData: renderData.viewData,
+      parentTitle: renderData.parentTitle,
     ),
-    appBar: AuraAppBarWithDrawer(title: TextLocale(titleKey)),
+    appBar: _SkillResourceAppBar(state: state, titleKey: renderData.titleKey),
+  );
+}
+
+class const _SkillResourceScreenContent({
+  required final _SkillResourceEditScreenState state,
+  required final _SkillResourceViewData viewData,
+  required final String? parentTitle,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: .stretch,
+    children: [
+      if (parentTitle case final title?)
+        _SkillResourceParentTitle(title: title),
+      if (viewData.staticResource != null)
+        const _SkillResourceReadOnlyMessage(),
+      Expanded(
+        child: _SkillResourceBody(
+          state: state,
+          resourceAsync: viewData.resourceAsync,
+          resource: viewData.resource,
+          staticResource: viewData.staticResource,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _SkillResourceParentTitle({required final String title})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(12),
+    child: Text(
+      LocaleKeys.skills_resource_parent.tr(args: [title], context: context),
+    ),
+  );
+}
+
+class const _SkillResourceReadOnlyMessage() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.all(12),
+    child: TextLocale(LocaleKeys.skills_screen_app_read_only),
+  );
+}
+
+class const _SkillResourceAppBar({
+  required final _SkillResourceEditScreenState state,
+  required final String titleKey,
+}) extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) => AuraAppBarWithDrawer(
+    title: TextLocale(titleKey),
+    leading: AuraIconButton(
+      icon: Icons.arrow_back,
+      onPressed: () => state._exitGuard.pop(context),
+    ),
   );
 }
 
@@ -143,8 +261,12 @@ extension on _SkillResourceEditScreenState {
   Future<void> _editDescription(BuildContext context) async {
     final result = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _descriptionController.text,
-      maxCharacters: 240,
+      options: (
+        initialMarkdown: _descriptionController.text,
+        maxCharacters: 240,
+        titleKey: LocaleKeys.markdown_editor_resource_description,
+        draftHintKey: LocaleKeys.markdown_editor_resource_hint,
+      ),
     );
     if (result == null || !mounted) return;
 
@@ -154,8 +276,12 @@ extension on _SkillResourceEditScreenState {
   Future<void> _editContent(BuildContext context) async {
     final result = await MarkdownEditorLauncher.show(
       context,
-      initialMarkdown: _contentController.text,
-      maxCharacters: _skillResourceContentMaxCharacters,
+      options: (
+        initialMarkdown: _contentController.text,
+        maxCharacters: _skillResourceContentMaxCharacters,
+        titleKey: LocaleKeys.markdown_editor_resource_content,
+        draftHintKey: LocaleKeys.markdown_editor_resource_hint,
+      ),
     );
     if (result == null || !mounted) return;
 
@@ -167,10 +293,8 @@ extension on _SkillResourceEditScreenState {
     _updateState(() => _isSaving = true);
     try {
       await _saveResource();
-      ref.invalidate(
-        skillResourcesProvider(widget.workspaceId, widget.skillId),
-      );
-      if (context.mounted) context.pop(true);
+      _completeMutation();
+      if (context.mounted) await _exitGuard.pop(context, true);
     } on Object {
       if (context.mounted) _showSaveError(context);
     } finally {
@@ -182,7 +306,7 @@ extension on _SkillResourceEditScreenState {
     if (_isCreate) {
       final _ = await ref.read(
         createSkillResourceUsecaseProvider(widget.workspaceId),
-      )(widget.skillId, _createValue());
+      )(widget.skillId, _createSkillResource(this));
 
       return;
     }
@@ -190,20 +314,8 @@ extension on _SkillResourceEditScreenState {
     if (resourceId == null) return;
     final _ = await ref.read(
       updateSkillResourceUsecaseProvider(widget.workspaceId),
-    )(resourceId, _updateValue());
+    )(resourceId, _updateSkillResource(this));
   }
-
-  SkillResourceToCreate _createValue() => SkillResourceToCreate(
-    title: _titleController.text,
-    description: _descriptionController.text,
-    content: _contentController.text,
-  );
-
-  SkillResourceToUpdate _updateValue() => SkillResourceToUpdate(
-    title: _titleController.text,
-    description: _descriptionController.text,
-    content: _contentController.text,
-  );
 
   Future<void> _delete(BuildContext context) async {
     final resourceId = widget.resourceId;
@@ -219,15 +331,19 @@ extension on _SkillResourceEditScreenState {
       final _ = await ref.read(deleteSkillResourceProvider(widget.workspaceId))(
         resourceId,
       );
-      ref.invalidate(
-        skillResourcesProvider(widget.workspaceId, widget.skillId),
-      );
-      if (context.mounted) context.pop(true);
+      _completeMutation();
+      if (context.mounted) await _exitGuard.pop(context, true);
     } on Object {
       if (context.mounted) _showSaveError(context);
     } finally {
       if (mounted) _updateState(() => _isSaving = false);
     }
+  }
+
+  void _completeMutation() {
+    ref.invalidate(skillResourcesProvider(widget.workspaceId, widget.skillId));
+    _savedSnapshot = _snapshot;
+    _isSaving = false;
   }
 
   Future<bool> _confirmDelete(BuildContext context) async {
@@ -451,7 +567,7 @@ class const _SkillResourceActions({
         const Spacer(),
         AuraButton(
           onPressed: onSave,
-          child: Text(LocaleKeys.skills_screen_save.tr(context: context)),
+          child: Text(LocaleKeys.skills_resource_save.tr(context: context)),
           disabled: state._isSaving,
         ),
       ],
@@ -490,3 +606,19 @@ class const _SkillResourceDeleteDialog() extends StatelessWidget {
     isDestructive: true,
   );
 }
+
+SkillResourceToCreate _createSkillResource(
+  _SkillResourceEditScreenState state,
+) => SkillResourceToCreate(
+  title: state._titleController.text,
+  description: state._descriptionController.text,
+  content: state._contentController.text,
+);
+
+SkillResourceToUpdate _updateSkillResource(
+  _SkillResourceEditScreenState state,
+) => SkillResourceToUpdate(
+  title: state._titleController.text,
+  description: state._descriptionController.text,
+  content: state._contentController.text,
+);

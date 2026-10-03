@@ -8,8 +8,10 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/conversation_skill_action.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
+import 'package:auravibes_app/features/skills/widgets/skill_access_status_view.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -96,6 +98,7 @@ class _ConversationSkillSelectorModalState
   }
 
   void _refreshSelector() {
+    ref.invalidate(skillAccessSummaryProvider);
     ref
         .read(conversationSkillContextRuntimeProvider.notifier)
         .markNeedsContext(widget.conversationId);
@@ -259,6 +262,7 @@ extension _ConversationSkillCredentialHandlers
 
 _SelectorActions _selectorActions(_ConversationSkillSelectorModalState state) =>
     _SelectorActions(
+      workspaceId: state.widget.workspaceId,
       onSearch: state._setQuery,
       onAdd: _skillActionHandler(state, .add),
       onUseNow: _skillActionHandler(state, .useNow),
@@ -277,6 +281,7 @@ bool _refreshesSelector(ConversationSkillActionResult result) =>
     result == .added || result == .alreadyAdded || result == .used;
 
 class const _SelectorActions({
+  required final String workspaceId,
   required final ValueChanged<String> onSearch,
   required final ValueChanged<AvailableSkill> onAdd,
   required final ValueChanged<AvailableSkill> onUseNow,
@@ -294,7 +299,14 @@ class const _SelectorDialog({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraAlertDialog(
-    title: const TextLocale(LocaleKeys.skills_selector_title),
+    title: const AuraColumn(
+      children: [
+        TextLocale(LocaleKeys.skills_selector_title),
+        TextLocale(LocaleKeys.skills_selector_actions_hint),
+      ],
+      spacing: .sm,
+      crossAxisAlignment: .start,
+    ),
     message: _SelectorDialogMessage(
       selectorAsync: selectorAsync,
       query: query,
@@ -567,6 +579,8 @@ class const _LoadedSkillTile({
   Widget build(BuildContext context) => AuraTile(
     child: _SkillTileContents(
       skill: skill,
+      actions: actions,
+      pending: pending,
       contextStatus: contextStatus,
       contextFailure: contextFailure,
       actionResult: actionResult,
@@ -591,7 +605,12 @@ class const _AvailableSkillTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
-    child: _SkillTileContents(skill: skill, actionResult: actionResult),
+    child: _SkillTileContents(
+      skill: skill,
+      actions: actions,
+      pending: pending,
+      actionResult: actionResult,
+    ),
     variant: .ghost,
     trailing: _AvailableSkillActions(
       skill: skill,
@@ -604,6 +623,8 @@ class const _AvailableSkillTile({
 
 class const _SkillTileContents({
   required final AvailableSkill skill,
+  required final _SelectorActions actions,
+  required final bool pending,
   final ConversationSkillContextStatus? contextStatus,
   final ConversationSkillContextFailure? contextFailure,
   final ConversationSkillActionResult? actionResult,
@@ -612,6 +633,7 @@ class const _SkillTileContents({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _SkillTileIdentity(skill: skill, contextStatus: contextStatus),
+      _SkillTileAccessStatus(skill: skill, actions: actions, pending: pending),
       _SkillTileMessages(
         description: skill.description,
         contextFailure: contextFailure,
@@ -620,6 +642,22 @@ class const _SkillTileContents({
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillTileAccessStatus({
+  required final AvailableSkill skill,
+  required final _SelectorActions actions,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SkillAccessStatusView(
+    workspaceId: actions.workspaceId,
+    skillId: skill.id,
+    showDependencies: true,
+    isAppSkill: skill.source == .app,
+    onChanged: actions.onRefresh,
+    recoveryEnabled: !pending,
   );
 }
 

@@ -11,6 +11,8 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../domain/workspace_resource_validation.dart';
 import '../repositories/workspace_state_repository.dart';
 import '../workspace_secret_cipher.dart';
+import 'credential_definition_safety.dart';
+import 'credential_write_safety.dart';
 
 typedef _OperationCommitMetadata = ({
   String userId,
@@ -359,6 +361,12 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request: request,
         existing: existing,
       );
+      await CredentialWriteSafety.validateSecret(
+        session,
+        request: request,
+        secret: secret,
+        transaction: transaction,
+      );
       final revision = (existing?.revision ?? 0) + 1;
       final box = secret == null
           ? null
@@ -552,8 +560,8 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
                 : request.clearSecret
                 ? null
                 : request.secret
-          : existing?.deletedAt == null
-          ? await const WorkspaceSecretCipher().decrypt(session, existing!)
+          : existing != null && existing.deletedAt == null
+          ? await const WorkspaceSecretCipher().decrypt(session, existing)
           : null;
       if (isMcpCredential) {
         _validateMcpSecret(operation.data!, secret);
@@ -561,10 +569,15 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
       final secretRevision = writesSecret
           ? (existing?.revision ?? 0) + 1
           : existing?.revision;
+      final displaySuffix = writesSecret
+          ? secret == null
+                ? null
+                : _suffix(secret)
+          : existing?.displaySuffix;
       final sanitized = _credentialOperation(
         operation,
         configured: secret != null,
-        displaySuffix: secret == null ? null : _suffix(secret),
+        displaySuffix: displaySuffix,
         secretRevision: secretRevision,
       );
       final previousResource = isMcpCredential
@@ -589,6 +602,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         request.workspaceId,
         now,
         transaction,
+        credentialSecret: (value: secret),
       );
       final resetResources = resetMcpPermissions
           ? await _resetMcpPermissions(
@@ -633,7 +647,7 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         final response = MutateWorkspaceCredentialResponse(
           resource: resource,
           configured: secret != null,
-          displaySuffix: secret == null ? null : _suffix(secret),
+          displaySuffix: displaySuffix,
           secretRevision: secretRevision,
           sequence: sequence,
         );
@@ -1168,8 +1182,9 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
     WorkspacePatchOperation operation,
     int workspaceId,
     DateTime now,
-    Transaction transaction,
-  ) async {
+    Transaction transaction, {
+    ({String? value})? credentialSecret,
+  }) async {
     if (operation.resourceId.isEmpty) {
       throw CloudWorkspaceException(
         code: CloudWorkspaceErrorCode.validationFailed,
@@ -1220,6 +1235,20 @@ class WorkspaceStateUseCases(final WorkspaceStateRepository _repository) {
         );
       }
     }
+    await CredentialWriteSafety.validate(
+      session,
+      operation: operation,
+      workspaceId: workspaceId,
+      transaction: transaction,
+      preparedSecret: credentialSecret,
+    );
+    await CredentialDefinitionSafety.validate(
+      session,
+      operation: operation,
+      existing: existing,
+      workspaceId: workspaceId,
+      transaction: transaction,
+    );
     if (operation.operation == WorkspacePatchOperationKind.create) {
       if (existing != null ||
           operation.data == null ||

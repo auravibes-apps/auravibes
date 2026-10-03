@@ -9,9 +9,9 @@ to drift.
 
 ## Verified repository facts
 
-- `.fvmrc` pins Flutter `3.47.5` and sets `runPubGetOnSdkChanges` to `true`.
-- Root `pubspec.yaml` requires Dart `^3.13.0`, declares a Dart Pub workspace,
-  and depends on Melos `^8.7.0`.
+- `.fvmrc` pins Flutter and sets `runPubGetOnSdkChanges` to `true`.
+- Root `pubspec.yaml` declares the Dart SDK constraint, a Dart Pub workspace,
+  and the Melos dependency.
 - FVM `4.3.1` exposes `--skip-pub-get`; its current documentation says `fvm use`
   runs `flutter pub get` unless skipped.
 - A local `fvm dart run melos bootstrap` run bootstrapped six workspace

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_state.dart';
+import 'package:auravibes_app/features/skills/providers/skill_access_summary_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/apply_conversation_skill_action_usecase.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -20,6 +22,7 @@ void main() {
   ) async {
     final container = ProviderContainer(
       overrides: [
+        skillAccessSummaryProvider.overrideWith((_, _) async => null),
         conversationSkillSelectorProvider(
           'workspace',
           'conversation',
@@ -80,9 +83,57 @@ void main() {
 
     expect(find.text('Research'), findsOneWidget);
     expect(find.text('Needs context'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
+    expect(find.text('Instruction requirements met'), findsOneWidget);
     expect(find.text('Use now'), findsOneWidget);
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
+  });
+
+  for (final access in SkillAccessStatus.values) {
+    testWidgets('access $access remains separate from ready context', (
+      tester,
+    ) async {
+      final container = _container(
+        state: const ConversationSkillSelectorState(
+          loaded: [_research],
+          loadable: [],
+          contextStatusBySlug: {'research': .ready},
+        ),
+        access: .new(status: access, instructionsAvailable: true),
+      );
+      addTearDown(container.dispose);
+      await _pumpModal(tester, container);
+      expect(find.text('Ready in context'), findsOneWidget);
+      expect(find.text('Instruction requirements met'), findsOneWidget);
+      expect(find.text('Use now'), findsOneWidget);
+      expect(
+        find.text(switch (access) {
+          .notRequired => 'No access required',
+          .saved => 'Saved access available',
+          .missing => 'Needs access',
+          .partial => 'Instructions available; access setup incomplete',
+          .unknown => 'Access status unknown',
+        }),
+        findsOneWidget,
+      );
+    });
+  }
+
+  testWidgets('saved access does not hide a context preparation error', (
+    tester,
+  ) async {
+    final container = _container(
+      state: const ConversationSkillSelectorState(
+        loaded: [_research],
+        loadable: [],
+        contextStatusBySlug: {'research': .error},
+      ),
+      access: const .new(status: .saved, instructionsAvailable: true),
+    );
+    addTearDown(container.dispose);
+    await _pumpModal(tester, container);
+    expect(find.text('Saved access available'), findsOneWidget);
+    expect(find.text('Context error'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 
   testWidgets('search filters both sections by description', (tester) async {
@@ -142,12 +193,16 @@ void main() {
         },
         send: (_, _, _) async => sends++,
       ),
+      access: const .new(status: .partial, instructionsAvailable: true),
     );
     addTearDown(container.dispose);
     await _pumpModal(tester, container);
 
+    await tester.ensureVisible(find.text('Add'));
     final _ = await tester.tap(find.text('Add'));
     await tester.pump();
+    final setup = find.widgetWithText(AuraButton, 'Set up credentials');
+    expect(tester.widget<AuraButton>(setup).disabled, isTrue);
 
     expect(find.textContaining('Adding'), findsOneWidget);
     expect(sends, 0);
@@ -185,8 +240,10 @@ void main() {
 ProviderContainer _container({
   required ConversationSkillSelectorState state,
   ApplyConversationSkillActionUsecase? actionUsecase,
+  SkillAccessSummary? access,
 }) => ProviderContainer(
   overrides: [
+    skillAccessSummaryProvider.overrideWith((_, _) async => access),
     conversationSkillSelectorProvider(
       'workspace',
       'conversation',
