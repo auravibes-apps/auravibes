@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 20);
+      expect(fixture.database.schemaVersion, 22);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -140,6 +140,74 @@ void main() {
 
         expect(row.read<String>('input_schema'), '{"type":"object"}');
         expect(row.read<String?>('output_schema'), isNull);
+      },
+    );
+
+    test(
+      'migration from schema 20 preserves tool policy and adds MCP fields',
+      () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 20
+        ..execute('''
+          CREATE TABLE mcp_servers (
+            id TEXT NOT NULL PRIMARY KEY
+          );
+        ''')
+        ..execute('''
+          CREATE TABLE workspace_model_selections (
+            id TEXT NOT NULL PRIMARY KEY,
+            tool_sampling_policy TEXT
+          );
+        ''');
+      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+      final mcpColumns = await fixture.database
+          .customSelect('PRAGMA table_info(mcp_servers)')
+          .get();
+      final selectionColumns = await fixture.database
+          .customSelect('PRAGMA table_info(workspace_model_selections)')
+          .get();
+
+      expect(
+        mcpColumns.map((row) => row.read<String>('name')),
+        containsAll(['catalog_snapshot_json', 'test_summary_json']),
+      );
+      expect(
+        selectionColumns.map((row) => row.read<String>('name')),
+        contains('tool_sampling_policy'),
+      );
+      },
+    );
+
+    test(
+      'migration from schema 21 adds tool policy to MCP-upgraded database',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 21
+          ..execute('''
+            CREATE TABLE mcp_servers (
+              id TEXT NOT NULL PRIMARY KEY,
+              catalog_snapshot_json TEXT,
+              test_summary_json TEXT
+            );
+          ''')
+          ..execute('''
+            CREATE TABLE workspace_model_selections (
+              id TEXT NOT NULL PRIMARY KEY
+            );
+          ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final columns = await fixture.database
+            .customSelect('PRAGMA table_info(workspace_model_selections)')
+            .get();
+
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          contains('tool_sampling_policy'),
+        );
       },
     );
 

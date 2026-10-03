@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_probe.dart';
+import 'package:auravibes_server/src/features/mcp_servers/mcp_oauth_token_resolver.dart';
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_repository.dart';
 import 'package:auravibes_server/src/features/mcp_servers/mcp_server_use_cases.dart';
 import 'package:auravibes_server/src/features/workspace_state/workspace_secret_cipher.dart';
@@ -16,6 +17,281 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('MCP server verification', (sessionBuilder, _) {
+    test('OAuth receipt, encrypted rotation, and reauth state', () async {
+      final fixture = await _Fixture.create(sessionBuilder.build());
+      await McpCatalogEntry.db.insertRow(
+        fixture.session,
+        McpCatalogEntry(
+          catalogId: 'oauth-catalog',
+          name: 'OAuth server',
+          description: 'OAuth tools',
+          url: 'https://mcp.example.com',
+          transport: 'streamableHttp',
+          isEnabled: true,
+          optionsJson: '[{"key":"oauth","name":"OAuth","authType":"oauth","fields":[{"key":"clientId","isSecret":false,"isRequired":true}]}]',
+        ),
+      );
+      const oauthJson =
+          '{"clientId":"client","tokenEndpoint":"https://auth.example.com/token","token":{"accessToken":"access-secret","refreshToken":"refresh-secret","issuedAt":"2026-01-01T00:00:00Z","tokenType":"Bearer"}}';
+      final useCases = McpServerUseCases(
+        McpServerRepository(),
+        _FakeMcpServerProbe(),
+      );
+      final verified = await useCases.verify(
+        fixture.session,
+        userId: fixture.userId,
+        request: VerifyMcpServerRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'verify-oauth',
+          url: 'https://mcp.example.com',
+          transport: 'streamableHttp',
+          useHttp2: false,
+          bearerToken: 'access-secret',
+          oauthJson: oauthJson,
+        ),
+      );
+      final request = CreateMcpServerRequest(
+        workspaceId: fixture.workspaceId,
+        requestId: 'create-oauth',
+        name: 'OAuth server',
+        url: 'https://mcp.example.com',
+        transport: 'streamableHttp',
+        useHttp2: false,
+        bearerToken: 'access-secret',
+        oauthJson: oauthJson,
+        catalogListingId: 'oauth-catalog',
+        catalogOptionKey: 'oauth',
+        verificationReceipt: verified.verificationReceipt,
+      );
+      await expectLater(
+        useCases.create(
+          fixture.session,
+          userId: fixture.userId,
+          request: request.copyWith(
+            requestId: 'tampered-oauth',
+            oauthJson: oauthJson.replaceFirst('refresh-secret', 'changed'),
+          ),
+        ),
+        throwsA(_cloudError(CloudWorkspaceErrorCode.validationFailed)),
+      );
+      final created = await useCases.create(
+        fixture.session,
+        userId: fixture.userId,
+        request: request,
+      );
+      final secret = (await WorkspaceSecret.db.find(
+        fixture.session,
+        where: (table) => table.workspaceId.equals(fixture.workspaceId),
+      )).single;
+      expect(
+        base64Encode(secret.ciphertext.buffer.asUint8List()),
+        isNot(contains('refresh-secret')),
+      );
+      final resolver = McpOAuthTokenResolver(
+        now: () => DateTime.utc(2026, 1, 1, 2),
+        exchange: (credentials) async => credentials.withRefreshedToken(
+          accessToken: 'rotated-access',
+          refreshToken: 'rotated-refresh',
+          expiresIn: 7200,
+          now: DateTime.utc(2026, 1, 1, 2),
+        ),
+      );
+      final beforeRefresh = await fixture.counts();
+      final sequenceBeforeRefresh = (await CloudWorkspace.db.findById(
+        fixture.session,
+        fixture.workspaceId,
+      ))!.sequence;
+      expect(
+        await resolver.resolve(
+          fixture.session,
+          secret,
+          actorUserId: fixture.userId,
+        ),
+        'rotated-access',
+      );
+      final persisted = (await WorkspaceSecret.db.find(
+        fixture.session,
+        where: (table) => table.workspaceId.equals(fixture.workspaceId),
+      )).single;
+      final encrypted = await const WorkspaceSecretCipher().decrypt(
+        fixture.session,
+        persisted,
+      );
+      expect(encrypted, contains('rotated-refresh'));
+      expect(encrypted, isNot(contains('refresh-secret')));
+      expect(created.mcpServerId, persisted.resourceId);
+      final rotatedResource = await WorkspaceResource.db.findFirstRow(
+        fixture.session,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.resourceId.equals(created.mcpServerId),
+      );
+      final rotatedData = jsonDecode(rotatedResource!.data) as Map;
+      expect(rotatedData['secretRevision'], persisted.revision);
+      expect(rotatedData['authStatus'], 'active');
+      expect(rotatedResource.revision, 2);
+      final afterRefresh = await fixture.counts();
+      expect(afterRefresh.events, beforeRefresh.events + 1);
+      expect(
+        (await CloudWorkspace.db.findById(
+          fixture.session,
+          fixture.workspaceId,
+        ))!.sequence,
+        sequenceBeforeRefresh + 1,
+      );
+      final stillValid = McpOAuthTokenResolver(
+        now: () => DateTime.utc(2026, 1, 1, 2, 1),
+        exchange: (_) => throw StateError('Must not refresh'),
+      );
+      expect(
+        await stillValid.resolve(
+          fixture.session,
+          persisted,
+          actorUserId: fixture.userId,
+        ),
+        'rotated-access',
+      );
+      expect((await fixture.counts()).events, afterRefresh.events);
+      final failed = McpOAuthTokenResolver(
+        now: () => DateTime.utc(2026, 1, 2),
+        exchange: (_) => throw const FormatException('refresh failed'),
+      );
+      await expectLater(
+        failed.resolve(
+          fixture.session,
+          persisted,
+          actorUserId: fixture.userId,
+        ),
+        throwsA(isA<McpOAuthReauthRequired>()),
+      );
+      final resource = await WorkspaceResource.db.findFirstRow(
+        fixture.session,
+        where: (table) =>
+            table.workspaceId.equals(fixture.workspaceId) &
+            table.resourceId.equals(created.mcpServerId),
+      );
+      expect(
+        (jsonDecode(resource!.data) as Map)['authStatus'],
+        'reauthRequired',
+      );
+      expect((await fixture.counts()).events, afterRefresh.events + 1);
+      final noRefresh = encrypted
+          .replaceFirst(
+            '"refreshToken":"rotated-refresh"',
+            '"refreshToken":null',
+          )
+          .replaceFirst('"expiresIn":7200', '"expiresIn":null');
+      final cipher = await const WorkspaceSecretCipher().encrypt(
+        fixture.session,
+        noRefresh,
+        workspaceId: persisted.workspaceId,
+        resourceId: persisted.resourceId,
+      );
+      final withoutRefresh = await WorkspaceSecret.db.updateRow(
+        fixture.session,
+        persisted.copyWith(
+          ciphertext: cipher.ciphertext,
+          nonce: cipher.nonce,
+          authenticationTag: cipher.authenticationTag,
+        ),
+      );
+      await expectLater(
+        McpOAuthTokenResolver(
+          now: () => DateTime.utc(2026, 1, 2),
+          exchange: (_) => throw StateError('Must not exchange'),
+        ).resolve(
+          fixture.session,
+          withoutRefresh,
+          actorUserId: fixture.userId,
+        ),
+        throwsA(isA<McpOAuthReauthRequired>()),
+      );
+    });
+
+    test(
+      'catalog install keeps metadata and encrypted workspace headers',
+      () async {
+        final fixture = await _Fixture.create(sessionBuilder.build());
+        await McpCatalogEntry.db.insertRow(
+          fixture.session,
+          McpCatalogEntry(
+            catalogId: 'catalog-1',
+            name: 'Original',
+            description: 'Original description',
+            url: 'https://mcp.example.com',
+            transport: 'streamableHttp',
+            isEnabled: true,
+            optionsJson: '[{"key":"personal","name":"Personal","authType":"apiKey","fields":[{"key":"X-API-Key","isSecret":true,"isRequired":true}]}]',
+          ),
+        );
+        final probe = _FakeMcpServerProbe();
+        final useCases = McpServerUseCases(McpServerRepository(), probe);
+        final verification = await useCases.verify(
+          fixture.session,
+          userId: fixture.userId,
+          request: VerifyMcpServerRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'verify-catalog',
+            url: 'https://mcp.example.com',
+            transport: 'streamableHttp',
+            useHttp2: false,
+            httpHeadersJson: '{"X-API-Key":"secret-value"}',
+          ),
+        );
+        final createRequest = CreateMcpServerRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'create-catalog',
+          name: 'Original',
+          url: 'https://mcp.example.com',
+          transport: 'streamableHttp',
+          useHttp2: false,
+          httpHeadersJson: '{"X-API-Key":"secret-value"}',
+          catalogListingId: 'catalog-1',
+          catalogOptionKey: 'personal',
+          verificationReceipt: verification.verificationReceipt,
+        );
+        final created = await useCases.create(
+          fixture.session,
+          userId: fixture.userId,
+          request: createRequest,
+        );
+        final resources = await WorkspaceResource.db.find(
+          fixture.session,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        );
+        final server = resources.singleWhere(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.mcpServer,
+        );
+        final snapshot = jsonDecode(server.data) as Map<String, dynamic>;
+        final secret = (await WorkspaceSecret.db.find(
+          fixture.session,
+          where: (table) => table.workspaceId.equals(fixture.workspaceId),
+        )).single;
+        expect(snapshot['catalogSnapshotJson'], contains('Original'));
+        expect(
+          snapshot['catalogSnapshotJson'],
+          isNot(contains('secret-value')),
+        );
+        expect(
+          base64Encode(secret.ciphertext.buffer.asUint8List()),
+          isNot(contains('secret-value')),
+        );
+        expect(probe.lastHeaders, {'X-API-Key': 'secret-value'});
+        await McpCatalogEntry.db.deleteWhere(
+          fixture.session,
+          where: (table) => table.catalogId.equals('catalog-1'),
+        );
+        expect(snapshot['catalogSnapshotJson'], contains('Original'));
+        final replay = await useCases.create(
+          fixture.session,
+          userId: fixture.userId,
+          request: createRequest,
+        );
+        expect(replay.toJson(), created.toJson());
+      },
+    );
+
     test('verify is read-only and create reuses its discovery', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       final probe = _FakeMcpServerProbe();
@@ -269,6 +545,7 @@ DiscoverMcpServerResult _discovery() => DiscoverMcpServerResult(
 
 class _FakeMcpServerProbe extends McpServerProbe {
   var calls = 0;
+  Map<String, String>? lastHeaders;
 
   @override
   Future<DiscoverMcpServerResult> call({
@@ -276,8 +553,10 @@ class _FakeMcpServerProbe extends McpServerProbe {
     required String transport,
     required bool useHttp2,
     String? bearerToken,
+    Map<String, String> httpHeaders = const {},
   }) async {
     calls++;
+    lastHeaders = httpHeaders;
 
     return _discovery();
   }
@@ -314,6 +593,8 @@ class _Fixture {
   final int workspaceId;
 
   static Future<_Fixture> create(Session session) async {
+    session.passwords['workspaceSecretKey'] =
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
     final userId = const Uuid().v4().toString();
     final workspace = await workspace_repo.CloudWorkspaceRepository()
         .createWorkspace(

@@ -1,1 +1,1 @@
-enum WorkspaceMcpAuthentication { none, bearerToken, oauth }
+enum WorkspaceMcpAuthentication { none, bearerToken, oauth, httpHeaders }

@@ -1,8 +1,32 @@
+import 'dart:convert';
+
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:uuid/v7.dart';
 
 class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
+  Future<VerifyMcpServerResult> verifyCatalogMcpServer(
+    McpServerFormToCreate server,
+  ) => CloudAppErrors.guardCall(
+    .mcp,
+    () => _stateGateway.client.mcpServer.verify(
+      _catalogVerificationRequest(server),
+    ),
+  );
+
+  Future<CreateMcpServerResult> createCatalogMcpServer(
+    McpServerFormToCreate server, {
+    required String requestId,
+    required String verificationReceipt,
+  }) => CloudAppErrors.guardCall(
+    .mcp,
+    () => _stateGateway.client.mcpServer.create(
+      _catalogCreateRequest(server, requestId, verificationReceipt),
+    ),
+  );
+
   Future<VerifyMcpServerResult> verifyMcpServer(
     ({
       String requestId,
@@ -99,4 +123,68 @@ class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
     useHttp2: request.useHttp2,
     bearerToken: request.bearerToken,
   );
+
+  VerifyMcpServerRequest _catalogVerificationRequest(
+    McpServerFormToCreate server,
+  ) =>
+      _verifyRequest((
+        requestId: const UuidV7().generate(),
+        url: server.url.trim(),
+        transport: server.transport.toJson()['type']! as String,
+        useHttp2: false,
+        bearerToken: server.bearerToken,
+      )).copyWith(
+        httpHeadersJson: server.httpHeaders == null
+            ? null
+            : jsonEncode(server.httpHeaders),
+        oauthJson: server.oauthJson,
+      );
+}
+
+extension _CloudMcpCatalogRequests on CloudMcpGateway {
+  CreateMcpServerRequest _catalogCreateRequest(
+    McpServerFormToCreate server,
+    String requestId,
+    String verificationReceipt,
+  ) => _withCatalogCreateMetadata(
+    _createMcpServerRequest((
+      requestId: requestId,
+      name: server.name.trim(),
+      url: server.url.trim(),
+      transport: server.transport.toJson()['type']! as String,
+      useHttp2: false,
+      description: server.description?.trim(),
+      bearerToken: server.bearerToken,
+      verificationReceipt: verificationReceipt,
+    )),
+    server,
+  );
+
+  CreateMcpServerRequest _withCatalogCreateMetadata(
+    CreateMcpServerRequest request,
+    McpServerFormToCreate server,
+  ) => request.copyWith(
+    httpHeadersJson: server.httpHeaders == null
+        ? null
+        : jsonEncode(server.httpHeaders),
+    oauthJson: server.oauthJson,
+    catalogListingId: _snapshotField(server, 'id'),
+    catalogOptionKey: _snapshotOptionKey(server),
+  );
+}
+
+String? _snapshotField(McpServerFormToCreate server, String key) {
+  final raw = server.catalogSnapshotJson;
+  if (raw == null) return null;
+  final decoded = jsonDecode(raw) as Map<String, dynamic>;
+
+  return decoded[key] as String?;
+}
+
+String? _snapshotOptionKey(McpServerFormToCreate server) {
+  final raw = server.catalogSnapshotJson;
+  if (raw == null) return null;
+  final decoded = jsonDecode(raw) as Map<String, dynamic>;
+
+  return (decoded['option'] as Map<String, dynamic>)['key'] as String?;
 }

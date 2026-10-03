@@ -4,12 +4,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/models/model_provider_verification.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/mcp_server_for_edit.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations.dart';
@@ -40,6 +42,8 @@ class _ServiceConnectionEditScreenState
   final _nameController = TextEditingController();
   final _modelKeyController = TextEditingController();
   final _modelUrlController = TextEditingController();
+  final _mcpUrlController = TextEditingController();
+  final _mcpSecretController = TextEditingController();
   final _nonSecretControllers = <String, TextEditingController>{};
   final _secretControllers = <String, TextEditingController>{};
   final _clearedSecrets = <String>{};
@@ -51,18 +55,14 @@ class _ServiceConnectionEditScreenState
   bool _isSaving = false;
   bool _isTestingModelProvider = false;
   ModelProviderVerification? _modelProviderVerification;
+  McpTransportTypeOptions? _mcpTransport;
+  McpServerAuthMode? _mcpAuthMode;
   Timer? _modelProviderVerificationExpiryTimer;
   Exception? _modelProviderVerificationError;
   var _modelProviderVerificationVersion = 0;
 
   Future<_ConnectionEditState> get _future =>
       _futureValue ?? (throw StateError('Edit state is not initialized'));
-
-  String? get _replacementModelProviderKey {
-    final key = _modelKeyController.text.trim();
-
-    return key.isEmpty ? null : key;
-  }
 
   String? get _modelProviderVerificationErrorMessage {
     final error = _modelProviderVerificationError;
@@ -97,6 +97,8 @@ class _ServiceConnectionEditScreenState
     _nameController.dispose();
     _modelKeyController.dispose();
     _modelUrlController.dispose();
+    _mcpUrlController.dispose();
+    _mcpSecretController.dispose();
     for (final controller in _nonSecretControllers.values) {
       controller.dispose();
     }
@@ -121,15 +123,7 @@ class _ServiceConnectionEditScreenState
   void _initialize(_ConnectionEditState state) {
     if (_initialized) return;
     _editState = state;
-    _initializeEditControllers(
-      state,
-      .new(
-        nameController: _nameController,
-        modelUrlController: _modelUrlController,
-        nonSecretControllers: _nonSecretControllers,
-        secretControllers: _secretControllers,
-      ),
-    );
+    _initializeConnectionEditControllers(state, this);
     _initialized = true;
     _savedSnapshot = _currentSnapshot();
     _isDirty = false;
@@ -176,6 +170,72 @@ class _ServiceConnectionEditScreenState
     );
     if (mounted) setState(() => _isSaving = false);
   }
+
+  Future<void> _saveMcpServer(
+    BuildContext context,
+    _McpServerEditState state,
+  ) async {
+    if (!mounted || !context.mounted) return;
+    setState(() => _isSaving = true);
+    await _runMcpServerEditSave(context, state, this);
+    if (mounted) setState(() => _isSaving = false);
+  }
+}
+
+void _initializeConnectionEditControllers(
+  _ConnectionEditState state,
+  _ServiceConnectionEditScreenState owner,
+) {
+  _initializeEditControllers(
+    state,
+    .new(
+      nameController: owner._nameController,
+      modelUrlController: owner._modelUrlController,
+      nonSecretControllers: owner._nonSecretControllers,
+      secretControllers: owner._secretControllers,
+    ),
+  );
+  if (state case final _McpServerEditState mcpState) {
+    owner._initializeMcpServerControllers(mcpState);
+  }
+}
+
+extension _McpServerEditInitialization on _ServiceConnectionEditScreenState {
+  void _initializeMcpServerControllers(_McpServerEditState state) {
+    _mcpUrlController.text = state.server.url;
+    _mcpTransport = _mcpTransportOption(state.server.transport);
+    _mcpAuthMode = state.server.authMode;
+  }
+}
+
+Future<void> _runMcpServerEditSave(
+  BuildContext context,
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) => _runEditSave(
+  context,
+  () => _saveMcpServerSettings(
+    owner.ref,
+    owner.widget.workspaceId,
+    state.server,
+    _mcpServerSettingsUpdate(state, owner),
+  ),
+  LocaleKeys.service_connections_save_error,
+  onSaved: owner._markSaved,
+);
+
+Future<void> _saveMcpServerSettings(
+  WidgetRef ref,
+  String workspaceId,
+  McpServerForEdit server,
+  McpServerSettingsUpdate update,
+) async {
+  final operations = await ref.read(
+    serviceConnectionOperationsProvider(workspaceId).future,
+  );
+  final save = operations.updateMcp;
+  if (save == null) throw StateError('MCP edit operation is unavailable.');
+  await save(server, update);
 }
 
 extension ServiceConnectionEditUnsavedChanges
@@ -197,6 +257,7 @@ extension ServiceConnectionEditUnsavedChanges
       ),
       final _GenericServiceConnectionEditState genericState =>
         _genericConnectionSnapshot(genericState, name),
+      final _McpServerEditState mcpState => _mcpServerSnapshot(mcpState, name),
     };
   }
 
@@ -256,6 +317,20 @@ extension ServiceConnectionEditUnsavedChanges
     ).name,
   });
 
+  String _mcpServerSnapshot(_McpServerEditState state, String name) =>
+      jsonEncode({
+        'type': 'mcpServer',
+        'serverId': state.server.id,
+        'name': name,
+        'url': _mcpUrlController.text.trim(),
+        'transport': _mcpTransport?.name,
+        'authMode': _mcpAuthMode?.name,
+        'secretIntent': _secretEditFor(
+          _mcpSecretController.text.trim(),
+          false,
+        ).name,
+      });
+
   void _markSaved() => _refreshForm(() => _savedSnapshot = _currentSnapshot());
 
   Future<void> _handleBack(BuildContext context) async {
@@ -275,6 +350,12 @@ extension ServiceConnectionEditUnsavedChanges
 }
 
 extension _ModelProviderEditActions on _ServiceConnectionEditScreenState {
+  String? get _replacementModelProviderKey {
+    final key = _modelKeyController.text.trim();
+
+    return key.isEmpty ? null : key;
+  }
+
   void _invalidateModelProviderVerification() {
     _modelProviderVerificationVersion++;
     _modelProviderVerificationExpiryTimer?.cancel();
@@ -472,12 +553,22 @@ Future<_ConnectionEditState> _loadConnectionEditState(
   final operations = await ref.read(
     serviceConnectionOperationsProvider(workspaceId).future,
   );
-  final generic = await operations.getGenericForEdit(connectionId);
-  if (generic != null) {
-    return _GenericServiceConnectionEditState(connection: generic);
-  }
+  final connection = await _loadMcpOrGenericEditState(operations, connectionId);
+  if (connection != null) return connection;
 
   return await _loadCredentialOrModel(ref, workspaceId, connectionId);
+}
+
+Future<_ConnectionEditState?> _loadMcpOrGenericEditState(
+  ServiceConnectionOperations operations,
+  String connectionId,
+) async {
+  final mcp = await operations.getMcpForEdit?.call(connectionId);
+  if (mcp != null) return _McpServerEditState(server: mcp);
+  final generic = await operations.getGenericForEdit(connectionId);
+  if (generic == null) return null;
+
+  return _GenericServiceConnectionEditState(connection: generic);
 }
 
 Future<_ConnectionEditState> _loadCredentialOrModel(
@@ -574,6 +665,8 @@ void _initializeEditControllers(
       _initializeModelProviderControllers(modelState, controllers);
     case final _GenericServiceConnectionEditState genericState:
       _initializeNameController(genericState.connection.name, controllers);
+    case final _McpServerEditState mcpState:
+      _initializeNameController(mcpState.server.name, controllers);
   }
 }
 
@@ -894,6 +987,10 @@ class const _ConnectionEditFormSelector({
       ),
       final _GenericServiceConnectionEditState genericState =>
         _GenericServiceConnectionEditForm(state: genericState, owner: owner),
+      final _McpServerEditState mcpState => _McpServerEditForm(
+        state: mcpState,
+        owner: owner,
+      ),
     };
   }
 }
@@ -912,6 +1009,351 @@ class _ModelProviderEditState({
 class _GenericServiceConnectionEditState({
   required final GenericServiceConnectionForEdit connection,
 }) extends _ConnectionEditState;
+
+class _McpServerEditState({required final McpServerForEdit server})
+    extends _ConnectionEditState;
+
+McpTransportTypeOptions _mcpTransportOption(McpTransportType transport) =>
+    switch (transport) {
+      McpTransportTypeSSE() => .sse,
+      McpTransportTypeStreamableHttp() => .streamableHttp,
+    };
+
+McpTransportType _mcpTransportValue(
+  McpTransportTypeOptions option,
+  McpTransportType current,
+) => switch (option) {
+  .sse => const McpTransportTypeSSE(),
+  .streamableHttp => McpTransportTypeStreamableHttp(
+    useHttp2: current is McpTransportTypeStreamableHttp && current.useHttp2,
+  ),
+};
+
+McpServerSettingsUpdate _mcpServerSettingsUpdate(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) => _McpServerEditFormValues.fromOwner(state, owner).toUpdate(state.server);
+
+McpTransportType _selectedMcpTransport(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) => _mcpTransportValue(
+  owner._mcpTransport ?? _mcpTransportOption(state.server.transport),
+  state.server.transport,
+);
+
+class const _McpServerEditFormValues({
+  required final String name,
+  required final String url,
+  required final McpTransportType transport,
+  required final McpServerAuthMode authMode,
+  required final McpServerSecretChange secretChange,
+  required final String? secret,
+}) {
+  new fromOwner(
+    _McpServerEditState state,
+    _ServiceConnectionEditScreenState owner,
+  ) : this(
+        name: owner._nameController.text.trim(),
+        url: owner._mcpUrlController.text.trim(),
+        transport: _selectedMcpTransport(state, owner),
+        authMode: _mcpServerEditAuthMode(state, owner),
+        secretChange: _mcpSecretChange(
+          state,
+          _mcpServerEditAuthMode(state, owner),
+          owner._mcpSecretController.text.trim(),
+        ),
+        secret: _mcpServerEditSecret(state, owner),
+      );
+
+  McpServerSettingsUpdate toUpdate(McpServerForEdit server) =>
+      McpServerSettingsUpdate(
+        serverId: server.id,
+        name: name,
+        url: url,
+        transport: transport,
+        authMode: authMode,
+        secretChange: secretChange,
+        secret: secret,
+        expectedRevision: server.revision,
+        expectedSecretRevision: server.secretRevision,
+      );
+}
+
+McpServerAuthMode _mcpServerEditAuthMode(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) => owner._mcpAuthMode ?? state.server.authMode;
+
+String? _mcpServerEditSecret(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) {
+  final secret = owner._mcpSecretController.text.trim();
+  final authMode = _mcpServerEditAuthMode(state, owner);
+
+  return _mcpSecretChange(state, authMode, secret) == .replace ? secret : null;
+}
+
+McpServerSecretChange _mcpSecretChange(
+  _McpServerEditState state,
+  McpServerAuthMode authMode,
+  String secret,
+) {
+  if (authMode == .none && state.server.authMode != .none) {
+    return .clear;
+  }
+  if (secret.isNotEmpty) return .replace;
+
+  return .preserve;
+}
+
+bool _mcpServerCanSave(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) {
+  if (owner._isSaving ||
+      owner._nameController.text.trim().isEmpty ||
+      owner._mcpUrlController.text.trim().isEmpty) {
+    return false;
+  }
+
+  return _mcpAuthCanSave(state, owner);
+}
+
+bool _mcpAuthCanSave(
+  _McpServerEditState state,
+  _ServiceConnectionEditScreenState owner,
+) {
+  final authMode = owner._mcpAuthMode ?? state.server.authMode;
+  final replacing = owner._mcpSecretController.text.trim().isNotEmpty;
+
+  return _canSaveMcpAuthMode(authMode, state.server, replacing);
+}
+
+bool _canSaveMcpAuthMode(
+  McpServerAuthMode authMode,
+  McpServerForEdit server,
+  bool replacing,
+) => switch (authMode) {
+  .oauth => server.authMode == .oauth,
+  .bearerToken || .httpHeaders =>
+    replacing || (authMode == server.authMode && server.hasSecret),
+  .none => true,
+};
+
+class const _McpServerEditForm({
+  required final _McpServerEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _ConnectionEditFormShell(
+    children: [
+      const _ConnectionEditHeader(
+        text: LocaleKeys.service_connections_type_mcp_server,
+      ),
+      _McpServerEditIdentityInputs(owner: owner),
+      _McpServerEditCredentials(state: state, owner: owner),
+      _ConnectionEditSaveButton(
+        onPressed: () => owner._saveMcpServer(context, state),
+        isSaving: owner._isSaving,
+        canSave: _mcpServerCanSave(state, owner),
+      ),
+    ],
+  );
+}
+
+class const _McpServerEditIdentityInputs({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _McpServerEditNameInput(owner: owner),
+      _McpServerEditUrlInput(owner: owner),
+      _McpServerEditTransportInput(owner: owner),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _McpServerEditCredentials({
+  required final _McpServerEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _McpServerEditAuthInput(state: state, owner: owner),
+      if (_showsMcpSecret(owner._mcpAuthMode ?? state.server.authMode))
+        _McpServerEditSecretInput(state: state, owner: owner),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .start,
+  );
+}
+
+bool _showsMcpSecret(McpServerAuthMode mode) =>
+    mode == .bearerToken || mode == .httpHeaders;
+
+class const _McpServerEditNameInput({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: owner._nameController,
+    label: const TextLocale(LocaleKeys.mcp_modal_fields_name_label),
+    onChanged: (_) => owner._refreshForm(),
+  );
+}
+
+class const _McpServerEditUrlInput({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: owner._mcpUrlController,
+    label: const TextLocale(LocaleKeys.mcp_modal_fields_url_label),
+    keyboardType: .url,
+    onChanged: (_) => owner._refreshForm(),
+  );
+}
+
+class const _McpServerEditTransportInput({
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  static const List<AuraDropdownOption<McpTransportTypeOptions>> _options = [
+    AuraDropdownOption(
+      value: McpTransportTypeOptions.streamableHttp,
+      child: TextLocale(LocaleKeys.mcp_modal_transport_streamable_http),
+    ),
+    AuraDropdownOption(
+      value: McpTransportTypeOptions.sse,
+      child: TextLocale(LocaleKeys.mcp_modal_transport_sse),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      const AuraText(
+        child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
+        style: .bodySmall,
+      ),
+      AuraDropdownSelector<McpTransportTypeOptions>(
+        options: _options,
+        value: owner._mcpTransport,
+        onChanged: _onChanged,
+      ),
+    ],
+    spacing: .xs,
+    crossAxisAlignment: .start,
+  );
+
+  void _onChanged(McpTransportTypeOptions? value) {
+    if (value == null) return;
+    owner._refreshForm(() => owner._mcpTransport = value);
+  }
+}
+
+class const _McpServerEditAuthInput({
+  required final _McpServerEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AuraColumn(
+      children: [
+        const AuraText(
+          child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
+          style: .bodySmall,
+        ),
+        _McpServerEditAuthSelector(
+          authMode: state.server.authMode,
+          value: owner._mcpAuthMode,
+          onChanged: _onChanged,
+        ),
+      ],
+      spacing: .xs,
+      crossAxisAlignment: .start,
+    );
+  }
+
+  void _onChanged(McpServerAuthMode? value) {
+    if (value == null) return;
+    owner._refreshForm(() => owner._mcpAuthMode = value);
+  }
+}
+
+class const _McpServerEditAuthSelector({
+  required final McpServerAuthMode authMode,
+  required final McpServerAuthMode? value,
+  required final ValueChanged<McpServerAuthMode?> onChanged,
+}) extends StatelessWidget {
+  static const List<AuraDropdownOption<McpServerAuthMode>> _commonOptions = [
+    AuraDropdownOption(
+      value: McpServerAuthMode.none,
+      child: TextLocale(LocaleKeys.mcp_modal_auth_none),
+    ),
+    AuraDropdownOption(
+      value: McpServerAuthMode.bearerToken,
+      child: TextLocale(LocaleKeys.mcp_modal_auth_bearer_token),
+    ),
+    AuraDropdownOption(
+      value: McpServerAuthMode.httpHeaders,
+      child: TextLocale(LocaleKeys.mcp_modal_auth_http_headers),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) => AuraDropdownSelector<McpServerAuthMode>(
+    options: [
+      ..._commonOptions,
+      if (authMode == .oauth)
+        const AuraDropdownOption(
+          value: McpServerAuthMode.oauth,
+          child: TextLocale(LocaleKeys.mcp_modal_auth_oauth),
+        ),
+    ],
+    value: value,
+    onChanged: onChanged,
+  );
+}
+
+class const _McpServerEditSecretInput({
+  required final _McpServerEditState state,
+  required final _ServiceConnectionEditScreenState owner,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraInput(
+    controller: owner._mcpSecretController,
+    placeholder: _savedSecretPlaceholder(context),
+    label: Text(_secretFieldLabel(context)),
+    hint: _savedSecretHint(context),
+    keyboardType: .visiblePassword,
+    obscureText: true,
+    onChanged: (_) => owner._refreshForm(),
+  );
+
+  Text? _savedSecretPlaceholder(BuildContext context) => state.server.hasSecret
+      ? Text(LocaleKeys.mcp_edit_secret_saved.tr(context: context))
+      : null;
+
+  Text? _savedSecretHint(BuildContext context) => state.server.hasSecret
+      ? Text(LocaleKeys.mcp_edit_secret_hint.tr(context: context))
+      : null;
+
+  String _secretFieldLabel(BuildContext context) {
+    final isHeaders =
+        (owner._mcpAuthMode ?? state.server.authMode) == .httpHeaders;
+    final labelKey = isHeaders
+        ? LocaleKeys.mcp_modal_fields_http_headers_label
+        : LocaleKeys.mcp_modal_fields_bearer_token_label;
+
+    return labelKey.tr(context: context);
+  }
+}
 
 class const _SkillCredentialEditForm({
   required final _SkillCredentialEditState state,

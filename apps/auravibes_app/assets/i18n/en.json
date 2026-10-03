@@ -217,9 +217,10 @@
       "attempted_at": "Tested {time}",
       "recovery_auth": "Reconnect this MCP server to restore access.",
       "recovery_network": "Check your network and try the connection test again.",
-      "recovery_protocol": "Review this MCP server in Tools. To change its URL or authentication, add a replacement connection.",
+      "recovery_protocol": "Review this MCP server's connection settings.",
       "retry": "Retry test",
-      "open_tools": "Open Tools"
+      "open_settings": "Open settings",
+      "result_details": "Found {count} tools in {duration} ms"
     },
     "diagnostics": {
       "transport": "Transport",
@@ -1049,6 +1050,31 @@
     "no_recent_chats": "Chats will appear here",
     "view_all_chats": "View All"
   },
+  "mcp_catalog": {
+    "back": "Back",
+    "browse": "Browse MCP catalog",
+    "title": "MCP catalog",
+    "search": "Search name or description",
+    "transport": "Transport",
+    "authentication": "Authentication",
+    "all": "All",
+    "empty": "No MCP catalog entries are available.",
+    "no_match": "No entries match these filters.",
+    "load_error": "Could not load the MCP catalog. Try again.",
+    "sign_in_required": "Sign in to a cloud account to browse the MCP catalog.",
+    "option": "Connection option",
+    "required": "Required",
+    "optional": "Optional",
+    "help": "Field help",
+    "verify": "Verify connection",
+    "install": "Add to workspace",
+    "verification_success": "Connection verified. {count} tools discovered.",
+    "verification_error": "Connection verification failed. Check the fields and retry.",
+    "install_success": "MCP connection added to this workspace.",
+    "install_error": "Could not add the MCP connection. Retry.",
+    "missing_fields": "Complete all required fields.",
+    "unsupported_option": "This option is unavailable in this workspace."
+  },
   "mcp_modal": {
     "title": "Add MCP Server",
     "add_mcp_tooltip": "Add MCP Server",
@@ -1059,7 +1085,8 @@
     "auth": {
       "none": "None",
       "oauth": "OAuth",
-      "bearer_token": "Bearer Token"
+      "bearer_token": "Bearer Token",
+      "http_headers": "HTTP Headers"
     },
     "oauth": {
       "configuration": "MCP OAuth is not configured.",
@@ -1118,6 +1145,9 @@
         "label": "Bearer Token",
         "placeholder": "Enter your bearer token",
         "hint": "This token will be stored securely"
+      },
+      "http_headers": {
+        "label": "HTTP Headers"
       }
     },
     "save_success": "MCP server configuration saved",
@@ -1127,6 +1157,10 @@
     "verification_required": "Verify the connection before saving.",
     "verification_expired": "Verification expired. Verify the connection again.",
     "legacy_sse_unavailable": "Streamable HTTP was rejected. This endpoint may require legacy SSE, which the web app cannot use. Connect from a native app or configure the server for Streamable HTTP."
+  },
+  "mcp_edit": {
+    "secret_saved": "Saved securely",
+    "secret_hint": "Leave blank to keep the saved value. Enter a replacement to change it."
   },
   "compaction": {
     "settings": {

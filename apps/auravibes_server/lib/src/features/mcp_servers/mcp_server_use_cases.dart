@@ -9,6 +9,11 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../workspaces/domain/workspace_roles.dart';
 import '../workspace_state/workspace_secret_cipher.dart';
+import '../mcp_catalog/mcp_catalog_repository.dart';
+import '../mcp_catalog/mcp_catalog_use_cases.dart';
+import 'mcp_server_headers.dart';
+import 'mcp_oauth_credentials.dart';
+import 'mcp_oauth_token_resolver.dart';
 import 'mcp_server_policy.dart';
 import 'mcp_server_probe.dart';
 import 'mcp_server_repository.dart';
@@ -35,11 +40,23 @@ class McpServerUseCases(
       ),
     );
     final url = request.url.trim();
+    final headers = _validatedHeaders(
+      request.httpHeadersJson,
+      request.bearerToken,
+    );
+    final oauth = request.oauthJson == null
+        ? null
+        : McpOAuthCredentials.parse(request.oauthJson!);
+    if (oauth != null &&
+        (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
+      _validation();
+    }
     final discovery = await _probe(
       uri: McpServerPolicy.validateUri(url),
       transport: request.transport,
       useHttp2: request.useHttp2,
       bearerToken: request.bearerToken,
+      httpHeaders: headers,
     );
     if (discovery.health != McpServerHealth.healthy) _validation();
 
@@ -66,6 +83,17 @@ class McpServerUseCases(
     final name = request.name.trim();
     final url = request.url.trim();
     final description = request.description?.trim();
+    final headers = _validatedHeaders(
+      request.httpHeadersJson,
+      request.bearerToken,
+    );
+    final oauth = request.oauthJson == null
+        ? null
+        : McpOAuthCredentials.parse(request.oauthJson!);
+    if (oauth != null &&
+        (request.bearerToken != oauth.accessToken || headers.isNotEmpty)) {
+      _validation();
+    }
     if (request.requestId.isEmpty ||
         name.isEmpty ||
         name.length > 200 ||
@@ -80,6 +108,10 @@ class McpServerUseCases(
       useHttp2: request.useHttp2,
       description: description,
       bearerToken: request.bearerToken,
+      headers: headers,
+      catalogListingId: request.catalogListingId,
+      catalogOptionKey: request.catalogOptionKey,
+      oauthJson: request.oauthJson,
     );
     final existing = await session.db.transaction((transaction) async {
       await _authorize(
@@ -98,6 +130,11 @@ class McpServerUseCases(
       );
     });
     if (existing != null) return existing;
+    final catalogSnapshotJson = await _catalogSnapshot(
+      session,
+      request,
+      headers,
+    );
     final verificationReceipt = request.verificationReceipt;
     if (verificationReceipt == null) _validation();
     final discovery = await _discoveryFromVerificationReceipt(
@@ -139,6 +176,19 @@ class McpServerUseCases(
       final now = DateTime.now().toUtc();
       final serverId = const Uuid().v7();
       final groupId = const Uuid().v7();
+      final secretValue = oauth == null
+          ? headers.isNotEmpty
+                ? jsonEncode(headers)
+                : request.bearerToken
+          : request.oauthJson;
+      final authType = oauth != null
+          ? 'oauth'
+          : headers.isNotEmpty
+          ? 'httpHeaders'
+          : request.bearerToken?.isNotEmpty == true
+          ? 'bearerToken'
+          : 'none';
+      final hasSecret = secretValue?.isNotEmpty == true;
       final resources = [
         WorkspaceResource(
           workspaceId: request.workspaceId,
@@ -153,6 +203,11 @@ class McpServerUseCases(
               'useHttp2': request.useHttp2,
             },
             'description': description,
+            'catalogSnapshotJson': ?catalogSnapshotJson,
+            'authType': authType,
+            'hasSecret': hasSecret,
+            if (hasSecret) 'secretRevision': 1,
+            if (hasSecret) 'authStatus': 'active',
             'isEnabled': true,
           }),
           revision: 1,
@@ -202,7 +257,7 @@ class McpServerUseCases(
           transaction: transaction,
         );
       }
-      if (request.bearerToken case final token? when token.isNotEmpty) {
+      if (secretValue case final token? when token.isNotEmpty) {
         final encrypted = await const WorkspaceSecretCipher().encrypt(
           session,
           token,
@@ -273,6 +328,104 @@ class McpServerUseCases(
         transaction: transaction,
       );
       return result;
+    });
+  }
+
+  Map<String, String> _validatedHeaders(String? encoded, String? bearerToken) {
+    try {
+      final headers = parseMcpHttpHeaders(encoded);
+      if (bearerToken?.contains(RegExp(r'[\r\n]')) == true ||
+          bearerToken?.isNotEmpty == true && headers.isNotEmpty) {
+        _validation();
+      }
+      return headers;
+    } on FormatException {
+      _validation();
+    }
+  }
+
+  Future<String?> _catalogSnapshot(
+    Session session,
+    CreateMcpServerRequest request,
+    Map<String, String> headers,
+  ) async {
+    final listingId = request.catalogListingId;
+    final optionKey = request.catalogOptionKey;
+    if (listingId == null && optionKey == null) return null;
+    if (listingId == null || optionKey == null) _validation();
+    final listings = await McpCatalogUseCases(McpCatalogRepository())
+        .list(session);
+    final listing = listings.where((item) => item.id == listingId).firstOrNull;
+    final option = listing?.options
+        .where((item) => item.key == optionKey)
+        .firstOrNull;
+    if (listing == null ||
+        option == null ||
+        listing.url != request.url.trim() ||
+        listing.transport != request.transport) {
+      _validation();
+    }
+    final fieldKeys = option.fields.map((field) => field.key).toSet();
+    final requiredKeys = option.fields
+        .where((field) => field.isRequired)
+        .map((field) => field.key)
+        .toSet();
+    switch (option.authType) {
+      case 'none':
+        if (request.bearerToken?.isNotEmpty == true ||
+            !headers.keys.toSet().containsAll(requiredKeys) ||
+            !fieldKeys.containsAll(headers.keys)) {
+          _validation();
+        }
+      case 'bearerToken':
+        if (request.bearerToken?.isNotEmpty != true || headers.isNotEmpty) {
+          _validation();
+        }
+      case 'apiKey':
+        if (option.fields.length != 1 ||
+            !option.fields.single.isSecret ||
+            request.bearerToken?.isNotEmpty == true ||
+            !headers.keys.toSet().containsAll(requiredKeys) ||
+            !fieldKeys.containsAll(headers.keys)) {
+          _validation();
+        }
+      case 'httpHeaders':
+        if (request.bearerToken?.isNotEmpty == true ||
+            !headers.keys.toSet().containsAll(requiredKeys) ||
+            !fieldKeys.containsAll(headers.keys)) {
+          _validation();
+        }
+      case 'oauth':
+        if (request.oauthJson == null ||
+            request.bearerToken?.isNotEmpty != true ||
+            headers.isNotEmpty) {
+          _validation();
+        }
+      default:
+        _validation();
+    }
+    return jsonEncode({
+      'id': listing.id,
+      'name': listing.name,
+      'description': listing.description,
+      'url': listing.url,
+      'transport': listing.transport,
+      'option': {
+        'key': option.key,
+        'name': option.name,
+        'authType': option.authType,
+        'fields': [
+          for (final field in option.fields)
+            {
+              'key': field.key,
+              'isSecret': field.isSecret,
+              'isRequired': field.isRequired,
+              'label': field.label,
+              'description': field.description,
+              'helpUrl': field.helpUrl,
+            },
+        ],
+      },
     });
   }
 
@@ -446,8 +599,13 @@ class McpServerUseCases(
     required bool useHttp2,
     required String? description,
     required String? bearerToken,
+    required Map<String, String> headers,
+    required String? catalogListingId,
+    required String? catalogOptionKey,
+    required String? oauthJson,
   }) async {
     final tokenDigest = await _bearerTokenDigest(bearerToken);
+    final headersDigest = await _headersDigest(headers);
     final bytes = await Sha256().hash(
       utf8.encode(
         jsonEncode({
@@ -458,6 +616,10 @@ class McpServerUseCases(
           'useHttp2': useHttp2,
           'description': description,
           'bearerTokenDigest': tokenDigest,
+          'headersDigest': headersDigest,
+          'catalogListingId': catalogListingId,
+          'catalogOptionKey': catalogOptionKey,
+          'oauthDigest': await _bearerTokenDigest(oauthJson),
         }),
       ),
     );
@@ -480,6 +642,10 @@ class McpServerUseCases(
       'transport': request.transport,
       'useHttp2': request.useHttp2,
       'bearerTokenDigest': await _bearerTokenDigest(request.bearerToken),
+      'headersDigest': await _headersDigest(
+        _validatedHeaders(request.httpHeadersJson, request.bearerToken),
+      ),
+      'oauthDigest': await _bearerTokenDigest(request.oauthJson),
       'expiresAt': expiresAt.toIso8601String(),
       'discovery': discovery.toJson(),
     });
@@ -533,7 +699,13 @@ class McpServerUseCases(
           payload['transport'] != request.transport ||
           payload['useHttp2'] != request.useHttp2 ||
           payload['bearerTokenDigest'] !=
-              await _bearerTokenDigest(request.bearerToken)) {
+              await _bearerTokenDigest(request.bearerToken) ||
+          payload['headersDigest'] !=
+              await _headersDigest(
+                _validatedHeaders(request.httpHeadersJson, request.bearerToken),
+              ) ||
+          payload['oauthDigest'] !=
+              await _bearerTokenDigest(request.oauthJson)) {
         _validation();
       }
       final expiresAt = DateTime.tryParse(
@@ -558,6 +730,13 @@ class McpServerUseCases(
   Future<String> _bearerTokenDigest(String? bearerToken) async =>
       base64UrlEncode(
         (await Sha256().hash(utf8.encode(bearerToken ?? ''))).bytes,
+      );
+
+  Future<String> _headersDigest(Map<String, String> headers) async =>
+      _bearerTokenDigest(
+        jsonEncode({
+          for (final name in headers.keys.toList()..sort()) name: headers[name],
+        }),
       );
 
   String _base64(ByteData value) => base64Encode(
@@ -602,16 +781,28 @@ class McpServerUseCases(
       resourceId: request.mcpServerId,
     );
     try {
+      final decrypted = secret == null
+          ? null
+          : metadata.authType == 'oauth'
+          ? await McpOAuthTokenResolver().resolve(
+              session,
+              secret,
+              actorUserId: userId,
+            )
+          : await const WorkspaceSecretCipher().decrypt(session, secret);
       return await _probe(
         uri: McpServerPolicy.validateUri(metadata.url),
         transport: metadata.transport,
         useHttp2: metadata.useHttp2,
-        bearerToken: secret == null
-            ? null
-            : await const WorkspaceSecretCipher().decrypt(session, secret),
+        bearerToken: metadata.authType == 'httpHeaders' ? null : decrypted,
+        httpHeaders: metadata.authType == 'httpHeaders'
+            ? parseMcpHttpHeaders(decrypted)
+            : const {},
       );
     } on FormatException {
       return _unhealthy('invalid_response');
+    } on McpOAuthReauthRequired {
+      return _unhealthy('reauth_required');
     } on TimeoutException {
       return _unhealthy('timeout');
     } on SocketException {
@@ -636,6 +827,9 @@ class McpServerUseCases(
       url: value['url']! as String,
       transport: transport['type']! as String,
       useHttp2: transport['useHttp2'] == true,
+      authType: value['authType'] is String
+          ? value['authType']! as String
+          : 'bearerToken',
     );
   }
 
@@ -667,4 +861,5 @@ class const _McpMetadata({
   required final String url,
   required final String transport,
   required final bool useHttp2,
+  required final String authType,
 });

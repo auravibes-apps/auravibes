@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth_status.dart';
@@ -22,6 +23,24 @@ typedef ServiceConnectionMcpCredential = ({
   bool canRefresh,
   DateTime now,
   bool hasMetadataError,
+  McpConnectionTestSummary? lastTestSummary,
+});
+
+typedef ServiceConnectionCloudMcp = ({
+  ServiceConnectionCloudMcpIdentity identity,
+  ServiceConnectionDisplayStatus displayStatus,
+  McpConnectionTestSummary? lastTestSummary,
+  bool canRefresh,
+  bool canReconnect,
+});
+
+typedef ServiceConnectionCloudMcpIdentity = ({
+  String id,
+  String workspaceId,
+  String name,
+  String url,
+  String authenticationType,
+  McpTransportType transport,
 });
 
 class const ServiceConnectionListItem({
@@ -42,6 +61,7 @@ class const ServiceConnectionListItem({
   required final bool canRefresh,
   required final bool canReconnect,
   final McpTransportType? transport,
+  final McpConnectionTestSummary? lastTestSummary,
 }) {
   new _fromModelConnection(ModelConnectionEntity connection)
     : this(
@@ -116,7 +136,7 @@ class const ServiceConnectionListItem({
 
   new _fromMcpCredential(ServiceConnectionMcpCredential data)
     : this(
-        id: data.id,
+        id: data.mcpServerId,
         workspaceId: data.workspaceId,
         name: data.name,
         serviceName: _hostFromUrl(data.url) ?? data.metadata.provider,
@@ -149,6 +169,29 @@ class const ServiceConnectionListItem({
         canRefresh: data.canRefresh,
         canReconnect: true,
         transport: data.transport,
+        lastTestSummary: data.lastTestSummary,
+      );
+
+  new _fromCloudMcp(ServiceConnectionCloudMcp data)
+    : this(
+        id: data.identity.id,
+        workspaceId: data.identity.workspaceId,
+        name: data.identity.name,
+        serviceName: _hostFromUrl(data.identity.url),
+        kind: .mcpServer,
+        keySuffix: null,
+        credentialDefinitionId: null,
+        mcpServerId: data.identity.id,
+        authenticationType: data.identity.authenticationType,
+        displayStatus: data.displayStatus,
+        expiresAt: null,
+        lastRefreshedAt: null,
+        lastAuthError: null,
+        metadataValues: const [],
+        canRefresh: data.canRefresh,
+        canReconnect: data.canReconnect,
+        transport: data.identity.transport,
+        lastTestSummary: data.lastTestSummary,
       );
 
   factory fromSkillCredential({
@@ -178,6 +221,10 @@ class const ServiceConnectionListItem({
 
   bool hasActions() => canRefresh || canReconnect;
 }
+
+ServiceConnectionListItem serviceConnectionListItemFromCloudMcp(
+  ServiceConnectionCloudMcp data,
+) => ServiceConnectionListItem._fromCloudMcp(data);
 
 enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
 

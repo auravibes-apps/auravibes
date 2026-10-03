@@ -15,6 +15,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _isubclmd;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_summary.dart'
     as _i54dvwkh;
+import 'package:auravibes_server_client/src/protocol/features/mcp_catalog/models/mcp_catalog_listing.dart'
+    as _i9ncq2qy;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model.dart'
     as _iuloe217;
 import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model_provider.dart'
@@ -139,6 +141,12 @@ import 'features/conversations/models/update_conversation_request.dart'
     as _ihs4d7mz;
 import 'features/conversations/models/update_conversation_settings_request.dart'
     as _i8unm495;
+import 'features/mcp_catalog/models/mcp_catalog_connection_option.dart'
+    as _ifinrrle;
+import 'features/mcp_catalog/models/mcp_catalog_credential_field.dart'
+    as _ih7e7tg6;
+import 'features/mcp_catalog/models/mcp_catalog_entry.dart' as _iuef8xcy;
+import 'features/mcp_catalog/models/mcp_catalog_listing.dart' as _i1plf9k0;
 import 'features/mcp_servers/models/create_mcp_server_request.dart'
     as _i6hg2xtf;
 import 'features/mcp_servers/models/create_mcp_server_result.dart' as _ihyupc89;
@@ -364,6 +372,10 @@ export 'features/conversations/models/submit_tool_decision_request.dart';
 export 'features/conversations/models/turn_snapshot.dart';
 export 'features/conversations/models/update_conversation_request.dart';
 export 'features/conversations/models/update_conversation_settings_request.dart';
+export 'features/mcp_catalog/models/mcp_catalog_connection_option.dart';
+export 'features/mcp_catalog/models/mcp_catalog_credential_field.dart';
+export 'features/mcp_catalog/models/mcp_catalog_entry.dart';
+export 'features/mcp_catalog/models/mcp_catalog_listing.dart';
 export 'features/mcp_servers/models/create_mcp_server_request.dart';
 export 'features/mcp_servers/models/create_mcp_server_result.dart';
 export 'features/mcp_servers/models/delete_mcp_server_request.dart';
@@ -694,6 +706,18 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _i8unm495.UpdateConversationSettingsRequest) {
       return _i8unm495.UpdateConversationSettingsRequest.fromJson(data) as T;
+    }
+    if (t == _ifinrrle.McpCatalogConnectionOption) {
+      return _ifinrrle.McpCatalogConnectionOption.fromJson(data) as T;
+    }
+    if (t == _ih7e7tg6.McpCatalogCredentialField) {
+      return _ih7e7tg6.McpCatalogCredentialField.fromJson(data) as T;
+    }
+    if (t == _iuef8xcy.McpCatalogEntry) {
+      return _iuef8xcy.McpCatalogEntry.fromJson(data) as T;
+    }
+    if (t == _i1plf9k0.McpCatalogListing) {
+      return _i1plf9k0.McpCatalogListing.fromJson(data) as T;
     }
     if (t == _i6hg2xtf.CreateMcpServerRequest) {
       return _i6hg2xtf.CreateMcpServerRequest.fromJson(data) as T;
@@ -1348,6 +1372,26 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t == _isc.getType<_ifinrrle.McpCatalogConnectionOption?>()) {
+      return (data != null
+              ? _ifinrrle.McpCatalogConnectionOption.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_ih7e7tg6.McpCatalogCredentialField?>()) {
+      return (data != null
+              ? _ih7e7tg6.McpCatalogCredentialField.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _isc.getType<_iuef8xcy.McpCatalogEntry?>()) {
+      return (data != null ? _iuef8xcy.McpCatalogEntry.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_i1plf9k0.McpCatalogListing?>()) {
+      return (data != null ? _i1plf9k0.McpCatalogListing.fromJson(data) : null)
+          as T;
+    }
     if (t == _isc.getType<_i6hg2xtf.CreateMcpServerRequest?>()) {
       return (data != null
               ? _i6hg2xtf.CreateMcpServerRequest.fromJson(data)
@@ -1943,6 +1987,18 @@ class Protocol extends _isc.SerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_ih7e7tg6.McpCatalogCredentialField>) {
+      return (data as List)
+              .map((e) => deserialize<_ih7e7tg6.McpCatalogCredentialField>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ifinrrle.McpCatalogConnectionOption>) {
+      return (data as List)
+              .map((e) => deserialize<_ifinrrle.McpCatalogConnectionOption>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_igzjg3pi.DiscoveredMcpTool>) {
       return (data as List)
               .map((e) => deserialize<_igzjg3pi.DiscoveredMcpTool>(e))
@@ -2001,6 +2057,12 @@ class Protocol extends _isc.SerializationManager {
     if (t == List<_isubclmd.ConversationMessageView>) {
       return (data as List)
               .map((e) => deserialize<_isubclmd.ConversationMessageView>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i9ncq2qy.McpCatalogListing>) {
+      return (data as List)
+              .map((e) => deserialize<_i9ncq2qy.McpCatalogListing>(e))
               .toList()
           as T;
     }
@@ -2147,6 +2209,10 @@ class Protocol extends _isc.SerializationManager {
       _ihs4d7mz.UpdateConversationRequest => 'UpdateConversationRequest',
       _i8unm495.UpdateConversationSettingsRequest =>
         'UpdateConversationSettingsRequest',
+      _ifinrrle.McpCatalogConnectionOption => 'McpCatalogConnectionOption',
+      _ih7e7tg6.McpCatalogCredentialField => 'McpCatalogCredentialField',
+      _iuef8xcy.McpCatalogEntry => 'McpCatalogEntry',
+      _i1plf9k0.McpCatalogListing => 'McpCatalogListing',
       _i6hg2xtf.CreateMcpServerRequest => 'CreateMcpServerRequest',
       _ihyupc89.CreateMcpServerResult => 'CreateMcpServerResult',
       _iabui7vl.DeleteMcpServerRequest => 'DeleteMcpServerRequest',
@@ -2404,6 +2470,14 @@ class Protocol extends _isc.SerializationManager {
         return 'UpdateConversationRequest';
       case _i8unm495.UpdateConversationSettingsRequest():
         return 'UpdateConversationSettingsRequest';
+      case _ifinrrle.McpCatalogConnectionOption():
+        return 'McpCatalogConnectionOption';
+      case _ih7e7tg6.McpCatalogCredentialField():
+        return 'McpCatalogCredentialField';
+      case _iuef8xcy.McpCatalogEntry():
+        return 'McpCatalogEntry';
+      case _i1plf9k0.McpCatalogListing():
+        return 'McpCatalogListing';
       case _i6hg2xtf.CreateMcpServerRequest():
         return 'CreateMcpServerRequest';
       case _ihyupc89.CreateMcpServerResult():
@@ -2833,6 +2907,18 @@ class Protocol extends _isc.SerializationManager {
       return deserialize<_i8unm495.UpdateConversationSettingsRequest>(
         data['data'],
       );
+    }
+    if (dataClassName == 'McpCatalogConnectionOption') {
+      return deserialize<_ifinrrle.McpCatalogConnectionOption>(data['data']);
+    }
+    if (dataClassName == 'McpCatalogCredentialField') {
+      return deserialize<_ih7e7tg6.McpCatalogCredentialField>(data['data']);
+    }
+    if (dataClassName == 'McpCatalogEntry') {
+      return deserialize<_iuef8xcy.McpCatalogEntry>(data['data']);
+    }
+    if (dataClassName == 'McpCatalogListing') {
+      return deserialize<_i1plf9k0.McpCatalogListing>(data['data']);
     }
     if (dataClassName == 'CreateMcpServerRequest') {
       return deserialize<_i6hg2xtf.CreateMcpServerRequest>(data['data']);

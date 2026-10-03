@@ -44,6 +44,13 @@ class const ServiceConnectionSecretBearerToken({
   }
 }
 
+class const ServiceConnectionSecretHttpHeaders({
+  required final Map<String, String> headers,
+}) extends ServiceConnectionSecret {
+  @override
+  Map<String, dynamic> toJson() => {'type': 'httpHeaders', 'headers': headers};
+}
+
 class const ServiceConnectionSecretOAuth2({
   required final String accessToken,
   final String? refreshToken,
@@ -66,6 +73,9 @@ final _secretFactories =
     <String, ServiceConnectionSecret Function(Map<String, dynamic>)>{
       'apiKey': _apiKeySecret,
       'bearerToken': _bearerTokenSecret,
+      'httpHeaders': (json) => ServiceConnectionSecretHttpHeaders(
+        headers: Map<String, String>.from(json['headers']! as Map),
+      ),
       'oauth2': _oauth2Secret,
     };
 

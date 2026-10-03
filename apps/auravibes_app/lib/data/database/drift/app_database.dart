@@ -151,8 +151,12 @@ class AppDatabase extends _$AppDatabase {
       _mcpOutputSchemaVersion + 1;
   static const int _compactionCheckpointSchemaVersion =
       _compactionBudgetsSchemaVersion + 1;
-  static const int _toolSamplingPolicySchemaVersion =
+  static const int _mcpCatalogSnapshotSchemaVersion =
       _compactionCheckpointSchemaVersion + 1;
+  static const int _mcpTestSummarySchemaVersion =
+      _mcpCatalogSnapshotSchemaVersion + 1;
+  static const int _toolSamplingPolicySchemaVersion =
+      _mcpTestSummarySchemaVersion + 1;
   static const int _currentSchemaVersion = _toolSamplingPolicySchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
@@ -206,9 +210,15 @@ extension on AppDatabase {
     await _backfillAgentDescriptions(from);
     await _upgradeCloudWorkspaceSchema(m, from);
     await _upgradeAgentCatalogSchema(from);
-    await _upgradeMcpOutputSchema(m, from);
+    await _runMcpSchemaUpgrades(m, from);
     await _runConversationUpgrades(m, from);
-    await _upgradeToolSamplingPolicySchema(m, from);
+    await _upgradeToolSamplingPolicySchema(m);
+  }
+
+  Future<void> _runMcpSchemaUpgrades(Migrator m, int from) async {
+    await _upgradeMcpOutputSchema(m, from);
+    await _upgradeMcpCatalogSnapshot(m);
+    await _upgradeMcpTestSummary(m);
   }
 
   Future<void> _upgradeMcpOutputSchema(Migrator m, int from) async {
@@ -218,6 +228,22 @@ extension on AppDatabase {
       return;
     }
     await m.addColumn(tools, tools.outputSchema);
+  }
+
+  Future<void> _upgradeMcpCatalogSnapshot(Migrator m) async {
+    if (!await _tableExists('mcp_servers') ||
+        await _columnExists('mcp_servers', 'catalog_snapshot_json')) {
+      return;
+    }
+    await m.addColumn(mcpServers, mcpServers.catalogSnapshotJson);
+  }
+
+  Future<void> _upgradeMcpTestSummary(Migrator m) async {
+    if (!await _tableExists('mcp_servers') ||
+        await _columnExists('mcp_servers', 'test_summary_json')) {
+      return;
+    }
+    await m.addColumn(mcpServers, mcpServers.testSummaryJson);
   }
 
   Future<void> _runConversationUpgrades(Migrator m, int from) async {
@@ -395,9 +421,8 @@ extension on AppDatabase {
     );
   }
 
-  Future<void> _upgradeToolSamplingPolicySchema(Migrator m, int from) async {
-    if (from >= AppDatabase._toolSamplingPolicySchemaVersion ||
-        !await _tableExists('workspace_model_selections') ||
+  Future<void> _upgradeToolSamplingPolicySchema(Migrator m) async {
+    if (!await _tableExists('workspace_model_selections') ||
         await _columnExists(
           'workspace_model_selections',
           'tool_sampling_policy',

@@ -133,7 +133,8 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
     String serviceConnectionId, {
     required bool refresh,
   }) => switch (row.authenticationType) {
-    .none || .apiKey => Future.value(const McpAuthenticationType.none()),
+    .none => Future.value(const McpAuthenticationType.none()),
+    .apiKey => _headerAuthentication(row.id),
     .bearerToken => _bearerAuthentication(row.id),
     .oauth2 => _oauthAuthentication(row, serviceConnectionId, refresh: refresh),
   };
@@ -145,6 +146,15 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
     }
 
     return McpAuthenticationType.bearerToken(bearerToken: secret.bearerToken);
+  }
+
+  Future<McpAuthenticationType> _headerAuthentication(String id) async {
+    final secret = await _serviceConnectionRepository.readSecret(id);
+    if (secret is! ServiceConnectionSecretHttpHeaders) {
+      return const McpAuthenticationType.none();
+    }
+
+    return McpAuthenticationType.httpHeaders(headers: secret.headers);
   }
 
   Future<McpAuthenticationType> _oauthAuthentication(
@@ -199,7 +209,9 @@ extension _OAuthCredentialAuthentication on OAuthCredentialService {
 
     throw const McpOAuthException(LocaleKeys.mcp_modal_oauth_configuration);
   }
+}
 
+extension _OAuthCredentialCachedTokenOperations on OAuthCredentialService {
   Future<_OAuthCachedTokenContext> _loadCachedTokenContext(String id) async {
     final row = await _requiredServiceConnection(id);
     final secret = await _serviceConnectionRepository.readSecret(row.id);

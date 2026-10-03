@@ -1,4 +1,6 @@
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
+import 'package:auravibes_app/domain/entities/mcp_connection_test_summary.dart';
+import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
@@ -21,6 +23,16 @@ class _FakeMcpServersRepository(final Map<String, McpServerEntity> _servers)
   @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async =>
       _servers[serverId];
+
+  @override
+  Future<void> saveMcpTestSummary({
+    required String serverId,
+    required McpConnectionTestSummary summary,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> updateMcpServerSettings(McpServerSettingsUpdate update) =>
+      throw UnimplementedError();
 
   @override
   Future<McpServerEntity> addMcpServerWithTools({

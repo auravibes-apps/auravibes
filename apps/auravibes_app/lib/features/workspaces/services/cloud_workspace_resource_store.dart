@@ -73,6 +73,19 @@ typedef _WorkspaceCredentialSend =
 typedef _WorkspaceSecretCall = WorkspaceSecretCall;
 typedef _WorkspaceCredentialCall = WorkspaceCredentialCall;
 
+typedef _McpWorkspaceCredentialInput = ({
+  String id,
+  Map<String, Object?> data,
+  int? resourceRevision,
+  String? secret,
+  bool clearSecret,
+  int? secretRevision,
+});
+typedef _McpWorkspaceCredentialWrite =
+    Future<MutateWorkspaceCredentialResponse> Function(
+      _McpWorkspaceCredentialInput input,
+    );
+
 class _SecretWriter {
   new(_WorkspaceSecretCall putSecret)
     : call =
@@ -121,6 +134,24 @@ class _CredentialWriter {
           )));
 
   final _WorkspaceCredentialWrite call;
+}
+
+class _McpCredentialWriter {
+  new(_WorkspaceCredentialSend send)
+    : call = ((input) => send((
+        operation: .update,
+        kind: .mcpServer,
+        id: input.id,
+        secretKind: .mcp,
+        scope: .workspace,
+        secret: input.secret,
+        clearSecret: input.clearSecret,
+        data: input.data,
+        resourceRevision: input.resourceRevision,
+        secretRevision: input.secretRevision,
+      )));
+
+  final _McpWorkspaceCredentialWrite call;
 }
 
 class _CredentialSender {
@@ -265,6 +296,9 @@ extension CloudWorkspaceResourceStoreAccess on CloudWorkspaceResourceStore {
 
   _WorkspaceCredentialWrite get mutateCredential =>
       _credentialWriter(_CredentialSender(_mutateCredential).call);
+
+  _McpWorkspaceCredentialWrite get updateMcpCredential =>
+      _McpCredentialWriter(_CredentialSender(_mutateCredential).call).call;
 
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds,

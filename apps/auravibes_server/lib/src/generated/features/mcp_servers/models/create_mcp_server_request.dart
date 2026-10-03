@@ -23,6 +23,10 @@ abstract class CreateMcpServerRequest
     required this.useHttp2,
     this.description,
     this.bearerToken,
+    this.httpHeadersJson,
+    this.oauthJson,
+    this.catalogListingId,
+    this.catalogOptionKey,
     this.verificationReceipt,
   });
 
@@ -35,6 +39,10 @@ abstract class CreateMcpServerRequest
     required bool useHttp2,
     String? description,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
+    String? catalogListingId,
+    String? catalogOptionKey,
     String? verificationReceipt,
   }) = _CreateMcpServerRequestImpl;
 
@@ -50,6 +58,10 @@ abstract class CreateMcpServerRequest
       useHttp2: _is.BoolJsonExtension.fromJson(jsonSerialization['useHttp2']),
       description: jsonSerialization['description'] as String?,
       bearerToken: jsonSerialization['bearerToken'] as String?,
+      httpHeadersJson: jsonSerialization['httpHeadersJson'] as String?,
+      oauthJson: jsonSerialization['oauthJson'] as String?,
+      catalogListingId: jsonSerialization['catalogListingId'] as String?,
+      catalogOptionKey: jsonSerialization['catalogOptionKey'] as String?,
       verificationReceipt: jsonSerialization['verificationReceipt'] as String?,
     );
   }
@@ -70,6 +82,14 @@ abstract class CreateMcpServerRequest
 
   String? bearerToken;
 
+  String? httpHeadersJson;
+
+  String? oauthJson;
+
+  String? catalogListingId;
+
+  String? catalogOptionKey;
+
   String? verificationReceipt;
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
@@ -84,6 +104,10 @@ abstract class CreateMcpServerRequest
     bool? useHttp2,
     String? description,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
+    String? catalogListingId,
+    String? catalogOptionKey,
     String? verificationReceipt,
   });
   @override
@@ -98,6 +122,10 @@ abstract class CreateMcpServerRequest
       'useHttp2': useHttp2,
       if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
+      if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
+      if (catalogListingId != null) 'catalogListingId': catalogListingId,
+      if (catalogOptionKey != null) 'catalogOptionKey': catalogOptionKey,
       if (verificationReceipt != null)
         'verificationReceipt': verificationReceipt,
     };
@@ -115,6 +143,10 @@ abstract class CreateMcpServerRequest
       'useHttp2': useHttp2,
       if (description != null) 'description': description,
       if (bearerToken != null) 'bearerToken': bearerToken,
+      if (httpHeadersJson != null) 'httpHeadersJson': httpHeadersJson,
+      if (oauthJson != null) 'oauthJson': oauthJson,
+      if (catalogListingId != null) 'catalogListingId': catalogListingId,
+      if (catalogOptionKey != null) 'catalogOptionKey': catalogOptionKey,
       if (verificationReceipt != null)
         'verificationReceipt': verificationReceipt,
     };
@@ -138,6 +170,10 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
     required bool useHttp2,
     String? description,
     String? bearerToken,
+    String? httpHeadersJson,
+    String? oauthJson,
+    String? catalogListingId,
+    String? catalogOptionKey,
     String? verificationReceipt,
   }) : super._(
          workspaceId: workspaceId,
@@ -148,6 +184,10 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
          useHttp2: useHttp2,
          description: description,
          bearerToken: bearerToken,
+         httpHeadersJson: httpHeadersJson,
+         oauthJson: oauthJson,
+         catalogListingId: catalogListingId,
+         catalogOptionKey: catalogOptionKey,
          verificationReceipt: verificationReceipt,
        );
 
@@ -164,6 +204,10 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
     bool? useHttp2,
     Object? description = _Undefined,
     Object? bearerToken = _Undefined,
+    Object? httpHeadersJson = _Undefined,
+    Object? oauthJson = _Undefined,
+    Object? catalogListingId = _Undefined,
+    Object? catalogOptionKey = _Undefined,
     Object? verificationReceipt = _Undefined,
   }) {
     return CreateMcpServerRequest(
@@ -175,6 +219,16 @@ class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
       useHttp2: useHttp2 ?? this.useHttp2,
       description: description is String? ? description : this.description,
       bearerToken: bearerToken is String? ? bearerToken : this.bearerToken,
+      httpHeadersJson: httpHeadersJson is String?
+          ? httpHeadersJson
+          : this.httpHeadersJson,
+      oauthJson: oauthJson is String? ? oauthJson : this.oauthJson,
+      catalogListingId: catalogListingId is String?
+          ? catalogListingId
+          : this.catalogListingId,
+      catalogOptionKey: catalogOptionKey is String?
+          ? catalogOptionKey
+          : this.catalogOptionKey,
       verificationReceipt: verificationReceipt is String?
           ? verificationReceipt
           : this.verificationReceipt,

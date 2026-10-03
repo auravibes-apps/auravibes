@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_server/src/features/workspace_state/repositories/workspace_state_repository.dart';
 import 'package:auravibes_server/src/features/workspace_state/usecases/workspace_state_usecases.dart';
+import 'package:auravibes_server/src/features/workspace_state/workspace_secret_cipher.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';
@@ -12,6 +13,142 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('Workspace agent duplication', (sessionBuilder, _) {
+    test(
+      'MCP credential updates reset permissions and emit state events',
+      () async {
+        final fixture = await _Fixture.create(sessionBuilder.build());
+        fixture.session.passwords['workspaceSecretKey'] =
+            'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+        const serverId = 'mcp-1';
+        const groupId = 'mcp-group-1';
+        const toolId = 'mcp-tool-1';
+        await fixture.insertResource(.mcpServer, serverId, const {
+          'id': serverId,
+          'name': 'Example MCP',
+          'url': 'https://mcp.example.com',
+          'transport': {'type': 'streamableHttp', 'useHttp2': false},
+          'authType': 'bearerToken',
+          'hasSecret': true,
+          'secretRevision': 1,
+          'authStatus': 'active',
+          'isEnabled': true,
+        });
+        await fixture.insertResource(.toolGroup, groupId, const {
+          'id': groupId,
+          'name': 'Example MCP',
+          'mcpServerId': serverId,
+          'isEnabled': true,
+          'permissionMode': 'alwaysAllow',
+        });
+        await fixture.insertResource(.tool, toolId, const {
+          'toolId': 'lookup',
+          'toolGroupId': groupId,
+          'mcpServerId': serverId,
+          'isEnabled': true,
+          'permissionMode': 'alwaysDeny',
+        });
+        await fixture.insertResource(.toolPermission, 'mcp-tool-permission-1', {
+          'toolId': toolId,
+          'toolGroupId': groupId,
+          'isEnabled': true,
+          'permissionMode': 'alwaysAllow',
+        });
+        final encrypted = await const WorkspaceSecretCipher().encrypt(
+          fixture.session,
+          'first-secret',
+          workspaceId: fixture.workspaceId,
+          resourceId: serverId,
+        );
+        final now = DateTime.now().toUtc();
+        await WorkspaceSecret.db.insertRow(
+          fixture.session,
+          WorkspaceSecret(
+            workspaceId: fixture.workspaceId,
+            secretKind: WorkspaceSecretKind.mcp,
+            scope: WorkspaceSecretScope.workspace,
+            ownerUserId: 'workspace',
+            resourceId: serverId,
+            ciphertext: encrypted.ciphertext,
+            nonce: encrypted.nonce,
+            authenticationTag: encrypted.authenticationTag,
+            algorithm: 'AES-256-GCM',
+            keyVersion: 1,
+            displaySuffix: 'cret',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final request = MutateWorkspaceCredentialRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'mcp-credential-update',
+          resourceOperation: WorkspacePatchOperation(
+            operation: WorkspacePatchOperationKind.update,
+            resourceKind: WorkspaceResourceKind.mcpServer,
+            resourceId: serverId,
+            data: jsonEncode(const {
+              'id': serverId,
+              'name': 'Example MCP',
+              'url': 'https://mcp-next.example.com',
+              'transport': {'type': 'streamableHttp', 'useHttp2': false},
+              'authType': 'bearerToken',
+              'hasSecret': true,
+              'secretRevision': 1,
+              'authStatus': 'active',
+              'isEnabled': true,
+            }),
+            fieldMask: const [],
+            expectedRevision: 1,
+          ),
+          secretKind: WorkspaceSecretKind.mcp,
+          scope: WorkspaceSecretScope.workspace,
+          secret: 'replacement-secret',
+          clearSecret: false,
+          expectedSecretRevision: 1,
+        );
+        final response = await fixture.useCases.mutateCredential(
+          fixture.session,
+          userId: fixture.userId,
+          request: request,
+        );
+        final replay = await fixture.useCases.mutateCredential(
+          fixture.session,
+          userId: fixture.userId,
+          request: request,
+        );
+
+        expect(replay.toJson(), response.toJson());
+        expect(response.resource.revision, 2);
+        expect(response.secretRevision, 2);
+        expect(response.resource.data, isNot(contains('replacement-secret')));
+        final storedSecret = (await WorkspaceSecret.db.findFirstRow(
+          fixture.session,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.resourceId.equals(serverId),
+        ))!;
+        expect(
+          await const WorkspaceSecretCipher().decrypt(
+            fixture.session,
+            storedSecret,
+          ),
+          'replacement-secret',
+        );
+        final group = (await fixture.resources(.toolGroup)).single;
+        final tool = (await fixture.resources(.tool)).single;
+        final permission = (await fixture.resources(.toolPermission)).single;
+        expect((jsonDecode(group.data) as Map)['permissionMode'], 'alwaysAsk');
+        expect((jsonDecode(tool.data) as Map)['permissionMode'], 'alwaysAsk');
+        expect(
+          (jsonDecode(permission.data) as Map)['permissionMode'],
+          'alwaysAsk',
+        );
+        expect(await fixture.events(), hasLength(5));
+        expect((await fixture.workspace()).sequence, 5);
+      },
+    );
+
     test('copies the agent and recognized associations idempotently', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       await fixture.insertAgent('agent-copy', const {

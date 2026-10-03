@@ -92,6 +92,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _irx2op5d;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/update_conversation_settings_request.dart'
     as _ia7au4nd;
+import 'package:auravibes_server_client/src/protocol/features/mcp_catalog/models/mcp_catalog_listing.dart'
+    as _i9ncq2qy;
 import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_request.dart'
     as _iqrnkkwp;
 import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_result.dart'
@@ -744,6 +746,21 @@ class EndpointConversation extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointMcpCatalog extends _isc.EndpointRef {
+  EndpointMcpCatalog(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'mcpCatalog';
+
+  _ida.Future<List<_i9ncq2qy.McpCatalogListing>> list() =>
+      caller.callServerEndpoint<List<_i9ncq2qy.McpCatalogListing>>(
+        'mcpCatalog',
+        'list',
+        {},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointMcpServer extends _isc.EndpointRef {
   EndpointMcpServer(_isc.EndpointCaller caller) : super(caller);
 
@@ -1235,6 +1252,7 @@ class Client extends _isc.ServerpodClientShared {
     agentCatalog = EndpointAgentCatalog(this);
     codexOAuth = EndpointCodexOAuth(this);
     conversation = EndpointConversation(this);
+    mcpCatalog = EndpointMcpCatalog(this);
     mcpServer = EndpointMcpServer(this);
     modelConnection = EndpointModelConnection(this);
     object = EndpointObject(this);
@@ -1257,6 +1275,8 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointCodexOAuth codexOAuth;
 
   late final EndpointConversation conversation;
+
+  late final EndpointMcpCatalog mcpCatalog;
 
   late final EndpointMcpServer mcpServer;
 
@@ -1284,6 +1304,7 @@ class Client extends _isc.ServerpodClientShared {
     'agentCatalog': agentCatalog,
     'codexOAuth': codexOAuth,
     'conversation': conversation,
+    'mcpCatalog': mcpCatalog,
     'mcpServer': mcpServer,
     'modelConnection': modelConnection,
     'object': object,
