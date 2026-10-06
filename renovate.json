@@ -72,6 +72,13 @@
       "additionalBranchPrefix": ""
     },
     {
+      "description": "Update Marionette CLI, MCP, and Flutter packages together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["marionette_cli", "marionette_mcp", "marionette_flutter"],
+      "groupName": "Marionette",
+      "additionalBranchPrefix": ""
+    },
+    {
       "description": "Automerge minor and patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
