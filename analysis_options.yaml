@@ -2,7 +2,8 @@ include: package:very_good_analysis/analysis_options.yaml
 
 plugins:
   dart_code_linter:
-    version: ^4.1.2
+    # Keep analyzer plugin aligned with the locked CLI dependency.
+    version: 4.3.0
     diagnostics:
       always-remove-listener: true
       arguments-ordering: true
