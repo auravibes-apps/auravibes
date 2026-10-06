@@ -32,10 +32,21 @@ void main() {
 
       expect(specs, hasLength(1));
       expect(specs.single.name, 'skill__app_template__openai__web_search');
-      expect(specs.single.inputJsonSchema['required'], ['question']);
-      final properties = specs.single.inputJsonSchema['properties']! as Map;
-      final credentialSchema = properties['credentialId'] as Map;
-      expect(credentialSchema['enum'], ['model:openai-1']);
+      _expectStrictProviderSchema(specs.single);
+      final properties = Map<String, Object?>.from(
+        specs.single.inputJsonSchema['properties']! as Map,
+      );
+      final modelSchemaValue = properties['model'];
+      if (modelSchemaValue is! Map) fail('Missing model schema.');
+      final modelSchema = Map<String, Object?>.from(modelSchemaValue);
+      final credentialSchemaValue = properties['credentialId'];
+      if (credentialSchemaValue is! Map) {
+        fail('Missing credentialId schema.');
+      }
+      final credentialSchema = Map<String, Object?>.from(credentialSchemaValue);
+      expect(modelSchema['type'], ['string', 'null']);
+      expect(credentialSchema['type'], ['string', 'null']);
+      expect(credentialSchema['enum'], ['model:openai-1', null]);
     });
 
     test('requires credentialId only with multiple credentials', () async {
@@ -62,12 +73,10 @@ void main() {
         workspaceId: 'workspace-1',
       );
 
-      expect(specs.single.inputJsonSchema['required'], [
-        'question',
-        'credentialId',
-      ]);
+      _expectStrictProviderSchema(specs.single);
       final properties = specs.single.inputJsonSchema['properties']! as Map;
       final credentialSchema = properties['credentialId'] as Map;
+      expect(credentialSchema['type'], 'string');
       expect(credentialSchema['enum'], ['model:openai-1', 'service:openai-2']);
       expect(credentialSchema.toString(), isNot(contains('OpenAI key')));
       expect(credentialSchema.toString(), isNot(contains('1234')));
@@ -181,10 +190,11 @@ void main() {
       );
 
       expect(specs.single.name, 'skill__app_template__codex__web_search');
-      expect(specs.single.inputJsonSchema['required'], ['question']);
+      _expectStrictProviderSchema(specs.single);
       final properties = specs.single.inputJsonSchema['properties']! as Map;
       final credentialSchema = properties['credentialId'] as Map;
-      expect(credentialSchema['enum'], ['model:codex-1']);
+      expect(credentialSchema['type'], ['string', 'null']);
+      expect(credentialSchema['enum'], ['model:codex-1', null]);
     });
 
     test(
@@ -265,14 +275,23 @@ void main() {
         );
 
         expect(specs.single.name, 'skill__app_template__searxng__search');
-        expect(specs.single.inputJsonSchema['required'], ['query']);
+        _expectStrictProviderSchema(specs.single);
         final properties = specs.single.inputJsonSchema['properties']! as Map;
         final credentialSchema = properties['credentialId'] as Map;
-        expect(credentialSchema['enum'], ['service:searxng-1']);
+        expect(credentialSchema['type'], ['string', 'null']);
+        expect(credentialSchema['enum'], ['service:searxng-1', null]);
         expect(properties, isNot(contains('baseUrl')));
       },
     );
   });
+}
+
+void _expectStrictProviderSchema(ToolSpec spec) {
+  final schema = spec.inputJsonSchema;
+  final properties = schema['properties']! as Map<String, Object?>;
+
+  expect(schema['additionalProperties'], false);
+  expect(schema['required'], unorderedEquals(properties.keys));
 }
 
 AvailableSkill _appSkill(String slug) {

@@ -61,6 +61,30 @@ abstract class LocaleKeys {
       'models_screens.no_models_available';
   static const models_screens_model_unavailable =
       'models_screens.model_unavailable';
+  static const models_screens_tool_sampling_settings_for_model =
+      'models_screens.tool_sampling_settings_for_model';
+  static const models_screens_tool_sampling_policy =
+      'models_screens.tool_sampling_policy';
+  static const models_screens_tool_sampling_automatic =
+      'models_screens.tool_sampling_automatic';
+  static const models_screens_tool_sampling_off =
+      'models_screens.tool_sampling_off';
+  static const models_screens_tool_sampling_prefer =
+      'models_screens.tool_sampling_prefer';
+  static const models_screens_tool_sampling_require =
+      'models_screens.tool_sampling_require';
+  static const models_screens_tool_sampling_verified =
+      'models_screens.tool_sampling_verified';
+  static const models_screens_tool_sampling_unverified =
+      'models_screens.tool_sampling_unverified';
+  static const models_screens_tool_sampling_no_tool_calls =
+      'models_screens.tool_sampling_no_tool_calls';
+  static const models_screens_tool_sampling_unsupported =
+      'models_screens.tool_sampling_unsupported';
+  static const models_screens_tool_sampling_unverified_explanation =
+      'models_screens.tool_sampling_unverified_explanation';
+  static const models_screens_tool_sampling_update_error =
+      'models_screens.tool_sampling_update_error';
   static const models_screens_title = 'models_screens.title';
   static const models_screens_list_error = 'models_screens.list_error';
   static const models_screens_list_empty_title =
@@ -1283,6 +1307,8 @@ abstract class LocaleKeys {
   static const common_delete = 'common.delete';
   static const common_confirm = 'common.confirm';
   static const common_close = 'common.close';
+  static const common_failed_items_title = 'common.failed_items_title';
+  static const common_retry_failed = 'common.retry_failed';
   static const common_close_dialog = 'common.close_dialog';
   static const common_reload = 'common.reload';
   static const common_details = 'common.details';
@@ -1617,6 +1643,41 @@ abstract class LocaleKeys {
   static const compaction_errors_checkpoint_restore_unavailable =
       'compaction.errors.checkpoint_restore_unavailable';
   static const workspace_archive_export = 'workspace_archive.export';
+  static const workspace_archive_export_selection_title =
+      'workspace_archive.export_selection_title';
+  static const workspace_archive_export_selection_message =
+      'workspace_archive.export_selection_message';
+  static const workspace_archive_export_dependencies =
+      'workspace_archive.export_dependencies';
+  static const workspace_archive_export_selection_empty =
+      'workspace_archive.export_selection_empty';
+  static const workspace_archive_preview_title =
+      'workspace_archive.preview_title';
+  static const workspace_archive_preview_source =
+      'workspace_archive.preview_source';
+  static const workspace_archive_preview_existing_destination =
+      'workspace_archive.preview_existing_destination';
+  static const workspace_archive_preview_new_destination =
+      'workspace_archive.preview_new_destination';
+  static const workspace_archive_preview_configuration =
+      'workspace_archive.preview_configuration';
+  static const workspace_archive_kind_agent = 'workspace_archive.kind_agent';
+  static const workspace_archive_kind_agent_skill =
+      'workspace_archive.kind_agent_skill';
+  static const workspace_archive_kind_agent_tool_permission =
+      'workspace_archive.kind_agent_tool_permission';
+  static const workspace_archive_kind_compaction_setting =
+      'workspace_archive.kind_compaction_setting';
+  static const workspace_archive_kind_model_connection =
+      'workspace_archive.kind_model_connection';
+  static const workspace_archive_kind_model_selection =
+      'workspace_archive.kind_model_selection';
+  static const workspace_archive_kind_skill = 'workspace_archive.kind_skill';
+  static const workspace_archive_kind_skill_resource =
+      'workspace_archive.kind_skill_resource';
+  static const workspace_archive_kind_skill_setting =
+      'workspace_archive.kind_skill_setting';
+  static const workspace_archive_kind_tool = 'workspace_archive.kind_tool';
   static const workspace_archive_import_into = 'workspace_archive.import_into';
   static const workspace_archive_import_new = 'workspace_archive.import_new';
   static const workspace_archive_exported = 'workspace_archive.exported';

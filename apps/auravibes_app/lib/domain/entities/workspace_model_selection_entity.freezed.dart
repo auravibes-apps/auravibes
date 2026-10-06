@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WorkspaceModelSelectionEntity {
 
- String get id; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get modelConnectionId; String? get modelName; List<String> get modalitiesInput; List<String> get modalitiesOutput; bool get supportsReasoning; List<ReasoningOption> get reasoningOptions; bool get supportsToolCalls; bool get supportsPromptCacheMarkers; bool get supportsMidConversationSystemMessages; bool get supportsToolDeltas; bool get supportsDeferredTools;
+ String get id; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get modelConnectionId; String? get modelName; List<String> get modalitiesInput; List<String> get modalitiesOutput; bool get supportsReasoning; List<ReasoningOption> get reasoningOptions; bool get supportsToolCalls; ToolSamplingPolicy? get toolSamplingPolicy; bool get supportsPromptCacheMarkers; bool get supportsMidConversationSystemMessages; bool get supportsToolDeltas; bool get supportsDeferredTools;
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $WorkspaceModelSelectionEntityCopyWith<WorkspaceModelSelectionEntity> get copyWi
 @override
 bool operator ==(Object other) {
   final _this = this as WorkspaceModelSelectionEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.modelConnectionId, _this.modelConnectionId) || other.modelConnectionId == _this.modelConnectionId)&&(identical(other.modelName, _this.modelName) || other.modelName == _this.modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _this.reasoningOptions)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls)&&(identical(other.supportsPromptCacheMarkers, _this.supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == _this.supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, _this.supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == _this.supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, _this.supportsToolDeltas) || other.supportsToolDeltas == _this.supportsToolDeltas)&&(identical(other.supportsDeferredTools, _this.supportsDeferredTools) || other.supportsDeferredTools == _this.supportsDeferredTools));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.modelConnectionId, _this.modelConnectionId) || other.modelConnectionId == _this.modelConnectionId)&&(identical(other.modelName, _this.modelName) || other.modelName == _this.modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _this.reasoningOptions)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls)&&(identical(other.toolSamplingPolicy, _this.toolSamplingPolicy) || other.toolSamplingPolicy == _this.toolSamplingPolicy)&&(identical(other.supportsPromptCacheMarkers, _this.supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == _this.supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, _this.supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == _this.supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, _this.supportsToolDeltas) || other.supportsToolDeltas == _this.supportsToolDeltas)&&(identical(other.supportsDeferredTools, _this.supportsDeferredTools) || other.supportsDeferredTools == _this.supportsDeferredTools));
 }
 
 
 @override
 int get hashCode {
   final _this = this as WorkspaceModelSelectionEntity;
-  return Object.hash(runtimeType,_this.id,_this.modelId,_this.createdAt,_this.updatedAt,_this.modelConnectionId,_this.modelName,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.supportsReasoning,const DeepCollectionEquality().hash(_this.reasoningOptions),_this.supportsToolCalls,_this.supportsPromptCacheMarkers,_this.supportsMidConversationSystemMessages,_this.supportsToolDeltas,_this.supportsDeferredTools);
+  return Object.hash(runtimeType,_this.id,_this.modelId,_this.createdAt,_this.updatedAt,_this.modelConnectionId,_this.modelName,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.supportsReasoning,const DeepCollectionEquality().hash(_this.reasoningOptions),_this.supportsToolCalls,_this.toolSamplingPolicy,_this.supportsPromptCacheMarkers,_this.supportsMidConversationSystemMessages,_this.supportsToolDeltas,_this.supportsDeferredTools);
 }
 
 @override
 String toString() {
   final _this = this as WorkspaceModelSelectionEntity;
-  return 'WorkspaceModelSelectionEntity(id: ${_this.id}, modelId: ${_this.modelId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, modelConnectionId: ${_this.modelConnectionId}, modelName: ${_this.modelName}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, supportsReasoning: ${_this.supportsReasoning}, reasoningOptions: ${_this.reasoningOptions}, supportsToolCalls: ${_this.supportsToolCalls}, supportsPromptCacheMarkers: ${_this.supportsPromptCacheMarkers}, supportsMidConversationSystemMessages: ${_this.supportsMidConversationSystemMessages}, supportsToolDeltas: ${_this.supportsToolDeltas}, supportsDeferredTools: ${_this.supportsDeferredTools})';
+  return 'WorkspaceModelSelectionEntity(id: ${_this.id}, modelId: ${_this.modelId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, modelConnectionId: ${_this.modelConnectionId}, modelName: ${_this.modelName}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, supportsReasoning: ${_this.supportsReasoning}, reasoningOptions: ${_this.reasoningOptions}, supportsToolCalls: ${_this.supportsToolCalls}, toolSamplingPolicy: ${_this.toolSamplingPolicy}, supportsPromptCacheMarkers: ${_this.supportsPromptCacheMarkers}, supportsMidConversationSystemMessages: ${_this.supportsMidConversationSystemMessages}, supportsToolDeltas: ${_this.supportsToolDeltas}, supportsDeferredTools: ${_this.supportsDeferredTools})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $WorkspaceModelSelectionEntityCopyWith<$Res>  {
   factory $WorkspaceModelSelectionEntityCopyWith(WorkspaceModelSelectionEntity value, $Res Function(WorkspaceModelSelectionEntity) _then) = _$WorkspaceModelSelectionEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool supportsToolCalls, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
+ String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool supportsToolCalls, ToolSamplingPolicy? toolSamplingPolicy, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
 });
 
 
@@ -68,7 +68,7 @@ class _$WorkspaceModelSelectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? supportsToolCalls = null,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? supportsToolCalls = null,Object? toolSamplingPolicy = freezed,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
   return _then(WorkspaceModelSelectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -81,7 +81,8 @@ as List<String>,modalitiesOutput: null == modalitiesOutput ? _self.modalitiesOut
 as List<String>,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
 as bool,reasoningOptions: null == reasoningOptions ? _self.reasoningOptions : reasoningOptions // ignore: cast_nullable_to_non_nullable
 as List<ReasoningOption>,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
-as bool,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
+as bool,toolSamplingPolicy: freezed == toolSamplingPolicy ? _self.toolSamplingPolicy : toolSamplingPolicy // ignore: cast_nullable_to_non_nullable
+as ToolSamplingPolicy?,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
 as bool,supportsMidConversationSystemMessages: null == supportsMidConversationSystemMessages ? _self.supportsMidConversationSystemMessages : supportsMidConversationSystemMessages // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolDeltas: null == supportsToolDeltas ? _self.supportsToolDeltas : supportsToolDeltas // ignore: cast_nullable_to_non_nullable
 as bool,supportsDeferredTools: null == supportsDeferredTools ? _self.supportsDeferredTools : supportsDeferredTools // ignore: cast_nullable_to_non_nullable
@@ -170,10 +171,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  ToolSamplingPolicy? toolSamplingPolicy,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity() when $default != null:
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.toolSamplingPolicy,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   return orElse();
 
 }
@@ -191,10 +192,10 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  ToolSamplingPolicy? toolSamplingPolicy,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity():
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.toolSamplingPolicy,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -211,10 +212,10 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  List<ReasoningOption> reasoningOptions,  bool supportsToolCalls,  ToolSamplingPolicy? toolSamplingPolicy,  bool supportsPromptCacheMarkers,  bool supportsMidConversationSystemMessages,  bool supportsToolDeltas,  bool supportsDeferredTools)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity() when $default != null:
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.reasoningOptions,_that.supportsToolCalls,_that.toolSamplingPolicy,_that.supportsPromptCacheMarkers,_that.supportsMidConversationSystemMessages,_that.supportsToolDeltas,_that.supportsDeferredTools);case _:
   return null;
 
 }
@@ -226,7 +227,7 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 
 
 class _WorkspaceModelSelectionEntity implements WorkspaceModelSelectionEntity {
-  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName,  List<String> modalitiesInput = const [],  List<String> modalitiesOutput = const [], this.supportsReasoning = false,  List<ReasoningOption> reasoningOptions = const [], this.supportsToolCalls = true, this.supportsPromptCacheMarkers = false, this.supportsMidConversationSystemMessages = false, this.supportsToolDeltas = false, this.supportsDeferredTools = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,_reasoningOptions = reasoningOptions;
+  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName,  List<String> modalitiesInput = const [],  List<String> modalitiesOutput = const [], this.supportsReasoning = false,  List<ReasoningOption> reasoningOptions = const [], this.supportsToolCalls = true, this.toolSamplingPolicy, this.supportsPromptCacheMarkers = false, this.supportsMidConversationSystemMessages = false, this.supportsToolDeltas = false, this.supportsDeferredTools = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,_reasoningOptions = reasoningOptions;
   
 
 @override final  String id;
@@ -258,6 +259,7 @@ class _WorkspaceModelSelectionEntity implements WorkspaceModelSelectionEntity {
 }
 
 @override@JsonKey() final  bool supportsToolCalls;
+@override final  ToolSamplingPolicy? toolSamplingPolicy;
 @override@JsonKey() final  bool supportsPromptCacheMarkers;
 @override@JsonKey() final  bool supportsMidConversationSystemMessages;
 @override@JsonKey() final  bool supportsToolDeltas;
@@ -273,18 +275,18 @@ _$WorkspaceModelSelectionEntityCopyWith<_WorkspaceModelSelectionEntity> get copy
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _reasoningOptions)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls)&&(identical(other.supportsPromptCacheMarkers, supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, supportsToolDeltas) || other.supportsToolDeltas == supportsToolDeltas)&&(identical(other.supportsDeferredTools, supportsDeferredTools) || other.supportsDeferredTools == supportsDeferredTools));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&const DeepCollectionEquality().equals(other.reasoningOptions, _reasoningOptions)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls)&&(identical(other.toolSamplingPolicy, toolSamplingPolicy) || other.toolSamplingPolicy == toolSamplingPolicy)&&(identical(other.supportsPromptCacheMarkers, supportsPromptCacheMarkers) || other.supportsPromptCacheMarkers == supportsPromptCacheMarkers)&&(identical(other.supportsMidConversationSystemMessages, supportsMidConversationSystemMessages) || other.supportsMidConversationSystemMessages == supportsMidConversationSystemMessages)&&(identical(other.supportsToolDeltas, supportsToolDeltas) || other.supportsToolDeltas == supportsToolDeltas)&&(identical(other.supportsDeferredTools, supportsDeferredTools) || other.supportsDeferredTools == supportsDeferredTools));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),supportsReasoning,const DeepCollectionEquality().hash(_reasoningOptions),supportsToolCalls,supportsPromptCacheMarkers,supportsMidConversationSystemMessages,supportsToolDeltas,supportsDeferredTools);
+    return Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),supportsReasoning,const DeepCollectionEquality().hash(_reasoningOptions),supportsToolCalls,toolSamplingPolicy,supportsPromptCacheMarkers,supportsMidConversationSystemMessages,supportsToolDeltas,supportsDeferredTools);
 }
 
 @override
 String toString() {
-    return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, supportsReasoning: $supportsReasoning, reasoningOptions: $reasoningOptions, supportsToolCalls: $supportsToolCalls, supportsPromptCacheMarkers: $supportsPromptCacheMarkers, supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, supportsToolDeltas: $supportsToolDeltas, supportsDeferredTools: $supportsDeferredTools)';
+    return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, supportsReasoning: $supportsReasoning, reasoningOptions: $reasoningOptions, supportsToolCalls: $supportsToolCalls, toolSamplingPolicy: $toolSamplingPolicy, supportsPromptCacheMarkers: $supportsPromptCacheMarkers, supportsMidConversationSystemMessages: $supportsMidConversationSystemMessages, supportsToolDeltas: $supportsToolDeltas, supportsDeferredTools: $supportsDeferredTools)';
 }
 
 
@@ -295,7 +297,7 @@ abstract mixin class _$WorkspaceModelSelectionEntityCopyWith<$Res> implements $W
   factory _$WorkspaceModelSelectionEntityCopyWith(_WorkspaceModelSelectionEntity value, $Res Function(_WorkspaceModelSelectionEntity) _then) = __$WorkspaceModelSelectionEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool supportsToolCalls, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
+ String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, List<ReasoningOption> reasoningOptions, bool supportsToolCalls, ToolSamplingPolicy? toolSamplingPolicy, bool supportsPromptCacheMarkers, bool supportsMidConversationSystemMessages, bool supportsToolDeltas, bool supportsDeferredTools
 });
 
 
@@ -312,7 +314,7 @@ class __$WorkspaceModelSelectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? supportsToolCalls = null,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? reasoningOptions = null,Object? supportsToolCalls = null,Object? toolSamplingPolicy = freezed,Object? supportsPromptCacheMarkers = null,Object? supportsMidConversationSystemMessages = null,Object? supportsToolDeltas = null,Object? supportsDeferredTools = null,}) {
   return _then(_WorkspaceModelSelectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -325,7 +327,8 @@ as List<String>,modalitiesOutput: null == modalitiesOutput ? _self._modalitiesOu
 as List<String>,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
 as bool,reasoningOptions: null == reasoningOptions ? _self._reasoningOptions : reasoningOptions // ignore: cast_nullable_to_non_nullable
 as List<ReasoningOption>,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
-as bool,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
+as bool,toolSamplingPolicy: freezed == toolSamplingPolicy ? _self.toolSamplingPolicy : toolSamplingPolicy // ignore: cast_nullable_to_non_nullable
+as ToolSamplingPolicy?,supportsPromptCacheMarkers: null == supportsPromptCacheMarkers ? _self.supportsPromptCacheMarkers : supportsPromptCacheMarkers // ignore: cast_nullable_to_non_nullable
 as bool,supportsMidConversationSystemMessages: null == supportsMidConversationSystemMessages ? _self.supportsMidConversationSystemMessages : supportsMidConversationSystemMessages // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolDeltas: null == supportsToolDeltas ? _self.supportsToolDeltas : supportsToolDeltas // ignore: cast_nullable_to_non_nullable
 as bool,supportsDeferredTools: null == supportsDeferredTools ? _self.supportsDeferredTools : supportsDeferredTools // ignore: cast_nullable_to_non_nullable

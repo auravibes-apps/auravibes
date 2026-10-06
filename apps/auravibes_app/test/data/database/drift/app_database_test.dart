@@ -47,7 +47,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 23);
+      expect(fixture.database.schemaVersion, 24);
     });
 
     test('migration defaults advanced capabilities to false', () async {
@@ -179,6 +179,40 @@ void main() {
     });
 
     test(
+      'migration from schema 19 adds nullable tool sampling policy',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 19
+          ..execute('''
+          CREATE TABLE workspace_model_selections (
+            id TEXT PRIMARY KEY NOT NULL,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            model_id TEXT NOT NULL,
+            model_connection_id TEXT NOT NULL
+          )
+        ''')
+          ..execute('''
+          INSERT INTO workspace_model_selections
+            (id, created_at, updated_at, model_id, model_connection_id)
+          VALUES ('selection-1', 1, 1, 'gpt-4o', 'connection-1')
+        ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final selection = await fixture.database
+            .customSelect(
+              'SELECT tool_sampling_policy FROM workspace_model_selections '
+              'WHERE id = ?',
+              variables: [const Variable<String>('selection-1')],
+            )
+            .getSingle();
+
+        expect(selection.read<String?>('tool_sampling_policy'), isNull);
+      },
+    );
+
+    test(
       'migration adds MCP output schema without changing existing tools',
       () async {
         await fixture.close();
@@ -204,27 +238,73 @@ void main() {
       },
     );
 
-    test('migration adds normalized MCP test summaries', () async {
-      await fixture.close();
-      final sqliteDb = sqlite.sqlite3.openInMemory()
-        ..userVersion = 20
-        ..execute('''
+    test(
+      'migration from schema 20 preserves tool policy and adds MCP fields',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 20
+          ..execute('''
           CREATE TABLE mcp_servers (
+            id TEXT NOT NULL PRIMARY KEY
+          );
+        ''')
+          ..execute('''
+          CREATE TABLE workspace_model_selections (
             id TEXT NOT NULL PRIMARY KEY,
-            catalog_snapshot_json TEXT
+            tool_sampling_policy TEXT
           );
         ''');
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
 
-      final columns = await fixture.database
-          .customSelect('PRAGMA table_info(mcp_servers)')
-          .get();
+        final mcpColumns = await fixture.database
+            .customSelect('PRAGMA table_info(mcp_servers)')
+            .get();
+        final selectionColumns = await fixture.database
+            .customSelect('PRAGMA table_info(workspace_model_selections)')
+            .get();
 
-      expect(
-        columns.map((row) => row.read<String>('name')),
-        contains('test_summary_json'),
-      );
-    });
+        expect(
+          mcpColumns.map((row) => row.read<String>('name')),
+          containsAll(['catalog_snapshot_json', 'test_summary_json']),
+        );
+        expect(
+          selectionColumns.map((row) => row.read<String>('name')),
+          contains('tool_sampling_policy'),
+        );
+      },
+    );
+
+    test(
+      'migration from schema 21 adds tool policy to MCP-upgraded database',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 21
+          ..execute('''
+            CREATE TABLE mcp_servers (
+              id TEXT NOT NULL PRIMARY KEY,
+              catalog_snapshot_json TEXT,
+              test_summary_json TEXT
+            );
+          ''')
+          ..execute('''
+            CREATE TABLE workspace_model_selections (
+              id TEXT NOT NULL PRIMARY KEY
+            );
+          ''');
+        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+
+        final columns = await fixture.database
+            .customSelect('PRAGMA table_info(workspace_model_selections)')
+            .get();
+
+        expect(
+          columns.map((row) => row.read<String>('name')),
+          contains('tool_sampling_policy'),
+        );
+      },
+    );
 
     test('workspace deletion cascades to sensitive child records', () async {
       final workspace = await fixture.database.workspaceDao.insertWorkspace(

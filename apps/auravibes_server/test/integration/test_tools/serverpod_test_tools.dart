@@ -135,6 +135,8 @@ import 'package:auravibes_server/src/generated/features/model_connections/models
     as _iskhxh94;
 import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i2yb5fxk;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _ijxinstp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_request.dart'
     as _ij84b3fp;
 import 'package:auravibes_server/src/generated/features/model_connections/models/verify_model_connection_result.dart'
@@ -2089,6 +2091,35 @@ class _ModelConnectionEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<List<_ipmnqqs6.WorkspaceModelSelectionView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> updateToolSamplingPolicy(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ijxinstp.UpdateWorkspaceModelSelectionPolicyRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'updateToolSamplingPolicy',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'updateToolSamplingPolicy',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

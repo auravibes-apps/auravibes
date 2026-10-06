@@ -184,12 +184,16 @@ import 'features/model_connections/models/test_and_sync_model_connection_request
     as _ixyi2mo6;
 import 'features/model_connections/models/update_model_connection_request.dart'
     as _iw5yf4pd;
+import 'features/model_connections/models/update_workspace_model_selection_policy_request.dart'
+    as _izwfsoeu;
 import 'features/model_connections/models/verify_model_connection_request.dart'
     as _ic2lxbsg;
 import 'features/model_connections/models/verify_model_connection_result.dart'
     as _ibj3h7po;
 import 'features/model_connections/models/workspace_model_connection.dart'
     as _ihf3aqrg;
+import 'features/model_connections/models/workspace_model_selection_tool_sampling_policy.dart'
+    as _i8rogqzm;
 import 'features/model_connections/models/workspace_model_selection_view.dart'
     as _i2zocl9o;
 import 'features/objects/models/begin_upload_request.dart' as _ii7xucwd;
@@ -394,9 +398,11 @@ export 'features/model_connections/models/recent_model_selection.dart';
 export 'features/model_connections/models/record_recent_model_selection_request.dart';
 export 'features/model_connections/models/test_and_sync_model_connection_request.dart';
 export 'features/model_connections/models/update_model_connection_request.dart';
+export 'features/model_connections/models/update_workspace_model_selection_policy_request.dart';
 export 'features/model_connections/models/verify_model_connection_request.dart';
 export 'features/model_connections/models/verify_model_connection_result.dart';
 export 'features/model_connections/models/workspace_model_connection.dart';
+export 'features/model_connections/models/workspace_model_selection_tool_sampling_policy.dart';
 export 'features/model_connections/models/workspace_model_selection_view.dart';
 export 'features/objects/models/begin_upload_request.dart';
 export 'features/objects/models/begin_upload_result.dart';
@@ -779,6 +785,10 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iw5yf4pd.UpdateModelConnectionRequest) {
       return _iw5yf4pd.UpdateModelConnectionRequest.fromJson(data) as T;
     }
+    if (t == _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest) {
+      return _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest.fromJson(data)
+          as T;
+    }
     if (t == _ic2lxbsg.VerifyModelConnectionRequest) {
       return _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data) as T;
     }
@@ -787,6 +797,10 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ihf3aqrg.WorkspaceModelConnection) {
       return _ihf3aqrg.WorkspaceModelConnection.fromJson(data) as T;
+    }
+    if (t == _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy) {
+      return _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy.fromJson(data)
+          as T;
     }
     if (t == _i2zocl9o.WorkspaceModelSelectionView) {
       return _i2zocl9o.WorkspaceModelSelectionView.fromJson(data) as T;
@@ -1499,6 +1513,15 @@ class Protocol extends _isc.SerializationManager {
               : null)
           as T;
     }
+    if (t ==
+        _isc.getType<_izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest?>()) {
+      return (data != null
+              ? _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest.fromJson(
+                  data,
+                )
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_ic2lxbsg.VerifyModelConnectionRequest?>()) {
       return (data != null
               ? _ic2lxbsg.VerifyModelConnectionRequest.fromJson(data)
@@ -1514,6 +1537,15 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_ihf3aqrg.WorkspaceModelConnection?>()) {
       return (data != null
               ? _ihf3aqrg.WorkspaceModelConnection.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t ==
+        _isc.getType<_i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy?>()) {
+      return (data != null
+              ? _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy.fromJson(
+                  data,
+                )
               : null)
           as T;
     }
@@ -2207,9 +2239,13 @@ class Protocol extends _isc.SerializationManager {
       _ixyi2mo6.TestAndSyncModelConnectionRequest =>
         'TestAndSyncModelConnectionRequest',
       _iw5yf4pd.UpdateModelConnectionRequest => 'UpdateModelConnectionRequest',
+      _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest =>
+        'UpdateWorkspaceModelSelectionPolicyRequest',
       _ic2lxbsg.VerifyModelConnectionRequest => 'VerifyModelConnectionRequest',
       _ibj3h7po.VerifyModelConnectionResult => 'VerifyModelConnectionResult',
       _ihf3aqrg.WorkspaceModelConnection => 'WorkspaceModelConnection',
+      _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy =>
+        'WorkspaceModelSelectionToolSamplingPolicy',
       _i2zocl9o.WorkspaceModelSelectionView => 'WorkspaceModelSelectionView',
       _ii7xucwd.BeginUploadRequest => 'BeginUploadRequest',
       _iy4az4cb.BeginUploadResult => 'BeginUploadResult',
@@ -2486,12 +2522,16 @@ class Protocol extends _isc.SerializationManager {
         return 'TestAndSyncModelConnectionRequest';
       case _iw5yf4pd.UpdateModelConnectionRequest():
         return 'UpdateModelConnectionRequest';
+      case _izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest():
+        return 'UpdateWorkspaceModelSelectionPolicyRequest';
       case _ic2lxbsg.VerifyModelConnectionRequest():
         return 'VerifyModelConnectionRequest';
       case _ibj3h7po.VerifyModelConnectionResult():
         return 'VerifyModelConnectionResult';
       case _ihf3aqrg.WorkspaceModelConnection():
         return 'WorkspaceModelConnection';
+      case _i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy():
+        return 'WorkspaceModelSelectionToolSamplingPolicy';
       case _i2zocl9o.WorkspaceModelSelectionView():
         return 'WorkspaceModelSelectionView';
       case _ii7xucwd.BeginUploadRequest():
@@ -2954,6 +2994,11 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'UpdateModelConnectionRequest') {
       return deserialize<_iw5yf4pd.UpdateModelConnectionRequest>(data['data']);
     }
+    if (dataClassName == 'UpdateWorkspaceModelSelectionPolicyRequest') {
+      return deserialize<_izwfsoeu.UpdateWorkspaceModelSelectionPolicyRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'VerifyModelConnectionRequest') {
       return deserialize<_ic2lxbsg.VerifyModelConnectionRequest>(data['data']);
     }
@@ -2962,6 +3007,11 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'WorkspaceModelConnection') {
       return deserialize<_ihf3aqrg.WorkspaceModelConnection>(data['data']);
+    }
+    if (dataClassName == 'WorkspaceModelSelectionToolSamplingPolicy') {
+      return deserialize<_i8rogqzm.WorkspaceModelSelectionToolSamplingPolicy>(
+        data['data'],
+      );
     }
     if (dataClassName == 'WorkspaceModelSelectionView') {
       return deserialize<_i2zocl9o.WorkspaceModelSelectionView>(data['data']);

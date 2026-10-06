@@ -16,6 +16,7 @@ class TestableApp extends StatefulWidget {
     this.overrides = const [],
     this.workspaceId = 'test-workspace',
     this.workspaceSession,
+    this.startLocale = const Locale('en'),
     super.key,
   });
 
@@ -30,6 +31,9 @@ class TestableApp extends StatefulWidget {
 
   /// Session instance used as the generated provider family argument.
   final WorkspaceSession? workspaceSession;
+
+  /// Locale used by EasyLocalization in the test app.
+  final Locale startLocale;
 
   @override
   State<TestableApp> createState() => _TestableAppState();
@@ -89,10 +93,10 @@ class _TestableAppState extends State<TestableApp> {
             supportedLocales: context.supportedLocales,
           ),
         ),
-        supportedLocales: const [Locale('en')],
+        supportedLocales: const [Locale('en'), Locale('es')],
         path: 'assets/i18n',
         fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
+        startLocale: widget.startLocale,
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),

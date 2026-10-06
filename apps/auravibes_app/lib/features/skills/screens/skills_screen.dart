@@ -812,38 +812,51 @@ Future<void> _runSkillsBulkDelete(_SkillsBulkDeleteRequest request) async {
   request.selectedIds.value = failed.map((skill) => skill.id).toSet();
   if (failed.isEmpty) return;
 
-  _showSkillsDeleteFailures(request.context, failed);
+  await _showSkillsBulkDeleteFailures(request, failed);
+}
+
+Future<void> _showSkillsBulkDeleteFailures(
+  _SkillsBulkDeleteRequest request,
+  List<WorkspaceSkill> failed,
+) async {
+  await ManagementListFeedback.showFailuresDialog(
+    context: request.context,
+    failedItems: failed,
+    nameOf: (skill) => _localizedSkillTitle(request.context, skill),
+    onRetry: (skills) => _retrySkillsBulkDelete(request, skills),
+  );
+}
+
+Future<List<WorkspaceSkill>> _retrySkillsBulkDelete(
+  _SkillsBulkDeleteRequest request,
+  List<WorkspaceSkill> skills,
+) async {
+  request.isDeleting.value = true;
+  final failed = await _deleteSkillsTargets(request, skills);
+  if (request.context.mounted) {
+    request.selectedIds.value = failed.map((skill) => skill.id).toSet();
+  }
+
+  return failed;
 }
 
 Future<List<WorkspaceSkill>> _deleteSelectedSkills(
   _SkillsBulkDeleteRequest request,
+) => _deleteSkillsTargets(request, request.selectedSkills);
+
+Future<List<WorkspaceSkill>> _deleteSkillsTargets(
+  _SkillsBulkDeleteRequest request,
+  List<WorkspaceSkill> targets,
 ) async {
   try {
-    return await request.onDeleteSkills(request.selectedSkills);
+    return await request.onDeleteSkills(targets);
   } on Object catch (error, stackTrace) {
     _logger.warning('Failed to delete selected skills', error, stackTrace);
 
-    return request.selectedSkills;
+    return targets;
   } finally {
     if (request.context.mounted) request.isDeleting.value = false;
   }
-}
-
-void _showSkillsDeleteFailures(
-  BuildContext context,
-  List<WorkspaceSkill> failed,
-) {
-  final _ = AuraSnackBars.show(
-    context: context,
-    content: Text(
-      ManagementListFeedback.failureText(
-        context,
-        LocaleKeys.skills_screen_bulk_delete_failures,
-        failed.map((skill) => _localizedSkillTitle(context, skill)).toList(),
-      ),
-    ),
-    variant: .error,
-  );
 }
 
 class const _SkillsScreenLoadedView({required final _SkillsViewState state})

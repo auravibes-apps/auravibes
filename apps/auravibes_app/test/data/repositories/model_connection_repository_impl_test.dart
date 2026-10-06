@@ -692,7 +692,7 @@ void main() {
         },
       );
 
-      test('preserves existing selection ids for unchanged models', () async {
+      test('preserves selection policy for unchanged catalog models', () async {
         final existingRow = connectionRow.copyWith(
           url: const Value('https://old.proxy.example.com'),
         );
@@ -706,6 +706,7 @@ void main() {
           updatedAt: now,
           modelId: 'gpt-4',
           modelConnectionId: 'conn-1',
+          toolSamplingPolicy: 'prefer',
         );
         final removedSelection = WorkspaceModelSelectionTable(
           id: 'selection-removed',

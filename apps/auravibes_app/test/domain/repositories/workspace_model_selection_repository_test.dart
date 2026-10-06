@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubRepository implements WorkspaceModelSelectionRepository {
@@ -35,6 +36,12 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
       getWorkspaceModelSelectionById(id);
+
+  @override
+  Future<void> updateToolSamplingPolicy(
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) => throw UnimplementedError();
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(

@@ -12,3 +12,4 @@ fields:
   revision: int
   createdAt: DateTime
   updatedAt: DateTime
+  toolSamplingPolicy: String?

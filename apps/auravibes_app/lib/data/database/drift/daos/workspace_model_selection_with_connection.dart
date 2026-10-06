@@ -40,6 +40,10 @@ mixin _WorkspaceModelSelectionsDaoWriteApi {
   Future<int> deleteByIds(Set<String> ids) =>
       WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
           .deleteByIds(ids);
+
+  Future<int> updateToolSamplingPolicy(String selectionId, String? policy) =>
+      WorkspaceModelSelectionsDaoWrites(this as WorkspaceModelSelectionsDao)
+          .updateToolSamplingPolicy(selectionId, policy);
 }
 
 mixin _WorkspaceModelSelectionsDaoReadApi {
@@ -86,6 +90,13 @@ extension WorkspaceModelSelectionsDaoWrites on WorkspaceModelSelectionsDao {
       workspaceModelSelections,
     )..where((table) => table.id.isIn(ids))).go();
   }
+
+  Future<int> updateToolSamplingPolicy(String selectionId, String? policy) =>
+      (update(
+        workspaceModelSelections,
+      )..where((table) => table.id.equals(selectionId))).write(
+        WorkspaceModelSelectionsCompanion(toolSamplingPolicy: .new(policy)),
+      );
 }
 
 extension WorkspaceModelSelectionsDaoReads on WorkspaceModelSelectionsDao {

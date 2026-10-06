@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -485,16 +488,115 @@ class const _ModelSheetTile({
     final selection = model.workspaceModelSelection;
     final isSelected = selection.id == workspaceModelSelectionId;
 
-    return _SelectableModelTile(
+    return _ModelSheetRow(
       model: model,
       isSelected: isSelected,
-      onTap: () => _select(context, selection.id),
+      onChanged: onChanged,
+    );
+  }
+}
+
+class const _ModelSheetRow({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+  required final bool isSelected,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: _ModelSheetSelection(
+          model: model,
+          isSelected: isSelected,
+          onChanged: onChanged,
+        ),
+      ),
+      _ModelToolSamplingMenu(model: model),
+    ],
+  );
+}
+
+class const _ModelSheetSelection({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+  required final bool isSelected,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SelectableModelTile(
+    model: model,
+    isSelected: isSelected,
+    onTap: () {
+      onChanged(model.workspaceModelSelection.id);
+      final _ = Navigator.maybePop(context);
+    },
+    trailing: isSelected ? const AuraIcon(Icons.check, tint: .primary) : null,
+  );
+}
+
+class const _ModelToolSamplingMenu({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AuraPopupMenuButton(
+      items: _menuItems(context, ref),
+      icon: Icons.tune,
+      tooltip: _tooltip(context),
     );
   }
 
-  void _select(BuildContext context, String id) {
-    onChanged(id);
-    final _ = Navigator.maybePop(context);
+  List<AuraPopupMenuEntry> _menuItems(BuildContext context, WidgetRef ref) =>
+      _toolSamplingMenuItems(
+        context,
+        model,
+        (policy) => unawaited(_saveToolSamplingPolicy(context, ref, policy)),
+      );
+
+  String _tooltip(BuildContext context) {
+    final selection = model.workspaceModelSelection;
+    final modelName = selection.modelName ?? selection.modelId;
+
+    return LocaleKeys.models_screens_tool_sampling_settings_for_model.tr(
+      args: [modelName],
+      context: context,
+    );
+  }
+
+  Future<void> _saveToolSamplingPolicy(
+    BuildContext context,
+    WidgetRef ref,
+    ToolSamplingPolicy? policy,
+  ) async {
+    final selection = model.workspaceModelSelection;
+    if (policy == .require && !_canRequireStrictToolSampling(model)) return;
+
+    try {
+      await _updateToolSamplingPolicy(ref, selection.id, policy);
+    } on Object catch (_) {
+      if (!context.mounted) return;
+      _showUpdateError(context);
+    }
+  }
+
+  Future<void> _updateToolSamplingPolicy(
+    WidgetRef ref,
+    String selectionId,
+    ToolSamplingPolicy? policy,
+  ) async {
+    final store = await ref.read(
+      modelSelectionStoreProvider(model.modelConnection.workspaceId).future,
+    );
+    await store.updateToolSamplingPolicy(selectionId, policy);
+  }
+
+  void _showUpdateError(BuildContext context) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: const TextLocale(
+        LocaleKeys.models_screens_tool_sampling_update_error,
+      ),
+      variant: .error,
+    );
   }
 }
 
@@ -502,15 +604,116 @@ class const _SelectableModelTile({
   required final WorkspaceModelSelectionWithConnectionEntity model,
   required final bool isSelected,
   required final VoidCallback onTap,
+  required final Widget? trailing,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraTile(
     child: _ModelSheetOptionContent(model: model),
     onTap: onTap,
     variant: isSelected ? AuraTileVariant.selected : AuraTileVariant.surface,
-    trailing: isSelected ? const AuraIcon(Icons.check, tint: .primary) : null,
+    trailing: trailing,
   );
 }
+
+bool _canRequireStrictToolSampling(
+  WorkspaceModelSelectionWithConnectionEntity model,
+) {
+  final selection = model.workspaceModelSelection;
+  if (!selection.supportsToolCalls) return false;
+
+  final providerId = model.modelsProvider.type?.name ?? '';
+  final baseUrl = _strictToolSamplingBaseUrl(model, providerId);
+
+  return strictToolSamplingProfile(providerId, selection.modelId, baseUrl) !=
+      null;
+}
+
+String? _strictToolSamplingBaseUrl(
+  WorkspaceModelSelectionWithConnectionEntity model,
+  String providerId,
+) {
+  final connectionUrl = _nonBlank(model.modelConnection.url);
+  if (connectionUrl != null) return connectionUrl;
+  if (providerId == 'openrouter') return null;
+
+  final providerUrl = _nonBlank(model.modelsProvider.url);
+  if (providerUrl != null) return providerUrl;
+
+  return providerId == 'openai' ? providerProfile('openai').defaultUrl : null;
+}
+
+String? _nonBlank(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) return null;
+
+  return trimmed;
+}
+
+List<AuraPopupMenuEntry> _toolSamplingMenuItems(
+  BuildContext context,
+  WorkspaceModelSelectionWithConnectionEntity model,
+  ValueChanged<ToolSamplingPolicy?> onSelected,
+) {
+  final selection = model.workspaceModelSelection;
+  final savedPolicy = model.workspaceModelSelection.toolSamplingPolicy;
+  final canRequire = _canRequireStrictToolSampling(model);
+  final effectivePolicy = _effectiveToolSamplingPolicy(selection, canRequire);
+
+  return [
+    _automaticToolSamplingItem(
+      context,
+      effectivePolicy,
+      savedPolicy,
+      onSelected,
+    ),
+    for (final policy in ToolSamplingPolicy.values)
+      _toolSamplingPolicyItem(policy, savedPolicy, canRequire, onSelected),
+  ];
+}
+
+AuraPopupMenuEntry _automaticToolSamplingItem(
+  BuildContext context,
+  ToolSamplingPolicy effectivePolicy,
+  ToolSamplingPolicy? savedPolicy,
+  ValueChanged<ToolSamplingPolicy?> onSelected,
+) => AuraPopupMenuItem(
+  title: TextLocale(
+    LocaleKeys.models_screens_tool_sampling_automatic,
+    args: [_toolSamplingPolicyLocaleKey(effectivePolicy).tr(context: context)],
+  ),
+  onTap: () => onSelected(null),
+  trailing: savedPolicy == null ? const AuraIcon(Icons.check) : null,
+);
+
+AuraPopupMenuEntry _toolSamplingPolicyItem(
+  ToolSamplingPolicy policy,
+  ToolSamplingPolicy? savedPolicy,
+  bool canRequire,
+  ValueChanged<ToolSamplingPolicy?> onSelected,
+) {
+  final isEnabled = policy != .require || canRequire;
+  final isSelected = savedPolicy == policy;
+
+  return AuraPopupMenuItem(
+    title: TextLocale(_toolSamplingPolicyLocaleKey(policy)),
+    onTap: isEnabled ? () => onSelected(policy) : null,
+    trailing: isSelected ? const AuraIcon(Icons.check) : null,
+  );
+}
+
+String _toolSamplingPolicyLocaleKey(ToolSamplingPolicy policy) =>
+    switch (policy) {
+      .off => LocaleKeys.models_screens_tool_sampling_off,
+      .prefer => LocaleKeys.models_screens_tool_sampling_prefer,
+      .require => LocaleKeys.models_screens_tool_sampling_require,
+    };
+
+ToolSamplingPolicy _effectiveToolSamplingPolicy(
+  WorkspaceModelSelectionEntity selection,
+  bool canRequire,
+) =>
+    selection.toolSamplingPolicy ??
+    (canRequire ? ToolSamplingPolicy.prefer : ToolSamplingPolicy.off);
 
 class const _CompactModelDropdown({
   required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
@@ -806,18 +1009,74 @@ class const _ModelSheetOptionContent({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final selection = model.workspaceModelSelection;
+    final canRequire = _canRequireStrictToolSampling(model);
 
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
-        _ModelOptionTitle(selection: selection),
+        _ModelOptionTitle(selection: model.workspaceModelSelection),
         const AuraSizedBox(height: .xs),
         _ModelBadges(model: model),
+        const AuraSizedBox(height: .xs),
+        _ToolSamplingPolicyDetails(model: model, canRequire: canRequire),
       ],
     );
   }
+}
+
+class const _ToolSamplingPolicyDetails({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+  required final bool canRequire,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final selection = model.workspaceModelSelection;
+
+    return Column(
+      crossAxisAlignment: .start,
+      children: [
+        TextLocale(
+          LocaleKeys.models_screens_tool_sampling_policy,
+          args: [_toolSamplingPolicyLabel(context, selection, canRequire)],
+        ),
+        TextLocale(_toolSamplingCapabilityLabel(selection, canRequire)),
+        if (!canRequire)
+          TextLocale(
+            selection.supportsToolCalls
+                ? LocaleKeys.models_screens_tool_sampling_unverified_explanation
+                : LocaleKeys.models_screens_tool_sampling_unsupported,
+          ),
+      ],
+    );
+  }
+}
+
+String _toolSamplingPolicyLabel(
+  BuildContext context,
+  WorkspaceModelSelectionEntity selection,
+  bool canRequire,
+) {
+  final policy = _effectiveToolSamplingPolicy(selection, canRequire);
+  final policyLabel = _toolSamplingPolicyLocaleKey(policy).tr(context: context);
+  if (selection.toolSamplingPolicy != null) return policyLabel;
+
+  return LocaleKeys.models_screens_tool_sampling_automatic.tr(
+    args: [policyLabel],
+    context: context,
+  );
+}
+
+String _toolSamplingCapabilityLabel(
+  WorkspaceModelSelectionEntity selection,
+  bool canRequire,
+) {
+  if (canRequire) return LocaleKeys.models_screens_tool_sampling_verified;
+  if (selection.supportsToolCalls) {
+    return LocaleKeys.models_screens_tool_sampling_unverified;
+  }
+
+  return LocaleKeys.models_screens_tool_sampling_no_tool_calls;
 }
 
 class const _ModelOptionTitle({

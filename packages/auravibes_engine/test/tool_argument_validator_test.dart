@@ -1,5 +1,4 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:auravibes_engine/src/tool_schema_strict.dart';
 import 'package:genkit/plugin.dart';
 import 'package:test/test.dart';
 

@@ -142,17 +142,18 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
   a2uiSupportedComponents: a2uiSupportedComponents,
 );
 
-List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
-    buildSkillCommandToolSpecs()
-        .map(
-          (spec) => ServerResolvedTool(
-            descriptor: AgentResolvedToolName.skillControl(
-              toolIdentifier: spec.name,
-            ),
-            spec: spec,
-          ),
-        )
-        .toList(growable: false);
+List<ServerResolvedTool> fixedCloudSkillCommandTools({
+  Iterable<SkillManifest> manifests = const [],
+}) => buildSkillCommandToolSpecs(manifests: manifests)
+    .map(
+      (spec) => ServerResolvedTool(
+        descriptor: AgentResolvedToolName.skillControl(
+          toolIdentifier: spec.name,
+        ),
+        spec: spec,
+      ),
+    )
+    .toList(growable: false);
 
 Future<SkillManifest?> buildCloudSkillManifest({
   required String slug,
@@ -192,6 +193,10 @@ Future<SkillManifest?> buildCloudSkillManifest({
               description: tool.spec.description,
               credentialRequired: tool.spec.requiresCredential,
               inputJsonSchema: tool.spec.inputJsonSchema,
+              optionalNullMeansOmission:
+                  tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+                  tool.descriptor.kind ==
+                      AgentResolvedToolKind.skillAppTemplate,
             ),
           )
           .toList()
@@ -213,6 +218,29 @@ Future<SkillManifest?> buildCloudSkillManifest({
     revision: revision,
     tools: manifestTools,
   );
+}
+
+Future<List<SkillManifest>> _cloudSkillManifests({
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<ServerResolvedTool> tools,
+}) async {
+  final slugs =
+      tools
+          .map((tool) => tool.descriptor.skillSlug)
+          .whereType<String>()
+          .toSet()
+          .toList()
+        ..sort();
+  final manifests = <SkillManifest>[];
+  for (final slug in slugs) {
+    final manifest = await buildCloudSkillManifest(
+      slug: slug,
+      userSkills: userSkills,
+      tools: tools,
+    );
+    if (manifest != null) manifests.add(manifest);
+  }
+  return manifests;
 }
 
 Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
@@ -244,7 +272,14 @@ Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
       '${command.skill}',
     );
   }
-  validateToolArguments(target.spec.inputJsonSchema, command.args);
+  final normalized = normalizeSkillToolArguments(
+    target.spec.inputJsonSchema,
+    command.args,
+    optionalNullMeansOmission:
+        target.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+        target.descriptor.kind == AgentResolvedToolKind.skillAppTemplate,
+  );
+  validateToolArguments(target.spec.inputJsonSchema, normalized);
   return target;
 }
 
@@ -471,6 +506,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
             tool.inputJsonSchema,
             requiresCredential: tool.requiresCredential,
             credentialIds: credentialIds,
+            strictProviderSchema: tool.urlTemplate != null,
           ),
           requiresCredential: tool.requiresCredential,
         ),
@@ -521,11 +557,13 @@ Map<String, Object?> cloudNativeInputSchema(
   Map<String, Object?> inputJsonSchema, {
   required bool requiresCredential,
   Iterable<String> credentialIds = const [],
+  bool strictProviderSchema = false,
 }) {
   return materializeSkillToolSchema(
     inputJsonSchema,
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
+    strictProviderSchema: strictProviderSchema,
   );
 }
 
@@ -760,6 +798,59 @@ class ServerToolRuntime({
   final ConversationCancellationProbe cancellationProbe =
       const DatabaseConversationCancellationProbe(),
 }) {
+  ({
+    List<ServerResolvedTool> tools,
+    List<Map<String, dynamic>> userSkills,
+  })
+  _materializeCloudSkillTargets({
+    required Conversation? conversation,
+    required Iterable<WorkspaceResource> resources,
+  }) {
+    final selectedSkillIds = conversation == null
+        ? <String>{}
+        : cloudAuthorizedSkillIds(
+            conversation: conversation,
+            resources: resources,
+          );
+    final userSkills = resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skill &&
+              _data(resource)['source'] != 'app',
+        )
+        .map((resource) => {'id': resource.resourceId, ..._data(resource)})
+        .toList(growable: false);
+
+    return (
+      userSkills: userSkills,
+      tools: materializeCloudSkillTools(
+        selectedSkillIds: selectedSkillIds,
+        userSkills: userSkills,
+        templateTools: resources
+            .where(
+              (resource) =>
+                  resource.resourceKind ==
+                  WorkspaceResourceKind.skillTemplateTool,
+            )
+            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
+        appSkillSettings: resources
+            .where(
+              (resource) =>
+                  resource.resourceKind == WorkspaceResourceKind.skillSetting,
+            )
+            .map(_data),
+        serviceConnections: resources
+            .where(
+              (resource) =>
+                  resource.resourceKind ==
+                  WorkspaceResourceKind.serviceConnection,
+            )
+            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
+        isChildConversation: conversation?.parentConversationStableId != null,
+      ),
+    );
+  }
+
   Future<List<ServerResolvedTool>> loadTools(
     Session session, {
     required int workspaceId,
@@ -816,6 +907,14 @@ class ServerToolRuntime({
           table.stableId.equals(conversationStableId) &
           table.deletedAt.equals(null),
     );
+    final skillTargets = _materializeCloudSkillTargets(
+      conversation: conversation,
+      resources: resources,
+    );
+    final skillManifests = await _cloudSkillManifests(
+      userSkills: skillTargets.userSkills,
+      tools: skillTargets.tools,
+    );
     final appSkillSettings = resources
         .where(
           (resource) =>
@@ -839,7 +938,7 @@ class ServerToolRuntime({
 
     return [
       ...genericTools,
-      ...fixedCloudSkillCommandTools(),
+      ...fixedCloudSkillCommandTools(manifests: skillManifests),
       ...agentTools,
     ];
   }
@@ -863,47 +962,9 @@ class ServerToolRuntime({
           table.workspaceId.equals(workspaceId) &
           table.stableId.equals(conversationStableId),
     );
-    final selectedSkillIds = conversation == null
-        ? <String>{}
-        : cloudAuthorizedSkillIds(
-            conversation: conversation,
-            resources: resources,
-          );
-    final userSkills = resources
-        .where(
-          (resource) =>
-              resource.resourceKind == WorkspaceResourceKind.skill &&
-              _data(resource)['source'] != 'app',
-        )
-        .map((resource) => {'id': resource.resourceId, ..._data(resource)})
-        .toList(growable: false);
-    return (
-      userSkills: userSkills,
-      tools: materializeCloudSkillTools(
-        selectedSkillIds: selectedSkillIds,
-        userSkills: userSkills,
-        templateTools: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind ==
-                  WorkspaceResourceKind.skillTemplateTool,
-            )
-            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
-        appSkillSettings: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind == WorkspaceResourceKind.skillSetting,
-            )
-            .map(_data),
-        serviceConnections: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind ==
-                  WorkspaceResourceKind.serviceConnection,
-            )
-            .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
-        isChildConversation: conversation?.parentConversationStableId != null,
-      ),
+    return _materializeCloudSkillTargets(
+      conversation: conversation,
+      resources: resources,
     );
   }
 
@@ -1076,10 +1137,19 @@ class ServerToolRuntime({
         if (tool == null) {
           throw const FormatException('Tool is no longer available.');
         }
+        final normalizedCommand = command.copyWithArguments(
+          normalizeSkillToolArguments(
+            tool.spec.inputJsonSchema,
+            command.args,
+            optionalNullMeansOmission:
+                tool.descriptor.kind == AgentResolvedToolKind.skillTemplate ||
+                tool.descriptor.kind == AgentResolvedToolKind.skillAppTemplate,
+          ),
+        );
         executionRequest = ServerToolRequest(
           id: request.id,
           name: permissionDescriptor.fullName,
-          arguments: Map<String, dynamic>.from(command.args),
+          arguments: Map<String, dynamic>.from(normalizedCommand.args),
           userFacingDescription: request.userFacingDescription,
         );
       } on Object catch (error) {

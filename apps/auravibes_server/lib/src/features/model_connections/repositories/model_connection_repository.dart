@@ -37,6 +37,60 @@ class ModelConnectionRepository {
         table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
   );
 
+  Future<List<WorkspaceModelSelectionToolSamplingPolicy>>
+  listToolSamplingPolicies(
+    Session session, {
+    required int workspaceId,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.find(
+    session,
+    where: (table) => table.workspaceId.equals(workspaceId),
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy?> findToolSamplingPolicy(
+    Session session, {
+    required int workspaceId,
+    required String connectionId,
+    required String modelId,
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.connectionId.equals(connectionId) &
+        table.modelId.equals(modelId),
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> insertToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.insertRow(
+    session,
+    policy,
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> updateToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.updateRow(
+    session,
+    policy,
+    transaction: transaction,
+  );
+
+  Future<WorkspaceModelSelectionToolSamplingPolicy> deleteToolSamplingPolicy(
+    Session session,
+    WorkspaceModelSelectionToolSamplingPolicy policy, {
+    required Transaction transaction,
+  }) => WorkspaceModelSelectionToolSamplingPolicy.db.deleteRow(
+    session,
+    policy,
+    transaction: transaction,
+  );
+
   Future<List<RecentModelSelection>> listRecentSelections(
     Session session, {
     required int workspaceId,
