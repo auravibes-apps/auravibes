@@ -61,12 +61,12 @@ void main() {
         ),
       );
       final skill = AvailableSkill(
-        source: skillEntity.source,
         id: skillEntity.id,
         slug: skillEntity.slug,
         title: skillEntity.title,
         description: skillEntity.description,
         content: skillEntity.content,
+        source: skillEntity.source,
         kind: skillEntity.kind,
         credentialReadiness: .ready,
       );

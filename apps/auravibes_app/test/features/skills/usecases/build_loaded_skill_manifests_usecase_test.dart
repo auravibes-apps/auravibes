@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -38,12 +37,12 @@ void main() {
       ).thenAnswer(
         (_) async => const [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'skill-1',
             slug: 'research',
             title: 'Research',
             description: 'Research sources.',
             content: 'Use primary sources.',
+            source: .user,
             kind: .template,
           ),
         ],

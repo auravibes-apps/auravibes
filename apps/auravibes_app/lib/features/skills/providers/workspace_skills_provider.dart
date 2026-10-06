@@ -106,11 +106,11 @@ WorkspaceSkill _appWorkspaceSkill(
   required bool isEnabled,
 }) {
   return WorkspaceSkill(
-    source: SkillSource.app,
     id: skill.identifier,
     slug: skill.slug,
     title: skill.title,
     description: skill.description,
+    source: .app,
     kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
     isEnabled: isEnabled,
     titleKey: skill.titleKey,
@@ -159,11 +159,11 @@ Future<List<WorkspaceSkill>> _loadUserSkills(
 
 WorkspaceSkill _userWorkspaceSkill(SkillEntity skill) {
   return WorkspaceSkill(
-    source: SkillSource.user,
     id: skill.id,
     slug: skill.slug,
     title: skill.title,
     description: skill.description,
+    source: .user,
     kind: skill.kind,
     isEnabled: skill.isEnabled,
   );

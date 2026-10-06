@@ -78,9 +78,9 @@ typedef _SetAppSkillEnabled = Future<void> Function(
 );
 
 final _blankSkill = SkillEntity(
-  source: SkillSource.user,
   id: '',
   workspaceId: '',
+  source: .user,
   kind: .template,
   title: '',
   slug: '',

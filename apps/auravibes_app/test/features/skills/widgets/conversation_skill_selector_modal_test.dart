@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/models/skill_access_summary.dart';
@@ -30,12 +29,12 @@ void main() {
           (ref) async => const ConversationSkillSelectorState(
             loaded: [
               AvailableSkill(
-                source: SkillSource.user,
                 id: 'research',
                 slug: 'research',
                 title: 'Research',
                 description: 'Find sources',
                 content: '',
+                source: .user,
                 kind: .template,
                 credentialReadiness: .ready,
               ),
@@ -314,23 +313,23 @@ Future<void> _pumpModal(
 }
 
 const _research = AvailableSkill(
-  source: SkillSource.user,
   id: 'research',
   slug: 'research',
   title: 'Research',
   description: 'Find sources for a topic.',
   content: 'Use research',
+  source: .user,
   kind: .template,
   credentialReadiness: .ready,
 );
 
 const _weather = AvailableSkill(
-  source: SkillSource.user,
   id: 'weather',
   slug: 'weather',
   title: 'Weather',
   description: 'Forecast details for today.',
   content: 'Use weather',
+  source: .user,
   kind: .template,
   credentialReadiness: .ready,
 );

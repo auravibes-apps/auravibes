@@ -173,9 +173,9 @@ extension SkillsRepositoryEntityMappings on SkillsRepository {
 }
 
 final _emptySkillEntity = SkillEntity(
-  source: SkillSource.user,
   id: '',
   workspaceId: '',
+  source: .user,
   kind: .template,
   title: '',
   slug: '',

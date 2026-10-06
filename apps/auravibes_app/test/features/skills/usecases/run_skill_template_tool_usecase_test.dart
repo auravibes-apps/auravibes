@@ -32,9 +32,9 @@ void main() {
       final tools = _SkillTemplateToolsRepository();
       final credentials = _CredentialsRepository();
       final skill = SkillEntity(
-        source: .user,
         id: 'skill-1',
         workspaceId: 'workspace-1',
+        source: .user,
         kind: .template,
         title: 'Example',
         slug: 'example-skill',

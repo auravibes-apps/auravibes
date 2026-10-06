@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_skill_context_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/conversation_skill_selector_provider.dart';
@@ -16,12 +15,12 @@ class _BuildManifests extends Mock implements BuildLoadedSkillManifestsUsecase;
 
 void main() {
   const skill = AvailableSkill(
-    source: SkillSource.user,
     id: 'skill-1',
     slug: 'research',
     title: 'Research',
     description: 'Find sources',
     content: 'Use primary sources',
+    source: .user,
     kind: .template,
     credentialReadiness: .ready,
   );
@@ -117,12 +116,12 @@ void main() {
     'new selection stays added while existing context stays ready',
     () async {
       const added = AvailableSkill(
-        source: SkillSource.user,
         id: 'skill-2',
         slug: 'writing',
         title: 'Writing',
         description: 'Write clearly',
         content: 'Use plain language',
+        source: .user,
         kind: .template,
         credentialReadiness: .ready,
       );
@@ -195,12 +194,12 @@ void main() {
 
   test('missing credentials remain selected and show error', () async {
     const missing = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'research',
       title: 'Research',
       description: '',
       content: '',
+      source: .user,
       kind: .template,
       credentialReadiness: .missing,
     );
@@ -232,12 +231,12 @@ void main() {
 
   test('maps unknown credentials to preparation failure', () async {
     const unknown = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'research',
       title: 'Research',
       description: '',
       content: '',
+      source: .user,
       kind: .template,
     );
     final list = _ListSkills();

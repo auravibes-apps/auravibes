@@ -32,9 +32,9 @@ void main() {
         .into(database.skills)
         .insert(
           SkillsCompanion.insert(
-            source: .user,
             id: const Value('skill-1'),
             workspaceId: source.id,
+            source: .user,
             kind: .template,
             title: 'Research',
             slug: 'research',

@@ -2,7 +2,6 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_app/features/chats/services/chat_attachment_modality.dart';
@@ -1589,12 +1588,12 @@ ConversationSkillSelectorState _skillSelectorState(int count) =>
       loaded: [
         for (var index = 0; index < count; index++)
           AvailableSkill(
-            source: SkillSource.user,
             id: 'skill-$index',
             slug: 'skill-$index',
             title: 'Skill $index',
             description: 'Description $index',
             content: '',
+            source: .user,
             kind: .template,
             credentialReadiness: .ready,
           ),

@@ -133,21 +133,21 @@ void main() {
           (_, _) async => [
             for (final userSkill in userSkills)
               WorkspaceSkill(
-                source: SkillSource.user,
                 id: userSkill.id,
                 slug: userSkill.slug,
                 title: userSkill.title,
                 description: userSkill.description,
+                source: .user,
                 kind: userSkill.kind,
                 isEnabled: userSkill.isEnabled,
               ),
             if (includeAppSkill)
               const WorkspaceSkill(
-                source: SkillSource.app,
                 id: 'app-skill',
                 slug: 'native_helper',
                 title: 'Native Helper',
                 description: 'Built-in helper skill.',
+                source: .app,
                 kind: .native,
                 isEnabled: false,
               ),

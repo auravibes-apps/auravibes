@@ -599,11 +599,11 @@ extension on AppDatabase {
 /// with proper configuration for mobile and desktop platforms.
 QueryExecutor _openConnection({String? dbHashSource}) {
   return driftDatabase(
-    native: const DriftNativeOptions(shareAcrossIsolates: true),
     name: AppDatabase.databaseNameForHashSource(dbHashSource),
     web: .new(
       sqlite3Wasm: Uri.parse('sqlite3.wasm'),
       driftWorker: Uri.parse('drift_worker.dart.js'),
     ),
+    native: const DriftNativeOptions(shareAcrossIsolates: true),
   );
 }

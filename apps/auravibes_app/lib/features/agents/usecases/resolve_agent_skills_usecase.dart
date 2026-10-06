@@ -107,12 +107,12 @@ class const ResolveAgentSkillsUsecase(
 }
 
 AvailableSkill _toAvailableAppSkill(AppSkillDefinition skill) => AvailableSkill(
-  source: SkillSource.app,
   id: skill.identifier,
   slug: skill.slug,
   title: skill.title,
   description: skill.description,
   content: skill.content,
+  source: .app,
   kind: .native,
 );
 
@@ -139,12 +139,12 @@ resolveAgentSkillsUsecaseProvider =
 extension AgentSkillEntityAvailableSkill on SkillEntity {
   AvailableSkill toAvailableSkill() {
     return AvailableSkill(
-      source: source,
       id: id,
       slug: slug,
       title: title,
       description: description,
       content: content,
+      source: source,
       kind: kind,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,

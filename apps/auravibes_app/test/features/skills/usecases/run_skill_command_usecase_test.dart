@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -21,12 +20,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.app,
             id: 'a2ui',
             slug: 'a2ui',
             title: 'A2UI',
             description: 'UI surfaces.',
             content: 'Load A2UI resources when needed.',
+            source: .app,
             kind: .native,
           ),
         ],
@@ -190,12 +189,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'research-skill-row',
             slug: 'research',
             title: 'Research',
             description: 'Search sources.',
             content: 'Use research instructions.',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -319,12 +318,12 @@ void main() {
       listAvailableSkillsUsecase: (_) => _LoadedSkills(
         skills: const [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'research-skill-row',
             slug: 'research',
             title: 'Research',
             description: 'Search sources.',
             content: 'Use research instructions.',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -370,12 +369,12 @@ void main() {
         listAvailableSkillsUsecase: (_) => _LoadedSkills(
           skills: const [
             AvailableSkill(
-              source: SkillSource.user,
               id: 'research-skill-row',
               slug: 'research',
               title: 'Research',
               description: 'Search sources.',
               content: 'Use research instructions.',
+              source: .user,
               kind: .template,
             ),
           ],
@@ -683,12 +682,12 @@ class _AgentsManifests implements BuildLoadedSkillManifestsUsecase {
 class _LoadedSkills({
   final List<AvailableSkill> skills = const [
     AvailableSkill(
-      source: SkillSource.user,
       id: 'github-skill-row',
       slug: 'github',
       title: 'GitHub',
       description: 'Manage GitHub issues.',
       content: 'Create issues when requested.',
+      source: .user,
       kind: .template,
     ),
   ],

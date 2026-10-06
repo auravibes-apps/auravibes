@@ -89,9 +89,9 @@ void main() {
           overrides: [
             skillDetailProvider.overrideWith(
               (_, _) async => const SkillDetail(
-                source: .user,
                 id: 'saved-skill',
                 workspaceId: 'owned-workspace',
+                source: .user,
                 kind: .template,
                 title: 'Saved skill',
                 slug: 'saved-skill',

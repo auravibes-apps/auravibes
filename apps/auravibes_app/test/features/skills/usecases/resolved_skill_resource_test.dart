@@ -319,9 +319,9 @@ WorkspaceResource _skillWorkspaceResource({
 
 SkillEntity _skill({required String slug, String id = 'skill-1'}) =>
     SkillEntity(
-      source: .user,
       id: id,
       workspaceId: 'workspace-1',
+      source: .user,
       kind: .template,
       title: 'Custom',
       slug: slug,

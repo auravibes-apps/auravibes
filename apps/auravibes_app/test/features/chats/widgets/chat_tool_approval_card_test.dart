@@ -119,11 +119,11 @@ void main() {
     workspaceSkillsProvider('ws-1').overrideWith(
       (ref) async => const [
         WorkspaceSkill(
-          source: .user,
           id: 'skill-1',
           slug: 'research',
           title: 'Research Assistant',
           description: '',
+          source: .user,
           kind: .template,
           isEnabled: true,
         ),
