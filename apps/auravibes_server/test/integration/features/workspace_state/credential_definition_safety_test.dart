@@ -395,6 +395,93 @@ void main() {
       },
     );
 
+    test(
+      'credential deletion clears its secret without trusting the flag',
+      () async {
+        final f = await _Fixture.create(sessionBuilder.build());
+        final created = await f.mutate(
+          f.credentialRequest(secret: {'token': 'synthetic-value'}),
+        );
+
+        final deleted = await f.mutate(
+          MutateWorkspaceCredentialRequest(
+            workspaceId: f.workspaceId,
+            requestId: const Uuid().v4().toString(),
+            resourceOperation: WorkspacePatchOperation(
+              operation: .delete,
+              resourceKind: .serviceConnection,
+              resourceId: 'prepared',
+              expectedRevision: created.resource.revision,
+              fieldMask: [],
+            ),
+            secretKind: .skillCredential,
+            scope: .workspace,
+            secret: 'stale-secret-payload',
+            clearSecret: false,
+            expectedSecretRevision: created.secretRevision,
+          ),
+        );
+
+        expect(deleted.configured, isFalse);
+        final resource = await WorkspaceResource.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        final secret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        expect(resource!.deletedAt, isNotNull);
+        expect(secret!.deletedAt, isNotNull);
+        expect(await f.events(), hasLength(4));
+      },
+    );
+
+    test(
+      'credential deletion without a secret avoids a tombstone',
+      () async {
+        final f = await _Fixture.create(sessionBuilder.build());
+        await f.insert(.serviceConnection, 'prepared', {
+          'kind': 'skillCredential',
+          'credentialDefinitionId': 'definition',
+          'name': 'Prepared',
+          'attributes': <String, String>{},
+          'isEnabled': true,
+        });
+
+        final deleted = await f.mutate(
+          MutateWorkspaceCredentialRequest(
+            workspaceId: f.workspaceId,
+            requestId: const Uuid().v4().toString(),
+            resourceOperation: WorkspacePatchOperation(
+              operation: .delete,
+              resourceKind: .serviceConnection,
+              resourceId: 'prepared',
+              expectedRevision: 1,
+              fieldMask: [],
+            ),
+            secretKind: .skillCredential,
+            scope: .workspace,
+            clearSecret: false,
+          ),
+        );
+
+        expect(deleted.configured, isFalse);
+        final secret = await WorkspaceSecret.db.findFirstRow(
+          f.session,
+          where: (t) =>
+              t.workspaceId.equals(f.workspaceId) &
+              t.resourceId.equals('prepared'),
+        );
+        expect(secret, isNull);
+        expect(await f.events(), hasLength(1));
+      },
+    );
+
     test('direct patch blocks disabled reference-only deletion', () async {
       final fixture = await _Fixture.create(sessionBuilder.build());
       await fixture.insert(.skill, 'skill', {
