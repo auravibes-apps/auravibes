@@ -108,6 +108,16 @@ jobs:
             exit 1
           fi
 
+      - name: Check DCL analyzer plugin version
+        run: |
+          plugin_version="$(ruby -ryaml -e 'puts YAML.load_file("analysis_options.yaml").fetch("plugins").fetch("dart_code_linter").fetch("version")')"
+          locked_version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("dart_code_linter").fetch("version")')"
+
+          if [ "$plugin_version" != "$locked_version" ]; then
+            echo "::error::DCL analyzer plugin version must match pubspec.lock. Expected ${locked_version}; found ${plugin_version}."
+            exit 1
+          fi
+
       - uses: ./.github/actions/setup-workspace
 
       - name: Check dependency artifact drift
