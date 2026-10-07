@@ -577,10 +577,29 @@ void main() {
 }
 
 class _ApiModelRepositoryFixture {
-  final MockApiModelProvidersDao _mockProvidersDao = .new();
-  final MockApiModelsDao _mockModelsDao = .new();
-  final _TestAppDatabase _database = .new(_mockProvidersDao, _mockModelsDao);
-  final ApiModelRepository _repository = .new(_database);
+  factory _ApiModelRepositoryFixture() {
+    final mockProvidersDao = MockApiModelProvidersDao();
+    final mockModelsDao = MockApiModelsDao();
+    final database = _TestAppDatabase(mockProvidersDao, mockModelsDao);
+    return _ApiModelRepositoryFixture._(
+      mockProvidersDao,
+      mockModelsDao,
+      database,
+      ApiModelRepository(database),
+    );
+  }
+
+  _ApiModelRepositoryFixture._(
+    this._mockProvidersDao,
+    this._mockModelsDao,
+    this._database,
+    this._repository,
+  );
+
+  final MockApiModelProvidersDao _mockProvidersDao;
+  final MockApiModelsDao _mockModelsDao;
+  final _TestAppDatabase _database;
+  final ApiModelRepository _repository;
 
   MockApiModelProvidersDao get mockProvidersDao => _mockProvidersDao;
 

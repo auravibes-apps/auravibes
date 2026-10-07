@@ -565,10 +565,29 @@ void main() {
 }
 
 class _WorkspaceToolsRepositoryFixture {
-  final MockWorkspaceToolsDao _mockToolsDao = .new();
-  final MockWorkspaceDao _mockWorkspaceDao = .new();
-  final _TestAppDatabase _database = .new(_mockToolsDao, _mockWorkspaceDao);
-  final WorkspaceToolsRepository _repository = .new(_database);
+  factory _WorkspaceToolsRepositoryFixture() {
+    final mockToolsDao = MockWorkspaceToolsDao();
+    final mockWorkspaceDao = MockWorkspaceDao();
+    final database = _TestAppDatabase(mockToolsDao, mockWorkspaceDao);
+    return _WorkspaceToolsRepositoryFixture._(
+      mockToolsDao,
+      mockWorkspaceDao,
+      database,
+      WorkspaceToolsRepository(database),
+    );
+  }
+
+  _WorkspaceToolsRepositoryFixture._(
+    this._mockToolsDao,
+    this._mockWorkspaceDao,
+    this._database,
+    this._repository,
+  );
+
+  final MockWorkspaceToolsDao _mockToolsDao;
+  final MockWorkspaceDao _mockWorkspaceDao;
+  final _TestAppDatabase _database;
+  final WorkspaceToolsRepository _repository;
 
   MockWorkspaceToolsDao get mockToolsDao => _mockToolsDao;
 

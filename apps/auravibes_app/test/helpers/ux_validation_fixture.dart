@@ -42,8 +42,6 @@ class UxValidationFixture {
     this.childId,
   );
 
-  static AppDatabase? _database;
-
   final AppDatabase database;
   final String workspaceId;
   final String skillId;
@@ -53,6 +51,8 @@ class UxValidationFixture {
   final String agentId;
   final String chatId;
   final String childId;
+
+  static AppDatabase? _database;
 
   static Future<void> closeDatabase() async {
     await _database?.close();

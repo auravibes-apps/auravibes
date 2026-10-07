@@ -493,6 +493,10 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
+  static final AppDatabase _sharedDatabase = .new(
+    connection: NativeDatabase.memory(),
+  );
+
   new({
     List<CloudAccountSession> accounts = const [],
     Client? client,
@@ -554,10 +558,6 @@ class _IntroFixture {
         ],
         initialLocation: management ? '/create' : '/intro',
       );
-
-  static final AppDatabase _sharedDatabase = .new(
-    connection: NativeDatabase.memory(),
-  );
 
   final AppDatabase database;
   final ProviderContainer container;
