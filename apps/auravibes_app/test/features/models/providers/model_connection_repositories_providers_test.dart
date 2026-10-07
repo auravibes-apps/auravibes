@@ -45,9 +45,7 @@ void main() {
   group('workspaceModelSelectionRepositoryProvider', () {
     test('returns WorkspaceModelSelectionRepository instance', () {
       final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(database),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
       );
       addTearDown(container.dispose);
 

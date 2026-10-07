@@ -144,7 +144,6 @@ Future<void> _seedDatabase(AppDatabase database, int messageCount) async {
         ]);
     });
   });
-
 }
 
 class _AttachmentQueryGate extends QueryInterceptor {

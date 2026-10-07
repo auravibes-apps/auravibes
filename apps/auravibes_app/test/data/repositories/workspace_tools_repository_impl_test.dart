@@ -588,9 +588,8 @@ class _WorkspaceToolsRepositoryFixture {
     reset(_mockWorkspaceDao);
     await clearAppDatabase(_database);
 
-    when(() => _mockToolsDao.getWorkspaceTools(any())).thenAnswer(
-      (_) async => [],
-    );
+    when(() => _mockToolsDao.getWorkspaceTools(any()))
+        .thenAnswer((_) async => []);
     when(
       () => _mockToolsDao.setWorkspaceToolEnabled(
         any(),

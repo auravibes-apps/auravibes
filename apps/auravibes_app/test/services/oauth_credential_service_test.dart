@@ -677,7 +677,6 @@ class const _Fixture({
   ServiceConnectionRepository get serviceConnectionRepository {
     return ServiceConnectionRepository(database, encryption);
   }
-
 }
 
 class _FakeSecretKeyManager() extends SecretKeyManager {
