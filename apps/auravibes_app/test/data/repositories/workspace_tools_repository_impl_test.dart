@@ -8,8 +8,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -565,15 +565,10 @@ void main() {
 }
 
 class _WorkspaceToolsRepositoryFixture {
-  final MockWorkspaceToolsDao _mockToolsDao = MockWorkspaceToolsDao();
-  final MockWorkspaceDao _mockWorkspaceDao = MockWorkspaceDao();
-  late final _TestAppDatabase _database = _TestAppDatabase(
-    _mockToolsDao,
-    _mockWorkspaceDao,
-  );
-  late final WorkspaceToolsRepository _repository = WorkspaceToolsRepository(
-    _database,
-  );
+  final MockWorkspaceToolsDao _mockToolsDao = .new();
+  final MockWorkspaceDao _mockWorkspaceDao = .new();
+  final _TestAppDatabase _database = .new(_mockToolsDao, _mockWorkspaceDao);
+  final WorkspaceToolsRepository _repository = .new(_database);
 
   MockWorkspaceToolsDao get mockToolsDao => _mockToolsDao;
 

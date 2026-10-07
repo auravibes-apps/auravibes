@@ -25,7 +25,7 @@ final class _DatabaseFixture {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ??= AppDatabase(connection: createConnection());
+      _database ??= .new(connection: createConnection());
 
   Future<void> reset() => clearAppDatabase(database);
 

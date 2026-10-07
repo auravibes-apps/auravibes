@@ -724,7 +724,7 @@ class _AgentsRepositoryFixture({
   static AppDatabase? _sharedDatabase;
 
   static Future<_AgentsRepositoryFixture> create() async {
-    final database = _sharedDatabase ??= AppDatabase(
+    final database = _sharedDatabase ??= .new(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     await database.customStatement(

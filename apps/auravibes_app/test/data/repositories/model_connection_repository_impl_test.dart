@@ -15,20 +15,20 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ModelConnectionRepository', () {
-    var mockProvidersDao = MockApiModelProvidersDao();
-    var mockConnectionsDao = MockModelConnectionsDao();
-    var mockSelectionsDao = MockWorkspaceModelSelectionsDao();
-    var mockEncryptionService = MockEncryptionService();
-    var mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
-    var mockModelProviderServices = MockModelProviderServices();
-    var database = _TestAppDatabase(
+    final mockProvidersDao = MockApiModelProvidersDao();
+    final mockConnectionsDao = MockModelConnectionsDao();
+    final mockSelectionsDao = MockWorkspaceModelSelectionsDao();
+    final mockEncryptionService = MockEncryptionService();
+    final mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
+    final mockModelProviderServices = MockModelProviderServices();
+    final database = _TestAppDatabase(
       mockProvidersDao,
       mockConnectionsDao,
       mockSelectionsDao,

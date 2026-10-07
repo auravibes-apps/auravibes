@@ -10,16 +10,16 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('WorkspaceModelSelectionRepository', () {
-    var mockDao = MockWorkspaceModelSelectionsDao();
-    var database = _TestAppDatabase(mockDao);
-    var repository = WorkspaceModelSelectionRepository(database);
+    final mockDao = MockWorkspaceModelSelectionsDao();
+    final database = _TestAppDatabase(mockDao);
+    final repository = WorkspaceModelSelectionRepository(database);
 
     setUp(() async {
       reset(mockDao);

@@ -297,7 +297,7 @@ class const _Fixture({
   required final AppDatabase database,
   required final EncryptionService encryptionService,
   required final WorkspaceEntity workspace,
-}) {}
+});
 
 class _FakeSecretKeyManager extends SecretKeyManager {
   final SecretKey _key = .new(List<int>.filled(32, 7));

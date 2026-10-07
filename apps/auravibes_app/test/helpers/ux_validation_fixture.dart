@@ -30,8 +30,6 @@ import '../data/database/drift/database_test_utils.dart';
 
 /// Local persisted objects and production routes; no remote credential calls.
 class UxValidationFixture {
-  static AppDatabase? _database;
-
   new _(
     this.database,
     this.workspaceId,
@@ -43,6 +41,8 @@ class UxValidationFixture {
     this.chatId,
     this.childId,
   );
+
+  static AppDatabase? _database;
 
   final AppDatabase database;
   final String workspaceId;
@@ -60,9 +60,7 @@ class UxValidationFixture {
   }
 
   static Future<UxValidationFixture> create({bool empty = false}) async {
-    final database = _database ??= AppDatabase(
-      connection: NativeDatabase.memory(),
-    );
+    final database = _database ??= .new(connection: NativeDatabase.memory());
     await clearAppDatabase(database);
     if (empty) {
       return UxValidationFixture._(database, '', '', '', '', '', '', '', '');

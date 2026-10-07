@@ -9,8 +9,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -1344,7 +1344,7 @@ void main() {
 }
 
 final class _ConversationToolsRepositoryFixture {
-  _ConversationToolsRepositoryFixture(this._database);
+  new(this._database);
 
   final AppDatabase _database;
   ConversationToolsRepository? _repository;

@@ -25,7 +25,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ??= AppDatabase(connection: createConnection());
+      _database ??= .new(connection: createConnection());
 
   Future<void> reset() => clearAppDatabase(database);
 
@@ -403,11 +403,9 @@ void main() {
 }
 
 final class _ConversationDatabaseBeforeReopen extends AppDatabase {
-  _ConversationDatabaseBeforeReopen(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 final class _ConversationDatabaseAfterReopen extends AppDatabase {
-  _ConversationDatabaseAfterReopen(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }

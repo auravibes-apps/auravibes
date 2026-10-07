@@ -24,7 +24,7 @@ class _CredentialDefinitionsHarness({
   required final ProviderContainer container,
   required final SkillCredentialDefinitionsRepository repository,
 }) {
-  Future<void> dispose() async {
+  void dispose() {
     container.dispose();
   }
 }

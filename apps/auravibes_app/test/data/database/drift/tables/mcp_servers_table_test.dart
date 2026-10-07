@@ -20,7 +20,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ??= AppDatabase(connection: createConnection());
+      _database ??= .new(connection: createConnection());
 
   Future<void> reset() => clearAppDatabase(database);
 

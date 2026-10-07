@@ -8,16 +8,16 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ToolsGroupsRepository', () {
-    var mockDao = MockToolsGroupsDao();
-    var database = _TestAppDatabase(mockDao);
-    var repository = ToolsGroupsRepository(database);
+    final mockDao = MockToolsGroupsDao();
+    final database = _TestAppDatabase(mockDao);
+    final repository = ToolsGroupsRepository(database);
 
     setUp(() async {
       reset(mockDao);

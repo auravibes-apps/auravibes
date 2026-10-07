@@ -147,14 +147,14 @@ Future<void> _seedDatabase(AppDatabase database, int messageCount) async {
 }
 
 class _AttachmentQueryGate extends QueryInterceptor {
-  bool armed = false;
-  late Completer<void> started;
-  late Completer<void> completed;
-  late Completer<void> _resume;
-
-  _AttachmentQueryGate() {
+  new() {
     reset();
   }
+
+  bool armed = false;
+  Completer<void> started = Completer<void>();
+  Completer<void> completed = Completer<void>();
+  Completer<void> _resume = Completer<void>();
 
   void reset() {
     armed = false;

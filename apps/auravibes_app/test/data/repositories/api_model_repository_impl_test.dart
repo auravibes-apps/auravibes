@@ -9,8 +9,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   test(
@@ -577,13 +577,10 @@ void main() {
 }
 
 class _ApiModelRepositoryFixture {
-  final MockApiModelProvidersDao _mockProvidersDao = MockApiModelProvidersDao();
-  final MockApiModelsDao _mockModelsDao = MockApiModelsDao();
-  late final _TestAppDatabase _database = _TestAppDatabase(
-    _mockProvidersDao,
-    _mockModelsDao,
-  );
-  late final ApiModelRepository _repository = ApiModelRepository(_database);
+  final MockApiModelProvidersDao _mockProvidersDao = .new();
+  final MockApiModelsDao _mockModelsDao = .new();
+  final _TestAppDatabase _database = .new(_mockProvidersDao, _mockModelsDao);
+  final ApiModelRepository _repository = .new(_database);
 
   MockApiModelProvidersDao get mockProvidersDao => _mockProvidersDao;
 
@@ -606,18 +603,15 @@ class _ApiModelRepositoryFixture {
 }
 
 final class _CapabilitiesDatabaseBeforeReopen extends AppDatabase {
-  _CapabilitiesDatabaseBeforeReopen(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 final class _CapabilitiesDatabaseAfterReopen extends AppDatabase {
-  _CapabilitiesDatabaseAfterReopen(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 final class _ModelReplacementFailureDatabase extends AppDatabase {
-  _ModelReplacementFailureDatabase(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 class _TestAppDatabase(

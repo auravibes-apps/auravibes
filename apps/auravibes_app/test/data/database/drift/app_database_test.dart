@@ -22,7 +22,7 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ??= AppDatabase(connection: createConnection());
+      _database ??= .new(connection: createConnection());
 
   Future<void> reset() => clearAppDatabase(database);
 
@@ -823,44 +823,43 @@ void main() {
 }
 
 final class _MigrationAppDatabase<Scenario> extends AppDatabase {
-  _MigrationAppDatabase({required super.connection});
+  new({required super.connection});
 }
 
-final class _MigrationCase1 {}
+final class _MigrationCase1;
 
-final class _MigrationCase2 {}
+final class _MigrationCase2;
 
-final class _MigrationCase3 {}
+final class _MigrationCase3;
 
-final class _MigrationCase4 {}
+final class _MigrationCase4;
 
-final class _MigrationCase5 {}
+final class _MigrationCase5;
 
-final class _MigrationCase6 {}
+final class _MigrationCase6;
 
-final class _MigrationCase7 {}
+final class _MigrationCase7;
 
-final class _MigrationCase8 {}
+final class _MigrationCase8;
 
-final class _MigrationCase9 {}
+final class _MigrationCase9;
 
-final class _MigrationCase10 {}
+final class _MigrationCase10;
 
-final class _MigrationCase11 {}
+final class _MigrationCase11;
 
-final class _MigrationCase12 {}
+final class _MigrationCase12;
 
-final class _MigrationCase13 {}
+final class _MigrationCase13;
 
-final class _MigrationCase14 {}
+final class _MigrationCase14;
 
-final class _MigrationCase15 {}
+final class _MigrationCase15;
 
 final class _RecreatedDatabase extends AppDatabase {
-  _RecreatedDatabase(QueryExecutor connection) : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }
 
 final class _DatabaseBeforeRecreation extends AppDatabase {
-  _DatabaseBeforeRecreation(QueryExecutor connection)
-    : super(connection: connection);
+  new(QueryExecutor connection) : super(connection: connection);
 }

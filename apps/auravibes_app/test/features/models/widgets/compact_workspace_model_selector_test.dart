@@ -478,7 +478,9 @@ void main() {
   testWidgets('shows existing recent models first and omits missing models', (
     tester,
   ) async {
-    final database = _sharedDatabase!;
+    final database =
+        _sharedDatabase ??
+        (throw StateError('Shared test database has not been initialized.'));
     for (final selectionId in ['sel-1', 'sel-2', 'deleted-selection']) {
       await database.recentModelSelectionsDao.recordSelection(
         'ws-1',
@@ -538,7 +540,9 @@ void main() {
   });
 
   testWidgets('hides recent section while searching', (tester) async {
-    final database = _sharedDatabase!;
+    final database =
+        _sharedDatabase ??
+        (throw StateError('Shared test database has not been initialized.'));
     await database.recentModelSelectionsDao.recordSelection('ws-1', 'sel-1');
     await _pumpSubject(
       tester,
@@ -609,7 +613,10 @@ abstract final class _SubjectBuilder {
     );
     final stream =
         groupedModelsStream ?? Stream.value(groupedModels ?? const {});
-    final appDatabase = database ?? _sharedDatabase!;
+    final appDatabase =
+        database ??
+        _sharedDatabase ??
+        (throw StateError('Shared test database has not been initialized.'));
 
     return TestableApp(
       child: AuraThemeScope(
