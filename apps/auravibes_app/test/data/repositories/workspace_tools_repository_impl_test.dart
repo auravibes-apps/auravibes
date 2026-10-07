@@ -573,8 +573,8 @@ typedef _WorkspaceToolsRepositoryFixtureSetup = ({
 
 _WorkspaceToolsRepositoryFixtureSetup
 _createWorkspaceToolsRepositoryFixtureSetup() {
-  final mockToolsDao = .new();
-  final mockWorkspaceDao = .new();
+  final mockToolsDao = MockWorkspaceToolsDao();
+  final mockWorkspaceDao = MockWorkspaceDao();
   final database = _TestAppDatabase(mockToolsDao, mockWorkspaceDao);
 
   return (

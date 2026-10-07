@@ -584,8 +584,8 @@ typedef _ApiModelRepositoryFixtureSetup = ({
 });
 
 _ApiModelRepositoryFixtureSetup _createApiModelRepositoryFixtureSetup() {
-  final mockProvidersDao = .new();
-  final mockModelsDao = .new();
+  final mockProvidersDao = MockApiModelProvidersDao();
+  final mockModelsDao = MockApiModelsDao();
   final database = _TestAppDatabase(mockProvidersDao, mockModelsDao);
 
   return (
