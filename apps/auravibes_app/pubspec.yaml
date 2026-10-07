@@ -69,7 +69,7 @@ dependencies:
   riverpod: ^3.4.3
   riverpod_annotation: ^4.0.7
   rxdart: ^0.28.0
-  schemantic: ^0.2.0
+  schemantic: ^1.0.0
   serverpod_auth_core_client: ^4.0.3
   serverpod_auth_idp_client: ^4.0.3
   shared_preferences: ^2.5.4
