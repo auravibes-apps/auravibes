@@ -416,6 +416,79 @@ void main() {
       expect(optionBottom, lessThanOrEqualTo(400));
     });
 
+    testWidgets('fits menu height to a short option list', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: AuraDropdownSelector<String>(
+                options: const [
+                  AuraDropdownOption(value: 'One', child: Text('One')),
+                  AuraDropdownOption(value: 'Two', child: Text('Two')),
+                ],
+                onChanged: (_) => fail('Unexpected selection'),
+                placeholder: const Text('Select'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Select'));
+      await tester.pump();
+
+      expect(tester.getSize(find.byType(ListView)).height, lessThan(200));
+    });
+
+    testWidgets('scrolls long menu within a short viewport', (tester) async {
+      tester.view.physicalSize = const Size(400, 220);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  width: 200,
+                  child: AuraDropdownSelector<int>(
+                    options: List.generate(
+                      20,
+                      (index) => AuraDropdownOption(
+                        value: index,
+                        child: Text('Option $index'),
+                      ),
+                    ),
+                    onChanged: (_) => fail('Unexpected selection'),
+                    placeholder: const Text('Select'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Select'));
+      await tester.pump();
+
+      final optionsList = find.byType(ListView);
+      expect(tester.getSize(optionsList).height, lessThanOrEqualTo(220));
+      expect(find.text('Option 19'), findsNothing);
+
+      await tester.drag(optionsList, const Offset(0, -1000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Option 19'), findsOneWidget);
+      expect(
+        tester.getBottomLeft(find.text('Option 19')).dy,
+        lessThanOrEqualTo(220),
+      );
+    });
+
     testWidgets('selects option while outside barrier is active', (
       tester,
     ) async {
