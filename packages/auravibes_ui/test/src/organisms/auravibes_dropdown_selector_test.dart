@@ -455,7 +455,7 @@ void main() {
                 child: SizedBox(
                   width: 200,
                   child: AuraDropdownSelector<int>(
-                    options: List.generate(
+                    options: .generate(
                       20,
                       (index) => AuraDropdownOption(
                         value: index,
@@ -480,7 +480,7 @@ void main() {
       expect(find.text('Option 19'), findsNothing);
 
       await tester.drag(optionsList, const Offset(0, -1000));
-      await tester.pumpAndSettle();
+      final _ = await tester.pumpAndSettle();
 
       expect(find.text('Option 19'), findsOneWidget);
       expect(
