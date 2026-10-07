@@ -898,7 +898,7 @@ void main() {
         '--exclude-tags=integration,golden',
         '--concurrency=1',
         '--timeout=30s',
-        '--reporter=compact',
+        '--reporter=failures-only',
       ]),
     );
   });
