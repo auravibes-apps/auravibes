@@ -22,8 +22,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
@@ -39,10 +46,6 @@ void main() {
     testWidgets(testName, (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database)
           .createWorkspace(const .new(name: 'Direct workspace', type: .local));
       final agents = AgentsRepository(database);

@@ -19,6 +19,7 @@ import 'package:material_ui/material_ui.dart';
 import '../helpers/ux_validation_fixture.dart';
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   for (final skill in ['anthropic', 'codex', 'jina']) {
     testWidgets(
       'actual app skill $skill recovery opens usable credential form',

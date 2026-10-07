@@ -20,7 +20,15 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   for (final action in [
     'agent-save',
     'type-save',
@@ -32,10 +40,6 @@ void main() {
     ) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database)
           .createWorkspace(const .new(name: 'Direct workspace', type: .local));
       final agents = AgentsRepository(database);

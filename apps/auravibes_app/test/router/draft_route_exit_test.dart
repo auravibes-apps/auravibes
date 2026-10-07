@@ -24,7 +24,15 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   for (final editor in [
     'skill',
     'resource',
@@ -34,10 +42,6 @@ void main() {
     'workspace',
   ]) {
     testWidgets('$editor replacement retains draft on cancel', (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database).createWorkspace(
         const WorkspaceToCreate(name: 'Draft test', type: .local),
       );

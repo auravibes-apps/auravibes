@@ -32,18 +32,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   Future<({AppDatabase database, WorkspaceEntity workspace})>
   createFixture() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
-
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),
     );

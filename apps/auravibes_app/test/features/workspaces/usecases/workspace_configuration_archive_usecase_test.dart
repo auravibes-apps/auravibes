@@ -8,12 +8,15 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   test('exports local configuration through the file service', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await WorkspaceRepository(
       database,
     ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
@@ -36,10 +39,6 @@ void main() {
   });
 
   test('preview is read-only and applying it imports once', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final json = WorkspaceConfigurationArchiveCodec.encode(
       const WorkspaceConfigurationArchive(
         workspaceName: 'Imported',
@@ -69,10 +68,6 @@ void main() {
   });
 
   test('invalid archive preview leaves stores unchanged', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final usecase = WorkspaceConfigurationArchiveUsecase(
       localRepository: .new(database),
       localImporter: .new(database),

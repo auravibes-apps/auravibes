@@ -22,15 +22,18 @@ import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   test(
     'rejects malformed input and unknown versions before creating rows',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -62,10 +65,6 @@ void main() {
   test(
     'imports repeated archive with fresh IDs and original timestamps',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -121,10 +120,6 @@ void main() {
   );
 
   test('imports a legacy single archive through the archive usecase', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -174,10 +169,6 @@ void main() {
       final _ = await tempDirectory.delete(recursive: true);
       final _ = await supportDirectory.delete(recursive: true);
     });
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -240,10 +231,6 @@ void main() {
   test(
     'restores hidden trusted context and remaps compacted message IDs',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -347,10 +334,6 @@ void main() {
   );
 
   test('remaps conversation tool settings by safe tool descriptor', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final sourceWorkspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Source', type: .local),
     );
@@ -409,10 +392,6 @@ void main() {
   });
 
   test('imports conversation when destination lacks archived tool', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -447,10 +426,6 @@ void main() {
   });
 
   test('rejects malformed later bundle entry before inserting rows', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive test', type: .local),
     );
@@ -491,10 +466,6 @@ void main() {
   test(
     'rejects invalid context state before importing any conversation',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );
@@ -558,10 +529,6 @@ void main() {
         final _ = await tempDirectory.delete(recursive: true);
         final _ = await supportDirectory.delete(recursive: true);
       });
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive test', type: .local),
       );

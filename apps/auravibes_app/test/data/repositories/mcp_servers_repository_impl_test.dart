@@ -14,24 +14,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('McpServersRepository', () {
-    final initialFixture = _McpServersRepositoryFixture();
-    var fixture = initialFixture;
+    final fixture = _McpServersRepositoryFixture();
 
-    setUp(() {
-      fixture = _McpServersRepositoryFixture();
-    });
-
-    tearDown(() async {
-      await fixture.database.close();
-    });
+    setUp(fixture.resetForTest);
 
     tearDownAll(() async {
-      await initialFixture.database.close();
+      await fixture.database.close();
     });
 
     final now = DateTime(2026);
@@ -768,6 +762,14 @@ class const _McpServersRepositoryFixture._({
       database: database,
       repository: .new(database, .new(database, encryptionService)),
     );
+  }
+
+  Future<void> resetForTest() async {
+    reset(mockMcpServersDao);
+    reset(mockToolsGroupsDao);
+    reset(mockWorkspaceToolsDao);
+    reset(mockEncryptionService);
+    await clearAppDatabase(database);
   }
 }
 

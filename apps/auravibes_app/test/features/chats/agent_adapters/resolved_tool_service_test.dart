@@ -38,6 +38,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
 import '../../../test_mocks.dart';
 
 class _MockLoadConversationSkillUsecase extends Mock
@@ -192,6 +193,10 @@ AvailableSkill _appAvailableSkill(String slug) {
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
   setUpAll(registerTestFallbackValues);
   var cancellationRuntime = AgentCancellationRuntime();
   var mcpCalls = <({String serverId, String toolIdentifier})>[];
@@ -1330,10 +1335,8 @@ void main() {
     );
   });
 
-  test('provider creates the shared tool runner', () {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+  test('provider creates the shared tool runner', () async {
+    await clearAppDatabase(database);
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
@@ -1348,7 +1351,6 @@ void main() {
         ),
       ],
     );
-    addTearDown(database.close);
     addTearDown(container.dispose);
 
     expect(
@@ -1402,9 +1404,7 @@ void main() {
       ),
     ).thenAnswer((_) async => AgentIterationDecision.waitForToolApproval);
 
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+    await clearAppDatabase(database);
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
@@ -1424,7 +1424,6 @@ void main() {
         appAgentLoopProvider.overrideWithValue(agentLoop),
       ],
     );
-    addTearDown(database.close);
     addTearDown(container.dispose);
 
     final service = container.read(resolvedToolServiceProvider);
@@ -1516,9 +1515,7 @@ void main() {
             messageRepository.getLatestAssistantMessagesByConversations(any()),
       ).thenAnswer((_) async => []);
 
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
+      await clearAppDatabase(database);
       final container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
@@ -1538,7 +1535,6 @@ void main() {
           appAgentLoopProvider.overrideWithValue(agentLoop),
         ],
       );
-      addTearDown(database.close);
       addTearDown(container.dispose);
 
       final cancellationRuntime = container.read(

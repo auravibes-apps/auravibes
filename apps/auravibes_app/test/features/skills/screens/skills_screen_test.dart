@@ -22,8 +22,15 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   Widget buildRouterScreen(ProviderContainer container, GoRouter router) {
     return EasyLocalization(
@@ -68,10 +75,6 @@ void main() {
     List<String> additionalUserSkillNames = const [],
     bool failDeletes = false,
   }) async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
       const WorkspaceToCreate(name: 'Test Workspace', type: .local),

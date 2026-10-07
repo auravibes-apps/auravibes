@@ -59,6 +59,7 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 import '../helpers/ux_validation_fixture.dart';
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   testWidgets(
     'two agents retain a shared skill when one saved agent is disabled',
     (tester) async {

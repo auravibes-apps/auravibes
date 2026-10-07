@@ -3,6 +3,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -19,11 +21,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= AppDatabase(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -37,13 +37,13 @@ void main() {
     var columns = <QueryRow>[];
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       columns = await fixture.database
           .customSelect('PRAGMA table_info(conversation_tools)')
           .get();
     });
 
-    tearDown(fixture.close);
+    tearDownAll(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();

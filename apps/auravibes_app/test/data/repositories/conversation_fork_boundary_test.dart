@@ -10,20 +10,15 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
-  AppDatabase createDatabase() =>
-      AppDatabase(connection: DatabaseConnection(NativeDatabase.memory()));
-
-  var database = createDatabase();
-  var repository = ConversationRepository(database);
-
-  setUp(() async {
-    await database.close();
-    database = createDatabase();
-    repository = ConversationRepository(database);
-  });
-
-  tearDown(() => database.close());
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  final repository = ConversationRepository(database);
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   Future<void> insertSource({String? reasoningConfigJson}) async {
     final workspace = await database.workspaceDao.insertWorkspace(

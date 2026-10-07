@@ -16,12 +16,22 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
 import '../../../helpers/test_app.dart';
 
 AppDatabase _newDatabase() =>
     AppDatabase(connection: DatabaseConnection(NativeDatabase.memory()));
+AppDatabase? _sharedDatabase;
 
 void main() {
+  final database = _newDatabase();
+  _sharedDatabase = database;
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(() async {
+    await database.close();
+    _sharedDatabase = null;
+  });
+
   testWidgets('shows loading placeholder', (tester) async {
     final _ = await tester.runAsync(() async {
       await tester.pumpWidget(
@@ -468,7 +478,7 @@ void main() {
   testWidgets('shows existing recent models first and omits missing models', (
     tester,
   ) async {
-    final database = _newDatabase();
+    final database = _sharedDatabase!;
     for (final selectionId in ['sel-1', 'sel-2', 'deleted-selection']) {
       await database.recentModelSelectionsDao.recordSelection(
         'ws-1',
@@ -528,7 +538,7 @@ void main() {
   });
 
   testWidgets('hides recent section while searching', (tester) async {
-    final database = _newDatabase();
+    final database = _sharedDatabase!;
     await database.recentModelSelectionsDao.recordSelection('ws-1', 'sel-1');
     await _pumpSubject(
       tester,
@@ -599,8 +609,7 @@ abstract final class _SubjectBuilder {
     );
     final stream =
         groupedModelsStream ?? Stream.value(groupedModels ?? const {});
-    final appDatabase = database ?? _newDatabase();
-    addTearDown(appDatabase.close);
+    final appDatabase = database ?? _sharedDatabase!;
 
     return TestableApp(
       child: AuraThemeScope(

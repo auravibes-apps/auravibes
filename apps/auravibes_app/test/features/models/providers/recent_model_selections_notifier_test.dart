@@ -8,15 +8,18 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-AppDatabase _newDatabase() =>
-    AppDatabase(connection: DatabaseConnection(NativeDatabase.memory()));
+import '../../../data/database/drift/database_test_utils.dart';
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   test(
     'restores recent selections in order, without duplicates, capped at five',
     () async {
-      final database = _newDatabase();
-      addTearDown(database.close);
       for (final selectionId in [
         'sel-1',
         'sel-2',
@@ -50,8 +53,6 @@ void main() {
   );
 
   test('record persists the capped history in the database', () async {
-    final database = _newDatabase();
-    addTearDown(database.close);
     final container = ProviderContainer(
       overrides: [
         cloudModelGatewayForWorkspaceProvider.overrideWith(

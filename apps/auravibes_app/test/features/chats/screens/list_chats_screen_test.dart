@@ -14,6 +14,7 @@ import '../../../helpers/test_app.dart';
 import '../../../helpers/ux_validation_fixture.dart';
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   testWidgets('View all opens older history in the production shell', (
     tester,
   ) async {

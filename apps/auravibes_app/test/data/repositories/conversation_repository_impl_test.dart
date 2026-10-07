@@ -13,6 +13,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
 
 void main() {
@@ -24,6 +25,8 @@ void main() {
     var repository = ConversationRepository(database);
 
     setUp(() async {
+      reset(mockDao);
+      await clearAppDatabase(database);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(id: const Value('ws-1'), name: 'Test Workspace', type: .local),
       );
@@ -36,13 +39,6 @@ void main() {
               title: 'Test Conversation',
             ),
           );
-    });
-
-    tearDown(() async {
-      await database.close();
-      mockDao = MockConversationDao();
-      database = _TestAppDatabase(mockDao);
-      repository = ConversationRepository(database);
     });
 
     tearDownAll(() async {

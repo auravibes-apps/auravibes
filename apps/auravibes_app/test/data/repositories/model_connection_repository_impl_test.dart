@@ -15,6 +15,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../database/drift/database_test_utils.dart';
 import '../../test_mocks.dart';
 
 void main() {
@@ -28,9 +29,9 @@ void main() {
     var mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
     var mockModelProviderServices = MockModelProviderServices();
     var database = _TestAppDatabase(
-      MockApiModelProvidersDao(),
-      MockModelConnectionsDao(),
-      MockWorkspaceModelSelectionsDao(),
+      mockProvidersDao,
+      mockConnectionsDao,
+      mockSelectionsDao,
     );
     var repository = ModelConnectionRepository(
       database: database,
@@ -42,18 +43,14 @@ void main() {
       await database.close();
     });
 
-    setUp(() {
-      mockProvidersDao = MockApiModelProvidersDao();
-      mockConnectionsDao = MockModelConnectionsDao();
-      mockSelectionsDao = MockWorkspaceModelSelectionsDao();
-      mockEncryptionService = MockEncryptionService();
-      mockLegacyApiKeyStorage = MockLegacyApiKeyStorage();
-      mockModelProviderServices = MockModelProviderServices();
-      database = _TestAppDatabase(
-        mockProvidersDao,
-        mockConnectionsDao,
-        mockSelectionsDao,
-      );
+    setUp(() async {
+      reset(mockProvidersDao);
+      reset(mockConnectionsDao);
+      reset(mockSelectionsDao);
+      reset(mockEncryptionService);
+      reset(mockLegacyApiKeyStorage);
+      reset(mockModelProviderServices);
+      await clearAppDatabase(database);
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,
@@ -70,10 +67,6 @@ void main() {
           });
       when(() => mockLegacyApiKeyStorage.isLegacyReference(any()))
           .thenReturn(false);
-    });
-
-    tearDown(() async {
-      await database.close();
     });
 
     final now = DateTime(2026);

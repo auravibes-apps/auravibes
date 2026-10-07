@@ -15,11 +15,18 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   group('WatchServiceConnectionListItemsUsecase', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    setUp(() => clearAppDatabase(database));
+    tearDownAll(database.close);
+
     test('returns model, skill, and MCP rows together', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       final definition =
           await SkillCredentialDefinitionsRepository(fixture.database)
               .createDefinition(
@@ -86,8 +93,7 @@ void main() {
     });
 
     test('malformed MCP metadata does not fail the stream', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       await _insertMcpCredential(fixture, metadataJson: '{invalid');
       final usecase = _createUsecase(fixture);
 
@@ -100,8 +106,7 @@ void main() {
     });
 
     test('invalid MCP metadata field types do not fail the stream', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       await _insertMcpCredential(fixture, metadataJson: '{"client_id":123}');
       final usecase = _createUsecase(fixture);
 
@@ -115,8 +120,7 @@ void main() {
     test(
       'maps OAuth credentials expiring within buffer as expiring soon',
       () async {
-        final fixture = await _createFixture();
-        addTearDown(fixture.close);
+        final fixture = await _createFixture(database);
         await _insertMcpCredential(
           fixture,
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -139,8 +143,7 @@ void main() {
     );
 
     test('maps expired OAuth credentials as expired', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       await _insertMcpCredential(
         fixture,
         metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -159,8 +162,7 @@ void main() {
     });
 
     test('maps MCP auth error metadata and failed status', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       await _insertMcpCredential(
         fixture,
         metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -197,8 +199,7 @@ void main() {
     });
 
     test('includes local app-skill credentials', () async {
-      final fixture = await _createFixture();
-      addTearDown(fixture.close);
+      final fixture = await _createFixture(database);
       final _ = await fixture.database
           .into(fixture.database.serviceConnections)
           .insert(
@@ -225,10 +226,7 @@ void main() {
   });
 }
 
-Future<_Fixture> _createFixture() async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
+Future<_Fixture> _createFixture(AppDatabase database) async {
   final workspace = await WorkspaceRepository(
     database,
   ).createWorkspace(const WorkspaceToCreate(name: 'Workspace', type: .local));
@@ -300,9 +298,6 @@ class const _Fixture({
   required final EncryptionService encryptionService,
   required final WorkspaceEntity workspace,
 }) {
-  Future<void> close() {
-    return database.close();
-  }
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

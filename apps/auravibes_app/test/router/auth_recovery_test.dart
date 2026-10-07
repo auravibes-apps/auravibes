@@ -35,6 +35,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 class _AuthRepository extends Mock implements WorkspaceRepository;
 
 class _AuthProtocol extends Mock implements CloudAuthProtocol;
@@ -78,6 +80,10 @@ Future<void> _pump(
 }
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
   for (final page in ['login', 'register', 'forgot-password']) {
     for (final leave in [false, true]) {
       testWidgets(
@@ -94,10 +100,7 @@ void main() {
           const session = WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: workspace),
           );
-          final database = AppDatabase(
-            connection: DatabaseConnection(NativeDatabase.memory()),
-          );
-          addTearDown(database.close);
+          await clearAppDatabase(database);
           final completion = Completer<CloudAuthResult>();
           final resetCompletion = Completer<void>();
           final protocol = _AuthProtocol();
@@ -286,10 +289,7 @@ void main() {
     testWidgets('expired workspace permits $page with auth context', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final location =
           '/workspaces/$workspace/more/cloud-accounts/$page?serverUrl=$origin'
           '&accountId=$account&email=person%40example.com'
@@ -328,10 +328,7 @@ void main() {
   testWidgets(
     'gated workspace reauth targets owning origin/account and validated return',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final router = GoRouter(
         routes: $appRoutes,
         initialLocation: '/workspaces/$workspace/more/tools',
@@ -513,10 +510,7 @@ void main() {
   testWidgets(
     'child auth rejection recovers exact account after cached health',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       const location = '/workspaces/$workspace/chats/parent/sub-agents/child';
       final router = GoRouter(routes: $appRoutes, initialLocation: location);
       addTearDown(router.dispose);
@@ -568,10 +562,7 @@ void main() {
   testWidgets(
     'account management remains usable after selected session fails',
     (tester) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final router = GoRouter(
         routes: $appRoutes,
         initialLocation: '/workspaces/$workspace/more/cloud-accounts',

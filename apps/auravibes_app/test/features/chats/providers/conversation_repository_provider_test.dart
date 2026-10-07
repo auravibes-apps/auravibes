@@ -20,23 +20,22 @@ QueryExecutor _testConnection() {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  AppDatabase? testDatabase;
+  final database = AppDatabase(connection: _testConnection());
   ProviderContainer? container;
   ProviderContainer readContainer() =>
       container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    final database = AppDatabase(connection: _testConnection());
-    testDatabase = database;
     container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
   });
 
-  tearDown(() async {
+  tearDown(() {
     container?.dispose();
-    await testDatabase?.close();
   });
+
+  tearDownAll(database.close);
 
   group('conversationRepositoryProvider', () {
     test('returns a ConversationRepository instance', () {

@@ -9,14 +9,17 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   test(
     'reimports every kind idempotently and preserves unrelated rows',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(
         database,
       ).createWorkspace(const WorkspaceToCreate(name: 'Target', type: .local));
@@ -139,10 +142,6 @@ void main() {
   );
 
   test('rejects duplicate natural identities before writing', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const WorkspaceToCreate(name: 'Target', type: .local));
     const archive = WorkspaceConfigurationArchive(
@@ -189,10 +188,6 @@ void main() {
   });
 
   test('remaps every kind when importing into a new workspace', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final targetId = await LocalWorkspaceConfigurationImporter(database)
         .importJson(WorkspaceConfigurationArchiveCodec.encode(_archive()));
     final imported = await LocalWorkspaceConfigurationRepository(database)

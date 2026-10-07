@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -18,11 +20,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= AppDatabase(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -31,6 +31,10 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 }
 
 void main() {
+  final fixture = _DatabaseFixture(_testConnection);
+
+  tearDownAll(fixture.close);
+
   group('McpServers table converters', () {
     group('transportTypeConverter', () {
       test('converts SSE from JSON', () {
@@ -96,11 +100,7 @@ void main() {
   });
 
   group('McpServers table insert', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
     setUp(fixture.reset);
-
-    tearDown(fixture.close);
 
     test('inserts and reads a row', () async {
       final _ = await fixture.database.workspaceDao.insertWorkspace(
@@ -126,17 +126,14 @@ void main() {
   });
 
   group('McpServers table schema', () {
-    final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       columns = await fixture.database
           .customSelect('PRAGMA table_info(mcp_servers)')
           .get();
     });
-
-    tearDown(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();

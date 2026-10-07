@@ -49,12 +49,13 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
   group('SkillsRepository', () {
-    final initialDatabase = AppDatabase(
+    final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    var database = initialDatabase;
     var workspaceRepository = WorkspaceRepository(database);
     var conversationRepository = ConversationRepository(database);
     var skillsRepository = SkillsRepository(database);
@@ -83,10 +84,8 @@ void main() {
       .new(skillCredentialsRepository),
     );
 
-    setUp(() {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
+    setUp(() async {
+      await clearAppDatabase(database);
       workspaceRepository = WorkspaceRepository(database);
       conversationRepository = ConversationRepository(database);
       skillsRepository = SkillsRepository(database);
@@ -116,13 +115,7 @@ void main() {
       );
     });
 
-    tearDown(() async {
-      await database.close();
-    });
-
-    tearDownAll(() async {
-      await initialDatabase.close();
-    });
+    tearDownAll(database.close);
 
     DuplicateSkillUsecase duplicateSkillUsecase() {
       return DuplicateSkillUsecase(

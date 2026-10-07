@@ -18,11 +18,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
 
-  var database = AppDatabase(
+  final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
   var selectionRepository = _SelectionRepository();
@@ -63,21 +65,19 @@ void main() {
   setUp(() async {
     container.dispose();
     container = ProviderContainer();
-    await database.close();
+    await clearAppDatabase(database);
     SharedPreferences.setMockInitialValues({});
-    database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
     selectionRepository = _SelectionRepository();
     lastLocation = null;
     modelSelectionCalls = 0;
     state = createState();
   });
 
-  tearDown(() async {
+  tearDown(() {
     container.dispose();
-    await database.close();
   });
+
+  tearDownAll(database.close);
 
   test('seeds deterministic credential-free data idempotently', () async {
     final firstSeed = await state.seedDemoData();

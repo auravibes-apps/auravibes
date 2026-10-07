@@ -8,14 +8,25 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  final gate = _AttachmentQueryGate();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()).interceptWith(gate),
+  );
+  setUp(() async {
+    gate.reset();
+    await clearAppDatabase(database);
+  });
+  tearDownAll(database.close);
+
   for (final messageCount in [40, 2000]) {
     test('resume baseline: $messageCount messages', () async {
       final conversationId = 'resume-$messageCount';
       final attachmentCount = messageCount ~/ 4;
-      final streamDatabase = await _seedDatabase(messageCount);
-      addTearDown(streamDatabase.close);
-      final streamRepository = MessageRepository(streamDatabase);
+      await _seedDatabase(database, messageCount);
+      final streamRepository = MessageRepository(database);
       final firstValue = Completer<List<MessageEntity>>();
       final streamTimer = Stopwatch()..start();
       void handleValue(List<MessageEntity> value) {
@@ -34,27 +45,20 @@ void main() {
       );
       _expectRows(streamed, messageCount, attachmentCount);
       await subscription.cancel();
-      await streamDatabase.close();
 
-      final readDatabase = await _seedDatabase(messageCount);
-      addTearDown(readDatabase.close);
-      final readRepository = MessageRepository(readDatabase);
+      await _seedDatabase(database, messageCount);
+      final readRepository = MessageRepository(database);
       final readTimer = Stopwatch()..start();
       final hydrated = await readRepository.getMessagesByConversation(
         conversationId,
       );
       readTimer.stop();
       _expectRows(hydrated, messageCount, attachmentCount);
-      await readDatabase.close();
 
-      final gate = _AttachmentQueryGate();
       addTearDown(gate.release);
-      final cancelDatabase = await _seedDatabase(
-        messageCount,
-        interceptor: gate,
-      );
-      addTearDown(cancelDatabase.close);
-      final cancelRepository = MessageRepository(cancelDatabase);
+      gate.reset();
+      await _seedDatabase(database, messageCount);
+      final cancelRepository = MessageRepository(database);
       gate.armed = true;
       var canceledEmissions = 0;
       final pendingSubscription = cancelRepository
@@ -72,7 +76,6 @@ void main() {
       await gate.completed.future.timeout(const Duration(seconds: 30));
       continuedTimer.stop();
       expect(canceledEmissions, 0);
-      await cancelDatabase.close();
 
       debugPrint(
         'resume baseline messages=$messageCount attachments=$attachmentCount '
@@ -97,16 +100,8 @@ void _expectRows(
   );
 }
 
-Future<AppDatabase> _seedDatabase(
-  int messageCount, {
-  QueryInterceptor? interceptor,
-}) async {
-  final connection = DatabaseConnection(NativeDatabase.memory());
-  final database = AppDatabase(
-    connection: interceptor == null
-        ? connection
-        : connection.interceptWith(interceptor),
-  );
+Future<void> _seedDatabase(AppDatabase database, int messageCount) async {
+  await clearAppDatabase(database);
   final workspace = await database.workspaceDao.insertWorkspace(
     .insert(name: 'Benchmark Workspace', type: .local),
   );
@@ -150,14 +145,24 @@ Future<AppDatabase> _seedDatabase(
     });
   });
 
-  return database;
 }
 
 class _AttachmentQueryGate extends QueryInterceptor {
-  final started = Completer<void>();
-  final completed = Completer<void>();
   bool armed = false;
-  final _resume = Completer<void>();
+  late Completer<void> started;
+  late Completer<void> completed;
+  late Completer<void> _resume;
+
+  _AttachmentQueryGate() {
+    reset();
+  }
+
+  void reset() {
+    armed = false;
+    started = Completer<void>();
+    completed = Completer<void>();
+    _resume = Completer<void>();
+  }
 
   void release() {
     if (!_resume.isCompleted) _resume.complete();
