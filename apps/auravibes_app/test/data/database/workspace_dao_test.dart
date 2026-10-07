@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'drift/database_test_utils.dart';
+
 /// Creates a database connection for testing.
 ///
 /// This method creates an in-memory database suitable for unit tests.
@@ -25,11 +27,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -43,7 +43,7 @@ void main() {
 
     setUp(fixture.reset);
 
-    tearDown(() async {
+    tearDownAll(() async {
       await fixture.close();
     });
 

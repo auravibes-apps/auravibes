@@ -65,6 +65,7 @@ import '../helpers/ux_validation_fixture.dart';
 final _captureFontMetadata = <Map<String, String>>[];
 
 void main() {
+  tearDownAll(UxValidationFixture.closeDatabase);
   setUpAll(() async {
     for (final font in const {
       'Inter': 'assets/fonts/Inter.ttf',

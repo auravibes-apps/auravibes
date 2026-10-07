@@ -100,10 +100,7 @@ void main() {
       ],
     );
     addTearDown(appSkillContainer.dispose);
-    final selectedCredentialDatabase = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(selectedCredentialDatabase.close);
+    final selectedCredentialDatabase = appSkillDatabase;
     final selectedEncryptionService = EncryptionService(
       _FakeSecretKeyManager(),
     );
@@ -179,10 +176,7 @@ void main() {
             isCredentialOptional: true,
           ),
         );
-    final staleCredentialDatabase = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(staleCredentialDatabase.close);
+    final staleCredentialDatabase = appSkillDatabase;
     final staleCredentialWorkspace =
         await WorkspaceRepository(staleCredentialDatabase).createWorkspace(
           const WorkspaceToCreate(name: 'Test Workspace', type: .local),

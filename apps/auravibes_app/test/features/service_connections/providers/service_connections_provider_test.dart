@@ -21,6 +21,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 AppDatabase _inMemoryDatabase() =>
     AppDatabase(connection: NativeDatabase.memory());
 
@@ -28,6 +30,10 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('serviceConnectionsProvider', () {
+    final database = _inMemoryDatabase();
+    setUp(() => clearAppDatabase(database));
+    tearDownAll(database.close);
+
     test(
       'combines model providers and skill credentials sorted by name',
       () async {
@@ -66,8 +72,6 @@ void main() {
         addTearDown(modelRepository.dispose);
         addTearDown(definitionRepository.dispose);
         addTearDown(credentialRepository.dispose);
-        final database = _inMemoryDatabase();
-        addTearDown(database.close);
         final container = _container(
           modelRepository: modelRepository,
           definitionRepository: definitionRepository,
@@ -124,8 +128,6 @@ void main() {
       addTearDown(modelRepository.dispose);
       addTearDown(definitionRepository.dispose);
       addTearDown(credentialRepository.dispose);
-      final database = _inMemoryDatabase();
-      addTearDown(database.close);
       final container = _container(
         modelRepository: modelRepository,
         definitionRepository: definitionRepository,

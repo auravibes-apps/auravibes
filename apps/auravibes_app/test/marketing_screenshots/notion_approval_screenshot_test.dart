@@ -55,6 +55,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/src/framework.dart' show Override;
 
+import '../data/database/drift/database_test_utils.dart';
 import '../helpers/test_provider_scope.dart';
 
 const _workspaceId = 'marketing-workspace';
@@ -120,6 +121,12 @@ const _webScenes = [
 ];
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   setUpAll(() async {
     await (FontLoader(
       'Inter',
@@ -158,10 +165,6 @@ void main() {
           final fixture = _NotionFixture(locale, scene);
           final colors = _marketingColors;
           final auraTheme = AuraTheme.light.copyWith(colors: colors);
-          final database = AppDatabase(
-            connection: DatabaseConnection(NativeDatabase.memory()),
-          );
-          addTearDown(database.close);
           final router = GoRouter(
             routes: $appRoutes,
             initialLocation: _location(scene),

@@ -23,12 +23,16 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  tearDownAll(_AgentsRepositoryFixture.closeDatabase);
+
   test(
     'lists filtered cursor pages with literal search and skill counts',
     () async {
       final fixture = await _AgentsRepositoryFixture.create();
-      addTearDown(fixture.close);
+      addTearDown(fixture.reset);
       final skill = await fixture.createSkill('Catalog Skill');
       final alpha = await fixture.agentsRepository.createAgent(
         fixture.workspaceId,
@@ -106,7 +110,7 @@ void main() {
 
   test('creates, updates, watches, and deletes agents with skills', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     final firstSkill = await fixture.createSkill('First Skill');
     final secondSkill = await fixture.createSkill('Second Skill');
@@ -157,7 +161,7 @@ void main() {
 
   test('streams agents created after subscription', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     final iterator = StreamIterator(
       fixture.agentsRepository.watchAgentsByWorkspace(fixture.workspaceId),
@@ -184,7 +188,7 @@ void main() {
     'updates visibility without changing enabled state or filtering',
     () async {
       final fixture = await _AgentsRepositoryFixture.create();
-      addTearDown(fixture.close);
+      addTearDown(fixture.reset);
 
       final agent = await fixture.agentsRepository.createAgent(
         fixture.workspaceId,
@@ -226,7 +230,7 @@ void main() {
 
   test('rejects invalid agent data', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     expect(
       () => fixture.agentsRepository.createAgent(
@@ -264,7 +268,7 @@ void main() {
 
   test('stores and clears agent tool permission overrides', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     final agent = await fixture.agentsRepository.createAgent(
       fixture.workspaceId,
@@ -325,7 +329,7 @@ void main() {
     'duplicates an agent with copied fields and the next available name',
     () async {
       final fixture = await _AgentsRepositoryFixture.create();
-      addTearDown(fixture.close);
+      addTearDown(fixture.reset);
 
       final firstSkill = await fixture.createSkill('First Skill');
       final original = await fixture.agentsRepository.createAgent(
@@ -423,7 +427,7 @@ void main() {
 
   test('rolls back the duplicate when an override cannot be copied', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
     final original = await fixture.agentsRepository.createAgent(
       fixture.workspaceId,
       const AgentToCreate(
@@ -493,7 +497,7 @@ void main() {
 
   test('delegates agent usecases and resolves conversation skills', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     final skill = await fixture.createSkill('First Skill');
     final agent = await SaveAgentUsecase(fixture.agentsRepository).create(
@@ -649,7 +653,7 @@ void main() {
 
   test('resolves agent skill availability branches', () async {
     final fixture = await _AgentsRepositoryFixture.create();
-    addTearDown(fixture.close);
+    addTearDown(fixture.reset);
 
     final enabledSkill = await fixture.createSkill('Enabled Skill');
     final disabledSkill = await fixture.createSkill(
@@ -717,10 +721,16 @@ class _AgentsRepositoryFixture({
   required final SkillsRepository skillsRepository,
   required final String workspaceId,
 }) {
+  static AppDatabase? _sharedDatabase;
+
   static Future<_AgentsRepositoryFixture> create() async {
-    final database = AppDatabase(
+    final database = _sharedDatabase ??= .new(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
+    await database.customStatement(
+      'DROP TRIGGER IF EXISTS fail_duplicate_override',
+    );
+    await clearAppDatabase(database);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Workspace', type: WorkspaceType.local),
     );
@@ -741,7 +751,17 @@ class _AgentsRepositoryFixture({
     );
   }
 
-  Future<void> close() => database.close();
+  Future<void> reset() async {
+    await database.customStatement(
+      'DROP TRIGGER IF EXISTS fail_duplicate_override',
+    );
+    await clearAppDatabase(database);
+  }
+
+  static Future<void> closeDatabase() async {
+    await _sharedDatabase?.close();
+    _sharedDatabase = null;
+  }
 
   Future<SkillEntity> createSkill(String title, {bool isEnabled = true}) {
     return skillsRepository.createSkill(

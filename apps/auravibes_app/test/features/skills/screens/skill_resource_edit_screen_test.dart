@@ -30,6 +30,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 class _PendingCreate extends CreateSkillResourceUsecase {
   new() : super(null);
   final requests = <Completer<SkillResourceEntity>>[];
@@ -84,13 +86,10 @@ class _Fixture {
   );
 
   static Future<_Fixture> create({
+    required AppDatabase database,
     bool existing = false,
     bool builtIn = false,
   }) async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(name: 'Resource workspace', type: .local),
     );
@@ -200,10 +199,16 @@ class _Fixture {
 }
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   testWidgets(
     'reverted resource is clean and direct Back returns to its parent',
     (tester) async {
-      final fixture = await _Fixture.create(existing: true);
+      final fixture = await _Fixture.create(database: database, existing: true);
       final _ = await fixture.pump(tester);
       await tester.enterText(find.byType(AuraInput).first, 'Changed resource');
       await tester.enterText(find.byType(AuraInput).first, 'Existing resource');
@@ -223,7 +228,7 @@ void main() {
   testWidgets(
     'built-in resource remains read-only and can exit without a prompt',
     (tester) async {
-      final fixture = await _Fixture.create(builtIn: true);
+      final fixture = await _Fixture.create(database: database, builtIn: true);
       final router = await fixture.pump(tester);
       expect(
         tester.widget<AuraInput>(find.byType(AuraInput).first).enabled,
@@ -251,7 +256,7 @@ void main() {
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 1400));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      final fixture = await _Fixture.create();
+      final fixture = await _Fixture.create(database: database);
       final pending = _PendingCreate();
       final router = await fixture.pump(tester, pending: pending);
       await tester.enterText(find.byType(AuraInput).first, 'Draft resource');

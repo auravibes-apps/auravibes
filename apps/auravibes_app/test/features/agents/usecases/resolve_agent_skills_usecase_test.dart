@@ -10,12 +10,19 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   test(
     'resolves enabled user and app skills and reports unavailable refs',
     () async {
-      final fixture = await _ResolveAgentSkillsFixture.create();
-      addTearDown(fixture.close);
+      final fixture = await _ResolveAgentSkillsFixture.create(database);
 
       final enabledSkill = await fixture.createSkill(
         fixture.workspaceId,
@@ -57,8 +64,7 @@ void main() {
   );
 
   test('reports disabled app skills as unavailable', () async {
-    final fixture = await _ResolveAgentSkillsFixture.create();
-    addTearDown(fixture.close);
+    final fixture = await _ResolveAgentSkillsFixture.create(database);
 
     await fixture.appSettingsRepository.setAppSkillEnabled(
       fixture.workspaceId,
@@ -84,10 +90,7 @@ class _ResolveAgentSkillsFixture({
   required final String workspaceId,
   required final String otherWorkspaceId,
 }) {
-  static Future<_ResolveAgentSkillsFixture> create() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+  static Future<_ResolveAgentSkillsFixture> create(AppDatabase database) async {
     final skillsRepository = SkillsRepository(database);
     final appSettingsRepository = AppSkillWorkspaceSettingsRepository(database);
     final workspace = await database.workspaceDao.insertWorkspace(
@@ -110,8 +113,6 @@ class _ResolveAgentSkillsFixture({
       otherWorkspaceId: otherWorkspace.id,
     );
   }
-
-  Future<void> close() => database.close();
 
   Future<SkillEntity> createSkill(
     String targetWorkspaceId,

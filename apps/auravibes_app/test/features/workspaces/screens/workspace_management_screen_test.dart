@@ -36,6 +36,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 class _UnusedCloudClient extends Mock implements Client;
 class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;
 
@@ -321,8 +323,13 @@ void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   group('WorkspaceManagementScreen', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     var repository = _FakeWorkspaceRepository();
     var router = _FakeGoRouter();
+
+    tearDownAll(database.close);
 
     setUpAll(() {
       registerFallbackValue(
@@ -1070,10 +1077,7 @@ void main() {
     testWidgets('previews import source, counts, and new destination', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final fileService = _MemoryArchiveFileService(
         pickedJson: _agentArchiveJson(),
       );
@@ -1105,10 +1109,7 @@ void main() {
     testWidgets('canceling import leaves workspace data unchanged', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final workspaceRepository = WorkspaceRepository(database);
       final workspace = await workspaceRepository.createWorkspace(
         const WorkspaceToCreate(name: 'Target', type: .local),
@@ -1146,10 +1147,7 @@ void main() {
     testWidgets('confirms import once and rejects invalid archives', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final screenRepository = _FakeWorkspaceRepository();
       final fileService = _MemoryArchiveFileService(
         pickedJson: _agentArchiveJson(),
@@ -1205,10 +1203,7 @@ void main() {
     testWidgets('selects export types and includes required dependencies', (
       tester,
     ) async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
+      await clearAppDatabase(database);
       final workspaceRepository = WorkspaceRepository(database);
       final workspace = await workspaceRepository.createWorkspace(
         const WorkspaceToCreate(name: 'Workspace', type: .local),

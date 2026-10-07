@@ -21,6 +21,8 @@ import 'package:drift/drift.dart' hide isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 const _secret = '{"token":{"description":"Token"}}';
 const _mixed =
     '{"token":{"description":"Token","optional":true},'
@@ -28,9 +30,14 @@ const _mixed =
 const _metadataOnly = '{"region":{"description":"Region","secret":false}}';
 
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   test('ownership: public skill create rejects a foreign definition', () async {
-    final h = await _LocalHarness.open();
-    addTearDown(h.database.close);
+    final h = await _LocalHarness.open(database);
     final definition = await h.create.call(
       h.workspaceId,
       const .new(title: 'Owned', attributesJson: _secret),
@@ -55,8 +62,7 @@ void main() {
   test(
     'ownership: skill reassignment and tool writes reject foreign definitions',
     () async {
-      final h = await _LocalHarness.open();
-      addTearDown(h.database.close);
+      final h = await _LocalHarness.open(database);
       final definition = await h.create.call(
         h.workspaceId,
         const .new(title: 'Owned', attributesJson: _secret),
@@ -124,8 +130,7 @@ void main() {
     test(
       'ownership: preserves foreign $reference without exposing usage',
       () async {
-        final h = await _LocalHarness.open();
-        addTearDown(h.database.close);
+        final h = await _LocalHarness.open(database);
         final definition = await h.create.call(
           h.workspaceId,
           const .new(title: 'Owned', attributesJson: _secret),
@@ -231,8 +236,7 @@ void main() {
   );
 
   test('usage reads disabled metadata and overrides without secrets', () async {
-    final harness = await _LocalHarness.open();
-    addTearDown(harness.database.close);
+    final harness = await _LocalHarness.open(database);
     final definition = await harness.create.call(
       harness.workspaceId,
       const .new(title: 'Usage', attributesJson: _secret),
@@ -337,8 +341,7 @@ void main() {
   test(
     'local mutation waits for credential creation and rechecks usage',
     () async {
-      final harness = await _LocalHarness.open();
-      addTearDown(harness.database.close);
+      final harness = await _LocalHarness.open(database);
       final definition = await harness.create.call(
         harness.workspaceId,
         const .new(title: 'Race', attributesJson: _secret),
@@ -383,8 +386,7 @@ void main() {
   );
 
   test('deleted local definitions cannot accept new credential rows', () async {
-    final harness = await _LocalHarness.open();
-    addTearDown(harness.database.close);
+    final harness = await _LocalHarness.open(database);
     final definition = await harness.create.call(
       harness.workspaceId,
       const .new(title: 'Deleted', attributesJson: _secret),
@@ -411,8 +413,7 @@ void main() {
   });
 
   test('definition creation requires a secret attribute', () async {
-    final harness = await _LocalHarness.open();
-    addTearDown(harness.database.close);
+    final harness = await _LocalHarness.open(database);
     final create = harness.create;
     final secret = await create.call(
       harness.workspaceId,
@@ -441,8 +442,7 @@ void main() {
   });
 
   test('destructive edits reject linked credentials without writing', () async {
-    final harness = await _LocalHarness.open();
-    addTearDown(harness.database.close);
+    final harness = await _LocalHarness.open(database);
     final definition = await harness.create.call(
       harness.workspaceId,
       const .new(title: 'Service', attributesJson: _mixed),
@@ -510,8 +510,7 @@ void main() {
   });
 
   test('safe edits and destructive edits without credentials save', () async {
-    final harness = await _LocalHarness.open();
-    addTearDown(harness.database.close);
+    final harness = await _LocalHarness.open(database);
     final definition = await harness.create.call(
       harness.workspaceId,
       const .new(title: 'Service', attributesJson: _mixed),
@@ -543,8 +542,7 @@ void main() {
   test(
     'legacy metadata-only definition stays visible and requires repair',
     () async {
-      final harness = await _LocalHarness.open();
-      addTearDown(harness.database.close);
+      final harness = await _LocalHarness.open(database);
       final legacy = await harness.database.skillCredentialDefinitionsDao
           .createDefinition(
             .new(
@@ -569,8 +567,7 @@ void main() {
   test(
     'delete counts disabled and metadata-only records without reading values',
     () async {
-      final harness = await _LocalHarness.open();
-      addTearDown(harness.database.close);
+      final harness = await _LocalHarness.open(database);
       final definition = await harness.create.call(
         harness.workspaceId,
         const .new(title: 'Service', attributesJson: _mixed),
@@ -704,10 +701,7 @@ class const _LocalHarness({
         toolsRepository: tools,
       );
 
-  static Future<_LocalHarness> open() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+  static Future<_LocalHarness> open(AppDatabase database) async {
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Test Workspace', type: .local));
 

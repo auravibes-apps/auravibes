@@ -12,6 +12,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -19,11 +21,12 @@ void main() {
   });
 
   group('ServiceConnectionRepository', () {
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    setUp(() => clearAppDatabase(database));
+    tearDownAll(database.close);
     test('encrypts MCP headers in the active workspace only', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
       final repository = ServiceConnectionRepository(
@@ -57,10 +60,6 @@ void main() {
     });
 
     test('lists app skill and compatible model provider candidates', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());
@@ -144,10 +143,6 @@ void main() {
     });
 
     test('generic edit preserves, replaces, and clears local secret', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       final repository = ServiceConnectionRepository(database, encryption);
@@ -207,10 +202,6 @@ void main() {
     });
 
     test('migrates a legacy secure-storage API key when read', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       const reference = '123e4567-e89b-42d3-a456-426614174000';
@@ -250,10 +241,6 @@ void main() {
     });
 
     test('does not persist a complete short legacy API key', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       final encryption = EncryptionService(_FakeSecretKeyManager());
       const reference = '123e4567-e89b-42d3-a456-426614174000';
@@ -275,10 +262,6 @@ void main() {
     });
 
     test('deletes only the app skill credential in its workspace', () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       await _insertWorkspace(database, 'workspace-1');
       await _insertWorkspace(database, 'workspace-2');
       final encryption = EncryptionService(_FakeSecretKeyManager());

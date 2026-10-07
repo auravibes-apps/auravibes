@@ -7,10 +7,17 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   test('creates, updates, finds, and deletes skill resources', () async {
-    final fixture = await _createFixture();
-    addTearDown(fixture.database.close);
+    final fixture = await _createFixture(database);
 
     final created = await fixture.resources.createResource(
       fixture.skillId,
@@ -42,8 +49,7 @@ void main() {
   });
 
   test('cascades resources when the parent skill is deleted', () async {
-    final fixture = await _createFixture();
-    addTearDown(fixture.database.close);
+    final fixture = await _createFixture(database);
 
     final created = await fixture.resources.createResource(
       fixture.skillId,
@@ -67,10 +73,7 @@ Future<
     String skillId,
   })
 >
-_createFixture() async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
+_createFixture(AppDatabase database) async {
   final workspace = await database.workspaceDao.insertWorkspace(
     .insert(name: 'Workspace', type: .local),
   );

@@ -13,18 +13,17 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
   group('MessageRepository with real database', () {
-    final initialDatabase = AppDatabase(
+    final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    var database = initialDatabase;
     var repository = MessageRepository(database);
 
     setUp(() async {
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
+      await clearAppDatabase(database);
       repository = MessageRepository(database);
 
       final workspace = await database.workspaceDao.insertWorkspace(
@@ -41,13 +40,7 @@ void main() {
       }
     });
 
-    tearDown(() async {
-      await database.close();
-    });
-
-    tearDownAll(() async {
-      await initialDatabase.close();
-    });
+    tearDownAll(database.close);
 
     test('getMessagesByConversation returns empty when no messages', () async {
       final messages = await repository.getMessagesByConversation('conv-1');

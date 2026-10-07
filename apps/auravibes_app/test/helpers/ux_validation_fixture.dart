@@ -26,6 +26,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 /// Local persisted objects and production routes; no remote credential calls.
 class UxValidationFixture {
   new _(
@@ -50,9 +52,16 @@ class UxValidationFixture {
   final String chatId;
   final String childId;
 
+  static AppDatabase? _database;
+
+  static Future<void> closeDatabase() async {
+    await _database?.close();
+    _database = null;
+  }
+
   static Future<UxValidationFixture> create({bool empty = false}) async {
-    final database = AppDatabase(connection: NativeDatabase.memory());
-    addTearDown(database.close);
+    final database = _database ??= .new(connection: NativeDatabase.memory());
+    await clearAppDatabase(database);
     if (empty) {
       return UxValidationFixture._(database, '', '', '', '', '', '', '', '');
     }

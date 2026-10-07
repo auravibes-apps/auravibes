@@ -11,24 +11,21 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
   group('WorkspaceRepository', () {
-    var database = AppDatabase(
+    final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     var repository = WorkspaceRepository(database);
 
-    tearDown(() async {
-      await database.close();
-      database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
+    setUp(() async {
+      await clearAppDatabase(database);
       repository = WorkspaceRepository(database);
     });
 
-    tearDownAll(() async {
-      await database.close();
-    });
+    tearDownAll(database.close);
 
     test('should create and retrieve a workspace', () async {
       // Arrange.

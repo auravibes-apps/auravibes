@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -16,9 +17,9 @@ void main() {
   group('WorkspaceToolsRepository', () {
     final fixture = _WorkspaceToolsRepositoryFixture();
 
-    setUp(fixture.reset);
+    setUp(fixture.resetForTest);
 
-    tearDown(fixture.dispose);
+    tearDownAll(fixture.dispose);
 
     final now = DateTime(2026);
 
@@ -563,35 +564,58 @@ void main() {
   });
 }
 
+typedef _WorkspaceToolsRepositoryFixtureSetup = ({
+  MockWorkspaceToolsDao mockToolsDao,
+  MockWorkspaceDao mockWorkspaceDao,
+  _TestAppDatabase database,
+  WorkspaceToolsRepository repository,
+});
+
+_WorkspaceToolsRepositoryFixtureSetup
+_createWorkspaceToolsRepositoryFixtureSetup() {
+  final mockToolsDao = MockWorkspaceToolsDao();
+  final mockWorkspaceDao = MockWorkspaceDao();
+  final database = _TestAppDatabase(mockToolsDao, mockWorkspaceDao);
+
+  return (
+    mockToolsDao: mockToolsDao,
+    mockWorkspaceDao: mockWorkspaceDao,
+    database: database,
+    repository: .new(database),
+  );
+}
+
 class _WorkspaceToolsRepositoryFixture {
-  MockWorkspaceToolsDao? _mockToolsDao;
-  MockWorkspaceDao? _mockWorkspaceDao;
-  _TestAppDatabase? _database;
-  WorkspaceToolsRepository? _repository;
+  new() : this._(_createWorkspaceToolsRepositoryFixtureSetup());
 
-  MockWorkspaceToolsDao get mockToolsDao =>
-      _mockToolsDao ?? fail('Fixture not initialized');
+  new _(_WorkspaceToolsRepositoryFixtureSetup setup)
+    : _mockToolsDao = setup.mockToolsDao,
+      _mockWorkspaceDao = setup.mockWorkspaceDao,
+      _database = setup.database,
+      _repository = setup.repository;
 
-  MockWorkspaceDao get mockWorkspaceDao =>
-      _mockWorkspaceDao ?? fail('Fixture not initialized');
+  final MockWorkspaceToolsDao _mockToolsDao;
+  final MockWorkspaceDao _mockWorkspaceDao;
+  final _TestAppDatabase _database;
+  final WorkspaceToolsRepository _repository;
 
-  _TestAppDatabase get database => _database ?? fail('Fixture not initialized');
+  MockWorkspaceToolsDao get mockToolsDao => _mockToolsDao;
 
-  WorkspaceToolsRepository get repository =>
-      _repository ?? fail('Fixture not initialized');
+  MockWorkspaceDao get mockWorkspaceDao => _mockWorkspaceDao;
 
-  void reset() {
-    final toolsDao = MockWorkspaceToolsDao();
-    final workspaceDao = MockWorkspaceDao();
-    final database = _TestAppDatabase(toolsDao, workspaceDao);
-    _mockToolsDao = toolsDao;
-    _mockWorkspaceDao = workspaceDao;
-    _database = database;
-    _repository = .new(database);
+  _TestAppDatabase get database => _database;
 
-    when(() => toolsDao.getWorkspaceTools(any())).thenAnswer((_) async => []);
+  WorkspaceToolsRepository get repository => _repository;
+
+  Future<void> resetForTest() async {
+    reset(_mockToolsDao);
+    reset(_mockWorkspaceDao);
+    await clearAppDatabase(_database);
+
+    when(() => _mockToolsDao.getWorkspaceTools(any()))
+        .thenAnswer((_) async => []);
     when(
-      () => toolsDao.setWorkspaceToolEnabled(
+      () => _mockToolsDao.setWorkspaceToolEnabled(
         any(),
         any(),
         isEnabled: any(named: 'isEnabled'),
@@ -609,13 +633,7 @@ class _WorkspaceToolsRepositoryFixture {
     );
   }
 
-  Future<void> dispose() async {
-    await database.close();
-    _mockToolsDao = null;
-    _mockWorkspaceDao = null;
-    _database = null;
-    _repository = null;
-  }
+  Future<void> dispose() => _database.close();
 }
 
 class _TestAppDatabase(

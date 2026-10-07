@@ -7,6 +7,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -23,11 +25,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -41,8 +41,16 @@ void main() {
 
     setUp(fixture.reset);
 
-    tearDown(() async {
+    tearDownAll(() async {
       await fixture.close();
+    });
+
+    test('database fixture reuses its database after reset', () async {
+      final originalDatabase = fixture.database;
+
+      await fixture.reset();
+
+      expect(fixture.database, same(originalDatabase));
     });
 
     test('insertConversation creates and returns conversation', () async {
@@ -58,12 +66,13 @@ void main() {
     });
 
     test('persists pin state after reopening the database', () async {
-      await fixture.close();
       final directory = await Directory.systemTemp.createTemp(
         'auravibes-conversation-',
       );
       final file = File('${directory.path}/conversations.sqlite');
-      var database = AppDatabase(connection: NativeDatabase(file));
+      AppDatabase database = _ConversationDatabaseBeforeReopen(
+        NativeDatabase(file),
+      );
       addTearDown(() async {
         await database.close();
         final _ = await directory.delete(recursive: true);
@@ -93,7 +102,7 @@ void main() {
       );
       await database.close();
 
-      database = AppDatabase(connection: NativeDatabase(file));
+      database = _ConversationDatabaseAfterReopen(NativeDatabase(file));
       final restored = await database.conversationDao.getConversationById(
         conversation.id,
       );
@@ -391,4 +400,12 @@ void main() {
       expect(page.single.id, allMatches[1].id);
     });
   });
+}
+
+final class _ConversationDatabaseBeforeReopen extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
+}
+
+final class _ConversationDatabaseAfterReopen extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
 }

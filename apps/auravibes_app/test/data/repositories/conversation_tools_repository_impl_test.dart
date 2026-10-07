@@ -10,12 +10,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  tearDownAll(database.close);
 
   group('ConversationToolsRepository - checkToolPermission', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     const testConversationId = 'test-conversation-id';
     const testWorkspaceId = 'test-workspace-id';
@@ -584,7 +589,7 @@ void main() {
   });
 
   group('getConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -614,7 +619,7 @@ void main() {
   });
 
   group('getConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -649,7 +654,7 @@ void main() {
   });
 
   group('setConversationToolEnabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -675,7 +680,7 @@ void main() {
   });
 
   group('setConversationToolPermission', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -701,7 +706,7 @@ void main() {
   });
 
   group('toggleConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -739,7 +744,7 @@ void main() {
   });
 
   group('isConversationToolEnabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -771,7 +776,7 @@ void main() {
   });
 
   group('removeConversationTool', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -809,7 +814,7 @@ void main() {
   });
 
   group('getConversationToolsCount', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -846,7 +851,7 @@ void main() {
   });
 
   group('getEnabledConversationToolsCount', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -861,7 +866,7 @@ void main() {
   });
 
   group('copyConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -888,7 +893,7 @@ void main() {
   });
 
   group('isToolAvailableForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -990,7 +995,7 @@ void main() {
   });
 
   group('getAvailableToolsForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1114,7 +1119,7 @@ void main() {
   });
 
   group('getAvailableToolEntitiesForConversation', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1223,7 +1228,7 @@ void main() {
   });
 
   group('setConversationToolsDisabled', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1241,7 +1246,7 @@ void main() {
   });
 
   group('validateConversationToolSetting', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1269,7 +1274,7 @@ void main() {
   });
 
   group('getEnabledConversationTools', () {
-    final fixture = _ConversationToolsRepositoryFixture();
+    final fixture = _ConversationToolsRepositoryFixture(database);
 
     setUp(fixture.setUp);
 
@@ -1339,12 +1344,13 @@ void main() {
 }
 
 final class _ConversationToolsRepositoryFixture {
-  AppDatabase? _database;
+  new(this._database);
+
+  final AppDatabase _database;
   ConversationToolsRepository? _repository;
   MockWorkspaceToolsRepository? _mockWorkspaceToolsRepository;
 
-  AppDatabase get database =>
-      _database ?? fail('Expected database fixture to be initialized.');
+  AppDatabase get database => _database;
 
   ConversationToolsRepository get repository =>
       _repository ?? fail('Expected repository fixture to be initialized.');
@@ -1354,9 +1360,8 @@ final class _ConversationToolsRepositoryFixture {
       fail('Expected workspace tools repository fixture to be initialized.');
 
   Future<void> setUp() async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
+    final database = _database;
+    await clearAppDatabase(database);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
@@ -1382,14 +1387,11 @@ final class _ConversationToolsRepositoryFixture {
     }
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 
-    _database = database;
     _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;
     _repository = .new(database, mockWorkspaceToolsRepository);
   }
 
-  Future<void> tearDown() async {
-    await database.close();
-    _database = null;
+  void tearDown() {
     _mockWorkspaceToolsRepository = null;
     _repository = null;
   }

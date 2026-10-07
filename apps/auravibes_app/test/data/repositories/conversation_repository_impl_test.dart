@@ -14,16 +14,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('ConversationRepository', () {
-    var mockDao = MockConversationDao();
-    var database = _TestAppDatabase(mockDao);
+    final mockDao = MockConversationDao();
+    final database = _TestAppDatabase(mockDao);
     var repository = ConversationRepository(database);
 
     setUp(() async {
+      reset(mockDao);
+      await clearAppDatabase(database);
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(id: const Value('ws-1'), name: 'Test Workspace', type: .local),
       );
@@ -36,13 +39,6 @@ void main() {
               title: 'Test Conversation',
             ),
           );
-    });
-
-    tearDown(() async {
-      await database.close();
-      mockDao = MockConversationDao();
-      database = _TestAppDatabase(mockDao);
-      repository = ConversationRepository(database);
     });
 
     tearDownAll(() async {

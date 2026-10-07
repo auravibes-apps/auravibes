@@ -6,6 +6,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
+import 'database_test_utils.dart';
+
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -20,15 +22,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  set database(AppDatabase database) {
-    _database = database;
-  }
-
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -42,22 +38,22 @@ void main() {
 
     setUp(fixture.reset);
 
-    tearDown(() async {
-      await fixture.close();
-    });
+    tearDownAll(fixture.close);
 
     test('has correct schema version', () {
       expect(fixture.database.schemaVersion, 24);
     });
 
     test('migration defaults advanced capabilities to false', () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 19
         ..execute('CREATE TABLE api_models (id TEXT PRIMARY KEY)')
         ..execute('INSERT INTO api_models VALUES (?)', ['existing']);
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
-      final row = await fixture.database
+      final database = _MigrationAppDatabase<_MigrationCase1>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
+      final row = await database
           .customSelect(
             'SELECT * FROM api_models WHERE id = ?',
             variables: [const Variable<String>('existing')],
@@ -74,7 +70,6 @@ void main() {
     });
 
     test('migration adds MCP columns to the PR version 21 schema', () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 21
         ..execute('''
@@ -89,9 +84,12 @@ void main() {
         ''')
         ..execute('CREATE TABLE model_usage_records (id TEXT PRIMARY KEY)')
         ..execute('CREATE TABLE mcp_servers (id TEXT PRIMARY KEY)');
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final database = _MigrationAppDatabase<_MigrationCase2>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
 
-      final columns = await fixture.database
+      final columns = await database
           .customSelect('PRAGMA table_info(mcp_servers)')
           .get();
 
@@ -104,7 +102,6 @@ void main() {
     test(
       'migration adds model columns to the main version 21 schema',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 21
           ..execute('CREATE TABLE api_models (id TEXT PRIMARY KEY)')
@@ -115,12 +112,15 @@ void main() {
             test_summary_json TEXT
           );
         ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase3>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final modelColumns = await fixture.database
+        final modelColumns = await database
             .customSelect('PRAGMA table_info(api_models)')
             .get();
-        final usageTables = await fixture.database
+        final usageTables = await database
             .customSelect(
               'SELECT name FROM sqlite_master WHERE type = ? AND name = ?',
               variables: [
@@ -181,7 +181,6 @@ void main() {
     test(
       'migration from schema 19 adds nullable tool sampling policy',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 19
           ..execute('''
@@ -198,9 +197,12 @@ void main() {
             (id, created_at, updated_at, model_id, model_connection_id)
           VALUES ('selection-1', 1, 1, 'gpt-4o', 'connection-1')
         ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase4>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final selection = await fixture.database
+        final selection = await database
             .customSelect(
               'SELECT tool_sampling_policy FROM workspace_model_selections '
               'WHERE id = ?',
@@ -215,7 +217,6 @@ void main() {
     test(
       'migration adds MCP output schema without changing existing tools',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 16
           ..execute(
@@ -224,9 +225,12 @@ void main() {
           ..execute(
             'INSERT INTO tools VALUES (\'tool-1\', \'{"type":"object"}\')',
           );
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase5>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final row = await fixture.database
+        final row = await database
             .customSelect(
               'SELECT input_schema, output_schema FROM tools WHERE id = ?',
               variables: [const Variable<String>('tool-1')],
@@ -241,7 +245,6 @@ void main() {
     test(
       'migration from schema 20 preserves tool policy and adds MCP fields',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 20
           ..execute('''
@@ -255,12 +258,15 @@ void main() {
             tool_sampling_policy TEXT
           );
         ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase6>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final mcpColumns = await fixture.database
+        final mcpColumns = await database
             .customSelect('PRAGMA table_info(mcp_servers)')
             .get();
-        final selectionColumns = await fixture.database
+        final selectionColumns = await database
             .customSelect('PRAGMA table_info(workspace_model_selections)')
             .get();
 
@@ -278,7 +284,6 @@ void main() {
     test(
       'migration from schema 21 adds tool policy to MCP-upgraded database',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 21
           ..execute('''
@@ -293,9 +298,12 @@ void main() {
               id TEXT NOT NULL PRIMARY KEY
             );
           ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase7>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final columns = await fixture.database
+        final columns = await database
             .customSelect('PRAGMA table_info(workspace_model_selections)')
             .get();
 
@@ -349,7 +357,6 @@ void main() {
         'migration converts legacy skill tool fragments '
         'to a definition';
     test(migrationDefinitionTestName, () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 11
         ..execute('''
@@ -385,9 +392,12 @@ void main() {
             '{"query":{"type":"string","description":"Query"}}'
           );
         ''');
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final database = _MigrationAppDatabase<_MigrationCase8>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
 
-      final row = await fixture.database
+      final row = await database
           .customSelect(
             'SELECT definition_json FROM skill_template_tools WHERE id = ?',
             variables: [const Variable<String>('tool-1')],
@@ -408,19 +418,21 @@ void main() {
     test(
       'migration adds cache-write pricing and request usage records',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 20
           ..execute('CREATE TABLE api_models (id TEXT NOT NULL PRIMARY KEY)')
           ..execute(
             'CREATE TABLE conversations (id TEXT NOT NULL PRIMARY KEY)',
           );
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase9>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final modelColumns = await fixture.database
+        final modelColumns = await database
             .customSelect('PRAGMA table_info(api_models)')
             .get();
-        final usageTable = await fixture.database
+        final usageTable = await database
             .customSelect(
               'SELECT name FROM sqlite_master WHERE type = ? AND name = ?',
               variables: [
@@ -439,7 +451,6 @@ void main() {
     );
 
     test('migration repairs the legacy api model modalities column', () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 13
         ..execute('''
@@ -459,12 +470,15 @@ void main() {
             name TEXT NOT NULL
           );
         ''');
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final database = _MigrationAppDatabase<_MigrationCase10>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
 
-      final columns = await fixture.database
+      final columns = await database
           .customSelect('PRAGMA table_info(api_models)')
           .get();
-      final model = await fixture.database
+      final model = await database
           .customSelect(
             'SELECT modalities_output FROM api_models WHERE id = ?',
             variables: [const Variable<String>('model-1')],
@@ -481,7 +495,6 @@ void main() {
     test(
       'migration converts legacy streaming messages to unfinished',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 14
           ..execute('''
@@ -511,11 +524,12 @@ void main() {
           ) VALUES ('message-1', 0, 0, 'conversation-1', 'Partial response',
             'text', 0, 'streaming');
         ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
-
-        final message = await fixture.database.messageDao.getMessageById(
-          'message-1',
+        final database = _MigrationAppDatabase<_MigrationCase11>(
+          connection: NativeDatabase.opened(sqliteDb),
         );
+        addTearDown(database.close);
+
+        final message = await database.messageDao.getMessageById('message-1');
 
         expect(message?.status, MessageTableStatus.unfinished);
       },
@@ -524,7 +538,6 @@ void main() {
     test(
       'migration from schema 6 preserves agents and adds catalog index',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 6
           ..execute('''
@@ -547,12 +560,15 @@ void main() {
           ) VALUES ('agent-1', 0, 0, 'workspace-1', 'Agent', 'Description',
             'Prompt', 1, 'both')
         ''');
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase12>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final agent = await fixture.database.customSelect(
+        final agent = await database.customSelect(
           '''SELECT id FROM agents WHERE id = 'agent-1' ''',
         ).getSingle();
-        final indexes = await fixture.database.customSelect(
+        final indexes = await database.customSelect(
           '''PRAGMA index_list('agents')''',
         ).get();
 
@@ -565,7 +581,6 @@ void main() {
     );
 
     test('migration from schema 4 backfills agent defaults', () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 4
         ..execute('''
@@ -600,9 +615,12 @@ void main() {
           'VALUES (?, 0, 0, ?, ?, ?)',
           ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
         );
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final database = _MigrationAppDatabase<_MigrationCase13>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
 
-      final agent = await fixture.database
+      final agent = await database
           .customSelect(
             'SELECT description, is_enabled, visibility FROM agents '
             'WHERE id = ?',
@@ -616,7 +634,6 @@ void main() {
     });
 
     test('migration from schema 4 adds attachment display names', () async {
-      await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 4
         ..execute('''
@@ -667,12 +684,15 @@ void main() {
             10,
           ],
         );
-      fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+      final database = _MigrationAppDatabase<_MigrationCase14>(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+      addTearDown(database.close);
 
-      final columns = await fixture.database
+      final columns = await database
           .customSelect('PRAGMA table_info(message_attachments)')
           .get();
-      final attachment = await fixture.database
+      final attachment = await database
           .customSelect(
             'SELECT display_name FROM message_attachments WHERE id = ?',
             variables: [const Variable<String>('attachment-1')],
@@ -689,7 +709,6 @@ void main() {
     test(
       'migration from schema 3 adds child conversations and agent defaults',
       () async {
-        await fixture.close();
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 3
           ..execute('''
@@ -736,16 +755,19 @@ void main() {
             'VALUES (?, 0, 0, ?, ?, ?)',
             ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
           );
-        fixture.database = .new(connection: NativeDatabase.opened(sqliteDb));
+        final database = _MigrationAppDatabase<_MigrationCase15>(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
 
-        final agent = await fixture.database
+        final agent = await database
             .customSelect(
               'SELECT description, is_enabled, visibility FROM agents '
               'WHERE id = ?',
               variables: [const Variable<String>('agent-1')],
             )
             .getSingle();
-        final columns = await fixture.database
+        final columns = await database
             .customSelect('PRAGMA table_info(conversations)')
             .get();
 
@@ -789,12 +811,55 @@ void main() {
     });
 
     test('database can be closed and recreated', () async {
-      await fixture.close();
+      final original = _DatabaseBeforeRecreation(createTestConnection());
+      await original.close();
 
-      final db2 = AppDatabase(connection: createTestConnection());
+      final db2 = _RecreatedDatabase(createTestConnection());
       final workspaces = await db2.workspaceDao.getAllWorkspaces();
       expect(workspaces, isEmpty);
       await db2.close();
     });
   });
+}
+
+final class _MigrationAppDatabase<Scenario> extends AppDatabase {
+  new({required super.connection});
+}
+
+final class _MigrationCase1;
+
+final class _MigrationCase2;
+
+final class _MigrationCase3;
+
+final class _MigrationCase4;
+
+final class _MigrationCase5;
+
+final class _MigrationCase6;
+
+final class _MigrationCase7;
+
+final class _MigrationCase8;
+
+final class _MigrationCase9;
+
+final class _MigrationCase10;
+
+final class _MigrationCase11;
+
+final class _MigrationCase12;
+
+final class _MigrationCase13;
+
+final class _MigrationCase14;
+
+final class _MigrationCase15;
+
+final class _RecreatedDatabase extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
+}
+
+final class _DatabaseBeforeRecreation extends AppDatabase {
+  new(QueryExecutor connection) : super(connection: connection);
 }

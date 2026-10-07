@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
@@ -61,6 +63,12 @@ void main() {
   });
 
   group('appDatabaseProvider', () {
+    final db = AppDatabase(connection: _testConnection());
+
+    setUp(() => clearAppDatabase(db));
+
+    tearDownAll(db.close);
+
     test('databaseNameForHashSource returns default name for empty source', () {
       expect(AppDatabase.databaseNameForHashSource(null), 'auravibes_app');
       expect(AppDatabase.databaseNameForHashSource(''), 'auravibes_app');
@@ -95,28 +103,20 @@ void main() {
     });
 
     test('returns an AppDatabase instance', () {
-      final db = AppDatabase(connection: _testConnection());
       final container = ProviderContainer(
         overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
-      addTearDown(() {
-        container.dispose();
-        db.close();
-      });
+      addTearDown(container.dispose);
 
       final result = container.read(appDatabaseProvider);
       expect(result, isA<AppDatabase>());
     });
 
     test('returns same instance on subsequent reads (keepAlive)', () {
-      final db = AppDatabase(connection: _testConnection());
       final container = ProviderContainer(
         overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
-      addTearDown(() {
-        container.dispose();
-        db.close();
-      });
+      addTearDown(container.dispose);
 
       final first = container.read(appDatabaseProvider);
       final second = container.read(appDatabaseProvider);
@@ -124,28 +124,20 @@ void main() {
     });
 
     test('overridden database has correct schema version', () {
-      final db = AppDatabase(connection: _testConnection());
       final container = ProviderContainer(
         overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
-      addTearDown(() {
-        container.dispose();
-        db.close();
-      });
+      addTearDown(container.dispose);
 
       final result = container.read(appDatabaseProvider);
       expect(result.schemaVersion, 24);
     });
 
     test('overridden database has all DAOs accessible', () {
-      final db = AppDatabase(connection: _testConnection());
       final container = ProviderContainer(
         overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
-      addTearDown(() {
-        container.dispose();
-        db.close();
-      });
+      addTearDown(container.dispose);
 
       final result = container.read(appDatabaseProvider);
       expect(result.workspaceDao, isNotNull);

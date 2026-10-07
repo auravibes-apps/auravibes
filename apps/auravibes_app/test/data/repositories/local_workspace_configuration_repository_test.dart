@@ -8,12 +8,15 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
   test('round-trips local configuration without credential values', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final exporter = LocalWorkspaceConfigurationRepository(database);
     final importer = LocalWorkspaceConfigurationImporter(database);
     final source = await WorkspaceRepository(database)
@@ -134,10 +137,6 @@ void main() {
   });
 
   test('unknown version and malformed archive write nothing', () async {
-    final database = AppDatabase(
-      connection: DatabaseConnection(NativeDatabase.memory()),
-    );
-    addTearDown(database.close);
     final importer = LocalWorkspaceConfigurationImporter(database);
     final valid = WorkspaceConfigurationArchiveCodec.encode(
       const WorkspaceConfigurationArchive(workspaceName: 'Import', entries: []),
@@ -158,10 +157,6 @@ void main() {
   test(
     'exports explicit selection policies and closes selected kinds',
     () async {
-      final database = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      addTearDown(database.close);
       final workspace = await WorkspaceRepository(database).createWorkspace(
         const WorkspaceToCreate(name: 'Workspace', type: .local),
       );

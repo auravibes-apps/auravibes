@@ -23,6 +23,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
+import '../data/database/drift/database_test_utils.dart';
+
 final _server = McpServerEntity(
   id: 'server-1',
   workspaceId: 'workspace-1',
@@ -161,12 +163,13 @@ void main() {
   group('McpConnectionNotifier', () {
     var mcpServersRepository = _FakeMcpServersRepository();
     var mcpManagerService = McpManagerService();
-    AppDatabase? database;
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     var container = ProviderContainer();
     ProviderSubscription<List<McpConnectionState>>? subscription;
 
-    AppDatabase getDatabase() =>
-        database ?? fail('Expected test database to be initialized');
+    AppDatabase getDatabase() => database;
 
     Future<ProviderContainer> createInitializedContainer(
       McpManagerService manager, {
@@ -199,12 +202,8 @@ void main() {
     setUp(() async {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
-      final testDatabase = AppDatabase(
-        connection: DatabaseConnection(NativeDatabase.memory()),
-      );
-      database = testDatabase;
-      addTearDown(testDatabase.close);
-      final _ = await testDatabase.workspaceDao.insertWorkspace(
+      await clearAppDatabase(database);
+      final _ = await database.workspaceDao.insertWorkspace(
         .insert(
           id: const Value('workspace-1'),
           name: 'Test Workspace',
@@ -236,6 +235,8 @@ void main() {
       subscription?.close();
       container.dispose();
     });
+
+    tearDownAll(database.close);
 
     test('initial state is empty list', () {
       final state = container.read(mcpConnectionProvider);

@@ -23,6 +23,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -30,6 +32,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
   });
+
+  setUp(() => clearAppDatabase(_IntroFixture._sharedDatabase));
+  tearDownAll(_IntroFixture._sharedDatabase.close);
 
   for (final management in [false, true]) {
     for (final failFirst in [false, true]) {
@@ -431,6 +436,8 @@ void main() {
     await _tapVisible(tester, find.byKey(_skipAiKey));
     await _pumpUntilFound(tester, find.textContaining('new chat:'));
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await clearAppDatabase(_IntroFixture._sharedDatabase);
     final connectFixture = _IntroFixture();
     addTearDown(connectFixture.dispose);
 
@@ -486,18 +493,16 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
+  static final AppDatabase _sharedDatabase = .new(
+    connection: NativeDatabase.memory(),
+  );
+
   new({
     List<CloudAccountSession> accounts = const [],
     Client? client,
     Future<CloudWorkspaceViewState?> Function()? load,
     bool management = false,
-  }) : this._(
-         .new(connection: NativeDatabase.memory()),
-         accounts,
-         client,
-         load,
-         management,
-       );
+  }) : this._(_sharedDatabase, accounts, client, load, management);
 
   new _(
     this.database,
@@ -586,10 +591,9 @@ class _IntroFixture {
     );
   }
 
-  Future<void> dispose() async {
+  void dispose() {
     router.dispose();
     container.dispose();
-    await database.close();
   }
 }
 

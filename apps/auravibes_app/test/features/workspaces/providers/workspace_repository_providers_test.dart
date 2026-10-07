@@ -139,23 +139,22 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  AppDatabase? testDatabase;
+  final database = AppDatabase(connection: _testConnection());
   ProviderContainer? container;
   ProviderContainer readContainer() =>
       container ?? fail('ProviderContainer not initialized');
 
   setUp(() {
-    final database = AppDatabase(connection: _testConnection());
-    testDatabase = database;
     container = ProviderContainer(
       overrides: [appDatabaseProvider.overrideWithValue(database)],
     );
   });
 
-  tearDown(() async {
+  tearDown(() {
     container?.dispose();
-    await testDatabase?.close();
   });
+
+  tearDownAll(database.close);
 
   group('workspaceRepositoryProvider', () {
     test('returns a WorkspaceRepository instance', () {

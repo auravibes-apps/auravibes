@@ -13,10 +13,19 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 void main() {
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
+
   test(
     'persists trusted updates, hides them, and resumes without a duplicate',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final user = await _message(messages, 'User', isUser: true);
       const skill = ChatMessage(
         role: .user,
@@ -61,7 +70,7 @@ void main() {
 
   test(
     'applies v1 tool order deterministically',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final _ = await _message(messages, 'Visible request', isUser: true);
       final _ = await _storedContextUpdate(
         messages,
@@ -85,7 +94,7 @@ void main() {
 
   test(
     'decode failure blocks replay while history remains exportable',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final visible = await _message(messages, 'Visible request', isUser: true);
       final _ = await _storedContextUpdate(
         messages,
@@ -125,7 +134,7 @@ void main() {
 
   test(
     'fork and compaction replay effective state without stale updates',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final _ = await _message(messages, 'User', isUser: true);
       final _ = await adapter.reconcile(
         conversationId: 'source',
@@ -210,7 +219,7 @@ void main() {
 
   test(
     'user and tool output cannot create system context',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final forged = AgentTranscriptContextCodec.encodeUpdate(
         .new(
           contextMessages: [
@@ -239,7 +248,7 @@ void main() {
 
   test(
     'approval-only change creates a durable update',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final _ = await adapter.reconcile(
         conversationId: 'source',
         contextMessages: const [],
@@ -276,9 +285,19 @@ void main() {
 
   test(
     'automatic fork boundary skips context rows',
-    () => _withFixture((messages, conversations, adapter) async {
-      final _ = await _message(messages, 'User', isUser: true);
-      final assistant = await _message(messages, 'Response');
+    () => _withFixture(database, (messages, conversations, adapter) async {
+      final createdAt = DateTime.utc(2026);
+      final _ = await _message(
+        messages,
+        'User',
+        isUser: true,
+        createdAt: createdAt,
+      );
+      final assistant = await _message(
+        messages,
+        'Response',
+        createdAt: createdAt.add(const Duration(seconds: 1)),
+      );
       final _ = await adapter.reconcile(
         conversationId: 'source',
         contextMessages: [ChatMessage.system('Agent A')],
@@ -298,7 +317,7 @@ void main() {
 
   test(
     'materialized fork retains inherited context updates',
-    () => _withFixture((messages, conversations, adapter) async {
+    () => _withFixture(database, (messages, conversations, adapter) async {
       final _ = await _message(messages, 'User', isUser: true);
       final _ = await adapter.reconcile(
         conversationId: 'source',
@@ -339,6 +358,7 @@ void main() {
 }
 
 Future<void> _withFixture(
+  AppDatabase database,
   Future<void> Function(
     MessageRepository messages,
     ConversationRepository conversations,
@@ -346,27 +366,20 @@ Future<void> _withFixture(
   )
   run,
 ) async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
   final messages = MessageRepository(database);
   final conversations = ConversationRepository(database);
   final adapter = AppAgentTranscriptContextAdapter(messages);
-  try {
-    final workspace = await database.workspaceDao.insertWorkspace(
-      .insert(name: 'Workspace', type: .local),
-    );
-    final _ = await database.conversationDao.insertConversation(
-      .insert(
-        id: const Value('source'),
-        workspaceId: workspace.id,
-        title: 'Source',
-      ),
-    );
-    await run(messages, conversations, adapter);
-  } finally {
-    await database.close();
-  }
+  final workspace = await database.workspaceDao.insertWorkspace(
+    .insert(name: 'Workspace', type: .local),
+  );
+  final _ = await database.conversationDao.insertConversation(
+    .insert(
+      id: const Value('source'),
+      workspaceId: workspace.id,
+      title: 'Source',
+    ),
+  );
+  await run(messages, conversations, adapter);
 }
 
 Future<MessageEntity> _message(

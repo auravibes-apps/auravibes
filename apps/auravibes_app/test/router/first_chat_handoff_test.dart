@@ -21,16 +21,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/database/drift/database_test_utils.dart';
 import '../helpers/test_app.dart';
 
 void main() {
+  final database = AppDatabase(connection: NativeDatabase.memory());
+  tearDownAll(database.close);
   testWidgets('pushed credential returns true and retains parent draft', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final database = AppDatabase(connection: NativeDatabase.memory());
-    addTearDown(database.close);
+    await clearAppDatabase(database);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Credential parent', type: .local));
     final definition = await SkillCredentialDefinitionsRepository(database)
@@ -124,8 +126,7 @@ void main() {
       ) async {
         await tester.binding.setSurfaceSize(const Size(1000, 1400));
         addTearDown(() => tester.binding.setSurfaceSize(null));
-        final database = AppDatabase(connection: NativeDatabase.memory());
-        addTearDown(database.close);
+        await clearAppDatabase(database);
         final workspace = await WorkspaceRepository(database)
             .createWorkspace(const .new(name: 'Handoff', type: .local));
         final chat = NewChatRoute(workspaceId: workspace.id).location;

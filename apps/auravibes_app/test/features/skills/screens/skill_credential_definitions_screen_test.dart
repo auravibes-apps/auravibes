@@ -16,22 +16,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../../data/database/drift/database_test_utils.dart';
+
 class _CredentialDefinitionsHarness({
   required final AppDatabase database,
   required final String workspaceId,
   required final ProviderContainer container,
   required final SkillCredentialDefinitionsRepository repository,
 }) {
-  Future<void> dispose() async {
+  void dispose() {
     container.dispose();
-    await database.close();
   }
 }
 
-Future<_CredentialDefinitionsHarness> _createHarness() async {
-  final database = AppDatabase(
-    connection: DatabaseConnection(NativeDatabase.memory()),
-  );
+Future<_CredentialDefinitionsHarness> _createHarness(
+  AppDatabase database,
+) async {
   final workspace = await WorkspaceRepository(database)
       .createWorkspace(const .new(name: 'Test Workspace', type: .local));
   final session = WorkspaceSession(
@@ -95,11 +95,16 @@ Future<void> _pumpScreen(
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final database = AppDatabase(
+    connection: DatabaseConnection(NativeDatabase.memory()),
+  );
+  setUp(() => clearAppDatabase(database));
+  tearDownAll(database.close);
 
   testWidgets(
     'filters definitions by title and slug with no-results feedback',
     (tester) async {
-      final harness = await _createHarness();
+      final harness = await _createHarness(database);
       addTearDown(harness.dispose);
       final _ = await harness.repository.createDefinition(
         harness.workspaceId,
@@ -143,7 +148,7 @@ void main() {
   testWidgets('duplicates a definition from the keyboard-accessible row menu', (
     tester,
   ) async {
-    final harness = await _createHarness();
+    final harness = await _createHarness(database);
     addTearDown(harness.dispose);
     final source = await harness.repository.createDefinition(
       harness.workspaceId,

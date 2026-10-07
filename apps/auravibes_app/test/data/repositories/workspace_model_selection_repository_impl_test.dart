@@ -11,20 +11,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
+import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
 
   group('WorkspaceModelSelectionRepository', () {
-    var mockDao = MockWorkspaceModelSelectionsDao();
-    var database = _TestAppDatabase(mockDao);
-    var repository = WorkspaceModelSelectionRepository(database);
+    final mockDao = MockWorkspaceModelSelectionsDao();
+    final database = _TestAppDatabase(mockDao);
+    final repository = WorkspaceModelSelectionRepository(database);
 
-    tearDown(() async {
-      await database.close();
-      mockDao = MockWorkspaceModelSelectionsDao();
-      database = _TestAppDatabase(mockDao);
-      repository = WorkspaceModelSelectionRepository(database);
+    setUp(() async {
+      reset(mockDao);
+      await clearAppDatabase(database);
     });
 
     tearDownAll(() async {

@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
@@ -23,21 +24,14 @@ class _FakeEncryptionService implements EncryptionService {
 }
 
 void main() {
+  final database = AppDatabase(connection: _testConnection());
+  tearDownAll(database.close);
+
   group('modelConnectionRepositoryProvider', () {
     test('returns ModelConnectionRepository instance', () {
       final container = ProviderContainer(
         overrides: [
-          appDatabaseProvider.overrideWithValue(
-            .new(
-              connection: DatabaseConnection.delayed(
-                Future(
-                  () => DatabaseConnection(
-                    LazyDatabase(() async => NativeDatabase.memory()),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          appDatabaseProvider.overrideWithValue(database),
           encryptionServiceProvider.overrideWithValue(_FakeEncryptionService()),
         ],
       );
@@ -51,11 +45,7 @@ void main() {
   group('workspaceModelSelectionRepositoryProvider', () {
     test('returns WorkspaceModelSelectionRepository instance', () {
       final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(
-            .new(connection: _testConnection()),
-          ),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
       );
       addTearDown(container.dispose);
 

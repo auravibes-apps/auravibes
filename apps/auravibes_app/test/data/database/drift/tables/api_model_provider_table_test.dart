@@ -4,6 +4,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../database_test_utils.dart';
+
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -20,11 +22,9 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
-      _database ?? fail('Database fixture not initialized');
+      _database ??= .new(connection: createConnection());
 
-  void reset() {
-    _database = .new(connection: createConnection());
-  }
+  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -33,6 +33,10 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 }
 
 void main() {
+  final fixture = _DatabaseFixture(_testConnection);
+
+  tearDownAll(fixture.close);
+
   group('ModelProvidersTableType', () {
     test('fromString parses supported values and rejects unknown values', () {
       const cases = <({String input, ModelProvidersTableType? expected})>[
@@ -73,17 +77,14 @@ void main() {
   });
 
   group('ApiModelProviders schema', () {
-    final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
 
     setUp(() async {
-      fixture.reset();
+      await fixture.reset();
       columns = await fixture.database
           .customSelect('PRAGMA table_info(api_model_providers)')
           .get();
     });
-
-    tearDown(fixture.close);
 
     test('has expected columns', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
@@ -121,11 +122,7 @@ void main() {
   });
 
   group('ApiModelProviders column accessors', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
     setUp(fixture.reset);
-
-    tearDown(fixture.close);
 
     test('can insert provider with nullable fields null', () async {
       final _ = await fixture.database
