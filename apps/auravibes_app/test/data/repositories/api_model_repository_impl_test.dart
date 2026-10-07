@@ -576,25 +576,34 @@ void main() {
   });
 }
 
-class _ApiModelRepositoryFixture {
-  factory _ApiModelRepositoryFixture() {
-    final mockProvidersDao = MockApiModelProvidersDao();
-    final mockModelsDao = MockApiModelsDao();
-    final database = _TestAppDatabase(mockProvidersDao, mockModelsDao);
-    return _ApiModelRepositoryFixture._(
-      mockProvidersDao,
-      mockModelsDao,
-      database,
-      ApiModelRepository(database),
-    );
-  }
+typedef _ApiModelRepositoryFixtureSetup = ({
+  MockApiModelProvidersDao mockProvidersDao,
+  MockApiModelsDao mockModelsDao,
+  _TestAppDatabase database,
+  ApiModelRepository repository,
+});
 
-  _ApiModelRepositoryFixture._(
-    this._mockProvidersDao,
-    this._mockModelsDao,
-    this._database,
-    this._repository,
+_ApiModelRepositoryFixtureSetup _createApiModelRepositoryFixtureSetup() {
+  final mockProvidersDao = .new();
+  final mockModelsDao = .new();
+  final database = _TestAppDatabase(mockProvidersDao, mockModelsDao);
+
+  return (
+    mockProvidersDao: mockProvidersDao,
+    mockModelsDao: mockModelsDao,
+    database: database,
+    repository: .new(database),
   );
+}
+
+class _ApiModelRepositoryFixture {
+  new() : this._(_createApiModelRepositoryFixtureSetup());
+
+  new _(_ApiModelRepositoryFixtureSetup setup)
+    : _mockProvidersDao = setup.mockProvidersDao,
+      _mockModelsDao = setup.mockModelsDao,
+      _database = setup.database,
+      _repository = setup.repository;
 
   final MockApiModelProvidersDao _mockProvidersDao;
   final MockApiModelsDao _mockModelsDao;

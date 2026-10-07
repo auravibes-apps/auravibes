@@ -564,25 +564,35 @@ void main() {
   });
 }
 
-class _WorkspaceToolsRepositoryFixture {
-  factory _WorkspaceToolsRepositoryFixture() {
-    final mockToolsDao = MockWorkspaceToolsDao();
-    final mockWorkspaceDao = MockWorkspaceDao();
-    final database = _TestAppDatabase(mockToolsDao, mockWorkspaceDao);
-    return _WorkspaceToolsRepositoryFixture._(
-      mockToolsDao,
-      mockWorkspaceDao,
-      database,
-      WorkspaceToolsRepository(database),
-    );
-  }
+typedef _WorkspaceToolsRepositoryFixtureSetup = ({
+  MockWorkspaceToolsDao mockToolsDao,
+  MockWorkspaceDao mockWorkspaceDao,
+  _TestAppDatabase database,
+  WorkspaceToolsRepository repository,
+});
 
-  _WorkspaceToolsRepositoryFixture._(
-    this._mockToolsDao,
-    this._mockWorkspaceDao,
-    this._database,
-    this._repository,
+_WorkspaceToolsRepositoryFixtureSetup
+_createWorkspaceToolsRepositoryFixtureSetup() {
+  final mockToolsDao = .new();
+  final mockWorkspaceDao = .new();
+  final database = _TestAppDatabase(mockToolsDao, mockWorkspaceDao);
+
+  return (
+    mockToolsDao: mockToolsDao,
+    mockWorkspaceDao: mockWorkspaceDao,
+    database: database,
+    repository: .new(database),
   );
+}
+
+class _WorkspaceToolsRepositoryFixture {
+  new() : this._(_createWorkspaceToolsRepositoryFixtureSetup());
+
+  new _(_WorkspaceToolsRepositoryFixtureSetup setup)
+    : _mockToolsDao = setup.mockToolsDao,
+      _mockWorkspaceDao = setup.mockWorkspaceDao,
+      _database = setup.database,
+      _repository = setup.repository;
 
   final MockWorkspaceToolsDao _mockToolsDao;
   final MockWorkspaceDao _mockWorkspaceDao;
