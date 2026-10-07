@@ -286,8 +286,18 @@ void main() {
   test(
     'automatic fork boundary skips context rows',
     () => _withFixture(database, (messages, conversations, adapter) async {
-      final _ = await _message(messages, 'User', isUser: true);
-      final assistant = await _message(messages, 'Response');
+      final createdAt = DateTime.utc(2026);
+      final _ = await _message(
+        messages,
+        'User',
+        isUser: true,
+        createdAt: createdAt,
+      );
+      final assistant = await _message(
+        messages,
+        'Response',
+        createdAt: createdAt.add(const Duration(seconds: 1)),
+      );
       final _ = await adapter.reconcile(
         conversationId: 'source',
         contextMessages: [ChatMessage.system('Agent A')],
