@@ -1291,26 +1291,26 @@ packages:
     dependency: "direct dev"
     description:
       name: marionette_cli
-      sha256: f96660d66d8812338449a4011d54eea8c1fe90656f6e8e3f70bb6a5c6692a620
+      sha256: "2bf8f92b1f6355866e50440e6c960183201a0243165035acf81f27c68f14342e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   marionette_flutter:
     dependency: transitive
     description:
       name: marionette_flutter
-      sha256: "9bf6aa531157edeb3d94f7c4972367240a1d704bbe9f4ac558ef1a125c4d1a6d"
+      sha256: f74b192ddd7e486b026203caa35b5a5d0c515de023e73958ba2035531c0a62bf
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   marionette_mcp:
     dependency: "direct dev"
     description:
       name: marionette_mcp
-      sha256: "24a2b3277c659367e3d6c306d35d35600fc78c5d28512f06bc843cb2e65e21b3"
+      sha256: b24c595b2e9f195c9e86cbdead507d583c8d5699e0b2cc9cfe7b488d5d0ca36a
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "0.7.0"
   markdown:
     dependency: transitive
     description:

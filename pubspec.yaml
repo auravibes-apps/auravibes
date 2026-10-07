@@ -19,8 +19,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   import_sorter: ^5.0.0-releasecandidate.1
-  marionette_cli: ^0.6.0
-  marionette_mcp: 0.6.0
+  marionette_cli: ^0.7.0
+  marionette_mcp: 0.7.0
   melos: ^8.7.0
   path: ^1.9.1
   riverpod_lint: ^3.1.9
