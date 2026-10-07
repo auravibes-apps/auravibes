@@ -505,12 +505,12 @@ extension ListAvailableSkillsAppSupport on ListAvailableSkillsUsecase {
     AppSkillDefinition skill, {
     required SkillCredentialReadiness credentialReadiness,
   }) => AvailableSkill(
-    source: SkillSource.app,
     id: skill.identifier,
     slug: skill.slug,
     title: skill.title,
     description: skill.description,
     content: skill.content,
+    source: .app,
     kind: skill.kind == AppSkillDefinitionKind.template ? .template : .native,
     credentialReadiness: credentialReadiness,
   );
@@ -671,12 +671,12 @@ extension on SkillEntity {
     required SkillCredentialReadiness credentialReadiness,
   }) {
     return AvailableSkill(
-      source: source,
       id: id,
       slug: slug,
       title: title,
       description: description,
       content: content,
+      source: source,
       kind: kind,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,

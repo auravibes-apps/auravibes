@@ -172,11 +172,11 @@ Future<void> _pumpAgentScreen(
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
             (_) async => const [
               WorkspaceSkill(
-                source: SkillSource.user,
                 id: 'summarizer',
                 slug: 'summarizer',
                 title: 'Summarizer',
                 description: 'Summarize things.',
+                source: .user,
                 kind: .template,
                 isEnabled: true,
               ),

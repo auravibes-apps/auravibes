@@ -823,8 +823,8 @@ Future<void> main(List<String> args) async {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
-          base: _requiredOption(options, 'base'),
           rootPath: Directory.current.path,
+          base: _requiredOption(options, 'base'),
           head: _requiredOption(options, 'head'),
         );
         final _ = await File(_requiredOption(options, 'output'))

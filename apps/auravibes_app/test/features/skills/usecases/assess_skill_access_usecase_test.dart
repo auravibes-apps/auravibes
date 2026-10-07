@@ -152,9 +152,9 @@ SkillDetail _skill({
   String? definitionId = 'parent-access',
   bool app = false,
 }) => SkillDetail(
-  source: app ? .app : .user,
   id: 'skill',
   workspaceId: 'workspace',
+  source: app ? .app : .user,
   kind: .template,
   title: 'Research',
   slug: 'research',

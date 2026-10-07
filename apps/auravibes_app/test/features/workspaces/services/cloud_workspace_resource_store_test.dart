@@ -34,9 +34,9 @@ Matcher get _unsupportedCapability =>
 
 CloudWorkspaceResourceStore _resourceStore() =>
     CloudWorkspaceResourceStore.forTesting(
+      watch: (_) => const Stream.empty(),
       patch: ({required requestId, required operations}) =>
           Future.error(StateError('Unexpected patch')),
-      watch: (_) => const Stream.empty(),
       putSecret: (_) => Future.error(StateError('Unexpected secret write')),
       mutateCredential: (_) =>
           Future.error(StateError('Unexpected credential mutation')),

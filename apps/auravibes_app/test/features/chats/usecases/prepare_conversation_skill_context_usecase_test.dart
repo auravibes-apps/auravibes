@@ -99,24 +99,24 @@ ToolSpec _tool(String name) => ToolSpec(
 );
 
 const _skill = AvailableSkill(
-  source: .user,
   id: 'skill-1',
   slug: 'research',
   title: 'Research',
   description: 'Research topics.',
   content: 'Research carefully.',
+  source: .user,
   kind: .template,
   credentialReadiness: .ready,
 );
 
 AvailableSkill _skillWithReadiness(SkillCredentialReadiness readiness) =>
     AvailableSkill(
-      source: _skill.source,
       id: _skill.id,
       slug: _skill.slug,
       title: _skill.title,
       description: _skill.description,
       content: _skill.content,
+      source: _skill.source,
       kind: _skill.kind,
       credentialReadiness: readiness,
     );

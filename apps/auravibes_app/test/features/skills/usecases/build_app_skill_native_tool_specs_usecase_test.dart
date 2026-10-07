@@ -1,4 +1,3 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -296,12 +295,12 @@ void _expectStrictProviderSchema(ToolSpec spec) {
 
 AvailableSkill _appSkill(String slug) {
   return AvailableSkill(
-    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
+    source: .app,
     kind: .native,
   );
 }

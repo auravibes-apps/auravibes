@@ -8,7 +8,6 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_conversation_data_provider.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/resolved_tool_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -180,12 +179,12 @@ SubAgentRunner _subAgentRunner() {
 
 AvailableSkill _appAvailableSkill(String slug) {
   return AvailableSkill(
-    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
+    source: .app,
     kind: .native,
   );
 }
@@ -517,12 +516,12 @@ void main() {
     final listSkills = _MockListAvailableSkillsUsecase();
     final manifests = _MockBuildLoadedSkillManifestsUsecase();
     const skill = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'skill-1',
       title: 'Skill',
       description: 'Use skill.',
       content: 'Use skill.',
+      source: .user,
       kind: .template,
     );
     final manifest = SkillManifest(
@@ -638,12 +637,12 @@ void main() {
     final listSkills = _MockListAvailableSkillsUsecase();
     final credentialsRepository = _MockSkillCredentialsRepository();
     const skill = AvailableSkill(
-      source: SkillSource.user,
       id: 'skill-1',
       slug: 'skill-1',
       title: 'Skill',
       description: '',
       content: '',
+      source: .user,
       kind: .template,
       credentialDefinitionId: 'definition-1',
     );

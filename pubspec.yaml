@@ -14,7 +14,7 @@ workspace:
 dev_dependencies:
   analyzer: ^14.0.0
   auravibes_app: ^0.0.4
-  dart_code_linter: ^4.3.0
+  dart_code_linter: ^4.4.1
   dependency_validator: ^5.0.5
   flutter_test:
     sdk: flutter

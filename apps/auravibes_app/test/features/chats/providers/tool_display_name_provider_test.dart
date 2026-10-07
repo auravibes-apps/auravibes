@@ -165,11 +165,11 @@ void main() {
           workspaceSkillsProvider('ws1').overrideWith(
             (ref) async => [
               WorkspaceSkill(
-                source: SkillSource.app,
                 id: appSkill.identifier,
                 slug: appSkill.slug,
                 title: appSkill.title,
                 description: appSkill.description,
+                source: .app,
                 kind: appSkill.kind == AppSkillDefinitionKind.template
                     ? SkillKind.template
                     : SkillKind.native,
@@ -217,11 +217,11 @@ void main() {
           workspaceSkillsProvider('ws1').overrideWith(
             (ref) async => [
               const WorkspaceSkill(
-                source: .user,
                 id: 'skill-1',
                 slug: 'research',
                 title: 'Research Assistant',
                 description: '',
+                source: .user,
                 kind: .template,
                 isEnabled: true,
               ),
@@ -258,11 +258,11 @@ void main() {
           workspaceSkillsProvider('ws1').overrideWith(
             (ref) async => [
               const WorkspaceSkill(
-                source: .user,
                 id: 'skill-1',
                 slug: 'research',
                 title: 'Research Assistant',
                 description: '',
+                source: .user,
                 kind: .template,
                 isEnabled: true,
               ),

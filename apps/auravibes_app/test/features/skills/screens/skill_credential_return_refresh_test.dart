@@ -223,9 +223,9 @@ void main() {
 }
 
 SkillDetail _skill(bool app) => SkillDetail(
-  source: app ? .app : .user,
   id: app ? 'jina' : 'custom-skill',
   workspaceId: 'owned-workspace',
+  source: app ? .app : .user,
   kind: .template,
   title: 'Saved skill',
   slug: 'saved-skill',

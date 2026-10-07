@@ -1,5 +1,4 @@
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -26,12 +25,12 @@ void main() {
       ).thenAnswer(
         (_) async => [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'skill',
             slug: 'research',
             title: title,
             description: '',
             content: '',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -45,12 +44,12 @@ void main() {
       ).thenAnswer(
         (_) async => [
           AvailableSkill(
-            source: SkillSource.user,
             id: 'skill',
             slug: 'research',
             title: title,
             description: '',
             content: '',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -118,12 +117,12 @@ void main() {
         buildManifests,
       );
       const skill = AvailableSkill(
-        source: SkillSource.user,
         id: 'skill-1',
         slug: 'research',
         title: 'Research',
         description: '',
         content: 'Use primary sources.',
+        source: .user,
         kind: .template,
       );
       when(
@@ -200,12 +199,12 @@ void main() {
       ).thenAnswer(
         (_) async => [
           const AvailableSkill(
-            source: SkillSource.user,
             id: '1',
             slug: 'slug',
             title: '<a&b"c\'d>',
             description: '',
             content: '<x&y"z\'w>',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -219,12 +218,12 @@ void main() {
       ).thenAnswer(
         (_) async => [
           const AvailableSkill(
-            source: SkillSource.user,
             id: '1',
             slug: 'slug',
             title: '<a&b"c\'d>',
             description: '',
             content: '<x&y"z\'w>',
+            source: .user,
             kind: .template,
           ),
         ],
@@ -279,30 +278,30 @@ void main() {
         );
         final now = DateTime(2026);
         const loadedSkill = AvailableSkill(
-          source: SkillSource.user,
           id: 'skill-1',
           slug: 'skill_one',
           title: 'Skill One',
           description: '',
           content: 'Loaded content',
+          source: .user,
           kind: .template,
         );
         const duplicateAgentSkill = AvailableSkill(
-          source: SkillSource.user,
           id: 'skill-1',
           slug: 'skill_one',
           title: 'Skill One Duplicate',
           description: '',
           content: 'Agent duplicate content',
+          source: .user,
           kind: .template,
         );
         const appAgentSkill = AvailableSkill(
-          source: SkillSource.app,
           id: 'app-skill',
           slug: 'app_skill',
           title: 'App Skill',
           description: '',
           content: 'App content',
+          source: .app,
           kind: .native,
         );
 

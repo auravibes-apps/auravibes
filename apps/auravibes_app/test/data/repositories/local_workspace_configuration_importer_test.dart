@@ -260,9 +260,9 @@ Future<String> _seedMatchingRows(
       .into(database.skills)
       .insert(
         SkillsCompanion.insert(
-          source: .user,
           id: const Value('target-skill'),
           workspaceId: workspaceId,
+          source: .user,
           kind: .template,
           title: 'Research Before',
           slug: 'research',
@@ -274,9 +274,9 @@ Future<String> _seedMatchingRows(
       .into(database.skills)
       .insert(
         SkillsCompanion.insert(
-          source: .app,
           id: const Value('target-app-skill'),
           workspaceId: workspaceId,
+          source: .app,
           kind: .template,
           title: 'Builtin Before',
           slug: 'builtin',

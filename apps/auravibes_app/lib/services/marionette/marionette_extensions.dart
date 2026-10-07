@@ -121,7 +121,6 @@ final class MarionetteExtensionBootstrap {
       'Stable identifier of an existing local workspace.';
 
   static const _navigateSchema = ExtensionInputSchema(
-    required: ['route', 'workspaceId'],
     properties: {
       'route': ExtensionParam.string(
         description: 'One of the allowlisted workspace routes.',
@@ -133,13 +132,13 @@ final class MarionetteExtensionBootstrap {
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
     },
+    required: ['route', 'workspaceId'],
     title: 'AuraVibes Development Navigation',
     description:
         'Debug-only navigation. Remote workspaces and arbitrary paths '
         'are rejected.',
   );
   static const _selectWorkspaceSchema = ExtensionInputSchema(
-    required: ['workspaceId'],
     properties: {
       'workspaceId': ExtensionParam.string(
         description: _workspaceIdDescription,
@@ -147,9 +146,9 @@ final class MarionetteExtensionBootstrap {
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
     },
+    required: ['workspaceId'],
   );
   static const _selectModelSchema = ExtensionInputSchema(
-    required: ['workspaceId', 'modelSelectionId'],
     properties: {
       'workspaceId': ExtensionParam.string(
         description: _workspaceIdDescription,
@@ -163,13 +162,13 @@ final class MarionetteExtensionBootstrap {
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
     },
+    required: ['workspaceId', 'modelSelectionId'],
   );
   static const _seedDemoDataSchema = ExtensionInputSchema(
     title: 'AuraVibes Demo Data Seed',
     description: 'No arguments. Writes only fixed local development records.',
   );
   static const _startSubAgentSmokeFixtureSchema = ExtensionInputSchema(
-    required: ['count'],
     properties: {
       'count': ExtensionParam.string(
         description:
@@ -177,11 +176,11 @@ final class MarionetteExtensionBootstrap {
         enumValues: MarionetteDevelopmentState.allowedSubAgentSmokeCountValues,
       ),
     },
+    required: ['count'],
     title: 'Start Sub-Agent Smoke Fixture',
     description: 'Starts local child conversations awaiting tool approval.',
   );
   static const _finishSubAgentSmokeFixtureSchema = ExtensionInputSchema(
-    required: ['childId'],
     properties: {
       'childId': ExtensionParam.string(
         description: 'Stable child identifier returned by the start action.',
@@ -189,6 +188,7 @@ final class MarionetteExtensionBootstrap {
         maxLength: MarionetteDevelopmentState.maxIdentifierLength,
       ),
     },
+    required: ['childId'],
     title: 'Finish Sub-Agent Smoke Fixture Child',
     description: 'Completes one active local smoke-fixture child.',
   );
@@ -202,7 +202,6 @@ final class MarionetteExtensionBootstrap {
         'No arguments. Does not touch other workspaces or preferences.',
   );
   static const _setDevelopmentFeatureFlagSchema = ExtensionInputSchema(
-    required: ['flag'],
     properties: {
       'flag': ExtensionParam.string(
         description: 'One of the allowlisted development flags.',
@@ -213,6 +212,7 @@ final class MarionetteExtensionBootstrap {
         defaultValue: true,
       ),
     },
+    required: ['flag'],
   );
 
   static bool shouldEnable({

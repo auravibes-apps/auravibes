@@ -122,11 +122,11 @@ void main() {
       router: router,
       skills: [
         WorkspaceSkill(
-          source: .user,
           id: skill.id,
           slug: skill.slug,
           title: skill.title,
           description: skill.description,
+          source: .user,
           kind: .template,
           isEnabled: false,
         ),
@@ -413,11 +413,11 @@ Future<void> _pumpAgentScreen(
                 skills ??
                 [
                   WorkspaceSkill(
-                    source: SkillSource.user,
                     id: 'summarizer',
                     slug: 'summarizer',
                     title: skillTitle?.call() ?? 'Summarizer',
                     description: 'Summarize things.',
+                    source: .user,
                     kind: .template,
                     isEnabled: true,
                   ),
