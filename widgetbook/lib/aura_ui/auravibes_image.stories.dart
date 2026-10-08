@@ -11,6 +11,10 @@ const _meta = Meta(AuraImage.new);
 abstract final class _StorybookDefinitions {
   static final $BasicImage = _Story(
     name: 'Basic Image',
+    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
+      StoryHelpers.constrainStoryWidth(child, maxWidth: 320),
+      maxHeight: 200,
+    ),
     args: _Args(
       url: StringArg(
         'https://picsum.photos/seed/aura-image/320/200',

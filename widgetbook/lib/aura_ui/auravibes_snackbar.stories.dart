@@ -2,6 +2,7 @@
 import 'package:auravibes_ui/ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:widgetbook/widgetbook.dart';
+import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_snackbar.stories.bridge.g.dart';
 part 'auravibes_snackbar.stories.g.dart';
@@ -27,7 +28,10 @@ final _Defaults _snackbarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $SnackbarVariants = _Story(
     name: 'Snackbar Variants',
-    setup: (context, child, args) => Scaffold(body: child),
+    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
+      StoryHelpers.constrainStoryWidth(Scaffold(body: child)),
+      maxHeight: 300,
+    ),
     args: _Args(
       variant: EnumArg(
         AuraSnackBarVariant.default_,

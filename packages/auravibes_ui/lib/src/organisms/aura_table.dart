@@ -277,27 +277,50 @@ class _AuraTableTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final table = AuraEdgy(
-        child: SingleChildScrollView(
-          scrollDirection: .horizontal,
-          child: Table(
-            children: _rows(context),
-            defaultColumnWidth: const IntrinsicColumnWidth(),
-            border: .new(
-              horizontalInside: BorderSide(color: context.auraColors.outline),
-            ),
-            defaultVerticalAlignment: .middle,
-          ),
-        ),
-        axis: .horizontal,
-        allowMouseDrag: true,
-      );
+    builder: (context, constraints) => SizedBox(
+      width: constraints.hasBoundedWidth ? constraints.maxWidth : null,
+      child: _AuraTableScrollView(
+        table: table,
+        sortedRows: sortedRows,
+        onSort: onSort,
+      ),
+    ),
+  );
+}
 
-      return constraints.hasBoundedWidth
-          ? SizedBox(width: constraints.maxWidth, child: table)
-          : table;
-    },
+class const _AuraTableScrollView({
+  required final AuraTable table,
+  required final List<_IndexedTableRow> sortedRows,
+  required final ValueChanged<int> onSort,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraEdgy(
+    child: SingleChildScrollView(
+      scrollDirection: .horizontal,
+      child: _AuraTableGrid(
+        table: table,
+        sortedRows: sortedRows,
+        onSort: onSort,
+      ),
+    ),
+    axis: .horizontal,
+    allowMouseDrag: true,
+  );
+}
+
+class const _AuraTableGrid({
+  required final AuraTable table,
+  required final List<_IndexedTableRow> sortedRows,
+  required final ValueChanged<int> onSort,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Table(
+    children: _rows(context),
+    defaultColumnWidth: const IntrinsicColumnWidth(),
+    border: .new(
+      horizontalInside: BorderSide(color: context.auraColors.outline),
+    ),
+    defaultVerticalAlignment: .middle,
   );
 
   List<TableRow> _rows(BuildContext context) => [

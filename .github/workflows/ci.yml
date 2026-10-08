@@ -520,6 +520,34 @@ jobs:
           path: ${{ runner.temp }}/coverage/${{ matrix.artifact }}
           if-no-files-found: error
 
+  linux-dashboard-golden-generation:
+    name: Linux dashboard golden generation
+    if: >-
+      ${{
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.ref == 'fix/dropdown-menu-fit-content'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Generate Linux dashboard goldens
+        working-directory: widgetbook
+        run: flutter test test/dashboard_widgets_test.dart --update-goldens --no-pub
+
+      - name: Upload Linux dashboard goldens
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pr-1322-linux-dashboard-goldens
+          path: widgetbook/test/goldens/linux/dashboard_*.png
+          if-no-files-found: error
+          retention-days: 1
+
   responsive-shell-goldens:
     name: responsive shell goldens
     needs: change

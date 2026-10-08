@@ -12,6 +12,10 @@ const _meta = Meta(AuraTabs.new);
 abstract final class _StorybookDefinitions {
   static final $BasicTabs = _Story<void>(
     name: 'Basic Tabs',
+    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
+      StoryHelpers.constrainStoryWidth(child, maxWidth: 320),
+      maxHeight: 320,
+    ),
     args: _Args<void>(
       items: .fixed(const [
         AuraTabItem(

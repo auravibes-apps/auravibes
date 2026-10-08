@@ -22,6 +22,10 @@ final _Defaults _loadingOverlayDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $LoadingOverlay = _Story(
     name: 'Loading Overlay',
+    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
+      StoryHelpers.constrainStoryWidth(child, maxWidth: 360),
+      maxHeight: 300,
+    ),
     args: _Args(
       isLoading: BoolArg(true, name: 'Loading'),
       message: NullableStringArg('Loading workspace', name: 'Message'),

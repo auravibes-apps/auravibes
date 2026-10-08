@@ -177,6 +177,8 @@ const _meta = Meta(A2uiCatalogShowcase.new);
 abstract final class _StorybookDefinitions {
   static final $Showcase = _Story(
     name: 'Catalog components',
+    setup: (context, child, args) =>
+        StoryHelpers.constrainStoryWidth(child, maxWidth: 360),
     args: _Args(),
     scenarios: [
       _Scenario(

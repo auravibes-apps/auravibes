@@ -38,60 +38,24 @@ class AuraEdgy extends StatefulWidget {
 }
 
 class _AuraEdgyState extends State<AuraEdgy> {
-  var _fadeStart = false;
-  var _fadeEnd = false;
-
-  LinearGradient get _edgeGradient => LinearGradient(
-    begin: _startAlignment,
-    end: _endAlignment,
-    colors: _maskColors,
-    stops: AuraEdgy._stops,
-  );
-
-  Alignment get _startAlignment =>
-      widget.axis == Axis.vertical ? Alignment.topCenter : Alignment.centerLeft;
-
-  Alignment get _endAlignment => widget.axis == Axis.vertical
-      ? Alignment.bottomCenter
-      : Alignment.centerRight;
-
-  List<Color> get _maskColors => [
-    if (widget.fadeStart && _fadeStart)
-      AuraEdgy._transparent
-    else
-      AuraEdgy._opaque,
-    AuraEdgy._opaque,
-    AuraEdgy._opaque,
-    if (widget.fadeEnd && _fadeEnd) AuraEdgy._transparent else AuraEdgy._opaque,
-  ];
+  ({bool start, bool end}) _fades = (start: false, end: false);
 
   @override
-  Widget build(BuildContext context) {
-    final Widget content;
-    if (widget.allowMouseDrag) {
-      final scrollBehavior = ScrollConfiguration.of(context);
-      content = ScrollConfiguration(
-        behavior: scrollBehavior.copyWith(
-          dragDevices: {...scrollBehavior.dragDevices, PointerDeviceKind.mouse},
-        ),
+  Widget build(BuildContext context) => _AuraEdgyScrollNotifications(
+    child: _AuraEdgyMask(
+      child: _AuraEdgyContent(
         child: widget.child,
-      );
-    } else {
-      content = widget.child;
-    }
-
-    return NotificationListener<ScrollMetricsNotification>(
-      child: NotificationListener<ScrollNotification>(
-        child: ShaderMask(
-          shaderCallback: (bounds) => _edgeGradient.createShader(bounds),
-          blendMode: .dstIn,
-          child: content,
-        ),
-        onNotification: _onScrollNotification,
+        allowMouseDrag: widget.allowMouseDrag,
       ),
-      onNotification: _onScrollMetricsNotification,
-    );
-  }
+      axis: widget.axis,
+      fadeStart: widget.fadeStart,
+      fadeEnd: widget.fadeEnd,
+      fadeStartVisible: _fades.start,
+      fadeEndVisible: _fades.end,
+    ),
+    onMetricsNotification: _onScrollMetricsNotification,
+    onScrollNotification: _onScrollNotification,
+  );
 
   bool _onScrollNotification(ScrollNotification notification) {
     _updateFades(notification.metrics, notification.depth);
@@ -108,18 +72,96 @@ class _AuraEdgyState extends State<AuraEdgy> {
   void _updateFades(ScrollMetrics metrics, int depth) {
     if (depth != 0 || metrics.axis != widget.axis) return;
 
+    final fades = _fadesFor(metrics);
+    if (fades == _fades) return;
+
+    setState(() => _fades = fades);
+  }
+
+  static ({bool start, bool end}) _fadesFor(ScrollMetrics metrics) {
     final isReversed =
         metrics.axisDirection == AxisDirection.left ||
         metrics.axisDirection == AxisDirection.up;
-    final fadeStart =
-        (isReversed ? metrics.extentAfter : metrics.extentBefore) > 0;
-    final fadeEnd =
-        (isReversed ? metrics.extentBefore : metrics.extentAfter) > 0;
-    if (fadeStart == _fadeStart && fadeEnd == _fadeEnd) return;
+    final hasBefore = metrics.extentBefore > 0;
+    final hasAfter = metrics.extentAfter > 0;
 
-    setState(() {
-      _fadeStart = fadeStart;
-      _fadeEnd = fadeEnd;
-    });
+    return (
+      start: isReversed ? hasAfter : hasBefore,
+      end: isReversed ? hasBefore : hasAfter,
+    );
+  }
+}
+
+class const _AuraEdgyScrollNotifications({
+  required final Widget child,
+  required final bool Function(ScrollMetricsNotification) onMetricsNotification,
+  required final bool Function(ScrollNotification) onScrollNotification,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollMetricsNotification>(
+        child: NotificationListener<ScrollNotification>(
+          child: child,
+          onNotification: onScrollNotification,
+        ),
+        onNotification: onMetricsNotification,
+      );
+}
+
+class const _AuraEdgyMask({
+  required final Widget child,
+  required final Axis axis,
+  required final bool fadeStart,
+  required final bool fadeEnd,
+  required final bool fadeStartVisible,
+  required final bool fadeEndVisible,
+}) extends StatelessWidget {
+  LinearGradient get _edgeGradient => LinearGradient(
+    begin: _startAlignment,
+    end: _endAlignment,
+    colors: _maskColors,
+    stops: AuraEdgy._stops,
+  );
+
+  Alignment get _startAlignment =>
+      axis == Axis.vertical ? Alignment.topCenter : Alignment.centerLeft;
+
+  Alignment get _endAlignment =>
+      axis == Axis.vertical ? Alignment.bottomCenter : Alignment.centerRight;
+
+  List<Color> get _maskColors => [
+    if (fadeStart && fadeStartVisible)
+      AuraEdgy._transparent
+    else
+      AuraEdgy._opaque,
+    AuraEdgy._opaque,
+    AuraEdgy._opaque,
+    if (fadeEnd && fadeEndVisible) AuraEdgy._transparent else AuraEdgy._opaque,
+  ];
+
+  @override
+  Widget build(BuildContext context) => ShaderMask(
+    shaderCallback: _edgeGradient.createShader,
+    blendMode: .dstIn,
+    child: child,
+  );
+}
+
+class const _AuraEdgyContent({
+  required final Widget child,
+  required final bool allowMouseDrag,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!allowMouseDrag) return child;
+
+    final scrollBehavior = ScrollConfiguration.of(context);
+
+    return ScrollConfiguration(
+      behavior: scrollBehavior.copyWith(
+        dragDevices: {...scrollBehavior.dragDevices, PointerDeviceKind.mouse},
+      ),
+      child: child,
+    );
   }
 }

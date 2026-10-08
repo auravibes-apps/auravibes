@@ -16,6 +16,12 @@ const _meta = Meta(SliderDemo.new);
 abstract final class _StorybookDefinitions {
   static final $Default = _Story(
     name: 'Default',
+    setup: (context, child, args) => LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+        width: constraints.maxWidth < 320 ? constraints.maxWidth : 320,
+        child: child,
+      ),
+    ),
     args: _Args(
       enabled: BoolArg(true, name: 'enabled'),
       tint: EnumArg(AuraTint.primary, name: 'tint', values: AuraTint.values),

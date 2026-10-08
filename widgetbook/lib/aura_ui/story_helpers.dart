@@ -137,6 +137,16 @@ abstract final class StoryHelpers {
     );
   }
 
+  static Widget constrainStoryHeight(
+    Widget child, {
+    required double maxHeight,
+  }) {
+    return ConstrainedBox(
+      constraints: .new(maxHeight: maxHeight),
+      child: child,
+    );
+  }
+
   static void noopCallback() {
     final _ = Object();
   }

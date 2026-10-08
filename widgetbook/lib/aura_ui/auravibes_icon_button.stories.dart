@@ -52,7 +52,10 @@ final _Defaults _iconButtonDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $IconButtonBasic = _Story(
     name: 'Icon Button Basic',
-    setup: (context, child, args) => Scaffold(body: child),
+    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
+      StoryHelpers.constrainStoryWidth(Scaffold(body: child)),
+      maxHeight: 200,
+    ),
     args: _Args(
       icon: SingleArg(
         Icons.add,
