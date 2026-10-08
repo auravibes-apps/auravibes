@@ -60,6 +60,14 @@ void main() {
       expect(find.byType(CompactionSettingsSection), findsNothing);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(AppVersionIndicator), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('settings_privacy')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('settings_terms')),
+        findsOneWidget,
+      );
       expect(find.byType(AuraAppBarWithDrawer), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('app_drawer_menu')),

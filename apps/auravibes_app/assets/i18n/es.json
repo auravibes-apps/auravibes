@@ -1053,6 +1053,12 @@
       "cancel": "Cancelar",
       "save": "Guardar",
       "reset_defaults": "Restaurar valores predeterminados"
+    },
+    "legal": {
+      "title": "Privacidad y términos",
+      "privacy": "Política de privacidad",
+      "terms": "Términos de uso",
+      "open_error": "No se pudo abrir esta página. Inténtalo de nuevo o visita auravibes.me en tu navegador."
     }
   },
   "more_screen": {
