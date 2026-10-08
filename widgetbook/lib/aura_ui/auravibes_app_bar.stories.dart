@@ -22,13 +22,9 @@ final _Defaults _appBarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AppBar = _Story(
     name: 'App Bar',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      ColoredBox(
-        color: context.auraColors.surface,
-        child: StoryHelpers.constrainStoryWidth(child),
-      ),
-      maxHeight: 120,
-    ),
+    setup: (context, child, args) =>
+        ColoredBox(color: context.auraColors.surface, child: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       title: StringArg('AuraVibes', name: 'Title'),
       showLeading: BoolArg(true, name: 'Show Leading'),

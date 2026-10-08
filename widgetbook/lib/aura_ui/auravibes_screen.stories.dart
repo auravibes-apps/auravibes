@@ -40,10 +40,7 @@ final _Defaults _screenDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AuraScreen = _Story(
     name: 'Aura Screen',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      StoryHelpers.constrainStoryWidth(child),
-      maxHeight: 500,
-    ),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       variant: EnumArg(
         AuraScreenVariation.values.first,

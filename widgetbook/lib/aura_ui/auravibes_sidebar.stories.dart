@@ -30,10 +30,7 @@ final _Defaults _sidebarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $Sidebar = _Story(
     name: 'Sidebar',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      StoryHelpers.constrainStoryWidth(child, maxWidth: 360),
-      maxHeight: 640,
-    ),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       expanded: BoolArg(true, name: 'Expanded'),
       selectedIndex: IntArg(

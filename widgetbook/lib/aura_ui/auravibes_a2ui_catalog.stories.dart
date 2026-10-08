@@ -177,15 +177,20 @@ const _meta = Meta(A2uiCatalogShowcase.new);
 abstract final class _StorybookDefinitions {
   static final $Showcase = _Story(
     name: 'Catalog components',
-    setup: (context, child, args) =>
-        StoryHelpers.constrainStoryWidth(child, maxWidth: 360),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(),
     scenarios: [
       _Scenario(
         name: 'Compact phone',
         modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
       ),
-      _Scenario(name: 'Large text', modes: [TextScaleMode(2)]),
+      _Scenario(
+        name: 'Large text',
+        modes: [
+          TextScaleMode(2),
+          ViewportMode(StoryHelpers.landscapePhoneViewport),
+        ],
+      ),
     ],
   );
 }

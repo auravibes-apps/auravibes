@@ -28,10 +28,8 @@ final _Defaults _snackbarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $SnackbarVariants = _Story(
     name: 'Snackbar Variants',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      StoryHelpers.constrainStoryWidth(Scaffold(body: child)),
-      maxHeight: 300,
-    ),
+    setup: (context, child, args) => Scaffold(body: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       variant: EnumArg(
         AuraSnackBarVariant.default_,

@@ -12,10 +12,8 @@ const _meta = Meta(PopupMenuButtonDemo.new);
 abstract final class _StorybookDefinitions {
   static final $PopupMenuButton = _Story(
     name: 'Popup Menu Button',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      StoryHelpers.constrainStoryWidth(Scaffold(body: child), maxWidth: 360),
-      maxHeight: 180,
-    ),
+    setup: (context, child, args) => Scaffold(body: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(),
     scenarios: [
       _Scenario(

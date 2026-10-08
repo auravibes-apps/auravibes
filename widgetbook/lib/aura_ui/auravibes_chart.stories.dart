@@ -11,8 +11,7 @@ const _meta = Meta(AuraChart.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraChart',
-    setup: (context, child, args) =>
-        StoryHelpers.constrainStoryWidth(child, maxWidth: 320),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       labels: .fixed(const ['A', 'B', 'C', 'D', 'E']),
       series: .fixed(const [

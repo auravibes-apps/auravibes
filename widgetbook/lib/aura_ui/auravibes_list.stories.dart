@@ -36,10 +36,7 @@ final _Defaults _listDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AuraList = _Story(
     name: 'AuraList',
-    setup: (context, child, args) => StoryHelpers.constrainStoryHeight(
-      StoryHelpers.constrainStoryWidth(child),
-      maxHeight: args.direction == Axis.vertical ? 320 : 140,
-    ),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       direction: EnumArg(Axis.vertical, name: 'direction', values: Axis.values),
       itemCount: IntArg(

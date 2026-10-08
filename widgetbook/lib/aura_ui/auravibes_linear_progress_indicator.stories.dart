@@ -24,10 +24,9 @@ const _meta = Meta(
 abstract final class _StorybookDefinitions {
   static final $Progress = _Story(
     name: 'Progress',
-    setup: (context, child, args) => StoryHelpers.constrainStoryWidth(
-      Padding(padding: const EdgeInsets.all(24), child: child),
-      maxWidth: 360,
-    ),
+    setup: (context, child, args) =>
+        Padding(padding: const EdgeInsets.all(24), child: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       value: DoubleArg(
         0.65,
