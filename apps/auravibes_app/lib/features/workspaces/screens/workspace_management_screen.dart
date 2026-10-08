@@ -2662,6 +2662,8 @@ class const _SelectableWorkspaceTile({
   required final Widget menu,
   required final _WorkspaceTileSelection selection,
 }) extends StatelessWidget {
+  AuraTileVariant get _variant => selection.isSelected ? .selected : .ghost;
+
   @override
   Widget build(BuildContext context) {
     final (:actions, :isDeleting, :isSelected) = selection;
@@ -2669,7 +2671,7 @@ class const _SelectableWorkspaceTile({
     return AuraTile(
       child: content,
       onTap: _workspaceTileTap(actions, workspace, isDeleting),
-      variant: isSelected ? .selected : .ghost,
+      variant: _variant,
       leading: _WorkspaceSelectionCheckbox(
         workspace: workspace,
         isSelected: isSelected,
