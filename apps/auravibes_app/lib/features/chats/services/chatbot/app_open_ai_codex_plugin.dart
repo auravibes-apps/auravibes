@@ -39,11 +39,9 @@ extension on AppOpenAICodexPlugin {
 
   Future<ModelResponse> _generateModel(
     String modelName,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    if (request == null) throw ArgumentError.notNull('request');
-
     final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
       return await codec.complete(_transport, body);
@@ -99,7 +97,7 @@ extension on AppOpenAICodexPlugin {
 
     throw GenkitException(
       '[openai_codex] OAuth access token is required.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
 

@@ -11,7 +11,6 @@ import 'package:auravibes_app/features/chats/notifiers/chat_a2ui_runtime.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/provider_factory.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:genkit/client.dart' show ActionStream;
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
 
@@ -137,9 +136,7 @@ Stream<ChatResult<ChatMessage>> _sendMessage(
   yield* _streamFinalResponse(request, responseStream);
 }
 
-Future<
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
->
+Future<ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>>
 _createResponseStream(_SendMessageRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
@@ -153,7 +150,7 @@ _createResponseStream(_SendMessageRequest request) async {
 
 Stream<ChatResult<ChatMessage>> _streamResponse(
   _SendMessageRequest request,
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+  ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
   responseStream,
 ) => _streamGeneratedResponse(
   request.service,
@@ -164,7 +161,7 @@ Stream<ChatResult<ChatMessage>> _streamResponse(
 
 Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   _SendMessageRequest request,
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+  ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
   responseStream,
 ) async* {
   final finalResponse = await responseStream.onResult;
@@ -176,7 +173,7 @@ Stream<ChatResult<ChatMessage>> _streamFinalResponse(
   );
 }
 
-void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
+void _throwFinalResponseError(GenerateResult<Object?> finalResponse) {
   final responseError = finalResponse.error;
   if (responseError == null) return;
   final cause = finalResponse.cause;
@@ -184,11 +181,11 @@ void _throwFinalResponseError(GenerateResponseHelper<Object?> finalResponse) {
   throw GenkitException(
     responseError.message,
     details: _responseErrorDetails(finalResponse),
-    underlyingException: cause,
+    cause: cause,
   );
 }
 
-String? _responseErrorDetails(GenerateResponseHelper<Object?> finalResponse) {
+String? _responseErrorDetails(GenerateResult<Object?> finalResponse) {
   final cause = finalResponse.cause;
   final causeDetails = cause is GenkitException ? cause.details?.trim() : null;
   if (causeDetails?.isNotEmpty == true) return causeDetails;
@@ -202,7 +199,7 @@ String? _responseErrorDetails(GenerateResponseHelper<Object?> finalResponse) {
 
 Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(
   ChatbotService service,
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+  ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
   responseStream,
   ChatA2uiRuntime? runtime,
   StringBuffer pendingThinking,
@@ -218,11 +215,11 @@ Stream<ChatResult<ChatMessage>> _streamGeneratedResponse(
   );
 }
 
-ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
 _generationStream(_SendMessageRequest request, Genkit ai) =>
     _generateStream(ai, request);
 
-ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
 _generateStream(Genkit ai, _SendMessageRequest request) {
   final factory = request.service._providerFactory;
   final provider = request.chatProvider;
@@ -239,7 +236,7 @@ _generateStream(Genkit ai, _SendMessageRequest request) {
   ));
 }
 
-ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
 _generateStreamRequest(_GenerationStreamRequest request) =>
     request.ai.generateStream<Object?, Object?>(
       model: request.model,
@@ -285,7 +282,7 @@ Stream<String> _streamTitle(_TitleRequest request) async* {
 }
 
 Stream<String> _streamTitleEvents(
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+  ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
   responseStream,
   String firstMessage,
 ) async* {
@@ -297,7 +294,7 @@ Stream<String> _streamTitleEvents(
 }
 
 Stream<String> _titleFallbackIfError(
-  Future<GenerateResponseHelper<Object?>> responseFuture,
+  Future<GenerateResult<Object?>> responseFuture,
   String firstMessage,
 ) async* {
   if ((await responseFuture).error != null) {
@@ -305,9 +302,7 @@ Stream<String> _titleFallbackIfError(
   }
 }
 
-Future<
-  ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
->
+Future<ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>>
 _titleStream(_TitleRequest request) async {
   final ai = await request.service._providerFactory.createGenkit(
     request.chatProvider,
@@ -316,7 +311,7 @@ _titleStream(_TitleRequest request) async {
   return _createTitleStream(ai, request);
 }
 
-ActionStream<GenerateResponseChunk<Object?>, GenerateResponseHelper<Object?>>
+ActionStream<GenerateResponseChunk<Object?>, GenerateResult<Object?>>
 _createTitleStream(Genkit ai, _TitleRequest request) {
   final factory = request.service._providerFactory;
 
@@ -401,7 +396,7 @@ extension on ChatbotService {
 
 extension on ChatbotService {
   ChatResult<ChatMessage> _finalChatResult(
-    GenerateResponseHelper<Object?> finalResponse,
+    GenerateResult<Object?> finalResponse,
   ) {
     final normalized = _normalizeFinalResponse(finalResponse);
 
@@ -413,66 +408,57 @@ extension on ChatbotService {
     );
   }
 
-  CompletionResult _normalizeFinalResponse(
-    GenerateResponseHelper<Object?> response,
-  ) => normalizeCompletionResult(
-    hasToolCalls: response.toolRequests.isNotEmpty,
-    providerFinishReason: _providerFinishReason(response),
-    promptTokens: _promptTokens(response),
-    responseTokens: _responseTokens(response),
-    totalTokens: _totalTokens(response),
-    cacheReadInputTokens: _cacheReadInputTokens(response),
-    cacheCreationInputTokens: _cacheCreationInputTokens(response),
-    metadata: _responseMetadata(response),
-  );
+  CompletionResult _normalizeFinalResponse(GenerateResult<Object?> response) =>
+      normalizeCompletionResult(
+        hasToolCalls: response.toolRequests.isNotEmpty,
+        providerFinishReason: _providerFinishReason(response),
+        promptTokens: _promptTokens(response),
+        responseTokens: _responseTokens(response),
+        totalTokens: _totalTokens(response),
+        cacheReadInputTokens: _cacheReadInputTokens(response),
+        cacheCreationInputTokens: _cacheCreationInputTokens(response),
+        metadata: _responseMetadata(response),
+      );
 
-  List<ToolRequestPart> _toolCallParts(
-    GenerateResponseHelper<Object?> response,
-  ) => [
+  List<ToolRequestPart> _toolCallParts(GenerateResult<Object?> response) => [
     for (final request in response.toolRequests)
       ToolRequestPart(toolRequest: request),
   ];
 
-  String? _providerFinishReason(GenerateResponseHelper<Object?> response) =>
-      response.candidates?.firstOrNull?.finishReason.value;
+  String? _providerFinishReason(GenerateResult<Object?> response) =>
+      response.message == null ? null : response.finishReason.value;
 
-  int? _promptTokens(GenerateResponseHelper<Object?> response) =>
-      response.usage?.inputTokens?.toInt();
+  int? _promptTokens(GenerateResult<Object?> response) =>
+      response.usage?.inputTokens;
 
-  int? _responseTokens(GenerateResponseHelper<Object?> response) =>
-      response.usage?.outputTokens?.toInt();
+  int? _responseTokens(GenerateResult<Object?> response) =>
+      response.usage?.outputTokens;
 
-  int? _totalTokens(GenerateResponseHelper<Object?> response) =>
-      response.usage?.totalTokens?.toInt();
+  int? _totalTokens(GenerateResult<Object?> response) =>
+      response.usage?.totalTokens;
 
-  int? _cacheReadInputTokens(GenerateResponseHelper<Object?> response) =>
+  int? _cacheReadInputTokens(GenerateResult<Object?> response) =>
       _usageMetadataToken(response, 'cacheReadInputTokens');
 
-  int? _cacheCreationInputTokens(GenerateResponseHelper<Object?> response) =>
+  int? _cacheCreationInputTokens(GenerateResult<Object?> response) =>
       _usageMetadataToken(response, 'cacheCreationInputTokens');
 
-  int? _usageMetadataToken(
-    GenerateResponseHelper<Object?> response,
-    String key,
-  ) {
+  int? _usageMetadataToken(GenerateResult<Object?> response, String key) {
     final value = _providerResponseMetadata(response)[key];
 
     return value is num ? value.toInt() : null;
   }
 
-  Map<String, Object?> _responseMetadata(
-    GenerateResponseHelper<Object?> response,
-  ) {
+  Map<String, Object?> _responseMetadata(GenerateResult<Object?> response) {
     return {..._providerResponseMetadata(response)}
       ..remove('cacheReadInputTokens')
       ..remove('cacheCreationInputTokens');
   }
 
   Map<String, Object?> _providerResponseMetadata(
-    GenerateResponseHelper<Object?> response,
+    GenerateResult<Object?> response,
   ) =>
-      response.candidates?.firstOrNull?.message.metadata
-          ?.cast<String, Object?>() ??
+      response.message?.metadata?.cast<String, Object?>() ??
       const <String, Object?>{};
 }
 

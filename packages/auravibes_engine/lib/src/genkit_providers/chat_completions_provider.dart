@@ -321,7 +321,7 @@ Stream<List<int>> _boundedBody(ProviderTransportResponse response) async* {
 
 Never _throwResponseLimit() => throw GenkitException(
   'Provider response exceeded the safe processing limit.',
-  status: .RESOURCE_EXHAUSTED,
+  status: .resourceExhausted,
 );
 
 const _maxProviderErrorLength = 500;
@@ -455,7 +455,7 @@ Map<String, dynamic> _mediaToChatContent(Part part, Media media) {
   if (data == null) {
     throw GenkitException(
       'Chat Completions media inputs require a data URL for files and audio.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
   if (contentType.startsWith('audio/')) {
@@ -661,8 +661,8 @@ GenerationUsage? _toUsage(sdk.Usage? usage) {
   if (usage == null) return null;
 
   return GenerationUsage(
-    inputTokens: usage.promptTokens.toDouble(),
-    outputTokens: usage.completionTokens?.toDouble(),
-    totalTokens: usage.totalTokens.toDouble(),
+    inputTokens: usage.promptTokens,
+    outputTokens: usage.completionTokens,
+    totalTokens: usage.totalTokens,
   );
 }

@@ -93,7 +93,7 @@ Map<String, dynamic> _decodeStreamEvent(String data) {
     Error.throwWithStackTrace(
       GenkitException(
         'OpenAI Codex stream parse error.',
-        status: .INTERNAL,
+        status: .internal,
         stackTrace: stackTrace,
       ),
       stackTrace,
@@ -180,7 +180,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
   if (data == null) {
     throw GenkitException(
       'OpenAI Responses media inputs require a data URL for files and audio.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
   if (contentType.startsWith('audio/')) {
@@ -271,9 +271,9 @@ GenerationUsage? _usageFromJson(Map<String, dynamic>? usage) {
   if (usage == null) return null;
 
   return GenerationUsage(
-    inputTokens: (usage['input_tokens'] as num?)?.toDouble(),
-    outputTokens: (usage['output_tokens'] as num?)?.toDouble(),
-    totalTokens: (usage['total_tokens'] as num?)?.toDouble(),
+    inputTokens: (usage['input_tokens'] as num?)?.toInt(),
+    outputTokens: (usage['output_tokens'] as num?)?.toInt(),
+    totalTokens: (usage['total_tokens'] as num?)?.toInt(),
   );
 }
 
@@ -317,7 +317,7 @@ class _CodexStreamAccumulator {
     final details = _failedEventDetails(event);
     throw GenkitException(
       'OpenAI Codex API request failed while streaming.',
-      status: .INTERNAL,
+      status: .internal,
       details: _retryableErrorDetail(jsonEncode(details['error'])),
       stackTrace: .current,
     );
@@ -402,7 +402,7 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 }
 
 bool isRetryableCodexError(GenkitException error) {
-  return error.status == StatusCodes.INTERNAL &&
+  return error.status == StatusCode.internal &&
       '${error.details}'.contains('server_error');
 }
 

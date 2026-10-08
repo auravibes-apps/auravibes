@@ -24,7 +24,7 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     if (name.isEmpty || name.contains('/')) {
       throw GenkitException(
         'Plugin name must be non-empty and must not contain "/". Got: "$name"',
-        status: .INVALID_ARGUMENT,
+        status: .invalidArgument,
       );
     }
   }
@@ -65,13 +65,9 @@ extension on AppChatCompletionsPlugin {
 
   Future<ModelResponse> _generateModel(
     String modelName,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) {
-    if (request == null) {
-      return Future<ModelResponse>.error(ArgumentError.notNull('request'));
-    }
-
     final body = codec.buildRequestBody(
       modelName: modelName,
       request: request,
@@ -92,7 +88,7 @@ extension on AppChatCompletionsPlugin {
     if (apiKey.trim().isEmpty) {
       throw GenkitException(
         '[$name] API key is required.',
-        status: .INVALID_ARGUMENT,
+        status: .invalidArgument,
       );
     }
     final request = _request(body, context);
