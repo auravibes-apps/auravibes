@@ -10,7 +10,6 @@ const _meta = Meta(AuraAvatarGroup.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraAvatarGroup',
-    setup: (context, child, args) => SizedBox(width: 320, child: child),
     args: _Args(
       children: .fixed(const [
         AuraAvatar(child: Text('AL'), semanticLabel: 'Alex Lee'),

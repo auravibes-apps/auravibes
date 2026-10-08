@@ -9,7 +9,6 @@ part 'auravibes_slider.stories.g.dart';
 const _minValue = 0.0;
 const _maxValue = 100.0;
 const _initialValue = 50.0;
-const _sliderWidth = 320.0;
 
 const _component = ComponentMeta(name: 'AuraSlider');
 const _meta = Meta(SliderDemo.new);
@@ -17,8 +16,6 @@ const _meta = Meta(SliderDemo.new);
 abstract final class _StorybookDefinitions {
   static final $Default = _Story(
     name: 'Default',
-    setup: (context, child, args) =>
-        SizedBox(width: _sliderWidth, child: child),
     args: _Args(
       enabled: BoolArg(true, name: 'enabled'),
       tint: EnumArg(AuraTint.primary, name: 'tint', values: AuraTint.values),

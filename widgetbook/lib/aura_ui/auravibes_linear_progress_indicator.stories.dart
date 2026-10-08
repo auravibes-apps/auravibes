@@ -24,10 +24,8 @@ const _meta = Meta(
 abstract final class _StorybookDefinitions {
   static final $Progress = _Story(
     name: 'Progress',
-    setup: (context, child, args) => SizedBox(
-      width: 360,
-      child: Padding(padding: const EdgeInsets.all(24), child: child),
-    ),
+    setup: (context, child, args) =>
+        Padding(padding: const EdgeInsets.all(24), child: child),
     args: _Args(
       value: DoubleArg(
         0.65,

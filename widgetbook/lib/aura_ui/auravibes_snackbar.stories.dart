@@ -27,8 +27,7 @@ final _Defaults _snackbarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $SnackbarVariants = _Story(
     name: 'Snackbar Variants',
-    setup: (context, child, args) =>
-        SizedBox(width: 420, height: 300, child: Scaffold(body: child)),
+    setup: (context, child, args) => Scaffold(body: child),
     args: _Args(
       variant: EnumArg(
         AuraSnackBarVariant.default_,

@@ -276,22 +276,29 @@ class _AuraTableTable extends StatelessWidget {
   final ValueChanged<int> onSort;
 
   @override
-  Widget build(BuildContext context) {
-    return AuraEdgy(
-      child: SingleChildScrollView(
-        scrollDirection: .horizontal,
-        child: Table(
-          children: _rows(context),
-          defaultColumnWidth: const IntrinsicColumnWidth(),
-          border: .new(
-            horizontalInside: BorderSide(color: context.auraColors.outline),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final table = AuraEdgy(
+        child: SingleChildScrollView(
+          scrollDirection: .horizontal,
+          child: Table(
+            children: _rows(context),
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            border: .new(
+              horizontalInside: BorderSide(color: context.auraColors.outline),
+            ),
+            defaultVerticalAlignment: .middle,
           ),
-          defaultVerticalAlignment: .middle,
         ),
-      ),
-      axis: .horizontal,
-    );
-  }
+        axis: .horizontal,
+        allowMouseDrag: true,
+      );
+
+      return constraints.hasBoundedWidth
+          ? SizedBox(width: constraints.maxWidth, child: table)
+          : table;
+    },
+  );
 
   List<TableRow> _rows(BuildContext context) => [
     _headerRow(context),

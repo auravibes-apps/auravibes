@@ -36,11 +36,6 @@ final _Defaults _listDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AuraList = _Story(
     name: 'AuraList',
-    setup: (context, child, args) => SizedBox(
-      width: 420,
-      height: args.direction == Axis.vertical ? 320 : 140,
-      child: child,
-    ),
     args: _Args(
       direction: EnumArg(Axis.vertical, name: 'direction', values: Axis.values),
       itemCount: IntArg(

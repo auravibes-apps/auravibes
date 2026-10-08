@@ -53,6 +53,7 @@ class _MarkdownEditorToolbarState extends State<MarkdownEditorToolbar> {
   Widget build(BuildContext context) => AuraEdgy(
     child: _ToolbarActions(toolbar: this),
     axis: .horizontal,
+    allowMouseDrag: true,
   );
 
   void _rememberAction(TextEditingValue before) {

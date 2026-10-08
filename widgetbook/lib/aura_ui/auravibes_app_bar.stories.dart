@@ -22,10 +22,8 @@ final _Defaults _appBarDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AppBar = _Story(
     name: 'App Bar',
-    setup: (context, child, args) => ColoredBox(
-      color: context.auraColors.surface,
-      child: SizedBox(width: 420, height: 120, child: child),
-    ),
+    setup: (context, child, args) =>
+        ColoredBox(color: context.auraColors.surface, child: child),
     args: _Args(
       title: StringArg('AuraVibes', name: 'Title'),
       showLeading: BoolArg(true, name: 'Show Leading'),

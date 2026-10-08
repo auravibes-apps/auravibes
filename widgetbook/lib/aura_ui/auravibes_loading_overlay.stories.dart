@@ -22,8 +22,6 @@ final _Defaults _loadingOverlayDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $LoadingOverlay = _Story(
     name: 'Loading Overlay',
-    setup: (context, child, args) =>
-        SizedBox(width: 360, height: 300, child: child),
     args: _Args(
       isLoading: BoolArg(true, name: 'Loading'),
       message: NullableStringArg('Loading workspace', name: 'Message'),

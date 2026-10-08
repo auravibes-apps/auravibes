@@ -10,7 +10,6 @@ const _meta = Meta(AuraChart.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraChart',
-    setup: (context, child, args) => SizedBox(width: 320, child: child),
     args: _Args(
       labels: .fixed(const ['A', 'B', 'C', 'D', 'E']),
       series: .fixed(const [

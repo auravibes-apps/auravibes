@@ -40,8 +40,6 @@ final _Defaults _screenDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $AuraScreen = _Story(
     name: 'Aura Screen',
-    setup: (context, child, args) =>
-        SizedBox(width: 420, height: 500, child: child),
     args: _Args(
       variant: EnumArg(
         AuraScreenVariation.values.first,

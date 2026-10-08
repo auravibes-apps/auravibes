@@ -12,8 +12,7 @@ const _meta = Meta(PopupMenuButtonDemo.new);
 abstract final class _StorybookDefinitions {
   static final $PopupMenuButton = _Story(
     name: 'Popup Menu Button',
-    setup: (context, child, args) =>
-        SizedBox(width: 360, height: 180, child: Scaffold(body: child)),
+    setup: (context, child, args) => Scaffold(body: child),
     args: _Args(),
     scenarios: [
       _Scenario(
