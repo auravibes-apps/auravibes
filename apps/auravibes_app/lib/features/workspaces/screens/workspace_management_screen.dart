@@ -1039,6 +1039,7 @@ class const _WorkspaceSelectAllButton({
           : LocaleKeys.common_select_all,
     ),
     key: const ValueKey('workspace-select-all'),
+    variant: .text,
     size: .small,
     disabled: data.selectableCount == 0 || data.isBulkDeleting,
   );
@@ -1996,6 +1997,7 @@ class const _LocalWorkspaceSection({
           onPressed: () => unawaited(actions.importConfiguration()),
           child: const TextLocale(LocaleKeys.workspace_archive_import_new),
           key: const ValueKey('workspace-archive-import-new'),
+          variant: .outlined,
         ),
       ],
     );
@@ -2660,6 +2662,8 @@ class const _SelectableWorkspaceTile({
   required final Widget menu,
   required final _WorkspaceTileSelection selection,
 }) extends StatelessWidget {
+  AuraTileVariant get _variant => selection.isSelected ? .selected : .ghost;
+
   @override
   Widget build(BuildContext context) {
     final (:actions, :isDeleting, :isSelected) = selection;
@@ -2667,7 +2671,7 @@ class const _SelectableWorkspaceTile({
     return AuraTile(
       child: content,
       onTap: _workspaceTileTap(actions, workspace, isDeleting),
-      variant: .ghost,
+      variant: _variant,
       leading: _WorkspaceSelectionCheckbox(
         workspace: workspace,
         isSelected: isSelected,

@@ -8,6 +8,8 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 import 'package:widgetbook_workspace/components.g.dart';
 
 const _auraLocales = <Locale>[Locale('en'), Locale('es'), Locale('ar')];
+const _defaultHue = 300;
+const _hueSteps = 360;
 
 void main() {
   final _ = WidgetsFlutterBinding.ensureInitialized();
@@ -32,19 +34,35 @@ abstract final class WidgetbookConfig {
     debugShowCheckedModeBanner: false,
   );
 
-  static Widget applyTheme(BuildContext _, ThemeData theme, Widget child) =>
-      AuraThemeScope(
-        theme: theme.brightness == Brightness.light
-            ? AuraTheme.light
-            : AuraTheme.dark,
-        child: Theme(
-          data: theme,
-          child: AuraSdkMaterialSurface(
-            // ignore: deprecated_member_use - Widgetbook previews legacy dependencies.
-            child: MaterialUiCompatibilityBridge(child: Material(child: child)),
-          ),
+  static Widget applyTheme(
+    BuildContext _,
+    ThemeData theme,
+    Widget child, {
+    int hue = _defaultHue,
+  }) {
+    final auraTheme = _createAuraTheme(theme.brightness, hue);
+
+    return AuraThemeScope(
+      theme: auraTheme,
+      child: Theme(
+        data: theme.copyWith(
+          colorScheme: _createColorScheme(auraTheme, theme.brightness),
+          scaffoldBackgroundColor: auraTheme.colors.background,
         ),
-      );
+        child: AuraSdkMaterialSurface(
+          // ignore: deprecated_member_use - Widgetbook previews legacy dependencies.
+          child: MaterialUiCompatibilityBridge(child: Material(child: child)),
+        ),
+      ),
+    );
+  }
+
+  // Hue addon builds the computed theme once, inside the selected brightness.
+  static Widget _applyBrightness(
+    BuildContext _,
+    ThemeData theme,
+    Widget child,
+  ) => Theme(data: theme, child: child);
 
   static Addon _createViewportAddon() => ViewportAddon([
     Viewports.none,
@@ -65,7 +83,7 @@ abstract final class WidgetbookConfig {
       'Aura Dark': _createDarkTheme(),
     };
 
-    return ThemeAddon<ThemeData>(themes, applyTheme);
+    return ThemeAddon<ThemeData>(themes, _applyBrightness);
   }
 
   static Addon _createPortalAddon() => BuilderAddon(
@@ -76,7 +94,7 @@ abstract final class WidgetbookConfig {
   static Addon _createSafeAreaAddon() => BuilderAddon(
     name: 'SafeArea',
     builder: (ctx, child) => ColoredBox(
-      color: ctx.auraColors.surface,
+      color: ctx.auraColors.background,
       child: SafeArea(child: child),
     ),
   );
@@ -85,10 +103,34 @@ abstract final class WidgetbookConfig {
       .new(definitions: [_createLightScenario(), _createDarkScenario()]);
 }
 
+/// Changes the preview's brand hue while retaining its selected brightness.
+class AuraHueAddon() extends Addon<int> with SingleFieldOnly {
+  this : super(name: 'Hue', initialValue: _defaultHue);
+
+  @override
+  Field<int> get field => IntSliderField(
+    name: 'degrees',
+    initialValue: initialValue,
+    min: 0,
+    max: _hueSteps,
+    divisions: _hueSteps,
+  );
+
+  @override
+  Widget apply(BuildContext context, Widget child, int setting) =>
+      WidgetbookConfig.applyTheme(
+        context,
+        Theme.of(context),
+        child,
+        hue: setting,
+      );
+}
+
 List<Addon> _createAddons() => [
   ..._createBaseAddons(),
   WidgetbookConfig._createViewportAddon(),
   WidgetbookConfig._createThemeAddon(),
+  AuraHueAddon(),
   WidgetbookConfig._createPortalAddon(),
   WidgetbookConfig._createSafeAreaAddon(),
   AlignmentAddon(),
@@ -110,7 +152,7 @@ ScenarioDefinition _createLightScenario() => ScenarioDefinition(
     ThemeMode<ThemeData>(
       'Aura Light',
       _createLightTheme(),
-      WidgetbookConfig.applyTheme,
+      WidgetbookConfig._applyBrightness,
     ),
   ],
   strategy: .perStory,
@@ -122,11 +164,22 @@ ScenarioDefinition _createDarkScenario() => ScenarioDefinition(
     ThemeMode<ThemeData>(
       'Aura Dark',
       _createDarkTheme(),
-      WidgetbookConfig.applyTheme,
+      WidgetbookConfig._applyBrightness,
     ),
   ],
   strategy: .perStory,
 );
+
+AuraTheme _createAuraTheme(Brightness brightness, int hue) {
+  final isLight = brightness == Brightness.light;
+
+  return (isLight ? AuraTheme.light : AuraTheme.dark).copyWith(
+    colors: AuraComputedColorScheme(
+      primaryHue: hue.toDouble(),
+      brightness: isLight ? .light : .dark,
+    ),
+  );
+}
 
 ThemeData _createLightTheme() {
   return ThemeData(
@@ -233,7 +286,7 @@ ColorScheme _withErrorColors(ColorScheme scheme, AuraTheme auraTheme) {
     error: colors.error,
     onError: colors.onError,
     errorContainer: colors.error,
-    onErrorContainer: colors.error,
+    onErrorContainer: colors.onError,
   );
 }
 

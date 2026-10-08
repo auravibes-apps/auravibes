@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -207,6 +208,45 @@ void main() {
           expect(find.text('Test Tile'), findsOneWidget);
         });
       }
+    });
+
+    testWidgets('ghost text uses the surface foreground', (tester) async {
+      final colors = AuraTheme.light.colors;
+
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: AuraTile(child: Text('Ghost tile'), variant: .ghost),
+            ),
+          ),
+        ),
+      );
+
+      final textContext = tester.element(find.text('Ghost tile'));
+      expect(
+        DefaultTextStyle.of(textContext).style.color,
+        colors.foregroundOnSurface,
+      );
+    });
+
+    testWidgets('selected text keeps the primary accent', (tester) async {
+      final colors = AuraTheme.light.colors;
+
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: AuraTile(child: Text('Selected tile'), variant: .selected),
+            ),
+          ),
+        ),
+      );
+
+      final textContext = tester.element(find.text('Selected tile'));
+      expect(DefaultTextStyle.of(textContext).style.color, colors.primary);
     });
 
     group('sizes', () {

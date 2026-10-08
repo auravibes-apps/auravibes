@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
-// APCA 0.0.98G reference constants (Myndex). WCAG 3.0 draft contrast model.
-// See https://github.com/Myndex/apca-w3.
+// APCA 0.0.98G constants from apca-w3 0.1.9 (Myndex).
+// See https://cdn.jsdelivr.net/npm/apca-w3@0.1.9/src/apca-w3.js.
 const double _normBgExp = 0.56;
 const double _normTxtExp = 0.57;
 const double _revBgExp = 0.65;
@@ -14,21 +14,29 @@ const double _blkClmp = 1.414;
 const double _deltaYMin = 0.0005;
 const double _loConThreshold = 0.1;
 const double _loConOffset = 0.027;
-const double _loConScale = 0.75;
 const double _maxContrast = 108;
 const double _wcagOffset = 0.05;
+const double _srgbGamma = 2.4;
 
-double _channelToLinear(double c) =>
-    c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
+double _channelToLinear(double c) => c <= 0.04045
+    ? c / 12.92
+    : math.pow((c + 0.055) / 1.055, _srgbGamma).toDouble();
 
 double _relativeLuminance(Color c) =>
     _channelToLinear(c.r) * 0.2126 +
     _channelToLinear(c.g) * 0.7152 +
     _channelToLinear(c.b) * 0.0722;
 
+double _apcaLuminance(Color color) =>
+    math.pow(color.r, _srgbGamma).toDouble() * 0.2126729 +
+    math.pow(color.g, _srgbGamma).toDouble() * 0.7151522 +
+    math.pow(color.b, _srgbGamma).toDouble() * 0.072175;
+
 /// APCA perceived contrast as Lc score.
 ///
-/// Implements WCAG 3.0 draft APCA 0.0.98G (Myndex). Asymmetric by design.
+/// Implements APCA 0.0.98G from apca-w3 0.1.9 (Myndex), for opaque sRGB.
+/// APCA is experimental guidance, not WCAG 2.x compliance.
+/// Asymmetric by design.
 /// Different exponents per polarity address the light-vs-dark divergence
 /// that WCAG 2.x ratios model symmetrically.
 ///
@@ -36,14 +44,13 @@ double _relativeLuminance(Color c) =>
 /// light background. Negative values represent light foreground on a dark
 /// background.
 ///
-/// Reference Lc targets per the APCA specification are Lc 90 for maximum
-/// usable contrast, Lc 75 for large body text or spot color, Lc 60 for the
-/// body text minimum, and Lc 45 for large text at least 18pt.
+/// Appropriate Lc targets depend on font size, weight, and use. The computed
+/// theme uses Lc 60 as a design target alongside the WCAG 2.x 4.5 text ratio.
 abstract final class ColorContrast {
   /// Computes the APCA perceived contrast score.
   static double apcaLc({required Color foreground, required Color background}) {
-    final textLuminance = _softClamp(_relativeLuminance(foreground));
-    final backgroundLuminance = _softClamp(_relativeLuminance(background));
+    final textLuminance = _softClamp(_apcaLuminance(foreground));
+    final backgroundLuminance = _softClamp(_apcaLuminance(background));
 
     return _contrastValue(
       textLuminance: textLuminance,
@@ -109,7 +116,7 @@ double _positiveContrast(double textLuminance, double backgroundLuminance) {
           math.pow(textLuminance, _normTxtExp).toDouble()) *
       _scale;
 
-  return value < _loConThreshold ? value * _loConScale : value - _loConOffset;
+  return value < _loConThreshold ? 0 : value - _loConOffset;
 }
 
 double _negativeContrast(double textLuminance, double backgroundLuminance) {
@@ -118,6 +125,6 @@ double _negativeContrast(double textLuminance, double backgroundLuminance) {
           math.pow(textLuminance, _revTxtExp).toDouble()) *
       _scale;
 
-  return value > -_loConThreshold ? value * _loConScale : value + _loConOffset;
+  return value > -_loConThreshold ? 0 : value + _loConOffset;
 }
 // Public contrast helpers intentionally remain top-level.

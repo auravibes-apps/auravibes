@@ -360,11 +360,11 @@ class const _CheckboxVisualContainer({
     required AuraColorScheme colors,
   }) : this(
          value: value,
-         activeColor: colors.colorFor(tint ?? AuraTint.primary),
-         borderColor: disabled
+         activeColor: colors.fillFor(tint ?? AuraTint.primary),
+         borderColor: disabled || !value
              ? colors.outlineVariant
              : colors.colorFor(tint ?? AuraTint.primary),
-         markColor: colors.onTint(tint ?? AuraTint.primary),
+         markColor: colors.onFill(tint ?? AuraTint.primary),
          isFocused: isFocused,
        );
 

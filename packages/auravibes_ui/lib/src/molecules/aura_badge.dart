@@ -222,7 +222,7 @@ Color _badgeBackgroundColor(AuraBadgeVariant variant, AuraColorScheme colors) {
   if (variant == .soft) return colors.primary.withValues(alpha: 0.1);
   if (variant == .neutral) return colors.surfaceVariant;
 
-  return colors.colorFor(_badgeTint(variant));
+  return colors.fillFor(_badgeTint(variant));
 }
 
 Color _badgeForegroundColor(AuraBadgeVariant variant, AuraColorScheme colors) =>
@@ -232,7 +232,7 @@ Color _badgeForegroundColor(AuraBadgeVariant variant, AuraColorScheme colors) =>
       .success ||
       .warning ||
       .error ||
-      .info => colors.onTint(_badgeTint(variant)),
+      .info => colors.onFill(_badgeTint(variant)),
       .neutral => colors.foregroundOnSurface,
       .outlined || .soft => colors.mutedForeground,
     };

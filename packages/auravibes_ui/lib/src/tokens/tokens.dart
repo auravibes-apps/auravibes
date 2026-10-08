@@ -7,6 +7,8 @@ library;
 
 export 'package:auravibes_ui/src/colors/aura_brightness.dart'
     show AuraBrightness, AuraComputedColor;
+export 'package:auravibes_ui/src/colors/aura_color_range.dart'
+    show AuraColorRange;
 
 export 'aura_computed_color_scheme.dart' show AuraComputedColorScheme;
 export 'aura_theme.dart'

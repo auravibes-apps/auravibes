@@ -188,7 +188,8 @@ void main() {
       expect(fab.foregroundColor, isNotNull);
 
       final icon = tester.widget<Icon>(find.byIcon(Icons.add));
-      expect(icon.color, AuraTheme.light.colors.onPrimary);
+      expect(fab.backgroundColor, AuraTheme.light.colors.fillFor(.primary));
+      expect(icon.color, AuraTheme.light.colors.onFill(.primary));
     });
 
     testWidgets('handles null onPressed correctly', (tester) async {

@@ -751,14 +751,11 @@ void main() {
         final selectionTheme = tester.widget<TextSelectionTheme>(
           find.byType(TextSelectionTheme),
         );
-        final overlayColor = theme.colors.onPrimary.computeLuminance() > .5
-            ? Colors.black
-            : Colors.white;
         expect(
           selectionTheme.data.selectionColor,
           Color.alphaBlend(
-            overlayColor.withValues(alpha: .24),
-            theme.colors.primary,
+            theme.colors.primary.withValues(alpha: .24),
+            theme.colors.surfaceVariant,
           ),
         );
         expect(

@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -140,7 +140,11 @@ void main() {
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(
         iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
+        AuraTheme.light.colors.fillFor(.primary),
+      );
+      expect(
+        iconButton.style?.foregroundColor?.resolve({}),
+        AuraTheme.light.colors.onFill(.primary),
       );
     });
 
@@ -184,7 +188,11 @@ void main() {
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(
         iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
+        AuraTheme.light.colors.fillFor(.primary),
+      );
+      expect(
+        iconButton.style?.foregroundColor?.resolve({}),
+        AuraTheme.light.colors.onFill(.primary),
       );
       expect(iconButton.style?.elevation?.resolve({}), 2);
     });
