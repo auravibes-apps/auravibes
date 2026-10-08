@@ -99,7 +99,7 @@ extension on AppOpenAICodexPlugin {
 
     throw GenkitException(
       '[openai_codex] OAuth access token is required.',
-      status: .INVALID_ARGUMENT,
+      status: .invalidArgument,
     );
   }
 

@@ -529,7 +529,7 @@ AgentIterationContext? _contextWithRetryUsers(
 
 String? _providerErrorDetail(Object error) {
   if (error is! GenkitException) return null;
-  final cause = error.underlyingException;
+  final cause = error.cause;
   final content = _firstNonEmptyProviderDetail([
     error.details,
     if (cause is GenkitException) cause.details,

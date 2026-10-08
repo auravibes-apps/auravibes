@@ -145,7 +145,7 @@ ModelResponse _response(sdk.Message message) => ModelResponse(
 );
 
 GenerationUsage _usage(sdk.Usage usage) => GenerationUsage(
-  inputTokens: usage.inputTokens.toDouble(),
-  outputTokens: usage.outputTokens.toDouble(),
-  totalTokens: (usage.inputTokens + usage.outputTokens).toDouble(),
+  inputTokens: usage.inputTokens,
+  outputTokens: usage.outputTokens,
+  totalTokens: usage.inputTokens + usage.outputTokens,
 );

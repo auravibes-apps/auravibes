@@ -701,7 +701,7 @@ void main() {
       );
       fail('Expected provider request to fail');
     } on GenkitException catch (error) {
-      expect(error.status, StatusCodes.NOT_FOUND);
+      expect(error.status, StatusCode.notFound);
       expect(error.message, 'Provider API request failed (HTTP 404).');
       expect(error.details, contains('Model rejected request'));
       expect(error.details, contains('[REDACTED]'));
@@ -731,7 +731,7 @@ void main() {
           fail('Expected provider request to fail');
         } on GenkitException catch (error) {
           expect(error.message, 'Provider API request failed (HTTP 502).');
-          expect(error.status, StatusCodes.UNKNOWN);
+          expect(error.status, StatusCode.unknown);
           expect(error.details, isNull);
         }
       }
@@ -783,7 +783,7 @@ void main() {
         isA<GenkitException>().having(
           (error) => error.status,
           'status',
-          StatusCodes.RESOURCE_EXHAUSTED,
+          StatusCode.resourceExhausted,
         ),
       ),
     );

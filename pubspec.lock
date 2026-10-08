@@ -533,10 +533,10 @@ packages:
     dependency: transitive
     description:
       name: dotprompt
-      sha256: "69872a007fa115dee4c35241b85c46b477a638fc81e5c6a7f55d5c13023b045c"
+      sha256: d588959f509a67062874c4378085f982a7ed4d10ae521c9504cd9c3331f13304
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "2.0.0"
   drift:
     dependency: transitive
     description:
@@ -931,26 +931,26 @@ packages:
     dependency: transitive
     description:
       name: genkit
-      sha256: e3e1a83c6d407da8408d86bee4fc91049129ea03f3da5e473500df7404cf3363
+      sha256: "478f914efde52c6c1c0f2177b5a1632c2e5dc39e88cab29b48930d80137c1a2a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.17.0"
+    version: "1.0.0"
   genkit_anthropic:
     dependency: transitive
     description:
       name: genkit_anthropic
-      sha256: "9fecf8f97b889a07ee83241bc554095758012f08444d5f4a40ddd4ac11a86b54"
+      sha256: "99ea31e75b61ad22cd81835ee76c34afed00996177a4d446fca1016a052153e0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.0"
+    version: "1.0.0"
   genkit_openai:
     dependency: transitive
     description:
       name: genkit_openai
-      sha256: "09d1c8031a66bef489a99104179e44b9a70ce63ac802afa3e7b9c168beba3323"
+      sha256: "963843257ad027c641e4fcc5594a174f035be413137093a6c0c6903c23b2b80c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "1.0.0"
   genui:
     dependency: transitive
     description:
@@ -1891,10 +1891,10 @@ packages:
     dependency: transitive
     description:
       name: schemantic
-      sha256: "1252e78063c2d124831337bf8e9d146cbd6d9cf575f5346a9c85c5911c430239"
+      sha256: f56f27cfc1db2466f3102b4d2814e184128df43aee92e093a880273dd1bccb75
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.3"
+    version: "1.0.0"
   scroll_drag_detector:
     dependency: transitive
     description:
