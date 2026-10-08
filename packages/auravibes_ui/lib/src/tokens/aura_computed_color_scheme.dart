@@ -145,10 +145,33 @@ _ComputedSchemeValues _computedSchemeValues(
   AuraBrightness brightness,
 ) {
   final isLight = brightness == AuraBrightness.light;
-  final palette = _computedPaletteValues(primaryHue, isLight);
+  final fixed = isLight ? _lightFixedValues : _darkFixedValues;
+  final brand = _computedBrandValues(primaryHue, isLight);
 
-  return _computedSchemeValuesFromPalette(palette, isLight);
+  return _computedSchemeWithForeground(
+    (brand: brand, surface: fixed.surface, semantic: fixed.semantic),
+    _computedHueForegrounds(brand, fixed.foreground, isLight),
+    isLight,
+  );
 }
+
+_ComputedForegroundValues _computedHueForegrounds(
+  _ComputedBrandValues brand,
+  _ComputedForegroundValues fixed,
+  bool isLight,
+) => (
+  brand: _computedBrandForegrounds(brand, isLight),
+  surface: fixed.surface,
+  semantic: fixed.semantic,
+);
+
+// Neutral surfaces and semantic hues depend only on brightness.
+final _ComputedSchemeValues _lightFixedValues =
+    _computedSchemeValuesFromPalette(_computedPaletteValues(0, true), true);
+final _ComputedSchemeValues _darkFixedValues = _computedSchemeValuesFromPalette(
+  _computedPaletteValues(0, false),
+  false,
+);
 
 _ComputedPaletteValues _computedPaletteValues(
   double primaryHue,

@@ -307,6 +307,31 @@ Re-run math checks from `packages/auravibes_ui`:
 fvm flutter test test/src/colors test/src/tokens/aura_computed_color_scheme_test.dart --no-pub
 ```
 
+## Hue calculation performance, 2026-10-08
+
+Measured on the same local host with Flutter 3.47.6 / Dart 3.13.5. Each timed sample constructs one changing-hue palette and resolves fill/label pairs for 20 brand controls. Browser samples cover 360 integer hues after 60 warmup iterations; native samples cover 180 after 30 warmups. These are color CPU measurements, not full-frame latency or FPS guarantees.
+
+| Browser mode | Theme | Original median | Optimized median | Original / optimized p95 |
+| --- | --- | ---: | ---: | ---: |
+| Debug | Light | 6.1 ms | 0.3 ms | 6.4 / 0.401 ms |
+| Debug | Dark | 5.2 ms | 1.2 ms | 5.5 / 1.401 ms |
+| Profile | Light | 1.7 ms | 0.1 ms | 2.1 / 0.201 ms |
+| Profile | Dark | 1.5 ms | 0.3 ms | 1.601 / 0.401 ms |
+
+The original palette searched 101 lightness candidates plus black/white for each foreground: seven searches in light mode and ten in dark mode. Neutral surfaces and fixed semantic hues now compute once per brightness. Foreground search returns white immediately when it is the original selected result; other searches scan the same discrete candidates from the end and stop at the first preferred match. Black bounds positive APCA contrast, so an impossible dark-text target cannot require scanning before choosing a passing white candidate. Gamut mapping and both contrast thresholds remain unchanged.
+
+Widgetbook's brightness addon now selects brightness only; the hue addon builds the computed Aura/Material theme once. Previously both addons constructed a palette and nested duplicate theme/material wrappers. Scenario overrides use the same ordering. No debounce, hue quantization beyond the existing one-degree slider, or approximate color lookup was added.
+
+Exact rendered output comparison matched all 27 scheme roles and seven fill/label pairs across 728 palettes: both modes, integer hues 0–360, and -1°, 12.5°, 721°. A regression compares optimized selection with the original exhaustive algorithm across 441 hue/lightness/chroma/target combinations, including impossible contrast targets; invalid source chroma still rejects. 110 color/token/button checks and 11 Widgetbook hue/localization checks pass; the Widgetbook checks assert one Aura theme scope.
+
+Native benchmark medians changed from 1.818 to 0.156 ms in light mode and 1.885 to 0.419 ms in dark mode. Re-run the small timing probe from `packages/auravibes_ui`:
+
+```sh
+fvm flutter test benchmark/color_scheme_benchmark.dart --no-pub --reporter expanded
+```
+
+The isolated browser comparison remains under ignored `widgetbook/.dart_tool/hue_perf_source` and `widgetbook/build/hue_perf_web`; palette captures are temporary output files. Browser readings have approximately 0.1 ms clock granularity. Full-frame tracing and slower-device calibration remain open.
+
 ## Do / don't record
 
 | Do | Don't |

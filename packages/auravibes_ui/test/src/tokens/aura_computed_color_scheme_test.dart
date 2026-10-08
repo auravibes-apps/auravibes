@@ -16,6 +16,22 @@ double hueDelta(double a, double b) {
 
 void main() {
   group('AuraComputedColorScheme', () {
+    test('hue changes reuse brightness-specific foregrounds', () {
+      for (final brightness in AuraBrightness.values) {
+        final first = AuraComputedColorScheme(
+          primaryHue: 0,
+          brightness: brightness,
+        );
+        final second = AuraComputedColorScheme(
+          primaryHue: 121,
+          brightness: brightness,
+        );
+        expect(identical(first.onError, second.onError), isTrue);
+        expect(identical(first.onSurface, second.onSurface), isTrue);
+        expect(first.primary, isNot(second.primary));
+      }
+    });
+
     test('bright brand fills keep dark labels readable across every hue', () {
       for (final brightness in AuraBrightness.values) {
         for (var hue = 0.0; hue <= 360; hue++) {

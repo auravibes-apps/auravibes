@@ -76,7 +76,7 @@ abstract final class WidgetbookConfig {
       'Aura Dark': _createDarkTheme(),
     };
 
-    return ThemeAddon<ThemeData>(themes, applyTheme);
+    return ThemeAddon<ThemeData>(themes, _applyBrightness);
   }
 
   static Addon _createPortalAddon() => BuilderAddon(
@@ -142,11 +142,7 @@ List<Addon> _createBaseAddons() => [
 ScenarioDefinition _createLightScenario() => ScenarioDefinition(
   name: 'Aura Light',
   modes: [
-    ThemeMode<ThemeData>(
-      'Aura Light',
-      _createLightTheme(),
-      WidgetbookConfig.applyTheme,
-    ),
+    ThemeMode<ThemeData>('Aura Light', _createLightTheme(), _applyBrightness),
   ],
   strategy: .perStory,
 );
@@ -154,14 +150,14 @@ ScenarioDefinition _createLightScenario() => ScenarioDefinition(
 ScenarioDefinition _createDarkScenario() => ScenarioDefinition(
   name: 'Aura Dark',
   modes: [
-    ThemeMode<ThemeData>(
-      'Aura Dark',
-      _createDarkTheme(),
-      WidgetbookConfig.applyTheme,
-    ),
+    ThemeMode<ThemeData>('Aura Dark', _createDarkTheme(), _applyBrightness),
   ],
   strategy: .perStory,
 );
+
+// Hue addon builds the computed theme once, inside the selected brightness.
+Widget _applyBrightness(BuildContext _, ThemeData theme, Widget child) =>
+    Theme(data: theme, child: child);
 
 AuraTheme _createAuraTheme(Brightness brightness, int hue) {
   final isLight = brightness == Brightness.light;

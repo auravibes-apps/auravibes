@@ -2,6 +2,8 @@ import 'package:auravibes_ui/src/colors/color_contrast.dart';
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:flutter/widgets.dart';
 
+const _onColorPolarityLightness = 0.5;
+
 typedef _OnColorCandidates = ({
   Color bestDark,
   Color bestLight,
@@ -28,6 +30,13 @@ class _OnColorCandidateScanner({
 
   _OnColorCandidates scan() {
     _checkBaseCandidates();
+    // White is the last light candidate; black bounds positive APCA contrast.
+    if (_validGamutComponents(source) &&
+        passingLight != null &&
+        (source.lightness < _onColorPolarityLightness || maxPos < targetLc)) {
+      return _result();
+    }
+    passingDark = null;
     _checkLightnessCandidates();
 
     return _result();
@@ -39,8 +48,13 @@ class _OnColorCandidateScanner({
   }
 
   void _checkLightnessCandidates() {
-    for (var step = 0; step <= _lightnessSteps; step++) {
+    for (var step = _lightnessSteps; step >= 0; step--) {
       _check(_colorAt(step / _lightnessSteps));
+      if (source.lightness >= _onColorPolarityLightness
+          ? passingDark != null
+          : passingLight != null) {
+        return;
+      }
     }
   }
 
@@ -68,8 +82,8 @@ class _OnColorCandidateScanner({
     _updateExtremes(candidate, contrastValue);
     if (!_meetsWcag(candidate)) return;
 
-    if (contrastValue >= targetLc) passingDark = candidate;
-    if (contrastValue <= -targetLc) passingLight = candidate;
+    if (contrastValue >= targetLc) passingDark ??= candidate;
+    if (contrastValue <= -targetLc) passingLight ??= candidate;
   }
 
   void _updateExtremes(Color candidate, double contrastValue) {
@@ -192,7 +206,9 @@ class AuraComputedColor extends OKLCHColor {
       _preferredCandidate(candidates) ?? _fallbackCandidate(candidates);
 
   Color? _preferredCandidate(_OnColorCandidates candidates) =>
-      lightness >= 0.5 ? candidates.passingDark : candidates.passingLight;
+      lightness >= _onColorPolarityLightness
+      ? candidates.passingDark
+      : candidates.passingLight;
 
   Color _fallbackCandidate(_OnColorCandidates candidates) {
     final dark = candidates.passingDark;

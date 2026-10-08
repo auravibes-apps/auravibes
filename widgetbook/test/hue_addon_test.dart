@@ -18,6 +18,9 @@ void main() {
     for (final hue in [0, 186, 300, 360]) {
       testWidgets('hue $hue updates ${brightness.name} theme', (tester) async {
         final addon = AuraHueAddon();
+        final themeAddon = (WidgetbookConfig.create().addons ?? const <Addon>[])
+            .whereType<ThemeAddon<ThemeData>>()
+            .single;
         final base = ThemeData(brightness: brightness);
         AuraColorScheme? actual;
         ColorScheme? material;
@@ -27,9 +30,8 @@ void main() {
             builder: (context) => WidgetbookConfig.applyApp(
               context,
               Builder(
-                builder: (context) => WidgetbookConfig.applyTheme(
+                builder: (context) => themeAddon.apply(
                   context,
-                  base,
                   Builder(
                     builder: (context) => addon.apply(
                       context,
@@ -45,6 +47,7 @@ void main() {
                       hue,
                     ),
                   ),
+                  base,
                 ),
               ),
             ),
@@ -61,6 +64,7 @@ void main() {
         expect(material?.onErrorContainer, expected.onError);
         expect(material?.brightness, brightness);
         expect(canvas, expected.background);
+        expect(find.byType(AuraThemeScope), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }
