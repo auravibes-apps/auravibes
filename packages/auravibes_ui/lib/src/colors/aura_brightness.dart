@@ -17,6 +17,8 @@ class _OnColorCandidateScanner({
   required final double targetLc,
   required final double targetWcagRatio,
 }) {
+  static const _lightnessSteps = 100;
+
   Color bestDark = const Color(0xFF000000);
   Color bestLight = const Color(0xFFFFFFFF);
   Color? passingDark;
@@ -37,17 +39,16 @@ class _OnColorCandidateScanner({
   }
 
   void _checkLightnessCandidates() {
-    for (
-      var lightnessValue = 0.0;
-      lightnessValue <= 1.0001;
-      lightnessValue += 0.01
-    ) {
-      _check(_colorAt(lightnessValue));
+    for (var step = 0; step <= _lightnessSteps; step++) {
+      _check(_colorAt(step / _lightnessSteps));
     }
   }
 
-  Color _colorAt(double lightnessValue) =>
-      source.copyWith(lightness: lightnessValue).toColor();
+  Color _colorAt(double lightnessValue) => AuraComputedColor.gamutMapped(
+    hue: source.hue,
+    lightness: lightnessValue,
+    chroma: source.chroma,
+  ).toColor();
 
   _OnColorCandidates _result() => (
     bestDark: bestDark,
@@ -58,7 +59,8 @@ class _OnColorCandidateScanner({
     passingLight: passingLight,
   );
 
-  void _check(Color candidate) {
+  void _check(Color rawCandidate) {
+    final candidate = Color(rawCandidate.toARGB32());
     final contrastValue = ColorContrast.apcaLc(
       foreground: candidate,
       background: background,
@@ -103,10 +105,9 @@ enum AuraBrightness(
 
 /// Computed Aura color expressed as OKLCH `hue + L + chroma`.
 ///
-/// Extends [OKLCHColor] with WCAG 3.0 APCA contrast search so foreground ("on")
-/// colors can be derived from a surface rather than hand-picked. Designed for
-/// the Aura theme. Callers supply a hue and a brightness/lightness, and the
-/// class produces a sRGB [Color] and a contrast-compliant foreground.
+/// Extends [OKLCHColor] with WCAG 2.x and APCA contrast search for foregrounds.
+/// Callers supply a hue and brightness/lightness. The gamutMapped method fits
+/// sRGB; [onColor] searches for text targets, falling back when targets fail.
 ///
 /// ```dart
 /// final surface = AuraComputedColor(
@@ -117,6 +118,8 @@ enum AuraBrightness(
 /// ```
 class AuraComputedColor extends OKLCHColor {
   static const _defaultChroma = 0.15;
+  static const _gamutSearchSteps = 24;
+  static const _gamutHeadroom = 0.95;
 
   /// Creates a computed Aura color from a hue and a brightness preset.
   new({
@@ -132,16 +135,39 @@ class AuraComputedColor extends OKLCHColor {
     super.chroma = _defaultChroma,
   });
 
+  /// Keeps an sRGB target, or reduces chroma with 5% boundary headroom.
+  ///
+  /// Preserves lightness and normalized hue. Does not clip RGB channels to
+  /// make an out-of-gamut chromatic target appear valid.
+  static AuraComputedColor gamutMapped({
+    required double hue,
+    required double lightness,
+    required double chroma,
+  }) {
+    final target = AuraComputedColor.withLightness(
+      hue: hue,
+      lightness: lightness,
+      chroma: chroma,
+    );
+    if (!_validGamutComponents(target)) {
+      throw ArgumentError('Expected finite hue/C, L in [0, 1], and C >= 0');
+    }
+    target.hue %= 360;
+    target.chroma = _mappedChroma(target);
+
+    return target;
+  }
+
   /// Foreground color that meets APCA [targetLc] against this surface.
   ///
-  /// Scans the OKLCH `L` axis (keeping this color's hue and chroma) for the
+  /// Scans the OKLCH `L` axis, preserving hue and gamut-capping chroma, for the
   /// lightness that achieves the requested perceptual contrast and WCAG 2.x AA
   /// text contrast. Prefers the natural polarity (dark text on light surfaces,
   /// light text on dark); if that polarity cannot meet both targets, falls
   /// back to whichever polarity does, else returns the strongest-contrast
-  /// candidate.
+  /// candidate. Contrast checks use opaque 8-bit sRGB output.
   Color onColor({double targetLc = 60, double targetWcagRatio = 4.5}) {
-    final background = toColor();
+    final background = Color(toColor().toARGB32());
     final candidates = _scanOnColorCandidates(
       background: background,
       targetLc: targetLc,
@@ -178,4 +204,36 @@ class AuraComputedColor extends OKLCHColor {
         ? candidates.bestDark
         : candidates.bestLight;
   }
+}
+
+bool _validGamutComponents(OKLCHColor color) =>
+    color.hue.isFinite &&
+    color.chroma.isFinite &&
+    color.chroma >= 0 &&
+    color.lightness >= 0 &&
+    color.lightness <= 1;
+
+double _mappedChroma(OKLCHColor color) {
+  if (color.chroma == 0 || color.lightness == 0 || color.lightness == 1) {
+    return 0;
+  }
+  if (color.toOklab().toLrgb().isValid) return color.chroma;
+
+  return _maximumSrgbChroma(color) * AuraComputedColor._gamutHeadroom;
+}
+
+double _maximumSrgbChroma(OKLCHColor color) {
+  var lower = 0.0;
+  // C < 1 covers sRGB and bounds precision for oversized requests.
+  var upper = color.chroma.clamp(0.0, 1.0);
+  for (var step = 0; step < AuraComputedColor._gamutSearchSteps; step++) {
+    final middle = (lower + upper) / 2;
+    if (color.copyWith(chroma: middle).toOklab().toLrgb().isValid) {
+      lower = middle;
+    } else {
+      upper = middle;
+    }
+  }
+
+  return lower;
 }

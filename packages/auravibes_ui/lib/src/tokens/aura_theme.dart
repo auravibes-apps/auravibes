@@ -1,12 +1,16 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: UI package exposes top-level helpers and constants.
 
+import 'package:auravibes_ui/src/colors/aura_color_range.dart';
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme_scope.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 export 'aura_theme_scope.dart' show AuraThemeScope;
+
+const _brandFillAchromaticChroma = 0.001;
+const _lightFillBackgroundLuminance = 0.5;
 
 typedef _SpacingCoreLerpValues = ({
   double none,
@@ -1395,6 +1399,40 @@ class AuraColorScheme {
       .info => onInfo,
     };
   }
+
+  /// Bright fill for brand controls; semantic and neutral colors retain theirs.
+  Color fillFor(AuraTint tint) => switch (tint) {
+    .primary ||
+    .secondary ||
+    .tertiary => _brandControlFill(colorFor(tint), background),
+    _ => colorFor(tint),
+  };
+
+  /// Foreground paired with [fillFor], separate from readable accent ink.
+  Color onFill(AuraTint tint) => switch (tint) {
+    .primary || .secondary || .tertiary =>
+      OKLCHColor.fromColor(colorFor(tint)).chroma < _brandFillAchromaticChroma
+          ? onTint(tint)
+          : DesignColors.neutral900,
+    _ => onTint(tint),
+  };
+}
+
+Color _brandControlFill(Color color, Color background) {
+  final accent = OKLCHColor.fromColor(color);
+  if (accent.chroma < _brandFillAchromaticChroma) return color;
+
+  const range = AuraColorRange.actionFill;
+
+  return range
+      .resolve(
+        hue: accent.hue,
+        lightness: background.computeLuminance() > _lightFillBackgroundLuminance
+            ? range.minLightness
+            : range.maxLightness,
+        chroma: range.maxChroma,
+      )
+      .toColor();
 }
 
 /// Animation theme that provides consistent timing values.

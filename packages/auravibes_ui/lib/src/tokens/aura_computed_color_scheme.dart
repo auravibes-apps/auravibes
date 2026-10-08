@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/colors/aura_brightness.dart';
+import 'package:auravibes_ui/src/colors/aura_color_range.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
@@ -77,16 +78,16 @@ typedef _BrandColorRequest = ({
   double lightLightness,
   double darkLightness,
   double chroma,
+  AuraColorRange range,
 });
 
-/// AuraColorScheme subclass whose 24 fields are derived from a single hue
-/// and a brightness preset, via OKLCH + APCA (WCAG 3.0 draft).
+/// AuraColorScheme derived from a hue and brightness via OKLCH role ranges.
 ///
 /// Brand colors follow `primaryHue`; the secondary hue is the complement
 /// (`primaryHue + 180`). Semantic hues default to HueColorValues. Surfaces
-/// stay achromatic. Every `on*` color is searched on the OKLCH `L` axis to meet
-/// APCA Lc 60 (body-text minimum) against its surface, picking the polarity
-/// that achieves it.
+/// stay neutral. Light mode uses near-white canvas with darker grouping;
+/// dark mode raises groups above charcoal and uses pastel accents. Foregrounds
+/// target WCAG 2.x 4.5 and absolute APCA Lc 60. Font size/weight need evaluation.
 ///
 /// Lives alongside the base light/dark factories; those and AuraTheme.light /
 /// AuraTheme.dark are unchanged.
@@ -98,7 +99,7 @@ typedef _BrandColorRequest = ({
 /// );
 /// ```
 class AuraComputedColorScheme extends AuraColorScheme {
-  /// Computes a full 24-field scheme from [primaryHue] and [brightness].
+  /// Computes color roles from [primaryHue] and [brightness].
   factory({required double primaryHue, required AuraBrightness brightness}) =>
       AuraComputedColorScheme._fromValues(
         _computedSchemeValues(primaryHue, brightness),
@@ -186,11 +187,11 @@ _ComputedSchemeValues _computedSchemeWithForeground(
 );
 
 const _computedShadow = Color(0xFF000000);
-const _brandVariantLightLightness = 0.3;
+const _brandVariantLightLightness = 0.48;
 const _brandVariantChroma = 0.15;
-const _backgroundDarkLightness = 0.15;
-const _outlineVariantDarkLightness = 0.3;
-const _semanticLightLightness = 0.3;
+const _backgroundDarkLightness = 0.2;
+const _outlineLightness = 0.6;
+const _outlineVariantDarkLightness = 0.58;
 
 Color _computedScrim(bool isLight) =>
     isLight ? const Color(0x80000000) : const Color(0xB3000000);
@@ -218,41 +219,46 @@ _ComputedBrandPair _computedBrandPair(double hue, bool isLight) => (
 _BrandColorRequest _primaryBrandRequest(double hue, bool isLight) => (
   hue: hue,
   isLight: isLight,
-  lightLightness: 0.4,
-  darkLightness: 0.78,
-  chroma: 0.17,
+  lightLightness: 0.5,
+  darkLightness: 0.86,
+  chroma: isLight ? 0.17 : 0.12,
+  range: isLight ? AuraColorRange.lightAction : AuraColorRange.darkPastel,
 );
 
 _BrandColorRequest _variantBrandRequest(double hue, bool isLight) => (
   hue: hue,
   isLight: isLight,
   lightLightness: _brandVariantLightLightness,
-  darkLightness: 0.68,
-  chroma: _brandVariantChroma,
+  darkLightness: 0.83,
+  chroma: isLight ? _brandVariantChroma : 0.1,
+  range: isLight ? AuraColorRange.lightAction : AuraColorRange.darkPastel,
 );
 
-AuraComputedColor _brandColor(_BrandColorRequest request) => _computedColor(
-  request.hue,
-  request.isLight ? request.lightLightness : request.darkLightness,
-  request.chroma,
-);
+AuraComputedColor _brandColor(_BrandColorRequest request) =>
+    request.range.resolve(
+      hue: request.hue,
+      lightness: request.isLight
+          ? request.lightLightness
+          : request.darkLightness,
+      chroma: request.chroma,
+    );
 
 _ComputedSurfaceValues _computedSurfaceValues(double primaryHue, bool isLight) {
   AuraComputedColor neutral(double lightLightness, double darkLightness) =>
       _computedColor(primaryHue, isLight ? lightLightness : darkLightness, 0);
 
   return (
-    surface: neutral(0.98, 0.18),
-    surfaceVariant: neutral(0.96, 0.22),
-    background: neutral(0.94, _backgroundDarkLightness),
-    outline: neutral(0.65, 0.45),
-    outlineVariant: neutral(0.8, _outlineVariantDarkLightness),
+    surface: neutral(0.97, 0.26),
+    surfaceVariant: neutral(0.95, 0.3),
+    background: neutral(0.99, _backgroundDarkLightness),
+    outline: neutral(_outlineLightness, _outlineLightness),
+    outlineVariant: neutral(0.62, _outlineVariantDarkLightness),
   );
 }
 
 _ComputedSemanticValues _computedSemanticValues(bool isLight) {
   AuraComputedColor semantic(double hue) =>
-      _computedColor(hue, isLight ? _semanticLightLightness : 0.82, 0.2);
+      _brandColor(_primaryBrandRequest(hue, isLight));
 
   return (
     error: semantic(HueColorValues.error),
@@ -265,18 +271,23 @@ _ComputedSemanticValues _computedSemanticValues(bool isLight) {
 _ComputedForegroundValues _computedForegroundValues(
   _ComputedForegroundRequest request,
 ) => (
-  brand: _computedBrandForegrounds(request.brand),
+  brand: _computedBrandForegrounds(request.brand, request.isLight),
   surface: _computedSurfaceForegrounds(request.surface, request.isLight),
   semantic: _computedSemanticForegrounds(request.semantic),
 );
 
 _ComputedBrandForegrounds _computedBrandForegrounds(
   _ComputedBrandValues brand,
+  bool isLight,
 ) => (
-  onPrimary: brand.primary.primary.onColor(),
-  onSecondary: brand.secondary.primary.onColor(),
-  onTertiary: brand.tertiary.primary.onColor(),
+  onPrimary: _computedBrandForeground(brand.primary, isLight),
+  onSecondary: _computedBrandForeground(brand.secondary, isLight),
+  onTertiary: _computedBrandForeground(brand.tertiary, isLight),
 );
+
+Color _computedBrandForeground(_ComputedBrandPair brand, bool isLight) =>
+    // Shared foreground must also work on the darker dark-mode variant.
+    (isLight ? brand.primary : brand.variant).onColor();
 
 _ComputedSemanticForegrounds _computedSemanticForegrounds(
   _ComputedSemanticValues semantic,
@@ -318,23 +329,9 @@ Color _computedForegroundColor(
   bool isLight,
 ) => isLight ? lightColor : darkSurface.onColor();
 
-AuraComputedColor _computedColor(double hue, double lightness, double chroma) {
-  var safeChroma = chroma;
-  while (safeChroma > 0) {
-    final candidate = AuraComputedColor.withLightness(
+AuraComputedColor _computedColor(double hue, double lightness, double chroma) =>
+    AuraComputedColor.gamutMapped(
       hue: hue,
       lightness: lightness,
-      chroma: safeChroma,
+      chroma: chroma,
     );
-    if (_isValidComputedColor(candidate)) return candidate;
-    safeChroma -= 0.01;
-  }
-
-  return _achromaticComputedColor(hue, lightness);
-}
-
-bool _isValidComputedColor(AuraComputedColor candidate) =>
-    candidate.toOklab().toLrgb().isValid;
-
-AuraComputedColor _achromaticComputedColor(double hue, double lightness) =>
-    AuraComputedColor.withLightness(hue: hue, lightness: lightness, chroma: 0);
