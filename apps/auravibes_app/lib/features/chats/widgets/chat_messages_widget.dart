@@ -1151,10 +1151,10 @@ String? _messageCopyText(MessageEntity message, ChatA2uiRuntime? a2uiRuntime) {
 }
 
 Color _userMessageSelectionColor(AuraColorScheme colors) {
-  final overlayColor = colors.onPrimary.computeLuminance() > .5
-      ? Colors.black
-      : Colors.white;
-  return Color.alphaBlend(overlayColor.withValues(alpha: .24), colors.primary);
+  return Color.alphaBlend(
+    colors.primary.withValues(alpha: .24),
+    colors.surfaceVariant,
+  );
 }
 
 AuraMessageDeliveryStatus _mapMessageStatus(
@@ -1310,7 +1310,7 @@ class const _MessageTextContent({
       return TextSelectionTheme(
         data: Theme.of(context).textSelectionTheme.copyWith(
           selectionColor: _userMessageSelectionColor(colors),
-          selectionHandleColor: colors.onPrimary,
+          selectionHandleColor: colors.primary,
         ),
         child: AuraMessageBubble(
           content: message.content,

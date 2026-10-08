@@ -153,7 +153,7 @@ extension on AuraIconButton {
       AuraIconButtonVariant.ghost ||
       AuraIconButtonVariant.outlined => DesignColors.transparent,
       AuraIconButtonVariant.filled || AuraIconButtonVariant.elevated =>
-        colors.colorFor(tint ?? AuraTint.primary),
+        colors.fillFor(tint ?? AuraTint.primary),
     };
   }
 }
@@ -164,7 +164,7 @@ Color _iconColorForVariant(
   AuraTint? tint,
 ) => switch (variant) {
   .ghost => tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
-  .filled || .elevated => colors.onTint(tint ?? AuraTint.primary),
+  .filled || .elevated => colors.onFill(tint ?? AuraTint.primary),
   .outlined => colors.colorFor(tint ?? AuraTint.primary),
 };
 

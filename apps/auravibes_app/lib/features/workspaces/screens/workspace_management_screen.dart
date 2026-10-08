@@ -1039,6 +1039,7 @@ class const _WorkspaceSelectAllButton({
           : LocaleKeys.common_select_all,
     ),
     key: const ValueKey('workspace-select-all'),
+    variant: .text,
     size: .small,
     disabled: data.selectableCount == 0 || data.isBulkDeleting,
   );
@@ -1996,6 +1997,7 @@ class const _LocalWorkspaceSection({
           onPressed: () => unawaited(actions.importConfiguration()),
           child: const TextLocale(LocaleKeys.workspace_archive_import_new),
           key: const ValueKey('workspace-archive-import-new'),
+          variant: .outlined,
         ),
       ],
     );
@@ -2667,7 +2669,7 @@ class const _SelectableWorkspaceTile({
     return AuraTile(
       child: content,
       onTap: _workspaceTileTap(actions, workspace, isDeleting),
-      variant: .ghost,
+      variant: isSelected ? .selected : .ghost,
       leading: _WorkspaceSelectionCheckbox(
         workspace: workspace,
         isSelected: isSelected,

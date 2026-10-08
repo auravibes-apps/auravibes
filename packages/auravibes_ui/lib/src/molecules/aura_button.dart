@@ -250,8 +250,8 @@ Color _buttonBackgroundColor(
   if (disabled) return _disabledButtonBackground(button, colors);
 
   return switch (button.variant) {
-    .primary || .elevated => colors.colorFor(button.tint ?? AuraTint.primary),
-    .secondary => colors.secondary,
+    .primary || .elevated => colors.fillFor(button.tint ?? AuraTint.primary),
+    .secondary => colors.fillFor(.secondary),
     .outlined || .ghost || .text => DesignColors.transparent,
   };
 }
@@ -273,8 +273,8 @@ Color _buttonEnabledForegroundColor(
   AuraButton button,
   AuraColorScheme colors,
 ) => switch (button.variant) {
-  .primary || .elevated => colors.onTint(button.tint ?? AuraTint.primary),
-  .secondary => colors.onTint(.secondary),
+  .primary || .elevated => colors.onFill(button.tint ?? AuraTint.primary),
+  .secondary => colors.onFill(.secondary),
   .outlined ||
   .ghost ||
   .text => colors.colorFor(button.tint ?? AuraTint.primary),
