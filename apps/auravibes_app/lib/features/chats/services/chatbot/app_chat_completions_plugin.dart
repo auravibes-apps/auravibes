@@ -65,13 +65,9 @@ extension on AppChatCompletionsPlugin {
 
   Future<ModelResponse> _generateModel(
     String modelName,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) {
-    if (request == null) {
-      return Future<ModelResponse>.error(ArgumentError.notNull('request'));
-    }
-
     final body = codec.buildRequestBody(
       modelName: modelName,
       request: request,

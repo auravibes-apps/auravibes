@@ -37,12 +37,9 @@ class AppAnthropicPlugin extends GenkitPlugin {
 
   Future<ModelResponse> _generate(
     String model,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    if (request == null) {
-      throw const AnthropicRequestException('missing_request');
-    }
     final encoded = encoder.encode(model, request);
     final client = _createClient();
     try {

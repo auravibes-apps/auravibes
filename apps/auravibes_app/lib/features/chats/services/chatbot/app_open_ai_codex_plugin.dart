@@ -39,11 +39,9 @@ extension on AppOpenAICodexPlugin {
 
   Future<ModelResponse> _generateModel(
     String modelName,
-    ModelRequest? request,
+    ModelRequest request,
     ActionFnArg<ModelResponseChunk, ModelRequest, void> context,
   ) async {
-    if (request == null) throw ArgumentError.notNull('request');
-
     final body = _requestBody(modelName, request, context.streamingRequested);
     if (!context.streamingRequested) {
       return await codec.complete(_transport, body);
