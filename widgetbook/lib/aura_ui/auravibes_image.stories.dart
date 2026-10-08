@@ -1,4 +1,3 @@
-// Required: Widgetbook stories use fixed example sizes.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:widgetbook/widgetbook.dart';
@@ -12,8 +11,6 @@ const _meta = Meta(AuraImage.new);
 abstract final class _StorybookDefinitions {
   static final $BasicImage = _Story(
     name: 'Basic Image',
-    setup: (context, child, args) =>
-        SizedBox(width: 320, height: 200, child: child),
     args: _Args(
       url: StringArg(
         'https://picsum.photos/seed/aura-image/320/200',

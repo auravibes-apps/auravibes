@@ -10,7 +10,6 @@ const _meta = Meta(AuraAnimatedContent.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraAnimatedContent',
-    setup: (context, child, args) => SizedBox(width: 320, child: child),
     args: _Args(child: .fixed(const _FadeDemo())),
   );
 }

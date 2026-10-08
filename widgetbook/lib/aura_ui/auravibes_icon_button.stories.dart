@@ -52,8 +52,8 @@ final _Defaults _iconButtonDefaults = _Defaults(
 abstract final class _StorybookDefinitions {
   static final $IconButtonBasic = _Story(
     name: 'Icon Button Basic',
-    setup: (context, child, args) =>
-        SizedBox(width: 420, height: 200, child: Scaffold(body: child)),
+    setup: (context, child, args) => Scaffold(body: child),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args(
       icon: SingleArg(
         Icons.add,

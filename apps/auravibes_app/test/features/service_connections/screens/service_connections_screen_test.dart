@@ -872,7 +872,12 @@ void main() {
     expect(find.text('Main Token'), findsOneWidget);
     await tester.tap(find.byType(AuraDropdownSelector<ConnectionFilter>).first);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(find.text('All').hitTestable().last);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AuraDropdownSelector<ConnectionFilter>).first,
+        matching: find.text('All'),
+      ),
+    );
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert).first);

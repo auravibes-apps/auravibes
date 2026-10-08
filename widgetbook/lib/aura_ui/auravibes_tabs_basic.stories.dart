@@ -12,11 +12,7 @@ const _meta = Meta(AuraTabs.new);
 abstract final class _StorybookDefinitions {
   static final $BasicTabs = _Story<void>(
     name: 'Basic Tabs',
-    setup: (context, child, args) => SizedBox(
-      width: 320,
-      height: 320,
-      child: StoryHelpers.constrainStoryWidth(child, maxWidth: 320),
-    ),
+    modes: [ViewportMode(StoryHelpers.compactPhoneViewport)],
     args: _Args<void>(
       items: .fixed(const [
         AuraTabItem(

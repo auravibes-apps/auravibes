@@ -10,7 +10,6 @@ const _meta = Meta(AuraTable.new);
 abstract final class _StorybookDefinitions {
   static final $Example = _Story(
     name: 'AuraTable',
-    setup: (context, child, args) => SizedBox(width: 320, child: child),
     args: _Args(
       columns: .fixed(const ['Name', 'Count', 'Available', 'Notes']),
       rows: .fixed(const <List<Object?>>[

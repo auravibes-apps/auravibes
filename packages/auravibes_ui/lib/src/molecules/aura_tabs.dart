@@ -322,6 +322,7 @@ class _AuraTabBarState extends State<_AuraTabBar> {
             ),
           ),
           axis: .horizontal,
+          allowMouseDrag: true,
         ),
         const AuraDivider(),
       ],
@@ -333,7 +334,6 @@ class _AuraTabBarState extends State<_AuraTabBar> {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
     final targetSize = auraTheme.interactionSizes.minimumTargetSize;
-    final borderRadius = auraTheme.fromBorderRadius(.md);
     final title = widget.titles[index];
 
     return Semantics(
@@ -366,12 +366,6 @@ class _AuraTabBarState extends State<_AuraTabBar> {
                 ),
                 color: auraColors.primary,
                 interaction: AuraPressableInteraction.localNavigation,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? auraColors.primary.withValues(alpha: 0.08)
-                      : DesignColors.transparent,
-                  borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-                ),
                 onPressed: widget.onChanged == null
                     ? null
                     : () => widget.onChanged!(index),

@@ -2969,6 +2969,7 @@ class const _AgentToolPermissionSelector({
       ),
     ),
     axis: .horizontal,
+    allowMouseDrag: true,
   );
 }
 

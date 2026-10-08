@@ -390,6 +390,31 @@ void main() {
       expect(horizontal.position.maxScrollExtent, 0);
     });
 
+    testWidgets('scrolls an overflowing tab strip with a horizontal drag', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(width: 160, child: AuraTabs<void>(items: _wideItems)),
+        ),
+      );
+
+      final tabs = find.byType(AuraTabs<void>);
+      final horizontal = tester.state<ScrollableState>(
+        find.descendant(of: tabs, matching: find.byType(Scrollable)),
+      );
+      expect(horizontal.position.maxScrollExtent, greaterThan(0));
+
+      final scrollView = find.descendant(
+        of: tabs,
+        matching: find.byType(SingleChildScrollView),
+      );
+      await tester.drag(scrollView, const Offset(-120, 0), kind: .mouse);
+      final _ = await tester.pumpAndSettle();
+
+      expect(horizontal.position.pixels, greaterThan(0));
+    });
+
     testWidgets('keeps a selected tab visible when items shrink in RTL', (
       tester,
     ) async {
@@ -472,6 +497,7 @@ void main() {
         pressables.every((tab) => tab.color == AuraTheme.light.colors.primary),
         isTrue,
       );
+      expect(pressables.every((tab) => tab.decoration == null), isTrue);
 
       final labels = tester.widgetList<AuraText>(find.byType(AuraText));
       expect(labels.firstOrNull?.tint, AuraTint.primary);
