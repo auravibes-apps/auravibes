@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
@@ -24,6 +25,7 @@ import 'package:auravibes_app/features/chats/providers/tool_display_name_provide
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/recent_model_selections_notifier.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -49,6 +51,7 @@ import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -139,6 +142,16 @@ void main() {
     await (FontLoader(
       'MaterialIcons',
     )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+    for (final id in const ['openai', 'anthropic']) {
+      final loader = SvgNetworkLoader('https://models.dev/logos/$id.svg');
+      final bytes = await SvgStringLoader(
+        File('test/marketing_screenshots/logos/$id.svg').readAsStringSync(),
+      ).loadBytes(null);
+      final _ = await svg.cache.putIfAbsent(
+        loader.cacheKey(null),
+        () async => bytes,
+      );
+    }
   });
 
   for (final locale in const ['en', 'es']) {
@@ -305,10 +318,13 @@ void main() {
               findsWidgets,
             );
           } else if (scene == 'setup-ai') {
+            final _ = await tester.pumpAndSettle();
             expect(
               find.text(locale == 'es' ? 'Conectar IA' : 'Connect AI'),
               findsWidgets,
             );
+            expect(find.text('OpenAI'), findsWidgets);
+            expect(find.text('Anthropic'), findsWidgets);
           } else if (scene == 'setup-notion') {
             expect(
               find.text(
@@ -1139,6 +1155,12 @@ List<Override> _overrides(_NotionFixture fixture, AppDatabase database) {
     ),
     listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
         .overrideWith((ref) => Stream.value(_demoModels())),
+    apiModelProvidersProvider(workspaceId: _workspaceId).overrideWith(
+      (ref) async => const <ApiModelProviderEntity>[
+        .new(id: 'openai', name: 'OpenAI', type: .openai),
+        .new(id: 'anthropic', name: 'Anthropic', type: .anthropic),
+      ],
+    ),
     workspaceModelSelectionByIdProvider(
       _workspaceId,
       _modelId,
