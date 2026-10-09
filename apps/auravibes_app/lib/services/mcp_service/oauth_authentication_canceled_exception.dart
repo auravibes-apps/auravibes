@@ -324,13 +324,11 @@ Future<_DevicePollOutcome> _pollDeviceTokenOnce(
   _DevicePollInput input,
   Duration interval,
 ) async {
-  _throwIfCancelled(input.code.isCancelled);
-  await input.code.authenticator._waitForDevicePoll(
-    interval,
-    input.code.isCancelled,
-  );
+  final code = input.code;
+  _throwIfCancelled(code.isCancelled);
+  await code.authenticator._waitForDevicePoll(interval, code.isCancelled);
 
-  return await _devicePollOutcome(input.code, input.device, input.tokenUri);
+  return await _devicePollOutcome(code, input.device, input.tokenUri);
 }
 
 Future<_DevicePollOutcome> _devicePollOutcome(

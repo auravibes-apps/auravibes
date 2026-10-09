@@ -23,9 +23,6 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   AgentCancellationScope? current(String conversationId) =>
       _entries[conversationId];
 
-  bool isCancellationRequested(String conversationId) =>
-      current(conversationId)?.isCancellationRequested ?? false;
-
   Future<void> waitForCompletion(String conversationId) {
     return _completionByConversationId[conversationId]?.future ??
         Future<void>.value();
@@ -98,6 +95,9 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
 }
 
 extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
+  bool isCancellationRequested(String conversationId) =>
+      current(conversationId)?.isCancellationRequested ?? false;
+
   AgentCancellationScope _startScope(String conversationId) {
     final scope = AgentCancellationScope();
     _replaceScope(conversationId);

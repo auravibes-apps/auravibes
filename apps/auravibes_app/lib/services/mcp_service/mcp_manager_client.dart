@@ -214,12 +214,12 @@ class McpManagerService {
     mcp.ClientTransport? clientTransport,
   }) async {
     // Create client configuration.
-    final config = mcp.McpClient.simpleConfig(
-      name: 'AuraVibes MCP Client',
-      version: '1.0.0',
+    final clientResult = mcp.McpClient.createClient(
+      mcp.McpClient.simpleConfig(
+        name: 'AuraVibes MCP Client',
+        version: '1.0.0',
+      ),
     );
-
-    final clientResult = mcp.McpClient.createClient(config);
     final transport = await _connectClient(
       clientResult,
       serverInfo,
