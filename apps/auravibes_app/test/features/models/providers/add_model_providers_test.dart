@@ -636,7 +636,7 @@ void main() {
             .isConnectionVerified,
         isTrue,
       );
-      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(.zero);
 
       expect(
         container2

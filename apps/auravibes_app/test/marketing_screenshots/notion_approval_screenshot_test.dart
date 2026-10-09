@@ -64,9 +64,10 @@ const _modelId = 'demo-model';
 const _toolName = 'mcp_demo_notion_update-page';
 const _capture = bool.fromEnvironment('MARKETING_SCREENSHOT_CAPTURE');
 const _output = String.fromEnvironment('MARKETING_SCREENSHOT_OUTPUT');
+const _dark = bool.fromEnvironment('MARKETING_SCREENSHOT_DARK');
 final _marketingColors = AuraComputedColorScheme(
   primaryHue: AccentHue.defaultValue,
-  brightness: .light,
+  brightness: _dark ? .dark : .light,
 );
 const ValueKey<String> _appKey = .new('marketing-app-capture');
 const ValueKey<String> _storeKey = .new('marketing-store-capture');
@@ -162,7 +163,9 @@ void main() {
 
           final fixture = _NotionFixture(locale, scene);
           final colors = _marketingColors;
-          final auraTheme = AuraTheme.light.copyWith(colors: colors);
+          final auraTheme = (_dark ? AuraTheme.dark : AuraTheme.light).copyWith(
+            colors: colors,
+          );
           final router = GoRouter(
             routes: $appRoutes,
             initialLocation: _location(scene),
@@ -195,7 +198,7 @@ void main() {
                             ),
                             theme: .new(
                               colorScheme: ColorScheme(
-                                brightness: .light,
+                                brightness: _dark ? .dark : .light,
                                 primary: colors.primary,
                                 onPrimary: colors.onPrimary,
                                 secondary: colors.secondary,
@@ -210,7 +213,7 @@ void main() {
                                   ? .android
                                   : .iOS,
                               useMaterial3: true,
-                              brightness: .light,
+                              brightness: _dark ? .dark : .light,
                               fontFamily:
                                   AuraTheme.light.typography.bodyFontFamily,
                             ),
@@ -682,7 +685,7 @@ class _SystemBarsPainter extends CustomPainter {
           drawing.size.width,
           drawing.size.height,
         ),
-        currentColor: const Color(0xFF101828),
+        currentColor: _marketingColors.onBackground,
       );
     }
   }
@@ -707,7 +710,7 @@ class _SystemBarsPainter extends CustomPainter {
         drawing.size.width,
         drawing.size.height,
       ),
-      currentColor: const Color(0xFF101828),
+      currentColor: _marketingColors.onBackground,
     );
   }
 }

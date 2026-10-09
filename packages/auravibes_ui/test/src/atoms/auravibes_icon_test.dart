@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -125,11 +125,19 @@ void main() {
       expect(
         buttons.map((button) => button.style?.backgroundColor?.resolve({})),
         [
-          DesignColors.primaryBase,
+          AuraTheme.light.colors.fillFor(.primary),
           Colors.transparent,
-          DesignColors.primaryBase,
+          AuraTheme.light.colors.fillFor(.primary),
           Colors.transparent,
         ],
+      );
+      expect(
+        buttons.firstOrNull?.style?.foregroundColor?.resolve({}),
+        AuraTheme.light.colors.onFill(.primary),
+      );
+      expect(
+        buttons.elementAt(2).style?.foregroundColor?.resolve({}),
+        AuraTheme.light.colors.onFill(.primary),
       );
       expect(buttons.elementAt(2).style?.elevation?.resolve({}), 2);
       expect(buttons.last.onPressed, isNull);

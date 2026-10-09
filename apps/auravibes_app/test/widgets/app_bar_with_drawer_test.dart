@@ -142,17 +142,17 @@ void main() {
         GoRoute(
           path: '/parent',
           pageBuilder: (_, state) => NoTransitionPage(
-            key: state.pageKey,
             child: const Scaffold(body: Text('Parent')),
+            key: state.pageKey,
           ),
           routes: [
             GoRoute(
               path: 'child',
               pageBuilder: (_, state) => NoTransitionPage(
-                key: state.pageKey,
                 child: const Scaffold(
                   appBar: AuraAppBarWithDrawer(title: Text('Child')),
                 ),
+                key: state.pageKey,
               ),
             ),
           ],

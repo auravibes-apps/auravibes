@@ -1,5 +1,5 @@
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +9,7 @@ void main() {
   group('AuraMessageBubble', () {
     testWidgets('renders text message correctly', (tester) async {
       const messageContent = 'Hello, this is a test message';
+      final expectedColor = AuraTheme.light.colors.surface;
 
       await tester.pumpWidget(
         const MaterialApp(
@@ -36,14 +37,42 @@ void main() {
                             ))
                         as BoxDecoration)
                     .color ==
-                DesignColors.primaryBase,
+                expectedColor,
       );
 
       final decoration =
           (messageContainer.decoration ??
                   fail('Expected messageContainer.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, DesignColors.primaryBase);
+      expect(decoration.color, expectedColor);
+    });
+
+    testWidgets('uses the neutral surface for assistant messages', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraMessageBubble(
+              content: 'Assistant message',
+              isUser: false,
+            ),
+          ),
+        ),
+      );
+
+      final expectedColor = AuraTheme.light.colors.surfaceVariant;
+      final containers = tester.widgetList<Container>(find.byType(Container));
+      final messageContainer = containers.firstWhere(
+        (container) =>
+            container.decoration is BoxDecoration &&
+            (container.decoration as BoxDecoration?)?.color == expectedColor,
+      );
+
+      expect(
+        (messageContainer.decoration as BoxDecoration?)?.color,
+        expectedColor,
+      );
     });
 
     testWidgets('keeps Markdown links clickable and text selectable', (

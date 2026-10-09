@@ -23,17 +23,17 @@ void main() {
           GoRoute(
             path: '/previous',
             pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
               child: const Text('Predecessor'),
+              key: state.pageKey,
             ),
           ),
           GoRoute(
             path: listPath,
             pageBuilder: (_, state) => NoTransitionPage(
-              key: state.pageKey,
               child: isManager
                   ? const WorkspaceManagementScreen(workspaceId: 'A')
                   : const SkillCredentialDefinitionsScreen(workspaceId: 'A'),
+              key: state.pageKey,
             ),
           ),
         ],

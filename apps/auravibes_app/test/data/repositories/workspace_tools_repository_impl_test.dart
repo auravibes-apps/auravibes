@@ -606,7 +606,7 @@ class _WorkspaceToolsRepositoryFixture {
 
   WorkspaceToolsRepository get repository => _repository;
 
-  Future<void> resetForTest() async {
+  void resetForTest() {
     reset(_mockToolsDao);
     reset(_mockWorkspaceDao);
 

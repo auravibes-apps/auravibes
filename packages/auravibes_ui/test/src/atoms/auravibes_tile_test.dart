@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -158,6 +159,40 @@ void main() {
         expect(find.byType(AuraTile), findsOneWidget, reason: '$size');
         expect(find.text('Test Tile'), findsOneWidget, reason: '$size');
       }
+    });
+
+    testWidgets('uses theme colors for ghost and selected text', (
+      tester,
+    ) async {
+      final colors = AuraTheme.light.colors;
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: .light,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  AuraTile(child: Text('Ghost tile'), variant: .ghost),
+                  AuraTile(child: Text('Selected tile'), variant: .selected),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        DefaultTextStyle.of(tester.element(find.text('Ghost tile')))
+            .style
+            .color,
+        colors.foregroundOnSurface,
+      );
+      expect(
+        DefaultTextStyle.of(tester.element(find.text('Selected tile')))
+            .style
+            .color,
+        colors.primary,
+      );
     });
   });
 }

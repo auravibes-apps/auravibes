@@ -142,14 +142,14 @@ class _AuraFabThemeData {
              child: button.size == AuraFABSize.extended && button.text != null
                  ? _AuraFabExtended(
                      button: button,
-                     background: colors.colorFor(button.tint ?? .primary),
-                     foreground: colors.onTint(button.tint ?? .primary),
+                     background: colors.fillFor(button.tint ?? .primary),
+                     foreground: colors.onFill(button.tint ?? .primary),
                      shape: _shape(button, theme),
                    )
                  : _AuraFabRegular(
                      button: button,
-                     background: colors.colorFor(button.tint ?? .primary),
-                     foreground: colors.onTint(button.tint ?? .primary),
+                     background: colors.fillFor(button.tint ?? .primary),
+                     foreground: colors.onFill(button.tint ?? .primary),
                      shape: _shape(button, theme),
                    ),
              enabled: button.onPressed != null,

@@ -4,9 +4,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'accent_hue.g.dart';
 
-/// Default accent hue: OKLCH hue of the brand teal `#0F766E` (≈ 186.4°).
+/// Default accent hue: violet in OKLCH.
 abstract final class AccentHue {
-  static const defaultValue = 186.0;
+  static const defaultValue = 300.0;
   static const maxValue = 360.0;
 }
 

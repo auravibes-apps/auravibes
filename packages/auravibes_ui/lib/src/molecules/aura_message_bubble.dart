@@ -210,7 +210,6 @@ class const _AuraOptionalMessageTimestamp({
     final timestamp => _AuraMessageBubbleTimestamp(
       timestamp: timestamp,
       label: message.timestampLabel,
-      isUser: message.isUser,
       now: message.now,
     ),
   };
@@ -222,7 +221,7 @@ class const _AuraMessageBubbleContent({
   @override
   Widget build(BuildContext context) => _AuraMessageTypeContent(
     message: message,
-    textColor: _messageContentTextColor(context, message),
+    textColor: context.auraColors.onSurface,
   );
 }
 
@@ -352,7 +351,6 @@ class const _AuraFileName({
 class const _AuraMessageBubbleTimestamp({
   required final DateTime timestamp,
   required final String? label,
-  required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
@@ -361,7 +359,6 @@ class const _AuraMessageBubbleTimestamp({
     child: _AuraMessageBubbleTimestampText(
       timestamp: timestamp,
       label: label,
-      isUser: isUser,
       now: now,
     ),
   );
@@ -370,16 +367,12 @@ class const _AuraMessageBubbleTimestamp({
 class const _AuraMessageBubbleTimestampText({
   required final DateTime timestamp,
   required final String? label,
-  required final bool isUser,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     label ?? _formatMessageTimestamp(timestamp, now: now?.call()),
-    style: _messageTimestampStyle(
-      context,
-      _messageTimestampColor(context, isUser),
-    ),
+    style: _messageTimestampStyle(context, context.auraColors.onSurfaceVariant),
   );
 }
 
@@ -408,23 +401,6 @@ TextStyle _messageFileStyle(BuildContext context, Color color) {
     fontSize: typography.fontSizeBase,
     fontFamily: typography.bodyFontFamily,
   );
-}
-
-Color _messageTimestampColor(BuildContext context, bool isUser) {
-  final colors = context.auraColors;
-
-  return isUser
-      ? colors.onPrimary.withValues(alpha: 0.7)
-      : colors.onSurfaceVariant;
-}
-
-Color _messageContentTextColor(
-  BuildContext context,
-  AuraMessageBubble message,
-) {
-  final colors = context.auraColors;
-
-  return message.isUser ? colors.onPrimary : colors.onSurface;
 }
 
 TextStyle _messageTimestampStyle(BuildContext context, Color color) {
@@ -522,7 +498,7 @@ Color _messageBackground(
 Color _messageBaseColor(
   AuraMessageBubble message,
   AuraColorScheme auraColors,
-) => message.isUser ? auraColors.primary : auraColors.surfaceVariant;
+) => message.isUser ? auraColors.surface : auraColors.surfaceVariant;
 
 Border? _messageBorder(AuraMessageBubble message, AuraColorScheme auraColors) =>
     message.status == AuraMessageDeliveryStatus.error

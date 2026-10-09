@@ -50,13 +50,12 @@ void main() {
 
   test('disables tools for unsupported non-Codex models', () {
     final adapter = _appAgentContinuationAdapter(
-      conversationRepository: MockConversationRepository(),
-      messageRepository: MockMessageRepository(),
-      workspaceModelSelectionsRepository:
-          MockWorkspaceModelSelectionRepository(),
-      apiModelRepository: MockApiModelRepository(),
-      selectPromptMessagesUsecase: MockSelectPromptMessagesUsecase(),
-      loadConversationToolSpecsUsecase: MockLoadConversationToolSpecsUsecase(),
+      conversationRepository: .new(),
+      messageRepository: .new(),
+      workspaceModelSelectionsRepository: .new(),
+      apiModelRepository: .new(),
+      selectPromptMessagesUsecase: .new(),
+      loadConversationToolSpecsUsecase: .new(),
       buildSkillContextMessagesUsecase:
           const _FakeBuildSkillContextMessagesService([]),
     );

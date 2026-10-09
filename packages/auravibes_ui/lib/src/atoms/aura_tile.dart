@@ -432,7 +432,7 @@ Color _tileVariantBackgroundColor(
   AuraTileVariant variant,
   AuraColorScheme colors,
 ) => switch (variant) {
-  .primary => colors.primary,
+  .primary => colors.fillFor(.primary),
   .surface => colors.surface,
   .ghost => DesignColors.transparent,
   .selected => colors.primary.withValues(alpha: 0.1),
@@ -483,9 +483,10 @@ Color _tileTextColor(_AuraTileAppearance appearance) {
 
 Color _tileVariantTextColor(AuraTileVariant variant, AuraColorScheme colors) =>
     switch (variant) {
-      .primary => colors.onTint(.primary),
+      .primary => colors.onFill(.primary),
       .surface => colors.foregroundOnSurface,
-      .ghost || .selected => colors.primary,
+      .ghost => colors.foregroundOnSurface,
+      .selected => colors.primary,
       .error => colors.onTint(.error),
     };
 

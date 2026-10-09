@@ -46,10 +46,12 @@ void main() {
       expect(fab.focusElevation, DesignElevation.lg);
       expect(fab.hoverElevation, DesignElevation.lg);
       expect(fab.highlightElevation, DesignElevation.xl);
+      expect(fab.backgroundColor, AuraTheme.light.colors.fillFor(.primary));
+      expect(fab.foregroundColor, AuraTheme.light.colors.onFill(.primary));
 
       final icon = tester.widget<Icon>(find.byIcon(testIcon));
       expect(icon.size, 20);
-      expect(icon.color, AuraTheme.light.colors.onPrimary);
+      expect(icon.color, AuraTheme.light.colors.onFill(.primary));
 
       final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
       expect(tooltip.message, tooltipMessage);
