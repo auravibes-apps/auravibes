@@ -85,29 +85,11 @@ void main() {
   testWidgets('renders group name for named group', (tester) async {
     final groupWithTools = ConversationToolsGroupWithTools(
       group: _group(name: 'My MCP Group'),
-      tools: [_toolState()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ConversationGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('My MCP Group'), findsOneWidget);
-  });
-
-  testWidgets('shows toggle when onToggleAllTools provided', (tester) async {
-    final groupWithTools = ConversationToolsGroupWithTools(
-      group: _group(),
-      tools: [_toolState()],
+      tools: [
+        _toolState(),
+        _toolState(id: 't2', isEnabled: false),
+        _toolState(id: 't3'),
+      ],
     );
 
     await tester.pumpWidget(
@@ -126,7 +108,17 @@ void main() {
     );
     final _ = await tester.pumpAndSettle();
 
+    expect(find.text('My MCP Group'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
+    expect(
+      find.ancestor(
+        of: find.byIcon(Icons.keyboard_arrow_down),
+        matching: find.byType(AuraIconButton),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(find.byType(AuraText), findsWidgets);
   });
 
   testWidgets('hides toggle when onToggleAllTools is null', (tester) async {
@@ -149,34 +141,6 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraSwitch), findsNothing);
-  });
-
-  testWidgets('renders expand chevron', (tester) async {
-    final groupWithTools = ConversationToolsGroupWithTools(
-      group: _group(),
-      tools: [_toolState()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ConversationGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(
-      find.ancestor(
-        of: find.byIcon(Icons.keyboard_arrow_down),
-        matching: find.byType(AuraIconButton),
-      ),
-      findsOneWidget,
-    );
   });
 
   testWidgets('shows MCP connecting spinner', (tester) async {
@@ -360,53 +324,5 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.extension), findsOneWidget);
-  });
-
-  testWidgets('renders build_circle icon for default group', (tester) async {
-    final groupWithTools = ConversationToolsGroupWithTools(
-      group: _group(),
-      tools: [_toolState()],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ConversationGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
-  });
-
-  testWidgets('tool count renders text', (tester) async {
-    final groupWithTools = ConversationToolsGroupWithTools(
-      group: _group(),
-      tools: [
-        _toolState(),
-        _toolState(id: 't2', isEnabled: false),
-        _toolState(id: 't3'),
-      ],
-    );
-
-    await tester.pumpWidget(
-      _Subject(
-        child: ConversationGroupHeader(
-          groupWithTools: groupWithTools,
-          isExpanded: false,
-          onToggleExpand: () {
-            final _ = Object();
-          },
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.byType(AuraText), findsWidgets);
   });
 }

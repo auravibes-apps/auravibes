@@ -115,54 +115,34 @@ void main() {
   });
 
   group('AuraPadding', () {
-    testWidgets('renders child with default padding', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(body: AuraPadding(child: Text('Padded'))),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.text('Padded'), findsOneWidget);
-      expect(find.byType(Padding), findsOneWidget);
-    });
-
-    testWidgets('renders child with custom padding', (tester) async {
+    testWidgets('renders default, large, and medium padding', (tester) async {
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
           child: MaterialApp(
             home: const Scaffold(
-              body: AuraPadding(child: Text('Large Padded'), padding: .large),
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.text('Large Padded'), findsOneWidget);
-      final paddingWidget = tester.widget<Padding>(find.byType(Padding));
-      final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, 24);
-      expect(edgeInsets.top, 24);
-      expect(edgeInsets.right, 24);
-      expect(edgeInsets.bottom, 24);
-    });
-
-    testWidgets('applies correct padding values through context', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(
-              body: AuraPadding(
-                child: SizedBox(width: 100, height: 100),
-                padding: .medium,
+              body: Column(
+                crossAxisAlignment: .start,
+                children: [
+                  KeyedSubtree(
+                    key: ValueKey('default'),
+                    child: AuraPadding(child: Text('Padded')),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('large'),
+                    child: AuraPadding(
+                      child: Text('Large Padded'),
+                      padding: .large,
+                    ),
+                  ),
+                  KeyedSubtree(
+                    key: ValueKey('medium'),
+                    child: AuraPadding(
+                      child: SizedBox(width: 100, height: 100),
+                      padding: .medium,
+                    ),
+                  ),
+                ],
               ),
             ),
             theme: .new(),
@@ -170,12 +150,39 @@ void main() {
         ),
       );
 
-      final paddingWidget = tester.widget<Padding>(find.byType(Padding));
-      final edgeInsets = paddingWidget.padding as EdgeInsets;
-      expect(edgeInsets.left, 16);
-      expect(edgeInsets.top, 16);
-      expect(edgeInsets.right, 16);
-      expect(edgeInsets.bottom, 16);
+      final defaultPadding = find.byKey(const ValueKey('default'));
+      expect(
+        find.descendant(of: defaultPadding, matching: find.text('Padded')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: defaultPadding, matching: find.byType(Padding)),
+        findsOneWidget,
+      );
+
+      final largePadding = find.byKey(const ValueKey('large'));
+      expect(
+        find.descendant(of: largePadding, matching: find.text('Large Padded')),
+        findsOneWidget,
+      );
+      final largePaddingWidget = tester.widget<Padding>(
+        find.descendant(of: largePadding, matching: find.byType(Padding)),
+      );
+      final largeInsets = largePaddingWidget.padding as EdgeInsets;
+      expect(largeInsets.left, 24);
+      expect(largeInsets.top, 24);
+      expect(largeInsets.right, 24);
+      expect(largeInsets.bottom, 24);
+
+      final mediumPadding = find.byKey(const ValueKey('medium'));
+      final mediumPaddingWidget = tester.widget<Padding>(
+        find.descendant(of: mediumPadding, matching: find.byType(Padding)),
+      );
+      final mediumInsets = mediumPaddingWidget.padding as EdgeInsets;
+      expect(mediumInsets.left, 16);
+      expect(mediumInsets.top, 16);
+      expect(mediumInsets.right, 16);
+      expect(mediumInsets.bottom, 16);
     });
   });
 }

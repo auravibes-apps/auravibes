@@ -6,64 +6,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraIcon', () {
-    testWidgets('renders icon correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraIcon(Icons.star))),
-      );
-
-      expect(find.byIcon(Icons.star), findsOneWidget);
-    });
-
-    testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraTint.error;
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const Scaffold(body: AuraIcon(Icons.star, tint: customColor)),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      // Verify the resolved color matches the theme's error color.
-      expect(iconWidget.color, AuraTheme.light.colors.error);
-    });
-
-    testWidgets('applies medium size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraIcon(Icons.star))),
-      );
-
-      final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(iconWidget.size, 20.0);
-    });
-
-    testWidgets('applies large size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraIcon(Icons.star, size: .large)),
-        ),
-      );
-
-      final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(iconWidget.size, 24.0);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Favorite star';
-
+    testWidgets('renders icons at medium and large sizes with a label', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraIcon(Icons.star, semanticLabel: semanticLabel),
+            body: Column(
+              children: [
+                AuraIcon(Icons.star),
+                AuraIcon(
+                  Icons.star,
+                  size: .large,
+                  semanticLabel: 'Favorite star',
+                ),
+              ],
+            ),
           ),
         ),
       );
 
-      expect(find.bySemanticsLabel(semanticLabel), findsOneWidget);
+      final icons = tester.widgetList<Icon>(find.byIcon(Icons.star));
+      expect(icons.map((icon) => icon.size), [20.0, 24.0]);
+      expect(find.bySemanticsLabel('Favorite star'), findsOneWidget);
     });
 
     group('AuraIconSize enum', () {
@@ -80,15 +45,18 @@ void main() {
   });
 
   group('AuraIconButton', () {
-    testWidgets('renders icon button correctly', (tester) async {
+    testWidgets('renders and activates default button with tooltip and label', (
+      tester,
+    ) async {
       var wasPressed = false;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: AuraIconButton(
               icon: Icons.star,
               onPressed: () => wasPressed = true,
+              semanticLabel: 'Favorite button',
+              tooltip: 'Star button',
             ),
           ),
         ),
@@ -96,135 +64,103 @@ void main() {
 
       expect(find.byIcon(Icons.star), findsOneWidget);
       expect(find.byType(IconButton), findsOneWidget);
+      expect(
+        tester
+            .widget<IconButton>(find.byType(IconButton))
+            .style
+            ?.backgroundColor
+            ?.resolve({}),
+        Colors.transparent,
+      );
+      expect(
+        tester.widget<Tooltip>(find.byType(Tooltip)).message,
+        'Star button',
+      );
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.star)).semanticLabel,
+        'Favorite button',
+      );
 
       await tester.tap(find.byType(AuraIconButton));
       expect(wasPressed, isTrue);
     });
 
-    testWidgets('applies ghost variant styling correctly', (tester) async {
+    testWidgets('applies variant styles and disables button', (tester) async {
+      void noOp() {
+        final _ = Object();
+      }
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
+            body: Column(
+              children: [
+                AuraIconButton(
+                  icon: Icons.star,
+                  onPressed: noOp,
+                  variant: .filled,
+                ),
+                AuraIconButton(
+                  icon: Icons.star,
+                  onPressed: noOp,
+                  variant: .outlined,
+                ),
+                AuraIconButton(
+                  icon: Icons.star,
+                  onPressed: noOp,
+                  variant: .elevated,
+                ),
+                AuraIconButton(
+                  icon: Icons.star,
+                  onPressed: noOp,
+                  disabled: true,
+                ),
+              ],
             ),
           ),
         ),
       );
 
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      final buttons = tester.widgetList<IconButton>(find.byType(IconButton));
       expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        Colors.transparent,
+        buttons.map((button) => button.style?.backgroundColor?.resolve({})),
+        [
+          DesignColors.primaryBase,
+          Colors.transparent,
+          DesignColors.primaryBase,
+          Colors.transparent,
+        ],
       );
+      expect(buttons.elementAt(2).style?.elevation?.resolve({}), 2);
+      expect(buttons.last.onPressed, isNull);
     });
 
-    testWidgets('applies filled variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              variant: .filled,
-            ),
-          ),
-        ),
-      );
-
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
-      );
-    });
-
-    testWidgets('applies outlined variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              variant: .outlined,
-            ),
-          ),
-        ),
-      );
-
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        Colors.transparent,
-      );
-    });
-
-    testWidgets('applies elevated variant styling correctly', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              variant: .elevated,
-            ),
-          ),
-        ),
-      );
-
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(
-        iconButton.style?.backgroundColor?.resolve({}),
-        DesignColors.primaryBase,
-      );
-      expect(iconButton.style?.elevation?.resolve({}), 2);
-    });
-
-    testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraTint.error;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              tint: customColor,
-            ),
-          ),
-        ),
-      );
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(icon.color, AuraTheme.light.colors.error);
-    });
-
-    testWidgets('applies custom tint to filled background', (tester) async {
+    testWidgets('applies tint to icons and button variants', (tester) async {
       const customTint = AuraTint.error;
+      void noOp() {
+        final _ = Object();
+      }
 
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
           child: MaterialApp(
             home: Scaffold(
-              body: AuraIconButton(
-                icon: Icons.star,
-                onPressed: () {
-                  final _ = Object();
-                },
-                tint: customTint,
-                variant: .filled,
+              body: Column(
+                children: [
+                  const AuraIcon(Icons.favorite, tint: customTint),
+                  AuraIconButton(
+                    icon: Icons.star,
+                    onPressed: noOp,
+                    tint: customTint,
+                  ),
+                  AuraIconButton(
+                    icon: Icons.star_border,
+                    onPressed: noOp,
+                    tint: customTint,
+                    variant: .filled,
+                  ),
+                ],
               ),
             ),
             theme: ThemeData.light().copyWith(),
@@ -232,93 +168,57 @@ void main() {
         ),
       );
 
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      final resolvedColor = iconButton.style?.backgroundColor?.resolve({});
-      expect(resolvedColor, isNotNull);
-      expect(resolvedColor, AuraTheme.light.colors.error);
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(icon.color, AuraTheme.light.colors.onError);
-    });
-
-    testWidgets('shows tooltip when provided', (tester) async {
-      const tooltipMessage = 'Star button';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              tooltip: tooltipMessage,
-            ),
-          ),
-        ),
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.favorite)).color,
+        AuraTheme.light.colors.error,
       );
-
-      expect(find.byType(Tooltip), findsOneWidget);
-
-      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
-      expect(tooltip.message, tooltipMessage);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Favorite button';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              semanticLabel: semanticLabel,
-            ),
-          ),
-        ),
+      final buttons = find.byType(AuraIconButton);
+      final ghostIcon = tester.widget<Icon>(
+        find.descendant(of: buttons.at(0), matching: find.byType(Icon)),
       );
+      expect(ghostIcon.color, AuraTheme.light.colors.error);
 
-      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
-      expect(icon.semanticLabel, semanticLabel);
-    });
-
-    testWidgets('disables button when disabled is true', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton(
-              icon: Icons.star,
-              onPressed: () {
-                final _ = Object();
-              },
-              disabled: true,
-            ),
-          ),
-        ),
+      final filledControl = tester.widget<IconButton>(
+        find.descendant(of: buttons.at(1), matching: find.byType(IconButton)),
       );
-
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(iconButton.onPressed, isNull);
+      expect(
+        filledControl.style?.backgroundColor?.resolve({}),
+        AuraTheme.light.colors.error,
+      );
+      final filledIcon = tester.widget<Icon>(
+        find.descendant(of: buttons.at(1), matching: find.byType(Icon)),
+      );
+      expect(filledIcon.color, AuraTheme.light.colors.onError);
     });
 
-    testWidgets('custom constructor renders child and handles tap', (
+    testWidgets('custom buttons render, show tooltip, and honor disabled', (
       tester,
     ) async {
       var wasPressed = false;
+      const tooltipMessage = 'Expand';
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraIconButton.custom(
-              child: const AnimatedRotation(
-                child: AuraIcon(Icons.keyboard_arrow_down),
-                turns: 0.5,
-                duration: .new(milliseconds: 200),
-              ),
-              onPressed: () => wasPressed = true,
+            body: Column(
+              children: [
+                AuraIconButton.custom(
+                  child: const AnimatedRotation(
+                    child: AuraIcon(Icons.keyboard_arrow_down),
+                    turns: 0.5,
+                    duration: .new(milliseconds: 200),
+                  ),
+                  onPressed: () => wasPressed = true,
+                  tooltip: tooltipMessage,
+                ),
+                AuraIconButton.custom(
+                  child: const AuraIcon(Icons.keyboard_arrow_up),
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  disabled: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -326,55 +226,17 @@ void main() {
 
       expect(find.byType(AnimatedRotation), findsOneWidget);
       expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+      expect(find.byIcon(Icons.keyboard_arrow_up), findsOneWidget);
+      expect(
+        tester.widget<Tooltip>(find.byType(Tooltip)).message,
+        tooltipMessage,
+      );
+      final controls = tester.widgetList<IconButton>(find.byType(IconButton));
+      expect(controls.firstOrNull?.onPressed, isNotNull);
+      expect(controls.last.onPressed, isNull);
 
-      await tester.tap(find.byType(AuraIconButton));
+      await tester.tap(find.byType(AuraIconButton).first);
       expect(wasPressed, isTrue);
-    });
-
-    testWidgets('custom constructor shows tooltip when provided', (
-      tester,
-    ) async {
-      const tooltipMessage = 'Expand';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton.custom(
-              child: const AuraIcon(Icons.keyboard_arrow_down),
-              onPressed: () {
-                final _ = Object();
-              },
-              tooltip: tooltipMessage,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(Tooltip), findsOneWidget);
-
-      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
-      expect(tooltip.message, tooltipMessage);
-    });
-
-    testWidgets('custom constructor disables inner icon button', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraIconButton.custom(
-              child: const AuraIcon(Icons.keyboard_arrow_down),
-              onPressed: () {
-                final _ = Object();
-              },
-              disabled: true,
-            ),
-          ),
-        ),
-      );
-
-      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
-      expect(iconButton.onPressed, isNull);
     });
 
     group('AuraIconButtonVariant enum', () {

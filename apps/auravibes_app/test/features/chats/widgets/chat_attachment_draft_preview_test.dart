@@ -78,7 +78,6 @@ void main() {
     });
     await tester.pump();
     await tester.pump();
-    await tester.pump();
   }
 
   void pressAudioButton(WidgetTester tester) {

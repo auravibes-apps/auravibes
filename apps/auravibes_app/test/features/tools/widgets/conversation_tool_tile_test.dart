@@ -77,7 +77,7 @@ Future<void> _pumpSubject(
 }
 
 void main() {
-  testWidgets('hides permission selector when workspace-disabled', (
+  testWidgets('renders a workspace-disabled tool without permissions', (
     tester,
   ) async {
     final toolState = ConversationToolState(
@@ -90,53 +90,15 @@ void main() {
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byType(ToolPermissionSelector), findsNothing);
-  });
-
-  testWidgets('hides permission selector when tool is disabled', (
-    tester,
-  ) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: false,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: true,
-    );
-
-    await _pumpSubject(tester, toolState: toolState);
-
-    expect(find.byType(ToolPermissionSelector), findsNothing);
-  });
-
-  testWidgets('renders card for workspace-disabled tool', (tester) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: false,
-    );
-
-    await _pumpSubject(tester, toolState: toolState);
-
     expect(find.byType(AuraCard), findsOneWidget);
     expect(find.text('custom_tool'), findsOneWidget);
-  });
-
-  testWidgets('shows block icon for workspace-disabled tool', (tester) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: false,
-    );
-
-    await _pumpSubject(tester, toolState: toolState);
-
     expect(find.byIcon(Icons.block), findsOneWidget);
+    final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
+    expect(auraCard.onTap, isNull);
+    expect(find.text('Disabled in workspace'), findsOneWidget);
   });
 
-  testWidgets('shows circle_outlined for disabled workspace tool', (
-    tester,
-  ) async {
+  testWidgets('hides permission selector for a disabled tool', (tester) async {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: false,
@@ -146,6 +108,7 @@ void main() {
 
     await _pumpSubject(tester, toolState: toolState);
 
+    expect(find.byType(ToolPermissionSelector), findsNothing);
     expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
   });
 
@@ -174,36 +137,7 @@ void main() {
     expect(find.text('A test tool description'), findsOneWidget);
   });
 
-  testWidgets('onTap is null when workspace-disabled', (tester) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: false,
-    );
-
-    await _pumpSubject(tester, toolState: toolState);
-
-    final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
-    expect(auraCard.onTap, isNull);
-  });
-
-  testWidgets('renders disabled text for workspace-disabled tool', (
-    tester,
-  ) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: false,
-    );
-
-    await _pumpSubject(tester, toolState: toolState);
-
-    expect(find.text('Disabled in workspace'), findsOneWidget);
-  });
-
-  testWidgets('shows check_circle for enabled workspace tool', (tester) async {
+  testWidgets('renders enabled workspace tool permissions', (tester) async {
     final toolState = ConversationToolState(
       tool: _tool(),
       isEnabled: true,
@@ -217,41 +151,7 @@ void main() {
     await _pumpSubject(tester, toolState: toolState);
 
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
-    FlutterError.onError = null;
-  });
-
-  testWidgets('shows permission selector when enabled and workspace-enabled', (
-    tester,
-  ) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: true,
-    );
-
-    FlutterError.onError = (_) {
-      final _ = Object();
-    };
-    await _pumpSubject(tester, toolState: toolState);
-
     expect(find.byType(ToolPermissionSelector), findsOneWidget);
-    FlutterError.onError = null;
-  });
-
-  testWidgets('onTap is not null when workspace-enabled', (tester) async {
-    final toolState = ConversationToolState(
-      tool: _tool(),
-      isEnabled: true,
-      permissionMode: .alwaysAsk,
-      isWorkspaceEnabled: true,
-    );
-
-    FlutterError.onError = (_) {
-      final _ = Object();
-    };
-    await _pumpSubject(tester, toolState: toolState);
-
     final auraCard = tester.widget<AuraCard>(find.byType(AuraCard));
     expect(auraCard.onTap, isNotNull);
     FlutterError.onError = null;

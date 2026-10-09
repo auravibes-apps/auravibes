@@ -35,10 +35,13 @@ class OAuthAuthenticate({
   required final String clientName,
   Dio? dio,
   Future<void> Function(Uri uri)? openBrowser,
+  Future<void> Function(Duration, bool Function())? waitForDevicePoll,
 }) {
   final Dio _dio = dio ?? Dio();
   final Future<void> Function(Uri uri) _openBrowser =
       openBrowser ?? OpenSystemBrowser.call;
+  final Future<void> Function(Duration, bool Function()) _waitForDevicePoll =
+      waitForDevicePoll ?? _delayDevicePoll;
 
   static Uri Function({
     required OAuthDiscoveryResult oAuthResult,
@@ -322,7 +325,10 @@ Future<_DevicePollOutcome> _pollDeviceTokenOnce(
   Duration interval,
 ) async {
   _throwIfCancelled(input.code.isCancelled);
-  await _delayDevicePoll(interval, input.code.isCancelled);
+  await input.code.authenticator._waitForDevicePoll(
+    interval,
+    input.code.isCancelled,
+  );
 
   return await _devicePollOutcome(input.code, input.device, input.tokenUri);
 }

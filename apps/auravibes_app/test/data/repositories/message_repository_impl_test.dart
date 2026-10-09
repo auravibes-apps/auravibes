@@ -21,9 +21,14 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     var repository = MessageRepository(database);
+    var isFirstTest = true;
 
     setUp(() async {
-      await clearAppDatabase(database);
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await clearAppDatabase(database);
+      }
       repository = MessageRepository(database);
 
       final workspace = await database.workspaceDao.insertWorkspace(

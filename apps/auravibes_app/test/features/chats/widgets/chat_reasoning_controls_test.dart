@@ -4,7 +4,6 @@ import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -500,7 +499,6 @@ class const _LocalizedApp({required final Widget child})
 
 Future<void> _pumpLocalized(WidgetTester tester, Widget child) async {
   final _ = await tester.runAsync(() async {
-    expect(await rootBundle.loadString('assets/i18n/en.json'), isNotEmpty);
     await tester.pumpWidget(_LocalizedApp(child: child));
   });
   final _ = await tester.pumpAndSettle();

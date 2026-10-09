@@ -293,7 +293,9 @@ void main() {
   });
 
   group('AuraThemeExtension', () {
-    testWidgets('auraTheme returns theme from context', (tester) async {
+    testWidgets('auraTheme and auraColors return values from context', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
@@ -301,23 +303,6 @@ void main() {
             home: Builder(
               builder: (context) {
                 expect(context.auraTheme, AuraTheme.light);
-
-                return const SizedBox();
-              },
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-    });
-
-    testWidgets('auraColors returns colors from context', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: Builder(
-              builder: (context) {
                 expect(context.auraColors, AuraTheme.light.colors);
 
                 return const SizedBox();

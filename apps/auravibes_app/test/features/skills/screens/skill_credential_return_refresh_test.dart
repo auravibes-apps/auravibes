@@ -41,21 +41,29 @@ void main() {
           routes: [
             GoRoute(
               path: '/',
-              builder: (_, _) => SkillDetailScreen(
-                workspaceId: 'owned-workspace',
-                skillId: skillId,
+              pageBuilder: (_, state) => NoTransitionPage(
+                child: SkillDetailScreen(
+                  workspaceId: 'owned-workspace',
+                  skillId: skillId,
+                ),
+                key: state.pageKey,
               ),
             ),
             GoRoute(
               path: Uri.parse(route.location).path,
-              builder: (context, _) => Scaffold(
-                body: TextButton(
-                  onPressed: () {
-                    saved = true;
-                    context.pop(true);
-                  },
-                  child: const Text('Persist credential and return'),
+              pageBuilder: (_, state) => NoTransitionPage(
+                child: Builder(
+                  builder: (context) => Scaffold(
+                    body: TextButton(
+                      onPressed: () {
+                        saved = true;
+                        context.pop(true);
+                      },
+                      child: const Text('Persist credential and return'),
+                    ),
+                  ),
                 ),
+                key: state.pageKey,
               ),
             ),
           ],

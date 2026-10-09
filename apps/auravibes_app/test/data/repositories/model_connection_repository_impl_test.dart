@@ -38,6 +38,7 @@ void main() {
       encryptionService: mockEncryptionService,
       modelProviderServices: mockModelProviderServices,
     );
+    var isFirstTest = true;
 
     tearDownAll(() async {
       await database.close();
@@ -50,7 +51,11 @@ void main() {
       reset(mockEncryptionService);
       reset(mockLegacyApiKeyStorage);
       reset(mockModelProviderServices);
-      await clearAppDatabase(database);
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await clearAppDatabase(database);
+      }
       repository = ModelConnectionRepository(
         database: database,
         encryptionService: mockEncryptionService,

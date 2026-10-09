@@ -50,7 +50,6 @@ void main() {
       await tester.pumpWidget(widget);
     });
     await tester.pump();
-    await tester.pump();
   }
 
   group('MarkdownEditorToolbar', () {

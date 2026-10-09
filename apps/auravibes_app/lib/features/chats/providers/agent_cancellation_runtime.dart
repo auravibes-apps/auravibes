@@ -2,9 +2,14 @@ import 'dart:async';
 
 import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
 class AgentCancellationRuntime implements AgentCancellationEffects {
+  new({@visibleForTesting this.cleanupTimeout = const Duration(seconds: 5)});
+
+  @visibleForTesting
+  final Duration cleanupTimeout;
   final _entries = <String, AgentCancellationScope>{};
   final _completionByConversationId = <String, Completer<void>>{};
   final _conversationByScope = <AgentCancellationScope, String>{};
@@ -72,7 +77,7 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
     AgentCancellationScope scope,
     Completer<void>? completion,
   ) async {
-    await _waitForScopeCleanup(scope);
+    await _waitForScopeCleanup(scope, cleanupTimeout);
     final conversationId = _conversationByScope.remove(scope);
     if (conversationId == null ||
         completion == null ||
@@ -136,9 +141,12 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
   }
 }
 
-Future<void> _waitForScopeCleanup(AgentCancellationScope scope) async {
+Future<void> _waitForScopeCleanup(
+  AgentCancellationScope scope,
+  Duration timeout,
+) async {
   try {
-    await scope.waitForCleanupCompletion().timeout(const Duration(seconds: 5));
+    await scope.waitForCleanupCompletion().timeout(timeout);
   } on Object {
     // Cleanup failure or timeout must not strand completion waiters.
   }

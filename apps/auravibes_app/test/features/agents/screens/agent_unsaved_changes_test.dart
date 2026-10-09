@@ -147,16 +147,16 @@ Future<void> _pumpAgentScreen(
       TestableApp(
         child: Navigator(
           onGenerateInitialRoutes: (_, _) => [
-            MaterialPageRoute<void>(builder: (_) => const Text('Previous')),
-            MaterialPageRoute<void>(
-              builder: (_) => AgentDetailScreen(
+            _pageRoute((_) => const Text('Previous')),
+            _pageRoute(
+              (_) => AgentDetailScreen(
                 workspaceId: fixture.workspace.id,
                 agentId: agentId,
               ),
             ),
           ],
-          onGenerateRoute: (_) => MaterialPageRoute<void>(
-            builder: (_) => AgentDetailScreen(
+          onGenerateRoute: (_) => _pageRoute(
+            (_) => AgentDetailScreen(
               workspaceId: fixture.workspace.id,
               agentId: agentId,
             ),
@@ -203,8 +203,8 @@ Future<void> _pushAgentScreen(
 ) async {
   final navigator = Navigator.of(tester.element(find.text('Previous')));
   final _ = navigator.push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => AgentDetailScreen(
+    _pageRoute(
+      (_) => AgentDetailScreen(
         workspaceId: fixture.workspace.id,
         agentId: agentId,
       ),
@@ -214,6 +214,13 @@ Future<void> _pushAgentScreen(
   await _pumpUntilFound(tester, find.text('Agent details'));
   await _pumpUntilFound(tester, find.byType(AuraInput));
 }
+
+PageRoute<void> _pageRoute(Widget Function(BuildContext context) builder) =>
+    PageRouteBuilder<void>(
+      pageBuilder: (context, _, _) => builder(context),
+      transitionDuration: .zero,
+      reverseTransitionDuration: .zero,
+    );
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 100 && finder.evaluate().isEmpty; attempt++) {

@@ -98,7 +98,15 @@ void main() {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  setUp(() => clearAppDatabase(database));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
   tearDownAll(database.close);
 
   testWidgets(

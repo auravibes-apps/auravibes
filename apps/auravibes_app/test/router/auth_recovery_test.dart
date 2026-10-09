@@ -136,9 +136,18 @@ void main() {
             },
             emailDelivery: .email,
           );
+          final authLocation = Uri(
+            path: '/workspaces/$workspace/more/cloud-accounts/$page',
+            queryParameters: {
+              'serverUrl': origin,
+              'accountId': account,
+              'email': email,
+              'return-path': destination,
+            },
+          ).toString();
           final router = GoRouter(
             routes: $appRoutes,
-            initialLocation: chatPath,
+            initialLocation: leave ? chatPath : authLocation,
           );
           addTearDown(router.dispose);
           final container = ProviderContainer(
@@ -164,18 +173,10 @@ void main() {
           addTearDown(container.dispose);
           await _pump(tester, router, container);
           final _ = await tester.pumpAndSettle();
-          router.go(
-            Uri(
-              path: '/workspaces/$workspace/more/cloud-accounts/$page',
-              queryParameters: {
-                'serverUrl': origin,
-                'accountId': account,
-                'email': email,
-                'return-path': destination,
-              },
-            ).toString(),
-          );
-          final _ = await tester.pumpAndSettle();
+          if (leave) {
+            router.go(authLocation);
+            final _ = await tester.pumpAndSettle();
+          }
           if (page == 'forgot-password') {
             await tester.tap(find.text('Send reset code'));
             final _ = await tester.pumpAndSettle();

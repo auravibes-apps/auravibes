@@ -39,7 +39,16 @@ void main() {
   group('ConversationDao', () {
     final fixture = _DatabaseFixture(createTestConnection);
 
-    setUp(fixture.reset);
+    var isFirstTest = true;
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
+
+        return;
+      }
+
+      await fixture.reset();
+    });
 
     tearDownAll(() async {
       await fixture.close();

@@ -9,6 +9,7 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 enum CodexOAuthMethod { browser, deviceCode }
 
@@ -22,9 +23,15 @@ class CodexOAuthService {
   static const fallbackPort = 1457;
   static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
   static const _jsonContentType = 'application/json';
-  new({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
-    : _dio = dio ?? Dio(),
-      _openBrowser = openBrowser ?? OpenSystemBrowser.call;
+  new({
+    Dio? dio,
+    Future<void> Function(Uri uri)? openBrowser,
+    @visibleForTesting this.devicePollDelay,
+  }) : _dio = dio ?? Dio(),
+       _openBrowser = openBrowser ?? OpenSystemBrowser.call;
+
+  @visibleForTesting
+  final Future<void> Function(Duration interval)? devicePollDelay;
 
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
@@ -388,6 +395,15 @@ extension _CodexOAuthResponseHelpers on CodexOAuthService {
     Duration interval,
     bool Function()? isCancelled,
   ) async {
+    final pollDelay = devicePollDelay;
+    if (pollDelay != null) {
+      _throwIfCancelled(isCancelled);
+      await pollDelay(interval);
+      _throwIfCancelled(isCancelled);
+
+      return;
+    }
+
     final deadline = DateTime.now().add(interval);
     while (DateTime.now().isBefore(deadline)) {
       _throwIfCancelled(isCancelled);

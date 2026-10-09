@@ -22,7 +22,11 @@ void main() {
   group('McpServersRepository', () {
     final fixture = _McpServersRepositoryFixture();
 
-    setUp(fixture.resetForTest);
+    var isFirstTest = true;
+    setUp(() async {
+      await fixture.resetForTest(clearDatabase: !isFirstTest);
+      isFirstTest = false;
+    });
 
     tearDownAll(() async {
       await fixture.database.close();
@@ -764,12 +768,12 @@ class const _McpServersRepositoryFixture._({
     );
   }
 
-  Future<void> resetForTest() async {
+  Future<void> resetForTest({required bool clearDatabase}) async {
     reset(mockMcpServersDao);
     reset(mockToolsGroupsDao);
     reset(mockWorkspaceToolsDao);
     reset(mockEncryptionService);
-    await clearAppDatabase(database);
+    if (clearDatabase) await clearAppDatabase(database);
   }
 }
 

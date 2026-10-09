@@ -37,19 +37,25 @@ void main() {
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, _) => Scaffold(
-              body: SkillAccessStatusView(
-                workspaceId: 'owned-workspace',
-                skillId: skillId,
-                showDependencies: true,
-                isAppSkill: isApp,
-                onChanged: () => returned = true,
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: Scaffold(
+                body: SkillAccessStatusView(
+                  workspaceId: 'owned-workspace',
+                  skillId: skillId,
+                  showDependencies: true,
+                  isAppSkill: isApp,
+                  onChanged: () => returned = true,
+                ),
               ),
+              key: state.pageKey,
             ),
           ),
           GoRoute(
             path: Uri.parse(expected).path,
-            builder: (_, _) => const Text('Access destination'),
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: const Text('Access destination'),
+              key: state.pageKey,
+            ),
           ),
         ],
       );

@@ -24,46 +24,20 @@ void main() {
           ),
         );
 
+        final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
         expect(find.byType(AuraSwitch), findsOneWidget);
         expect(find.byType(GestureDetector), findsOneWidget);
         expect(find.byType(FocusableActionDetector), findsOneWidget);
         expect(find.byType(AnimatedContainer), findsWidgets);
-      });
-
-      testWidgets('renders switch in on state', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: true,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-              ),
-            ),
-          ),
-        );
-
-        final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
-        expect(auraSwitch.value, isTrue);
-      });
-
-      testWidgets('renders switch in off state', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-              ),
-            ),
-          ),
-        );
-
-        final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
         expect(auraSwitch.value, isFalse);
+        expect(auraSwitch.size, AuraSwitchSize.base);
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
+          find.descendant(
+            of: find.byType(AuraSwitch),
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.click);
       });
     });
 
@@ -93,28 +67,6 @@ void main() {
         expect(receivedValue, isTrue);
       });
 
-      testWidgets('toggles value correctly when tapped (off to on)', (
-        tester,
-      ) async {
-        bool? receivedValue;
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (value) => receivedValue = value,
-              ),
-            ),
-          ),
-        );
-
-        await tester.tap(find.byType(AuraSwitch));
-        await tester.pump();
-
-        expect(receivedValue, isTrue);
-      });
-
       testWidgets('toggles value correctly when tapped (on to off)', (
         tester,
       ) async {
@@ -131,52 +83,12 @@ void main() {
           ),
         );
 
+        final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
+        expect(auraSwitch.value, isTrue);
         await tester.tap(find.byType(AuraSwitch));
         await tester.pump();
 
         expect(receivedValue, isFalse);
-      });
-
-      testWidgets('does not call onChanged when disabled', (tester) async {
-        var wasChanged = false;
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) => wasChanged = true,
-                disabled: true,
-              ),
-            ),
-          ),
-        );
-
-        await tester.tap(find.byType(AuraSwitch));
-        await tester.pump();
-
-        expect(wasChanged, isFalse);
-      });
-
-      testWidgets('does not call onChanged when loading', (tester) async {
-        var wasChanged = false;
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) => wasChanged = true,
-                isLoading: true,
-              ),
-            ),
-          ),
-        );
-
-        await tester.tap(find.byType(AuraSwitch));
-        await tester.pump();
-
-        expect(wasChanged, isFalse);
       });
 
       testWidgets('does not call onChanged when onChanged is null', (
@@ -194,6 +106,13 @@ void main() {
 
         // Widget should still render correctly.
         expect(find.byType(AuraSwitch), findsOneWidget);
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
+          find.descendant(
+            of: find.byType(AuraSwitch),
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        expect(focusableActionDetector.enabled, isFalse);
       });
     });
 
@@ -223,24 +142,6 @@ void main() {
         final constraints = animatedContainer.constraints;
         // Sm size should have width of 36.0.
         expect(constraints?.maxWidth, 36.0);
-      });
-
-      testWidgets('renders with base size correctly (default)', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-              ),
-            ),
-          ),
-        );
-
-        final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
-        expect(auraSwitch.size, AuraSwitchSize.base);
       });
 
       testWidgets('renders with lg size correctly', (tester) async {
@@ -321,36 +222,19 @@ void main() {
 
         expect(unfocusedDecoration.boxShadow, isNull);
       });
-
-      testWidgets('does not enable focus when onChanged is null', (
-        tester,
-      ) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: AuraSwitch(value: false, onChanged: null)),
-          ),
-        );
-
-        final focusableActionDetector = tester.widget<FocusableActionDetector>(
-          find.descendant(
-            of: find.byType(AuraSwitch),
-            matching: find.byType(FocusableActionDetector),
-          ),
-        );
-        expect(focusableActionDetector.enabled, isFalse);
-      });
     });
 
     group('Disabled state', () {
-      testWidgets('applies disabled property correctly', (tester) async {
+      testWidgets('disabled switch exposes state and ignores taps', (
+        tester,
+      ) async {
+        var wasChanged = false;
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
+                onChanged: (_) => wasChanged = true,
                 disabled: true,
               ),
             ),
@@ -359,23 +243,6 @@ void main() {
 
         final auraSwitch = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
         expect(auraSwitch.disabled, isTrue);
-      });
-
-      testWidgets('shows basic cursor when disabled', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-                disabled: true,
-              ),
-            ),
-          ),
-        );
-
         final focusableActionDetector = tester.widget<FocusableActionDetector>(
           find.descendant(
             of: find.byType(AuraSwitch),
@@ -383,44 +250,24 @@ void main() {
           ),
         );
         expect(focusableActionDetector.mouseCursor, SystemMouseCursors.basic);
-      });
-
-      testWidgets('shows click cursor when enabled', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-              ),
-            ),
-          ),
-        );
-
-        final focusableActionDetector = tester.widget<FocusableActionDetector>(
-          find.descendant(
-            of: find.byType(AuraSwitch),
-            matching: find.byType(FocusableActionDetector),
-          ),
-        );
-        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.click);
+        await tester.tap(find.byType(AuraSwitch));
+        await tester.pump();
+        expect(wasChanged, isFalse);
       });
     });
 
     group('Loading state', () {
-      testWidgets('shows loading indicator when isLoading is true', (
+      testWidgets('loading switch is visible, disabled, and ignores taps', (
         tester,
       ) async {
+        var wasChanged = false;
+        final semantics = tester.ensureSemantics();
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: AuraSwitch(
                 value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
+                onChanged: (_) => wasChanged = true,
                 isLoading: true,
               ),
             ),
@@ -428,6 +275,22 @@ void main() {
         );
 
         expect(find.byType(AuraLoadingCircle), findsOneWidget);
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
+          find.descendant(
+            of: find.byType(AuraSwitch),
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.basic);
+        final flags = tester
+            .getSemantics(find.byType(AuraSwitch))
+            .flagsCollection;
+        expect(flags.isToggled, ui.Tristate.isFalse);
+        expect(flags.isEnabled, ui.Tristate.isFalse);
+        await tester.tap(find.byType(AuraSwitch));
+        await tester.pump();
+        expect(wasChanged, isFalse);
+        semantics.dispose();
       });
 
       testWidgets('does not show loading indicator when isLoading is false', (
@@ -447,30 +310,6 @@ void main() {
         );
 
         expect(find.byType(AuraLoadingCircle), findsNothing);
-      });
-
-      testWidgets('shows basic cursor when loading', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-                isLoading: true,
-              ),
-            ),
-          ),
-        );
-
-        final focusableActionDetector = tester.widget<FocusableActionDetector>(
-          find.descendant(
-            of: find.byType(AuraSwitch),
-            matching: find.byType(FocusableActionDetector),
-          ),
-        );
-        expect(focusableActionDetector.mouseCursor, SystemMouseCursors.basic);
       });
     });
 
@@ -496,34 +335,6 @@ void main() {
 
         expect(flags.isToggled, ui.Tristate.isTrue);
         expect(flags.isEnabled, ui.Tristate.isTrue);
-
-        semantics.dispose();
-      });
-
-      testWidgets('marks loading switch as disabled for semantics', (
-        tester,
-      ) async {
-        final semantics = tester.ensureSemantics();
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: AuraSwitch(
-                value: false,
-                onChanged: (_) {
-                  final _ = Object();
-                },
-                isLoading: true,
-              ),
-            ),
-          ),
-        );
-
-        final node = tester.getSemantics(find.byType(AuraSwitch));
-        final flags = node.flagsCollection;
-
-        expect(flags.isToggled, ui.Tristate.isFalse);
-        expect(flags.isEnabled, ui.Tristate.isFalse);
 
         semantics.dispose();
       });

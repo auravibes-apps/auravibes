@@ -30,7 +30,15 @@ void main() {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  setUp(() => clearAppDatabase(database));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
   tearDownAll(database.close);
 
   for (final editor in [
@@ -102,14 +110,27 @@ void main() {
           : 'Discard changes';
       final router = GoRouter(
         routes: [
-          GoRoute(path: '/draft', builder: route.build, onExit: route.onExit),
+          GoRoute(
+            path: '/draft',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: route.build(context, state),
+              key: state.pageKey,
+            ),
+            onExit: route.onExit,
+          ),
           GoRoute(
             path: '/workspaces/:workspaceId/more/agents',
-            builder: (_, _) => const Text('Workspace agents destination'),
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: const Text('Workspace agents destination'),
+              key: state.pageKey,
+            ),
           ),
           GoRoute(
             path: '/destination',
-            builder: (_, _) => const Text('Destination'),
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: const Text('Destination'),
+              key: state.pageKey,
+            ),
           ),
         ],
         initialLocation: '/draft',

@@ -66,28 +66,41 @@ void main() {
         routes: [
           GoRoute(
             path: '/workspaces/:workspaceId/more/skills/new',
-            builder: (context, state) => SkillCreateRoute(
-              workspaceId: state.pathParameters['workspaceId']!,
-            ).build(context, state),
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillCreateRoute(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ).build(context, state),
+              key: state.pageKey,
+            ),
           ),
           GoRoute(
             path: '/workspaces/:workspaceId/more/skills/:skillId/resources/new',
-            builder: (_, state) => SkillResourceEditScreen(
-              workspaceId: state.pathParameters['workspaceId']!,
-              skillId: state.pathParameters['skillId']!,
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: SkillResourceEditScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+                skillId: state.pathParameters['skillId']!,
+              ),
+              key: state.pageKey,
             ),
           ),
           GoRoute(
             path: '/workspaces/:workspaceId/more/skills/:skillId',
-            builder: (context, state) => SkillDetailRoute(
-              workspaceId: state.pathParameters['workspaceId']!,
-              skillId: state.pathParameters['skillId']!,
-            ).build(context, state),
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillDetailRoute(
+                workspaceId: state.pathParameters['workspaceId']!,
+                skillId: state.pathParameters['skillId']!,
+              ).build(context, state),
+              key: state.pageKey,
+            ),
           ),
           GoRoute(
             path: '/workspaces/:workspaceId/more/skills',
-            builder: (context, state) =>
-                SkillsScreen(workspaceId: state.pathParameters['workspaceId']!),
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: SkillsScreen(
+                workspaceId: state.pathParameters['workspaceId']!,
+              ),
+              key: state.pageKey,
+            ),
           ),
         ],
         initialLocation: '/workspaces/${workspace.id}/more/skills',

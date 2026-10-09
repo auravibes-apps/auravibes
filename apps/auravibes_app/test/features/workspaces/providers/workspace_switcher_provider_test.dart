@@ -12,6 +12,9 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const _testDebounceDuration = Duration(milliseconds: 1);
+const _testDebounceWait = Duration(milliseconds: 10);
+
 class _PendingWorkspaceSelectionRepository
     implements WorkspaceSelectionRepository {
   final savedWorkspaceIds = <String>[];
@@ -77,18 +80,27 @@ class _FakeGoRouter implements GoRouter {
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
+  final fastDebounceOverride = workspaceSwitcherProvider.overrideWith(
+    () => WorkspaceSwitcher(debounceDuration: _testDebounceDuration),
+  );
 
   group('WorkspaceSwitcher', () {
     var fakeRouter = _FakeGoRouter();
     var container = ProviderContainer(
-      overrides: [routerProvider.overrideWithValue(fakeRouter)],
+      overrides: [
+        routerProvider.overrideWithValue(fakeRouter),
+        fastDebounceOverride,
+      ],
     );
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       fakeRouter = _FakeGoRouter();
       container = ProviderContainer(
-        overrides: [routerProvider.overrideWithValue(fakeRouter)],
+        overrides: [
+          routerProvider.overrideWithValue(fakeRouter),
+          fastDebounceOverride,
+        ],
       );
       // Keep provider alive during async timer-based tests.
       final _ = container.listen(workspaceSwitcherProvider, (_, _) {
@@ -114,7 +126,7 @@ void main() {
         notifier.switchToWorkspace('ws-1');
         expect(fakeRouter.lastLocation, isNull);
 
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(_testDebounceWait);
 
         expect(fakeRouter.lastLocation, '/workspaces/ws-1/chat/new');
       },
@@ -124,7 +136,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('ws-1');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       final preferences = await SharedPreferences.getInstance();
       expect(preferences.getString('last_selected_workspace_id'), 'ws-1');
@@ -139,6 +151,7 @@ void main() {
         container = ProviderContainer(
           overrides: [
             routerProvider.overrideWithValue(fakeRouter),
+            fastDebounceOverride,
             lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
               pendingSelection,
             ),
@@ -150,9 +163,9 @@ void main() {
         final notifier = container.read(workspaceSwitcherProvider.notifier);
 
         notifier.switchToWorkspace('ws-1');
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(_testDebounceWait);
         notifier.switchToWorkspace('ws-2');
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(_testDebounceWait);
 
         expect(pendingSelection.savedWorkspaceIds, ['ws-1']);
 
@@ -175,6 +188,7 @@ void main() {
         container = ProviderContainer(
           overrides: [
             routerProvider.overrideWithValue(fakeRouter),
+            fastDebounceOverride,
             lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
               pendingSelection,
             ),
@@ -189,10 +203,10 @@ void main() {
         final notifier = container.read(workspaceSwitcherProvider.notifier);
 
         notifier.switchToWorkspace('ws-1');
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(_testDebounceWait);
         expect(pendingSelection.savedWorkspaceIds, ['ws-1']);
         notifier.switchToWorkspace('ws-2');
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(_testDebounceWait);
         final stateCount = states.length;
 
         if (staleSaveFails) {
@@ -229,6 +243,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           routerProvider.overrideWithValue(fakeRouter),
+          fastDebounceOverride,
           lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
             pendingSelection,
           ),
@@ -240,7 +255,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('ws-1');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
       notifier.cancelPendingSwitch();
       pendingSelection.completeSave(0);
       await Future<void>.delayed(.zero);
@@ -258,6 +273,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           routerProvider.overrideWithValue(fakeRouter),
+          fastDebounceOverride,
           lastWorkspaceSelectionRepositoryProvider.overrideWithValue(
             failingSelection,
           ),
@@ -269,7 +285,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('ws-1');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       final state = container.read(workspaceSwitcherProvider);
       expect(state.status, SwitchStatus.error);
@@ -289,7 +305,7 @@ void main() {
       addTearDown(subscription.close);
 
       notifier.switchToWorkspace('ws-1');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       expect(states.length, greaterThanOrEqualTo(3));
       expect(states.firstOrNull?.status, SwitchStatus.idle);
@@ -305,15 +321,24 @@ void main() {
     });
 
     test('debounce cancels previous pending switch', () async {
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [routerProvider.overrideWithValue(fakeRouter)],
+      );
+      final _ = container.listen(workspaceSwitcherProvider, (_, _) {
+        final _ = Object();
+      });
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('ws-1');
       await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(fakeRouter.locations, isEmpty);
       notifier.switchToWorkspace('ws-2');
 
       await Future<void>.delayed(const Duration(milliseconds: 350));
 
       expect(fakeRouter.lastLocation, '/workspaces/ws-2/chat/new');
+      expect(fakeRouter.locations, ['/workspaces/ws-2/chat/new']);
     });
 
     test('cancelPendingSwitch prevents navigation', () async {
@@ -322,7 +347,7 @@ void main() {
       notifier.switchToWorkspace('ws-1');
       notifier.cancelPendingSwitch();
 
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       expect(fakeRouter.lastLocation, isNull);
     });
@@ -352,7 +377,7 @@ void main() {
       notifier.switchToWorkspace('ws-2');
       notifier.switchToWorkspace('ws-3');
 
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       expect(fakeRouter.lastLocation, '/workspaces/ws-3/chat/new');
     });
@@ -361,7 +386,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('ws-1');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       expect(fakeRouter.lastLocation, '/workspaces/ws-1/chat/new');
     });
@@ -370,7 +395,7 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
 
       notifier.switchToWorkspace('workspace-abc-123');
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(_testDebounceWait);
 
       expect(fakeRouter.lastLocation, '/workspaces/workspace-abc-123/chat/new');
     });

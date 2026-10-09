@@ -79,8 +79,7 @@ void main() {
   group('ApiModelProviders schema', () {
     var columns = <QueryRow>[];
 
-    setUp(() async {
-      await fixture.reset();
+    setUpAll(() async {
       columns = await fixture.database
           .customSelect('PRAGMA table_info(api_model_providers)')
           .get();
@@ -122,7 +121,15 @@ void main() {
   });
 
   group('ApiModelProviders column accessors', () {
-    setUp(fixture.reset);
+    var isFirstTest = true;
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
+
+        return;
+      }
+      await fixture.reset();
+    });
 
     test('can insert provider with nullable fields null', () async {
       final _ = await fixture.database

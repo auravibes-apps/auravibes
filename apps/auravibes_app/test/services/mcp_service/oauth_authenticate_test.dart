@@ -307,6 +307,7 @@ void main() {
       test('sends resource and polls the discovered token endpoint', () async {
         var tokenRequests = 0;
         final opened = <Uri>[];
+        final pollIntervals = <Duration>[];
         final adapter = FakeHttpClientAdapter(
           fetchCallback: (options, _, _) async {
             final data = options.data;
@@ -360,6 +361,12 @@ void main() {
           clientName: 'AuraVibes',
           dio: Dio()..httpClientAdapter = adapter,
           openBrowser: (uri) async => opened.add(uri),
+          waitForDevicePoll: (interval, isCancelled) async {
+            pollIntervals.add(interval);
+            if (isCancelled()) {
+              throw const OAuthAuthenticationCanceledException();
+            }
+          },
         );
 
         McpOAuthDeviceCode? deviceCode;
@@ -380,6 +387,10 @@ void main() {
         expect(deviceCode?.userCode, 'ABCD-EFGH');
         expect(opened, [Uri.parse('https://github.com/login/device')]);
         expect(tokenRequests, 2);
+        expect(pollIntervals, [
+          const Duration(seconds: 1),
+          const Duration(seconds: 1),
+        ]);
       });
 
       test('cancellation after showing device code stops polling', () async {

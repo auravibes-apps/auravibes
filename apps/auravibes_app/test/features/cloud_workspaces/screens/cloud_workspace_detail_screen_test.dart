@@ -115,25 +115,36 @@ void main() {
       routes: [
         GoRoute(
           path: '/workspaces/:workspaceId/more/manage-workspaces',
-          builder: (context, state) => const WorkspaceManagementScreen(
-            workspaceId: 'local',
-            connectView: true,
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: const WorkspaceManagementScreen(
+              workspaceId: 'local',
+              connectView: true,
+            ),
+            key: state.pageKey,
           ),
           routes: [
             GoRoute(
               path: 'cloud/:accountId/:cloudId',
-              builder: (context, state) => CloudWorkspaceDetailScreen(
-                workspaceId: state.pathParameters['workspaceId'] ?? '',
-                cloudAccountId: state.pathParameters['accountId'] ?? '',
-                cloudWorkspaceId: .parse(state.pathParameters['cloudId'] ?? ''),
-                serverUrl: state.uri.queryParameters['server-url'],
+              pageBuilder: (context, state) => NoTransitionPage(
+                child: CloudWorkspaceDetailScreen(
+                  workspaceId: state.pathParameters['workspaceId'] ?? '',
+                  cloudAccountId: state.pathParameters['accountId'] ?? '',
+                  cloudWorkspaceId: .parse(
+                    state.pathParameters['cloudId'] ?? '',
+                  ),
+                  serverUrl: state.uri.queryParameters['server-url'],
+                ),
+                key: state.pageKey,
               ),
             ),
           ],
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/chat/new',
-          builder: (context, state) => const Text('Opened existing workspace'),
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: const Text('Opened existing workspace'),
+            key: state.pageKey,
+          ),
         ),
       ],
       initialLocation: '/workspaces/local/more/manage-workspaces?view=connect',
@@ -251,7 +262,6 @@ void main() {
     expect(request.name, 'Renamed Team');
     expect(requested, [accounts.last.key]);
     await tester.tap(find.text('Open workspaces'));
-    await tester.pump(const Duration(milliseconds: 300));
     final _ = await tester.pumpAndSettle();
     expect(
       router.routeInformationProvider.value.uri.path,

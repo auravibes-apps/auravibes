@@ -62,7 +62,16 @@ void main() {
     test('automatic retries transient errors three times', () async {
       final service = _MockModelSyncService();
       when(service.sync).thenThrow(_serviceUnavailable());
-      final container = _containerFor(service);
+      final container = ProviderContainer(
+        overrides: [
+          modelSyncServiceProvider.overrideWithValue(service),
+          modelCatalogSyncNotifierProvider.overrideWith(
+            () => ModelCatalogSyncNotifier(
+              retryDelays: const [Duration.zero, Duration.zero],
+            ),
+          ),
+        ],
+      );
       addTearDown(container.dispose);
 
       await container

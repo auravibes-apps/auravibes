@@ -81,28 +81,19 @@ void main() {
         expect(result.toolIdentifier, 'read_file');
       });
 
-      test('returns null for non-mcp prefix', () {
-        expect(McpToolIdComponents.fromComposite('built_in_123_tool'), isNull);
-      });
-
-      test('returns null when no underscores after prefix', () {
-        expect(McpToolIdComponents.fromComposite('mcp_nounderscore'), isNull);
-      });
-
-      test('returns null when only one underscore after prefix', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id_onlyslug'), isNull);
-      });
-
-      test('returns null for empty parts', () {
-        expect(McpToolIdComponents.fromComposite('mcp__slug_tool'), isNull);
-      });
-
-      test('returns null for empty slug', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id__tool'), isNull);
-      });
-
-      test('returns null for empty tool identifier', () {
-        expect(McpToolIdComponents.fromComposite('mcp_id_slug_'), isNull);
+      test('returns null for malformed composite IDs', () {
+        for (final id in [
+          'built_in_123_tool',
+          'mcp_nounderscore',
+          'mcp_id_onlyslug',
+          'mcp__slug_tool',
+          'mcp_id__tool',
+          'mcp_id_slug_',
+          'mcp_',
+          'mcp_abc_',
+        ]) {
+          expect(McpToolIdComponents.fromComposite(id), isNull, reason: id);
+        }
       });
 
       test('parses composite ID with underscores in tool name', () {
@@ -368,18 +359,6 @@ void main() {
       expect(connecting, isEmpty);
     });
 
-    test('callTool throws when server not found', () async {
-      final notifier = container.read(mcpConnectionProvider.notifier);
-      await expectLater(
-        notifier.callTool(
-          mcpServerId: 'server-1',
-          toolIdentifier: 'sum',
-          arguments: const {},
-        ),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('getToolSpec returns null when server not connected', () {
       final notifier = container.read(mcpConnectionProvider.notifier);
       expect(
@@ -502,20 +481,29 @@ void main() {
       },
     );
 
-    test('callTool throws descriptive message for missing server', () async {
-      final notifier = container.read(mcpConnectionProvider.notifier);
+    test(
+      'callTool reports missing server IDs with descriptive exceptions',
+      () async {
+        final notifier = container.read(mcpConnectionProvider.notifier);
 
-      try {
-        final _ = await notifier.callTool(
-          mcpServerId: 'missing',
-          toolIdentifier: 'sum',
-          arguments: const {},
-        );
-        fail('Should have thrown');
-      } on Exception catch (e) {
-        expect(e.toString(), contains('MCP server not found'));
-      }
-    });
+        for (final serverId in ['server-1', 'missing']) {
+          await expectLater(
+            notifier.callTool(
+              mcpServerId: serverId,
+              toolIdentifier: 'sum',
+              arguments: const {},
+            ),
+            throwsA(
+              isA<Exception>().having(
+                (error) => error.toString(),
+                'message',
+                contains('MCP server not found'),
+              ),
+            ),
+          );
+        }
+      },
+    );
 
     test('callTool throws descriptive message for not connected', () async {
       final notifier = container.read(mcpConnectionProvider.notifier)
@@ -615,14 +603,6 @@ void main() {
         ),
         throwsA(isA<Exception>()),
       );
-    });
-
-    test('McpToolIdComponents handles first underscore at position 0', () {
-      expect(McpToolIdComponents.fromComposite('mcp_'), isNull);
-    });
-
-    test('McpToolIdComponents handles second underscore at position 0', () {
-      expect(McpToolIdComponents.fromComposite('mcp_abc_'), isNull);
     });
 
     test('reconnectMcpServer with server not in db returns empty', () async {

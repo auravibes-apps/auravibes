@@ -193,6 +193,7 @@ void main() {
 
     test('keeps polling while device code is pending', () async {
       var tokenPolls = 0;
+      final intervals = <Duration>[];
       final dio = Dio()
         ..httpClientAdapter = _FakeHttpClientAdapter(
           onFetch: (options) async {
@@ -217,10 +218,13 @@ void main() {
           },
         );
 
-      final token = await CodexOAuthService(dio: dio)
-          .authenticateWithDeviceCode();
+      final token = await CodexOAuthService(
+        dio: dio,
+        devicePollDelay: (interval) async => intervals.add(interval),
+      ).authenticateWithDeviceCode();
 
       expect(tokenPolls, 2);
+      expect(intervals, [const Duration(seconds: 1)]);
       expect(token.accessToken, 'access');
     });
 

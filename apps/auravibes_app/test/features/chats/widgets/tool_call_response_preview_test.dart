@@ -75,7 +75,9 @@ void main() {
       expect(find.byIcon(Icons.copy_outlined), findsNothing);
     });
 
-    testWidgets('copies the full response content', (tester) async {
+    testWidgets('copies full response and opens its overflow modal', (
+      tester,
+    ) async {
       const content = 'First line\nSecond line\nThird line\nFourth line';
       String? copiedContent;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -99,11 +101,23 @@ void main() {
         buildSubject(toolName: 'test_tool', content: content),
       );
 
+      expect(find.text('Show more'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byIcon(Icons.copy_outlined)).dx,
+        lessThan(tester.getTopLeft(find.text('Show more')).dx),
+      );
+
       await tester.tap(find.byIcon(Icons.copy_outlined));
       await tester.pump();
 
       expect(copiedContent, content);
       expect(find.byIcon(Icons.check), findsOneWidget);
+
+      await tester.tap(find.text('Show more'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(ToolCallResponseModal), findsOneWidget);
+      expect(find.text('test_tool'), findsOneWidget);
     });
 
     test('static maxPreviewLines is 3', () {
@@ -120,30 +134,6 @@ void main() {
 
       expect(find.byType(ToolCallResponsePreview), findsOneWidget);
       expect(find.text('Short text'), findsOneWidget);
-    });
-
-    testWidgets('opens the full result modal for overflowing content', (
-      tester,
-    ) async {
-      await pumpAndInit(
-        tester,
-        buildSubject(
-          toolName: 'test_tool',
-          content: 'First line\nSecond line\nThird line\nFourth line',
-        ),
-      );
-
-      expect(find.text('Show more'), findsOneWidget);
-      expect(
-        tester.getTopLeft(find.byIcon(Icons.copy_outlined)).dx,
-        lessThan(tester.getTopLeft(find.text('Show more')).dx),
-      );
-
-      await tester.tap(find.text('Show more'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byType(ToolCallResponseModal), findsOneWidget);
-      expect(find.text('test_tool'), findsOneWidget);
     });
 
     testWidgets('uses inherited text scaling when detecting overflow', (

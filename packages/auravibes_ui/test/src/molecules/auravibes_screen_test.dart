@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraScreen', () {
-    testWidgets('renders child content correctly', (tester) async {
+    testWidgets('renders default standard screen child', (tester) async {
       const childText = 'Screen Content';
 
       await tester.pumpWidget(
@@ -18,20 +18,21 @@ void main() {
       );
 
       expect(find.text(childText), findsOneWidget);
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      expect(scaffold.backgroundColor, AuraTheme.light.colors.background);
+      expect(find.byType(BackdropFilter), findsNothing);
     });
 
-    testWidgets('renders standard variant with solid background', (
+    testWidgets('renders explicit standard screen with padding', (
       tester,
     ) async {
+      const padding = AuraEdgeInsetsGeometry.medium;
+
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
           child: MaterialApp(
-            home: const AuraScreen(
-              child: SizedBox(),
-              // ignore: avoid_redundant_argument_values - Required to cover explicit standard variant separately from default behavior.
-              variant: .standard,
-            ),
+            home: const AuraScreen(child: SizedBox(), padding: padding),
             theme: .new(),
           ),
         ),
@@ -40,6 +41,7 @@ void main() {
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       expect(scaffold.backgroundColor, AuraTheme.light.colors.background);
       expect(find.byType(BackdropFilter), findsNothing);
+      expect(find.byType(AuraPadding), findsOneWidget);
     });
 
     testWidgets('renders aurora variant with mesh gradient and blur', (
@@ -60,37 +62,9 @@ void main() {
       expect(find.byType(BackdropFilter), findsOneWidget);
     });
 
-    testWidgets('renders AppBar when provided', (tester) async {
-      const titleText = 'My Screen';
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(
-              child: SizedBox(),
-              appBar: AuraAppBar(title: Text(titleText)),
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.text(titleText), findsOneWidget);
-      expect(find.byType(AuraAppBar), findsOneWidget);
-      expect(find.byType(AppBar), findsOneWidget);
-      final title = tester.widget<AuraText>(
-        find.descendant(
-          of: find.byType(AppBar),
-          matching: find.byType(AuraText),
-        ),
-      );
-
-      expect(title.style, AuraTextStyle.heading5);
-    });
-
-    testWidgets('places body directly below the app bar', (tester) async {
+    testWidgets('renders AppBar properties and body layout', (tester) async {
       final bodyKey = UniqueKey();
+      const leadingWidth = 96.0;
 
       await tester.pumpWidget(
         AuraThemeScope(
@@ -98,111 +72,9 @@ void main() {
           child: MaterialApp(
             home: AuraScreen(
               child: SizedBox(key: bodyKey, height: 20),
-              appBar: const AuraAppBar(title: Text('My Screen')),
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      final appBarBottom = tester.getBottomRight(find.byType(AppBar)).dy;
-      final bodyTop = tester.getTopLeft(find.byKey(bodyKey)).dy;
-
-      expect(bodyTop, closeTo(appBarBottom, 0.01));
-    });
-
-    testWidgets('applies padding when provided', (tester) async {
-      const padding = AuraEdgeInsetsGeometry.medium;
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(child: SizedBox(), padding: padding),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.byType(AuraPadding), findsOneWidget);
-    });
-
-    testWidgets('uses standard variant by default', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(child: SizedBox()),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-      expect(scaffold.backgroundColor, AuraTheme.light.colors.background);
-      expect(find.byType(BackdropFilter), findsNothing);
-    });
-
-    testWidgets('renders AuraAppBar with leading widget', (tester) async {
-      const titleText = 'Screen with Leading';
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(
-              child: SizedBox(),
-              appBar: AuraAppBar(
-                title: Text(titleText),
-                leading: Text('Leading'),
-              ),
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.text(titleText), findsOneWidget);
-      expect(find.text('Leading'), findsOneWidget);
-      expect(find.byType(AuraAppBar), findsOneWidget);
-    });
-
-    testWidgets('app layer controls leading via AuraAppBar leading parameter', (
-      tester,
-    ) async {
-      const customLeadingText = 'Back Button';
-      const screenTitleText = 'My Screen';
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(
-              child: SizedBox(),
-              appBar: AuraAppBar(
-                title: Text(screenTitleText),
-                leading: Text(customLeadingText),
-              ),
-            ),
-            theme: .new(),
-          ),
-        ),
-      );
-
-      expect(find.text(customLeadingText), findsOneWidget);
-      expect(find.byType(AuraAppBar), findsOneWidget);
-    });
-
-    testWidgets('passes leading width to the Material app bar', (tester) async {
-      final leadingWidth = double.parse('96');
-
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: Scaffold(
-              appBar: AuraAppBar(
-                title: const Text('Sized leading'),
+              appBar: const AuraAppBar(
+                title: Text('My Screen'),
+                leading: Text('Back Button'),
                 leadingWidth: leadingWidth,
               ),
             ),
@@ -211,10 +83,25 @@ void main() {
         ),
       );
 
-      expect(
-        tester.widget<AppBar>(find.byType(AppBar)).leadingWidth,
-        leadingWidth,
+      expect(find.text('My Screen'), findsOneWidget);
+      expect(find.text('Back Button'), findsOneWidget);
+      expect(find.byType(AuraAppBar), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
+
+      final title = tester.widget<AuraText>(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(AuraText),
+        ),
       );
+      expect(title.style, AuraTextStyle.heading5);
+
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(appBar.leadingWidth, leadingWidth);
+
+      final appBarBottom = tester.getBottomRight(find.byType(AppBar)).dy;
+      final bodyTop = tester.getTopLeft(find.byKey(bodyKey)).dy;
+      expect(bodyTop, closeTo(appBarBottom, 0.01));
     });
   });
 }

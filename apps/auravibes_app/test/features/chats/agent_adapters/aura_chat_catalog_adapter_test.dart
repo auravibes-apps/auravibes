@@ -140,7 +140,7 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(tester.takeException(), isNull);
         expect(find.byType(SelectionArea), findsOneWidget);
         expect(find.byIcon(Icons.dashboard), findsOneWidget);
@@ -148,7 +148,7 @@ void main() {
         expect(description, findsOneWidget);
         expect(tester.getRect(description).right, lessThanOrEqualTo(width));
         await tester.tap(find.text('Details'));
-        await tester.pumpAndSettle();
+        await tester.pump();
         expect(find.text('Dashboard details'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
@@ -1396,7 +1396,7 @@ void main() {
         ),
       ),
     );
-    final _ = await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('Form content'), findsOneWidget);
     expect(find.text('Accordion content'), findsOneWidget);

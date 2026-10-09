@@ -40,8 +40,15 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 void main() {
   group('WorkspaceDao Tests', () {
     final fixture = _DatabaseFixture(createTestConnection);
+    var isFirstTest = true;
 
-    setUp(fixture.reset);
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await fixture.reset();
+      }
+    });
 
     tearDownAll(() async {
       await fixture.close();

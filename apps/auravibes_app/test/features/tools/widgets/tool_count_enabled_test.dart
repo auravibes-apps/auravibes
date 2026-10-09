@@ -38,12 +38,6 @@ class _LoadingToolsNotifier extends WorkspaceToolsNotifier {
       _completer.future;
 }
 
-class _DataToolsNotifier(final List<WorkspaceToolEntity> tools)
-    extends WorkspaceToolsNotifier {
-  @override
-  Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
-}
-
 class _ErrorToolsNotifier extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
@@ -54,24 +48,38 @@ class _ErrorToolsNotifier extends WorkspaceToolsNotifier {
 void main() {
   const workspaceId = 'ws1';
 
-  testWidgets('shows loading spinner while loading', (tester) async {
+  testWidgets('shows loading spinner then count when data loads', (
+    tester,
+  ) async {
+    final notifier = _LoadingToolsNotifier();
+    final tools = [
+      _tool(id: 't1'),
+      _tool(id: 't2'),
+      _tool(id: 't3', isEnabled: false),
+    ];
+
     await tester.runAsync(() async {
       await tester.pumpWidget(
         EasyLocalization(
-          child: TestProviderScope(
-            overrides: [
-              workspaceToolsProvider(workspaceId)
-                  .overrideWith(_LoadingToolsNotifier.new),
-            ],
-            child: MaterialApp(
-              home: AuraThemeScope(
-                theme: .light,
-                child: Theme(
-                  data: .new(),
-                  child: const Scaffold(
-                    body: ToolCountEnabledWidget(workspaceId: workspaceId),
+          child: Builder(
+            builder: (context) => TestProviderScope(
+              overrides: [
+                workspaceToolsProvider(workspaceId)
+                    .overrideWith(() => notifier),
+              ],
+              child: MaterialApp(
+                home: AuraThemeScope(
+                  theme: .light,
+                  child: Theme(
+                    data: .new(),
+                    child: const Scaffold(
+                      body: ToolCountEnabledWidget(workspaceId: workspaceId),
+                    ),
                   ),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             ),
           ),
@@ -87,53 +95,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(AuraSpinner), findsOneWidget);
-  });
-
-  testWidgets('shows count of available tools when data loaded', (
-    tester,
-  ) async {
-    final tools = [
-      _tool(id: 't1'),
-      _tool(id: 't2'),
-      _tool(id: 't3', isEnabled: false),
-    ];
-
-    await tester.runAsync(() async {
-      await tester.pumpWidget(
-        EasyLocalization(
-          child: Builder(
-            builder: (context) {
-              return TestProviderScope(
-                overrides: [
-                  workspaceToolsProvider(workspaceId)
-                      .overrideWith(() => _DataToolsNotifier(tools)),
-                ],
-                child: MaterialApp(
-                  home: AuraThemeScope(
-                    theme: .light,
-                    child: Theme(
-                      data: .new(),
-                      child: const Scaffold(
-                        body: ToolCountEnabledWidget(workspaceId: workspaceId),
-                      ),
-                    ),
-                  ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
-                ),
-              );
-            },
-          ),
-          supportedLocales: const [Locale('en')],
-          path: 'assets/i18n',
-          fallbackLocale: const Locale('en'),
-          startLocale: const Locale('en'),
-          useOnlyLangCode: true,
-          useFallbackTranslations: true,
-        ),
-      );
-    });
+    notifier._completer.complete(tools);
     await tester.pump();
     await tester.pump();
 

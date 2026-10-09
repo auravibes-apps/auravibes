@@ -405,191 +405,145 @@ void main() {
       });
     });
 
-    group('Size variants', () {
-      testWidgets('renders with sm size', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-              size: .sm,
-            ),
-          ),
-        );
+    test('stores size, variant, and orientation options', () {
+      const items = <AuraButtonGroupItem<String>>[];
+      void onChanged(String _) {
+        final _ = Object();
+      }
 
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.size, AuraButtonGroupSize.sm);
-      });
+      final groups = [
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+          size: .sm,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+          size: .lg,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+          variant: .filled,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+          variant: .ghost,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+        ),
+        AuraButtonGroup<String>.single(
+          items: items,
+          selectedValue: 'a',
+          onChanged: onChanged,
+          orientation: .vertical,
+        ),
+      ];
 
-      testWidgets('renders with base size (default)', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.size, AuraButtonGroupSize.base);
-      });
-
-      testWidgets('renders with lg size', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-              size: .lg,
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.size, AuraButtonGroupSize.lg);
-      });
+      expect(groups.map((group) => group.size), [
+        AuraButtonGroupSize.sm,
+        AuraButtonGroupSize.base,
+        AuraButtonGroupSize.lg,
+        AuraButtonGroupSize.base,
+        AuraButtonGroupSize.base,
+        AuraButtonGroupSize.base,
+        AuraButtonGroupSize.base,
+        AuraButtonGroupSize.base,
+      ]);
+      expect(groups.map((group) => group.variant), [
+        AuraButtonGroupVariant.outlined,
+        AuraButtonGroupVariant.outlined,
+        AuraButtonGroupVariant.outlined,
+        AuraButtonGroupVariant.filled,
+        AuraButtonGroupVariant.outlined,
+        AuraButtonGroupVariant.ghost,
+        AuraButtonGroupVariant.outlined,
+        AuraButtonGroupVariant.outlined,
+      ]);
+      expect(groups.map((group) => group.orientation), [
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.horizontal,
+        Axis.vertical,
+      ]);
     });
 
-    group('Variant types', () {
-      testWidgets('renders with filled variant', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-              variant: .filled,
-            ),
+    testWidgets('lays out horizontal and vertical groups', (tester) async {
+      const items = [
+        AuraButtonGroupItem(value: 'a', child: Text('A')),
+        AuraButtonGroupItem(value: 'b', child: Text('B')),
+      ];
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: .ltr,
+          child: Column(
+            mainAxisSize: .min,
+            children: [
+              AuraButtonGroup<String>.single(
+                items: items,
+                selectedValue: 'a',
+                onChanged: (_) {
+                  final _ = Object();
+                },
+                key: const ValueKey('horizontal'),
+              ),
+              AuraButtonGroup<String>.single(
+                items: items,
+                selectedValue: 'a',
+                onChanged: (_) {
+                  final _ = Object();
+                },
+                key: const ValueKey('vertical'),
+                orientation: .vertical,
+              ),
+            ],
           ),
-        );
+        ),
+      );
 
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.variant, AuraButtonGroupVariant.filled);
-      });
+      final horizontal = find.byKey(const ValueKey('horizontal'));
+      expect(
+        find.descendant(of: horizontal, matching: find.byType(Row)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: horizontal, matching: find.byType(Column)),
+        findsNothing,
+      );
 
-      testWidgets('renders with outlined variant (default)', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.variant, AuraButtonGroupVariant.outlined);
-      });
-
-      testWidgets('renders with ghost variant', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-              variant: .ghost,
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.variant, AuraButtonGroupVariant.ghost);
-      });
-    });
-
-    group('Orientation', () {
-      testWidgets('renders with horizontal orientation (default)', (
-        tester,
-      ) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-                AuraButtonGroupItem(value: 'b', child: Text('B')),
-              ],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.orientation, Axis.horizontal);
-
-        // Verify it uses Row.
-        expect(find.byType(Row), findsOneWidget);
-        expect(find.byType(Column), findsNothing);
-      });
-
-      testWidgets('renders with vertical orientation', (tester) async {
-        await tester.pumpWidget(
-          Directionality(
-            textDirection: .ltr,
-            child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-                AuraButtonGroupItem(value: 'b', child: Text('B')),
-              ],
-              selectedValue: 'a',
-              onChanged: (_) {
-                final _ = Object();
-              },
-              orientation: .vertical,
-            ),
-          ),
-        );
-
-        final buttonGroup = tester.widget<AuraButtonGroup<String>>(
-          find.byType(AuraButtonGroup<String>),
-        );
-        expect(buttonGroup.orientation, Axis.vertical);
-
-        // Verify it uses Column.
-        expect(find.byType(Column), findsOneWidget);
-        expect(find.byType(Row), findsNothing);
-      });
+      final vertical = find.byKey(const ValueKey('vertical'));
+      expect(
+        find.descendant(of: vertical, matching: find.byType(Column)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: vertical, matching: find.byType(Row)),
+        findsNothing,
+      );
     });
 
     group('Cursor behavior', () {

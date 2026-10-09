@@ -21,8 +21,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-import '../../../data/database/drift/database_test_utils.dart';
-
 AppDatabase _inMemoryDatabase() =>
     AppDatabase(connection: NativeDatabase.memory());
 
@@ -31,7 +29,6 @@ void main() {
 
   group('serviceConnectionsProvider', () {
     final database = _inMemoryDatabase();
-    setUp(() => clearAppDatabase(database));
     tearDownAll(database.close);
 
     test(

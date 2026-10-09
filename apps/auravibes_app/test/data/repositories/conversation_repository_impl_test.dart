@@ -23,10 +23,15 @@ void main() {
     final mockDao = MockConversationDao();
     final database = _TestAppDatabase(mockDao);
     var repository = ConversationRepository(database);
+    var isFirstTest = true;
 
     setUp(() async {
       reset(mockDao);
-      await clearAppDatabase(database);
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await clearAppDatabase(database);
+      }
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(id: const Value('ws-1'), name: 'Test Workspace', type: .local),
       );

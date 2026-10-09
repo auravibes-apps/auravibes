@@ -87,10 +87,10 @@ void main() {
     expect(find.byIcon(Icons.remove_circle_outline), findsNothing);
   });
 
-  for (final access in SkillAccessStatus.values) {
-    testWidgets('access $access remains separate from ready context', (
-      tester,
-    ) async {
+  testWidgets('all access statuses remain separate from ready context', (
+    tester,
+  ) async {
+    for (final access in SkillAccessStatus.values) {
       final container = _container(
         state: const ConversationSkillSelectorState(
           loaded: [_research],
@@ -101,21 +101,27 @@ void main() {
       );
       addTearDown(container.dispose);
       await _pumpModal(tester, container);
-      expect(find.text('Ready in context'), findsOneWidget);
-      expect(find.text('Instruction requirements met'), findsOneWidget);
-      expect(find.text('Use now'), findsOneWidget);
+      final reason = 'access $access';
+      expect(find.text('Ready in context'), findsOneWidget, reason: reason);
       expect(
-        find.text(switch (access) {
-          .notRequired => 'No access required',
-          .saved => 'Saved access available',
-          .missing => 'Needs access',
-          .partial => 'Instructions available; access setup incomplete',
-          .unknown => 'Access status unknown',
-        }),
+        find.text('Instruction requirements met'),
         findsOneWidget,
+        reason: reason,
       );
-    });
-  }
+      expect(find.text('Use now'), findsOneWidget, reason: reason);
+      final label = switch (access) {
+        .notRequired => 'No access required',
+        .saved => 'Saved access available',
+        .missing => 'Needs access',
+        .partial => 'Instructions available; access setup incomplete',
+        .unknown => 'Access status unknown',
+      };
+      expect(find.text(label), findsOneWidget, reason: reason);
+    }
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    final _ = await tester.pumpAndSettle();
+  });
 
   testWidgets('saved access does not hide a context preparation error', (
     tester,

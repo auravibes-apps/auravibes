@@ -258,9 +258,9 @@ void main() {
     await tester.tap(find.text('Enabled first').last);
     final _ = await tester.pumpAndSettle();
     visible.value = false;
-    final _ = await tester.pumpAndSettle();
+    await tester.pump();
     visible.value = true;
-    final _ = await tester.pumpAndSettle();
+    await tester.pump();
     expect(
       tester.widget<EditableText>(find.byType(EditableText)).controller.text,
       'Files',

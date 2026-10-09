@@ -599,8 +599,8 @@ void main() {
             keyDigest: ModelProviderVerification.digestKey('valid-key'),
           ),
           modelIds: const ['gpt-4o'],
-          expiresAt: DateTime.now().toUtc().add(
-            const Duration(milliseconds: 10),
+          expiresAt: DateTime.now().toUtc().subtract(
+            const Duration(seconds: 1),
           ),
         );
       final container2 = ProviderContainer(
@@ -630,7 +630,13 @@ void main() {
         ..setKey('valid-key')
         ..setModel('openai');
       final _ = await notifier.verifyModelProvider();
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(
+        container2
+            .read(addModelProviderStateProvider('ws1'))
+            .isConnectionVerified,
+        isTrue,
+      );
+      await Future<void>.delayed(Duration.zero);
 
       expect(
         container2

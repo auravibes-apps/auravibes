@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
-import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -19,10 +18,7 @@ void main() {
     final database = _TestAppDatabase(mockDao);
     final repository = ToolsGroupsRepository(database);
 
-    setUp(() async {
-      reset(mockDao);
-      await clearAppDatabase(database);
-    });
+    setUp(() => reset(mockDao));
 
     tearDownAll(() async {
       await database.close();

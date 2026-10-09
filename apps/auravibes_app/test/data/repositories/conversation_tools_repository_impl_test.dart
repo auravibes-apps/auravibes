@@ -828,6 +828,7 @@ void main() {
     });
 
     test('returns correct count', () async {
+      await fixture.insertWorkspaceTool('tool-2');
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             'conv-1',
@@ -873,6 +874,13 @@ void main() {
     tearDown(fixture.tearDown);
 
     test('copies tools from source to target conversation', () async {
+      final _ = await fixture.database.conversationDao.insertConversation(
+        .insert(
+          id: const Value('conv-2'),
+          workspaceId: fixture.workspaceId,
+          title: 'Test Conversation',
+        ),
+      );
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
             'conv-1',
@@ -1235,6 +1243,7 @@ void main() {
     tearDown(fixture.tearDown);
 
     test('completes without error', () async {
+      await fixture.insertWorkspaceTool('tool-2');
       await expectLater(
         fixture.repository.setConversationToolsDisabled('conv-1', [
           'tool-1',
@@ -1346,6 +1355,7 @@ void main() {
 final class _ConversationToolsRepositoryFixture {
   new(this._database);
 
+  String workspaceId = '';
   final AppDatabase _database;
   ConversationToolsRepository? _repository;
   MockWorkspaceToolsRepository? _mockWorkspaceToolsRepository;
@@ -1359,32 +1369,33 @@ final class _ConversationToolsRepositoryFixture {
       _mockWorkspaceToolsRepository ??
       fail('Expected workspace tools repository fixture to be initialized.');
 
+  Future<void> insertWorkspaceTool(String toolId) async {
+    final _ = await _database
+        .into(_database.tools)
+        .insert(
+          ToolsCompanion.insert(
+            id: .new(toolId),
+            workspaceId: workspaceId,
+            toolId: toolId,
+          ),
+        );
+  }
+
   Future<void> setUp() async {
     final database = _database;
     await clearAppDatabase(database);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Test Workspace', type: .local),
     );
-    for (final conversationId in ['conv-1', 'conv-2']) {
-      final _ = await database.conversationDao.insertConversation(
-        .insert(
-          id: Value(conversationId),
-          workspaceId: workspace.id,
-          title: 'Test Conversation',
-        ),
-      );
-    }
-    for (final toolId in ['tool-1', 'tool-2']) {
-      final _ = await database
-          .into(database.tools)
-          .insert(
-            ToolsCompanion.insert(
-              id: .new(toolId),
-              workspaceId: workspace.id,
-              toolId: toolId,
-            ),
-          );
-    }
+    workspaceId = workspace.id;
+    final _ = await database.conversationDao.insertConversation(
+      .insert(
+        id: const Value('conv-1'),
+        workspaceId: workspace.id,
+        title: 'Test Conversation',
+      ),
+    );
+    await insertWorkspaceTool('tool-1');
     final mockWorkspaceToolsRepository = MockWorkspaceToolsRepository();
 
     _mockWorkspaceToolsRepository = mockWorkspaceToolsRepository;

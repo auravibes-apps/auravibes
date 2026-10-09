@@ -730,7 +730,6 @@ class _AgentsRepositoryFixture({
     await database.customStatement(
       'DROP TRIGGER IF EXISTS fail_duplicate_override',
     );
-    await clearAppDatabase(database);
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Workspace', type: WorkspaceType.local),
     );

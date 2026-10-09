@@ -32,7 +32,6 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await clearAppDatabase(database);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'Credential parent', type: .local));
     final definition = await SkillCredentialDefinitionsRepository(database)

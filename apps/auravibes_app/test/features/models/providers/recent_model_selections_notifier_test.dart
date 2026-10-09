@@ -14,7 +14,6 @@ void main() {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  setUp(() => clearAppDatabase(database));
   tearDownAll(database.close);
 
   test(
@@ -53,6 +52,8 @@ void main() {
   );
 
   test('record persists the capped history in the database', () async {
+    await clearAppDatabase(database);
+
     final container = ProviderContainer(
       overrides: [
         cloudModelGatewayForWorkspaceProvider.overrideWith(

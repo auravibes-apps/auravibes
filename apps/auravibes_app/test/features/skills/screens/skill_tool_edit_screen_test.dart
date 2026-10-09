@@ -102,24 +102,33 @@ void main() {
       routes: [
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId',
-          builder: (context, state) => const Text('Skill detail'),
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: const Text('Skill detail'),
+            key: state.pageKey,
+          ),
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId/tools/new',
-          builder: (context, state) => SkillToolEditScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-            skillId: state.pathParameters['skillId']!,
-            routeExitGuard: createRouteGuard,
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: SkillToolEditScreen(
+              workspaceId: state.pathParameters['workspaceId']!,
+              skillId: state.pathParameters['skillId']!,
+              routeExitGuard: createRouteGuard,
+            ),
+            key: state.pageKey,
           ),
           onExit: (context, _) => createRouteGuard.canExit(context),
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId/tools/:toolId/edit',
-          builder: (context, state) => SkillToolEditScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-            skillId: state.pathParameters['skillId']!,
-            toolId: state.pathParameters['toolId'],
-            routeExitGuard: editRouteGuard,
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: SkillToolEditScreen(
+              workspaceId: state.pathParameters['workspaceId']!,
+              skillId: state.pathParameters['skillId']!,
+              toolId: state.pathParameters['toolId'],
+              routeExitGuard: editRouteGuard,
+            ),
+            key: state.pageKey,
           ),
           onExit: (context, _) => editRouteGuard.canExit(context),
         ),
