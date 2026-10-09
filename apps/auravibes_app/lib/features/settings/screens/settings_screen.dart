@@ -5,6 +5,7 @@
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/app_version_indicator.dart';
+import 'package:auravibes_app/features/settings/widgets/legal_links_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
@@ -149,6 +150,7 @@ class const _SettingsBody({
             onThemeReset: onThemeReset,
           ),
           const AccentColorSection(),
+          const LegalLinksSection(),
           const AppVersionIndicator(),
         ],
         crossAxisAlignment: .start,

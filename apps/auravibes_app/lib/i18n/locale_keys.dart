@@ -1396,6 +1396,11 @@ abstract class LocaleKeys {
   static const settings_screen_actions_save = 'settings_screen.actions.save';
   static const settings_screen_actions_reset_defaults =
       'settings_screen.actions.reset_defaults';
+  static const settings_screen_legal_title = 'settings_screen.legal.title';
+  static const settings_screen_legal_privacy = 'settings_screen.legal.privacy';
+  static const settings_screen_legal_terms = 'settings_screen.legal.terms';
+  static const settings_screen_legal_open_error =
+      'settings_screen.legal.open_error';
   static const more_screen_title = 'more_screen.title';
   static const more_screen_workspaces_title = 'more_screen.workspaces.title';
   static const more_screen_workspaces_subtitle =
