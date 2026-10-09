@@ -83,56 +83,6 @@ void main() {
       expect(find.byIcon(Icons.done_all), findsOneWidget);
     });
 
-    testWidgets('applies small size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(
-              status: .sent,
-              size: .small,
-              showAnimation: false, // Disable animation for stable testing.
-            ),
-          ),
-        ),
-      );
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.done));
-      expect(icon.size, 12.0);
-    });
-
-    testWidgets('applies medium size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(
-              status: .sent,
-              showAnimation: false, // Disable animation for stable testing.
-            ),
-          ),
-        ),
-      );
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.done));
-      expect(icon.size, 16.0);
-    });
-
-    testWidgets('applies large size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraMessageStatus(
-              status: .sent,
-              size: .large,
-              showAnimation: false, // Disable animation for stable testing.
-            ),
-          ),
-        ),
-      );
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.done));
-      expect(icon.size, 20.0);
-    });
-
     testWidgets('applies custom color when provided', (tester) async {
       const customColor = Colors.purple;
 
@@ -285,7 +235,9 @@ void main() {
       final _ = await tester.pumpAndSettle();
     });
 
-    testWidgets('applies correct padding for different sizes', (tester) async {
+    testWidgets('applies icon sizes and padding for different sizes', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -309,8 +261,9 @@ void main() {
       );
 
       final containers = tester.widgetList<Container>(find.byType(Container));
+      final icons = tester.widgetList<Icon>(find.byIcon(Icons.done));
 
-      // Check padding for each size.
+      expect(icons.map((icon) => icon.size), [12.0, 16.0, 20.0]);
       expect(containers.firstOrNull?.padding, const EdgeInsets.all(2));
       expect(containers.elementAt(1).padding, const EdgeInsets.all(4));
       expect(containers.elementAt(2).padding, const EdgeInsets.all(6));

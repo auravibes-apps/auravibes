@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
-import '../database/drift/database_test_utils.dart';
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -607,10 +606,9 @@ class _WorkspaceToolsRepositoryFixture {
 
   WorkspaceToolsRepository get repository => _repository;
 
-  Future<void> resetForTest() async {
+  void resetForTest() {
     reset(_mockToolsDao);
     reset(_mockWorkspaceDao);
-    await clearAppDatabase(_database);
 
     when(() => _mockToolsDao.getWorkspaceTools(any()))
         .thenAnswer((_) async => []);

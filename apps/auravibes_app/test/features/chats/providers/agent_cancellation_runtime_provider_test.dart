@@ -99,7 +99,9 @@ void main() {
     });
 
     test('force clear completes after cleanup timeout', () async {
-      final runtime = AgentCancellationRuntime();
+      final runtime = AgentCancellationRuntime(
+        cleanupTimeout: const Duration(milliseconds: 10),
+      );
       final cleanupRelease = Completer<void>();
       final scope = runtime.start('c1');
       scope.registerCleanup(() => cleanupRelease.future);

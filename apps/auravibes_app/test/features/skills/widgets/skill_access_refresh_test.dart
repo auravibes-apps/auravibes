@@ -130,10 +130,6 @@ void main() {
       );
     });
     final _ = await tester.pumpAndSettle();
-    final _ = await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    });
-    final _ = await tester.pumpAndSettle();
     expect(find.text('Tool needs access'), findsOneWidget);
     await tester.tap(find.text('Set up credentials'));
     final _ = await tester.pumpAndSettle();

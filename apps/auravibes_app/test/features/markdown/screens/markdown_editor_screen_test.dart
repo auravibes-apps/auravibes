@@ -521,7 +521,7 @@ Future<void> _openMarkdownEditor(
     expect(sourceFocusNode.hasFocus, isTrue);
   }
   await tester.tap(find.text('Open editor'));
-  final _ = await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle(const Duration(milliseconds: 500));
   expect(find.byType(MarkdownEditorScreen), findsOneWidget);
   expect(_markdownEditorInput, findsOneWidget);
 }

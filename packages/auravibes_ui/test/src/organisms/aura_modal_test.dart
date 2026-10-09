@@ -29,11 +29,11 @@ void main() {
       expect(focusNode.hasFocus, isTrue);
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(focusNode.hasFocus, isFalse);
 
       await tester.tapAt(const Offset(1, 1));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(focusNode.hasFocus, isFalse);
     });
 
@@ -57,7 +57,7 @@ void main() {
       expect(find.text('Arbitrary modal content'), findsNothing);
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Modal heading'), findsOneWidget);
       expect(find.text('Arbitrary modal content'), findsOneWidget);
@@ -84,7 +84,7 @@ void main() {
       expect(tester.getSize(find.byType(AuraButton)).width, lessThan(200));
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(entryPointPressed, isTrue);
       expect(find.text('Modal content'), findsOneWidget);
@@ -106,11 +106,11 @@ void main() {
       );
       await gesture.moveBy(const Offset(40, 0));
       await gesture.up();
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.text('Modal content'), findsNothing);
 
       await tester.tap(find.text('Open modal'), buttons: kSecondaryButton);
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
       expect(find.text('Modal content'), findsNothing);
     });
 
@@ -128,7 +128,7 @@ void main() {
       expect(await tester.sendKeyEvent(.tab), isTrue);
       expect(await tester.sendKeyEvent(.enter), isTrue);
       final _ = await tester.sendKeyEvent(.enter);
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Modal content'), findsOneWidget);
     });
@@ -154,7 +154,7 @@ void main() {
       );
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       final content = tester.widget<ColoredBox>(
         find.byKey(const Key('themed-modal-content')),
@@ -174,11 +174,11 @@ void main() {
       );
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Modal content'), findsOneWidget);
 
       await tester.tapAt(const Offset(1, 1));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Modal content'), findsNothing);
     });
@@ -198,11 +198,11 @@ void main() {
 
       expect(await tester.sendKeyEvent(.tab), isTrue);
       expect(await tester.sendKeyEvent(.enter), isTrue);
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Modal content'), findsOneWidget);
 
       expect(await tester.sendKeyEvent(.escape), isTrue);
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Modal content'), findsNothing);
     });
 
@@ -223,11 +223,11 @@ void main() {
       );
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Close modal'), findsOneWidget);
 
       await tester.tap(find.text('Close modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Close modal'), findsNothing);
     });
@@ -274,7 +274,7 @@ void main() {
       );
 
       await tester.tap(find.text('Open modal'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Details'), findsOneWidget);
       expect(
@@ -282,7 +282,7 @@ void main() {
         'Close details',
       );
       await tester.tap(find.text('Close details'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Modal content'), findsNothing);
     });
   });

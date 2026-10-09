@@ -190,28 +190,34 @@ void main() {
       final _ = await tester.pumpAndSettle();
     }
 
-    testWidgets('renders drawer and body widgets', (tester) async {
+    testWidgets('desktop drawer renders and reports attachment', (
+      tester,
+    ) async {
       final controller = ResponsiveSlidingDrawerController();
       await pumpDrawer(tester, controller: controller);
 
       expect(find.text('Drawer'), findsOneWidget);
       expect(find.text('Body'), findsOneWidget);
-    });
-
-    testWidgets('controller attaches and reports isDesktop', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
-
-      await pumpDrawer(tester, controller: controller);
-
       expect(controller.isDesktop, isTrue);
     });
 
-    testWidgets('controller open animates drawer', (tester) async {
+    testWidgets('controller opens, closes, and toggles drawer', (tester) async {
       final controller = ResponsiveSlidingDrawerController();
 
       await pumpDrawer(tester, controller: controller);
 
       controller.open();
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Drawer'), findsOneWidget);
+      controller.close();
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Drawer'), findsOneWidget);
+      expect(find.text('Body'), findsOneWidget);
+      controller.toggle();
+      final _ = await tester.pumpAndSettle();
+
+      controller.toggle();
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
@@ -228,35 +234,6 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(tester.getTopLeft(find.text('Drawer')).dx, lessThan(0));
-    });
-
-    testWidgets('controller close after open', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
-
-      await pumpDrawer(tester, controller: controller);
-
-      controller.open();
-      final _ = await tester.pumpAndSettle();
-
-      controller.close();
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Drawer'), findsOneWidget);
-      expect(find.text('Body'), findsOneWidget);
-    });
-
-    testWidgets('controller toggle opens then closes', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
-
-      await pumpDrawer(tester, controller: controller);
-
-      controller.toggle();
-      final _ = await tester.pumpAndSettle();
-
-      controller.toggle();
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Drawer'), findsOneWidget);
     });
 
     testWidgets('closeIfMobile does nothing on desktop width', (tester) async {
@@ -283,14 +260,6 @@ void main() {
       await pumpDrawer(tester, controller: controller2);
       expect(controller2.isDesktop, isTrue);
       expect(controller1.isDesktop, isFalse);
-    });
-
-    testWidgets('uses docked layout when width >= 960', (tester) async {
-      final controller = ResponsiveSlidingDrawerController();
-
-      await pumpDrawer(tester, controller: controller);
-
-      expect(controller.isDesktop, isTrue);
     });
 
     testWidgets('uses overlay through 959 and docked layout at 960', (

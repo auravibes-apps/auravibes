@@ -153,9 +153,13 @@ class McpManagerService {
   new({
     this.oauthCredentialService,
     @visibleForTesting bool? legacySseSupported,
+    @visibleForTesting this.legacySseTransportFactory,
   }) : _legacySseSupported = legacySseSupported ?? !kIsWeb;
 
   final OAuthCredentialService? oauthCredentialService;
+  @visibleForTesting
+  final Future<mcp.ClientTransport> Function(McpServerToCreate)?
+  legacySseTransportFactory;
   final bool _legacySseSupported;
 
   Future<void> disconnect(McpManagerClient? client) async {
@@ -207,18 +211,20 @@ class McpManagerService {
   Future<McpManagerClient> _connectMcp(
     McpServerToCreate serverInfo, {
     http.Client? httpClient,
+    mcp.ClientTransport? clientTransport,
   }) async {
     // Create client configuration.
-    final config = mcp.McpClient.simpleConfig(
-      name: 'AuraVibes MCP Client',
-      version: '1.0.0',
+    final clientResult = mcp.McpClient.createClient(
+      mcp.McpClient.simpleConfig(
+        name: 'AuraVibes MCP Client',
+        version: '1.0.0',
+      ),
     );
-
-    final clientResult = mcp.McpClient.createClient(config);
     final transport = await _connectClient(
       clientResult,
       serverInfo,
       httpClient: httpClient,
+      clientTransport: clientTransport,
     );
 
     return McpManagerClient._(
@@ -235,13 +241,16 @@ class McpManagerService {
     mcp.Client client,
     McpServerToCreate serverInfo, {
     http.Client? httpClient,
+    mcp.ClientTransport? clientTransport,
   }) async {
     try {
-      final transport = await _createTransportConfig(
-        serverInfo,
-        oauthCredentialService: oauthCredentialService,
-        httpClient: httpClient,
-      );
+      final transport =
+          clientTransport ??
+          await _createTransportConfig(
+            serverInfo,
+            oauthCredentialService: oauthCredentialService,
+            httpClient: httpClient,
+          );
       await client.connect(transport);
 
       return transport;
@@ -251,14 +260,23 @@ class McpManagerService {
     }
   }
 
-  Future<McpManagerClient> _connectLegacySse(McpConnectionRequest request) {
+  Future<McpManagerClient> _connectLegacySse(
+    McpConnectionRequest request,
+  ) async {
     if (!_legacySseSupported) {
       throw const McpLegacySseUnavailableException();
     }
 
-    return _connectMcp(
-      _serverForTransport(request, const McpTransportTypeSSE()),
+    final serverInfo = _serverForTransport(
+      request,
+      const McpTransportTypeSSE(),
     );
+    final factory = legacySseTransportFactory;
+    if (factory == null) return await _connectMcp(serverInfo);
+
+    final transport = await factory(serverInfo);
+
+    return await _connectMcp(serverInfo, clientTransport: transport);
   }
 }
 

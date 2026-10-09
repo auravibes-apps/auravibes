@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraPressable', () {
-    testWidgets('uses an 8 percent hover state layer', (tester) async {
+    testWidgets('uses hover and pressed state layer opacities', (tester) async {
       final previousStrategy = FocusManager.instance.highlightStrategy;
       FocusManager.instance.highlightStrategy = .alwaysTraditional;
       addTearDown(
@@ -22,19 +22,16 @@ void main() {
       expect(_stateLayerColor(tester).a, closeTo(0.08, 0.001));
 
       await gesture.removePointer();
-    });
+      await tester.pump();
 
-    testWidgets('uses a 16 percent pressed state layer', (tester) async {
-      await tester.pumpWidget(_host());
-
-      final gesture = await tester.startGesture(
+      final pressGesture = await tester.startGesture(
         tester.getCenter(find.byType(AuraPressable)),
       );
       await tester.pump(const Duration(milliseconds: 250));
 
       expect(_stateLayerColor(tester).a, closeTo(0.16, 0.001));
 
-      await gesture.up();
+      await pressGesture.up();
     });
   });
 }

@@ -40,8 +40,17 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 void main() {
   group('ApiModelsDao', () {
     final fixture = _DatabaseFixture(createTestConnection);
+    var isFirstTest = true;
 
-    setUp(fixture.reset);
+    setUp(() async {
+      if (isFirstTest) {
+        isFirstTest = false;
+
+        return;
+      }
+
+      await fixture.reset();
+    });
 
     tearDownAll(() async {
       await fixture.close();

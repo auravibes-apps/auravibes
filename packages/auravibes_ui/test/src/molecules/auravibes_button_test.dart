@@ -6,65 +6,39 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraButton', () {
-    testWidgets('renders button with text correctly', (tester) async {
+    testWidgets('renders, sizes, centers, and activates button', (
+      tester,
+    ) async {
       const buttonText = 'Click me';
       var wasPressed = false;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraButton(
-              onPressed: () => wasPressed = true,
-              child: const Text(buttonText),
+            body: SizedBox(
+              width: 300,
+              child: Center(
+                child: AuraButton(
+                  onPressed: () => wasPressed = true,
+                  child: const Text(buttonText),
+                ),
+              ),
             ),
           ),
         ),
       );
 
       expect(find.text(buttonText), findsOneWidget);
-      // Check for the actual widget structure: Material -> InkWell ->.
-      // AnimatedContainer.
+      final buttonSize = tester.getSize(find.byType(AuraButton));
+      expect(buttonSize.width, lessThan(200));
+      expect(buttonSize.height, lessThan(100));
+      expect(
+        tester.getRect(find.text(buttonText)).center.dx,
+        closeTo(tester.getRect(find.byType(AuraButton)).center.dx, 0.5),
+      );
 
       await tester.tap(find.byType(AuraButton));
       expect(wasPressed, isTrue);
-    });
-
-    testWidgets('uses intrinsic width by default', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: AuraButton(
-                onPressed: () {
-                  final _ = Object();
-                },
-                child: const Text('Button'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(tester.getSize(find.byType(AuraButton)).width, lessThan(200));
-    });
-
-    testWidgets('uses intrinsic height by default', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: AuraButton(
-                onPressed: () {
-                  final _ = Object();
-                },
-                child: const Text('Button'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      expect(tester.getSize(find.byType(AuraButton)).height, lessThan(100));
     });
 
     testWidgets('keeps enabled and disabled buttons the same size', (
@@ -109,29 +83,6 @@ void main() {
       expect(disabledSize.height, greaterThanOrEqualTo(48));
     });
 
-    testWidgets('centers content in a tight parent', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 300,
-              child: AuraButton(
-                onPressed: () {
-                  final _ = Object();
-                },
-                child: const Text('Button'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final buttonRect = tester.getRect(find.byType(AuraButton));
-      final textRect = tester.getRect(find.text('Button'));
-
-      expect(textRect.center.dx, closeTo(buttonRect.center.dx, 0.5));
-    });
-
     testWidgets('applies ghost variant styling correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -159,28 +110,8 @@ void main() {
       expect(decoration.border, isNull);
     });
 
-    testWidgets('shows loading spinner when isLoading is true', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              child: const Text('Loading'),
-              isLoading: true,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(AuraLoadingCircle), findsOneWidget);
-      expect(find.text('Loading'), findsNothing);
-    });
-
-    testWidgets('disables button when isLoading is true', (tester) async {
+    testWidgets('shows spinner and blocks taps while loading', (tester) async {
       var wasPressed = false;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -193,11 +124,13 @@ void main() {
         ),
       );
 
+      expect(find.byType(AuraLoadingCircle), findsOneWidget);
+      expect(find.text('Loading'), findsNothing);
       await tester.tap(find.byType(AuraButton));
       expect(wasPressed, isFalse);
     });
 
-    testWidgets('activates focused button with enter and space', (
+    testWidgets('shows focus ring and activates with enter and space', (
       tester,
     ) async {
       var pressCount = 0;
@@ -213,33 +146,6 @@ void main() {
         ),
       );
 
-      expect(await tester.sendKeyEvent(.tab), isTrue);
-      await tester.pump();
-      expect(pressCount, 0);
-
-      expect(await tester.sendKeyEvent(.enter), isTrue);
-      await tester.pump();
-      expect(pressCount, 1);
-
-      expect(await tester.sendKeyEvent(.space), isTrue);
-      await tester.pump();
-      expect(pressCount, 2);
-    });
-
-    testWidgets('shows focus ring when focused', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              child: const Text('Keyboard'),
-            ),
-          ),
-        ),
-      );
-
       final focusRing = find.descendant(
         of: find.byType(AuraButton),
         matching: find.byType(CustomPaint),
@@ -249,9 +155,17 @@ void main() {
 
       expect(await tester.sendKeyEvent(.tab), isTrue);
       await tester.pump();
-
+      expect(pressCount, 0);
       final afterFocus = tester.widget<CustomPaint>(focusRing);
       expect(afterFocus.foregroundPainter, isNotNull);
+
+      expect(await tester.sendKeyEvent(.enter), isTrue);
+      await tester.pump();
+      expect(pressCount, 1);
+
+      expect(await tester.sendKeyEvent(.space), isTrue);
+      await tester.pump();
+      expect(pressCount, 2);
     });
 
     testWidgets('applies full width when isFullWidth is true', (tester) async {

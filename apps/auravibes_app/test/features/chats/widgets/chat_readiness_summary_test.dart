@@ -52,8 +52,9 @@ void main() {
       text: 'Model selected. Remote access is checked when you send a message.',
     ),
   ];
-  for (final scenario in scenarios) {
-    testWidgets(scenario.text, (tester) async {
+  testWidgets('summarizes all chat readiness states', (tester) async {
+    for (var index = 0; index < scenarios.length; index++) {
+      final scenario = scenarios[index];
       await tester.runAsync(
         () => tester.pumpWidget(
           TestableApp(
@@ -76,14 +77,15 @@ void main() {
               newChatProvider('ws')
                   .overrideWithValue(.new(modelId: scenario.selected)),
             ],
+            key: ValueKey<int>(index),
           ),
         ),
       );
       final _ = await tester.pumpAndSettle();
-      expect(find.text(scenario.text), findsOneWidget);
-      expect(find.text('Ready to chat'), findsNothing);
-    });
-  }
+      expect(find.text(scenario.text), findsOneWidget, reason: scenario.text);
+      expect(find.text('Ready to chat'), findsNothing, reason: scenario.text);
+    }
+  });
   testWidgets('catalog failure offers retry without claiming access', (
     tester,
   ) async {

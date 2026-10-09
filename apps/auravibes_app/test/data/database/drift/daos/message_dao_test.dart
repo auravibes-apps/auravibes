@@ -36,10 +36,15 @@ final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
 void main() {
   group('MessageDao', () {
     final fixture = _DatabaseFixture(createTestConnection);
+    var isFirstTest = true;
     var conversationId = '';
 
     setUp(() async {
-      await fixture.reset();
+      if (isFirstTest) {
+        isFirstTest = false;
+      } else {
+        await fixture.reset();
+      }
       final ws = await fixture.database.workspaceDao.insertWorkspace(
         .insert(name: 'WS', type: WorkspaceType.local),
       );

@@ -1349,19 +1349,25 @@ Future<ProviderContainer> _pumpActiveSubAgentStatusWidget(
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, _) => const Scaffold(
-          body: ActiveSubAgentStatusWidget(
-            workspaceId: _workspaceId,
-            conversationId: _chatId,
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: const Scaffold(
+            body: ActiveSubAgentStatusWidget(
+              workspaceId: _workspaceId,
+              conversationId: _chatId,
+            ),
           ),
+          key: state.pageKey,
         ),
       ),
       GoRoute(
         path: '/workspaces/:workspaceId/chats/:chatId/sub-agents/:subAgentConversationId',
-        builder: (_, state) => Scaffold(
-          body: Text(
-            'Opened ${state.pathParameters['subAgentConversationId']}',
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: Scaffold(
+            body: Text(
+              'Opened ${state.pathParameters['subAgentConversationId']}',
+            ),
           ),
+          key: state.pageKey,
         ),
       ),
     ],

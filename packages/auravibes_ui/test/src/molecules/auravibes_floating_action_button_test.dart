@@ -7,17 +7,27 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraFloatingActionButton', () {
-    testWidgets('renders regular FAB correctly', (tester) async {
+    testWidgets('renders regular FAB with expected style and behavior', (
+      tester,
+    ) async {
       const testIcon = Icons.add;
+      const tooltipMessage = 'Add new item';
+      const semanticLabel = 'Create item';
       var wasPressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () => wasPressed = true,
-              icon: testIcon,
+        AuraThemeScope(
+          theme: .light,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AuraFloatingActionButton(
+                onPressed: () => wasPressed = true,
+                icon: testIcon,
+                semanticLabel: semanticLabel,
+                tooltip: tooltipMessage,
+              ),
             ),
+            theme: ThemeData.light().copyWith(),
           ),
         ),
       );
@@ -25,6 +35,38 @@ void main() {
       expect(find.byIcon(testIcon), findsOneWidget);
       expect(find.byType(Icon), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byType(Tooltip), findsOneWidget);
+
+      final fab = tester.widget<FloatingActionButton>(
+        find.byType(FloatingActionButton),
+      );
+      expect(fab.backgroundColor, isNotNull);
+      expect(fab.foregroundColor, isNotNull);
+      expect(fab.elevation, DesignElevation.md);
+      expect(fab.focusElevation, DesignElevation.lg);
+      expect(fab.hoverElevation, DesignElevation.lg);
+      expect(fab.highlightElevation, DesignElevation.xl);
+      expect(fab.backgroundColor, AuraTheme.light.colors.fillFor(.primary));
+      expect(fab.foregroundColor, AuraTheme.light.colors.onFill(.primary));
+
+      final icon = tester.widget<Icon>(find.byIcon(testIcon));
+      expect(icon.size, 20);
+      expect(icon.color, AuraTheme.light.colors.onFill(.primary));
+
+      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+      expect(tooltip.message, tooltipMessage);
+
+      final semanticsWidgets = tester.widgetList<Semantics>(
+        find.descendant(
+          of: find.byType(AuraFloatingActionButton),
+          matching: find.byType(Semantics),
+        ),
+      );
+      final semantics = semanticsWidgets.firstWhere(
+        (s) => s.properties.label == semanticLabel,
+      );
+      expect(semantics.properties.label, semanticLabel);
+      expect(semantics.properties.button, isTrue);
 
       await tester.tap(find.byType(FloatingActionButton));
       expect(wasPressed, isTrue);
@@ -57,83 +99,67 @@ void main() {
       expect(wasPressed, isTrue);
     });
 
-    testWidgets('applies mini size correctly', (tester) async {
+    testWidgets('applies mini and large sizes correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-              size: .mini,
+            body: Column(
+              mainAxisSize: .min,
+              children: [
+                AuraFloatingActionButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  icon: Icons.add,
+                  key: const ValueKey('mini'),
+                  size: .mini,
+                  heroTag: null,
+                ),
+                AuraFloatingActionButton(
+                  onPressed: () {
+                    final _ = Object();
+                  },
+                  icon: Icons.remove,
+                  key: const ValueKey('large'),
+                  size: .large,
+                  heroTag: null,
+                ),
+              ],
             ),
           ),
         ),
       );
 
-      final sizedBox = tester.widget<SizedBox>(
-        find.ancestor(
-          of: find.byType(FloatingActionButton),
-          matching: find.byType(SizedBox),
-        ),
+      final miniFab = find.descendant(
+        of: find.byKey(const ValueKey('mini')),
+        matching: find.byType(FloatingActionButton),
+      );
+      final miniSizedBox = tester.widget<SizedBox>(
+        find.ancestor(of: miniFab, matching: find.byType(SizedBox)),
       );
 
-      expect(sizedBox.width, 40.0);
-      expect(sizedBox.height, 40.0);
+      expect(miniSizedBox.width, 40.0);
+      expect(miniSizedBox.height, 40.0);
 
-      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
-      expect(icon.size, 16);
+      final largeFab = find.descendant(
+        of: find.byKey(const ValueKey('large')),
+        matching: find.byType(FloatingActionButton),
+      );
+      final largeSizedBox = tester.widget<SizedBox>(
+        find.ancestor(of: largeFab, matching: find.byType(SizedBox)),
+      );
+
+      expect(largeSizedBox.width, 72.0);
+      expect(largeSizedBox.height, 72.0);
+
+      final miniIcon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(miniIcon.size, 16);
+
+      final largeIcon = tester.widget<Icon>(find.byIcon(Icons.remove));
+      expect(largeIcon.size, 24);
     });
 
-    testWidgets('applies regular size correctly', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-            ),
-          ),
-        ),
-      );
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
-      expect(icon.size, 20);
-    });
-
-    testWidgets('applies large size correctly', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-              size: .large,
-            ),
-          ),
-        ),
-      );
-
-      final sizedBox = tester.widget<SizedBox>(
-        find.ancestor(
-          of: find.byType(FloatingActionButton),
-          matching: find.byType(SizedBox),
-        ),
-      );
-
-      expect(sizedBox.width, 72.0);
-      expect(sizedBox.height, 72.0);
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
-      expect(icon.size, 24);
-    });
-
-    testWidgets('applies custom tint correctly', (tester) async {
+    testWidgets('applies custom tint and handles disabled FAB', (tester) async {
       const customColor = AuraTint.error;
 
       await tester.pumpWidget(
@@ -141,12 +167,25 @@ void main() {
           theme: .light,
           child: MaterialApp(
             home: Scaffold(
-              body: AuraFloatingActionButton(
-                onPressed: () {
-                  final _ = Object();
-                },
-                icon: Icons.add,
-                tint: customColor,
+              body: Column(
+                mainAxisSize: .min,
+                children: [
+                  AuraFloatingActionButton(
+                    onPressed: () {
+                      final _ = Object();
+                    },
+                    icon: Icons.add,
+                    key: const ValueKey('tinted'),
+                    tint: customColor,
+                    heroTag: null,
+                  ),
+                  const AuraFloatingActionButton(
+                    onPressed: null,
+                    icon: Icons.remove,
+                    key: ValueKey('disabled'),
+                    heroTag: null,
+                  ),
+                ],
               ),
             ),
             theme: ThemeData.light().copyWith(),
@@ -155,135 +194,22 @@ void main() {
       );
 
       final fab = tester.widget<FloatingActionButton>(
-        find.byType(FloatingActionButton),
+        find.descendant(
+          of: find.byKey(const ValueKey('tinted')),
+          matching: find.byType(FloatingActionButton),
+        ),
       );
       // Verify the resolved color matches the theme's error color.
       expect(fab.backgroundColor, AuraTheme.light.colors.error);
       expect(fab.foregroundColor, AuraTheme.light.colors.onError);
-    });
 
-    testWidgets('applies default colors correctly', (tester) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: Scaffold(
-              body: AuraFloatingActionButton(
-                onPressed: () {
-                  final _ = Object();
-                },
-                icon: Icons.add,
-              ),
-            ),
-            theme: ThemeData.light().copyWith(),
-          ),
-        ),
-      );
-
-      final fab = tester.widget<FloatingActionButton>(
-        find.byType(FloatingActionButton),
-      );
-      // Default colors are resolved from AuraTheme.
-      expect(fab.backgroundColor, isNotNull);
-      expect(fab.foregroundColor, isNotNull);
-
-      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
-      expect(fab.backgroundColor, AuraTheme.light.colors.fillFor(.primary));
-      expect(icon.color, AuraTheme.light.colors.onFill(.primary));
-    });
-
-    testWidgets('handles null onPressed correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(onPressed: null, icon: Icons.add),
-          ),
-        ),
-      );
-
-      final fab = tester.widget<FloatingActionButton>(
-        find.byType(FloatingActionButton),
-      );
-      expect(fab.onPressed, isNull);
-    });
-
-    testWidgets('applies tooltip correctly', (tester) async {
-      const tooltipMessage = 'Add new item';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-              tooltip: tooltipMessage,
-            ),
-          ),
-        ),
-      );
-
-      expect(find.byType(Tooltip), findsOneWidget);
-
-      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
-      expect(tooltip.message, tooltipMessage);
-    });
-
-    testWidgets('applies semantic label correctly', (tester) async {
-      const semanticLabel = 'Add new item';
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-              semanticLabel: semanticLabel,
-            ),
-          ),
-        ),
-      );
-
-      final semanticsWidgets = tester.widgetList<Semantics>(
+      final disabledFab = tester.widget<FloatingActionButton>(
         find.descendant(
-          of: find.byType(AuraFloatingActionButton),
-          matching: find.byType(Semantics),
+          of: find.byKey(const ValueKey('disabled')),
+          matching: find.byType(FloatingActionButton),
         ),
       );
-
-      // Find the Semantics widget with the correct label.
-      final semantics = semanticsWidgets.firstWhere(
-        (s) => s.properties.label == semanticLabel,
-      );
-
-      expect(semantics.properties.label, semanticLabel);
-      expect(semantics.properties.button, isTrue);
-    });
-
-    testWidgets('applies proper elevation values', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-            ),
-          ),
-        ),
-      );
-
-      final fab = tester.widget<FloatingActionButton>(
-        find.byType(FloatingActionButton),
-      );
-      expect(fab.elevation, DesignElevation.md);
-      expect(fab.focusElevation, DesignElevation.lg);
-      expect(fab.hoverElevation, DesignElevation.lg);
-      expect(fab.highlightElevation, DesignElevation.xl);
+      expect(disabledFab.onPressed, isNull);
     });
 
     group('AuraFABSize enum', () {

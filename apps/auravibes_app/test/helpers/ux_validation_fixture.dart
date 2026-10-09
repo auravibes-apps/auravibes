@@ -60,8 +60,9 @@ class UxValidationFixture {
   }
 
   static Future<UxValidationFixture> create({bool empty = false}) async {
+    final isNewDatabase = _database == null;
     final database = _database ??= .new(connection: NativeDatabase.memory());
-    await clearAppDatabase(database);
+    if (!isNewDatabase) await clearAppDatabase(database);
     if (empty) {
       return UxValidationFixture._(database, '', '', '', '', '', '', '', '');
     }
@@ -249,13 +250,22 @@ class UxValidationFixture {
   }
 
   Future<void> settle(WidgetTester tester) async {
+    // Preserve the prior minimum wait while collapsing five virtual frames.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    if (find.byType(AuraSpinner).evaluate().isEmpty &&
+        !tester.binding.hasScheduledFrame) {
+      return;
+    }
+
     for (var attempt = 0; attempt < 100; attempt++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 10)),
       );
       await tester.pump(const Duration(milliseconds: 100));
-      if (attempt >= 4 &&
-          find.byType(AuraSpinner).evaluate().isEmpty &&
+      if (find.byType(AuraSpinner).evaluate().isEmpty &&
           !tester.binding.hasScheduledFrame) {
         return;
       }

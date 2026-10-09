@@ -681,10 +681,10 @@ void main() {
             tester.widget<AuraSidebar>(find.byType(AuraSidebar));
         expect(sidebar().selectedIndex, -1);
         router.go('/workspaces/ws-test/more/skills');
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(sidebar().selectedIndex, 1);
         router.go('/workspaces/ws-test/more/skills/skill-A');
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         sidebar().onNavigationTap.call(2);
         sidebar().onNavigationTap.call(3);
         await tester.pump();
@@ -708,32 +708,32 @@ void main() {
         );
         expect(sidebar().selectedIndex, 2);
         sidebar().onNavigationTap.call(1);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
         sidebar().onNavigationTap.call(3);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/settings');
         expect(sidebar().selectedIndex, 3);
         sidebar().onNavigationTap.call(4);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(
           router.state.uri.path,
           '/workspaces/ws-test/more/cloud-accounts',
         );
         expect(sidebar().selectedIndex, 4);
         sidebar().onNavigationTap.call(0);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/chats/chat-A');
         expect(confirmations, 2);
         router.go('/workspaces/B/chat/new');
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         sidebar().onNavigationTap.call(1);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/B/more/agents');
         router.go('/workspaces/ws-test/chat/new');
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         sidebar().onNavigationTap.call(1);
-        final _ = await tester.pumpAndSettle();
+        final _ = await tester.pump();
         expect(router.state.uri.path, '/workspaces/ws-test/more/skills');
         for (final width in [959.0, 960.0]) {
           tester.view.physicalSize = .new(width, 900);

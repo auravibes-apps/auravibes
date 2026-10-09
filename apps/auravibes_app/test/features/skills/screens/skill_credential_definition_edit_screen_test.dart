@@ -80,7 +80,15 @@ void main() {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  setUp(() => clearAppDatabase(database));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
   tearDownAll(database.close);
 
   Widget buildScreen({
@@ -136,11 +144,13 @@ void main() {
       builder: (context) => TextButton(
         onPressed: () {
           Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(
-              builder: (_) => SkillCredentialDefinitionEditScreen(
+            PageRouteBuilder<void>(
+              pageBuilder: (_, _, _) => SkillCredentialDefinitionEditScreen(
                 workspaceId: workspaceId,
                 definitionId: definitionId,
               ),
+              transitionDuration: .zero,
+              reverseTransitionDuration: .zero,
             ),
           );
         },
@@ -280,22 +290,28 @@ void main() {
       routes: [
         GoRoute(
           path: parent,
-          builder: (_, _) => SkillCredentialDefinitionEditScreen(
-            workspaceId: harness.workspaceId,
-            definitionId: definition.id,
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: SkillCredentialDefinitionEditScreen(
+              workspaceId: harness.workspaceId,
+              definitionId: definition.id,
+            ),
+            key: state.pageKey,
           ),
         ),
         for (final target in targets)
           GoRoute(
             path: target,
-            builder: (context, state) {
+            pageBuilder: (context, state) {
               visited = state.uri.path;
 
-              return Scaffold(
-                body: TextButton(
-                  onPressed: () => context.pop(),
-                  child: const Text('Return to type'),
+              return NoTransitionPage(
+                child: Scaffold(
+                  body: TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Return to type'),
+                  ),
                 ),
+                key: state.pageKey,
               );
             },
           ),

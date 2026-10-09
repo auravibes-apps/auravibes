@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_legacy_sse_unavailable_exception.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
   group('McpManagerService.connectMcpWithAutoTransport', () {
@@ -87,12 +88,17 @@ void main() {
       expect(server.sseGetCount, 0);
     });
 
-    test('surfaces invalid SSE endpoint handshake failure', () async {
-      final server = await _LocalMcpHttpServer.start(
-        streamableStatus: 405,
-        sseEndpoint: false,
+    test('surfaces a missing SSE endpoint handshake failure', () async {
+      final server = await _LocalMcpHttpServer.start(streamableStatus: 405);
+      var legacySseAttempted = false;
+      final manager = McpManagerService(
+        legacySseTransportFactory: (serverInfo) async {
+          legacySseAttempted = true;
+          expect(serverInfo.transport, isA<McpTransportTypeSSE>());
+
+          return _MissingSseEndpointTransport();
+        },
       );
-      final manager = McpManagerService();
       addTearDown(server.close);
 
       await expectLater(
@@ -102,7 +108,8 @@ void main() {
         throwsA(anything),
       );
 
-      expect(server.sseGetCount, 1);
+      expect(legacySseAttempted, isTrue);
+      expect(server.sseGetCount, 0);
     });
 
     test('reports legacy SSE unavailable when platform disallows it', () async {
@@ -139,13 +146,11 @@ final class _LocalMcpHttpServer {
     this._server, {
     required this.streamableStatus,
     required this.sseStatus,
-    required this.sseEndpoint,
     required this.useJsonRpcError,
   });
 
   final int streamableStatus;
   final int sseStatus;
-  final bool sseEndpoint;
   final bool useJsonRpcError;
   int streamablePostCount = 0;
   int sseGetCount = 0;
@@ -167,7 +172,6 @@ final class _LocalMcpHttpServer {
   static Future<_LocalMcpHttpServer> start({
     int streamableStatus = 200,
     int sseStatus = 200,
-    bool sseEndpoint = true,
     bool useJsonRpcError = false,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -175,7 +179,6 @@ final class _LocalMcpHttpServer {
       server,
       streamableStatus: streamableStatus,
       sseStatus: sseStatus,
-      sseEndpoint: sseEndpoint,
       useJsonRpcError: useJsonRpcError,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
@@ -254,14 +257,10 @@ final class _LocalMcpHttpServer {
       return;
     }
 
-    response.headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream');
-    response.bufferOutput = false;
-    if (!sseEndpoint) {
-      final _ = await response.close();
-
-      return;
-    }
-    response.write('event: endpoint\ndata: /messages\n\n');
+    response
+      ..headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream')
+      ..bufferOutput = false
+      ..write('event: endpoint\ndata: /messages\n\n');
     final _ = await response.flush();
     _sseResponse.complete(response);
     final _ = await response.done;
@@ -295,6 +294,28 @@ final class _LocalMcpHttpServer {
     }
 
     return Map<String, Object?>.from(decoded);
+  }
+}
+
+final class _MissingSseEndpointTransport implements mcp.ClientTransport {
+  final _messages = StreamController<Object?>();
+  final _closeCompleter = Completer<void>();
+
+  @override
+  Stream<Object?> get onMessage => _messages.stream;
+
+  @override
+  Future<void> get onClose => _closeCompleter.future;
+
+  @override
+  void send(Object? message) {
+    _messages.addError(StateError('SSE endpoint not found'));
+  }
+
+  @override
+  void close() {
+    if (!_closeCompleter.isCompleted) _closeCompleter.complete();
+    unawaited(_messages.close());
   }
 }
 

@@ -25,67 +25,59 @@ void main() {
       expect(find.bySemanticsLabel('Preview unavailable'), findsOneWidget);
     });
 
-    testWidgets('passes URL to Image.network', (tester) async {
+    testWidgets('passes image configuration to Image', (tester) async {
       const url = 'https://example.com/image.png';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraImage(url: url)),
-        ),
-      );
-
-      final image = tester.widget<Image>(find.byType(Image));
-      final provider = image.image as NetworkImage;
-
-      expect(provider.url, url);
-    });
-
-    testWidgets('passes fit to Image.network', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraImage(url: 'https://example.com/image.png', fit: .cover),
-          ),
-        ),
-      );
-
-      final image = tester.widget<Image>(find.byType(Image));
-
-      expect(image.fit, BoxFit.cover);
-    });
-
-    testWidgets('uses a caller-provided image provider', (tester) async {
+      const semanticLabel = 'A mountain landscape';
       final provider = MemoryImage(.fromList(const [0, 1, 2]));
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraImage(url: 'unused', imageProvider: provider),
-          ),
-        ),
-      );
-
-      expect(tester.widget<Image>(find.byType(Image)).image, same(provider));
-    });
-
-    testWidgets('exposes semantic label', (tester) async {
-      const semanticLabel = 'A mountain landscape';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraImage(
-              url: 'https://example.com/image.png',
-              semanticLabel: semanticLabel,
+            body: Column(
+              children: [
+                const SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: AuraImage(
+                    url: url,
+                    key: ValueKey('network-image'),
+                    fit: .cover,
+                    semanticLabel: semanticLabel,
+                  ),
+                ),
+                SizedBox(
+                  width: 100,
+                  height: 100,
+                  child: AuraImage(
+                    url: 'unused',
+                    key: const ValueKey('provided-image'),
+                    imageProvider: provider,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
 
-      final image = tester.widget<Image>(find.byType(Image));
-
-      expect(image.semanticLabel, semanticLabel);
+      final networkImage = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const ValueKey('network-image')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect((networkImage.image as NetworkImage).url, url);
+      expect(networkImage.fit, BoxFit.cover);
+      expect(networkImage.semanticLabel, semanticLabel);
       expect(find.bySemanticsLabel(semanticLabel), findsOneWidget);
+
+      final providedImage = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const ValueKey('provided-image')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(providedImage.image, same(provider));
     });
 
     testWidgets('shows loading fallback before first image frame', (

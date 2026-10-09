@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/usecases/select_workspace_usec
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/draft_exit_registry_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -23,7 +24,10 @@ final _logger = Logger('WorkspaceSwitcher');
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
 @Riverpod(keepAlive: true)
-class WorkspaceSwitcher extends _$WorkspaceSwitcher
+class WorkspaceSwitcher({
+  @visibleForTesting
+  final Duration debounceDuration = const Duration(milliseconds: 300),
+}) extends _$WorkspaceSwitcher
     with _WorkspaceSwitcherActions, _WorkspaceSwitcherTransitionActions {
   Timer? _debounceTimer;
   final _switchQueue = Queue<({String workspaceId, int generation})>();
@@ -45,7 +49,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher
     _debounceTimer?.cancel();
     final switchGeneration = ++_switchGeneration;
 
-    _debounceTimer = .new(const Duration(milliseconds: 300), () {
+    _debounceTimer = .new(debounceDuration, () {
       _queueSwitch(workspaceId, switchGeneration);
     });
   }

@@ -82,6 +82,7 @@ void main() {
     expect(find.byType(ConversationContextUsagePill), findsOneWidget);
     expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
     expect(find.text('50%'), findsOneWidget);
+    expect(find.byType(AuraLinearProgressIndicator), findsOneWidget);
   });
 
   testWidgets('renders elevated usage level', (tester) async {
@@ -158,13 +159,5 @@ void main() {
           .value,
       endsWith('de contexto no disponible'),
     );
-  });
-
-  testWidgets('renders progress indicator', (tester) async {
-    final data = ContextUsageData.compute(usedTokens: 50, limitTokens: 100);
-
-    await pumpSubject(tester, data: data);
-
-    expect(find.byType(AuraLinearProgressIndicator), findsOneWidget);
   });
 }

@@ -4,23 +4,37 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraInput', () {
-    testWidgets('renders input field correctly', (tester) async {
+    testWidgets('renders placeholder, hint, and icons', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: AuraInput(placeholder: Text('Enter text'))),
+          home: Scaffold(
+            body: AuraInput(
+              placeholder: Text('Enter text'),
+              hint: Text('This is helper text'),
+              prefixIcon: Icon(Icons.search),
+              suffixIcon: Icon(Icons.clear),
+            ),
+          ),
         ),
       );
 
       expect(find.byType(TextFormField), findsOneWidget);
       expect(find.text('Enter text'), findsOneWidget);
+      expect(find.text('This is helper text'), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.byIcon(Icons.clear), findsOneWidget);
     });
 
-    testWidgets('displays initial value correctly', (tester) async {
-      const initialValue = 'Initial text';
+    testWidgets('displays initial value and obscures it when requested', (
+      tester,
+    ) async {
+      const initialValue = 'password';
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: AuraInput(initialValue: initialValue)),
+          home: Scaffold(
+            body: AuraInput(initialValue: initialValue, obscureText: true),
+          ),
         ),
       );
 
@@ -28,35 +42,29 @@ void main() {
         find.byType(TextFormField),
       );
       expect(textField.initialValue, initialValue);
-    });
-
-    testWidgets('calls onChanged when text changes', (tester) async {
-      String? changedValue;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraInput(onChanged: (value) => changedValue = value),
-          ),
-        ),
+      expect(
+        tester.widget<AuraInput>(find.byType(AuraInput)).obscureText,
+        isTrue,
       );
-
-      await tester.enterText(find.byType(TextFormField), 'New text');
-      expect(changedValue, 'New text');
     });
 
-    testWidgets('calls onSubmitted when submitted', (tester) async {
+    testWidgets('calls onChanged and onSubmitted', (tester) async {
+      String? changedValue;
       String? submittedValue;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraInput(onSubmitted: (value) => submittedValue = value),
+            body: AuraInput(
+              onChanged: (value) => changedValue = value,
+              onSubmitted: (value) => submittedValue = value,
+            ),
           ),
         ),
       );
 
       await tester.enterText(find.byType(TextFormField), 'Submitted text');
+      expect(changedValue, 'Submitted text');
       await tester.testTextInput.receiveAction(.done);
       expect(submittedValue, 'Submitted text');
     });
@@ -101,18 +109,6 @@ void main() {
       expect(find.text('123456789'), findsNothing);
     });
 
-    testWidgets('displays helper text correctly', (tester) async {
-      const helperText = 'This is helper text';
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraInput(hint: Text(helperText))),
-        ),
-      );
-
-      expect(find.text(helperText), findsOneWidget);
-    });
-
     testWidgets('prioritizes error text over helper text', (tester) async {
       const helperText = 'Helper text';
       const errorText = 'Error text';
@@ -129,66 +125,23 @@ void main() {
       expect(find.text(helperText), findsNothing);
     });
 
-    testWidgets('disables input when enabled is false', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraInput(enabled: false))),
-      );
-
-      final textField = tester.widget<TextFormField>(
-        find.byType(TextFormField),
-      );
-      expect(textField.enabled, isFalse);
-    });
-
-    testWidgets('makes input read-only when readOnly is true', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraInput(readOnly: true))),
-      );
-
-      // Test that the input is read-only by checking if we can enter text.
-      await tester.enterText(find.byType(TextFormField), 'test');
-      expect(find.text('test'), findsNothing);
-    });
-
-    testWidgets('obscures text when obscureText is true', (tester) async {
+    testWidgets('disables input and respects read-only state', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraInput(initialValue: 'password', obscureText: true),
+            body: Column(
+              children: [AuraInput(enabled: false), AuraInput(readOnly: true)],
+            ),
           ),
         ),
       );
 
-      // Find the AuraInput widget and verify obscureText property is set.
-      final auraInput = tester.widget<AuraInput>(find.byType(AuraInput));
-      expect(auraInput.obscureText, isTrue);
+      final fields = find.byType(TextFormField);
+      expect(fields, findsNWidgets(2));
+      expect(tester.widget<TextFormField>(fields.at(0)).enabled, isFalse);
 
-      // Verify the initial value is set correctly.
-      expect(auraInput.initialValue, equals('password'));
-    });
-
-    testWidgets('displays prefix icon correctly', (tester) async {
-      const prefixIcon = Icon(Icons.search);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraInput(prefixIcon: prefixIcon)),
-        ),
-      );
-
-      expect(find.byIcon(Icons.search), findsOneWidget);
-    });
-
-    testWidgets('displays suffix icon correctly', (tester) async {
-      const suffixIcon = Icon(Icons.clear);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraInput(suffixIcon: suffixIcon)),
-        ),
-      );
-
-      expect(find.byIcon(Icons.clear), findsOneWidget);
+      await tester.enterText(fields.at(1), 'test');
+      expect(find.text('test'), findsNothing);
     });
 
     testWidgets('displays header above field and footer below', (tester) async {
@@ -208,23 +161,16 @@ void main() {
       expect(footerTop, greaterThan(fieldTop));
     });
 
-    group('AuraInputSize enum', () {
-      test('has all expected values', () {
-        expect(AuraInputSize.values, hasLength(3));
-        expect(AuraInputSize.values, contains(AuraInputSize.small));
-        expect(AuraInputSize.values, contains(AuraInputSize.medium));
-        expect(AuraInputSize.values, contains(AuraInputSize.large));
-      });
-    });
-
-    group('AuraInputState enum', () {
-      test('has all expected values', () {
-        expect(AuraInputState.values, hasLength(4));
-        expect(AuraInputState.values, contains(AuraInputState.normal));
-        expect(AuraInputState.values, contains(AuraInputState.success));
-        expect(AuraInputState.values, contains(AuraInputState.warning));
-        expect(AuraInputState.values, contains(AuraInputState.error));
-      });
+    test('has all expected size and state enum values', () {
+      expect(AuraInputSize.values, hasLength(3));
+      expect(AuraInputSize.values, contains(AuraInputSize.small));
+      expect(AuraInputSize.values, contains(AuraInputSize.medium));
+      expect(AuraInputSize.values, contains(AuraInputSize.large));
+      expect(AuraInputState.values, hasLength(4));
+      expect(AuraInputState.values, contains(AuraInputState.normal));
+      expect(AuraInputState.values, contains(AuraInputState.success));
+      expect(AuraInputState.values, contains(AuraInputState.warning));
+      expect(AuraInputState.values, contains(AuraInputState.error));
     });
   });
 }

@@ -58,7 +58,6 @@ Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
   });
   await tester.pump();
   await tester.pump();
-  await tester.pump();
 }
 
 Future<void> _showDialog(WidgetTester tester) async {

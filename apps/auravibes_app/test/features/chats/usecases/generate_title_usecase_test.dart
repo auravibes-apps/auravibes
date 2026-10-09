@@ -142,7 +142,7 @@ void main() {
       );
 
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
 
       expect(removedIds, contains('conv-1'));
     });
@@ -174,10 +174,10 @@ void main() {
       );
 
       controller.add('Title 1');
-      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(.zero);
       controller.add('Title 2');
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
 
       expect(updatedTitles, containsAll(['Title 1', 'Title 2']));
     });
@@ -194,9 +194,9 @@ void main() {
       );
 
       controller.add('New Title');
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
 
       expect(
         () =>
@@ -218,10 +218,10 @@ void main() {
       );
 
       controller.add('Title A');
-      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(.zero);
       controller.add('Title B');
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await Future<void>.delayed(.zero);
 
       expect(
         () =>
@@ -263,9 +263,9 @@ void main() {
       );
 
       controller.add('Partial');
-      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await Future<void>.delayed(.zero);
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
 
       expect(
         () => verifyNever(
@@ -305,7 +305,7 @@ void main() {
       );
 
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await Future<void>.delayed(.zero);
 
       expect(removedIds, contains('conv-done'));
     });
@@ -322,9 +322,9 @@ void main() {
       );
 
       controller.add('Final Title');
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await Future<void>.delayed(.zero);
       final _ = await controller.close();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await Future<void>.delayed(.zero);
 
       expect(
         () => verify(

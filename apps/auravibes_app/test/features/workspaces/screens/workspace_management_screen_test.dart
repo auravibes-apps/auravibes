@@ -1077,7 +1077,6 @@ void main() {
     testWidgets('previews import source, counts, and new destination', (
       tester,
     ) async {
-      await clearAppDatabase(database);
       final fileService = _MemoryArchiveFileService(
         pickedJson: _agentArchiveJson(),
       );

@@ -29,7 +29,15 @@ void main() {
   final database = AppDatabase(
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
-  setUp(() => clearAppDatabase(database));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
   tearDownAll(database.close);
 
   Widget buildRouterScreen(ProviderContainer container, GoRouter router) {
@@ -177,17 +185,26 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const SizedBox.shrink(),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: const SizedBox.shrink(),
+            key: state.pageKey,
+          ),
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills',
-          builder: (context, state) =>
-              SkillsScreen(workspaceId: state.pathParameters['workspaceId']!),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: SkillsScreen(
+              workspaceId: state.pathParameters['workspaceId']!,
+            ),
+            key: state.pageKey,
+          ),
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId',
-          builder: (context, state) =>
-              Text('Editing ${state.pathParameters['skillId']}'),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: Text('Editing ${state.pathParameters['skillId']}'),
+            key: state.pageKey,
+          ),
         ),
       ],
       initialLocation: '/',

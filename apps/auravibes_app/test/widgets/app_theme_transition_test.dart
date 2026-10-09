@@ -31,17 +31,35 @@ void main() {
               GoRoute(
                 path: '/',
                 builder: (context, state) => AuraSdkMaterialSurface(
-                  child: Builder(
-                    builder: (context) {
-                      observedTheme = context.auraTheme;
-                      final materialTheme = Theme.of(context);
-                      observedMaterialTheme = materialTheme;
-                      observedSelectionTheme = materialTheme.textSelectionTheme;
-                      observedPageTransitionsTheme =
-                          materialTheme.pageTransitionsTheme;
+                  child: Column(
+                    children: [
+                      Builder(
+                        builder: (context) {
+                          observedTheme = context.auraTheme;
+                          final materialTheme = Theme.of(context);
+                          observedMaterialTheme = materialTheme;
+                          observedSelectionTheme =
+                              materialTheme.textSelectionTheme;
+                          observedPageTransitionsTheme =
+                              materialTheme.pageTransitionsTheme;
 
-                      return const SizedBox.shrink();
-                    },
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      SizedBox(
+                        height: 100,
+                        child: ListView(
+                          children: const [SizedBox(height: 300)],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 100,
+                        child: ListView(
+                          scrollDirection: .horizontal,
+                          children: const [SizedBox(width: 1200)],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -169,63 +187,6 @@ void main() {
       darkPrimary?.withValues(alpha: 0.24),
     );
     expect(find.byType(AuraSdkMaterialSurface), findsWidgets);
-  });
-
-  testWidgets('app scroll behavior adds one scrollbar per scrollable', (
-    tester,
-  ) async {
-    AppFlavorConfig.instance.setAppFlavor(.dev);
-    final router = GoRouter(
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (_, _) => AuraSdkMaterialSurface(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 100,
-                  child: ListView(children: const [SizedBox(height: 300)]),
-                ),
-                SizedBox(
-                  height: 100,
-                  child: ListView(
-                    scrollDirection: .horizontal,
-                    children: const [SizedBox(width: 1200)],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-    final container = ProviderContainer(
-      overrides: [
-        themeProvider.overrideWith(_TestThemeNotifier.new),
-        accentHueProvider.overrideWith(_TestAccentHueNotifier.new),
-        routerProvider.overrideWith((ref) => router),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    final _ = await tester.runAsync(
-      () => tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: EasyLocalization(
-            child: const app.MyApp(),
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useOnlyLangCode: true,
-          ),
-        ),
-      ),
-    );
-    final _ = await tester.pumpAndSettle();
-
     expect(find.byType(Scrollbar), findsNWidgets(2));
   });
 }

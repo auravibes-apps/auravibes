@@ -26,7 +26,15 @@ AppDatabase? _sharedDatabase;
 void main() {
   final database = _newDatabase();
   _sharedDatabase = database;
-  setUp(() => clearAppDatabase(database));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(database);
+  });
   tearDownAll(() async {
     await database.close();
     _sharedDatabase = null;

@@ -139,40 +139,6 @@ void main() {
       expect(prefs.getDouble('app_accent_hue'), AccentHue.defaultValue);
     });
 
-    testWidgets('tapping theme tile shows radio group dialog', (tester) async {
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          TestableApp(
-            child: AuraThemeScope(
-              theme: .light,
-              child: Theme(
-                data: .new(),
-                child: const SettingsScreen(workspaceId: 'test-ws'),
-              ),
-            ),
-            overrides: [
-              themeProvider.overrideWith(_MockThemeNotifier.new),
-              compactionSettingsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(CompactionSettings.defaults),
-              ),
-              listWorkspaceModelSelectionsProvider(workspaceId: 'test-ws')
-                  .overrideWith((ref) => Stream.value(const [])),
-            ],
-          ),
-        );
-      });
-      final _ = await tester.pumpAndSettle();
-
-      final themeTiles = find.descendant(
-        of: find.byType(SettingsScreen),
-        matching: find.byType(AuraTile),
-      );
-      await tester.tap(themeTiles.first);
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
-    });
-
     testWidgets('changing theme keeps settings screen visible', (tester) async {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer(
@@ -209,6 +175,7 @@ void main() {
       );
       await tester.tap(themeTiles.first);
       final _ = await tester.pumpAndSettle();
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
 
       await tester.tap(find.text('Dark'));
       final _ = await tester.pumpAndSettle();

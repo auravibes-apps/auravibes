@@ -151,17 +151,30 @@ class _Fixture {
           );
     final router = GoRouter(
       routes: [
-        GoRoute(path: '/draft', builder: route.build, onExit: route.onExit),
+        GoRoute(
+          path: '/draft',
+          pageBuilder: (context, state) => NoTransitionPage(
+            child: route.build(context, state),
+            key: state.pageKey,
+          ),
+          onExit: route.onExit,
+        ),
         GoRoute(
           path: SkillDetailRoute(
             workspaceId: workspace.id,
             skillId: skill.id,
           ).location,
-          builder: (_, _) => const Text('Parent detail'),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: const Text('Parent detail'),
+            key: state.pageKey,
+          ),
         ),
         GoRoute(
           path: '/destination',
-          builder: (_, _) => const Text('Destination'),
+          pageBuilder: (_, state) => NoTransitionPage(
+            child: const Text('Destination'),
+            key: state.pageKey,
+          ),
         ),
       ],
       initialLocation: '/draft',

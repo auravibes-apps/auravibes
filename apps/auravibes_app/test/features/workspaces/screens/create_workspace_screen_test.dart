@@ -78,7 +78,6 @@ void main() {
 
     await tester.enterText(find.byType(AuraInput), 'Project');
     await tester.tap(find.byKey(const Key('intro_create_workspace_button')));
-    await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     final record = records.firstWhere(

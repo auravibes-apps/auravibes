@@ -61,21 +61,27 @@ void main() {
           GoRoute(path: '/home', builder: (_, _) => const SizedBox.shrink()),
           GoRoute(
             path: '/skills/:id',
-            builder: (_, _) => SkillDetailScreen(
-              workspaceId: 'workspace-1',
-              skillId: searxng.identifier,
+            pageBuilder: (_, state) => NoTransitionPage(
+              child: SkillDetailScreen(
+                workspaceId: 'workspace-1',
+                skillId: searxng.identifier,
+              ),
+              key: state.pageKey,
             ),
           ),
           GoRoute(
             path: '/workspaces/:workspaceId/more/service-connections/new',
-            builder: (context, _) => Builder(
-              builder: (context) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  context.pop(true);
-                });
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: Builder(
+                builder: (context) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    context.pop(true);
+                  });
 
-                return const SizedBox.shrink();
-              },
+                  return const SizedBox.shrink();
+                },
+              ),
+              key: state.pageKey,
             ),
           ),
         ],

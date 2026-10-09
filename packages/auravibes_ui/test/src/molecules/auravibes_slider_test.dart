@@ -25,54 +25,80 @@ Widget _app(Widget child) => WidgetsApp(
 );
 
 void main() {
-  testWidgets('renders custom painted slider with Aura tint', (tester) async {
+  testWidgets('renders slider and labeled slider values', (tester) async {
     await tester.pumpWidget(
       _host(
-        AuraSlider(
-          value: 6,
-          onChanged: (value) => expect(value, isA<double>()),
-          min: _minValue,
-          max: _maxValue,
-          tint: .error,
+        Column(
+          crossAxisAlignment: .start,
+          children: [
+            KeyedSubtree(
+              key: const ValueKey('plain'),
+              child: AuraSlider(
+                value: 6,
+                onChanged: (value) => expect(value, isA<double>()),
+                min: _minValue,
+                max: _maxValue,
+                tint: .error,
+              ),
+            ),
+            KeyedSubtree(
+              key: const ValueKey('labeled'),
+              child: AuraLabeledSlider(
+                value: 6,
+                onChanged: (value) => expect(value, isA<double>()),
+                min: _minValue,
+                max: _maxValue,
+                label: 'Amount',
+              ),
+            ),
+          ],
         ),
       ),
     );
 
-    expect(find.byType(AuraSlider), findsOneWidget);
-    expect(find.byType(CustomPaint), findsOneWidget);
+    final plainSlider = find.byKey(const ValueKey('plain'));
+    final sliderFinder = find.descendant(
+      of: plainSlider,
+      matching: find.byType(AuraSlider),
+    );
+    expect(sliderFinder, findsOneWidget);
     expect(
-      tester.widget<AuraSlider>(find.byType(AuraSlider)).tint,
-      AuraTint.error,
+      find.descendant(of: plainSlider, matching: find.byType(CustomPaint)),
+      findsOneWidget,
     );
+    expect(tester.widget<AuraSlider>(sliderFinder).tint, AuraTint.error);
+
+    final labeledSlider = find.byKey(const ValueKey('labeled'));
+    final labeledSliderFinder = find.descendant(
+      of: labeledSlider,
+      matching: find.byType(AuraSlider),
+    );
+    expect(labeledSliderFinder, findsOneWidget);
+    expect(
+      find.descendant(of: labeledSlider, matching: find.text('Amount')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: labeledSlider, matching: find.text('6.00')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: labeledSlider, matching: find.text('2.00')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: labeledSlider, matching: find.text('10.00')),
+      findsOneWidget,
+    );
+    expect(tester.getSemantics(labeledSliderFinder).value, '6.0');
   });
 
-  testWidgets('labeled slider shows label, value, and bounds', (tester) async {
-    await tester.pumpWidget(
-      _host(
-        AuraLabeledSlider(
-          value: 6,
-          onChanged: (value) => expect(value, isA<double>()),
-          min: _minValue,
-          max: _maxValue,
-          label: 'Amount',
-        ),
-      ),
-    );
-
-    expect(find.byType(AuraSlider), findsOneWidget);
-    expect(find.text('Amount'), findsOneWidget);
-    expect(find.text('6.00'), findsOneWidget);
-    expect(find.text('2.00'), findsOneWidget);
-    expect(find.text('10.00'), findsOneWidget);
-    expect(tester.getSemantics(find.byType(AuraSlider)).value, '6.0');
-  });
-
-  testWidgets('forwards values from pointer changes', (tester) async {
+  testWidgets('clamps values and forwards pointer boundaries', (tester) async {
     double? changedValue;
     await tester.pumpWidget(
       _host(
         AuraSlider(
-          value: 6,
+          value: 1,
           onChanged: (value) => changedValue = value,
           min: _minValue,
           max: _maxValue,
@@ -83,6 +109,12 @@ void main() {
     final gestureDetector = tester.widget<GestureDetector>(
       find.byType(GestureDetector),
     );
+    expect(find.byType(CustomPaint), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraSlider)).value, '2.0');
+
+    gestureDetector.onTapDown?.call(.new(localPosition: const Offset(0, 24)));
+    expect(changedValue, _minValue);
+
     final width = tester.getSize(find.byType(GestureDetector)).width;
     gestureDetector.onTapDown?.call(.new(localPosition: Offset(width, 24)));
 
@@ -218,46 +250,6 @@ void main() {
     expect(currentValue, _maxValue);
   });
 
-  testWidgets('clamps invalid values and pointer boundaries', (tester) async {
-    double? changedValue;
-    await tester.pumpWidget(
-      _host(
-        AuraSlider(
-          value: 1,
-          onChanged: (value) => changedValue = value,
-          min: _minValue,
-          max: _maxValue,
-        ),
-      ),
-    );
-
-    expect(find.byType(CustomPaint), findsOneWidget);
-    expect(tester.getSemantics(find.byType(AuraSlider)).value, '2.0');
-
-    final gestureDetector = tester.widget<GestureDetector>(
-      find.byType(GestureDetector),
-    );
-    gestureDetector.onTapDown?.call(.new(localPosition: const Offset(0, 24)));
-    expect(changedValue, _minValue);
-
-    gestureDetector.onTapDown?.call(
-      .new(
-        localPosition: Offset(
-          tester.getSize(find.byType(GestureDetector)).width,
-          24,
-        ),
-      ),
-    );
-    expect(changedValue, _maxValue);
-  });
-
-  test('rejects inverted bounds', () {
-    expect(
-      () => AuraSlider(value: 0, onChanged: null, min: 1, max: 0),
-      throwsA(isA<AssertionError>()),
-    );
-  });
-
   testWidgets('applies step and precision to values', (tester) async {
     double? changedValue;
     await tester.pumpWidget(
@@ -300,7 +292,11 @@ void main() {
     expect(changedValue, 10);
   });
 
-  test('rejects non-positive step and negative precision', () {
+  test('rejects inverted bounds, non-positive step and negative precision', () {
+    expect(
+      () => AuraSlider(value: 0, onChanged: null, min: 1, max: 0),
+      throwsA(isA<AssertionError>()),
+    );
     expect(
       () => AuraSlider(value: 0, onChanged: null, step: 0),
       throwsA(isA<AssertionError>()),

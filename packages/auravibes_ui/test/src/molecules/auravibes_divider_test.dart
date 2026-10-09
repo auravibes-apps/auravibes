@@ -1,174 +1,106 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_divider.dart';
-import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraDivider', () {
-    testWidgets('renders horizontal divider correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: AuraDivider())),
-      );
-
-      expect(
-        find.byType(Container),
-        findsNWidgets(2),
-      ); // Outer and inner container.
-    });
-
-    testWidgets('thickness controls line and area', (tester) async {
+    testWidgets('renders orientations and divider options', (tester) async {
       const customThickness = 32.0;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraDivider(thickness: customThickness)),
-        ),
-      );
-
-      final outerContainer = tester.widget<Container>(
-        find.byType(Container).first,
-      );
-      expect(outerContainer.constraints?.minHeight, customThickness);
-      expect(outerContainer.constraints?.maxHeight, customThickness);
-
-      final innerContainer = tester.widget<Container>(
-        find.byType(Container).last,
-      );
-      expect(innerContainer.constraints?.maxHeight, customThickness);
-    });
-
-    testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraTint.error;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraDivider(color: customColor)),
-        ),
-      );
-
-      final innerContainer = tester.widget<Container>(
-        find.byType(Container).last,
-      );
-      // Note: The actual color will be resolved from AuraTint.error.
-      expect(innerContainer.color, isNotNull);
-    });
-
-    testWidgets('applies indent correctly', (tester) async {
+      const labelThickness = 48.0;
       const indent = 16.0;
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(body: AuraDivider(indent: indent)),
+          home: Scaffold(
+            body: Column(
+              crossAxisAlignment: .stretch,
+              children: [
+                AuraDivider(key: ValueKey('horizontal')),
+                AuraDivider(
+                  key: ValueKey('horizontal-thickness'),
+                  thickness: customThickness,
+                ),
+                AuraDivider(key: ValueKey('horizontal-color'), color: .error),
+                AuraDivider(key: ValueKey('horizontal-indent'), indent: indent),
+                AuraDivider(
+                  key: ValueKey('horizontal-end-indent'),
+                  endIndent: indent,
+                ),
+                SizedBox(
+                  height: 32,
+                  child: AuraDivider.vertical(key: ValueKey('vertical')),
+                ),
+                SizedBox(
+                  height: 32,
+                  child: AuraDivider.vertical(
+                    key: ValueKey('vertical-thickness'),
+                    thickness: customThickness,
+                  ),
+                ),
+                SizedBox(
+                  height: 32,
+                  child: AuraDivider.vertical(
+                    key: ValueKey('vertical-indent'),
+                    indent: indent,
+                  ),
+                ),
+                AuraDivider.withLabel(
+                  label: Text('OR'),
+                  key: ValueKey('label'),
+                ),
+                AuraDivider.withLabel(
+                  label: Text('SECTION'),
+                  key: ValueKey('label-thickness'),
+                  thickness: labelThickness,
+                ),
+              ],
+            ),
+          ),
         ),
       );
 
-      final outerContainer = tester.widget<Container>(
-        find.byType(Container).first,
+      Finder within(String key, Finder matching) => find.descendant(
+        of: find.byKey(ValueKey<String>(key)),
+        matching: matching,
       );
+      List<Container> containers(String key) => tester
+          .widgetList<Container>(within(key, find.byType(Container)))
+          .toList();
+
+      expect(containers('horizontal'), hasLength(2));
+      final horizontalThickness = containers('horizontal-thickness');
+      final firstThickness = horizontalThickness.firstOrNull?.constraints;
+      expect(firstThickness?.minHeight, customThickness);
+      expect(firstThickness?.maxHeight, customThickness);
+      expect(horizontalThickness.last.constraints?.maxHeight, customThickness);
+      expect(containers('horizontal-color').last.color, isNotNull);
       expect(
-        outerContainer.margin,
+        containers('horizontal-indent').first.margin,
         const EdgeInsetsDirectional.only(start: indent),
       );
-    });
-
-    testWidgets('applies endIndent correctly', (tester) async {
-      const endIndent = 16.0;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraDivider(endIndent: endIndent)),
-        ),
-      );
-
-      final outerContainer = tester.widget<Container>(
-        find.byType(Container).first,
-      );
       expect(
-        outerContainer.margin,
-        const EdgeInsetsDirectional.only(end: endIndent),
+        containers('horizontal-end-indent').first.margin,
+        const EdgeInsetsDirectional.only(end: indent),
       );
-    });
 
-    group('AuraDivider.vertical', () {
-      testWidgets('renders vertical divider correctly', (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: AuraDivider.vertical())),
-        );
+      expect(containers('vertical'), hasLength(2));
+      final verticalThickness = containers('vertical-thickness').first;
+      expect(verticalThickness.constraints?.minWidth, customThickness);
+      expect(verticalThickness.constraints?.maxWidth, customThickness);
+      expect(
+        containers('vertical-indent').first.margin,
+        const EdgeInsets.only(top: indent),
+      );
 
-        expect(find.byType(Container), findsNWidgets(2));
-      });
-
-      testWidgets('thickness controls line and area', (tester) async {
-        const customThickness = 32.0;
-
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.vertical(thickness: customThickness),
-            ),
-          ),
-        );
-
-        final outerContainer = tester.widget<Container>(
-          find.byType(Container).first,
-        );
-        expect(outerContainer.constraints?.minWidth, customThickness);
-        expect(outerContainer.constraints?.maxWidth, customThickness);
-      });
-
-      testWidgets('applies vertical indent correctly', (tester) async {
-        const indent = 16.0;
-
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: AuraDivider.vertical(indent: indent)),
-          ),
-        );
-
-        final outerContainer = tester.widget<Container>(
-          find.byType(Container).first,
-        );
-        expect(outerContainer.margin, const EdgeInsets.only(top: indent));
-      });
-    });
-
-    group('AuraDivider.withLabel', () {
-      testWidgets('renders labeled divider correctly', (tester) async {
-        const labelText = 'OR';
-
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: AuraDivider.withLabel(label: Text(labelText))),
-          ),
-        );
-
-        expect(find.text(labelText), findsOneWidget);
-        expect(find.byType(AuraText), findsOneWidget);
-        expect(find.byType(Row), findsOneWidget);
-        expect(find.byType(Expanded), findsNWidgets(2)); // Two line segments.
-      });
-
-      testWidgets('uses thickness as minimum label area', (tester) async {
-        const customThickness = 48.0;
-        const labelText = 'SECTION';
-
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.withLabel(
-                label: Text(labelText),
-                thickness: customThickness,
-              ),
-            ),
-          ),
-        );
-
-        final outerContainer = tester.widget<Container>(
-          find.ancestor(of: find.byType(Row), matching: find.byType(Container)),
-        );
-        expect(outerContainer.constraints?.minHeight, customThickness);
-      });
+      expect(within('label', find.text('OR')), findsOneWidget);
+      expect(within('label', find.byType(AuraText)), findsOneWidget);
+      expect(within('label', find.byType(Row)), findsOneWidget);
+      expect(within('label', find.byType(Expanded)), findsNWidgets(2));
+      expect(
+        containers('label-thickness').first.constraints?.minHeight,
+        labelThickness,
+      );
     });
 
     group('AuraDividerOrientation enum', () {

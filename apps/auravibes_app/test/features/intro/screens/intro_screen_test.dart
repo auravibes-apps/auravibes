@@ -33,7 +33,15 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  setUp(() => clearAppDatabase(_IntroFixture._sharedDatabase));
+  var isFirstTest = true;
+  setUp(() async {
+    if (isFirstTest) {
+      isFirstTest = false;
+
+      return;
+    }
+    await clearAppDatabase(_IntroFixture._sharedDatabase);
+  });
   tearDownAll(_IntroFixture._sharedDatabase.close);
 
   for (final management in [false, true]) {

@@ -4,8 +4,6 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../database_test_utils.dart';
-
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(() {
@@ -26,8 +24,6 @@ final class _DatabaseFixture {
 
   AppDatabase get database =>
       _database ??= .new(connection: createConnection());
-
-  Future<void> reset() => clearAppDatabase(database);
 
   Future<void> close() async {
     await _database?.close();
@@ -109,8 +105,7 @@ void main() {
     final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
 
-    setUp(() async {
-      await fixture.reset();
+    setUpAll(() async {
       columns = await fixture.database
           .customSelect('PRAGMA table_info(messages)')
           .get();

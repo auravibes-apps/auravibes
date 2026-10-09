@@ -48,6 +48,27 @@ void main() {
     );
   });
 
+  test('disables tools for unsupported non-Codex models', () {
+    final adapter = _appAgentContinuationAdapter(
+      conversationRepository: .new(),
+      messageRepository: .new(),
+      workspaceModelSelectionsRepository: .new(),
+      apiModelRepository: .new(),
+      selectPromptMessagesUsecase: .new(),
+      loadConversationToolSpecsUsecase: .new(),
+      buildSkillContextMessagesUsecase:
+          const _FakeBuildSkillContextMessagesService([]),
+    );
+    final model = _model.copyWith(
+      modelsProvider: _model.modelsProvider.copyWith(type: .openrouter),
+      workspaceModelSelection: _model.workspaceModelSelection.copyWith(
+        supportsToolCalls: false,
+      ),
+    );
+
+    expect(adapter.shouldDisableTools(model), isTrue);
+  });
+
   group('ContinueAgentService', () {
     var chatbotService = MockChatbotService();
     var messageRepository = MockMessageRepository();
@@ -216,27 +237,6 @@ void main() {
               createdAt: .utc(2026),
             );
           });
-    });
-
-    test('disables tools for unsupported non-Codex models', () {
-      final adapter = _appAgentContinuationAdapter(
-        conversationRepository: conversationRepository,
-        messageRepository: messageRepository,
-        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-        apiModelRepository: apiModelRepository,
-        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
-        buildSkillContextMessagesUsecase:
-            const _FakeBuildSkillContextMessagesService([]),
-      );
-      final model = _model.copyWith(
-        modelsProvider: _model.modelsProvider.copyWith(type: .openrouter),
-        workspaceModelSelection: _model.workspaceModelSelection.copyWith(
-          supportsToolCalls: false,
-        ),
-      );
-
-      expect(adapter.shouldDisableTools(model), isTrue);
     });
 
     test('uses model stream as lastResult', () async {

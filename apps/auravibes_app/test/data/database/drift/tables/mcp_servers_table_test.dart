@@ -135,7 +135,7 @@ void main() {
           .get();
     });
 
-    test('has expected columns', () {
+    test('has expected columns and constraints', () {
       final names = columns.map((r) => r.read<String>('name')).toSet();
       expect(names, {
         'id',
@@ -151,33 +151,20 @@ void main() {
         'created_at',
         'updated_at',
       });
-    });
-
-    test('id is primary key', () {
       final col = columns.firstWhere((r) => r.read<String>('name') == 'id');
       expect(col.read<int>('pk'), greaterThan(0));
-    });
-
-    test('description is nullable', () {
-      final col = columns.firstWhere(
+      final description = columns.firstWhere(
         (r) => r.read<String>('name') == 'description',
       );
-      expect(col.read<int>('notnull'), 0);
-    });
-
-    test('is_enabled column exists', () {
-      final col = columns.where((r) => r.read<String>('name') == 'is_enabled');
-      expect(col, isNotEmpty);
-    });
-
-    test('name is not nullable', () {
-      final col = columns.firstWhere((r) => r.read<String>('name') == 'name');
-      expect(col.read<int>('notnull'), 1);
-    });
-
-    test('url is not nullable', () {
-      final col = columns.firstWhere((r) => r.read<String>('name') == 'url');
-      expect(col.read<int>('notnull'), 1);
+      expect(description.read<int>('notnull'), 0);
+      expect(
+        columns.where((r) => r.read<String>('name') == 'is_enabled'),
+        isNotEmpty,
+      );
+      final name = columns.firstWhere((r) => r.read<String>('name') == 'name');
+      expect(name.read<int>('notnull'), 1);
+      final url = columns.firstWhere((r) => r.read<String>('name') == 'url');
+      expect(url.read<int>('notnull'), 1);
     });
   });
 

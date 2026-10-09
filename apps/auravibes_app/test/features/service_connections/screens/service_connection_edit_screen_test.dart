@@ -304,11 +304,13 @@ Future<void> _pumpEditor(
             builder: (context) => TextButton(
               onPressed: () {
                 Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ServiceConnectionEditScreen(
+                  PageRouteBuilder<void>(
+                    pageBuilder: (_, _, _) => ServiceConnectionEditScreen(
                       workspaceId: _workspaceId,
                       connectionId: connectionId,
                     ),
+                    transitionDuration: .zero,
+                    reverseTransitionDuration: .zero,
                   ),
                 );
               },
