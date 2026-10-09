@@ -7,40 +7,45 @@ import 'package:material_ui/material_ui.dart';
 
 class const LegalLinksSection({super.key}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraCard(
+  Widget build(BuildContext _) => const AuraCard(
     child: AuraColumn(
       children: [
-        const AuraText(
+        AuraText(
           child: TextLocale(LocaleKeys.settings_screen_legal_title),
           style: .heading6,
         ),
-        Semantics(
-          key: const ValueKey<String>('settings_privacy'),
-          child: AuraTile(
-            child: const TextLocale(LocaleKeys.settings_screen_legal_privacy),
-            onTap: () => _open(context, 'privacy'),
-            variant: .ghost,
-            trailing: const Icon(Icons.open_in_new),
-          ),
-          identifier: 'settings_privacy',
+        _LegalLinkTile(
+          document: 'privacy',
+          titleKey: LocaleKeys.settings_screen_legal_privacy,
         ),
-        Semantics(
-          key: const ValueKey<String>('settings_terms'),
-          child: AuraTile(
-            child: const TextLocale(LocaleKeys.settings_screen_legal_terms),
-            onTap: () => _open(context, 'terms'),
-            variant: .ghost,
-            trailing: const Icon(Icons.open_in_new),
-          ),
-          identifier: 'settings_terms',
+        _LegalLinkTile(
+          document: 'terms',
+          titleKey: LocaleKeys.settings_screen_legal_terms,
         ),
       ],
       spacing: .none,
       crossAxisAlignment: .start,
     ),
   );
+}
 
-  Future<void> _open(BuildContext context, String document) async {
+class const _LegalLinkTile({
+  required final String document,
+  required final String titleKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
+    key: ValueKey<String>('settings_$document'),
+    child: AuraTile(
+      child: TextLocale(titleKey),
+      onTap: () => _open(context),
+      variant: .ghost,
+      trailing: const Icon(Icons.open_in_new),
+    ),
+    identifier: 'settings_$document',
+  );
+
+  Future<void> _open(BuildContext context) async {
     final language = context.locale.languageCode == 'es' ? 'es' : 'en';
     try {
       await OpenSystemBrowser.call(
