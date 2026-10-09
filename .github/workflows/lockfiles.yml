@@ -56,22 +56,30 @@ jobs:
         with:
           run-bootstrap: true
 
-      - name: 💾 Commit lockfile repair
+      - name: 🔧 Sync VS Code Flutter SDK path
+        run: |
+          flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
+          jq -j --arg sdk_path ".fvm/versions/${flutter_version}" \
+            '."dart.flutterSdkPath" = $sdk_path' \
+            .vscode/settings.json > "$RUNNER_TEMP/settings.json"
+          mv "$RUNNER_TEMP/settings.json" .vscode/settings.json
+
+      - name: 💾 Commit dependency repair
         id: lockfile
         env:
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if git diff --quiet -- pubspec.lock; then
+          if git diff --quiet -- pubspec.lock .vscode/settings.json; then
             echo 'changed=false' >> "$GITHUB_OUTPUT"
-            echo 'No pubspec.lock changes.'
+            echo 'No dependency repair changes.'
             exit 0
           fi
 
           echo 'changed=true' >> "$GITHUB_OUTPUT"
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git config user.name 'github-actions[bot]'
-          git add pubspec.lock
-          git commit -m 'chore: refresh pubspec.lock'
+          git add pubspec.lock .vscode/settings.json
+          git commit -m 'chore: sync Flutter SDK config and lockfile'
           git push origin "HEAD:$PR_HEAD_REF"
 
   dispatch-ci:
