@@ -61,6 +61,198 @@ Map<String, Set<String>> findMissingTranslations({
   return missing;
 }
 
+/// Reports nested catalog paths missing from any supported locale.
+List<String> findLocaleKeyParityIssues({required Directory translationsDir}) {
+  final catalogs = _loadLocaleCatalogs(translationsDir);
+  final allKeys =
+      catalogs.values.expand((catalog) => catalog.keys).toSet().toList()
+        ..sort();
+  final issues = <String>[];
+  for (final locale in catalogs.keys.toList()..sort()) {
+    for (final key in allKeys) {
+      if (!catalogs[locale]!.keys.contains(key)) {
+        issues.add('$locale: $key (missing catalog key)');
+      }
+    }
+  }
+
+  return issues;
+}
+
+/// Compares named and positional placeholders across matching locale entries.
+List<String> findPlaceholderMismatches({required Directory translationsDir}) {
+  final catalogs = _loadLocaleCatalogs(translationsDir);
+  if (catalogs.length < 2) return const [];
+
+  final locales = catalogs.keys.toList()..sort();
+  final pluralBranches = <String, Set<String>>{};
+  for (final catalog in catalogs.values) {
+    for (final key in catalog.translations.keys) {
+      final branch = _pluralBranch(key);
+      if (branch == null) continue;
+      pluralBranches.putIfAbsent(branch.key, () => {}).add(branch.branch);
+    }
+  }
+
+  final issues = <String>[];
+  for (final entry in pluralBranches.entries) {
+    final key = entry.key;
+    for (final locale in locales) {
+      final catalog = catalogs[locale]!;
+      for (final branch in entry.value.toList()..sort()) {
+        final branchKey = '$key.$branch';
+        final translation = catalog.translations[branchKey];
+        if (translation == null) {
+          issues.add('$locale: $key [branch: $branch] (missing plural branch)');
+          continue;
+        }
+        final referenceLocale = locales.firstWhere(
+          (candidate) =>
+              catalogs[candidate]!.translations.containsKey(branchKey),
+        );
+        if (referenceLocale == locale) continue;
+        final reference = catalogs[referenceLocale]!.translations[branchKey]!;
+        final mismatch = _placeholderMismatch(
+          locale: locale,
+          key: key,
+          branch: branch,
+          expected: reference,
+          actual: translation,
+        );
+        if (mismatch != null) issues.add(mismatch);
+      }
+    }
+  }
+
+  final allKeys =
+      catalogs.values
+          .expand((catalog) => catalog.translations.keys)
+          .toSet()
+          .where((key) => _pluralBranch(key) == null)
+          .toList()
+        ..sort();
+  for (final key in allKeys) {
+    final referenceLocale = locales.firstWhere(
+      (locale) => catalogs[locale]!.translations.containsKey(key),
+    );
+    final reference = catalogs[referenceLocale]!.translations[key]!;
+    for (final locale in locales) {
+      if (locale == referenceLocale) continue;
+      final translation = catalogs[locale]!.translations[key];
+      if (translation == null) continue;
+      final mismatch = _placeholderMismatch(
+        locale: locale,
+        key: key,
+        expected: reference,
+        actual: translation,
+      );
+      if (mismatch != null) issues.add(mismatch);
+    }
+  }
+
+  return issues;
+}
+
+class _LocaleCatalog {
+  const _LocaleCatalog({required this.keys, required this.translations});
+
+  final Set<String> keys;
+  final Map<String, String> translations;
+}
+
+Map<String, _LocaleCatalog> _loadLocaleCatalogs(Directory translationsDir) {
+  final files =
+      translationsDir
+          .listSync()
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.json'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
+  final catalogs = <String, _LocaleCatalog>{};
+  for (final file in files) {
+    final locale = file.uri.pathSegments.last.replaceFirst(
+      RegExp(r'\.json$'),
+      '',
+    );
+    final data = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    final keys = <String>{};
+    final translations = <String, String>{};
+    _collectCatalogEntries(data, '', keys, translations);
+    catalogs[locale] = _LocaleCatalog(keys: keys, translations: translations);
+  }
+
+  return catalogs;
+}
+
+void _collectCatalogEntries(
+  Map<String, dynamic> values,
+  String prefix,
+  Set<String> keys,
+  Map<String, String> translations,
+) {
+  for (final entry in values.entries) {
+    final key = prefix.isEmpty ? entry.key : '$prefix.${entry.key}';
+    keys.add(key);
+    if (entry.value case final String value) {
+      translations[key] = value;
+    } else if (entry.value case final Map<String, dynamic> children) {
+      _collectCatalogEntries(children, key, keys, translations);
+    }
+  }
+}
+
+const _pluralBranchNames = {'zero', 'one', 'two', 'few', 'many', 'other'};
+
+({String key, String branch})? _pluralBranch(String key) {
+  final separator = key.lastIndexOf('.');
+  if (separator < 1) return null;
+  final branch = key.substring(separator + 1);
+  if (!_pluralBranchNames.contains(branch)) return null;
+
+  return (key: key.substring(0, separator), branch: branch);
+}
+
+String? _placeholderMismatch({
+  required String locale,
+  required String key,
+  String? branch,
+  required String expected,
+  required String actual,
+}) {
+  final expectedPositionals = RegExp(r'\{\}').allMatches(expected).length;
+  final actualPositionals = RegExp(r'\{\}').allMatches(actual).length;
+  final expectedNamed = _namedPlaceholders(expected);
+  final actualNamed = _namedPlaceholders(actual);
+  final differences = <String>[];
+  if (!_setsEqual(expectedNamed, actualNamed)) {
+    differences.add(
+      'named placeholders: expected ${_formatPlaceholderSet(expectedNamed)}, '
+      'found ${_formatPlaceholderSet(actualNamed)}',
+    );
+  }
+  if (expectedPositionals != actualPositionals) {
+    differences.add(
+      'positional placeholders: expected $expectedPositionals, '
+      'found $actualPositionals',
+    );
+  }
+  if (differences.isEmpty) return null;
+  final location = branch == null ? key : '$key [branch: $branch]';
+
+  return '$locale: $location (${differences.join('; ')})';
+}
+
+Set<String> _namedPlaceholders(String text) => {
+  for (final match in RegExp(r'\{([A-Za-z_][A-Za-z0-9_]*)\}').allMatches(text))
+    match.group(1)!,
+};
+
+bool _setsEqual(Set<String> left, Set<String> right) =>
+    left.length == right.length && left.containsAll(right);
+
+String _formatPlaceholderSet(Set<String> values) =>
+    '{${(values.toList()..sort()).join(', ')}}';
+
 typedef _Token = ({
   String value,
   bool isString,
@@ -366,8 +558,9 @@ void _collectKeys(
 
 void main() {
   final appDir = File.fromUri(Platform.script).parent.parent;
+  final translationsDir = Directory('${appDir.path}/assets/i18n');
   final missing = findMissingTranslations(
-    translationsDir: .new('${appDir.path}/assets/i18n'),
+    translationsDir: translationsDir,
     sourceDir: .new('${appDir.path}/lib'),
     localeKeysFile: .new('${appDir.path}/lib/i18n/locale_keys.dart'),
   );
@@ -377,7 +570,21 @@ void main() {
       exitCode = 1;
     }
   }
+  for (final issue in findLocaleKeyParityIssues(
+    translationsDir: translationsDir,
+  )) {
+    stdout.writeln('Catalog key parity: $issue');
+    exitCode = 1;
+  }
+  for (final issue in findPlaceholderMismatches(
+    translationsDir: translationsDir,
+  )) {
+    stdout.writeln('Placeholder mismatch: $issue');
+    exitCode = 1;
+  }
   if (exitCode == 0) {
-    stdout.writeln('No missing translations.');
+    stdout.writeln(
+      'Localization audit passed (referenced keys, catalog parity, placeholders).',
+    );
   }
 }
