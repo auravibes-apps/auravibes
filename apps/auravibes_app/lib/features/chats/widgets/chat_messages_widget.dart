@@ -2463,6 +2463,11 @@ class const _ActivityToolCallRow({
     final statusColor = _statusColor(context);
     final onOpenSubAgent = openSubAgent;
     final onOpenSkillDetails = openSkillDetails;
+    final statusBadge = _ActivityToolStatusBadge(
+      label: statusKey.tr(),
+      color: statusColor,
+      textKey: ValueKey('activity_tool_status_${toolCall.id}'),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2489,78 +2494,64 @@ class const _ActivityToolCallRow({
                   if (description != null) description,
                   statusKey.tr(),
                 ].join(' '),
-                child: Row(
-                  children: [
-                    Icon(_statusIcon(), size: 14, color: statusColor),
-                    const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: displayName),
-                            if (description != null)
-                              TextSpan(
-                                text: ' · $description',
-                                style: TextStyle(
-                                  color: statusColor.withValues(alpha: .72),
-                                  fontSize:
-                                      context.auraTheme.typography.fontSizeXs,
-                                  fontFamily: context
-                                      .auraTheme
-                                      .typography
-                                      .bodyFontFamily,
-                                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 240;
+
+                    return Row(
+                      children: [
+                        Icon(_statusIcon(), size: 14, color: statusColor),
+                        const AuraSizedBox(width: .xs),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: displayName),
+                                if (description != null)
+                                  TextSpan(
+                                    text: ' · $description',
+                                    style: TextStyle(
+                                      color: statusColor.withValues(alpha: .72),
+                                      fontSize: context
+                                          .auraTheme
+                                          .typography
+                                          .fontSizeXs,
+                                      fontFamily: context
+                                          .auraTheme
+                                          .typography
+                                          .bodyFontFamily,
+                                    ),
+                                  ),
+                              ],
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize:
+                                    context.auraTheme.typography.fontSizeSm,
+                                fontFamily:
+                                    context.auraTheme.typography.bodyFontFamily,
                               ),
-                          ],
-                          style: TextStyle(
+                            ),
+                            key: ValueKey('activity_tool_label_${toolCall.id}'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const AuraSizedBox(width: .xs),
+                        if (isCompact)
+                          Flexible(child: statusBadge)
+                        else
+                          statusBadge,
+                        if (hasDetails)
+                          Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 18,
                             color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeSm,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
                           ),
-                        ),
-                        key: ValueKey('activity_tool_label_${toolCall.id}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const AuraSizedBox(width: .xs),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: context.auraTheme.fromSpacing(.xs),
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
-                          ),
-                        ),
-                        child: Text(
-                          statusKey.tr(),
-                          key: ValueKey('activity_tool_status_${toolCall.id}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeXs,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (hasDetails)
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 18,
-                        color: statusColor,
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -2657,6 +2648,40 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.executionError => colors.error,
     };
   }
+}
+
+class const _ActivityToolStatusBadge({
+  required final String label,
+  required final Color color,
+  required final Key textKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 120),
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.xs),
+        vertical: 1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.sm),
+        ),
+      ),
+      child: Text(
+        label,
+        key: textKey,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+          fontFamily: context.auraTheme.typography.bodyFontFamily,
+        ),
+      ),
+    ),
+  );
 }
 
 class const _ActivityToolCallDetails({

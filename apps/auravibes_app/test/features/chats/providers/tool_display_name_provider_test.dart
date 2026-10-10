@@ -175,6 +175,7 @@ void main() {
                     : SkillKind.native,
                 isEnabled: true,
                 titleKey: appSkill.titleKey,
+                descriptionKey: appSkill.descriptionKey,
               ),
             ],
           ),
@@ -193,12 +194,18 @@ void main() {
       expect(titles, (
         skillId: appSkill.identifier,
         skillSource: SkillSource.app,
-        skillTitle: appSkill.title,
-        skillTitleKey: appSkill.titleKey,
-        toolTitle: tool.title,
-        toolTitleKey: tool.titleKey,
-        toolDescription: tool.description,
-        toolDescriptionKey: tool.descriptionKey,
+        skill: (
+          title: appSkill.title,
+          titleKey: appSkill.titleKey,
+          description: appSkill.description,
+          descriptionKey: appSkill.descriptionKey,
+        ),
+        tool: (
+          title: tool.title,
+          titleKey: tool.titleKey,
+          description: tool.description,
+          descriptionKey: tool.descriptionKey,
+        ),
       ));
     });
 
@@ -250,12 +257,18 @@ void main() {
       expect(titles, (
         skillId: 'skill-1',
         skillSource: SkillSource.user,
-        skillTitle: 'Research Assistant',
-        skillTitleKey: null,
-        toolTitle: 'Search the web',
-        toolTitleKey: null,
-        toolDescription: 'Searches the web.',
-        toolDescriptionKey: null,
+        skill: (
+          title: 'Research Assistant',
+          titleKey: null,
+          description: '',
+          descriptionKey: null,
+        ),
+        tool: (
+          title: 'Search the web',
+          titleKey: null,
+          description: 'Searches the web.',
+          descriptionKey: null,
+        ),
       ));
     });
 
@@ -292,8 +305,8 @@ void main() {
         ).future,
       );
 
-      expect(titles?.skillTitle, 'Research Assistant');
-      expect(titles?.toolTitle, isNull);
+      expect(titles?.skill.title, 'Research Assistant');
+      expect(titles?.tool.title, isNull);
     });
 
     test('returns null when skill metadata is unavailable', () async {

@@ -25,13 +25,13 @@ abstract final class SkillToolCallDisplay {
   }) {
     final skillTitle = _localizedTitle(
       context,
-      titles?.skillTitleKey,
-      titles?.skillTitle ?? target.skillSlug.toHumanReadable(),
+      titles?.skill.titleKey,
+      titles?.skill.title ?? target.skillSlug.toHumanReadable(),
     );
     final toolTitle = _localizedTitle(
       context,
-      titles?.toolTitleKey,
-      titles?.toolTitle ?? target.toolSlug.toHumanReadable(),
+      titles?.tool.titleKey,
+      titles?.tool.title ?? target.toolSlug.toHumanReadable(),
     );
 
     return '$skillTitle / $toolTitle';
@@ -49,8 +49,8 @@ abstract final class SkillToolCallDisplay {
 
     final saved = _localizedTitle(
       context,
-      titles?.toolDescriptionKey,
-      titles?.toolDescription ?? '',
+      titles?.tool.descriptionKey,
+      titles?.tool.description ?? '',
     );
 
     return normalizeToolCallUserFacingDescription(saved);

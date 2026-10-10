@@ -2344,7 +2344,10 @@ void main() {
         tester
             .getSemantics(find.byKey(const ValueKey('activity_tool_tc-skill')))
             .label,
-        contains('Research Assistant / Search the web Disabled in workspace'),
+        contains(
+          'Research Assistant / Search the web Searches the web. '
+          'Disabled in workspace',
+        ),
       );
       expect(tester.takeException(), isNull);
       semantics.dispose();

@@ -51,6 +51,7 @@ typedef _BatchApprovalErrorRequest = ({
 });
 
 typedef _ApprovalToolDisplay = ({String name, String? description});
+typedef _ApprovalDisplayContext = ({BuildContext context, WidgetRef ref});
 
 void _showApprovalActionError(_ActionErrorRequest request) {
   _logApprovalActionError(request);
@@ -717,7 +718,7 @@ class const _ApprovalCardDisplay({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final display = _approvalToolDisplay(context, ref, request);
+    final display = _approvalToolDisplay((context: context, ref: ref), request);
 
     return _ApprovalCardFrame(
       child: _ApprovalCardBody(
@@ -730,34 +731,57 @@ class const _ApprovalCardDisplay({
 }
 
 _ApprovalToolDisplay _approvalToolDisplay(
-  BuildContext context,
-  WidgetRef ref,
+  _ApprovalDisplayContext displayContext,
+  _ApprovalCardRequest request,
+) {
+  final target = SkillToolCallDisplay.parseTarget(request.current.toolCall);
+  if (target == null) {
+    return _standardApprovalToolDisplay(displayContext, request);
+  }
+
+  return _skillApprovalToolDisplay(displayContext, request, target);
+}
+
+_ApprovalToolDisplay _standardApprovalToolDisplay(
+  _ApprovalDisplayContext displayContext,
   _ApprovalCardRequest request,
 ) {
   final toolCall = request.current.toolCall;
-  final workspaceId = request.source.workspaceId;
-  final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target == null) {
-    return (
-      name: _toolDisplayName(ref, workspaceId, toolCall.name),
-      description: SkillToolCallDisplay.description(
-        context: context,
-        titles: null,
-        userFacingDescription: toolCall.userFacingDescription,
-      ),
-    );
-  }
 
-  final titles = _skillToolCallDisplayTitles(ref, workspaceId, target);
+  return (
+    name: _toolDisplayName(
+      displayContext.ref,
+      request.source.workspaceId,
+      toolCall.name,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: displayContext.context,
+      titles: null,
+      userFacingDescription: toolCall.userFacingDescription,
+    ),
+  );
+}
+
+_ApprovalToolDisplay _skillApprovalToolDisplay(
+  _ApprovalDisplayContext displayContext,
+  _ApprovalCardRequest request,
+  SkillToolCallTarget target,
+) {
+  final toolCall = request.current.toolCall;
+  final titles = _skillToolCallDisplayTitles(
+    displayContext.ref,
+    request.source.workspaceId,
+    target,
+  );
 
   return (
     name: SkillToolCallDisplay.displayName(
-      context: context,
+      context: displayContext.context,
       titles: titles,
       target: target,
     ),
     description: SkillToolCallDisplay.description(
-      context: context,
+      context: displayContext.context,
       titles: titles,
       userFacingDescription: toolCall.userFacingDescription,
     ),
@@ -1136,28 +1160,25 @@ class const _ToolCallDescription({
   required final String displayName,
   required final String? description,
 }) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final text =
-        description ??
-        LocaleKeys
-            .chats_screens_chat_conversation_tool_call_fallback_description
-            .tr(namedArgs: {'tool': displayName});
+  String get _text =>
+      description ??
+      LocaleKeys.chats_screens_chat_conversation_tool_call_fallback_description
+          .tr(namedArgs: {'tool': displayName});
 
-    return Padding(
-      padding: EdgeInsets.only(
-        top: context.auraTheme.fromSpacing(.xs),
-        bottom: context.auraTheme.fromSpacing(.xs),
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(
+      top: context.auraTheme.fromSpacing(.xs),
+      bottom: context.auraTheme.fromSpacing(.xs),
+    ),
+    child: Text(
+      _text,
+      style: .new(
+        color: context.auraColors.onSurface,
+        fontSize: context.auraTheme.typography.fontSizeXs,
       ),
-      child: Text(
-        text,
-        style: .new(
-          color: context.auraColors.onSurface,
-          fontSize: context.auraTheme.typography.fontSizeXs,
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 class const _ToolCallName({required final String displayName})
