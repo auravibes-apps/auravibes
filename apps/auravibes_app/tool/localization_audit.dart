@@ -115,9 +115,9 @@ List<String> findPlaceholderMismatches({required Directory translationsDir}) {
         final mismatch = _placeholderMismatch(
           locale: locale,
           key: key,
-          branch: branch,
           expected: reference,
           actual: translation,
+          branch: branch,
         );
         if (mismatch != null) issues.add(mismatch);
       }

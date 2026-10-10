@@ -252,8 +252,7 @@ final static = 'menu.' 'new_chat'.tr();
     );
   });
 
-  test('reports named and positional placeholder mismatches '
-      'by locale and key', () {
+  test('reports placeholder mismatches by locale and key', () {
     File('${translationsDir.path}/en.json').writeAsStringSync('''
 {"menu":{"greeting":"Hello {name}","selected_count":"{} selected"}}
 ''');
