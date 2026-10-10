@@ -9,22 +9,32 @@ abstract final class LogRedaction {
       r'\b(authorization\s*[:=]\s*bearer\s+)[^\s,;]+',
       caseSensitive: false,
     ),
+    RegExp(
+      r'\b(authorization\s*[:=]\s*basic\s+)[^\s,;]+',
+      caseSensitive: false,
+    ),
     RegExp(r'\b(bearer\s+)[^\s,;]+', caseSensitive: false),
+    RegExp(
+      r'(?<![\x22\x27])\b((?:set-cookie|cookie)\s*:\s*)[^\r\n]+',
+      caseSensitive: false,
+    ),
     RegExp(
       r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)\s*[:=]\s*)[^\s,;&]+',
       caseSensitive: false,
     ),
+    RegExp(r'(\b[a-z][a-z0-9+.-]*://)(?:[^/@\s]+)(@)', caseSensitive: false),
     RegExp(
       '(["\'](?:x[_-]?api[_-]?key|authorization|api[_-]?key|'
       'access[_-]?token|refresh[_-]?token|'
       'auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|'
       'id[_-]?token|code[_-]?verifier|authorization[_-]?code|'
-      'verification[_-]?code|token|secret|password|code|state|nonce)["\']\\s*:\\s*["\'])'
+      'verification[_-]?code|token|secret|password|code|state|nonce|'
+      'cookie|set-cookie)["\']\\s*:\\s*["\'])'
       '[^"\']+',
       caseSensitive: false,
     ),
     RegExp(
-      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|token|secret|password|code|state|nonce)=)[^&#\s]+',
+      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|x-amz-signature|x-goog-signature|signature|sig|token|secret|password|code|state|nonce)=)[^&#\s\x22\x27]+',
       caseSensitive: false,
     ),
   ];
@@ -66,6 +76,9 @@ abstract final class LogRedaction {
 
   static String _replaceMatch(Match match) {
     final prefix = match.group(1) ?? '';
+    if (match.groupCount == 2) {
+      return '$prefix$_redacted${match.group(2)}';
+    }
 
     return '$prefix$_redacted';
   }
