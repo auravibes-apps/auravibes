@@ -22,6 +22,35 @@ void main() {
     expect(selected.keptTailMessageIds, ['3', '4']);
   });
 
+  test(
+    'keeps an undelivered background completion outside compacted history',
+    () {
+      final messages = [
+        _message(1, 'user', 'first'),
+        _message(2, 'assistant', 'answer'),
+        _message(
+          3,
+          'user',
+          'Background result is ready.',
+          status: 'queued',
+          metadata: {
+            'isBackgroundWorkCompletion': true,
+            'backgroundWorkId': 'work-1',
+          },
+        ),
+      ];
+
+      final range =
+          selectConversationCompactionRange(
+                messages,
+              )
+              as AgentCompactionRangeSelected;
+
+      expect(range.messageIds, ['1', '2']);
+      expect(range.keptTailMessageIds, ['3']);
+    },
+  );
+
   test('maps active checkpoint stable ID to the transcript message ID', () {
     final messages = [
       _message(1, 'user', 'before'),
@@ -56,9 +85,11 @@ void main() {
       _message(6, 'user', 'keep'),
     ];
 
-    final range = selectConversationCompactionRange(
-      messages,
-    ) as AgentCompactionRangeSelected;
+    final range =
+        selectConversationCompactionRange(
+              messages,
+            )
+            as AgentCompactionRangeSelected;
 
     expect(range.messageIds, ['1', '2', '4', '5']);
     expect(range.throughMessageId, '5');
