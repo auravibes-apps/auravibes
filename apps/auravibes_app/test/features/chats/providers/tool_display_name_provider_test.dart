@@ -328,6 +328,47 @@ void main() {
 
       expect(titles, isNull);
     });
+
+    test('returns null when workspace skill slugs are ambiguous', () async {
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith(
+            (ref) async => const [
+              WorkspaceSkill(
+                id: 'user-research',
+                slug: 'research',
+                title: 'User Research',
+                description: '',
+                source: .user,
+                kind: .template,
+                isEnabled: true,
+              ),
+              WorkspaceSkill(
+                id: 'app-research',
+                slug: 'research',
+                title: 'App Research',
+                description: '',
+                source: .app,
+                kind: .native,
+                isEnabled: true,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          'research',
+          'search_web',
+        ).future,
+      );
+
+      expect(titles, isNull);
+    });
   });
 
   group('mcpServerNameProvider', () {

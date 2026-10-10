@@ -101,8 +101,12 @@ Future<WorkspaceSkill?> _workspaceSkillBySlug(
   String skillSlug,
 ) async {
   final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
+  final matchingSkills = skills
+      .where((skill) => skill.slug == skillSlug)
+      .toList();
+  if (matchingSkills.length != 1) return null;
 
-  return skills.where((skill) => skill.slug == skillSlug).firstOrNull;
+  return matchingSkills.single;
 }
 
 Future<SkillToolDisplayMetadata> _toolTitlesForSkill(
