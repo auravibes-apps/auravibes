@@ -85,15 +85,17 @@ Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
   return (
     skillId: skill.id,
     skillSource: skill.source,
-    skill: (
-      title: skill.title,
-      titleKey: skill.titleKey,
-      description: skill.description,
-      descriptionKey: skill.descriptionKey,
-    ),
+    skill: _skillDisplayMetadata(skill),
     tool: toolMetadata,
   );
 }
+
+SkillToolDisplayMetadata _skillDisplayMetadata(WorkspaceSkill skill) => (
+  title: skill.title,
+  titleKey: skill.titleKey,
+  description: skill.description,
+  descriptionKey: skill.descriptionKey,
+);
 
 Future<WorkspaceSkill?> _workspaceSkillBySlug(
   Ref ref,

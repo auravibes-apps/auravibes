@@ -2138,24 +2138,13 @@ extension on _AgentToolPermissionsDialogState {
     return group;
   }
 
-  _ToolGroup _newToolGroup(_NewToolGroupRequest request) {
-    final parsed = request.parsed;
-    final skill = request.skill;
-    final skillSlug = parsed.skillSlug;
-    final source = parsed.source;
-
-    return _ToolGroup(
-      key: request.key,
-      title: _skillGroupTitle(skill, skillSlug),
-      titleKey: skill?.source == .app ? skill?.titleKey : null,
-      tools: [],
-      overrideCount: _skillGroupOverrideCount(
-        source: source,
-        skillSlug: skillSlug,
-        tools: request.visibleTools,
-      ),
-    );
-  }
+  _ToolGroup _newToolGroup(_NewToolGroupRequest request) => _ToolGroup(
+    key: request.key,
+    title: _skillGroupTitle(request.skill, request.parsed.skillSlug),
+    titleKey: _skillGroupTitleKey(request.skill),
+    tools: [],
+    overrideCount: _skillGroupOverrideCount(request),
+  );
 
   void _addToolGroup(
     _ToolGroup group,
@@ -2183,18 +2172,24 @@ extension on _AgentToolPermissionsDialogState {
   String _skillGroupTitle(WorkspaceSkill? skill, String fallbackSlug) =>
       skill?.title ?? fallbackSlug.toHumanReadable();
 
+  String? _skillGroupTitleKey(WorkspaceSkill? skill) =>
+      skill?.source == .app ? skill?.titleKey : null;
+
   bool _isSkillControlTool(String toolId) =>
       toolId == activateSkillToolName || toolId == 'list_skill_credentials';
 
   AgentToolPermissionMode _value(String toolId) =>
       widget.values[toolId] ?? AgentToolPermissionMode.workspaceDefault;
 
-  int _skillGroupOverrideCount({
-    required String source,
-    required String skillSlug,
-    required List<WorkspaceToolEntity> tools,
-  }) => tools
-      .where((tool) => _isToolOverrideForGroup(tool, source, skillSlug))
+  int _skillGroupOverrideCount(_NewToolGroupRequest request) => request
+      .visibleTools
+      .where(
+        (tool) => _isToolOverrideForGroup(
+          tool,
+          request.parsed.source,
+          request.parsed.skillSlug,
+        ),
+      )
       .length;
 
   bool _isToolOverrideForGroup(
