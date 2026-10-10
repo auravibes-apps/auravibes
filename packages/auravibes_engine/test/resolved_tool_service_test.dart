@@ -154,6 +154,7 @@ class const _FakeResolvedToolProvider()
   @override
   Future<Object?> runBuiltInTool({
     required String conversationId,
+    required String toolCallId,
     required AgentResolvedToolName tool,
     required Object input,
   }) async {
@@ -163,6 +164,7 @@ class const _FakeResolvedToolProvider()
   @override
   Future<Object?> runNativeTool({
     required String conversationId,
+    required String toolCallId,
     required AgentResolvedToolName tool,
     required Object input,
   }) async {
@@ -170,12 +172,9 @@ class const _FakeResolvedToolProvider()
   }
 
   @override
-  Future<Object?> runMcpTool({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) async {
-    return 'mcp:$mcpServerId:$toolIdentifier:${arguments.length}';
+  Future<Object?> runMcpTool(McpToolCallRequest request) async {
+    return 'mcp:${request.mcpServerId}:'
+        '${request.toolIdentifier}:${request.arguments.length}';
   }
 
   @override

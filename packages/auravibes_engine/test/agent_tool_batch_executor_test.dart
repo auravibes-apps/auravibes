@@ -9,7 +9,12 @@ void main() {
     final release = Completer<void>();
     final executor = AgentToolBatchExecutor<String>(
       runResolvedTool:
-          ({required conversationId, required tool, required arguments}) async {
+          ({
+            required conversationId,
+            required toolCallId,
+            required tool,
+            required arguments,
+          }) async {
             started.add(tool);
             await release.future;
 

@@ -227,6 +227,7 @@ void main() {
       when(
         () => resolvedToolService.call(
           conversationId: 'child',
+          toolCallId: 'success-call',
           tool: resolved,
           arguments: {'input': 'value'},
         ),

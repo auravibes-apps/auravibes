@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
@@ -70,43 +73,123 @@ class const RunSkillTemplateToolUsecase(
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) async {
-    final session = await _workspaceSession(workspaceId);
-    _ensureLocalSession(session);
+  }) => callCancelable(
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  ).valueOrCancellation();
 
-    return await _runEnabledTool((
-      workspaceId: workspaceId,
-      skillSlug: skillSlug,
-      toolSlug: toolSlug,
-      arguments: arguments,
-    ));
-  }
+  CancelableOperation<Object?> callCancelable({
+    required String workspaceId,
+    required String skillSlug,
+    required String toolSlug,
+    required Map<String, dynamic> arguments,
+  }) => _CancelableTemplateToolCall(this, (
+    workspaceId: workspaceId,
+    skillSlug: skillSlug,
+    toolSlug: toolSlug,
+    arguments: arguments,
+  )).start();
 }
 
-extension on RunSkillTemplateToolUsecase {
-  Future<Object?> _runEnabledTool(_TemplateInvocationRequest request) async {
-    final skill = await _loadEnabledSkill(
-      request.workspaceId,
-      request.skillSlug,
-    );
-    if (skill == null) return null;
+class _CancelableTemplateToolCall(
+  final RunSkillTemplateToolUsecase _usecase,
+  final _TemplateInvocationRequest _request,
+) {
+  CancelableOperation<UrlResponse>? _httpOperation;
 
-    return await _runEnabledToolForSkill(request, skill);
+  CancelableOperation<Object?> start() {
+    final completer = CancelableCompleter<Object?>(
+      onCancel: _cancelHttpOperation,
+    );
+    unawaited(_run(completer));
+
+    return completer.operation;
   }
 
-  Future<Object?> _runEnabledToolForSkill(
-    _TemplateInvocationRequest request,
+  Future<void> _cancelHttpOperation() async {
+    final httpOperation = _httpOperation;
+    if (httpOperation != null) {
+      final _ = await httpOperation.cancel();
+    }
+  }
+
+  Future<void> _run(CancelableCompleter<Object?> completer) async {
+    try {
+      final response = await _resolveTemplateResponse(completer);
+      if (response == null || completer.isCanceled) return;
+
+      completer.complete(response.body);
+    } on Object catch (error, stackTrace) {
+      if (!completer.isCanceled) completer.completeError(error, stackTrace);
+    }
+  }
+
+  Future<UrlResponse?> _resolveTemplateResponse(
+    CancelableCompleter<Object?> completer,
+  ) async {
+    final workspaceId = _request.workspaceId;
+    final session = await _usecase._workspaceSession(workspaceId);
+    _usecase._ensureLocalSession(session);
+    if (completer.isCanceled) return null;
+
+    return await _resolveEnabledTemplateSkill(completer, workspaceId);
+  }
+
+  Future<UrlResponse?> _resolveEnabledTemplateSkill(
+    CancelableCompleter<Object?> completer,
+    String workspaceId,
+  ) async {
+    final skill = await _usecase._loadEnabledSkill(
+      workspaceId,
+      _request.skillSlug,
+    );
+    if (skill == null) return _completeMissingTemplatePart(completer);
+    if (completer.isCanceled) return null;
+
+    return await _resolveEnabledTemplateTool(completer, workspaceId, skill);
+  }
+
+  Future<UrlResponse?> _resolveEnabledTemplateTool(
+    CancelableCompleter<Object?> completer,
+    String workspaceId,
     SkillEntity skill,
   ) async {
-    final tool = await _loadEnabledTool(skill.id, request.toolSlug);
-    if (tool == null) return null;
+    final tool = await _usecase._loadEnabledTool(skill.id, _request.toolSlug);
+    if (tool == null) return _completeMissingTemplatePart(completer);
+    if (completer.isCanceled) return null;
 
-    return await _runTool((
-      workspaceId: request.workspaceId,
+    final execution = await _usecase._templateExecutionRequest((
+      workspaceId: workspaceId,
       skill: skill,
       tool: tool,
-      arguments: request.arguments,
+      arguments: _request.arguments,
     ));
+    if (completer.isCanceled) return null;
+
+    return await _executeTemplate(execution);
+  }
+
+  UrlResponse? _completeMissingTemplatePart(
+    CancelableCompleter<Object?> completer,
+  ) {
+    completer.complete(null);
+
+    return null;
+  }
+
+  Future<UrlResponse?> _executeTemplate(_TemplateExecutionRequest execution) {
+    final operation = _usecase._templateExecutor.call(
+      definition: execution.definition,
+      inputs: execution.inputs,
+      credentials: execution.credentials,
+      schema: execution.definition.inputSchema,
+      credentialDefinitions: execution.credentialDefinitions,
+    );
+    _httpOperation = operation;
+
+    return operation.valueOrCancellation();
   }
 }
 
@@ -141,10 +224,6 @@ extension on RunSkillTemplateToolUsecase {
     );
 
     return tool == null || !tool.isEnabled ? null : tool;
-  }
-
-  Future<Object?> _runTool(_TemplateToolRequest request) async {
-    return await _executeTemplate(await _templateExecutionRequest(request));
   }
 
   Future<_TemplateExecutionRequest> _templateExecutionRequest(
@@ -212,23 +291,6 @@ extension on RunSkillTemplateToolUsecase {
       credentialDefinitions: credentialDefinitions,
     );
   }
-
-  Future<Object?> _executeTemplate(_TemplateExecutionRequest request) async {
-    final response = await _runTemplateCall(request);
-
-    return response.body;
-  }
-
-  Future<UrlResponse> _runTemplateCall(_TemplateExecutionRequest request) =>
-      _templateExecutor
-          .call(
-            definition: request.definition,
-            inputs: request.inputs,
-            credentials: request.credentials,
-            schema: request.definition.inputSchema,
-            credentialDefinitions: request.credentialDefinitions,
-          )
-          .value;
 
   Future<SkillCredentialEntity?> _resolveCredential(
     _CredentialResolutionRequest request,

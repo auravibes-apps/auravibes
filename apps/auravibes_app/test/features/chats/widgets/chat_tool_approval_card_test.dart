@@ -900,6 +900,7 @@ class _DecisionEffects
   @override
   Future<Object?> runResolvedTool({
     required String conversationId,
+    required String toolCallId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) async {
