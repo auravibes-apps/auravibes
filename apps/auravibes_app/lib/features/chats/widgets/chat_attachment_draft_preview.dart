@@ -232,19 +232,6 @@ class _AttachmentDraftAudioPlayerState
     return canPlay && _isCurrentRequest(playbackRequest);
   }
 
-  Future<void> _loadAndPlay(AudioPlayer player, int playbackRequest) async {
-    final _ = await player.setFilePath(widget.localPath);
-    if (!_isCurrentRequest(playbackRequest)) return;
-    unawaited(
-      player.play().catchError((Object _) async {
-        await _handlePlaybackFailure(player, playbackRequest);
-      }),
-    );
-  }
-
-  bool _isCurrentRequest(int playbackRequest) =>
-      mounted && playbackRequest == _playbackRequest;
-
   Future<void> _stopPlayback() {
     final existingStop = _stoppingPlayback;
     if (existingStop != null) return existingStop;
@@ -267,6 +254,25 @@ class _AttachmentDraftAudioPlayerState
       // A failed stop still leaves the preview in its stopped state.
     }
   }
+
+  void _setPlaying(bool isPlaying) {
+    if (mounted) setState(() => _isPlaying = isPlaying);
+  }
+}
+
+extension on _AttachmentDraftAudioPlayerState {
+  Future<void> _loadAndPlay(AudioPlayer player, int playbackRequest) async {
+    final _ = await player.setFilePath(widget.localPath);
+    if (!_isCurrentRequest(playbackRequest)) return;
+    unawaited(
+      player.play().catchError((Object _) async {
+        await _handlePlaybackFailure(player, playbackRequest);
+      }),
+    );
+  }
+
+  bool _isCurrentRequest(int playbackRequest) =>
+      mounted && playbackRequest == _playbackRequest;
 
   Future<void> _handlePlaybackFailure(
     AudioPlayer player,
@@ -292,10 +298,6 @@ class _AttachmentDraftAudioPlayerState
         _setPlaying(false);
       }
     });
-  }
-
-  void _setPlaying(bool isPlaying) {
-    if (mounted) setState(() => _isPlaying = isPlaying);
   }
 
   Future<void> _disposePlayer(AudioPlayer player) async {
