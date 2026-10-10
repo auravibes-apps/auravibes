@@ -392,6 +392,53 @@ void main() {
     },
   );
 
+  testWidgets('does not carry a preview error to the next attachment', (
+    tester,
+  ) async {
+    final first = attachment.copyWith(
+      localPath: '/tmp/first.wav',
+      fileName: 'first.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+    );
+    final second = attachment.copyWith(
+      localPath: '/tmp/second.wav',
+      fileName: 'second.wav',
+      mimeType: 'audio/wav',
+      modality: .audio,
+    );
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        attachment: first,
+        attachments: [first, second],
+        onRemove: _ignoreAttachment,
+      ),
+    );
+    audioPlatform.failNextLoad = true;
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+    expect(
+      find.text('Audio preview failed. Retry or remove this attachment.'),
+      findsOneWidget,
+    );
+
+    tester.widget<InputChip>(find.byType(InputChip).first).onDeleted?.call();
+    await tester.pump();
+
+    expect(find.byType(InputChip), findsOneWidget);
+    expect(
+      find.text('Audio preview failed. Retry or remove this attachment.'),
+      findsNothing,
+    );
+  });
+
   testWidgets('starting another preview stops the first and updates both', (
     tester,
   ) async {
@@ -425,6 +472,7 @@ void main() {
     await tester.pump();
     expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
     expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    final firstPlayerId = audioPlatform.players.keys.single;
 
     await tester.runAsync(() async {
       pressAudioButton(tester, index: 1);
@@ -434,6 +482,110 @@ void main() {
 
     expect(audioPlatform.sources, ['/tmp/first.wav', '/tmp/second.wav']);
     expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+    expect(audioPlatform.disposedPlayerIds, [firstPlayerId]);
+  });
+
+  testWidgets('restarting waits for an in-flight stop to finish', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        attachment: attachment.copyWith(
+          localPath: '/tmp/voice.wav',
+          fileName: 'voice.wav',
+          mimeType: 'audio/wav',
+          modality: .audio,
+        ),
+        onRemove: _ignoreAttachment,
+      ),
+    );
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+
+    audioPlatform.stopGate = Completer<void>();
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.stopStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
+    await tester.pump();
+    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    expect(audioPlatform.sources, ['/tmp/voice.wav']);
+
+    await tester.runAsync(() async {
+      audioPlatform.stopGate?.complete();
+      await audioPlatform.secondLoadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+
+    expect(audioPlatform.sources, ['/tmp/voice.wav', '/tmp/voice.wav']);
+    expect(audioPlatform.disposedPlayerIds, hasLength(1));
+    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+  });
+
+  testWidgets('retry waits for failure cleanup to stop the player', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        attachment: attachment.copyWith(
+          localPath: '/tmp/voice.wav',
+          fileName: 'voice.wav',
+          mimeType: 'audio/wav',
+          modality: .audio,
+        ),
+        onRemove: _ignoreAttachment,
+      ),
+    );
+    audioPlatform.failNextLoad = true;
+    audioPlatform.stopGate = Completer<void>();
+
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+      await audioPlatform.stopStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
+    await tester.pump();
+
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    expect(audioPlatform.sources, ['/tmp/voice.wav']);
+
+    await tester.runAsync(() async {
+      audioPlatform.stopGate?.complete();
+      await audioPlatform.secondLoadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    });
+    await tester.pump();
+
+    expect(audioPlatform.sources, ['/tmp/voice.wav', '/tmp/voice.wav']);
+    expect(audioPlatform.disposedPlayerIds, hasLength(1));
     expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
   });
 
@@ -523,17 +675,26 @@ class _PreviewComposerState extends State<_PreviewComposer> {
 class _FakeJustAudioPlatform extends JustAudioPlatform {
   final sources = <String>[];
   final players = <String, _FakeAudioPlayerPlatform>{};
+  final disposedPlayerIds = <String>[];
   Completer<void> loadStarted = Completer<void>();
+  Completer<void> secondLoadStarted = Completer<void>();
+  Completer<void> stopStarted = Completer<void>();
   Completer<void> disposeStarted = Completer<void>();
+  Completer<void>? stopGate;
   int disposeCount = 0;
   bool failNextLoad = false;
 
   void reset() {
     sources.clear();
+    players.clear();
+    disposedPlayerIds.clear();
     disposeCount = 0;
     failNextLoad = false;
     loadStarted = Completer<void>();
+    secondLoadStarted = Completer<void>();
+    stopStarted = Completer<void>();
     disposeStarted = Completer<void>();
+    stopGate = null;
   }
 
   void completePlayback() {
@@ -548,6 +709,7 @@ class _FakeJustAudioPlatform extends JustAudioPlatform {
       request.id,
       sources,
       loadStarted,
+      secondLoadStarted,
       () {
         if (!failNextLoad) return false;
         failNextLoad = false;
@@ -565,6 +727,10 @@ class _FakeJustAudioPlatform extends JustAudioPlatform {
     DisposePlayerRequest request,
   ) async {
     disposeCount++;
+    if (!stopStarted.isCompleted) stopStarted.complete();
+    final gate = stopGate;
+    if (gate != null) await gate.future;
+    disposedPlayerIds.add(request.id);
     if (!disposeStarted.isCompleted) disposeStarted.complete();
     final player = players.remove(request.id);
     await player?.close();
@@ -584,10 +750,17 @@ class _FakeJustAudioPlatform extends JustAudioPlatform {
 }
 
 class _FakeAudioPlayerPlatform extends AudioPlayerPlatform {
-  new(super.id, this.sources, this.loadStarted, this.shouldFailNextLoad);
+  new(
+    super.id,
+    this.sources,
+    this.loadStarted,
+    this.secondLoadStarted,
+    this.shouldFailNextLoad,
+  );
 
   final List<String> sources;
   final Completer<void> loadStarted;
+  final Completer<void> secondLoadStarted;
   final bool Function() shouldFailNextLoad;
   final events = StreamController<PlaybackEventMessage>.broadcast();
   final data = StreamController<PlayerDataMessage>.broadcast();
@@ -607,6 +780,9 @@ class _FakeAudioPlayerPlatform extends AudioPlayerPlatform {
           .toFilePath(),
     );
     if (!loadStarted.isCompleted) loadStarted.complete();
+    if (sources.length == 2 && !secondLoadStarted.isCompleted) {
+      secondLoadStarted.complete();
+    }
     if (shouldFailNextLoad()) {
       throw StateError('private platform error at /tmp/private/voice.wav');
     }

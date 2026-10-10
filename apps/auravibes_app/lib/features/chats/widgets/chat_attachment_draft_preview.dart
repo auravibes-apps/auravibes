@@ -31,6 +31,7 @@ class const ChatAttachmentDraftPreview({
         enabled: enabled,
         maxWidth: _maxLabelWidth,
         audioPreviewCoordinator: audioPreviewCoordinator,
+        key: ObjectKey(attachment),
       ),
       onDeleted: enabled ? () => onRemove(attachment) : null,
     );
@@ -79,6 +80,7 @@ class const _AttachmentDraftChipLabel({
   required final bool enabled,
   required final double maxWidth,
   required final ChatAttachmentAudioPreviewCoordinator? audioPreviewCoordinator,
+  super.key,
 }) extends StatefulWidget {
   @override
   State<_AttachmentDraftChipLabel> createState() =>
@@ -204,8 +206,12 @@ class _AttachmentDraftAudioPlayerState
       _isPlaying ? _stopPlayback() : _startPlayback();
 
   Future<void> _startPlayback() async {
-    final player = _preparePlayer();
     final playbackRequest = ++_playbackRequest;
+    final existingStop = _stoppingPlayback;
+    if (existingStop != null) await existingStop;
+    if (!_isCurrentRequest(playbackRequest)) return;
+
+    final player = _preparePlayer();
     if (!await _activatePreview(playbackRequest)) return;
 
     _setPlaying(true);
@@ -213,7 +219,7 @@ class _AttachmentDraftAudioPlayerState
     try {
       await _loadAndPlay(player, playbackRequest);
     } on Object {
-      await _handlePlaybackFailure(player, playbackRequest);
+      await _handlePlaybackFailure(playbackRequest);
     }
   }
 
@@ -266,7 +272,7 @@ extension on _AttachmentDraftAudioPlayerState {
     if (!_isCurrentRequest(playbackRequest)) return;
     unawaited(
       player.play().catchError((Object _) async {
-        await _handlePlaybackFailure(player, playbackRequest);
+        await _handlePlaybackFailure(playbackRequest);
       }),
     );
   }
@@ -274,16 +280,15 @@ extension on _AttachmentDraftAudioPlayerState {
   bool _isCurrentRequest(int playbackRequest) =>
       mounted && playbackRequest == _playbackRequest;
 
-  Future<void> _handlePlaybackFailure(
-    AudioPlayer player,
-    int playbackRequest,
-  ) async {
+  Future<void> _handlePlaybackFailure(int playbackRequest) async {
     if (playbackRequest != _playbackRequest) return;
     _setPlaying(false);
+    final stopping = _stopPlayer();
+    _stoppingPlayback = stopping;
     try {
-      await player.stop();
-    } on Object {
-      // The preview still reports a generic failure if stopping also fails.
+      await stopping;
+    } finally {
+      if (identical(_stoppingPlayback, stopping)) _stoppingPlayback = null;
     }
     if (playbackRequest != _playbackRequest) return;
     widget.audioPreviewCoordinator?.release(_previewOwner);
