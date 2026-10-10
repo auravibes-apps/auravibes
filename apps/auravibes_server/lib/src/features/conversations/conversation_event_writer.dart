@@ -25,6 +25,7 @@ class ConversationEventWriter {
     required String requestId,
     required ConversationEventType kind,
     required String payloadJson,
+    String? eventId,
     Future<void> Function(Transaction transaction)? guard,
     Future<void> Function(
       Transaction transaction,
@@ -48,6 +49,31 @@ class ConversationEventWriter {
         throw ConversationException(code: ConversationErrorCode.notFound);
       }
 
+      if (eventId != null) {
+        final existing = await ConversationEvent.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(workspaceId) &
+              table.eventId.equals(eventId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (existing != null) {
+          if (existing.conversationId != conversation.id ||
+              existing.actorUserId != actorUserId ||
+              existing.kind != kind ||
+              existing.payloadJson != payloadJson) {
+            throw ConversationException(
+              code: ConversationErrorCode.idempotencyConflict,
+            );
+          }
+          return ConversationEventWriteResult(
+            conversation: conversation,
+            event: existing,
+          );
+        }
+      }
+
       final now = DateTime.now().toUtc();
       await guard?.call(transaction);
       await persist?.call(transaction, conversation, now);
@@ -67,7 +93,7 @@ class ConversationEventWriter {
           workspaceId: workspaceId,
           conversationId: conversation.id!,
           sequence: sequence,
-          eventId: const Uuid().v7(),
+          eventId: eventId ?? const Uuid().v7(),
           actorUserId: actorUserId,
           requestId: requestId,
           kind: kind,

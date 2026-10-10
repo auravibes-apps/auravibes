@@ -55,7 +55,33 @@ void main() {
           where: (table) => table.conversationId.equals(conversation.id),
         );
         expect(event!.kind, ConversationEventType.messageQueued);
-        expect(jsonDecode(event.payloadJson), {'messageId': 'message-1'});
+        final eventPayload = jsonDecode(event.payloadJson) as Map;
+        expect(eventPayload['messageId'], 'message-1');
+        expect(eventPayload['contentDigest'], isA<String>());
+        expect(eventPayload['attachmentIds'], isEmpty);
+        final replay = await endpoints.conversation.queueConversationMessage(
+          session,
+          QueueConversationMessageRequest(
+            workspaceId: workspace.id!,
+            requestId: 'queue-1-reconnect',
+            conversationId: conversation.stableId,
+            expectedProjectionRevision: 1,
+            clientMessageId: 'message-1',
+            content: 'follow-up',
+            attachmentIds: const [],
+          ),
+        );
+        final allEvents = await ConversationEvent.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        );
+        final allMessages = await ConversationMessage.db.find(
+          database,
+          where: (table) => table.conversationId.equals(conversation.id),
+        );
+        expect(replay.pendingMessages, hasLength(1));
+        expect(allEvents, hasLength(1));
+        expect(allMessages, hasLength(1));
       },
     );
 

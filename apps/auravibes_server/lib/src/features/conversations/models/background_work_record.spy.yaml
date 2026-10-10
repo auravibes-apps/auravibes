@@ -8,6 +8,7 @@ fields:
   stableId: String
   toolCallId: String
   toolKind: String
+  runtimeServerId: String?
   status: String
   statusPreview: String?
   resultContent: String?

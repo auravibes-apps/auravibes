@@ -10,6 +10,7 @@ import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
+import '../usecases/conversation_usecases.dart';
 
 import 'conversation_job_leases.dart';
 
@@ -61,6 +62,7 @@ class const ConversationWorker({
     if (isActive != null && !isActive()) return true;
     if (job.status == ConversationJobStatuses.failed) {
       await _reconcileParentAfterChild(session, job);
+      await _continueQueuedAfterJob(session, job);
       return true;
     }
 
@@ -107,6 +109,7 @@ class const ConversationWorker({
       if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job configuration failed: job=${job.id}.',
@@ -125,6 +128,7 @@ class const ConversationWorker({
       if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job response exceeded limit: job=${job.id}.',
@@ -143,6 +147,7 @@ class const ConversationWorker({
       if (updated == null) return true;
       if (updated.status == ConversationJobStatuses.failed) {
         await _recordExecutionFailure(session, updated);
+        await _continueQueuedAfterJob(session, updated);
       }
       session.log(
         'Conversation job provider execution failed: job=${job.id}, '
@@ -206,6 +211,27 @@ class const ConversationWorker({
         stackTrace: stackTrace,
       );
     }
+  }
+
+  Future<void> _continueQueuedAfterJob(
+    Session session,
+    ConversationJob job,
+  ) async {
+    if (job.turnId == null) return;
+    final turn = await ConversationTurn.db.findById(session, job.turnId!);
+    final conversation = await Conversation.db.findById(
+      session,
+      job.conversationId,
+    );
+    if (turn == null || conversation == null) return;
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: turn.initiatorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
   }
 
   Future<void> _executeTurn(
@@ -387,6 +413,14 @@ class const ConversationWorker({
       result,
     );
     await _reconcileParentAfterChild(session, job);
+    await ConversationUseCases(
+      conversation_repo.ConversationRepository(),
+    ).continueOldestQueuedMessage(
+      session,
+      userId: turn.initiatorUserId,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+    );
 
     await SyncWakeups.publishWorkspace(session, job.workspaceId);
     final currentConversation = await Conversation.db.findById(

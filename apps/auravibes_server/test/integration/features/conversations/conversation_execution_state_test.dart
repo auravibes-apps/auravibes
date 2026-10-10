@@ -181,6 +181,74 @@ void main() {
         recoveryInterval: const Duration(milliseconds: 1),
       );
 
+      test(
+        'queued user messages are claimed one at a time in FIFO order',
+        () async {
+          final fixture = await prepareExecution(continueConversation: false);
+          await endpoints.conversation.queueConversationMessage(
+            fixture.session,
+            QueueConversationMessageRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'queue-first',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision: 1,
+              clientMessageId: 'message-first',
+              content: 'First arrival',
+              attachmentIds: const [],
+            ),
+          );
+          await endpoints.conversation.queueConversationMessage(
+            fixture.session,
+            QueueConversationMessageRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'queue-second',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision: 2,
+              clientMessageId: 'message-second',
+              content: 'Second arrival',
+              attachmentIds: const [],
+            ),
+          );
+
+          final continued =
+              await ConversationUseCases(
+                conversation_repo.ConversationRepository(),
+              ).continueOldestQueuedMessage(
+                fixture.session,
+                userId: fixture.userId,
+                workspaceId: fixture.workspaceId,
+                conversationId: fixture.conversationId,
+              );
+          expect(continued, isTrue);
+
+          final started = await endpoints.conversation.getConversationSnapshot(
+            fixture.session,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+
+          expect(started.activeExecution!.claimedMessageIds, ['message-first']);
+          expect(
+            started.pendingMessages.map((message) => message.id),
+            ['message-second'],
+          );
+          final queuedEvents = await ConversationEvent.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.kind.equals(ConversationEventType.messageQueued),
+            orderBy: (table) => table.sequence,
+          );
+          expect(
+            queuedEvents.map((event) => event.eventId),
+            ['user-message:message-first', 'user-message:message-second'],
+          );
+        },
+      );
+
       test('cancel hides turn existence from non-members', () async {
         final fixture = await prepareExecution();
         final attackerId = const Uuid().v4().toString();
