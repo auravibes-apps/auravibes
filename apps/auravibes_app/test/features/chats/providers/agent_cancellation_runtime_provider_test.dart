@@ -55,6 +55,7 @@ void main() {
         isSupported: true,
         cancel: () {
           cancelCalls += 1;
+
           return cancellationRelease.future;
         },
       );
@@ -78,8 +79,9 @@ void main() {
       final handle = AgentToolCancellationHandle(
         toolCallId: 'mcp-1',
         isSupported: false,
-        cancel: () async {
+        cancel: () {
           cancelCalls += 1;
+          return Future<void>.value();
         },
       );
 
@@ -96,7 +98,7 @@ void main() {
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
-        cancel: () async {},
+        cancel: () => Future<void>.value(),
       );
 
       runtime.completeToolCancellationHandle(

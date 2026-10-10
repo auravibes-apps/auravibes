@@ -93,9 +93,7 @@ class const RunSkillTemplateToolUsecase(
   )).start();
 }
 
-class _CancelableTemplateToolCall {
-  _CancelableTemplateToolCall(this._usecase, this._request);
-
+class _CancelableTemplateToolCall(this._usecase, this._request) {
   final RunSkillTemplateToolUsecase _usecase;
   final _TemplateInvocationRequest _request;
   CancelableOperation<UrlResponse>? _httpOperation;
@@ -123,6 +121,7 @@ class _CancelableTemplateToolCall {
       );
       if (skill == null) {
         completer.complete(null);
+
         return;
       }
       if (completer.isCanceled) return;
@@ -130,6 +129,7 @@ class _CancelableTemplateToolCall {
       final tool = await _usecase._loadEnabledTool(skill.id, _request.toolSlug);
       if (tool == null) {
         completer.complete(null);
+
         return;
       }
       if (completer.isCanceled) return;
@@ -157,33 +157,6 @@ class _CancelableTemplateToolCall {
     } on Object catch (error, stackTrace) {
       if (!completer.isCanceled) completer.completeError(error, stackTrace);
     }
-  }
-}
-
-extension on RunSkillTemplateToolUsecase {
-  Future<Object?> _runEnabledTool(_TemplateInvocationRequest request) async {
-    final skill = await _loadEnabledSkill(
-      request.workspaceId,
-      request.skillSlug,
-    );
-    if (skill == null) return null;
-
-    return await _runEnabledToolForSkill(request, skill);
-  }
-
-  Future<Object?> _runEnabledToolForSkill(
-    _TemplateInvocationRequest request,
-    SkillEntity skill,
-  ) async {
-    final tool = await _loadEnabledTool(skill.id, request.toolSlug);
-    if (tool == null) return null;
-
-    return await _runTool((
-      workspaceId: request.workspaceId,
-      skill: skill,
-      tool: tool,
-      arguments: request.arguments,
-    ));
   }
 }
 
@@ -218,10 +191,6 @@ extension on RunSkillTemplateToolUsecase {
     );
 
     return tool == null || !tool.isEnabled ? null : tool;
-  }
-
-  Future<Object?> _runTool(_TemplateToolRequest request) async {
-    return await _executeTemplate(await _templateExecutionRequest(request));
   }
 
   Future<_TemplateExecutionRequest> _templateExecutionRequest(
@@ -289,23 +258,6 @@ extension on RunSkillTemplateToolUsecase {
       credentialDefinitions: credentialDefinitions,
     );
   }
-
-  Future<Object?> _executeTemplate(_TemplateExecutionRequest request) async {
-    final response = await _runTemplateCall(request);
-
-    return response.body;
-  }
-
-  Future<UrlResponse> _runTemplateCall(_TemplateExecutionRequest request) =>
-      _templateExecutor
-          .call(
-            definition: request.definition,
-            inputs: request.inputs,
-            credentials: request.credentials,
-            schema: request.definition.inputSchema,
-            credentialDefinitions: request.credentialDefinitions,
-          )
-          .value;
 
   Future<SkillCredentialEntity?> _resolveCredential(
     _CredentialResolutionRequest request,

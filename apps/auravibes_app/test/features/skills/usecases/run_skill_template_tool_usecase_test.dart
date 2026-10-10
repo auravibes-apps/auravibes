@@ -158,10 +158,10 @@ void main() {
       slug: 'example-tool',
       isEnabled: true,
       requiresCredential: false,
-      templateJson: '{"url":"https://example.com"}',
-      inputsJson: '{}',
       createdAt: now,
       updatedAt: now,
+      templateJson: '{"url":"https://example.com"}',
+      inputsJson: '{}',
     );
     when(() => skills.getSkillBySlug('workspace-1', skill.slug))
         .thenAnswer((_) async => skill);
@@ -173,7 +173,7 @@ void main() {
     var cancelCalls = 0;
     final httpOperation = CancelableOperation<engine.UrlResponse>.fromFuture(
       response.future,
-      onCancel: () async {
+      onCancel: () {
         cancelCalls += 1;
       },
     );
@@ -187,6 +187,7 @@ void main() {
       ),
     ).thenAnswer((_) {
       requestStarted.complete();
+
       return httpOperation;
     });
 
@@ -208,7 +209,7 @@ void main() {
     );
 
     await requestStarted.future.timeout(const Duration(seconds: 1));
-    await Future.wait([operation.cancel(), operation.cancel()]);
+    final _ = await Future.wait([operation.cancel(), operation.cancel()]);
 
     expect(cancelCalls, 1);
     expect(await operation.valueOrCancellation(), isNull);

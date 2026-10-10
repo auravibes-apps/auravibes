@@ -244,7 +244,7 @@ class const AppResolvedToolProvider({
       conversationId: conversationId,
       toolCallId: toolCallId,
       isSupported: false,
-      cancel: () async {},
+      cancel: () => Future<void>.value(),
     );
     try {
       return await mcpToolCaller(
@@ -290,6 +290,7 @@ class const AppResolvedToolProvider({
         arguments: input.arguments,
       ),
     );
+
     return _registerAndAwaitCancelableOperation(
       agentCancellationRuntime,
       conversationId: input.conversationId,
@@ -502,8 +503,8 @@ Future<Object?> _registerAndAwaitCancelableOperation(
   AgentCancellationRuntime runtime, {
   required String conversationId,
   required String toolCallId,
-  bool isCancellationSupported = true,
   required CancelableOperation<Object?> operation,
+  bool isCancellationSupported = true,
 }) async {
   final handle = runtime.registerToolCancellationHandle(
     conversationId: conversationId,
@@ -612,7 +613,10 @@ Future<Object?> _runSubAgentToolWithRunner(
   agent.SubAgentRunner runner,
 ) async {
   if (request.toolSlug == agent.listAgentsToolName) {
-    return runner.listAgents(request.workspaceId, arguments: request.arguments);
+    return await runner.listAgents(
+      request.workspaceId,
+      arguments: request.arguments,
+    );
   }
   if (request.toolSlug != agent.runSubAgentToolName) {
     throw StateError('Unknown sub-agent tool: ${request.toolSlug}');
@@ -633,25 +637,38 @@ Future<Object?> _runSubAgentToolWithRunner(
         toolCallId: request.toolCallId,
         isSupported: true,
         cancel: () async {
+          Future<String?> finishBeforeChildStarts() async {
+            final _ = await _futureValueOrNull(operation);
+
+            return null;
+          }
+
           final startedChild = await Future.any<String?>([
             childStartedId.future,
-            operation.then<String?>(
-              (_) => null,
-              onError: (Object error, StackTrace stackTrace) => null,
-            ),
+            finishBeforeChildStarts(),
           ]);
           if (startedChild == null) {
             throw StateError('Sub-agent ended before cancellation was sent.');
           }
 
-          final runtime = request.provider.agentCancellationRuntime;
-          runtime.requestStopOnStart(startedChild);
+          final runtime = request.provider.agentCancellationRuntime
+            ..requestStopOnStart(startedChild);
+
+          Future<bool> childCleanupCompletes() async {
+            await runtime.waitForCompletion(startedChild);
+
+            return true;
+          }
+
+          Future<bool> toolFinishesBeforeCleanup() async {
+            final _ = await _futureValueOrNull(operation);
+
+            return false;
+          }
+
           final stopped = await Future.any<bool>([
-            runtime.waitForCompletion(startedChild).then((_) => true),
-            operation.then<bool>(
-              (_) => false,
-              onError: (Object error, StackTrace stackTrace) => false,
-            ),
+            childCleanupCompletes(),
+            toolFinishesBeforeCleanup(),
           ]);
           if (!stopped) {
             throw StateError('Sub-agent stop was requested but not confirmed.');
@@ -666,6 +683,14 @@ Future<Object?> _runSubAgentToolWithRunner(
       toolCallId: request.toolCallId,
       handle: handle,
     );
+  }
+}
+
+Future<T?> _futureValueOrNull<T>(Future<T> future) async {
+  try {
+    return await future;
+  } on Object catch (_) {
+    return null;
   }
 }
 

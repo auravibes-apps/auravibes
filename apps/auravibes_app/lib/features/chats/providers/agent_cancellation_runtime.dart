@@ -46,7 +46,7 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
       () => <String, AgentToolCancellationHandle>{},
     )[toolCallId] = handle;
     current(conversationId)?.registerCleanup(() async {
-      await handle.requestCancellation();
+      final _ = await handle.requestCancellation();
     });
 
     return handle;
@@ -64,9 +64,11 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
   }) {
     handle.markCompleted();
     final handles = _toolCancellationHandles[conversationId];
-    if (!identical(handles?[toolCallId], handle)) return;
-    handles!.remove(toolCallId);
-    if (handles.isEmpty) _toolCancellationHandles.remove(conversationId);
+    if (handles == null || !identical(handles[toolCallId], handle)) return;
+    final _ = handles.remove(toolCallId);
+    if (handles.isEmpty) {
+      final _ = _toolCancellationHandles.remove(conversationId);
+    }
   }
 
   @override
@@ -79,7 +81,7 @@ class AgentCancellationRuntime implements AgentCancellationEffects {
     final scope = _entries[conversationId];
     if (scope == null) {
       final _ = _pendingStops.add(conversationId);
-      _completionByConversationId.putIfAbsent(
+      final _ = _completionByConversationId.putIfAbsent(
         conversationId,
         Completer<void>.new,
       );
@@ -148,12 +150,11 @@ enum AgentToolCancellationStatus {
 }
 
 class AgentToolCancellationHandle {
-  AgentToolCancellationHandle({
+  new({
     required this.toolCallId,
     required bool isSupported,
-    required Future<void> Function() cancel,
-  }) : _cancel = cancel,
-       _isSupported = isSupported,
+    required this._cancel,
+  }) : _isSupported = isSupported,
        _status = isSupported
            ? AgentToolCancellationStatus.running
            : AgentToolCancellationStatus.unsupported;
@@ -188,20 +189,22 @@ class AgentToolCancellationHandle {
       return isCancellationConfirmed;
     }
 
-    _status = AgentToolCancellationStatus.cancellationRequested;
-    final cancellation = Future<void>.sync(_cancel).then((_) {
-      _status = AgentToolCancellationStatus.cancellationConfirmed;
-    });
+    _status = .cancellationRequested;
+    final cancellation = _cancelOnce();
     _cancellation = cancellation;
     await cancellation;
 
     return isCancellationConfirmed;
   }
 
+  Future<void> _cancelOnce() async {
+    await _cancel();
+    _status = .cancellationConfirmed;
+  }
+
   void markCompleted() {
-    if (_status == AgentToolCancellationStatus.running ||
-        _status == AgentToolCancellationStatus.unsupported) {
-      _status = AgentToolCancellationStatus.completed;
+    if (_status == .running || _status == .unsupported) {
+      _status = .completed;
     }
   }
 }
@@ -213,7 +216,7 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
   AgentCancellationScope _startScope(String conversationId) {
     final scope = AgentCancellationScope();
     _replaceScope(conversationId);
-    _completionByConversationId.putIfAbsent(
+    final _ = _completionByConversationId.putIfAbsent(
       conversationId,
       Completer<void>.new,
     );
