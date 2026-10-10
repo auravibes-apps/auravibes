@@ -4,6 +4,18 @@ abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
   static const _suffixCaptureCount = 2;
   static const _suffixCaptureIndex = 2;
+  static const _jsonCookieSuffixCaptureIndex = 3;
+
+  static final _jsonCookiePatterns = <RegExp>[
+    RegExp(
+      r"""(["'](?:cookie|set-cookie)["']\s*:\s*")((?:\\.|[^"\\])*)(")""",
+      caseSensitive: false,
+    ),
+    RegExp(
+      r"""(["'](?:cookie|set-cookie)["']\s*:\s*')((?:\\.|[^'\\])*)(')""",
+      caseSensitive: false,
+    ),
+  ];
 
   static final _secretPatterns = <RegExp>[
     RegExp(r'(\b)(?:sk|rk)-[A-Za-z0-9_-]+\b'),
@@ -69,12 +81,18 @@ abstract final class LogRedaction {
 
   static String _redact(String text) {
     var redacted = text;
+    for (final pattern in _jsonCookiePatterns) {
+      redacted = redacted.replaceAllMapped(pattern, _replaceJsonCookieValue);
+    }
     for (final pattern in _secretPatterns) {
       redacted = redacted.replaceAllMapped(pattern, _replaceMatch);
     }
 
     return redacted;
   }
+
+  static String _replaceJsonCookieValue(Match match) =>
+      match.group(1)! + _redacted + match.group(_jsonCookieSuffixCaptureIndex)!;
 
   static String _replaceMatch(Match match) {
     final prefix = match.group(1) ?? '';

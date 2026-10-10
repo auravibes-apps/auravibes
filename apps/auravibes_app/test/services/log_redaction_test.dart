@@ -99,6 +99,12 @@ void main() {
       ),
       '{"Cookie":"[REDACTED]","Set-Cookie":"[REDACTED]"}',
     );
+    expect(
+      LogRedaction.redact(
+        r'{"Set-Cookie":"session=\"secret-token\"; HttpOnly"}',
+      ),
+      '{"Set-Cookie":"[REDACTED]"}',
+    );
   });
 
   test('redacts URL userinfo', () {
