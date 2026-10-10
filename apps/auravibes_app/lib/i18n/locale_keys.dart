@@ -571,6 +571,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.play_voice_attachment';
   static const chats_screens_chat_conversation_stop_voice_attachment =
       'chats_screens.chat_conversation.stop_voice_attachment';
+  static const chats_screens_chat_conversation_audio_preview_error =
+      'chats_screens.chat_conversation.audio_preview_error';
   static const chats_screens_chat_conversation_microphone_permission_denied =
       'chats_screens.chat_conversation.microphone_permission_denied';
   static const chats_screens_chat_conversation_attachment_file_model_unsupported =

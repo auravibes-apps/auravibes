@@ -12,6 +12,7 @@ import 'package:material_ui/material_ui.dart';
 class const ChatAttachmentDraftPreview({
   required final MessageAttachmentToCreate attachment,
   required final ValueChanged<MessageAttachmentToCreate> onRemove,
+  final ChatAttachmentAudioPreviewCoordinator? audioPreviewCoordinator,
   final bool enabled = true,
   super.key,
 }) extends StatelessWidget {
@@ -29,42 +30,114 @@ class const ChatAttachmentDraftPreview({
         attachment: attachment,
         enabled: enabled,
         maxWidth: _maxLabelWidth,
+        audioPreviewCoordinator: audioPreviewCoordinator,
       ),
       onDeleted: enabled ? () => onRemove(attachment) : null,
     );
   }
 }
 
+/// Coordinates mutually exclusive draft audio previews within one composer.
+class ChatAttachmentAudioPreviewCoordinator {
+  int _generation = 0;
+  ChatAttachmentAudioPreviewOwner? _activeOwner;
+  Future<void> Function()? _stopActive;
+
+  Future<bool> activate(
+    ChatAttachmentAudioPreviewOwner owner,
+    Future<void> Function() stopActive,
+  ) async {
+    if (identical(_activeOwner, owner)) return true;
+    final generation = ++_generation;
+    final previousStop = _stopActive;
+    _activeOwner = owner;
+    _stopActive = stopActive;
+    if (previousStop != null) await previousStop();
+
+    return generation == _generation && identical(_activeOwner, owner);
+  }
+
+  void release(ChatAttachmentAudioPreviewOwner owner) {
+    if (!identical(_activeOwner, owner)) return;
+    _generation++;
+    _activeOwner = null;
+    _stopActive = null;
+  }
+
+  void dispose() {
+    _generation++;
+    _activeOwner = null;
+    _stopActive = null;
+  }
+}
+
+/// Identity token for one attachment's local audio preview.
+class ChatAttachmentAudioPreviewOwner();
+
 class const _AttachmentDraftChipLabel({
   required final MessageAttachmentToCreate attachment,
   required final bool enabled,
   required final double maxWidth,
-}) extends StatelessWidget {
+  required final ChatAttachmentAudioPreviewCoordinator? audioPreviewCoordinator,
+}) extends StatefulWidget {
+  @override
+  State<_AttachmentDraftChipLabel> createState() =>
+      _AttachmentDraftChipLabelState();
+}
+
+class _AttachmentDraftChipLabelState extends State<_AttachmentDraftChipLabel> {
+  var _hasPlaybackError = false;
+
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: .new(maxWidth: maxWidth),
-      child: Row(
+      constraints: .new(maxWidth: widget.maxWidth),
+      child: Column(
         mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
-          if (attachment.modality == .audio) ...[
-            _AttachmentDraftAudioPlayer(
-              localPath: attachment.localPath,
-              enabled: enabled,
-              key: ObjectKey(attachment),
+          Row(
+            mainAxisSize: .min,
+            children: [
+              if (widget.attachment.modality == .audio) ...[
+                _AttachmentDraftAudioPlayer(
+                  localPath: widget.attachment.localPath,
+                  enabled: widget.enabled,
+                  audioPreviewCoordinator: widget.audioPreviewCoordinator,
+                  onPlaybackErrorChanged: _setPlaybackError,
+                  key: ObjectKey(widget.attachment),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: _AttachmentDraftLabel(attachment: widget.attachment),
+              ),
+            ],
+          ),
+          if (_hasPlaybackError)
+            AuraText(
+              child: Text(
+                LocaleKeys.chats_screens_chat_conversation_audio_preview_error
+                    .tr(),
+              ),
+              style: .caption,
+              tint: .error,
             ),
-            const SizedBox(width: 4),
-          ],
-          Flexible(child: _AttachmentDraftLabel(attachment: attachment)),
         ],
       ),
     );
+  }
+
+  void _setPlaybackError(bool hasError) {
+    if (mounted) setState(() => _hasPlaybackError = hasError);
   }
 }
 
 class const _AttachmentDraftAudioPlayer({
   required final String localPath,
   required final bool enabled,
+  required final ChatAttachmentAudioPreviewCoordinator? audioPreviewCoordinator,
+  required final ValueChanged<bool> onPlaybackErrorChanged,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -74,12 +147,17 @@ class const _AttachmentDraftAudioPlayer({
 
 class _AttachmentDraftAudioPlayerState
     extends State<_AttachmentDraftAudioPlayer> {
+  final _previewOwner = ChatAttachmentAudioPreviewOwner();
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _completionSubscription;
   bool _isPlaying = false;
+  var _playbackRequest = 0;
+  Future<void>? _stoppingPlayback;
 
   @override
   void dispose() {
+    _playbackRequest++;
+    widget.audioPreviewCoordinator?.release(_previewOwner);
     final completionSubscription = _completionSubscription;
     if (completionSubscription != null) {
       unawaited(completionSubscription.cancel());
@@ -114,28 +192,72 @@ class _AttachmentDraftAudioPlayerState
   Future<void> _startPlayback() async {
     final player = _player ??= .new();
     _listenForCompletion(player);
+    final playbackRequest = ++_playbackRequest;
+    final coordinator = widget.audioPreviewCoordinator;
+    if (coordinator != null) {
+      final canPlay = await coordinator.activate(_previewOwner, _stopPlayback);
+      if (!canPlay || !mounted || playbackRequest != _playbackRequest) return;
+    }
 
     try {
       _setPlaying(true);
+      widget.onPlaybackErrorChanged(false);
       final _ = await player.setFilePath(widget.localPath);
-      unawaited(player.play().catchError((Object _) => _setPlaying(false)));
+      if (!mounted || playbackRequest != _playbackRequest) return;
+      unawaited(
+        player.play().catchError((Object _) async {
+          await _handlePlaybackFailure(player, playbackRequest);
+        }),
+      );
     } on Object {
-      _setPlaying(false);
+      await _handlePlaybackFailure(player, playbackRequest);
     }
   }
 
-  Future<void> _stopPlayback() async {
+  Future<void> _stopPlayback() {
+    final existingStop = _stoppingPlayback;
+    if (existingStop != null) return existingStop;
+
+    _playbackRequest++;
+    _setPlaying(false);
+    final stopping = _stopPlayer();
+    _stoppingPlayback = stopping;
+
+    return stopping.whenComplete(() {
+      if (identical(_stoppingPlayback, stopping)) _stoppingPlayback = null;
+      widget.audioPreviewCoordinator?.release(_previewOwner);
+    });
+  }
+
+  Future<void> _stopPlayer() async {
     try {
       await _player?.stop();
     } on Object {
       // A failed stop still leaves the preview in its stopped state.
     }
+  }
+
+  Future<void> _handlePlaybackFailure(
+    AudioPlayer player,
+    int playbackRequest,
+  ) async {
+    if (playbackRequest != _playbackRequest) return;
     _setPlaying(false);
+    try {
+      await player.stop();
+    } on Object {
+      // The preview still reports a generic failure if stopping also fails.
+    }
+    if (playbackRequest != _playbackRequest) return;
+    widget.audioPreviewCoordinator?.release(_previewOwner);
+    _setPlaying(false);
+    widget.onPlaybackErrorChanged(true);
   }
 
   void _listenForCompletion(AudioPlayer player) {
     _completionSubscription ??= player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
+        widget.audioPreviewCoordinator?.release(_previewOwner);
         _setPlaying(false);
       }
     });
