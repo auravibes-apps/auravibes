@@ -138,7 +138,7 @@ List<_DartToken> _tokenizeDart(String source) {
       }
       tokens.add(
         _DartToken(
-          value: String.fromCharCodes(source.codeUnits.getRange(start, index)),
+          value: .fromCharCodes(source.codeUnits.getRange(start, index)),
         ),
       );
       continue;
