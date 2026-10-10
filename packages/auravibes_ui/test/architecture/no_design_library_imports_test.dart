@@ -34,8 +34,9 @@ export // comment
       '''import  'package:cupertino_ui/cupertino_ui.dart';''',
       '''import r'package:material_ui/material_ui.dart';''',
       '''export r"package:cupertino_ui/cupertino_ui.dart";''',
-      r"import '\x70ackage:material_ui/material_ui.dart';",
-      r"export '\u{70}ackage:cupertino_ui/cupertino_ui.dart';",
+      r'''import '\x70ackage:material_ui/material_ui.dart';''',
+      r'''export '\u{70}ackage:cupertino_ui/cupertino_ui.dart';''',
+      r'''import '\u0070ackage:material_ui/material_ui.dart';''',
       'import r${tripleSingleQuote}package:material_ui/material_ui.dart$tripleSingleQuote;',
       'export r"""package:cupertino_ui/cupertino_ui.dart""";',
       'import """package:cupertino_ui/cupertino_ui.dart""";',
@@ -173,11 +174,11 @@ List<_DartToken> _tokenizeDart(String source) {
         : source[index] == quote) {
       return (value: value.toString(), end: index + delimiterLength);
     }
-    if (!raw && source[index] == '\\' && index + 1 < source.length) {
+    if (!raw && source.codeUnitAt(index) == 0x5C && index + 1 < source.length) {
       final escape = source[index + 1];
       if (escape == 'x' && index + 3 < source.length) {
         final codeUnit = int.tryParse(
-          source.substring(index + 2, index + 4),
+          _codeUnitRangeAsString(source, index + 2, index + 4),
           radix: 16,
         );
         if (codeUnit != null) {
@@ -228,7 +229,7 @@ List<_DartToken> _tokenizeDart(String source) {
     final closingBrace = source.indexOf('}', digitStart + 1);
     if (closingBrace == -1) return null;
     final value = int.tryParse(
-      source.substring(digitStart + 1, closingBrace),
+      _codeUnitRangeAsString(source, digitStart + 1, closingBrace),
       radix: 16,
     );
     if (value == null || value > 0x10FFFF) return null;
@@ -238,11 +239,17 @@ List<_DartToken> _tokenizeDart(String source) {
 
   final end = digitStart + 4;
   if (end > source.length) return null;
-  final value = int.tryParse(source.substring(digitStart, end), radix: 16);
+  final value = int.tryParse(
+    _codeUnitRangeAsString(source, digitStart, end),
+    radix: 16,
+  );
   if (value == null) return null;
 
   return (value: value, end: end);
 }
+
+String _codeUnitRangeAsString(String source, int start, int end) =>
+    String.fromCharCodes(source.codeUnits.getRange(start, end));
 
 int _skipLineComment(String source, int start) {
   var index = start;
