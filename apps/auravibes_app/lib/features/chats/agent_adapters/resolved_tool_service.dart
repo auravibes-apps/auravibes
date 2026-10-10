@@ -244,7 +244,7 @@ class const AppResolvedToolProvider({
       conversationId: conversationId,
       toolCallId: toolCallId,
       isSupported: false,
-      cancel: () => Future<void>.value(),
+      cancel: Future<void>.value,
     );
     try {
       return await mcpToolCaller(
@@ -495,8 +495,8 @@ Future<Object?> _runCancelableInputTool(_CancelableInputToolRequest request) =>
       request.agentCancellationRuntime,
       conversationId: request.conversationId,
       toolCallId: request.toolCallId,
-      isCancellationSupported: request.isCancellationSupported,
       operation: request.operation,
+      isCancellationSupported: request.isCancellationSupported,
     );
 
 Future<Object?> _registerAndAwaitCancelableOperation(

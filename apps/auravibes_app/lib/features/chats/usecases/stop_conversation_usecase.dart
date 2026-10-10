@@ -76,16 +76,22 @@ class const StopConversationUsecase({
 
   Future<void> _stopOne(String conversationId) async {
     final parentId = activeSubAgents.parentOf(conversationId);
-    await _stopRuntime(conversationId);
+    await _stopRuntime(conversationId, parentId: parentId);
     _releaseParent(conversationId, parentId);
   }
 
-  Future<void> _stopRuntime(String conversationId) async {
-    cancellationRuntime.requestStopOnStart(conversationId);
+  Future<void> _stopRuntime(String conversationId, {String? parentId}) async {
+    final hasActiveScope = cancellationRuntime.current(conversationId) != null;
+    final isStreaming = streamingRuntime.isStreaming(conversationId);
+    if (hasActiveScope || isStreaming || parentId != null) {
+      cancellationRuntime.requestStopOnStart(conversationId);
+    }
     sendQueueRuntime.clear(conversationId);
     retryRuntime.clear(conversationId);
     final _ = streamingRuntime.remove(conversationId);
-    await cancellationRuntime.waitForCompletion(conversationId);
+    if (hasActiveScope) {
+      await cancellationRuntime.waitForCompletion(conversationId);
+    }
     await _pendingToolStopper.call(conversationId);
   }
 

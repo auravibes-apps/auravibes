@@ -186,6 +186,7 @@ class AgentToolCancellationHandle {
     final existing = _cancellation;
     if (existing != null) {
       await existing;
+
       return isCancellationConfirmed;
     }
 
@@ -197,15 +198,15 @@ class AgentToolCancellationHandle {
     return isCancellationConfirmed;
   }
 
-  Future<void> _cancelOnce() async {
-    await _cancel();
-    _status = .cancellationConfirmed;
-  }
-
   void markCompleted() {
     if (_status == .running || _status == .unsupported) {
       _status = .completed;
     }
+  }
+
+  Future<void> _cancelOnce() async {
+    await _cancel();
+    _status = .cancellationConfirmed;
   }
 }
 

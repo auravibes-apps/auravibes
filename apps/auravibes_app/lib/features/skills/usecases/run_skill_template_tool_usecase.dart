@@ -93,20 +93,26 @@ class const RunSkillTemplateToolUsecase(
   )).start();
 }
 
-class _CancelableTemplateToolCall(this._usecase, this._request) {
-  final RunSkillTemplateToolUsecase _usecase;
-  final _TemplateInvocationRequest _request;
+class _CancelableTemplateToolCall(
+  final RunSkillTemplateToolUsecase _usecase,
+  final _TemplateInvocationRequest _request,
+) {
   CancelableOperation<UrlResponse>? _httpOperation;
 
   CancelableOperation<Object?> start() {
     final completer = CancelableCompleter<Object?>(
-      onCancel: () async {
-        await _httpOperation?.cancel();
-      },
+      onCancel: _cancelHttpOperation,
     );
     unawaited(_run(completer));
 
     return completer.operation;
+  }
+
+  Future<void> _cancelHttpOperation() async {
+    final httpOperation = _httpOperation;
+    if (httpOperation != null) {
+      final _ = await httpOperation.cancel();
+    }
   }
 
   Future<void> _run(CancelableCompleter<Object?> completer) async {

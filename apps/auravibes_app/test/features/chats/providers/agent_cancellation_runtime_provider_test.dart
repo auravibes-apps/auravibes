@@ -81,6 +81,7 @@ void main() {
         isSupported: false,
         cancel: () {
           cancelCalls += 1;
+
           return Future<void>.value();
         },
       );
@@ -98,7 +99,7 @@ void main() {
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
-        cancel: () => Future<void>.value(),
+        cancel: Future<void>.value,
       );
 
       runtime.completeToolCancellationHandle(
