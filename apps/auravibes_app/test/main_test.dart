@@ -4,8 +4,56 @@ import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main.dart' as app_main;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 
 void main() {
+  test('reserves caption backdrop for wide Android windows', () {
+    expect(
+      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+        platform: .android,
+        width: 1280,
+        topInset: 42,
+      ),
+      isTrue,
+    );
+    expect(
+      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+        platform: .android,
+        width: 900,
+        topInset: 42,
+      ),
+      isFalse,
+    );
+    expect(
+      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+        platform: .android,
+        width: 1280,
+        topInset: 24,
+      ),
+      isFalse,
+    );
+    expect(
+      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+        platform: .macOS,
+        width: 1280,
+        topInset: 42,
+      ),
+      isFalse,
+    );
+  });
+
+  test('enables Android Photo Picker before gallery selection', () {
+    final previousImagePicker = ImagePickerPlatform.instance;
+    final imagePicker = ImagePickerAndroid();
+    ImagePickerPlatform.instance = imagePicker;
+    addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
+
+    app_main.configureAndroidPhotoPicker();
+
+    expect(imagePicker.useAndroidPhotoPicker, isTrue);
+  });
+
   group('resolveAppFlavor', () {
     test('resolves flavor by name', () {
       expect(app_main.AppFlavorResolver.resolve('dev'), Flavor.dev);

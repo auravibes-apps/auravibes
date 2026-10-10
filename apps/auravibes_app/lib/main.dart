@@ -13,10 +13,12 @@ import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_app/services/marionette/marionette_extensions.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_app/widgets/friendly_build_error_widget.dart';
+import 'package:auravibes_app/widgets/responsive_shell_layout.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, debugPrint, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiOverlayStyle, appFlavor;
 import 'package:flutter_driver/driver_extension.dart';
@@ -24,6 +26,9 @@ import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -32,6 +37,8 @@ PrintLogCollector? _marionetteLogCollector;
 Future<void> main() async {
   _configureFlavor();
   final marionetteInstanceId = _ensureFlutterBinding();
+  configureAndroidPhotoPicker();
+  JustAudioMediaKit.ensureInitialized();
   _configureLogging();
   await MainLocale.ensureInitialized();
 
@@ -123,6 +130,13 @@ void _configureSystemUi() {
     const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent),
   );
   SystemChrome.setEnabledSystemUIMode(.edgeToEdge);
+}
+
+void configureAndroidPhotoPicker() {
+  final imagePicker = ImagePickerPlatform.instance;
+  if (imagePicker is ImagePickerAndroid) {
+    imagePicker.useAndroidPhotoPicker = true;
+  }
 }
 
 void _runApp(ProviderContainer container) {
@@ -319,16 +333,54 @@ class const _AuraAppContent({
   required final Widget? child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<AuraTheme>(
-    tween: _AuraThemeTween(end: targetAuraTheme),
-    duration: kThemeAnimationDuration,
-    builder: (context, theme, _) => _AuraAppThemeContent(
-      router: router,
-      theme: theme,
-      child: _snackBarBuilder(context, child),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final appContent = TweenAnimationBuilder<AuraTheme>(
+      tween: _AuraThemeTween(end: targetAuraTheme),
+      duration: kThemeAnimationDuration,
+      builder: (context, theme, _) => _AuraAppThemeContent(
+        router: router,
+        theme: theme,
+        child: _snackBarBuilder(context, child),
+      ),
+    );
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    if (!shouldShowAndroidDesktopCaptionBackdrop(
+      platform: defaultTargetPlatform,
+      width: MediaQuery.sizeOf(context).width,
+      topInset: topInset,
+    )) {
+      return appContent;
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final captionColor = Theme.of(context).brightness == Brightness.light
+        ? colorScheme.onSurface
+        : colorScheme.surface;
+
+    return Stack(
+      children: [
+        Positioned(
+          left: 0,
+          top: 0,
+          right: 0,
+          height: topInset,
+          child: IgnorePointer(child: ColoredBox(color: captionColor)),
+        ),
+        SafeArea(left: false, right: false, bottom: false, child: appContent),
+      ],
+    );
+  }
 }
+
+/// The shortcut: 40dp may misclassify tall bars; use exact insets later.
+bool shouldShowAndroidDesktopCaptionBackdrop({
+  required TargetPlatform platform,
+  required double width,
+  required double topInset,
+}) =>
+    platform == TargetPlatform.android &&
+    ResponsiveShellLayout.isDesktop(width) &&
+    topInset >= 40;
 
 class const _AuraAppThemeContent({
   required final GoRouter router,

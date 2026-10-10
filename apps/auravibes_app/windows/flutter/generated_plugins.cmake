@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_webview_window
   file_selector_windows
   flutter_secure_storage_windows
+  media_kit_libs_windows_audio
   record_windows
   url_launcher_windows
   video_player_win

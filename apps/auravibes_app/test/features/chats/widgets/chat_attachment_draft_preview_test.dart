@@ -1,29 +1,24 @@
 import 'dart:async';
 
-import 'package:audioplayers_platform_interface/audioplayers_platform_interface.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_draft_preview.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
-  final previousAudioPlatform = AudioplayersPlatformInterface.instance;
-  final previousGlobalAudioPlatform =
-      GlobalAudioplayersPlatformInterface.instance;
-  final audioPlatform = _FakeAudioPlayersPlatform();
-  final globalAudioPlatform = _FakeGlobalAudioplayersPlatform();
+  final previousAudioPlatform = JustAudioPlatform.instance;
+  final audioPlatform = _FakeJustAudioPlatform();
 
   setUpAll(() {
-    AudioplayersPlatformInterface.instance = audioPlatform;
-    GlobalAudioplayersPlatformInterface.instance = globalAudioPlatform;
+    JustAudioPlatform.instance = audioPlatform;
   });
+  setUp(audioPlatform.reset);
   tearDownAll(() {
-    AudioplayersPlatformInterface.instance = previousAudioPlatform;
-    GlobalAudioplayersPlatformInterface.instance = previousGlobalAudioPlatform;
-    unawaited(globalAudioPlatform.events.close());
+    JustAudioPlatform.instance = previousAudioPlatform;
   });
 
   const attachment = MessageAttachmentToCreate(
@@ -201,19 +196,67 @@ void main() {
       ),
     );
 
-    pressAudioButton(tester);
-    await tester.pump();
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
     await tester.pump();
 
     expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
     expect(audioPlatform.sources, ['/tmp/voice.wav']);
 
-    pressAudioButton(tester);
-    await tester.pump();
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.disposeStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
     await tester.pump();
 
-    expect(audioPlatform.stopCount, 1);
+    expect(audioPlatform.disposeCount, 1);
     expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+  });
+
+  testWidgets('resets playback after a voice attachment completes', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        attachment: attachment.copyWith(
+          localPath: '/tmp/voice.wav',
+          fileName: 'voice.wav',
+          mimeType: 'audio/wav',
+          modality: .audio,
+        ),
+        onRemove: _ignoreAttachment,
+      ),
+    );
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
+    await tester.pump();
+    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+
+    await tester.runAsync(() async {
+      audioPlatform.completePlayback();
+      await Future<void>.delayed(.zero);
+    });
+    await tester.pump();
+
+    expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await audioPlatform.disposeStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
   });
 
   testWidgets('stops playback when a voice attachment is removed', (
@@ -231,83 +274,162 @@ void main() {
         onRemove: _ignoreAttachment,
       ),
     );
-    pressAudioButton(tester);
-    await tester.pump();
+    await tester.runAsync(() async {
+      pressAudioButton(tester);
+      await audioPlatform.loadStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
     await tester.pump();
 
-    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await audioPlatform.disposeStarted.future.timeout(
+        const Duration(seconds: 1),
+      );
+    });
     await tester.pump();
 
-    expect(audioPlatform.stopCount, 2);
+    expect(audioPlatform.disposeCount, 1);
   });
 }
 
-class _FakeAudioPlayersPlatform extends AudioplayersPlatformInterface {
+class _FakeJustAudioPlatform extends JustAudioPlatform {
   final sources = <String>[];
-  int stopCount = 0;
-  final Map<String, StreamController<AudioEvent>> _eventStreams = {};
+  final players = <String, _FakeAudioPlayerPlatform>{};
+  Completer<void> loadStarted = Completer<void>();
+  Completer<void> disposeStarted = Completer<void>();
+  int disposeCount = 0;
 
-  @override
-  Future<void> create(String playerId) async {
-    _eventStreams[playerId] = StreamController<AudioEvent>.broadcast();
+  void reset() {
+    sources.clear();
+    disposeCount = 0;
+    loadStarted = Completer<void>();
+    disposeStarted = Completer<void>();
   }
 
-  @override
-  Future<void> dispose(String playerId) async {
-    final eventStream = _eventStreams.remove(playerId);
-    if (eventStream != null) {
-      final _ = await eventStream.close();
+  void completePlayback() {
+    for (final player in players.values) {
+      player.events.add(_playbackEvent(.completed));
     }
   }
 
   @override
-  Stream<AudioEvent> getEventStream(String playerId) =>
-      _eventStreams[playerId]!.stream;
+  Future<AudioPlayerPlatform> init(InitRequest request) async {
+    final player = _FakeAudioPlayerPlatform(request.id, sources, loadStarted);
+    players[request.id] = player;
+
+    return player;
+  }
 
   @override
-  Future<int?> getCurrentPosition(String playerId) async => 0;
+  Future<DisposePlayerResponse> disposePlayer(
+    DisposePlayerRequest request,
+  ) async {
+    disposeCount++;
+    if (!disposeStarted.isCompleted) disposeStarted.complete();
+    final player = players.remove(request.id);
+    await player?.close();
+
+    return DisposePlayerResponse();
+  }
 
   @override
-  Future<void> release(String playerId) => Future.value();
+  Future<DisposeAllPlayersResponse> disposeAllPlayers(
+    DisposeAllPlayersRequest request,
+  ) async {
+    final _ = await Future.wait(players.values.map((player) => player.close()));
+    players.clear();
+
+    return DisposeAllPlayersResponse();
+  }
+}
+
+class _FakeAudioPlayerPlatform extends AudioPlayerPlatform {
+  new(super.id, this.sources, this.loadStarted);
+
+  final List<String> sources;
+  final Completer<void> loadStarted;
+  final events = StreamController<PlaybackEventMessage>.broadcast();
+  final data = StreamController<PlayerDataMessage>.broadcast();
 
   @override
-  Future<void> resume(String playerId) => Future.value();
+  Stream<PlaybackEventMessage> get playbackEventMessageStream => events.stream;
 
   @override
-  Future<void> setSourceUrl(
-    String playerId,
-    String url, {
-    bool? isLocal,
-    String? mimeType,
-  }) async {
-    sources.add(url);
-    _eventStreams[playerId]!.add(
-      const AudioEvent(eventType: .prepared, isPrepared: true),
+  Stream<PlayerDataMessage> get playerDataMessageStream => data.stream;
+
+  @override
+  Future<LoadResponse> load(LoadRequest request) async {
+    final playlist =
+        request.audioSourceMessage as ConcatenatingAudioSourceMessage;
+    sources.add(
+      Uri.parse((playlist.children.first as UriAudioSourceMessage).uri)
+          .toFilePath(),
     );
+    if (!loadStarted.isCompleted) loadStarted.complete();
+    events.add(_playbackEvent(.ready));
+
+    return LoadResponse(duration: const Duration(seconds: 1));
   }
 
   @override
-  Future<void> stop(String playerId) async {
-    stopCount++;
+  Future<PlayResponse> play(PlayRequest request) async => PlayResponse();
+
+  @override
+  Future<PauseResponse> pause(PauseRequest request) async => PauseResponse();
+
+  @override
+  Future<SetVolumeResponse> setVolume(SetVolumeRequest request) async =>
+      SetVolumeResponse();
+
+  @override
+  Future<SetSpeedResponse> setSpeed(SetSpeedRequest request) async =>
+      SetSpeedResponse();
+
+  @override
+  Future<SetLoopModeResponse> setLoopMode(SetLoopModeRequest request) async =>
+      SetLoopModeResponse();
+
+  @override
+  Future<SetShuffleModeResponse> setShuffleMode(
+    SetShuffleModeRequest request,
+  ) async => SetShuffleModeResponse();
+
+  @override
+  Future<SetPitchResponse> setPitch(SetPitchRequest request) async =>
+      SetPitchResponse();
+
+  @override
+  Future<SetSkipSilenceResponse> setSkipSilence(
+    SetSkipSilenceRequest request,
+  ) async => SetSkipSilenceResponse();
+
+  @override
+  Future<SetAndroidAudioAttributesResponse> setAndroidAudioAttributes(
+    SetAndroidAudioAttributesRequest request,
+  ) async => SetAndroidAudioAttributesResponse();
+
+  Future<void> close() async {
+    final _ = await events.close();
+    final _ = await data.close();
   }
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _FakeGlobalAudioplayersPlatform
-    extends GlobalAudioplayersPlatformInterface {
-  final events = StreamController<GlobalAudioEvent>.broadcast();
-
-  @override
-  Stream<GlobalAudioEvent> getGlobalEventStream() => events.stream;
-
-  @override
-  Future<void> init() => Future.value();
-
-  @override
-  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
-}
+PlaybackEventMessage _playbackEvent(ProcessingStateMessage state) =>
+    PlaybackEventMessage(
+      processingState: state,
+      updateTime: .now(),
+      updatePosition: .zero,
+      bufferedPosition: const Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
+      icyMetadata: null,
+      currentIndex: 0,
+      androidAudioSessionId: null,
+    );
 
 void _ignoreAttachment(MessageAttachmentToCreate _) {
   final _ = Object();
