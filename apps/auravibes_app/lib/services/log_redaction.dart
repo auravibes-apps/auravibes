@@ -48,7 +48,7 @@ abstract final class LogRedaction {
       caseSensitive: false,
     ),
     RegExp(
-      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?token|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|x-amz-signature|x-goog-signature|signature|sig|token|secret|password|code|state|nonce)=)[^&#\s\x22\x27]+',
+      r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|oauth[_-]?(?:token|signature)|bearer[_-]?token|client[_-]?secret|id[_-]?token|code[_-]?verifier|authorization[_-]?code|verification[_-]?code|x-amz-signature|x-goog-signature|signature|sig|token|secret|password|code|state|nonce)=)[^&#\s\x22\x27]+',
       caseSensitive: false,
     ),
   ];

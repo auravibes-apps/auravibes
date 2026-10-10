@@ -125,9 +125,9 @@ void main() {
   test('redacts common signed URL query parameters case-insensitively', () {
     expect(
       LogRedaction.redact(
-        'Download https://example.com/file?sig=one&Signature=two&X-Amz-Signature=three',
+        'Download https://example.com/file?sig=one&Signature=two&X-Amz-Signature=three&oauth_signature=four',
       ),
-      'Download https://example.com/file?sig=[REDACTED]&Signature=[REDACTED]&X-Amz-Signature=[REDACTED]',
+      'Download https://example.com/file?sig=[REDACTED]&Signature=[REDACTED]&X-Amz-Signature=[REDACTED]&oauth_signature=[REDACTED]',
     );
   });
 }
