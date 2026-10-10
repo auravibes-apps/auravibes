@@ -555,8 +555,9 @@ void main() {
         onRemove: _ignoreAttachment,
       ),
     );
-    audioPlatform.failNextLoad = true;
-    audioPlatform.stopGate = Completer<void>();
+    audioPlatform
+      ..failNextLoad = true
+      ..stopGate = Completer<void>();
 
     await tester.runAsync(() async {
       pressAudioButton(tester);
