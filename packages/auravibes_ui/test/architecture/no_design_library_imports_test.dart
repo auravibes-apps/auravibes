@@ -34,6 +34,8 @@ export // comment
       '''import  'package:cupertino_ui/cupertino_ui.dart';''',
       '''import r'package:material_ui/material_ui.dart';''',
       '''export r"package:cupertino_ui/cupertino_ui.dart";''',
+      r"import '\x70ackage:material_ui/material_ui.dart';",
+      r"export '\u{70}ackage:cupertino_ui/cupertino_ui.dart';",
       'import r${tripleSingleQuote}package:material_ui/material_ui.dart$tripleSingleQuote;',
       'export r"""package:cupertino_ui/cupertino_ui.dart""";',
       'import """package:cupertino_ui/cupertino_ui.dart""";',
@@ -171,10 +173,44 @@ List<_DartToken> _tokenizeDart(String source) {
         : source[index] == quote) {
       return (value: value.toString(), end: index + delimiterLength);
     }
-    if (!raw &&
-        source[index].codeUnitAt(0) == 92 &&
-        index + 1 < source.length) {
-      value.write(source[index + 1]);
+    if (!raw && source[index] == '\\' && index + 1 < source.length) {
+      final escape = source[index + 1];
+      if (escape == 'x' && index + 3 < source.length) {
+        final codeUnit = int.tryParse(
+          source.substring(index + 2, index + 4),
+          radix: 16,
+        );
+        if (codeUnit != null) {
+          value.writeCharCode(codeUnit);
+          index += 4;
+          continue;
+        }
+      }
+      if (escape == 'u') {
+        final unicodeEscape = _readUnicodeEscape(source, index);
+        if (unicodeEscape != null) {
+          value.write(String.fromCharCode(unicodeEscape.value));
+          index = unicodeEscape.end;
+          continue;
+        }
+      }
+      if (escape == '\n') {
+        index += 2;
+        continue;
+      }
+      if (escape == '\r') {
+        index += index + 2 < source.length && source[index + 2] == '\n' ? 3 : 2;
+        continue;
+      }
+      value.write(switch (escape) {
+        'b' => '\b',
+        'f' => '\f',
+        'n' => '\n',
+        'r' => '\r',
+        't' => '\t',
+        'v' => '\x0B',
+        _ => escape,
+      });
       index += 2;
       continue;
     }
@@ -183,6 +219,29 @@ List<_DartToken> _tokenizeDart(String source) {
   }
 
   return (value: value.toString(), end: source.length);
+}
+
+({int value, int end})? _readUnicodeEscape(String source, int start) {
+  final digitStart = start + 2;
+  if (digitStart >= source.length) return null;
+  if (source[digitStart] == '{') {
+    final closingBrace = source.indexOf('}', digitStart + 1);
+    if (closingBrace == -1) return null;
+    final value = int.tryParse(
+      source.substring(digitStart + 1, closingBrace),
+      radix: 16,
+    );
+    if (value == null || value > 0x10FFFF) return null;
+
+    return (value: value, end: closingBrace + 1);
+  }
+
+  final end = digitStart + 4;
+  if (end > source.length) return null;
+  final value = int.tryParse(source.substring(digitStart, end), radix: 16);
+  if (value == null) return null;
+
+  return (value: value, end: end);
 }
 
 int _skipLineComment(String source, int start) {
