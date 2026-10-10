@@ -381,12 +381,39 @@ void main() {
         expect(cancelledAfterDetach, isFalse);
         expect(completed?.status, 'completed');
         expect(completed?.resultContent, contains('"ok":true'));
+        final completionEvents = await ConversationEvent.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.eventId.equals(
+                'background-work-completion:${work.id}',
+              ),
+        );
+        final completionMessages = await ConversationMessage.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId) &
+              table.stableId.equals('background_work:${work.id}'),
+        );
+        expect(completionEvents, hasLength(1));
+        expect(completionMessages, hasLength(1));
+        expect(completionMessages.single.status, ConversationStatuses.queued);
         final immutableCall = (await ConversationToolCall.db.findById(
           fixture.database,
           callAfterAcknowledgement.id!,
         ))!;
         expect(immutableCall.status, 'runningInBackground');
         expect(immutableCall.resultJson, acknowledgement);
+        final turns = await ConversationTurn.db.find(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationId),
+        );
+        expect(turns, hasLength(1));
+        expect(turns.single.status, ConversationStatuses.cancelled);
       },
     );
 
@@ -593,13 +620,26 @@ void main() {
           everyElement(ConversationStatuses.queued),
         );
         expect(
+          completionMessages.map((message) => message.stableId).toSet(),
+          workIds.map((id) => 'background_work:$id').toSet(),
+        );
+        expect(
           completionMessages.map((message) => message.content),
           everyElement(contains('outcome is unknown')),
         );
-        expect(
-          storedCalls.map((call) => call.resultJson),
-          everyElement(isNotNull),
-        );
+        for (var index = 0; index < calls.length; index++) {
+          final storedCall = storedCalls.singleWhere(
+            (call) => call.id == calls[index].id,
+          );
+          expect(storedCall.status, 'runningInBackground');
+          expect(
+            storedCall.resultJson,
+            jsonEncode({
+              'status': 'running_in_background',
+              'work_id': workIds[index],
+            }),
+          );
+        }
         expect(turns, hasLength(1));
         expect(turns.single.status, ConversationStatuses.cancelled);
       },
