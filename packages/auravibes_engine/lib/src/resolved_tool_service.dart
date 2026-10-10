@@ -35,6 +35,14 @@ typedef SkillAppTemplateToolRequest = ({
   Map<String, dynamic> arguments,
 });
 
+typedef McpToolCallRequest = ({
+  String conversationId,
+  String toolCallId,
+  String mcpServerId,
+  String toolIdentifier,
+  Map<String, dynamic> arguments,
+});
+
 abstract interface class ResolvedToolProvider<TTool> {
   AgentResolvedToolExecution<TTool> toExecution(TTool tool);
 
@@ -52,13 +60,7 @@ abstract interface class ResolvedToolProvider<TTool> {
     required Object input,
   });
 
-  Future<Object?> runMcpTool({
-    required String conversationId,
-    required String toolCallId,
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  });
+  Future<Object?> runMcpTool(McpToolCallRequest request);
 
   Future<String> getConversationWorkspaceId(String conversationId);
 
@@ -177,13 +179,13 @@ class const ResolvedToolService<TTool>({
       );
     }
 
-    return provider.runMcpTool(
+    return provider.runMcpTool((
       conversationId: conversationId,
       toolCallId: toolCallId,
       mcpServerId: mcpServerId,
       toolIdentifier: descriptor.toolIdentifier,
       arguments: arguments,
-    );
+    ));
   }
 
   Future<Object?> _runSkillControlTool(

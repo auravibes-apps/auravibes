@@ -49,7 +49,7 @@ void main() {
       final runtime = AgentCancellationRuntime()..start('conversation-1');
       final cancellationRelease = Completer<void>();
       var cancelCalls = 0;
-      final handle = runtime.registerToolCancellationHandle(
+      final handle = runtime.registerToolCancellationHandle((
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
@@ -58,7 +58,7 @@ void main() {
 
           return cancellationRelease.future;
         },
-      );
+      ));
 
       expect(handle.isEligibleForBackgroundRun, isTrue);
       final firstRequest = handle.requestCancellation();
@@ -95,12 +95,12 @@ void main() {
 
     test('normal tool completion is distinct from cancellation', () {
       final runtime = AgentCancellationRuntime();
-      final handle = runtime.registerToolCancellationHandle(
+      final handle = runtime.registerToolCancellationHandle((
         conversationId: 'conversation-1',
         toolCallId: 'call-1',
         isSupported: true,
         cancel: Future<void>.value,
-      );
+      ));
 
       runtime.completeToolCancellationHandle(
         conversationId: 'conversation-1',

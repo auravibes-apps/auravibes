@@ -117,52 +117,66 @@ class _CancelableTemplateToolCall(
 
   Future<void> _run(CancelableCompleter<Object?> completer) async {
     try {
-      final session = await _usecase._workspaceSession(_request.workspaceId);
-      _usecase._ensureLocalSession(session);
-      if (completer.isCanceled) return;
-
-      final skill = await _usecase._loadEnabledSkill(
-        _request.workspaceId,
-        _request.skillSlug,
-      );
-      if (skill == null) {
-        completer.complete(null);
-
-        return;
-      }
-      if (completer.isCanceled) return;
-
-      final tool = await _usecase._loadEnabledTool(skill.id, _request.toolSlug);
-      if (tool == null) {
-        completer.complete(null);
-
-        return;
-      }
-      if (completer.isCanceled) return;
-
-      final execution = await _usecase._templateExecutionRequest((
-        workspaceId: _request.workspaceId,
-        skill: skill,
-        tool: tool,
-        arguments: _request.arguments,
-      ));
-      if (completer.isCanceled) return;
-
-      final operation = _usecase._templateExecutor.call(
-        definition: execution.definition,
-        inputs: execution.inputs,
-        credentials: execution.credentials,
-        schema: execution.definition.inputSchema,
-        credentialDefinitions: execution.credentialDefinitions,
-      );
-      _httpOperation = operation;
-      final response = await operation.valueOrCancellation();
+      final response = await _resolveTemplateResponse(completer);
       if (response == null || completer.isCanceled) return;
 
       completer.complete(response.body);
     } on Object catch (error, stackTrace) {
       if (!completer.isCanceled) completer.completeError(error, stackTrace);
     }
+  }
+
+  Future<UrlResponse?> _resolveTemplateResponse(
+    CancelableCompleter<Object?> completer,
+  ) async {
+    final workspaceId = _request.workspaceId;
+    final skillSlug = _request.skillSlug;
+    final toolSlug = _request.toolSlug;
+    final arguments = _request.arguments;
+    final usecase = _usecase;
+
+    final session = await usecase._workspaceSession(workspaceId);
+    usecase._ensureLocalSession(session);
+    if (completer.isCanceled) return null;
+
+    final skill = await usecase._loadEnabledSkill(workspaceId, skillSlug);
+    if (skill == null) {
+      completer.complete(null);
+
+      return null;
+    }
+    if (completer.isCanceled) return null;
+
+    final tool = await usecase._loadEnabledTool(skill.id, toolSlug);
+    if (tool == null) {
+      completer.complete(null);
+
+      return null;
+    }
+    if (completer.isCanceled) return null;
+
+    final execution = await usecase._templateExecutionRequest((
+      workspaceId: workspaceId,
+      skill: skill,
+      tool: tool,
+      arguments: arguments,
+    ));
+    if (completer.isCanceled) return null;
+
+    return await _executeTemplate(execution);
+  }
+
+  Future<UrlResponse?> _executeTemplate(_TemplateExecutionRequest execution) {
+    final operation = _usecase._templateExecutor.call(
+      definition: execution.definition,
+      inputs: execution.inputs,
+      credentials: execution.credentials,
+      schema: execution.definition.inputSchema,
+      credentialDefinitions: execution.credentialDefinitions,
+    );
+    _httpOperation = operation;
+
+    return operation.valueOrCancellation();
   }
 }
 

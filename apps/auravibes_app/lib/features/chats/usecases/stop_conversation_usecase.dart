@@ -8,6 +8,14 @@ import 'package:auravibes_app/features/chats/providers/conversation_send_queue_r
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 
 typedef _StopResult = ({Object? error, StackTrace? stackTrace});
+typedef _StopRuntimeRequest = ({
+  String conversationId,
+  String? parentId,
+  AgentCancellationRuntime cancellationRuntime,
+  ConversationStreamingRuntime streamingRuntime,
+  ConversationSendQueueRuntime sendQueueRuntime,
+  ConversationRateLimitRetryRuntime retryRuntime,
+});
 
 class const StopConversationUsecase({
   required final ConversationRepository conversationRepository,
@@ -81,14 +89,15 @@ class const StopConversationUsecase({
   }
 
   Future<void> _stopRuntime(String conversationId, {String? parentId}) async {
-    final hasActiveScope = cancellationRuntime.current(conversationId) != null;
-    final isStreaming = streamingRuntime.isStreaming(conversationId);
-    if (hasActiveScope || isStreaming || parentId != null) {
-      cancellationRuntime.requestStopOnStart(conversationId);
-    }
-    sendQueueRuntime.clear(conversationId);
-    retryRuntime.clear(conversationId);
-    final _ = streamingRuntime.remove(conversationId);
+    final request = (
+      conversationId: conversationId,
+      parentId: parentId,
+      cancellationRuntime: cancellationRuntime,
+      streamingRuntime: streamingRuntime,
+      sendQueueRuntime: sendQueueRuntime,
+      retryRuntime: retryRuntime,
+    );
+    final hasActiveScope = _prepareRuntimeStop(request);
     if (hasActiveScope) {
       await cancellationRuntime.waitForCompletion(conversationId);
     }
@@ -107,4 +116,19 @@ class const StopConversationUsecase({
       ));
     }
   }
+}
+
+bool _prepareRuntimeStop(_StopRuntimeRequest request) {
+  final hasActiveScope =
+      request.cancellationRuntime.current(request.conversationId) != null;
+  if (hasActiveScope ||
+      request.streamingRuntime.isStreaming(request.conversationId) ||
+      request.parentId != null) {
+    request.cancellationRuntime.requestStopOnStart(request.conversationId);
+  }
+  request.sendQueueRuntime.clear(request.conversationId);
+  request.retryRuntime.clear(request.conversationId);
+  final _ = request.streamingRuntime.remove(request.conversationId);
+
+  return hasActiveScope;
 }
