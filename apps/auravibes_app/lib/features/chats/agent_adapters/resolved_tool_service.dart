@@ -233,27 +233,8 @@ class const AppResolvedToolProvider({
   }
 
   @override
-  Future<Object?> runMcpTool(agent.McpToolCallRequest request) async {
-    final handle = agentCancellationRuntime.registerToolCancellationHandle((
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      isSupported: false,
-      cancel: Future<void>.value,
-    ));
-    try {
-      return await mcpToolCaller(
-        mcpServerId: request.mcpServerId,
-        toolIdentifier: request.toolIdentifier,
-        arguments: request.arguments,
-      );
-    } finally {
-      agentCancellationRuntime.completeToolCancellationHandle(
-        conversationId: request.conversationId,
-        toolCallId: request.toolCallId,
-        handle: handle,
-      );
-    }
-  }
+  Future<Object?> runMcpTool(agent.McpToolCallRequest request) =>
+      _runMcpToolCall(this, request);
 
   @override
   Future<String> getConversationWorkspaceId(String conversationId) {
@@ -378,30 +359,74 @@ bool _supportsSkillCommandCancellation(agent.AgentResolvedToolName? target) {
 Future<Object?> _runSkillTemplateTool(
   AppResolvedToolProvider provider,
   agent.SkillTemplateToolRequest input,
+) => _registerAndAwaitCancelableOperation(
+  _skillTemplateOperationRequest(provider, input),
+);
+
+_CancelableOperationRequest _skillTemplateOperationRequest(
+  AppResolvedToolProvider provider,
+  agent.SkillTemplateToolRequest input,
+) => (
+  runtime: provider.agentCancellationRuntime,
+  conversationId: input.conversationId,
+  toolCallId: input.toolCallId,
+  operation: _startSkillTemplateOperation(provider, input),
+  isCancellationSupported: true,
+);
+
+CancelableOperation<Object?> _startSkillTemplateOperation(
+  AppResolvedToolProvider provider,
+  agent.SkillTemplateToolRequest input,
+) => _requiredSkillTemplateUsecase(provider).callCancelable(
+  workspaceId: input.workspaceId,
+  skillSlug: input.skillSlug,
+  toolSlug: input.toolSlug,
+  arguments: _unwrapSkillCommandArguments(
+    skillSlug: input.skillSlug,
+    toolSlug: input.toolSlug,
+    arguments: input.arguments,
+  ),
+);
+
+RunSkillTemplateToolUsecase _requiredSkillTemplateUsecase(
+  AppResolvedToolProvider provider,
 ) {
   final usecase = provider.runSkillTemplateToolUsecase;
   if (usecase == null) {
     throw StateError('RunSkillTemplateToolUsecase is not configured.');
   }
-  final operation = usecase.callCancelable(
-    workspaceId: input.workspaceId,
-    skillSlug: input.skillSlug,
-    toolSlug: input.toolSlug,
-    arguments: _unwrapSkillCommandArguments(
-      skillSlug: input.skillSlug,
-      toolSlug: input.toolSlug,
-      arguments: input.arguments,
-    ),
-  );
 
-  return _registerAndAwaitCancelableOperation((
-    runtime: provider.agentCancellationRuntime,
-    conversationId: input.conversationId,
-    toolCallId: input.toolCallId,
-    operation: operation,
-    isCancellationSupported: true,
-  ));
+  return usecase;
 }
+
+Future<Object?> _runMcpToolCall(
+  AppResolvedToolProvider provider,
+  agent.McpToolCallRequest input,
+) => _registerAndAwaitCancelableOperation(
+  _mcpToolOperationRequest(provider, input),
+);
+
+_CancelableOperationRequest _mcpToolOperationRequest(
+  AppResolvedToolProvider provider,
+  agent.McpToolCallRequest input,
+) => (
+  runtime: provider.agentCancellationRuntime,
+  conversationId: input.conversationId,
+  toolCallId: input.toolCallId,
+  operation: _mcpToolOperation(provider, input),
+  isCancellationSupported: false,
+);
+
+CancelableOperation<Object?> _mcpToolOperation(
+  AppResolvedToolProvider provider,
+  agent.McpToolCallRequest input,
+) => CancelableOperation<Object?>.fromFuture(
+  provider.mcpToolCaller(
+    mcpServerId: input.mcpServerId,
+    toolIdentifier: input.toolIdentifier,
+    arguments: input.arguments,
+  ),
+);
 
 agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
   return switch (tool.type) {
@@ -635,47 +660,92 @@ Future<Object?> _runSubAgentTool({required _SkillNativeToolRequest request}) {
 Future<Object?> _runSubAgentToolWithRunner(
   _SkillNativeToolRequest request,
   agent.SubAgentRunner runner,
-) async {
+) {
   if (request.toolSlug == agent.listAgentsToolName) {
-    return await runner.listAgents(
-      request.workspaceId,
-      arguments: request.arguments,
-    );
+    return runner.listAgents(request.workspaceId, arguments: request.arguments);
   }
   if (request.toolSlug != agent.runSubAgentToolName) {
     throw StateError('Unknown sub-agent tool: ${request.toolSlug}');
   }
 
+  return _runCancellableSubAgent(request, runner);
+}
+
+Future<Object?> _runCancellableSubAgent(
+  _SkillNativeToolRequest request,
+  agent.SubAgentRunner runner,
+) {
   final childStartedId = Completer<String>();
-  final operation = runner.run(
-    parentConversationId: request.conversationId,
-    workspaceId: request.workspaceId,
-    arguments: request.arguments,
-    onChildStarted: ({required childId, required parentId}) {
-      if (!childStartedId.isCompleted) childStartedId.complete(childId);
-    },
+  final operation = _startSubAgentOperation(request, runner, childStartedId);
+
+  return _awaitSubAgentOperation(
+    request: request,
+    runtime: request.provider.agentCancellationRuntime,
+    childStartedId: childStartedId,
+    operation: operation,
   );
+}
+
+Future<Object?> _startSubAgentOperation(
+  _SkillNativeToolRequest request,
+  agent.SubAgentRunner runner,
+  Completer<String> childStartedId,
+) => runner.run(
+  parentConversationId: request.conversationId,
+  workspaceId: request.workspaceId,
+  arguments: request.arguments,
+  onChildStarted: ({required childId, required parentId}) =>
+      _recordStartedSubAgent(childStartedId, childId),
+);
+
+void _recordStartedSubAgent(Completer<String> childStartedId, String childId) {
+  if (!childStartedId.isCompleted) childStartedId.complete(childId);
+}
+
+Future<Object?> _awaitSubAgentOperation({
+  required _SkillNativeToolRequest request,
+  required AgentCancellationRuntime runtime,
+  required Completer<String> childStartedId,
+  required Future<Object?> operation,
+}) async {
   final cancellationRequest = (
     request: request,
     childStartedId: childStartedId,
     operation: operation,
   );
-  final runtime = request.provider.agentCancellationRuntime;
-  final handle = runtime.registerToolCancellationHandle((
-    conversationId: request.conversationId,
-    toolCallId: request.toolCallId,
-    isSupported: true,
-    cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
-  ));
+  final handle = _registerSubAgentCancellationHandle(
+    runtime,
+    request,
+    cancellationRequest,
+  );
   try {
     return await operation;
   } finally {
-    runtime.completeToolCancellationHandle(
-      conversationId: request.conversationId,
-      toolCallId: request.toolCallId,
-      handle: handle,
-    );
+    _completeSubAgentCancellationHandle(runtime, request, handle);
   }
+}
+
+AgentToolCancellationHandle _registerSubAgentCancellationHandle(
+  AgentCancellationRuntime runtime,
+  _SkillNativeToolRequest request,
+  _SubAgentCancellationRequest cancellationRequest,
+) => runtime.registerToolCancellationHandle((
+  conversationId: request.conversationId,
+  toolCallId: request.toolCallId,
+  isSupported: true,
+  cancel: () => _cancelSubAgentOperation(runtime, cancellationRequest),
+));
+
+void _completeSubAgentCancellationHandle(
+  AgentCancellationRuntime runtime,
+  _SkillNativeToolRequest request,
+  AgentToolCancellationHandle handle,
+) {
+  runtime.completeToolCancellationHandle(
+    conversationId: request.conversationId,
+    toolCallId: request.toolCallId,
+    handle: handle,
+  );
 }
 
 Future<void> _cancelSubAgentOperation(

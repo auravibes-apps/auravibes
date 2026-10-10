@@ -119,16 +119,31 @@ class const StopConversationUsecase({
 }
 
 bool _prepareRuntimeStop(_StopRuntimeRequest request) {
-  final hasActiveScope =
-      request.cancellationRuntime.current(request.conversationId) != null;
-  if (hasActiveScope ||
-      request.streamingRuntime.isStreaming(request.conversationId) ||
-      request.parentId != null) {
-    request.cancellationRuntime.requestStopOnStart(request.conversationId);
+  final conversationId = request.conversationId;
+  final cancellationRuntime = request.cancellationRuntime;
+  final hasActiveScope = cancellationRuntime.current(conversationId) != null;
+
+  if (_shouldRequestStop(request, hasActiveScope)) {
+    cancellationRuntime.requestStopOnStart(conversationId);
   }
-  request.sendQueueRuntime.clear(request.conversationId);
-  request.retryRuntime.clear(request.conversationId);
-  final _ = request.streamingRuntime.remove(request.conversationId);
+  _clearStopRuntimeState(request);
 
   return hasActiveScope;
+}
+
+bool _shouldRequestStop(_StopRuntimeRequest request, bool hasActiveScope) {
+  if (hasActiveScope) return true;
+  final isStreaming = request.streamingRuntime.isStreaming(
+    request.conversationId,
+  );
+  if (isStreaming) return true;
+
+  return request.parentId != null;
+}
+
+void _clearStopRuntimeState(_StopRuntimeRequest request) {
+  final conversationId = request.conversationId;
+  request.sendQueueRuntime.clear(conversationId);
+  request.retryRuntime.clear(conversationId);
+  final _ = request.streamingRuntime.remove(conversationId);
 }

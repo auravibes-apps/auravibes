@@ -60,12 +60,12 @@ void main() {
         },
       ));
 
-      expect(handle.isEligibleForBackgroundRun, isTrue);
+      expect(handle.status, AgentToolCancellationStatus.running);
       final firstRequest = handle.requestCancellation();
       final repeatedRequest = handle.requestCancellation();
 
       expect(handle.status, AgentToolCancellationStatus.cancellationRequested);
-      expect(handle.isCancellationConfirmed, isFalse);
+      expect(handle.status, AgentToolCancellationStatus.cancellationRequested);
       expect(cancelCalls, 1);
 
       cancellationRelease.complete();
@@ -86,10 +86,10 @@ void main() {
         },
       );
 
-      expect(handle.isEligibleForBackgroundRun, isFalse);
+      expect(handle.status, AgentToolCancellationStatus.unsupported);
       expect(await handle.requestCancellation(), isFalse);
       expect(handle.status, AgentToolCancellationStatus.unsupported);
-      expect(handle.isCancellationConfirmed, isFalse);
+      expect(handle.status, AgentToolCancellationStatus.unsupported);
       expect(cancelCalls, 0);
     });
 
@@ -109,7 +109,7 @@ void main() {
       );
 
       expect(handle.status, AgentToolCancellationStatus.completed);
-      expect(handle.isCancellationConfirmed, isFalse);
+      expect(handle.status, AgentToolCancellationStatus.completed);
     });
 
     test('pending child stop waits for the child run to close', () async {

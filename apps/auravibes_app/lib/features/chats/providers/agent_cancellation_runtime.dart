@@ -5,6 +5,13 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
 
+typedef _ToolCancellationRegistrationRequest = ({
+  String conversationId,
+  String toolCallId,
+  bool isSupported,
+  Future<void> Function() cancel,
+});
+
 class AgentCancellationRuntime implements AgentCancellationEffects {
   new({@visibleForTesting this.cleanupTimeout = const Duration(seconds: 5)});
 
@@ -102,47 +109,35 @@ class AgentToolCancellationHandle {
 
   AgentToolCancellationStatus get status => _status;
 
-  bool get isSupported => _isSupported;
-
-  bool get isCancellationRequested =>
-      _status == AgentToolCancellationStatus.cancellationRequested ||
-      _status == AgentToolCancellationStatus.cancellationConfirmed;
-
-  bool get isCancellationConfirmed =>
-      _status == AgentToolCancellationStatus.cancellationConfirmed;
-
-  bool get isEligibleForBackgroundRun =>
-      _status == AgentToolCancellationStatus.running;
-
   Future<bool> requestCancellation() async {
-    if (!isSupported || _status == AgentToolCancellationStatus.completed) {
+    if (!_isSupported || _status == AgentToolCancellationStatus.completed) {
       return false;
     }
     final existing = _cancellation;
     if (existing != null) {
       await existing;
 
-      return isCancellationConfirmed;
+      return _status == AgentToolCancellationStatus.cancellationConfirmed;
     }
 
     _status = .cancellationRequested;
-    final cancellation = _cancelOnce();
+    final cancellation = _cancelToolOnce(this);
     _cancellation = cancellation;
     await cancellation;
 
-    return isCancellationConfirmed;
+    return _status == AgentToolCancellationStatus.cancellationConfirmed;
   }
+}
 
-  void markCompleted() {
-    if (_status == .running || _status == .unsupported) {
-      _status = .completed;
-    }
+void _markToolCancellationCompleted(AgentToolCancellationHandle handle) {
+  if (handle._status == .running || handle._status == .unsupported) {
+    handle._status = .completed;
   }
+}
 
-  Future<void> _cancelOnce() async {
-    await _cancel();
-    _status = .cancellationConfirmed;
-  }
+Future<void> _cancelToolOnce(AgentToolCancellationHandle handle) async {
+  await handle._cancel();
+  handle._status = .cancellationConfirmed;
 }
 
 extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
@@ -151,26 +146,11 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
       Future<void>.value();
 
   AgentToolCancellationHandle registerToolCancellationHandle(
-    ({
-      String conversationId,
-      String toolCallId,
-      bool isSupported,
-      Future<void> Function() cancel,
-    })
-    request,
+    _ToolCancellationRegistrationRequest request,
   ) {
-    final handle = AgentToolCancellationHandle(
-      toolCallId: request.toolCallId,
-      isSupported: request.isSupported,
-      cancel: request.cancel,
-    );
-    _toolCancellationHandles.putIfAbsent(
-      request.conversationId,
-      () => <String, AgentToolCancellationHandle>{},
-    )[request.toolCallId] = handle;
-    current(request.conversationId)?.registerCleanup(() async {
-      final _ = await handle.requestCancellation();
-    });
+    final handle = _newToolCancellationHandle(request);
+    _storeToolCancellationHandle(this, request, handle);
+    _registerToolCancellationCleanup(this, request, handle);
 
     return handle;
   }
@@ -185,7 +165,7 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
     required String toolCallId,
     required AgentToolCancellationHandle handle,
   }) {
-    handle.markCompleted();
+    _markToolCancellationCompleted(handle);
     final handles = _toolCancellationHandles[conversationId];
     if (handles == null || !identical(handles[toolCallId], handle)) return;
     final _ = handles.remove(toolCallId);
@@ -244,24 +224,68 @@ extension AgentCancellationRuntimeHelpers on AgentCancellationRuntime {
   }
 }
 
+AgentToolCancellationHandle _newToolCancellationHandle(
+  _ToolCancellationRegistrationRequest request,
+) => AgentToolCancellationHandle(
+  toolCallId: request.toolCallId,
+  isSupported: request.isSupported,
+  cancel: request.cancel,
+);
+
+void _storeToolCancellationHandle(
+  AgentCancellationRuntime runtime,
+  _ToolCancellationRegistrationRequest request,
+  AgentToolCancellationHandle handle,
+) {
+  final handles = runtime._toolCancellationHandles.putIfAbsent(
+    request.conversationId,
+    () => <String, AgentToolCancellationHandle>{},
+  );
+  handles[request.toolCallId] = handle;
+}
+
+void _registerToolCancellationCleanup(
+  AgentCancellationRuntime runtime,
+  _ToolCancellationRegistrationRequest request,
+  AgentToolCancellationHandle handle,
+) {
+  runtime.current(request.conversationId)?.registerCleanup(() async {
+    final _ = await handle.requestCancellation();
+  });
+}
+
 Future<void> _completeScope(
   AgentCancellationRuntime runtime,
   AgentCancellationScope scope,
   Completer<void>? completion,
 ) async {
   await _waitForScopeCleanup(scope, runtime.cleanupTimeout);
+  _completeScopeCompletion(runtime, scope, completion);
+}
+
+void _completeScopeCompletion(
+  AgentCancellationRuntime runtime,
+  AgentCancellationScope scope,
+  Completer<void>? completion,
+) {
   final conversationId = runtime._conversationByScope.remove(scope);
   if (conversationId == null || completion == null || completion.isCompleted) {
     return;
   }
   if (identical(runtime._entries[conversationId], scope)) return;
-  if (identical(
-    runtime._completionByConversationId[conversationId],
-    completion,
-  )) {
+  _removeScopeCompletion(runtime, conversationId, completion);
+  completion.complete();
+}
+
+void _removeScopeCompletion(
+  AgentCancellationRuntime runtime,
+  String conversationId,
+  Completer<void> completion,
+) {
+  final currentCompletion = runtime._completionByConversationId[conversationId];
+  if (identical(currentCompletion, completion)) {
     final _ = runtime._completionByConversationId.remove(conversationId);
   }
-  completion.complete();
 }
 
 void _completeConversation(

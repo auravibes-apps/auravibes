@@ -130,40 +130,53 @@ class _CancelableTemplateToolCall(
     CancelableCompleter<Object?> completer,
   ) async {
     final workspaceId = _request.workspaceId;
-    final skillSlug = _request.skillSlug;
-    final toolSlug = _request.toolSlug;
-    final arguments = _request.arguments;
-    final usecase = _usecase;
-
-    final session = await usecase._workspaceSession(workspaceId);
-    usecase._ensureLocalSession(session);
+    final session = await _usecase._workspaceSession(workspaceId);
+    _usecase._ensureLocalSession(session);
     if (completer.isCanceled) return null;
 
-    final skill = await usecase._loadEnabledSkill(workspaceId, skillSlug);
-    if (skill == null) {
-      completer.complete(null);
+    return await _resolveEnabledTemplateSkill(completer, workspaceId);
+  }
 
-      return null;
-    }
+  Future<UrlResponse?> _resolveEnabledTemplateSkill(
+    CancelableCompleter<Object?> completer,
+    String workspaceId,
+  ) async {
+    final skill = await _usecase._loadEnabledSkill(
+      workspaceId,
+      _request.skillSlug,
+    );
+    if (skill == null) return _completeMissingTemplatePart(completer);
     if (completer.isCanceled) return null;
 
-    final tool = await usecase._loadEnabledTool(skill.id, toolSlug);
-    if (tool == null) {
-      completer.complete(null);
+    return await _resolveEnabledTemplateTool(completer, workspaceId, skill);
+  }
 
-      return null;
-    }
+  Future<UrlResponse?> _resolveEnabledTemplateTool(
+    CancelableCompleter<Object?> completer,
+    String workspaceId,
+    SkillEntity skill,
+  ) async {
+    final tool = await _usecase._loadEnabledTool(skill.id, _request.toolSlug);
+    if (tool == null) return _completeMissingTemplatePart(completer);
     if (completer.isCanceled) return null;
 
-    final execution = await usecase._templateExecutionRequest((
+    final execution = await _usecase._templateExecutionRequest((
       workspaceId: workspaceId,
       skill: skill,
       tool: tool,
-      arguments: arguments,
+      arguments: _request.arguments,
     ));
     if (completer.isCanceled) return null;
 
     return await _executeTemplate(execution);
+  }
+
+  UrlResponse? _completeMissingTemplatePart(
+    CancelableCompleter<Object?> completer,
+  ) {
+    completer.complete(null);
+
+    return null;
   }
 
   Future<UrlResponse?> _executeTemplate(_TemplateExecutionRequest execution) {
