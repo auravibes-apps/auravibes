@@ -28,6 +28,7 @@ class const CompactAgentSelector({
   required final String workspaceId,
   required final String? agentId,
   required final ValueChanged<String?> onChanged,
+  final VoidCallback? onCompactTap,
   final bool compactMode = false,
   final bool sheetMode = false,
   super.key,
@@ -40,6 +41,7 @@ class const CompactAgentSelector({
       agentsAsync: agentsAsync,
       agentId: agentId,
       onChanged: onChanged,
+      onCompactTap: onCompactTap,
       compactMode: compactMode,
       sheetMode: sheetMode,
     );
@@ -51,6 +53,7 @@ class _CompactAgentSelectorContent extends StatelessWidget {
     required this.agentsAsync,
     required this.agentId,
     required this.onChanged,
+    required this.onCompactTap,
     required this.compactMode,
     required this.sheetMode,
   });
@@ -58,6 +61,7 @@ class _CompactAgentSelectorContent extends StatelessWidget {
   final AsyncValue<List<AgentEntity>> agentsAsync;
   final String? agentId;
   final ValueChanged<String?> onChanged;
+  final VoidCallback? onCompactTap;
   final bool compactMode;
   final bool sheetMode;
 
@@ -72,7 +76,11 @@ class _CompactAgentSelectorContent extends StatelessWidget {
     }
 
     if (compactMode) {
-      return _AgentCompactMode(agentsAsync: agentsAsync, agentId: agentId);
+      return _AgentCompactMode(
+        agentsAsync: agentsAsync,
+        agentId: agentId,
+        onCompactTap: onCompactTap,
+      );
     }
 
     return _AgentDropdownMode(
@@ -103,30 +111,39 @@ class const _AgentSheetMode({
 }
 
 class _AgentCompactMode extends StatelessWidget {
-  new({required this.agentsAsync, required this.agentId})
-    : _child = switch (agentsAsync) {
-        AsyncLoading() => const _AgentChip(label: AuraSpinner(size: .small)),
-        AsyncError() => const _AgentChip(
-          label: TextLocale(LocaleKeys.agents_selector_placeholder),
-        ),
-        AsyncData(:final value) => _AgentChip(
-          label: switch (_selectedAgentName(
-            _visibleChatAgents(value),
-            agentId,
-          )) {
-            null => const TextLocale(
-              LocaleKeys.agents_selector_none,
-              softWrap: false,
-              overflow: .ellipsis,
-              maxLines: 1,
-            ),
-            final name => Text(name, overflow: .ellipsis, maxLines: 1),
-          },
-        ),
-      };
+  new({
+    required this.agentsAsync,
+    required this.agentId,
+    required this.onCompactTap,
+  }) : _child = switch (agentsAsync) {
+         AsyncLoading() => _AgentChip(
+           label: const AuraSpinner(size: .small),
+           onTap: onCompactTap,
+         ),
+         AsyncError() => _AgentChip(
+           label: const TextLocale(LocaleKeys.agents_selector_placeholder),
+           onTap: onCompactTap,
+         ),
+         AsyncData(:final value) => _AgentChip(
+           label: switch (_selectedAgentName(
+             _visibleChatAgents(value),
+             agentId,
+           )) {
+             null => const TextLocale(
+               LocaleKeys.agents_selector_none,
+               softWrap: false,
+               overflow: .ellipsis,
+               maxLines: 1,
+             ),
+             final name => Text(name, overflow: .ellipsis, maxLines: 1),
+           },
+           onTap: onCompactTap,
+         ),
+       };
 
   final AsyncValue<List<AgentEntity>> agentsAsync;
   final String? agentId;
+  final VoidCallback? onCompactTap;
   final Widget _child;
 
   @override
@@ -216,11 +233,13 @@ class _AgentDropdownOptions extends StatelessWidget {
   );
 }
 
-class const _AgentChip({required final Widget label}) extends StatelessWidget {
+class const _AgentChip({required final Widget label, final VoidCallback? onTap})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
       child: label,
+      onTap: onTap,
       variant: .selected,
       size: .small,
       leading: const AuraIcon(Icons.smart_toy_outlined),

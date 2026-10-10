@@ -18,9 +18,11 @@ void main() {
     for (final hue in [0, 186, 300, 360]) {
       testWidgets('hue $hue updates ${brightness.name} theme', (tester) async {
         final addon = AuraHueAddon();
-        final themeAddon = (WidgetbookConfig.create().addons ?? const <Addon>[])
-            .whereType<ThemeAddon<ThemeData>>()
-            .single;
+        final addons = WidgetbookConfig.create().addons ?? const <Addon>[];
+        final themeAddon = addons.whereType<ThemeAddon<ThemeData>>().single;
+        final radiusAddon = addons.singleWhere(
+          (addon) => addon.name == 'Global border radius level',
+        ) as Addon<AuraBorderRadius>;
         final base = ThemeData(brightness: brightness);
         AuraColorScheme? actual;
         ColorScheme? material;
@@ -36,13 +38,20 @@ void main() {
                     builder: (context) => addon.apply(
                       context,
                       Builder(
-                        builder: (context) {
-                          actual = context.auraColors;
-                          material = Theme.of(context).colorScheme;
-                          canvas = Theme.of(context).scaffoldBackgroundColor;
+                        builder: (hueContext) => radiusAddon.apply(
+                          hueContext,
+                          Builder(
+                            builder: (context) {
+                              actual = context.auraColors;
+                              material = Theme.of(context).colorScheme;
+                              canvas = Theme.of(context)
+                                  .scaffoldBackgroundColor;
 
-                          return const SizedBox.shrink();
-                        },
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                          .lg,
+                        ),
                       ),
                       hue,
                     ),

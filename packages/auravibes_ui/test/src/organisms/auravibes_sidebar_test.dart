@@ -1,5 +1,6 @@
 import 'dart:ui' show Tristate;
 
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/organisms/aura_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,6 +51,25 @@ void main() {
         find.descendant(of: sidebars.at(0), matching: find.text('Settings')),
       );
       expect(tappedIndex, 1);
+    });
+
+    testWidgets('insets item content from rounded surface', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraSidebar(
+              navigationItems: const [
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
+              ],
+              onNavigationTap: (_) => fail('layout test must not tap sidebar'),
+            ),
+          ),
+        ),
+      );
+
+      final surface = tester.getRect(find.byType(AuraPressable));
+      final icon = tester.getRect(find.byIcon(Icons.home));
+      expect(icon.left - surface.left, 16);
     });
 
     testWidgets('fits navigation labels at large RTL text scale', (

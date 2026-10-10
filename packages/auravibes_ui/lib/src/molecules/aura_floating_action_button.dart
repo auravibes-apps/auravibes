@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -78,6 +79,10 @@ class AuraFloatingActionButton extends StatelessWidget {
     button: this,
     colors: context.auraColors,
     theme: context.auraTheme,
+    radius: AuraCornerRadiusScope.resolve(
+      context,
+      fallback: _getBorderRadius(),
+    ),
   ).toWidget();
 }
 
@@ -132,6 +137,7 @@ class _AuraFabThemeData {
     required AuraFloatingActionButton button,
     required AuraColorScheme colors,
     required AuraTheme theme,
+    required double radius,
   }) : _widget = _AuraFabLayout(
          child: ConstrainedBox(
            constraints: .new(
@@ -144,13 +150,13 @@ class _AuraFabThemeData {
                      button: button,
                      background: colors.fillFor(button.tint ?? .primary),
                      foreground: colors.onFill(button.tint ?? .primary),
-                     shape: _shape(button, theme),
+                     shape: _shape(radius),
                    )
                  : _AuraFabRegular(
                      button: button,
                      background: colors.fillFor(button.tint ?? .primary),
                      foreground: colors.onFill(button.tint ?? .primary),
-                     shape: _shape(button, theme),
+                     shape: _shape(radius),
                    ),
              enabled: button.onPressed != null,
              button: true,
@@ -167,12 +173,8 @@ class _AuraFabThemeData {
 
   Widget toWidget() => _widget;
 
-  static ShapeBorder _shape(AuraFloatingActionButton button, AuraTheme theme) =>
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(
-          theme.fromBorderRadius(button._getBorderRadius()),
-        ),
-      );
+  static ShapeBorder _shape(double radius) =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius));
 }
 
 class _AuraFabLayout extends StatelessWidget {

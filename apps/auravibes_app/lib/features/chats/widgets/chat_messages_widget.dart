@@ -266,7 +266,7 @@ class const ChatMessagesWidget({
             retryableMessageId: retryableMessageId,
             onRetryMessage: onRetryMessage,
           ),
-          separatorBuilder: (context, index) => const AuraSizedBox(height: .md),
+          separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
           itemCount: itemCount,
           addAutomaticKeepAlives: false,
           scrollCacheExtent: const ScrollCacheExtent.pixels(500),
@@ -1044,6 +1044,7 @@ class const _ChatMessageContent({
         onRetryMessage: onRetryMessage,
       ),
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: .xs,
     );
   }
 }
@@ -2417,6 +2418,8 @@ class const _ActivityToolCallRow({
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: .baseline,
+          textBaseline: .alphabetic,
           children: [
             Expanded(
               child: AuraPressable(

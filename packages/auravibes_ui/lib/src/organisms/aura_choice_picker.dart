@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -324,13 +325,12 @@ BoxDecoration _chipDecoration<T>(
   BuildContext context,
   _AuraChoicePickerOption<T> source,
 ) {
-  final theme = context.auraTheme;
   final accent = _chipAccent(context, source);
   final isSelected = source._isSelected;
   final outline = context.auraColors.outline;
 
   return _chipDecorationValues((
-    theme: theme,
+    radius: AuraCornerRadiusScope.resolve(context, fallback: .full),
     accent: accent,
     outline: outline,
     isSelected: isSelected,
@@ -338,7 +338,7 @@ BoxDecoration _chipDecoration<T>(
 }
 
 typedef _ChipDecorationRequest = ({
-  AuraTheme theme,
+  double radius,
   Color accent,
   Color outline,
   bool isSelected,
@@ -350,7 +350,7 @@ BoxDecoration _chipDecorationValues(_ChipDecorationRequest request) {
     border: Border.all(
       color: request.isSelected ? request.accent : request.outline,
     ),
-    borderRadius: BorderRadius.circular(request.theme.fromBorderRadius(.full)),
+    borderRadius: BorderRadius.circular(request.radius),
   );
 }
 

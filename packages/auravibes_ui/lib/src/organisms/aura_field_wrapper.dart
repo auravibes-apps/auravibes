@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_field_label.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -263,8 +264,9 @@ List<BoxShadow> _fieldBuildBoxShadow(Color color) => [
   ),
 ];
 
-BorderRadius _fieldBorderRadius(BuildContext context) =>
-    BorderRadius.all(.circular(context.auraTheme.fromBorderRadius(.xl)));
+BorderRadius _fieldBorderRadius(BuildContext context) => BorderRadius.all(
+  .circular(AuraCornerRadiusScope.resolve(context, fallback: .xl)),
+);
 
 BoxDecoration _fieldSurfaceDecoration(
   Color backgroundColor,

@@ -11,6 +11,7 @@ export 'aura_theme_scope.dart' show AuraThemeScope;
 
 const _brandFillAchromaticChroma = 0.001;
 const _lightFillBackgroundLuminance = 0.5;
+const _globalBorderRadiusLevelMidpoint = 0.5;
 
 typedef _SpacingCoreLerpValues = ({
   double none,
@@ -181,6 +182,34 @@ typedef _BorderRadiusLerpValues = ({
   _BorderRadiusExtendedLerpValues extended,
 });
 
+typedef _ResolvedBorderRadiusValues = ({
+  double none,
+  double sm,
+  double md,
+  double lg,
+  double xl,
+  double full,
+});
+
+typedef _ThemeAppearanceLerpValues = ({
+  AuraColorScheme colors,
+  AuraAnimationTheme animation,
+  AuraTypographyScale typography,
+  AuraInteractionSizeScale interactionSizes,
+});
+
+typedef _ThemeGeometryLerpValues = ({
+  AuraSpacingScale spacing,
+  AuraBorderRadiusScale borderRadius,
+  _ResolvedBorderRadiusValues resolvedBorderRadiusValues,
+});
+
+typedef _AuraThemeLerpValues = ({
+  _ThemeAppearanceLerpValues appearance,
+  _ThemeGeometryLerpValues geometry,
+  AuraBorderRadius? globalBorderRadiusLevel,
+});
+
 typedef _ChromeLerpValues = ({
   Color outline,
   Color outlineVariant,
@@ -309,9 +338,20 @@ class AuraTheme {
     required this.animation,
     this.spacing = const AuraSpacingScale._standard(),
     this.borderRadius = const AuraBorderRadiusScale._standard(),
+    this.globalBorderRadiusLevel,
     this.typography = const AuraTypographyScale._standard(),
     this.interactionSizes = const AuraInteractionSizeScale(),
-  });
+  }) : _resolvedBorderRadiusValues = null;
+
+  new _interpolated({required _AuraThemeLerpValues values})
+    : colors = values.appearance.colors,
+      animation = values.appearance.animation,
+      spacing = values.geometry.spacing,
+      borderRadius = values.geometry.borderRadius,
+      globalBorderRadiusLevel = values.globalBorderRadiusLevel,
+      typography = values.appearance.typography,
+      interactionSizes = values.appearance.interactionSizes,
+      _resolvedBorderRadiusValues = values.geometry.resolvedBorderRadiusValues;
 
   /// Color scheme for the theme.
   final AuraColorScheme colors;
@@ -325,11 +365,20 @@ class AuraTheme {
   /// Theme-owned border-radius scale (rethemeable, lerp-able).
   final AuraBorderRadiusScale borderRadius;
 
+  /// Optional radius level used for every Aura border-radius selector
+  /// in this theme scope.
+  ///
+  /// When null, each component's selector remains in use.
+  final AuraBorderRadius? globalBorderRadiusLevel;
+
   /// Theme-owned typography scale (rethemeable, lerp-able).
   final AuraTypographyScale typography;
 
   /// Theme-owned minimum size for interactive targets.
   final AuraInteractionSizeScale interactionSizes;
+
+  // Holds per-selector values during lerp so a scope level change can animate.
+  final _ResolvedBorderRadiusValues? _resolvedBorderRadiusValues;
 
   /// Returns a copy with selected theme values replaced.
   AuraTheme copyWith({
@@ -337,6 +386,7 @@ class AuraTheme {
     AuraAnimationTheme? animation,
     AuraSpacingScale? spacing,
     AuraBorderRadiusScale? borderRadius,
+    AuraBorderRadius? globalBorderRadiusLevel,
     AuraTypographyScale? typography,
     AuraInteractionSizeScale? interactionSizes,
   }) {
@@ -345,6 +395,8 @@ class AuraTheme {
       animation: animation ?? this.animation,
       spacing: spacing ?? this.spacing,
       borderRadius: borderRadius ?? this.borderRadius,
+      globalBorderRadiusLevel:
+          globalBorderRadiusLevel ?? this.globalBorderRadiusLevel,
       typography: typography ?? this.typography,
       interactionSizes: interactionSizes ?? this.interactionSizes,
     );
@@ -353,14 +405,11 @@ class AuraTheme {
   /// Interpolates this theme's values toward [other].
   AuraTheme lerp(AuraTheme? other, double t) {
     if (other == null) return this;
+    if (t <= 0) return this;
+    if (t >= 1) return other;
 
-    return AuraTheme(
-      colors: colors.lerp(other.colors, t),
-      animation: animation.lerp(other.animation, t),
-      spacing: spacing.lerp(other.spacing, t),
-      borderRadius: borderRadius.lerp(other.borderRadius, t),
-      typography: typography.lerp(other.typography, t),
-      interactionSizes: interactionSizes.lerp(other.interactionSizes, t),
+    return AuraTheme._interpolated(
+      values: _lerpAuraThemeValues(this, other, t),
     );
   }
 
@@ -369,7 +418,8 @@ class AuraTheme {
 
   /// Resolve an [AuraBorderRadius] enum to its concrete pixel value.
   double fromBorderRadius(AuraBorderRadius value) =>
-      borderRadius.resolve(value);
+      _resolvedBorderRadiusValues?.resolve(value) ??
+      borderRadius.resolve(globalBorderRadiusLevel ?? value);
 }
 
 /// Theme-owned minimum size for interactive targets.
@@ -864,6 +914,77 @@ _BorderRadiusLerpValues _lerpBorderRadiusValues(
   core: _lerpBorderRadiusCoreValues(begin, end, t),
   extended: _lerpBorderRadiusExtendedValues(begin, end, t),
 );
+
+_AuraThemeLerpValues _lerpAuraThemeValues(
+  AuraTheme begin,
+  AuraTheme end,
+  double t,
+) => (
+  appearance: _lerpThemeAppearanceValues(begin, end, t),
+  geometry: _lerpThemeGeometryValues(begin, end, t),
+  globalBorderRadiusLevel: _lerpGlobalBorderRadiusLevel(begin, end, t),
+);
+
+_ThemeAppearanceLerpValues _lerpThemeAppearanceValues(
+  AuraTheme begin,
+  AuraTheme end,
+  double t,
+) => (
+  colors: begin.colors.lerp(end.colors, t),
+  animation: begin.animation.lerp(end.animation, t),
+  typography: begin.typography.lerp(end.typography, t),
+  interactionSizes: begin.interactionSizes.lerp(end.interactionSizes, t),
+);
+
+_ThemeGeometryLerpValues _lerpThemeGeometryValues(
+  AuraTheme begin,
+  AuraTheme end,
+  double t,
+) => (
+  spacing: begin.spacing.lerp(end.spacing, t),
+  borderRadius: begin.borderRadius.lerp(end.borderRadius, t),
+  resolvedBorderRadiusValues: _lerpResolvedBorderRadiusValues(begin, end, t),
+);
+
+AuraBorderRadius? _lerpGlobalBorderRadiusLevel(
+  AuraTheme begin,
+  AuraTheme end,
+  double t,
+) => t < _globalBorderRadiusLevelMidpoint
+    ? begin.globalBorderRadiusLevel
+    : end.globalBorderRadiusLevel;
+
+_ResolvedBorderRadiusValues _lerpResolvedBorderRadiusValues(
+  AuraTheme begin,
+  AuraTheme end,
+  double t,
+) {
+  double lerpRadius(AuraBorderRadius radius) => _lerpDouble(
+    begin.fromBorderRadius(radius),
+    end.fromBorderRadius(radius),
+    t,
+  );
+
+  return (
+    none: lerpRadius(.none),
+    sm: lerpRadius(.sm),
+    md: lerpRadius(.md),
+    lg: lerpRadius(.lg),
+    xl: lerpRadius(.xl),
+    full: lerpRadius(.full),
+  );
+}
+
+extension on _ResolvedBorderRadiusValues {
+  double resolve(AuraBorderRadius radius) => switch (radius) {
+    .none => none,
+    .sm => sm,
+    .md => md,
+    .lg => lg,
+    .xl => xl,
+    .full => full,
+  };
+}
 
 _BorderRadiusCoreLerpValues _lerpBorderRadiusCoreValues(
   AuraBorderRadiusScale begin,

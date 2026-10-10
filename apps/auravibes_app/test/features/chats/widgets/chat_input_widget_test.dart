@@ -102,8 +102,20 @@ void main() {
               onToolsPress: onToolsPress,
               modelSheetControl: modelSheetControl,
               agentSheetControl: agentSheetControl,
-              modelCompactControl: modelCompactControl,
-              agentCompactControl: agentCompactControl,
+              modelCompactControl: (onPressed) => AuraTile(
+                child: modelCompactControl,
+                onTap: onPressed,
+                variant: .outlined,
+                size: .small,
+                leading: const AuraIcon(Icons.memory_outlined, size: .small),
+              ),
+              agentCompactControl: (onPressed) => AuraTile(
+                child: agentCompactControl,
+                onTap: onPressed,
+                variant: .selected,
+                size: .small,
+                leading: const AuraIcon(Icons.smart_toy_outlined),
+              ),
               onDraftStatusChanged: onDraftStatusChanged,
               conversationId: conversationId,
               reasoningControl: reasoningControl,
@@ -539,6 +551,19 @@ void main() {
       expect(find.byKey(ValueKey<String>(selector)), findsOneWidget);
     }
     expect(find.text('reasoning control'), findsOneWidget);
+    final composerRadii = tester
+        .widgetList<AuraCornerRadiusScope>(
+          find.ancestor(
+            of: find.byKey(
+              const ValueKey<String>('chat_attachment_options_button'),
+            ),
+            matching: find.byType(AuraCornerRadiusScope),
+          ),
+        )
+        .map((scope) => scope.radius)
+        .toList();
+    expect(composerRadii, contains(16));
+    expect(composerRadii, contains(12));
     expect(
       find.byKey(const ValueKey<String>('chat_voice_button')),
       kIsWeb ? findsNothing : findsOneWidget,
@@ -1556,9 +1581,7 @@ void main() {
     expect(find.text('sheet agent'), findsOneWidget);
   });
 
-  testWidgets('agent control opens sheet with a non-interactive tile', (
-    tester,
-  ) async {
+  testWidgets('agent tile opens sheet', (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -1570,7 +1593,7 @@ void main() {
         onSendMessage: (_) {
           final _ = Object();
         },
-        agentCompactControl: const AuraTile(child: Text('compact agent')),
+        agentCompactControl: const Text('compact agent'),
         agentSheetControl: const Text('sheet agent'),
       ),
     );
@@ -1581,6 +1604,73 @@ void main() {
 
     expect(find.text('sheet agent'), findsOneWidget);
   });
+
+  testWidgets('compact agent and model selectors show hover feedback', (
+    tester,
+  ) async {
+    final previousStrategy = FocusManager.instance.highlightStrategy;
+    FocusManager.instance.highlightStrategy = .alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy = previousStrategy,
+    );
+
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    final agent = find.byKey(const ValueKey<String>('chat_agent_selector'));
+    final model = find.byKey(const ValueKey<String>('chat_model_selector'));
+    final agentTile = find.descendant(
+      of: agent,
+      matching: find.byType(AuraTile),
+    );
+    final modelTile = find.descendant(
+      of: model,
+      matching: find.byType(AuraTile),
+    );
+    expect(agentTile, findsOneWidget);
+    expect(modelTile, findsOneWidget);
+    expect(tester.widget<AuraTile>(agentTile).onTap, isNotNull);
+    expect(tester.widget<AuraTile>(modelTile).onTap, isNotNull);
+
+    final agentLayer = find
+        .descendant(of: agentTile, matching: find.byType(AnimatedContainer))
+        .first;
+    final modelLayer = find
+        .descendant(of: modelTile, matching: find.byType(AnimatedContainer))
+        .first;
+    final agentColor = _animatedContainerColor(tester, agentLayer);
+    final modelColor = _animatedContainerColor(tester, modelLayer);
+    final mouse = await tester.createGesture(kind: .mouse);
+    await mouse.addPointer();
+    await mouse.moveTo(tester.getCenter(agent));
+    final _ = await tester.pumpAndSettle();
+    expect(_animatedContainerColor(tester, agentLayer), isNot(agentColor));
+
+    await mouse.moveTo(tester.getCenter(model));
+    final _ = await tester.pumpAndSettle();
+    expect(_animatedContainerColor(tester, modelLayer), isNot(modelColor));
+  });
+}
+
+Color _animatedContainerColor(WidgetTester tester, Finder finder) {
+  final decoration = tester.widget<AnimatedContainer>(finder).decoration;
+  if (decoration case BoxDecoration(:final Color color)) return color;
+  fail('Expected an animated container with a color.');
 }
 
 ConversationSkillSelectorState _skillSelectorState(int count) =>

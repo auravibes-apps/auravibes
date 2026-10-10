@@ -114,8 +114,97 @@ void main() {
     );
 
     expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.byType(AuraTile), findsOneWidget);
     expect(find.byIcon(Icons.memory_outlined), findsOneWidget);
     expect(find.text('Claude Sonnet 4'), findsOneWidget);
+    expect(
+      tester.getRect(find.text('Claude Sonnet 4')).center.dy,
+      closeTo(tester.getRect(find.byType(AuraTile)).center.dy, 0.1),
+    );
+  });
+
+  testWidgets('compact model placeholder is vertically centered', (
+    tester,
+  ) async {
+    await _pumpSubject(
+      tester,
+      _SubjectBuilder.build(groupedModels: {}, compactMode: true),
+    );
+
+    expect(find.text('Model'), findsOneWidget);
+    expect(
+      tester.getRect(find.text('Model')).center.dy,
+      closeTo(tester.getRect(find.byType(AuraTile)).center.dy, 0.1),
+    );
+  });
+
+  testWidgets('compact tile handles its own tap', (tester) async {
+    var tapped = false;
+    await _pumpSubject(
+      tester,
+      _SubjectBuilder.build(
+        groupedModels: {
+          'anthropic-work': [
+            _makeSelection(
+              'sel-1',
+              connectionId: 'anthropic-work',
+              modelId: 'claude-sonnet-4',
+              providerName: 'Anthropic',
+              modelName: 'Claude Sonnet 4',
+            ),
+          ],
+        },
+        selectedId: 'sel-1',
+        compactMode: true,
+        onCompactTap: () => tapped = true,
+      ),
+    );
+
+    final tile = tester.widget<AuraTile>(find.byType(AuraTile));
+    expect(tile.onTap == null, isFalse);
+    await tester.tap(find.byType(AuraTile));
+    await tester.pump();
+
+    expect(tapped, isTrue);
+  });
+
+  testWidgets('compact chip resolves its configured radius from theme', (
+    tester,
+  ) async {
+    await _pumpSubject(
+      tester,
+      _SubjectBuilder.build(
+        groupedModels: {
+          'anthropic-work': [
+            _makeSelection(
+              'sel-1',
+              connectionId: 'anthropic-work',
+              modelId: 'claude-sonnet-4',
+              providerName: 'Anthropic',
+              modelName: 'Claude Sonnet 4',
+            ),
+          ],
+        },
+        selectedId: 'sel-1',
+        compactMode: true,
+        theme: AuraTheme.light.copyWith(
+          borderRadius: const AuraBorderRadiusScale(xl: 12),
+          globalBorderRadiusLevel: .xl,
+        ),
+      ),
+    );
+
+    final chipDecoration = find.ancestor(
+      of: find.text('Claude Sonnet 4'),
+      matching: find.byWidgetPredicate((widget) {
+        if (widget is! AnimatedContainer) return false;
+        final decoration = widget.decoration;
+
+        return decoration is BoxDecoration &&
+            decoration.borderRadius == const BorderRadius.all(.circular(12));
+      }),
+    );
+    expect(chipDecoration, findsOneWidget);
   });
 
   testWidgets('compact mode shows warning for unavailable model', (
@@ -602,6 +691,7 @@ Future<void> _pumpSubject(WidgetTester tester, Widget subject) async {
 
 abstract final class _SubjectBuilder {
   static Widget build({
+    AuraTheme? theme,
     Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>?
     groupedModels,
     Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>?
@@ -614,6 +704,7 @@ abstract final class _SubjectBuilder {
     bool sheetMode = false,
     bool modelUnavailable = false,
     Locale locale = const Locale('en'),
+    VoidCallback? onCompactTap,
   }) {
     assert(
       groupedModels != null || groupedModelsStream != null,
@@ -628,7 +719,7 @@ abstract final class _SubjectBuilder {
 
     return TestableApp(
       child: AuraThemeScope(
-        theme: .light,
+        theme: theme ?? .light,
         child: Theme(
           data: .new(),
           child: Scaffold(
@@ -640,6 +731,7 @@ abstract final class _SubjectBuilder {
                 compactMode: compactMode,
                 sheetMode: sheetMode,
                 modelUnavailable: modelUnavailable,
+                onCompactTap: onCompactTap,
               ),
             ),
           ),

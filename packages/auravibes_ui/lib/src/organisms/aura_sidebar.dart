@@ -294,7 +294,7 @@ class const _AuraSidebarItem({
     onTap: onTap,
     selected: selected,
     colors: context.auraColors,
-    borderRadius: context.auraTheme.fromBorderRadius(.xl),
+    borderRadius: AuraCornerRadiusScope.resolve(context, fallback: .xl),
   );
 }
 
@@ -355,7 +355,7 @@ class const _AuraSidebarItemContent({
         ),
         tint: selected ? AuraTint.primary : null,
       ),
-      padding: .small,
+      padding: const .symmetric(horizontal: .md, vertical: .sm),
     );
   }
 }

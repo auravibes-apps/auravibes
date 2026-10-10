@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
     show AuraEdgeInsetsGeometry, AuraPadding;
 import 'package:auravibes_ui/src/tokens/aura_theme.dart'
@@ -72,6 +73,7 @@ class const _AuraContainerBody({required final AuraContainer container})
     child: _AuraContainerDecorated(
       container: container,
       theme: context.auraTheme,
+      radius: container.borderRadius ?? AuraCornerRadiusScope.maybeOf(context),
     ),
   );
 }
@@ -95,20 +97,23 @@ class const _AuraContainerMargins({
 }
 
 class _AuraContainerDecorated extends StatelessWidget {
-  new({required AuraContainer container, required AuraTheme theme})
-    : _child = Container(
-        alignment: container.alignment,
-        decoration: _containerDecoration(container, theme),
-        width: container.width,
-        height: container.height,
-        child: switch (container.padding) {
-          final padding? => AuraPadding(
-            child: container.child,
-            padding: padding,
-          ),
-          null => container.child,
-        },
-      );
+  new({
+    required AuraContainer container,
+    required AuraTheme theme,
+    required double? radius,
+  }) : _child = Container(
+         alignment: container.alignment,
+         decoration: _containerDecoration(container, theme, radius),
+         width: container.width,
+         height: container.height,
+         child: switch (container.padding) {
+           final padding? => AuraPadding(
+             child: container.child,
+             padding: padding,
+           ),
+           null => container.child,
+         },
+       );
 
   final Widget _child;
 
@@ -116,13 +121,16 @@ class _AuraContainerDecorated extends StatelessWidget {
   Widget build(BuildContext context) => _child;
 }
 
-BoxDecoration _containerDecoration(AuraContainer container, AuraTheme theme) =>
-    BoxDecoration(
-      color: _containerColor(container.variant, theme),
-      border: container.border,
-      borderRadius: _containerBorderRadius(container.borderRadius),
-      boxShadow: _containerBoxShadow(container.shadow),
-    );
+BoxDecoration _containerDecoration(
+  AuraContainer container,
+  AuraTheme theme,
+  double? radius,
+) => BoxDecoration(
+  color: _containerColor(container.variant, theme),
+  border: container.border,
+  borderRadius: _containerBorderRadius(radius),
+  boxShadow: _containerBoxShadow(container.shadow),
+);
 
 Color _containerColor(AuraContainerVariant variant, AuraTheme theme) =>
     switch (variant) {

@@ -1167,7 +1167,6 @@ class const _ChatConversationBody({
   Widget build(BuildContext context) => AuraColumn(
     children: [
       _ConversationOrientation(data: data),
-      _ConversationActivitySummary(data: data),
       _ChatConversationControls(data: data),
       _ChatConversationMessageList(data: data),
       if (_hasChatConversationStatus(data) || data.showInputComposer)
@@ -1237,12 +1236,69 @@ class const _ChatConversationMessageList({
 
 class const _ChatConversationControls({
   required final _LoadedChatConversationData data,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _ChatConversationControlsLayout(
+        data: data,
+        activity: _conversationActivitySummary(ref, data),
+      );
+}
+
+typedef _ConversationActivitySummary = ({String activityKey, int childCount});
+
+_ConversationActivitySummary _conversationActivitySummary(
+  WidgetRef ref,
+  _LoadedChatConversationData data,
+) {
+  final childCount = _activeConversationChildCount(ref, data.conversation.id);
+
+  return (
+    activityKey: _conversationActivityKey((data: data, childCount: childCount)),
+    childCount: childCount,
+  );
+}
+
+class const _ChatConversationControlsLayout({
+  required final _LoadedChatConversationData data,
+  required final _ConversationActivitySummary activity,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => _ChatControlsBar(
-    workspaceId: data.workspaceId,
-    conversationId: data.conversation.id,
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _ActiveConversationActivityLabel(activity: activity),
+      _ChatControlsBar(
+        workspaceId: data.workspaceId,
+        conversationId: data.conversation.id,
+        idleActivitySummary: _IdleConversationActivityLabel(activity: activity),
+      ),
+    ],
+    spacing: activity.activityKey == 'idle' ? .none : .base,
   );
+}
+
+class const _ActiveConversationActivityLabel({
+  required final _ConversationActivitySummary activity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => activity.activityKey == 'idle'
+      ? const SizedBox.shrink()
+      : _ConversationActivityLabel(
+          activityKey: activity.activityKey,
+          childCount: activity.childCount,
+        );
+}
+
+class const _IdleConversationActivityLabel({
+  required final _ConversationActivitySummary activity,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => activity.activityKey != 'idle'
+      ? const SizedBox.shrink()
+      : _CompactConversationActivityLabel(
+          activityKey: activity.activityKey,
+          childCount: activity.childCount,
+        );
 }
 
 class const _ChatConversationStatus({
@@ -1470,16 +1526,18 @@ class _ChatComposerInput extends StatelessWidget {
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
          ),
-         modelCompactControl: _ChatComposerModelCompactControl(
+         modelCompactControl: (onPressed) => _ChatComposerModelCompactControl(
            workspaceId: data.workspaceId,
            workspaceModelSelectionId: data.conversation.modelId,
            onChanged: data.callbacks.selectors.onModelSelectionChanged,
            modelUnavailable: modelUnavailable,
+           onCompactTap: onPressed,
          ),
-         agentCompactControl: _ChatComposerAgentCompactControl(
+         agentCompactControl: (onPressed) => _ChatComposerAgentCompactControl(
            workspaceId: data.workspaceId,
            agentId: data.conversation.agentId,
            onChanged: data.callbacks.selectors.onAgentChanged,
+           onCompactTap: onPressed,
          ),
          conversationId: data.conversation.id,
          reasoningControl: reasoningControl,
@@ -1548,6 +1606,7 @@ class const _ChatComposerModelCompactControl({
   required final String? workspaceModelSelectionId,
   required final ValueChanged<String?> onChanged,
   required final bool modelUnavailable,
+  required final VoidCallback onCompactTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactWorkspaceModelSelector(
@@ -1556,6 +1615,7 @@ class const _ChatComposerModelCompactControl({
     onChanged: onChanged,
     compactMode: true,
     modelUnavailable: modelUnavailable,
+    onCompactTap: onCompactTap,
   );
 }
 
@@ -1563,12 +1623,14 @@ class const _ChatComposerAgentCompactControl({
   required final String workspaceId,
   required final String? agentId,
   required final ValueChanged<String?> onChanged,
+  required final VoidCallback onCompactTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CompactAgentSelector(
     workspaceId: workspaceId,
     agentId: agentId,
     onChanged: onChanged,
+    onCompactTap: onCompactTap,
     compactMode: true,
   );
 }
@@ -1576,6 +1638,7 @@ class const _ChatComposerAgentCompactControl({
 class const _ChatControlsBar({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1589,6 +1652,7 @@ class const _ChatControlsBar({
       child: _ChatControlsContent(
         workspaceId: workspaceId,
         conversationId: conversationId,
+        idleActivitySummary: idleActivitySummary,
       ),
     );
   }
@@ -1597,6 +1661,7 @@ class const _ChatControlsBar({
 class const _ChatControlsContent({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -1605,6 +1670,7 @@ class const _ChatControlsContent({
     child: _ChatControlsPadding(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      idleActivitySummary: idleActivitySummary,
     ),
   );
 }
@@ -1612,16 +1678,19 @@ class const _ChatControlsContent({
 class const _ChatControlsPadding({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(
+      left: context.auraTheme.fromSpacing(.md),
       top: context.auraTheme.fromSpacing(.sm),
-      right: context.auraTheme.fromSpacing(.sm),
+      right: context.auraTheme.fromSpacing(.md),
     ),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
+      idleActivitySummary: idleActivitySummary,
     ),
   );
 }
@@ -1629,23 +1698,22 @@ class const _ChatControlsPadding({
 class const _ChatControlsAlignment({
   required final String workspaceId,
   required final String conversationId,
+  required final Widget idleActivitySummary,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: Alignment.centerRight,
-    child: Row(
-      mainAxisSize: .min,
-      children: [
-        ActiveSubAgentStatusWidget(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-        ConversationContextUsagePill(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      ],
-    ),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(child: idleActivitySummary),
+      ActiveSubAgentStatusWidget(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+      const AuraSizedBox(width: .sm),
+      ConversationContextUsagePill(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      ),
+    ],
   );
 }
 
@@ -2655,24 +2723,6 @@ String _conversationParentTitle(
     ? parent.title
     : parentId;
 
-class const _ConversationActivitySummary({
-  required final _LoadedChatConversationData data,
-}) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final childCount = _activeConversationChildCount(ref, data.conversation.id);
-    final activityKey = _conversationActivityKey((
-      data: data,
-      childCount: childCount,
-    ));
-
-    return _ConversationActivityLabel(
-      activityKey: activityKey,
-      childCount: childCount,
-    );
-  }
-}
-
 int _activeConversationChildCount(WidgetRef ref, String conversationId) =>
     ref.watch(
       activeSubAgentRuntimeProvider.select(
@@ -2686,14 +2736,37 @@ class const _ConversationActivityLabel({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
+    child: Text(_conversationActivityText(activityKey, childCount)),
+    liveRegion: true,
+  );
+}
+
+class const _CompactConversationActivityLabel({
+  required final String activityKey,
+  required final int childCount,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Semantics(
     child: Text(
-      'conversation_activity.$activityKey'.tr(
-        namedArgs: {'count': '$childCount'},
-      ),
+      _conversationActivityText(activityKey, childCount),
+      style: _compactConversationActivityStyle(context),
+      overflow: .ellipsis,
+      maxLines: 1,
     ),
     liveRegion: true,
   );
 }
+
+String _conversationActivityText(String activityKey, int childCount) =>
+    'conversation_activity.$activityKey'.tr(
+      namedArgs: {'count': '$childCount'},
+    );
+
+TextStyle _compactConversationActivityStyle(BuildContext context) => TextStyle(
+  color: context.auraColors.onSurfaceVariant,
+  fontSize: context.auraTheme.typography.fontSizeXs,
+  fontFamily: context.auraTheme.typography.bodyFontFamily,
+);
 
 String _conversationActivityKey(
   ({_LoadedChatConversationData data, int childCount}) request,

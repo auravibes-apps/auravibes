@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -123,7 +124,7 @@ class const _AuraDialogShellActions({required final List<Widget> actions})
 BoxDecoration _dialogShellDecoration(BuildContext context) => BoxDecoration(
   color: context.auraColors.surface,
   borderRadius: BorderRadius.all(
-    .circular(context.auraTheme.fromBorderRadius(.lg)),
+    .circular(AuraCornerRadiusScope.resolve(context, fallback: .lg)),
   ),
   boxShadow: const [DesignShadows.lg],
 );

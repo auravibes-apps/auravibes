@@ -14,6 +14,7 @@ export 'aura_animated_content.dart';
 export 'aura_avatar.dart';
 export 'aura_code_block.dart';
 export 'aura_column.dart';
+export 'aura_corner_radius_scope.dart';
 export 'aura_edge_insets_geometry.dart';
 export 'aura_edgy.dart';
 export 'aura_flex.dart';

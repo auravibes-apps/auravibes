@@ -1,3 +1,4 @@
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -29,7 +30,7 @@ class AuraCodeBlock extends StatelessWidget {
   BoxDecoration _decoration(BuildContext context) => BoxDecoration(
     color: context.auraColors.surfaceVariant,
     borderRadius: BorderRadius.circular(
-      context.auraTheme.fromBorderRadius(.md),
+      AuraCornerRadiusScope.resolve(context, fallback: .md),
     ),
   );
 }

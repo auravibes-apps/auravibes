@@ -1,5 +1,7 @@
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/molecules/aura_message_bubble.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/ui.dart' show AuraCornerRadiusScope;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,6 +75,146 @@ void main() {
         (messageContainer.decoration as BoxDecoration?)?.color,
         expectedColor,
       );
+    });
+
+    testWidgets('provides existing per-content padding defaults', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                AuraMessageBubble(content: 'Text', isUser: true),
+                AuraMessageBubble(
+                  content: 'Image',
+                  isUser: true,
+                  contentType: .image,
+                ),
+                AuraMessageBubble(
+                  content: 'File',
+                  isUser: true,
+                  contentType: .file,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      const paddings = [
+        AuraEdgeInsetsGeometry.symmetric(horizontal: .md, vertical: .sm),
+        AuraEdgeInsetsGeometry.all(.xs),
+        AuraEdgeInsetsGeometry.small,
+      ];
+      expect(
+        tester.widgetList<AuraCornerRadiusScope>(
+          find.byType(AuraCornerRadiusScope),
+        ),
+        hasLength(6),
+      );
+
+      for (var index = 0; index < paddings.length; index++) {
+        final bubble = find.byType(AuraMessageBubble).at(index);
+        final insets = paddings[index].toEdgeInsets(tester.element(bubble));
+        expect(
+          find.descendant(
+            of: bubble,
+            matching: find.byWidgetPredicate(
+              (widget) => widget is Padding && widget.padding == insets,
+            ),
+          ),
+          findsOneWidget,
+        );
+      }
+    });
+
+    testWidgets('derives inner radius from caller padding and theme', (
+      tester,
+    ) async {
+      const contentPadding = AuraEdgeInsetsGeometry.all(.xs);
+      final theme = AuraTheme.light.copyWith(globalBorderRadiusLevel: .lg);
+
+      await tester.pumpWidget(
+        AuraThemeScope(
+          theme: theme,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: AuraMessageBubble(
+                content: 'Image',
+                isUser: true,
+                contentType: .image,
+                contentPadding: contentPadding,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final scopes = tester.widgetList<AuraCornerRadiusScope>(
+        find.byType(AuraCornerRadiusScope),
+      );
+      expect(scopes, hasLength(2));
+      final outerScope = scopes.firstOrNull;
+      final innerScope = scopes.skip(1).firstOrNull;
+      final padding = tester.widget<Padding>(
+        find.descendant(
+          of: find.byType(AuraCornerRadiusScope),
+          matching: find.byType(Padding),
+        ),
+      );
+      final clip = tester.widget<ClipRRect>(find.byType(ClipRRect));
+
+      expect(outerScope?.radius, theme.borderRadius.resolve(.xl));
+      expect(
+        innerScope?.radius,
+        theme.borderRadius.resolve(.xl) - theme.fromSpacing(.xs),
+      );
+      expect(
+        padding.padding,
+        contentPadding.toEdgeInsets(
+          tester.element(find.byType(AuraMessageBubble)),
+        ),
+      );
+      expect(
+        clip.borderRadius,
+        BorderRadius.all(
+          .circular(theme.borderRadius.resolve(.xl) - theme.fromSpacing(.xs)),
+        ),
+      );
+    });
+
+    testWidgets('corner scope is readable by descendants only', (tester) async {
+      double? insideScope;
+      double? outsideScope;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Column(
+            children: [
+              Builder(
+                builder: (context) {
+                  outsideScope = AuraCornerRadiusScope.maybeOf(context);
+
+                  return const SizedBox.shrink();
+                },
+              ),
+              AuraCornerRadiusScope.select(
+                level: .xl,
+                child: Builder(
+                  builder: (context) {
+                    insideScope = AuraCornerRadiusScope.maybeOf(context);
+
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(outsideScope, isNull);
+      expect(insideScope, AuraTheme.light.borderRadius.resolve(.xl));
     });
 
     testWidgets('keeps Markdown links clickable and text selectable', (

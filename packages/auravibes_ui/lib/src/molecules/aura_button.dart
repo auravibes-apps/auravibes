@@ -1,4 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_ui/src/atoms/aura_corner_radius_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
@@ -76,7 +77,7 @@ class AuraButton extends StatelessWidget {
     button: this,
     colors: context.auraColors,
     typography: context.auraTheme.typography,
-    radius: context.auraTheme.fromBorderRadius(.xl),
+    radius: AuraCornerRadiusScope.resolve(context, fallback: .xl),
     disabled: disabled || !AuraInteractionScope.of(context).allowsActions,
   );
 }
