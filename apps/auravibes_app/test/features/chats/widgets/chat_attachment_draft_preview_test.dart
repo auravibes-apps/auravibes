@@ -492,6 +492,12 @@ class _PreviewComposerState extends State<_PreviewComposer> {
   }
 
   @override
+  void dispose() {
+    _audioPreviewCoordinator.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => Wrap(
     children: [
       for (final attachment in _attachments)
@@ -505,15 +511,12 @@ class _PreviewComposerState extends State<_PreviewComposer> {
     ],
   );
 
-  @override
-  void dispose() {
-    _audioPreviewCoordinator.dispose();
-    super.dispose();
-  }
-
   void _remove(MessageAttachmentToCreate attachment) {
     widget.onRemove(attachment);
-    if (_attachments.remove(attachment)) setState(() {});
+    if (!_attachments.contains(attachment)) return;
+    setState(() {
+      _attachments.removeWhere((candidate) => candidate == attachment);
+    });
   }
 }
 
