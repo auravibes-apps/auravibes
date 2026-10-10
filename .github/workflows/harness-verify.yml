@@ -25,6 +25,9 @@ jobs:
       - name: Test harness repair diagnostics
         run: python3 -m unittest discover -s tool -p 'verify_agent_harness_test.py'
 
+      - name: Test CI change classification
+        run: python3 -m unittest discover -s tool -p 'classify_ci_changes_test.py'
+
       - name: Verify project-local Marionette MCP
         shell: bash
         run: |
