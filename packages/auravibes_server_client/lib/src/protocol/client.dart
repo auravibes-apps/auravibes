@@ -28,6 +28,8 @@ import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models
     as _ijrb3tyt;
 import 'package:auravibes_server_client/src/protocol/features/codex_oauth/models/start_codex_oauth_result.dart'
     as _i614hct4;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/background_work_view.dart'
+    as _ii9na0oj;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/cancel_turn_request.dart'
     as _icy1uco6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/compact_conversation_request.dart'
@@ -54,6 +56,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _ij3epthu;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/delete_conversation_request.dart'
     as _ik9usty6;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/detach_tool_call_request.dart'
+    as _i0pja7fm;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i4hkj4ob;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/fork_conversation_request.dart'
@@ -62,6 +66,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i3j9438n;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_turn_request.dart'
     as _inh22t6z;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_background_works_request.dart'
+    as _izjha4p3;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversation_messages_request.dart'
     as _ikmnkbtb;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversations_request.dart'
@@ -78,6 +84,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
     as _iwmr2a61;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/stop_background_work_request.dart'
+    as _it7u65ep;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/stop_conversation_request.dart'
     as _ijtzjq4c;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_batch_request.dart'
@@ -632,6 +640,30 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_i0ao9hou.ConversationSnapshot>(
     'conversation',
     'getConversationSnapshot',
+    {'request': request},
+  );
+
+  _ida.Future<_ii9na0oj.BackgroundWorkView> detachToolCall(
+    _i0pja7fm.DetachToolCallRequest request,
+  ) => caller.callServerEndpoint<_ii9na0oj.BackgroundWorkView>(
+    'conversation',
+    'detachToolCall',
+    {'request': request},
+  );
+
+  _ida.Future<List<_ii9na0oj.BackgroundWorkView>> listBackgroundWorks(
+    _izjha4p3.ListBackgroundWorksRequest request,
+  ) => caller.callServerEndpoint<List<_ii9na0oj.BackgroundWorkView>>(
+    'conversation',
+    'listBackgroundWorks',
+    {'request': request},
+  );
+
+  _ida.Future<_ii9na0oj.BackgroundWorkView> stopBackgroundWork(
+    _it7u65ep.StopBackgroundWorkRequest request,
+  ) => caller.callServerEndpoint<_ii9na0oj.BackgroundWorkView>(
+    'conversation',
+    'stopBackgroundWork',
     {'request': request},
   );
 

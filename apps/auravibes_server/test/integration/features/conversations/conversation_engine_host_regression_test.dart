@@ -208,6 +208,256 @@ void main() {
     }
 
     test(
+      'cloud detach preserves its acknowledgement and runs past turn stop',
+      () async {
+        final fixture = await prepare();
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        bool? cancelledAfterDetach;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, request) async {
+            entered.complete();
+            await release.future;
+            cancelledAfterDetach = await request.isCancelled?.call();
+            return {'ok': true};
+          },
+        );
+        final tool =
+            (await runtime.loadTools(
+              fixture.database,
+              workspaceId: fixture.workspaceId,
+              conversationStableId: 'conversation-1',
+            )).singleWhere(
+              (candidate) =>
+                  candidate.spec.name == 'skill__user__research__search',
+            );
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final handling = runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'background-cloud-call',
+            name: tool.spec.name,
+            arguments: const {},
+          ),
+        );
+        await entered.future.timeout(const Duration(seconds: 2));
+
+        final request = DetachToolCallRequest(
+          workspaceId: fixture.workspaceId,
+          requestId: 'detach-background-cloud-call',
+          conversationId: 'conversation-1',
+          toolCallId: 'background-cloud-call',
+        );
+        await expectLater(
+          ConversationUseCases(
+            conversation_repo.ConversationRepository(),
+          ).detachToolCall(
+            fixture.database,
+            userId: 'not-a-workspace-member',
+            request: request,
+          ),
+          throwsA(
+            isA<ConversationException>().having(
+              (error) => error.code,
+              'code',
+              ConversationErrorCode.permissionDenied,
+            ),
+          ),
+        );
+
+        final work = await endpoints.conversation.detachToolCall(
+          fixture.session,
+          request,
+        );
+        expect(work.status, 'running');
+        await handling.timeout(const Duration(seconds: 2));
+        final callAfterAcknowledgement = (await ConversationToolCall.db
+            .findFirstRow(
+              fixture.database,
+              where: (table) => table.stableId.equals('background-cloud-call'),
+            ))!;
+        final acknowledgement = jsonEncode({
+          'status': 'running_in_background',
+          'work_id': work.id,
+        });
+        expect(callAfterAcknowledgement.backgroundEligible, isTrue);
+        expect(callAfterAcknowledgement.status, 'runningInBackground');
+        expect(callAfterAcknowledgement.resultJson, acknowledgement);
+        expect(
+          (await endpoints.conversation.listBackgroundWorks(
+            fixture.session,
+            ListBackgroundWorksRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: 'conversation-1',
+            ),
+          )).map((item) => item.id),
+          [work.id],
+        );
+
+        await ConversationUseCases(
+          conversation_repo.ConversationRepository(),
+        ).cancelTurn(
+          fixture.database,
+          userId: fixture.userId,
+          request: CancelTurnRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'stop-after-detach',
+            turnId: fixture.turn.requestId,
+            expectedTurnRevision: fixture.turn.revision,
+          ),
+        );
+        release.complete();
+
+        BackgroundWorkRecord? completed;
+        for (var attempt = 0; attempt < 40; attempt++) {
+          completed = await BackgroundWorkRecord.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(work.id),
+          );
+          if (completed?.status != 'running') break;
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+        expect(cancelledAfterDetach, isFalse);
+        expect(completed?.status, 'completed');
+        expect(completed?.resultContent, contains('"ok":true'));
+        final immutableCall = (await ConversationToolCall.db.findById(
+          fixture.database,
+          callAfterAcknowledgement.id!,
+        ))!;
+        expect(immutableCall.status, 'runningInBackground');
+        expect(immutableCall.resultJson, acknowledgement);
+      },
+    );
+
+    test('cloud stop request is scoped and idempotent', () async {
+      final fixture = await prepare();
+      final now = DateTime.now().toUtc();
+      final message = fixture.messages.first;
+      const workId = 'background-work-stop';
+      const toolCallId = 'background-call-stop';
+      const acknowledgement = '{"status":"running_in_background"}';
+      final call = await ConversationToolCall.db.insertRow(
+        fixture.database,
+        ConversationToolCall(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          turnId: fixture.turn.id!,
+          messageId: message.id!,
+          stableId: toolCallId,
+          name: 'skill__user__research__search',
+          argumentsJson: '{}',
+          argumentsDigest: 'digest',
+          backgroundEligible: true,
+          backgroundWorkStableId: workId,
+          status: 'runningInBackground',
+          resultJson: acknowledgement,
+          revision: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await BackgroundWorkRecord.db.insertRow(
+        fixture.database,
+        BackgroundWorkRecord(
+          workspaceId: fixture.workspaceId,
+          conversationId: fixture.conversationId,
+          conversationToolCallId: call.id!,
+          originatingMessageId: message.id!,
+          stableId: workId,
+          toolCallId: toolCallId,
+          toolKind: 'skillTemplate',
+          status: 'running',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final request = StopBackgroundWorkRequest(
+        requestId: 'stop-background-work',
+        workspaceId: fixture.workspaceId,
+        conversationId: 'conversation-1',
+        workId: workId,
+      );
+      final requested = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request,
+      );
+      expect(requested.status, 'stopRequested');
+      final retried = await endpoints.conversation.stopBackgroundWork(
+        fixture.session,
+        request.copyWith(requestId: 'stop-background-work-retry'),
+      );
+      expect(retried.status, 'stopRequested');
+      final storedCall = await ConversationToolCall.db.findById(
+        fixture.database,
+        call.id!,
+      );
+      expect(storedCall?.resultJson, acknowledgement);
+      expect(storedCall?.backgroundWorkStableId, workId);
+    });
+
+    test(
       'resumed all-denied calls are sent to the provider as a terminal exchange',
       () async {
         final fixture = await prepare();

@@ -81,6 +81,17 @@ void main() {
         conversationId: 'conversation',
         expectedProjectionRevision: 1,
       ),
+      'detachToolCall': () => gateway.detachToolCall(
+        requestId: 'detach',
+        conversationId: 'conversation',
+        toolCallId: 'tool-call',
+      ),
+      'listBackgroundWorks': () => gateway.listBackgroundWorks('conversation'),
+      'stopBackgroundWork': () => gateway.stopBackgroundWork(
+        requestId: 'stop-work',
+        conversationId: 'conversation',
+        workId: 'work',
+      ),
       'getTurn': () => gateway.getTurn(turnId: 'turn'),
       'getConversationSnapshot': () =>
           gateway.getConversationSnapshot('conversation'),
@@ -96,11 +107,20 @@ void main() {
       await expectLater(entry.value(), throwsA(anything));
       expect(requests, contains(entry.key));
       if (entry.key != 'restoreCompactionCheckpoint') {
-        expect(
-          requests[entry.key]!['a2uiSupportedComponents'],
-          unorderedEquals(supportedA2uiChatComponents),
-          reason: entry.key,
-        );
+        if (entry.key == 'detachToolCall' ||
+            entry.key == 'stopBackgroundWork' ||
+            entry.key == 'listBackgroundWorks') {
+          expect(
+            requests[entry.key]!['workspaceId'],
+            _workspace.cloudWorkspaceId,
+          );
+        } else {
+          expect(
+            requests[entry.key]!['a2uiSupportedComponents'],
+            unorderedEquals(supportedA2uiChatComponents),
+            reason: entry.key,
+          );
+        }
       }
     }
     expect(
@@ -115,6 +135,13 @@ void main() {
       requests['restoreCompactionCheckpoint'],
       containsPair('checkpointMessageId', 'checkpoint'),
     );
+    expect(requests['detachToolCall'], containsPair('requestId', 'detach'));
+    expect(requests['detachToolCall'], containsPair('toolCallId', 'tool-call'));
+    expect(
+      requests['listBackgroundWorks'],
+      containsPair('conversationId', 'conversation'),
+    );
+    expect(requests['stopBackgroundWork'], containsPair('workId', 'work'));
   });
 
   test('cloud subscriptions advertise supported components', () async {

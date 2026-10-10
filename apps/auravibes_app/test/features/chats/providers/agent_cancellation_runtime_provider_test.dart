@@ -93,6 +93,69 @@ void main() {
       expect(cancelCalls, 0);
     });
 
+    test(
+      'detaching transfers cancellation ownership from foreground cleanup',
+      () async {
+        final runtime = AgentCancellationRuntime()..start('conversation-1');
+        final operationResult = Completer<Object?>();
+        var cancelCalls = 0;
+        final handle = runtime.registerToolCancellationHandle((
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          isSupported: true,
+          cancel: () async => cancelCalls++,
+        ), operationResult: operationResult.future);
+
+        expect(
+          runtime.detachToolCall(
+            conversationId: 'conversation-1',
+            toolCallId: 'call-1',
+            workId: 'work-1',
+          ),
+          isTrue,
+        );
+        await handle.detached;
+        final scope = runtime.current('conversation-1')!;
+        runtime.clear('conversation-1', scope);
+        await runtime.waitForCompletion('conversation-1');
+
+        expect(cancelCalls, 0);
+        expect(handle.status, AgentToolCancellationStatus.detached);
+        operationResult.complete('done');
+      },
+    );
+
+    test('detach loses to foreground stop once cancellation begins', () async {
+      final runtime = AgentCancellationRuntime()..start('conversation-1');
+      final cancellationRelease = Completer<void>();
+      final operationResult = Completer<Object?>();
+      var cancelCalls = 0;
+      final handle = runtime.registerToolCancellationHandle((
+        conversationId: 'conversation-1',
+        toolCallId: 'call-1',
+        isSupported: true,
+        cancel: () {
+          cancelCalls++;
+
+          return cancellationRelease.future;
+        },
+      ), operationResult: operationResult.future);
+
+      runtime.requestStop('conversation-1');
+
+      expect(
+        runtime.detachToolCall(
+          conversationId: 'conversation-1',
+          toolCallId: 'call-1',
+          workId: 'work-1',
+        ),
+        isFalse,
+      );
+      expect(handle.status, AgentToolCancellationStatus.cancellationRequested);
+      expect(cancelCalls, 1);
+      cancellationRelease.complete();
+    });
+
     test('normal tool completion is distinct from cancellation', () {
       final runtime = AgentCancellationRuntime();
       final handle = runtime.registerToolCancellationHandle((

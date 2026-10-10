@@ -41,4 +41,28 @@ void main() {
       expect(calls, ['first', 'async', 'late']);
     },
   );
+
+  test('cleanup ownership can be transferred before stop', () async {
+    final scope = AgentCancellationScope();
+    var cleanupCount = 0;
+    final cleanup = scope.registerCleanup(() => cleanupCount++);
+
+    expect(cleanup.remove(), isTrue);
+    expect(cleanup.remove(), isFalse);
+    scope.requestStop();
+    await Future<void>.delayed(.zero);
+
+    expect(cleanupCount, 0);
+  });
+
+  test('cleanup cannot be transferred after stop starts', () {
+    final scope = AgentCancellationScope();
+    var cleanupCount = 0;
+    final cleanup = scope.registerCleanup(() => cleanupCount++);
+
+    scope.requestStop();
+
+    expect(cleanup.remove(), isFalse);
+    expect(cleanupCount, 1);
+  });
 }
