@@ -48,10 +48,8 @@ class const RadiusScopeDemo({
   );
 }
 
-class const _SelectedRadiusContent({required this.delta})
+class const _SelectedRadiusContent({required final double delta})
     extends StatelessWidget {
-  final double delta;
-
   @override
   Widget build(BuildContext context) => Column(
     mainAxisSize: .min,
@@ -66,27 +64,24 @@ class const _SelectedRadiusContent({required this.delta})
   );
 }
 
-class const _AdjustedRadiusContent({required this.delta})
+class const _AdjustedRadiusContent({required final double delta})
     extends StatelessWidget {
-  final double delta;
-
   @override
   Widget build(BuildContext context) => AuraCornerRadiusScope.adjust(
     delta: delta,
-    child: Column(
+    child: const Column(
       crossAxisAlignment: .stretch,
       children: [
-        const _RadiusValueLabel(label: 'Adjusted radius:'),
-        const AuraSizedBox(height: .sm),
-        const AuraTile(child: Text('Nested adjustment')),
+        _RadiusValueLabel(label: 'Adjusted radius:'),
+        AuraSizedBox(height: .sm),
+        AuraTile(child: Text('Nested adjustment')),
       ],
     ),
   );
 }
 
-class const _RadiusValueLabel({required this.label}) extends StatelessWidget {
-  final String label;
-
+class const _RadiusValueLabel({required final String label})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Text('$label${AuraCornerRadiusScope.of(context)}dp');
