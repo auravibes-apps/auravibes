@@ -8,11 +8,11 @@ abstract final class LogRedaction {
 
   static final _jsonCookiePatterns = <RegExp>[
     RegExp(
-      r"""(["'](?:cookie|set-cookie)["']\s*:\s*")((?:\\.|[^"\\])*)(")""",
+      r'''(["'](?:cookie|set-cookie)["']\s*:\s*")((?:\\.|[^"\\])*)(")''',
       caseSensitive: false,
     ),
     RegExp(
-      r"""(["'](?:cookie|set-cookie)["']\s*:\s*')((?:\\.|[^'\\])*)(')""",
+      r'''(["'](?:cookie|set-cookie)["']\s*:\s*')((?:\\.|[^'\\])*)(')''',
       caseSensitive: false,
     ),
   ];
@@ -91,13 +91,19 @@ abstract final class LogRedaction {
     return redacted;
   }
 
-  static String _replaceJsonCookieValue(Match match) =>
-      match.group(1)! + _redacted + match.group(_jsonCookieSuffixCaptureIndex)!;
+  static String _replaceJsonCookieValue(Match match) {
+    final prefix = match.group(1) ?? '';
+    final suffix = match.group(_jsonCookieSuffixCaptureIndex) ?? '';
+
+    return '$prefix$_redacted$suffix';
+  }
 
   static String _replaceMatch(Match match) {
     final prefix = match.group(1) ?? '';
     if (match.groupCount == _suffixCaptureCount) {
-      return '$prefix$_redacted${match.group(_suffixCaptureIndex)}';
+      final suffix = match.group(_suffixCaptureIndex) ?? '';
+
+      return '$prefix$_redacted$suffix';
     }
 
     return '$prefix$_redacted';
