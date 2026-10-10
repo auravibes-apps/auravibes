@@ -175,6 +175,7 @@ void main() {
                     : SkillKind.native,
                 isEnabled: true,
                 titleKey: appSkill.titleKey,
+                descriptionKey: appSkill.descriptionKey,
               ),
             ],
           ),
@@ -191,10 +192,20 @@ void main() {
       );
 
       expect(titles, (
-        skillTitle: appSkill.title,
-        skillTitleKey: appSkill.titleKey,
-        toolTitle: tool.title,
-        toolTitleKey: tool.titleKey,
+        skillId: appSkill.identifier,
+        skillSource: SkillSource.app,
+        skill: (
+          title: appSkill.title,
+          titleKey: appSkill.titleKey,
+          description: appSkill.description,
+          descriptionKey: appSkill.descriptionKey,
+        ),
+        tool: (
+          title: tool.title,
+          titleKey: tool.titleKey,
+          description: tool.description,
+          descriptionKey: tool.descriptionKey,
+        ),
       ));
     });
 
@@ -244,10 +255,20 @@ void main() {
       );
 
       expect(titles, (
-        skillTitle: 'Research Assistant',
-        skillTitleKey: null,
-        toolTitle: 'Search the web',
-        toolTitleKey: null,
+        skillId: 'skill-1',
+        skillSource: SkillSource.user,
+        skill: (
+          title: 'Research Assistant',
+          titleKey: null,
+          description: '',
+          descriptionKey: null,
+        ),
+        tool: (
+          title: 'Search the web',
+          titleKey: null,
+          description: 'Searches the web.',
+          descriptionKey: null,
+        ),
       ));
     });
 
@@ -284,8 +305,8 @@ void main() {
         ).future,
       );
 
-      expect(titles?.skillTitle, 'Research Assistant');
-      expect(titles?.toolTitle, isNull);
+      expect(titles?.skill.title, 'Research Assistant');
+      expect(titles?.tool.title, isNull);
     });
 
     test('returns null when skill metadata is unavailable', () async {
@@ -302,6 +323,47 @@ void main() {
           'ws1',
           'missing_skill',
           'missing_tool',
+        ).future,
+      );
+
+      expect(titles, isNull);
+    });
+
+    test('returns null when workspace skill slugs are ambiguous', () async {
+      final container = createContainer(
+        {},
+        providerOverrides: [
+          workspaceSkillsProvider('ws1').overrideWith(
+            (ref) async => const [
+              WorkspaceSkill(
+                id: 'user-research',
+                slug: 'research',
+                title: 'User Research',
+                description: '',
+                source: .user,
+                kind: .template,
+                isEnabled: true,
+              ),
+              WorkspaceSkill(
+                id: 'app-research',
+                slug: 'research',
+                title: 'App Research',
+                description: '',
+                source: .app,
+                kind: .native,
+                isEnabled: true,
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final titles = await container.read(
+        skillToolCallDisplayTitlesProvider(
+          'ws1',
+          'research',
+          'search_web',
         ).future,
       );
 

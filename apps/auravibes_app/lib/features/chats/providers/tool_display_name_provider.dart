@@ -7,15 +7,24 @@ import 'package:auravibes_app/features/skills/providers/workspace_skills_provide
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillToolDefinition;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_display_name_provider.g.dart';
 
+typedef SkillToolDisplayMetadata = ({
+  String? title,
+  String? titleKey,
+  String? description,
+  String? descriptionKey,
+});
+
 typedef SkillToolCallDisplayTitles = ({
-  String skillTitle,
-  String? skillTitleKey,
-  String? toolTitle,
-  String? toolTitleKey,
+  String skillId,
+  SkillSource skillSource,
+  SkillToolDisplayMetadata skill,
+  SkillToolDisplayMetadata tool,
 });
 
 /// Provides a human-friendly display name for a tool composite ID.
@@ -57,8 +66,6 @@ Future<SkillToolCallDisplayTitles?> skillToolCallDisplayTitles(
   String toolSlug,
 ) => _resolveSkillToolCallDisplayTitles(ref, workspaceId, skillSlug, toolSlug);
 
-typedef _SkillToolTitles = ({String? title, String? titleKey});
-
 Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
   Ref ref,
   String workspaceId,
@@ -68,7 +75,7 @@ Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
   final skill = await _workspaceSkillBySlug(ref, workspaceId, skillSlug);
   if (skill == null) return null;
 
-  final toolTitles = await _toolTitlesForSkill(
+  final toolMetadata = await _toolTitlesForSkill(
     ref,
     workspaceId,
     skill,
@@ -76,12 +83,19 @@ Future<SkillToolCallDisplayTitles?> _resolveSkillToolCallDisplayTitles(
   );
 
   return (
-    skillTitle: skill.title,
-    skillTitleKey: skill.titleKey,
-    toolTitle: toolTitles.title,
-    toolTitleKey: toolTitles.titleKey,
+    skillId: skill.id,
+    skillSource: skill.source,
+    skill: _skillDisplayMetadata(skill),
+    tool: toolMetadata,
   );
 }
+
+SkillToolDisplayMetadata _skillDisplayMetadata(WorkspaceSkill skill) => (
+  title: skill.title,
+  titleKey: skill.titleKey,
+  description: skill.description,
+  descriptionKey: skill.descriptionKey,
+);
 
 Future<WorkspaceSkill?> _workspaceSkillBySlug(
   Ref ref,
@@ -89,11 +103,15 @@ Future<WorkspaceSkill?> _workspaceSkillBySlug(
   String skillSlug,
 ) async {
   final skills = await ref.watch(workspaceSkillsProvider(workspaceId).future);
+  final matchingSkills = skills
+      .where((skill) => skill.slug == skillSlug)
+      .toList();
+  if (matchingSkills.length != 1) return null;
 
-  return skills.where((skill) => skill.slug == skillSlug).firstOrNull;
+  return matchingSkills.single;
 }
 
-Future<_SkillToolTitles> _toolTitlesForSkill(
+Future<SkillToolDisplayMetadata> _toolTitlesForSkill(
   Ref ref,
   String workspaceId,
   WorkspaceSkill skill,
@@ -103,28 +121,42 @@ Future<_SkillToolTitles> _toolTitlesForSkill(
     return _appSkillToolTitles(ref, skill, toolSlug);
   }
   if (skill.kind != SkillKind.template) {
-    return (title: null, titleKey: null);
+    return (
+      title: null,
+      titleKey: null,
+      description: null,
+      descriptionKey: null,
+    );
   }
 
   return await _templateSkillToolTitles(ref, workspaceId, skill.id, toolSlug);
 }
 
-_SkillToolTitles _appSkillToolTitles(
+SkillToolDisplayMetadata _appSkillToolTitles(
   Ref ref,
   WorkspaceSkill skill,
   String toolSlug,
-) {
-  final appSkill = ref
-      .watch(appSkillRegistryProvider)
-      .getByIdentifier(skill.id);
-  final tool = appSkill?.tools
-      .where((tool) => tool.slug == toolSlug)
-      .firstOrNull;
+) => _appSkillToolMetadata(_findAppSkillTool(ref, skill.id, toolSlug));
 
-  return (title: tool?.title, titleKey: tool?.titleKey);
+AppSkillToolDefinition? _findAppSkillTool(
+  Ref ref,
+  String skillId,
+  String toolSlug,
+) {
+  final skill = ref.watch(appSkillRegistryProvider).getByIdentifier(skillId);
+
+  return skill?.tools.where((tool) => tool.slug == toolSlug).firstOrNull;
 }
 
-Future<_SkillToolTitles> _templateSkillToolTitles(
+SkillToolDisplayMetadata _appSkillToolMetadata(AppSkillToolDefinition? tool) =>
+    (
+      title: tool?.title,
+      titleKey: tool?.titleKey,
+      description: tool?.description,
+      descriptionKey: tool?.descriptionKey,
+    );
+
+Future<SkillToolDisplayMetadata> _templateSkillToolTitles(
   Ref ref,
   String workspaceId,
   String skillId,
@@ -135,7 +167,12 @@ Future<_SkillToolTitles> _templateSkillToolTitles(
   );
   final tool = tools.where((tool) => tool.slug == toolSlug).firstOrNull;
 
-  return (title: tool?.title, titleKey: null);
+  return (
+    title: tool?.title,
+    titleKey: null,
+    description: tool?.description,
+    descriptionKey: null,
+  );
 }
 
 /// Provides the name of an MCP server by its ID.

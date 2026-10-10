@@ -59,6 +59,12 @@ import 'package:material_ui/material_ui.dart';
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
 
+typedef _ActivityToolDisplay = ({
+  String displayName,
+  String? description,
+  VoidCallback? openSkillDetails,
+});
+
 class const ChatPrimaryScrollController({
   required final Widget child,
   super.key,
@@ -1831,35 +1837,51 @@ class const _AssistantActivityRun({
     final toolContents = <String, Widget>{};
     for (final entry in toolGroupEntries) {
       final groupId = _activityToolGroupId(entry);
-      final activityToolCalls = [
-        for (final item in entry.toolCalls)
-          (
-            messageId: item.messageId,
+      final activityToolCalls =
+          <
+            ({
+              String messageId,
+              MessageToolCallEntity toolCall,
+              bool isForkReference,
+              String displayName,
+              String? description,
+              bool showArguments,
+              VoidCallback? openSkillDetails,
+              VoidCallback? openSubAgent,
+            })
+          >[];
+      for (final item in entry.toolCalls) {
+        final display = _activityToolDisplay(
+          context: context,
+          ref: ref,
+          workspaceId: workspaceId,
+          toolCall: item.toolCall,
+        );
+        activityToolCalls.add((
+          messageId: item.messageId,
+          toolCall: item.toolCall,
+          isForkReference: item.isForkReference,
+          displayName: display.displayName,
+          description: display.description,
+          showArguments: !item.hideArguments,
+          openSkillDetails: display.openSkillDetails,
+          openSubAgent: _openSubAgent(
+            context: context,
+            ref: ref,
+            workspaceId: workspaceId,
+            parentConversationId: parentConversationId,
+            childConversations: childConversations,
             toolCall: item.toolCall,
-            isForkReference: item.isForkReference,
-            displayName: _activityToolCallDisplayName(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              toolCall: item.toolCall,
-            ),
-            showArguments: !item.hideArguments,
-            openSubAgent: _openSubAgent(
-              context: context,
-              ref: ref,
-              workspaceId: workspaceId,
-              parentConversationId: parentConversationId,
-              childConversations: childConversations,
-              toolCall: item.toolCall,
-            ),
           ),
-      ];
+        ));
+      }
       final toolRows = [
         for (final activityToolCall in activityToolCalls)
           _ActivityToolCallRow(
             key: ValueKey('activity_tool_row_${activityToolCall.toolCall.id}'),
             toolCall: activityToolCall.toolCall,
             displayName: activityToolCall.displayName,
+            description: activityToolCall.description,
             showArguments: activityToolCall.showArguments,
             isExpanded: expandedToolIds.value.contains(
               activityToolCall.toolCall.id,
@@ -1870,6 +1892,7 @@ class const _AssistantActivityRun({
                 activityToolCall.toolCall.id,
               ),
             ),
+            openSkillDetails: activityToolCall.openSkillDetails,
             openSubAgent: activityToolCall.openSubAgent,
           ),
       ];
@@ -2112,35 +2135,62 @@ String _toolCallDisplayName(
   ),
 );
 
-String _activityToolCallDisplayName({
+_ActivityToolDisplay _activityToolDisplay({
   required BuildContext context,
   required WidgetRef ref,
   required String workspaceId,
   required MessageToolCallEntity toolCall,
 }) {
   final target = SkillToolCallDisplay.parseTarget(toolCall);
-  if (target != null) {
-    final titlesAsync = ref.watch(
-      skillToolCallDisplayTitlesProvider(
-        workspaceId,
-        target.skillSlug,
-        target.toolSlug,
+  if (target == null) {
+    return (
+      displayName: _toolCallDisplayName(
+        ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
+        toolCall.name,
       ),
-    );
-
-    return SkillToolCallDisplay.displayName(
-      context: context,
-      titles: titlesAsync.maybeWhen(
-        data: (titles) => titles,
-        orElse: () => null,
+      description: SkillToolCallDisplay.description(
+        context: context,
+        titles: null,
+        userFacingDescription: toolCall.userFacingDescription,
       ),
-      target: target,
+      openSkillDetails: null,
     );
   }
 
-  return _toolCallDisplayName(
-    ref.watch(toolDisplayNameProvider(workspaceId, toolCall.name)),
-    toolCall.name,
+  final titlesAsync = ref.watch(
+    skillToolCallDisplayTitlesProvider(
+      workspaceId,
+      target.skillSlug,
+      target.toolSlug,
+    ),
+  );
+  final titles = titlesAsync.maybeWhen(
+    data: (value) => value,
+    orElse: () => null,
+  );
+  final skillId = titles?.skillId;
+
+  return (
+    displayName: SkillToolCallDisplay.displayName(
+      context: context,
+      titles: titles,
+      target: target,
+    ),
+    description: SkillToolCallDisplay.description(
+      context: context,
+      titles: titles,
+      userFacingDescription: toolCall.userFacingDescription,
+    ),
+    openSkillDetails: skillId == null || skillId.isEmpty
+        ? null
+        : () {
+            unawaited(
+              SkillDetailRoute(
+                workspaceId: workspaceId,
+                skillId: skillId,
+              ).push<void>(context),
+            );
+          },
   );
 }
 
@@ -2393,10 +2443,12 @@ void _toggleDisclosure({
 class const _ActivityToolCallRow({
   required final MessageToolCallEntity toolCall,
   required final String displayName,
+  required final String? description,
   required final bool showArguments,
   required final bool isExpanded,
   required final VoidCallback onToggle,
   required final VoidCallback? openSubAgent,
+  required final VoidCallback? openSkillDetails,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -2409,10 +2461,13 @@ class const _ActivityToolCallRow({
         decodedArgs?.isNotEmpty == true || decodedResponse?.isNotEmpty == true;
     final statusKey = _statusLocaleKey();
     final statusColor = _statusColor(context);
-    final description = normalizeToolCallUserFacingDescription(
-      toolCall.userFacingDescription,
-    );
     final onOpenSubAgent = openSubAgent;
+    final onOpenSkillDetails = openSkillDetails;
+    final statusBadge = _ActivityToolStatusBadge(
+      label: statusKey.tr(),
+      color: statusColor,
+      textKey: ValueKey('activity_tool_status_${toolCall.id}'),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2439,78 +2494,64 @@ class const _ActivityToolCallRow({
                   if (description != null) description,
                   statusKey.tr(),
                 ].join(' '),
-                child: Row(
-                  children: [
-                    Icon(_statusIcon(), size: 14, color: statusColor),
-                    const AuraSizedBox(width: .xs),
-                    Expanded(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: displayName),
-                            if (description != null)
-                              TextSpan(
-                                text: ' · $description',
-                                style: TextStyle(
-                                  color: statusColor.withValues(alpha: .72),
-                                  fontSize:
-                                      context.auraTheme.typography.fontSizeXs,
-                                  fontFamily: context
-                                      .auraTheme
-                                      .typography
-                                      .bodyFontFamily,
-                                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 240;
+
+                    return Row(
+                      children: [
+                        Icon(_statusIcon(), size: 14, color: statusColor),
+                        const AuraSizedBox(width: .xs),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: displayName),
+                                if (description != null)
+                                  TextSpan(
+                                    text: ' · $description',
+                                    style: TextStyle(
+                                      color: statusColor.withValues(alpha: .72),
+                                      fontSize: context
+                                          .auraTheme
+                                          .typography
+                                          .fontSizeXs,
+                                      fontFamily: context
+                                          .auraTheme
+                                          .typography
+                                          .bodyFontFamily,
+                                    ),
+                                  ),
+                              ],
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize:
+                                    context.auraTheme.typography.fontSizeSm,
+                                fontFamily:
+                                    context.auraTheme.typography.bodyFontFamily,
                               ),
-                          ],
-                          style: TextStyle(
+                            ),
+                            key: ValueKey('activity_tool_label_${toolCall.id}'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const AuraSizedBox(width: .xs),
+                        if (isCompact)
+                          Flexible(child: statusBadge)
+                        else
+                          statusBadge,
+                        if (hasDetails)
+                          Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                            size: 18,
                             color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeSm,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
                           ),
-                        ),
-                        key: ValueKey('activity_tool_label_${toolCall.id}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const AuraSizedBox(width: .xs),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 120),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: context.auraTheme.fromSpacing(.xs),
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: .12),
-                          borderRadius: BorderRadius.circular(
-                            context.auraTheme.fromBorderRadius(.sm),
-                          ),
-                        ),
-                        child: Text(
-                          statusKey.tr(),
-                          key: ValueKey('activity_tool_status_${toolCall.id}'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: context.auraTheme.typography.fontSizeXs,
-                            fontFamily:
-                                context.auraTheme.typography.bodyFontFamily,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (hasDetails)
-                      Icon(
-                        isExpanded
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
-                        size: 18,
-                        color: statusColor,
-                      ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -2524,6 +2565,21 @@ class const _ActivityToolCallRow({
                       LocaleKeys
                           .chats_screens_chat_conversation_view_sub_agent_run,
                     ),
+                    AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
+                  ],
+                  spacing: .xs,
+                  mainAxisSize: .min,
+                ),
+                variant: .ghost,
+                size: .small,
+              ),
+            if (onOpenSkillDetails != null)
+              AuraButton(
+                key: ValueKey('activity_open_skill_${toolCall.id}'),
+                onPressed: onOpenSkillDetails,
+                child: const AuraRow(
+                  children: [
+                    TextLocale(LocaleKeys.related_lists_view_skill),
                     AuraIcon(Icons.open_in_new, size: .small, tint: .primary),
                   ],
                   spacing: .xs,
@@ -2592,6 +2648,40 @@ class const _ActivityToolCallRow({
       ToolCallResultStatus.executionError => colors.error,
     };
   }
+}
+
+class const _ActivityToolStatusBadge({
+  required final String label,
+  required final Color color,
+  required final Key textKey,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 120),
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.xs),
+        vertical: 1,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(
+          context.auraTheme.fromBorderRadius(.sm),
+        ),
+      ),
+      child: Text(
+        label,
+        key: textKey,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: color,
+          fontSize: context.auraTheme.typography.fontSizeXs,
+          fontFamily: context.auraTheme.typography.bodyFontFamily,
+        ),
+      ),
+    ),
+  );
 }
 
 class const _ActivityToolCallDetails({
