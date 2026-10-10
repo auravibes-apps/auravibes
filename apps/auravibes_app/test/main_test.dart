@@ -1,8 +1,7 @@
-// Required: Tests keep helper functions top-level.
-
 import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/main.dart' as app_main;
+import 'package:auravibes_app/widgets/android_desktop_caption_backdrop.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
@@ -10,7 +9,7 @@ import 'package:image_picker_platform_interface/image_picker_platform_interface.
 void main() {
   test('reserves caption backdrop for wide Android windows', () {
     expect(
-      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+      AndroidDesktopCaptionBackdrop.shouldShow(
         platform: .android,
         width: 1280,
         topInset: 42,
@@ -18,7 +17,7 @@ void main() {
       isTrue,
     );
     expect(
-      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+      AndroidDesktopCaptionBackdrop.shouldShow(
         platform: .android,
         width: 900,
         topInset: 42,
@@ -26,7 +25,7 @@ void main() {
       isFalse,
     );
     expect(
-      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+      AndroidDesktopCaptionBackdrop.shouldShow(
         platform: .android,
         width: 1280,
         topInset: 24,
@@ -34,7 +33,7 @@ void main() {
       isFalse,
     );
     expect(
-      app_main.shouldShowAndroidDesktopCaptionBackdrop(
+      AndroidDesktopCaptionBackdrop.shouldShow(
         platform: .macOS,
         width: 1280,
         topInset: 42,
@@ -49,7 +48,7 @@ void main() {
     ImagePickerPlatform.instance = imagePicker;
     addTearDown(() => ImagePickerPlatform.instance = previousImagePicker);
 
-    app_main.configureAndroidPhotoPicker();
+    app_main.AndroidPhotoPickerSetup.configure();
 
     expect(imagePicker.useAndroidPhotoPicker, isTrue);
   });
