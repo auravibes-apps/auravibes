@@ -2,6 +2,8 @@ import 'package:genkit/plugin.dart';
 
 abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
+  static const _suffixCaptureCount = 2;
+  static const _suffixCaptureIndex = 2;
 
   static final _secretPatterns = <RegExp>[
     RegExp(r'(\b)(?:sk|rk)-[A-Za-z0-9_-]+\b'),
@@ -76,8 +78,8 @@ abstract final class LogRedaction {
 
   static String _replaceMatch(Match match) {
     final prefix = match.group(1) ?? '';
-    if (match.groupCount == 2) {
-      return '$prefix$_redacted${match.group(2)}';
+    if (match.groupCount == _suffixCaptureCount) {
+      return '$prefix$_redacted${match.group(_suffixCaptureIndex)}';
     }
 
     return '$prefix$_redacted';
