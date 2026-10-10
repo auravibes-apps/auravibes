@@ -94,6 +94,14 @@ void main() {
       'Set-Cookie: [REDACTED]',
     );
     expect(
+      LogRedaction.redact('Cookie=session=secret; theme=dark'),
+      'Cookie=[REDACTED]',
+    );
+    expect(
+      LogRedaction.redact('Set-Cookie=session=secret; HttpOnly'),
+      'Set-Cookie=[REDACTED]',
+    );
+    expect(
       LogRedaction.redact(
         '{"Cookie":"session=secret","Set-Cookie":"session=secret"}',
       ),

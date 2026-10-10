@@ -29,7 +29,7 @@ abstract final class LogRedaction {
     ),
     RegExp(r'\b(bearer\s+)[^\s,;]+', caseSensitive: false),
     RegExp(
-      r'(?<![\x22\x27])\b((?:set-cookie|cookie)\s*:\s*)[^\r\n]+',
+      r'(?<![\x22\x27])\b((?:set-cookie|cookie)\s*[:=]\s*)[^\r\n]+',
       caseSensitive: false,
     ),
     RegExp(
