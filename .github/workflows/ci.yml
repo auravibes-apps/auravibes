@@ -160,6 +160,7 @@ jobs:
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
       run_code_checks: ${{ steps.platforms.outputs.run_code_checks }}
+      renovate_config_changes: ${{ steps.platforms.outputs.renovate_config_changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -180,6 +181,7 @@ jobs:
           all_platforms='["android","ios","macos","linux","windows","web"]'
           full_build=false
           run_code_checks=true
+          renovate_config_changes=false
           base_sha=''
           head_sha="$GITHUB_SHA"
 
@@ -187,6 +189,11 @@ jobs:
             pull_request)
               base_sha="$(jq -r '.pull_request.base.sha // empty' "$EVENT_PATH")"
               head_sha="$(jq -r '.pull_request.head.sha // empty' "$EVENT_PATH")"
+              ;;
+            merge_group)
+              base_sha="$(jq -r '.merge_group.base_sha // empty' "$EVENT_PATH")"
+              head_sha="$(jq -r '.merge_group.head_sha // empty' "$EVENT_PATH")"
+              full_build=true
               ;;
             push)
               base_sha="$(jq -r '.before // empty' "$EVENT_PATH")"
@@ -203,7 +210,8 @@ jobs:
             full_build=true
           elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
             full_build=true
-          elif [[ "$EVENT_NAME" == "push" ]] && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
+          elif [[ "$EVENT_NAME" == "push" || "$EVENT_NAME" == "merge_group" ]] \
+            && ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
             full_build=true
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
             if [[ -z "$head_sha" ]] || ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
@@ -211,15 +219,28 @@ jobs:
             fi
           fi
 
-          if [[ "$full_build" == true ]]; then
+          if [[ "$base_sha" == "" || "$base_sha" =~ ^0+$ ]] || \
+            ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null || \
+            [[ "$head_sha" == "" ]] || \
+            ! git cat-file -e "${head_sha}^{commit}" 2>/dev/null; then
             printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
             printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           changed_files="$(git diff --name-only --diff-filter=ACDMRTUXB "$base_sha" "$head_sha")"
+          classification="$(printf '%s\n' "$changed_files" | python3 tool/classify_ci_changes.py)"
+          run_code_checks="$(jq -r '.run_code_checks' <<< "$classification")"
+          renovate_config_changes="$(jq -r '.renovate_config_changes' <<< "$classification")"
           platforms=()
-          run_code_checks=false
+
+          if [[ "$full_build" == true ]]; then
+            printf 'platforms=%s\n' "$all_platforms" >> "$GITHUB_OUTPUT"
+            printf 'run_code_checks=true\n' >> "$GITHUB_OUTPUT"
+            printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           add_platform() {
             local platform="$1"
@@ -230,17 +251,6 @@ jobs:
           }
 
           while IFS= read -r path; do
-            case "$path" in
-              .github/*|.fvm/*|.fvmrc|.vscode/settings.json|assets/*|*/assets/*)
-                run_code_checks=true
-                ;;
-              *.md|*.mdx|README|*/README|CHANGELOG|*/CHANGELOG|LICENSE|*/LICENSE|.pi/*|sonar-project.properties)
-                ;;
-              *)
-                run_code_checks=true
-                ;;
-            esac
-
             case "$path" in
               apps/auravibes_app/android/*) add_platform android ;;
               apps/auravibes_app/ios/*) add_platform ios ;;
@@ -267,6 +277,30 @@ jobs:
             printf '%s\n' "${platforms[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' | sed 's/^/platforms=/' >> "$GITHUB_OUTPUT"
           fi
           printf 'run_code_checks=%s\n' "$run_code_checks" >> "$GITHUB_OUTPUT"
+          printf 'renovate_config_changes=%s\n' "$renovate_config_changes" >> "$GITHUB_OUTPUT"
+
+  renovate-validation:
+    name: validate Renovate configuration
+    needs: change
+    if: ${{ needs.change.outputs.renovate_config_changes == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.11.0
+
+      - name: Validate Renovate configuration
+        run: npx --yes --package renovate@44.149.0 -- renovate-config-validator --strict
+        # This checks configuration syntax and supported options. It does not
+        # run dependency lookups or prove that package names resolve.
 
   platform-builds:
     name: platform builds
@@ -889,7 +923,7 @@ jobs:
   ci-success:
     name: ci success
     if: ${{ always() }}
-    needs: [change, format, analysis, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose]
+    needs: [change, format, analysis, code-health, integrity, test-plan, test, responsive-shell-goldens, coverage, platform-builds, server-compose, renovate-validation]
     runs-on: ubuntu-latest
     steps:
       - name: Fail for failed required checks
