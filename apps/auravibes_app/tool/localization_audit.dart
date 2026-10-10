@@ -90,7 +90,7 @@ List<String> findPlaceholderMismatches({required Directory translationsDir}) {
     for (final key in catalog.translations.keys) {
       final branch = _pluralBranch(key);
       if (branch == null) continue;
-      pluralBranches.putIfAbsent(branch.key, () => {}).add(branch.branch);
+      pluralBranches.putIfAbsent(branch.key, () => {}).addAll([branch.branch]);
     }
   }
 
@@ -153,12 +153,7 @@ List<String> findPlaceholderMismatches({required Directory translationsDir}) {
   return issues;
 }
 
-class _LocaleCatalog {
-  const _LocaleCatalog({required this.keys, required this.translations});
-
-  final Set<String> keys;
-  final Map<String, String> translations;
-}
+typedef _LocaleCatalog = ({Set<String> keys, Map<String, String> translations});
 
 Map<String, _LocaleCatalog> _loadLocaleCatalogs(Directory translationsDir) {
   final files =
@@ -178,7 +173,7 @@ Map<String, _LocaleCatalog> _loadLocaleCatalogs(Directory translationsDir) {
     final keys = <String>{};
     final translations = <String, String>{};
     _collectCatalogEntries(data, '', keys, translations);
-    catalogs[locale] = _LocaleCatalog(keys: keys, translations: translations);
+    catalogs[locale] = (keys: keys, translations: translations);
   }
 
   return catalogs;
@@ -192,7 +187,7 @@ void _collectCatalogEntries(
 ) {
   for (final entry in values.entries) {
     final key = prefix.isEmpty ? entry.key : '$prefix.${entry.key}';
-    keys.add(key);
+    keys.addAll([key]);
     if (entry.value case final String value) {
       translations[key] = value;
     } else if (entry.value case final Map<String, dynamic> children) {
@@ -206,18 +201,18 @@ const _pluralBranchNames = {'zero', 'one', 'two', 'few', 'many', 'other'};
 ({String key, String branch})? _pluralBranch(String key) {
   final separator = key.lastIndexOf('.');
   if (separator < 1) return null;
-  final branch = key.substring(separator + 1);
+  final branch = key._slice(separator + 1, key.length);
   if (!_pluralBranchNames.contains(branch)) return null;
 
-  return (key: key.substring(0, separator), branch: branch);
+  return (key: key._slice(0, separator), branch: branch);
 }
 
 String? _placeholderMismatch({
   required String locale,
   required String key,
-  String? branch,
   required String expected,
   required String actual,
+  String? branch,
 }) {
   final expectedPositionals = RegExp(r'\{\}').allMatches(expected).length;
   final actualPositionals = RegExp(r'\{\}').allMatches(actual).length;
@@ -244,7 +239,7 @@ String? _placeholderMismatch({
 
 Set<String> _namedPlaceholders(String text) => {
   for (final match in RegExp(r'\{([A-Za-z_][A-Za-z0-9_]*)\}').allMatches(text))
-    match.group(1)!,
+    if (match.group(1) case final String placeholder) placeholder,
 };
 
 bool _setsEqual(Set<String> left, Set<String> right) =>
@@ -584,7 +579,8 @@ void main() {
   }
   if (exitCode == 0) {
     stdout.writeln(
-      'Localization audit passed (referenced keys, catalog parity, placeholders).',
+      'Localization audit passed (referenced keys, '
+      'catalog parity, placeholders).',
     );
   }
 }

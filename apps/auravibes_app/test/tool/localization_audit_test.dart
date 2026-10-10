@@ -252,7 +252,8 @@ final static = 'menu.' 'new_chat'.tr();
     );
   });
 
-  test('reports named and positional placeholder mismatches by locale and key', () {
+  test('reports named and positional placeholder mismatches '
+      'by locale and key', () {
     File('${translationsDir.path}/en.json').writeAsStringSync('''
 {"menu":{"greeting":"Hello {name}","selected_count":"{} selected"}}
 ''');
@@ -271,7 +272,8 @@ final static = 'menu.' 'new_chat'.tr();
     expect(
       issues,
       contains(
-        'es: menu.selected_count (positional placeholders: expected 1, found 0)',
+        'es: menu.selected_count '
+        '(positional placeholders: expected 1, found 0)',
       ),
     );
   });
@@ -287,7 +289,9 @@ final static = 'menu.' 'new_chat'.tr();
     expect(
       findPlaceholderMismatches(translationsDir: translationsDir),
       contains(
-        'es: items [branch: other] (named placeholders: expected {}, found {count}; positional placeholders: expected 1, found 0)',
+        'es: items [branch: other] '
+        '(named placeholders: expected {}, found {count}; '
+        'positional placeholders: expected 1, found 0)',
       ),
     );
   });
