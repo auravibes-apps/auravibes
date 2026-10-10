@@ -2948,15 +2948,19 @@ class const _AgentToolPermissionTileContent({
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraColumn(
     children: [
-      AuraText(child: _toolName(context, ref)),
+      AuraText(child: _AgentToolName(tool: tool)),
       _AgentToolDescription(tool: tool),
       _AgentToolPermissionSelector(value: value, onChanged: onChanged),
     ],
     spacing: .xs,
     crossAxisAlignment: .start,
   );
+}
 
-  Widget _toolName(BuildContext context, WidgetRef ref) {
+class const _AgentToolName({required final WorkspaceToolEntity tool})
+    extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final target = ToolNameFormatter.parseSkillToolName(tool.toolId);
     if (target == null) return tool.getNameWidget();
 
